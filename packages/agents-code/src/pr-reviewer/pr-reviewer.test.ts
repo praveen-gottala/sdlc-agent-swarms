@@ -2,10 +2,31 @@ import {
   prReviewerWork,
   PR_REVIEWER_CONTRACT,
   parseReviewOutput,
+  extractFeedbackThemes,
+  createObservationsFromFeedback,
+  handleContradictions,
+  promoteRecurringPatterns,
 } from './pr-reviewer.js';
 import type { PRReviewerInput } from './pr-reviewer.js';
-import type { AgentContext, LLMProviderRef, TaskEntry } from '@agentforge/core';
+import type { AgentContext, LLMProviderRef, TaskEntry, AgentLearning } from '@agentforge/core';
 import { Ok, Err } from '@agentforge/core';
+
+// Mock the learnings functions used internally by the helpers
+const mockAddObservation = jest.fn();
+const mockExpireObservation = jest.fn();
+const mockReadLearnings = jest.fn();
+const mockUpdateObservationConfidence = jest.fn();
+
+jest.mock('@agentforge/core', () => {
+  const actual = jest.requireActual<typeof import('@agentforge/core')>('@agentforge/core');
+  return {
+    ...actual,
+    addObservation: (...args: unknown[]) => mockAddObservation(...args),
+    expireObservation: (...args: unknown[]) => mockExpireObservation(...args),
+    readLearnings: (...args: unknown[]) => mockReadLearnings(...args),
+    updateObservationConfidence: (...args: unknown[]) => mockUpdateObservationConfidence(...args),
+  };
+});
 
 // ============================================================================
 // Helpers
@@ -102,7 +123,7 @@ new file mode 100644
 const makeContext = (): AgentContext => ({
   taskId: 'task_030',
   projectRoot: '/tmp/test-project',
-  eventBus: { publish: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn() },
+  eventBus: { publish: jest.fn(), emit: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn(), history: jest.fn().mockReturnValue([]) },
   fs: {
     readFile: jest.fn().mockReturnValue(Ok(SPEC_YAML)),
     writeFile: jest.fn().mockReturnValue(Ok(undefined)),
@@ -172,10 +193,19 @@ describe('prReviewerWork', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.spyOn(require('node:fs'), 'readFileSync').mockReturnValue('# Mock PR Review Prompt');
+    // Default mocks for learnings functions called by promoteRecurringPatterns/createObservationsFromFeedback
+    mockReadLearnings.mockResolvedValue({ ok: true, value: [] });
+    mockAddObservation.mockResolvedValue({ ok: true, value: { id: 'obs_001' } });
+    mockExpireObservation.mockResolvedValue({ ok: true, value: undefined });
+    mockUpdateObservationConfidence.mockResolvedValue({ ok: true, value: undefined });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+    mockReadLearnings.mockReset();
+    mockAddObservation.mockReset();
+    mockExpireObservation.mockReset();
+    mockUpdateObservationConfidence.mockReset();
   });
 
   it('reads PR diff via MCP and posts approval review', async () => {
@@ -414,5 +444,218 @@ describe('PR_REVIEWER_CONTRACT', () => {
 
   it('specifies notify_human + pause error strategy (no retries)', () => {
     expect(PR_REVIEWER_CONTRACT.on_error).toBe('notify_human + pause');
+  });
+});
+
+// ============================================================================
+// Learnings Integration Tests
+// ============================================================================
+
+describe('extractFeedbackThemes', () => {
+  it('extracts themes from structured review with **Issue** markers', () => {
+    const body = `### Comments
+- **File**: src/routes/revenue.ts
+- **Issue**: Missing auth middleware on protected endpoint
+- **Issue**: No input validation on request body`;
+
+    const themes = extractFeedbackThemes(body);
+
+    expect(themes).toHaveLength(2);
+    expect(themes[0]).toBe('Missing auth middleware on protected endpoint');
+    expect(themes[1]).toBe('No input validation on request body');
+  });
+
+  it('falls back to extracting sentences with convention keywords', () => {
+    const body = `The code should use named exports instead of default exports.
+    Also, you must add error handling for the database calls.
+    Looks good otherwise.`;
+
+    const themes = extractFeedbackThemes(body);
+
+    expect(themes.length).toBeGreaterThan(0);
+    expect(themes.some((t) => t.includes('named exports'))).toBe(true);
+  });
+
+  it('returns empty array for clean review with no issues', () => {
+    const body = 'APPROVE\nAll good, no changes needed.';
+    const themes = extractFeedbackThemes(body);
+    expect(themes).toHaveLength(0);
+  });
+});
+
+describe('createObservationsFromFeedback', () => {
+  beforeEach(() => {
+    mockAddObservation.mockReset();
+  });
+
+  it('creates high-confidence observations from feedback themes', async () => {
+    mockAddObservation.mockResolvedValue(Ok({
+      id: 'obs_001',
+      date: '2026-03-18T00:00:00.000Z',
+      source: 'human_feedback_on_task_030',
+      learning: 'Missing auth middleware',
+      confidence: 'high',
+      taskRef: 'task_030',
+      active: true,
+    }));
+
+    await createObservationsFromFeedback(
+      'pr_reviewer',
+      'task_030',
+      ['Missing auth middleware', 'No input validation'],
+      '/tmp/learnings',
+    );
+
+    expect(mockAddObservation).toHaveBeenCalledTimes(2);
+
+    // Verify first call has correct structure
+    const firstCall = mockAddObservation.mock.calls[0];
+    expect(firstCall[0]).toBe('pr_reviewer');
+    expect(firstCall[1]).toMatchObject({
+      source: 'human_feedback_on_task_030',
+      learning: 'Missing auth middleware',
+      confidence: 'high',
+      active: true,
+    });
+
+    // Verify second call
+    const secondCall = mockAddObservation.mock.calls[1];
+    expect(secondCall[1]).toMatchObject({
+      learning: 'No input validation',
+      confidence: 'high',
+    });
+  });
+});
+
+describe('handleContradictions', () => {
+  beforeEach(() => {
+    mockExpireObservation.mockReset();
+  });
+
+  it('expires existing learning when new feedback contradicts it', async () => {
+    mockExpireObservation.mockResolvedValue(Ok(undefined));
+
+    const existing: AgentLearning[] = [
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'pattern_detected',
+        learning: 'Use default exports for components',
+        confidence: 'medium',
+        taskRef: null,
+        active: true,
+      },
+    ];
+
+    await handleContradictions(
+      'pr_reviewer',
+      ['Use named exports for all modules'],
+      existing,
+      '/tmp/learnings',
+    );
+
+    expect(mockExpireObservation).toHaveBeenCalledWith('pr_reviewer', 'obs_001', '/tmp/learnings');
+  });
+
+  it('does not expire when there is no contradiction', async () => {
+    mockExpireObservation.mockResolvedValue(Ok(undefined));
+
+    const existing: AgentLearning[] = [
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'pattern_detected',
+        learning: 'Use Zod for validation',
+        confidence: 'medium',
+        taskRef: null,
+        active: true,
+      },
+    ];
+
+    await handleContradictions(
+      'pr_reviewer',
+      ['Missing auth middleware'],
+      existing,
+      '/tmp/learnings',
+    );
+
+    expect(mockExpireObservation).not.toHaveBeenCalled();
+  });
+});
+
+describe('promoteRecurringPatterns', () => {
+  beforeEach(() => {
+    mockReadLearnings.mockReset();
+    mockUpdateObservationConfidence.mockReset();
+  });
+
+  it('promotes medium to high confidence after 3+ occurrences from different tasks', async () => {
+    mockReadLearnings.mockResolvedValue(Ok([
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'human_feedback_on_task_001',
+        learning: 'use named exports',
+        confidence: 'medium',
+        taskRef: 'task_001',
+        active: true,
+      },
+      {
+        id: 'obs_002',
+        date: '2026-03-02T00:00:00.000Z',
+        source: 'human_feedback_on_task_002',
+        learning: 'use named exports',
+        confidence: 'medium',
+        taskRef: 'task_002',
+        active: true,
+      },
+      {
+        id: 'obs_003',
+        date: '2026-03-03T00:00:00.000Z',
+        source: 'human_feedback_on_task_003',
+        learning: 'use named exports',
+        confidence: 'medium',
+        taskRef: 'task_003',
+        active: true,
+      },
+    ]));
+
+    mockUpdateObservationConfidence.mockResolvedValue(Ok(undefined));
+
+    await promoteRecurringPatterns('pr_reviewer', '/tmp/learnings');
+
+    expect(mockUpdateObservationConfidence).toHaveBeenCalledTimes(3);
+    expect(mockUpdateObservationConfidence).toHaveBeenCalledWith('pr_reviewer', 'obs_001', 'high', '/tmp/learnings');
+    expect(mockUpdateObservationConfidence).toHaveBeenCalledWith('pr_reviewer', 'obs_002', 'high', '/tmp/learnings');
+    expect(mockUpdateObservationConfidence).toHaveBeenCalledWith('pr_reviewer', 'obs_003', 'high', '/tmp/learnings');
+  });
+
+  it('does not promote when fewer than 3 unique tasks', async () => {
+    mockReadLearnings.mockResolvedValue(Ok([
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'human_feedback_on_task_001',
+        learning: 'use named exports',
+        confidence: 'medium',
+        taskRef: 'task_001',
+        active: true,
+      },
+      {
+        id: 'obs_002',
+        date: '2026-03-02T00:00:00.000Z',
+        source: 'human_feedback_on_task_002',
+        learning: 'use named exports',
+        confidence: 'medium',
+        taskRef: 'task_002',
+        active: true,
+      },
+    ]));
+
+    mockUpdateObservationConfidence.mockResolvedValue(Ok(undefined));
+
+    await promoteRecurringPatterns('pr_reviewer', '/tmp/learnings');
+
+    expect(mockUpdateObservationConfidence).not.toHaveBeenCalled();
   });
 });

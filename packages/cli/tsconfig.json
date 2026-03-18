@@ -9,6 +9,7 @@
     { "path": "../core" },
     { "path": "../governance" },
     { "path": "../providers" },
-    { "path": "../channels" }
+    { "path": "../channels" },
+    { "path": "../agents-design" }
   ]
 }

@@ -23,6 +23,18 @@
     },
     {
       "path": "./packages/agents-code"
+    },
+    {
+      "path": "./packages/agents-design"
+    },
+    {
+      "path": "./packages/agents-cicd"
+    },
+    {
+      "path": "./packages/integration-tests"
+    },
+    {
+      "path": "./packages/e2e-test"
     }
   ]
 }

@@ -1,24 +1,29 @@
 /**
  * @module @agentforge/cli/commands/approve
  *
- * The `agentforge approve <task_id>` command.
- * Updates a task's hitl_status to approved and emits HITLApprovalReceived.
+ * The `agentforge approve <task_id> [--changes <feedback>]` command.
+ * Updates a task's hitl_status to approved (or changes_requested) and
+ * emits HITLApproved + writes to file bridge for the Python engine.
  */
 
 import * as path from 'node:path';
 import { readYaml, writeYaml, type FileSystem, realFs } from '../fs-utils.js';
-import { successMsg, errorMsg } from '../formatter.js';
+import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import type { TasksFile, TaskEntry } from '../types.js';
-import { createEventBus } from '@agentforge/core';
+import { createEventBus, writeBridgeEvent } from '@agentforge/core';
+import type { TaskStatus } from '@agentforge/core';
+import { createEngineClient, type EngineClient } from '../engine-client.js';
 
 /**
- * Approve a task by ID, updating its HITL status.
+ * Approve a task by ID, or request changes with feedback.
  */
 export async function approveCommand(
   taskId: string,
   rootDir: string,
   fileSystem: FileSystem = realFs,
   output: NodeJS.WritableStream = process.stdout,
+  options: { changes?: string } = {},
+  clientOverride?: EngineClient,
 ): Promise<void> {
   const tasksPath = path.join(rootDir, 'agentforge.tasks.yaml');
   const result = readYaml<TasksFile>(tasksPath, fileSystem);
@@ -46,8 +51,17 @@ export async function approveCommand(
     return;
   }
 
+  // Determine decision
+  const isChangesRequested = !!options.changes;
+  const newStatus: TaskStatus = isChangesRequested ? 'changes_requested' : 'approved';
+  const decision = isChangesRequested ? 'changes_requested' : 'approved';
+
   // Update the task
-  const updatedTask: TaskEntry = { ...task, hitl_status: 'approved', status: 'approved' };
+  const updatedTask: TaskEntry = {
+    ...task,
+    hitl_status: decision,
+    status: newStatus,
+  };
   const updatedTasks = [...tasks];
   updatedTasks[taskIndex] = updatedTask;
 
@@ -58,15 +72,40 @@ export async function approveCommand(
     return;
   }
 
-  output.write(successMsg(`Task "${taskId}" approved.\n`));
-
-  // Emit TaskStatusChanged event so listeners can react
+  // Emit HITLApproved event on in-memory bus
   const bus = createEventBus();
-  bus.publish({
-    type: 'TaskStatusChanged',
-    taskId,
-    from: 'awaiting_approval',
-    to: 'approved',
+  const hitlEvent = {
+    type: 'HITLApproved' as const,
+    gateId: taskId,
+    decision,
+    feedback: options.changes,
+    source: 'cli',
     timestamp: Date.now(),
-  });
+  };
+  bus.publish(hitlEvent);
+
+  // Write to file bridge for Python engine
+  writeBridgeEvent(rootDir, hitlEvent);
+
+  // Notify engine via REST if active thread exists
+  const threadPath = path.join(rootDir, '.agentforge', 'active-thread.yaml');
+  const threadResult = readYaml<{ threadId: string }>(threadPath, fileSystem);
+  if (threadResult.ok) {
+    const client = clientOverride ?? createEngineClient();
+    const apiResult = await client.approveGate(
+      threadResult.value.threadId,
+      taskId,
+      decision,
+      options.changes,
+    );
+    if (!apiResult.ok) {
+      output.write(infoMsg(`Warning: engine notification failed: ${apiResult.error.message}\n`));
+    }
+  }
+
+  if (isChangesRequested) {
+    output.write(successMsg(`Changes requested for "${taskId}": ${options.changes}\n`));
+  } else {
+    output.write(successMsg(`Task "${taskId}" approved.\n`));
+  }
 }

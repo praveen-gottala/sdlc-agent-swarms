@@ -138,7 +138,7 @@ describe('scaffoldProject', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
-    scaffoldProject('/project', manifest, fs);
+    scaffoldProject('/project', manifest, fs, new Map());
 
     expect(fs.dirs.has('/project/agentforge/spec/components')).toBe(true);
     expect(fs.dirs.has('/project/.agentforge/learnings')).toBe(true);
@@ -149,7 +149,7 @@ describe('scaffoldProject', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
-    scaffoldProject('/project', manifest, fs);
+    scaffoldProject('/project', manifest, fs, new Map());
 
     expect(fs.files.has('/project/agentforge.yaml')).toBe(true);
     const content = fs.files.get('/project/agentforge.yaml')!;
@@ -160,7 +160,7 @@ describe('scaffoldProject', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
-    scaffoldProject('/project', manifest, fs);
+    scaffoldProject('/project', manifest, fs, new Map());
 
     expect(fs.files.has('/project/agentforge.tasks.yaml')).toBe(true);
     const content = fs.files.get('/project/agentforge.tasks.yaml')!;
@@ -171,7 +171,7 @@ describe('scaffoldProject', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
-    scaffoldProject('/project', manifest, fs);
+    scaffoldProject('/project', manifest, fs, new Map());
 
     expect(fs.files.has('/project/agentforge/spec/project.yaml')).toBe(true);
     expect(fs.files.has('/project/agentforge/spec/pages.yaml')).toBe(true);
@@ -183,10 +183,62 @@ describe('scaffoldProject', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
-    const created = scaffoldProject('/project', manifest, fs);
+    const created = scaffoldProject('/project', manifest, fs, new Map());
 
     expect(created).toContain('agentforge.yaml');
     expect(created).toContain('agentforge.tasks.yaml');
     expect(created).toContain('agentforge/spec/project.yaml');
+  });
+
+  it('creates app directories', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs, new Map());
+
+    expect(fs.dirs.has('/project/src/components')).toBe(true);
+    expect(fs.dirs.has('/project/src/pages')).toBe(true);
+    expect(fs.dirs.has('/project/src/api')).toBe(true);
+    expect(fs.dirs.has('/project/src/lib')).toBe(true);
+    expect(fs.dirs.has('/project/prisma')).toBe(true);
+  });
+
+  it('creates locks directory and trust-state', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs, new Map());
+
+    expect(fs.dirs.has('/project/.agentforge/locks')).toBe(true);
+    expect(fs.files.has('/project/.agentforge/trust-state.yaml')).toBe(true);
+  });
+
+  it('writes agents.yaml with Phase 1 agent definitions', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs, new Map());
+
+    expect(fs.files.has('/project/agentforge/agents.yaml')).toBe(true);
+    const content = fs.files.get('/project/agentforge/agents.yaml')!;
+    expect(content).toContain('ux_researcher');
+    expect(content).toContain('code_generator');
+    expect(content).toContain('code_reviewer');
+  });
+
+  it('writes rendered template files', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+    const templates = new Map([
+      ['package.json', '{"name": "TaskFlow"}'],
+      ['tsconfig.json', '{"strict": true}'],
+    ]);
+
+    const created = scaffoldProject('/project', manifest, fs, templates);
+
+    expect(fs.files.has('/project/package.json')).toBe(true);
+    expect(fs.files.get('/project/package.json')).toBe('{"name": "TaskFlow"}');
+    expect(created).toContain('package.json');
+    expect(created).toContain('tsconfig.json');
   });
 });

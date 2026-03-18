@@ -127,6 +127,8 @@ export function statusEmoji(status: TaskStatus): string {
     completed: '✓',
     failed: '✗',
     paused: '⏸',
+    aborting: '⏹',
+    aborted: '⊘',
   };
   return map[status];
 }

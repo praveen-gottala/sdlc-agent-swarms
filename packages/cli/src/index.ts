@@ -14,6 +14,7 @@ import { approveCommand } from './commands/approve.js';
 import { abortCommand } from './commands/abort.js';
 import { migrateCommand } from './commands/migrate.js';
 import { configCommand } from './commands/config.js';
+import { designCommand } from './commands/design.js';
 
 /**
  * Create the AgentForge CLI program with all commands registered.
@@ -56,9 +57,10 @@ export function createProgram(): Command {
     .command('approve')
     .description('Approve a task awaiting human review')
     .argument('<task_id>', 'ID of the task to approve')
-    .action(async (taskId: string) => {
+    .option('--changes <feedback>', 'Request changes with feedback')
+    .action(async (taskId: string, options: { changes?: string }) => {
       const rootDir = findProjectRoot();
-      await approveCommand(taskId, rootDir, realFs);
+      await approveCommand(taskId, rootDir, realFs, process.stdout, options);
     });
 
   program
@@ -91,6 +93,15 @@ export function createProgram(): Command {
       await configCommand(key, value, rootDir, realFs);
     });
 
+  program
+    .command('design')
+    .description('Request a new page design from the design agent pipeline')
+    .argument('<description>', 'Natural language description of the page to design')
+    .action(async (description: string) => {
+      const rootDir = findProjectRoot();
+      await designCommand(description, rootDir, realFs);
+    });
+
   return program;
 }
 
@@ -101,6 +112,7 @@ export { approveCommand } from './commands/approve.js';
 export { abortCommand } from './commands/abort.js';
 export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
+export { designCommand } from './commands/design.js';
 export type { InitAnswers } from './commands/init.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
 export { formatTaskTable, formatTaskRow } from './formatter.js';

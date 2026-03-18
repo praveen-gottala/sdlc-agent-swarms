@@ -271,6 +271,7 @@ export const testWriterWork: AgentWorkFn<TestWriterInput, TestWriterOutput> = as
     agentId: TEST_WRITER_CONTRACT.role,
     branch: targetBranch,
     testFilesGenerated: testFilePaths,
+    source: `agent:${TEST_WRITER_CONTRACT.role}`,
     timestamp: Date.now(),
   });
 
@@ -321,6 +322,7 @@ export const registerTestWriter = (
       type: 'AgentStarted',
       agentId: contract.role,
       taskId: event.taskId,
+      source: `agent:${contract.role}`,
       timestamp: Date.now(),
     });
   });

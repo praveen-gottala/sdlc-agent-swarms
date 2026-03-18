@@ -2,16 +2,19 @@
  * @module @agentforge/cli/commands/abort
  *
  * The `agentforge abort <task_id> [--cleanup] [--all]` command.
- * Sets tasks to aborting status. With --cleanup, marks branches for deletion.
- * With --all, aborts every in-progress or pending task.
+ * Sets tasks to 'aborting' status first, calls the engine, then polls
+ * until the task reaches 'aborted'/'failed'. With --cleanup, deletes
+ * the feature branch. With --all, aborts every in-progress/pending task.
  */
 
 import * as path from 'node:path';
+import { execSync } from 'node:child_process';
 import { readYaml, writeYaml, type FileSystem, realFs } from '../fs-utils.js';
 import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import type { TasksFile, TaskEntry } from '../types.js';
-import { createEventBus } from '@agentforge/core';
+import { createEventBus, writeBridgeEvent } from '@agentforge/core';
 import type { TaskStatus } from '@agentforge/core';
+import { createEngineClient, type EngineClient } from '../engine-client.js';
 
 const ABORTABLE_STATUSES: readonly TaskStatus[] = [
   'pending',
@@ -20,16 +23,87 @@ const ABORTABLE_STATUSES: readonly TaskStatus[] = [
   'paused',
 ];
 
+const POLL_INTERVAL_MS = 1_000;
+const POLL_TIMEOUT_MS = 30_000;
+
 /**
- * Abort a single task by setting it to aborting status.
+ * Set a single task to aborting status.
  */
-function abortTask(task: TaskEntry, cleanup: boolean): TaskEntry {
+function markAborting(task: TaskEntry): TaskEntry {
   return {
     ...task,
-    status: 'failed' as TaskStatus, // aborting -> eventually aborted
+    status: 'aborting' as TaskStatus,
+    hitl_status: 'aborting',
+  };
+}
+
+/**
+ * Finalize a task to aborted status.
+ */
+function markAborted(task: TaskEntry, cleanup: boolean): TaskEntry {
+  return {
+    ...task,
+    status: 'aborted' as TaskStatus,
     hitl_status: 'aborted',
     branch: cleanup ? null : task.branch,
   };
+}
+
+/**
+ * Emit AgentAborted event and write to file bridge.
+ */
+function emitAbortEvent(
+  taskId: string,
+  agentId: string,
+  reason: string,
+  rootDir: string,
+): void {
+  const bus = createEventBus();
+  const event = {
+    type: 'AgentAborted' as const,
+    agentId,
+    taskId,
+    reason,
+    source: 'cli',
+    timestamp: Date.now(),
+  };
+  bus.publish(event);
+  writeBridgeEvent(rootDir, event);
+}
+
+/**
+ * Poll task status in YAML until it reaches a terminal state.
+ */
+async function pollUntilAborted(
+  taskId: string,
+  tasksPath: string,
+  fileSystem: FileSystem,
+  timeoutMs: number = POLL_TIMEOUT_MS,
+): Promise<TaskStatus> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const result = readYaml<TasksFile>(tasksPath, fileSystem);
+    if (result.ok) {
+      const task = result.value.tasks.find((t) => t.id === taskId);
+      if (task && (task.status === 'aborted' || task.status === 'failed')) {
+        return task.status;
+      }
+    }
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  }
+  return 'aborting' as TaskStatus;
+}
+
+/**
+ * Delete a remote branch, wrapped in try/catch.
+ */
+function cleanupBranch(branch: string, output: NodeJS.WritableStream): void {
+  try {
+    execSync(`git push origin --delete ${branch}`, { stdio: 'pipe' });
+    output.write(infoMsg(`Deleted remote branch "${branch}".\n`));
+  } catch {
+    output.write(infoMsg(`Could not delete branch "${branch}" (may not exist remotely).\n`));
+  }
 }
 
 /**
@@ -41,6 +115,8 @@ export async function abortCommand(
   rootDir: string,
   fileSystem: FileSystem = realFs,
   output: NodeJS.WritableStream = process.stdout,
+  clientOverride?: EngineClient,
+  pollTimeoutMs: number = POLL_TIMEOUT_MS,
 ): Promise<void> {
   const tasksPath = path.join(rootDir, 'agentforge.tasks.yaml');
   const result = readYaml<TasksFile>(tasksPath, fileSystem);
@@ -52,6 +128,11 @@ export async function abortCommand(
   }
 
   const { tasks } = result.value;
+  const client = clientOverride ?? createEngineClient();
+
+  // Read active thread for --all pause
+  const threadPath = path.join(rootDir, '.agentforge', 'active-thread.yaml');
+  const threadResult = readYaml<{ threadId: string }>(threadPath, fileSystem);
 
   if (options.all) {
     const abortable = tasks.filter((t) =>
@@ -63,35 +144,43 @@ export async function abortCommand(
       return;
     }
 
-    const updatedTasks = tasks.map((t) =>
-      (ABORTABLE_STATUSES as readonly string[]).includes(t.status)
-        ? abortTask(t, options.cleanup ?? false)
-        : t,
-    );
-
-    const writeResult = writeYaml(tasksPath, { tasks: updatedTasks }, fileSystem);
-    if (!writeResult.ok) {
-      output.write(errorMsg(`Failed to write tasks file: ${writeResult.error.message}\n`));
-      process.exitCode = 1;
-      return;
+    // Pause phase first if thread is active
+    if (threadResult.ok) {
+      await client.pausePhase(threadResult.value.threadId);
     }
 
-    // Emit TaskStatusChanged for each aborted task
-    const bus = createEventBus();
+    // Set all to aborting
+    let updatedTasks = tasks.map((t) =>
+      (ABORTABLE_STATUSES as readonly string[]).includes(t.status)
+        ? markAborting(t)
+        : t,
+    );
+    writeYaml(tasksPath, { tasks: updatedTasks }, fileSystem);
+
+    // Notify engine + emit events for each
     for (const t of abortable) {
-      bus.publish({
-        type: 'TaskStatusChanged',
-        taskId: t.id,
-        from: t.status,
-        to: 'failed',
-        timestamp: Date.now(),
-      });
+      await client.abortTask(t.id);
+      emitAbortEvent(t.id, t.agent, 'User requested abort --all', rootDir);
+    }
+
+    // Finalize all to aborted
+    updatedTasks = updatedTasks.map((t) =>
+      t.status === ('aborting' as TaskStatus)
+        ? markAborted(t, options.cleanup ?? false)
+        : t,
+    );
+    writeYaml(tasksPath, { tasks: updatedTasks }, fileSystem);
+
+    // Cleanup branches if requested
+    if (options.cleanup) {
+      for (const t of abortable) {
+        if (t.branch) {
+          cleanupBranch(t.branch, output);
+        }
+      }
     }
 
     output.write(successMsg(`Aborted ${abortable.length} task(s).\n`));
-    if (options.cleanup) {
-      output.write(infoMsg('Branches marked for cleanup.\n'));
-    }
     return;
   }
 
@@ -117,30 +206,40 @@ export async function abortCommand(
     return;
   }
 
-  const updatedTasks = [...tasks];
-  updatedTasks[taskIndex] = abortTask(task, options.cleanup ?? false);
+  // Step 1: Set to aborting
+  const abortingTasks = [...tasks];
+  abortingTasks[taskIndex] = markAborting(task);
+  writeYaml(tasksPath, { tasks: abortingTasks }, fileSystem);
 
-  const writeResult = writeYaml(tasksPath, { tasks: updatedTasks }, fileSystem);
-  if (!writeResult.ok) {
-    output.write(errorMsg(`Failed to write tasks file: ${writeResult.error.message}\n`));
-    process.exitCode = 1;
-    return;
+  output.write(infoMsg(`Task "${taskId}" set to aborting...\n`));
+
+  // Step 2: Emit AgentAborted event
+  emitAbortEvent(taskId, task.agent, 'User requested abort', rootDir);
+
+  // Step 3: Call engine
+  await client.abortTask(taskId);
+
+  // Step 4: Poll until aborted/failed
+  const finalStatus = await pollUntilAborted(taskId, tasksPath, fileSystem, pollTimeoutMs);
+
+  // Step 5: Finalize to aborted in YAML
+  const finalResult = readYaml<TasksFile>(tasksPath, fileSystem);
+  if (finalResult.ok) {
+    const finalTasks = [...finalResult.value.tasks];
+    const idx = finalTasks.findIndex((t) => t.id === taskId);
+    if (idx !== -1) {
+      finalTasks[idx] = markAborted(finalTasks[idx], options.cleanup ?? false);
+      writeYaml(tasksPath, { tasks: finalTasks }, fileSystem);
+    }
   }
 
-  // Emit TaskStatusChanged event
-  const bus = createEventBus();
-  bus.publish({
-    type: 'TaskStatusChanged',
-    taskId,
-    from: task.status,
-    to: 'failed',
-    timestamp: Date.now(),
-  });
+  // Step 6: Cleanup branch if requested
+  if (options.cleanup && task.branch) {
+    cleanupBranch(task.branch, output);
+  }
 
-  output.write(successMsg(`Task "${taskId}" aborted.\n`));
-  if (options.cleanup) {
-    output.write(infoMsg(`Branch "${task.branch}" marked for cleanup.\n`));
-  } else if (task.branch) {
+  output.write(successMsg(`Task "${taskId}" aborted (final status: ${finalStatus}).\n`));
+  if (!options.cleanup && task.branch) {
     output.write(infoMsg(`Branch "${task.branch}" preserved for inspection.\n`));
   }
 }

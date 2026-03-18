@@ -9,6 +9,6 @@ export type {
   AgentRunResult,
 } from './types.js';
 
-export { runAgent } from './base-agent.js';
+export { runAgent, formatLearningsForPrompt } from './base-agent.js';
 export type { ErrorStrategy } from './error-strategy.js';
 export { parseErrorStrategy } from './error-strategy.js';

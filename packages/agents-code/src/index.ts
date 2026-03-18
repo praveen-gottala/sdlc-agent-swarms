@@ -56,4 +56,8 @@ export {
   executePRReviewer,
   registerPRReviewer,
   parseReviewOutput,
+  extractFeedbackThemes,
+  createObservationsFromFeedback,
+  handleContradictions,
+  promoteRecurringPatterns,
 } from './pr-reviewer/pr-reviewer.js';

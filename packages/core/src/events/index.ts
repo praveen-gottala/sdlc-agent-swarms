@@ -1,5 +1,7 @@
 export type {
+  BaseDomainEventFields,
   DomainEvent,
+  DomainEventInput,
   DomainEventType,
   AgentStarted,
   AgentCompleted,
@@ -12,6 +14,12 @@ export type {
   SpecLockReleased,
   PRMerged,
   SpecDriftDetected,
+  PageRequested,
+  UXResearchComplete,
+  WireframeComplete,
+  WireframeApproved,
+  VisualDesignComplete,
+  DesignReviewComplete,
   DesignPhaseComplete,
   SpecComplete,
   TasksCreated,
@@ -19,7 +27,24 @@ export type {
   TestsComplete,
   PRCreated,
   ReviewComplete,
+  CIFailed,
+  CIResult,
+  SecurityScanComplete,
+  BuildFixComplete,
+  DeployComplete,
+  DeployFailed,
+  AgentAborted,
+  HITLApproved,
+  HITLTimeout,
+  TrustEscalated,
 } from './domain-events.js';
 
-export type { EventBus } from './event-bus.js';
+export type { EventBus, EventFilter, EventBusOptions } from './event-bus.js';
 export { createEventBus } from './event-bus.js';
+
+// File-based event bridge for Python engine interop
+export {
+  writeEvent as writeBridgeEvent,
+  readNewEvents as readBridgeEvents,
+  startBridgeWatcher,
+} from './file-event-bridge.js';

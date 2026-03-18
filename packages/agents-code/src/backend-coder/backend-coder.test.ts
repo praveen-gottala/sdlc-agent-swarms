@@ -127,7 +127,7 @@ models:
 const makeContext = (): AgentContext => ({
   taskId: 'task_010',
   projectRoot: '/tmp/test-project',
-  eventBus: { publish: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn() },
+  eventBus: { publish: jest.fn(), emit: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn(), history: jest.fn().mockReturnValue([]) },
   fs: {
     readFile: jest.fn().mockImplementation((path: string) => {
       if (path.includes('api.yaml')) return Ok(API_SPEC_YAML);

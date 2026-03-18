@@ -567,6 +567,7 @@ export const flagSignificantDeviation = (
     specFile,
     deviations: [deviation.description],
     severity: 'significant',
+    source: 'spec-sync',
     timestamp: Date.now(),
   });
 

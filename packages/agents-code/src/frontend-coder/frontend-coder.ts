@@ -321,6 +321,7 @@ export const frontendCoderWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOut
     agentId: FRONTEND_CODER_CONTRACT.role,
     branch: branchName,
     filesGenerated: [filePath],
+    source: `agent:${FRONTEND_CODER_CONTRACT.role}`,
     timestamp: Date.now(),
   });
 
@@ -375,6 +376,7 @@ export const registerFrontendCoder = (
         type: 'AgentStarted',
         agentId: contract.role,
         taskId,
+        source: `agent:${contract.role}`,
         timestamp: Date.now(),
       });
     }

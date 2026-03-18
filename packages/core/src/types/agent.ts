@@ -28,4 +28,6 @@ export interface AgentLearning {
   readonly taskRef: string | null;
   /** Whether this learning is still considered relevant */
   readonly active: boolean;
+  /** Optional ISO8601 expiry date — learnings past this date are filtered out */
+  readonly expires?: string;
 }

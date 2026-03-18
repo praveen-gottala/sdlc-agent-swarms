@@ -8,6 +8,8 @@ import {
   getActiveLearnings,
   deactivateObservation,
   createLearningsFile,
+  updateObservationConfidence,
+  expireObservation,
 } from './learnings-manager.js';
 import type { AgentLearning } from '../types/agent.js';
 
@@ -177,6 +179,99 @@ describe('learnings-manager', () => {
       await addObservation('pr_reviewer', sampleObservation, tmpDir);
 
       const result = await deactivateObservation('pr_reviewer', 'obs_999', tmpDir);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('TASK_NOT_FOUND');
+      }
+    });
+  });
+
+  describe('getActiveLearnings - expired filtering', () => {
+    it('filters out expired learnings', async () => {
+      // Add a learning that expires in the past
+      await addObservation('pr_reviewer', {
+        ...sampleObservation,
+        learning: 'Expired learning',
+        expires: '2020-01-01T00:00:00.000Z',
+      }, tmpDir);
+      // Add a learning with no expiry
+      await addObservation('pr_reviewer', {
+        ...sampleObservation,
+        learning: 'Still valid',
+      }, tmpDir);
+      // Add a learning that expires in the future
+      await addObservation('pr_reviewer', {
+        ...sampleObservation,
+        learning: 'Future expiry',
+        expires: '2099-12-31T23:59:59.000Z',
+      }, tmpDir);
+
+      const result = await getActiveLearnings('pr_reviewer', tmpDir);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toHaveLength(2);
+        expect(result.value.map((l) => l.learning)).toEqual([
+          'Still valid',
+          'Future expiry',
+        ]);
+      }
+    });
+  });
+
+  describe('updateObservationConfidence', () => {
+    it('updates confidence from medium to high', async () => {
+      await addObservation('pr_reviewer', {
+        ...sampleObservation,
+        confidence: 'medium',
+      }, tmpDir);
+
+      const result = await updateObservationConfidence('pr_reviewer', 'obs_001', 'high', tmpDir);
+      expect(result.ok).toBe(true);
+
+      const all = await readLearnings('pr_reviewer', tmpDir);
+      expect(all.ok).toBe(true);
+      if (all.ok) {
+        expect(all.value[0].confidence).toBe('high');
+      }
+    });
+
+    it('returns error for nonexistent observation', async () => {
+      await addObservation('pr_reviewer', sampleObservation, tmpDir);
+      const result = await updateObservationConfidence('pr_reviewer', 'obs_999', 'high', tmpDir);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('TASK_NOT_FOUND');
+      }
+    });
+  });
+
+  describe('expireObservation', () => {
+    it('sets expires field to current date', async () => {
+      await addObservation('pr_reviewer', sampleObservation, tmpDir);
+
+      const beforeExpire = new Date().toISOString();
+      const result = await expireObservation('pr_reviewer', 'obs_001', tmpDir);
+      expect(result.ok).toBe(true);
+
+      const all = await readLearnings('pr_reviewer', tmpDir);
+      expect(all.ok).toBe(true);
+      if (all.ok) {
+        expect(all.value[0].expires).toBeDefined();
+        // The expires timestamp should be around now
+        expect(all.value[0].expires! >= beforeExpire).toBe(true);
+      }
+
+      // The expired observation should no longer appear in active learnings
+      const active = await getActiveLearnings('pr_reviewer', tmpDir);
+      expect(active.ok).toBe(true);
+      if (active.ok) {
+        expect(active.value).toHaveLength(0);
+      }
+    });
+
+    it('returns error for nonexistent observation', async () => {
+      await addObservation('pr_reviewer', sampleObservation, tmpDir);
+      const result = await expireObservation('pr_reviewer', 'obs_999', tmpDir);
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.code).toBe('TASK_NOT_FOUND');

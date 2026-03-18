@@ -180,6 +180,7 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
       type: 'SpecLockAcquired',
       filePath,
       agentId,
+      source: `agent:${agentId}`,
       timestamp: Date.now(),
     });
 
@@ -194,6 +195,7 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
       type: 'SpecLockReleased',
       filePath,
       agentId,
+      source: `agent:${agentId}`,
       timestamp: Date.now(),
     });
 

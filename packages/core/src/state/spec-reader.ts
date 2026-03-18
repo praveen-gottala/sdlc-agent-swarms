@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
 import type { FileSystem } from '../fs/file-system.js';
+import type { ComponentSpec, ApiSpec, ModelsSpec } from '../types/spec-types.js';
 import { readYaml } from '../fs/yaml-utils.js';
 
 /**
@@ -18,9 +19,9 @@ import { readYaml } from '../fs/yaml-utils.js';
 export interface SpecFiles {
   readonly project?: unknown;
   readonly pages?: unknown;
-  readonly api?: unknown;
-  readonly models?: unknown;
-  readonly components: Readonly<Record<string, unknown>>;
+  readonly api?: ApiSpec;
+  readonly models?: ModelsSpec;
+  readonly components: Readonly<Record<string, ComponentSpec>>;
 }
 
 /**
@@ -33,15 +34,15 @@ export const readSpecs = (specDir: string, fs: FileSystem): Result<SpecFiles> =>
     return Err({ code: 'INVALID_STATE' as const, message: `Spec directory not found: ${specDir}`, recoverable: false });
   }
 
-  const readOptional = (name: string): unknown | undefined => {
+  const readOptional = <T>(name: string): T | undefined => {
     const filePath = path.join(specDir, `${name}.yaml`);
     if (!fs.exists(filePath)) return undefined;
-    const result = readYaml<unknown>(filePath, fs);
+    const result = readYaml<T>(filePath, fs);
     return result.ok ? result.value : undefined;
   };
 
   // Read component files from components/ subdirectory
-  const components: Record<string, unknown> = {};
+  const components: Record<string, ComponentSpec> = {};
   const componentsDir = path.join(specDir, 'components');
   if (fs.exists(componentsDir)) {
     const listResult = fs.listDir(componentsDir);
@@ -49,7 +50,7 @@ export const readSpecs = (specDir: string, fs: FileSystem): Result<SpecFiles> =>
       for (const file of listResult.value) {
         if (file.endsWith('.yaml')) {
           const name = file.replace('.yaml', '');
-          const compResult = readYaml<unknown>(path.join(componentsDir, file), fs);
+          const compResult = readYaml<ComponentSpec>(path.join(componentsDir, file), fs);
           if (compResult.ok) {
             components[name] = compResult.value;
           }
@@ -61,8 +62,8 @@ export const readSpecs = (specDir: string, fs: FileSystem): Result<SpecFiles> =>
   return Ok({
     project: readOptional('project'),
     pages: readOptional('pages'),
-    api: readOptional('api'),
-    models: readOptional('models'),
+    api: readOptional<ApiSpec>('api'),
+    models: readOptional<ModelsSpec>('models'),
     components,
   });
 };

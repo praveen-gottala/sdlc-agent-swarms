@@ -49,7 +49,9 @@ export type TaskStatus =
   | 'changes_requested'
   | 'completed'
   | 'failed'
-  | 'paused';
+  | 'paused'
+  | 'aborting'
+  | 'aborted';
 
 /**
  * Minimal task representation for channel display.

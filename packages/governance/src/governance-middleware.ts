@@ -5,10 +5,10 @@
  * HITL enforcer, audit logger) into a single middleware that wraps
  * every agent execution.
  *
- * Execution flow:
+ * Execution flow (ADR-004: budget before HITL to avoid orphaned approval requests):
  * 1. checkPermission — if deny, block immediately
- * 2. checkBudget — if deny, block immediately
- * 3. enforceHITL — may pause and wait for approval
+ * 2. checkBudget — if deny, block immediately (sync, no external side effects)
+ * 3. enforceHITL — may pause and wait for approval (creates external workflows)
  * 4. Agent executes (only if all checks pass)
  * 5. recordAudit
  */
@@ -111,6 +111,7 @@ export const executeGovernancePipeline = async (
   estimate: CostEstimate,
   hitlConfig: HITLConfig,
 ): Promise<Result<HITLResult>> => {
+  // Order: permission → budget → HITL (see ADR-004 for rationale on budget-before-HITL)
   // Step 1: Permission
   const permResult = middleware.checkPermission(agent, action);
   if (!permResult.ok) {

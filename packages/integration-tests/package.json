@@ -1,0 +1,22 @@
+{
+  "name": "@agentforge/integration-tests",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@agentforge/core": "0.1.0",
+    "@agentforge/governance": "0.1.0",
+    "@agentforge/providers": "0.1.0",
+    "@agentforge/channels": "0.1.0",
+    "@agentforge/agents-code": "0.1.0"
+  },
+  "devDependencies": {
+    "@swc/jest": "~0.2.37",
+    "jest": "~29.7.0",
+    "@types/jest": "~29.5.14"
+  }
+}

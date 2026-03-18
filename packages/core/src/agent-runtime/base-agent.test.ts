@@ -1,7 +1,8 @@
-import { runAgent } from './base-agent.js';
+import { runAgent, formatLearningsForPrompt } from './base-agent.js';
 import type { AgentContext, AgentWorkFn, LLMProviderRef } from './types.js';
-import type { AgentContract } from '../types/index.js';
+import type { AgentContract, AgentLearning } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import * as yaml from 'yaml';
 
 // ============================================================================
 // Helpers
@@ -39,7 +40,7 @@ const makeProvider = (): LLMProviderRef => ({
 const makeContext = (overrides: Partial<AgentContext> = {}): AgentContext => ({
   taskId: 'task_001',
   projectRoot: '/tmp/test-project',
-  eventBus: { publish: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn() },
+  eventBus: { publish: jest.fn(), emit: jest.fn(), subscribe: jest.fn(), unsubscribe: jest.fn(), clear: jest.fn(), history: jest.fn().mockReturnValue([]) },
   fs: {
     readFile: jest.fn().mockReturnValue(Ok('')),
     writeFile: jest.fn().mockReturnValue(Ok(undefined)),
@@ -228,5 +229,173 @@ describe('runAgent', () => {
       expect(result.value.status).toBe('error');
     }
     expect(work).toHaveBeenCalledTimes(2); // 1 original + 1 retry
+  });
+
+  describe('checkAbort via YAML', () => {
+    it('aborts when task status is aborting in YAML', async () => {
+      const tasksYaml = yaml.stringify({
+        tasks: [{ id: 'task_001', status: 'aborting' }],
+      });
+      const ctx = makeContext({
+        fs: {
+          ...makeContext().fs,
+          readFile: jest.fn().mockReturnValue({ ok: true, value: tasksYaml }),
+        },
+      });
+      const work = jest.fn();
+
+      const result = await runAgent(makeContract(), ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', work);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('AGENT_ABORTED');
+        expect(result.error.message).toContain('aborting');
+      }
+      expect(work).not.toHaveBeenCalled();
+    });
+
+    it('aborts when task status is aborted in YAML', async () => {
+      const tasksYaml = yaml.stringify({
+        tasks: [{ id: 'task_001', status: 'aborted' }],
+      });
+      const ctx = makeContext({
+        fs: {
+          ...makeContext().fs,
+          readFile: jest.fn().mockReturnValue({ ok: true, value: tasksYaml }),
+        },
+      });
+      const work = jest.fn();
+
+      const result = await runAgent(makeContract(), ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', work);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('AGENT_ABORTED');
+      }
+    });
+
+    it('continues when task status is in_progress in YAML', async () => {
+      const tasksYaml = yaml.stringify({
+        tasks: [{ id: 'task_001', status: 'in_progress' }],
+      });
+      const ctx = makeContext({
+        fs: {
+          ...makeContext().fs,
+          readFile: jest.fn().mockReturnValue({ ok: true, value: tasksYaml }),
+        },
+      });
+
+      const result = await runAgent(makeContract(), ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', successWork);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.status).toBe('completed');
+      }
+    });
+
+    it('emits AgentAborted event and records audit on abort', async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const ctx = makeContext({ abortSignal: controller.signal });
+
+      await runAgent(makeContract(), ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', jest.fn());
+
+      expect(ctx.eventBus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'AgentAborted' }),
+      );
+      expect(ctx.recordAudit).toHaveBeenCalledWith(
+        expect.objectContaining({ outcome: 'aborted' }),
+      );
+    });
+
+    it('detects abort during retry loop', async () => {
+      let readCount = 0;
+      const inProgressYaml = yaml.stringify({ tasks: [{ id: 'task_001', status: 'in_progress' }] });
+      const abortingYaml = yaml.stringify({ tasks: [{ id: 'task_001', status: 'aborting' }] });
+
+      const ctx = makeContext({
+        fs: {
+          ...makeContext().fs,
+          readFile: jest.fn().mockImplementation(() => {
+            readCount++;
+            // After a couple reads, return aborting
+            return { ok: true, value: readCount > 2 ? abortingYaml : inProgressYaml };
+          }),
+        },
+      });
+      const contract = makeContract({ on_error: 'retry(max=3)' });
+
+      const work: AgentWorkFn<TestInput, TestOutput> = jest.fn()
+        .mockResolvedValueOnce(Err({ code: 'LLM_API_ERROR' as const, message: 'err', recoverable: true }));
+
+      const result = await runAgent(contract, ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', work);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('AGENT_ABORTED');
+      }
+      // Should have called work only once before detecting abort on retry
+      expect(work).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+// ============================================================================
+// formatLearningsForPrompt Tests
+// ============================================================================
+
+describe('formatLearningsForPrompt', () => {
+  it('returns empty string when no learnings', () => {
+    expect(formatLearningsForPrompt([])).toBe('');
+  });
+
+  it('formats learnings as Team Conventions section', () => {
+    const learnings: AgentLearning[] = [
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'human_feedback_on_task_001',
+        learning: 'Team prefers named exports',
+        confidence: 'high',
+        taskRef: 'task_001',
+        active: true,
+      },
+      {
+        id: 'obs_002',
+        date: '2026-03-02T00:00:00.000Z',
+        source: 'pattern_detected',
+        learning: 'Use Zod for all input validation',
+        confidence: 'medium',
+        taskRef: null,
+        active: true,
+      },
+    ];
+
+    const result = formatLearningsForPrompt(learnings);
+
+    expect(result).toContain('## Team Conventions');
+    expect(result).toContain('Based on past work on this project:');
+    expect(result).toContain('Team prefers named exports');
+    expect(result).toContain('(confidence: high)');
+    expect(result).toContain('Use Zod for all input validation');
+    expect(result).toContain('(confidence: medium)');
+  });
+
+  it('includes learning text in the formatted output', () => {
+    const learnings: AgentLearning[] = [
+      {
+        id: 'obs_001',
+        date: '2026-03-01T00:00:00.000Z',
+        source: 'pattern_detected',
+        learning: 'Always use async/await over raw promises',
+        confidence: 'high',
+        taskRef: null,
+        active: true,
+      },
+    ];
+
+    const result = formatLearningsForPrompt(learnings);
+
+    expect(result).toContain('Always use async/await over raw promises');
   });
 });

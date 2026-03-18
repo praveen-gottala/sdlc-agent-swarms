@@ -29,6 +29,7 @@ interface LearningsFileObservation {
   confidence: ObservationConfidence;
   task_ref: string | null;
   active: boolean;
+  expires?: string;
 }
 
 /** Default base directory for learnings files. */
@@ -54,6 +55,7 @@ function toAgentLearning(raw: LearningsFileObservation): AgentLearning {
     confidence: raw.confidence,
     taskRef: raw.task_ref,
     active: raw.active,
+    ...(raw.expires ? { expires: raw.expires } : {}),
   };
 }
 
@@ -69,6 +71,7 @@ function toFileObservation(learning: AgentLearning): LearningsFileObservation {
     confidence: learning.confidence,
     task_ref: learning.taskRef,
     active: learning.active,
+    ...(learning.expires ? { expires: learning.expires } : {}),
   };
 }
 
@@ -148,7 +151,12 @@ export async function getActiveLearnings(
 ): Promise<Result<AgentLearning[]>> {
   const result = await readLearnings(role, basePath);
   if (!result.ok) return result;
-  return Ok(result.value.filter((obs) => obs.active));
+  const now = new Date().toISOString();
+  return Ok(result.value.filter((obs) => {
+    if (!obs.active) return false;
+    if (obs.expires && obs.expires <= now) return false;
+    return true;
+  }));
 }
 
 /**
@@ -235,6 +243,99 @@ export async function createLearningsFile(
     return Err({
       code: 'INVALID_STATE',
       message: `Failed to create learnings file for role "${role}": ${String(err)}`,
+      recoverable: true,
+    });
+  }
+}
+
+/**
+ * Update the confidence level of an observation.
+ */
+export async function updateObservationConfidence(
+  role: string,
+  obsId: string,
+  newConfidence: ObservationConfidence,
+  basePath?: string,
+): Promise<Result<void>> {
+  const filePath = learningsPath(role, basePath);
+  const readResult = await readLearnings(role, basePath);
+  if (!readResult.ok) return readResult;
+
+  const observations = readResult.value;
+  const target = observations.find((obs) => obs.id === obsId);
+  if (!target) {
+    return Err({
+      code: 'TASK_NOT_FOUND',
+      message: `Observation "${obsId}" not found for role "${role}"`,
+      recoverable: true,
+    });
+  }
+
+  const updated = observations.map((obs) =>
+    obs.id === obsId ? { ...obs, confidence: newConfidence } : obs,
+  );
+
+  const fileData: LearningsFile = {
+    version: '1.0',
+    agent_role: role,
+    last_updated: new Date().toISOString(),
+    observations: updated.map(toFileObservation),
+  };
+
+  try {
+    await writeFile(filePath, stringify(fileData), 'utf-8');
+    return Ok(undefined);
+  } catch (err) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: `Failed to update confidence for role "${role}": ${String(err)}`,
+      recoverable: true,
+    });
+  }
+}
+
+/**
+ * Expire an observation by setting its expires field to the current date.
+ * This effectively deactivates the learning without removing it.
+ */
+export async function expireObservation(
+  role: string,
+  obsId: string,
+  basePath?: string,
+): Promise<Result<void>> {
+  const filePath = learningsPath(role, basePath);
+  const readResult = await readLearnings(role, basePath);
+  if (!readResult.ok) return readResult;
+
+  const observations = readResult.value;
+  const target = observations.find((obs) => obs.id === obsId);
+  if (!target) {
+    return Err({
+      code: 'TASK_NOT_FOUND',
+      message: `Observation "${obsId}" not found for role "${role}"`,
+      recoverable: true,
+    });
+  }
+
+  const now = new Date().toISOString();
+  const updated = observations.map((obs) =>
+    obs.id === obsId ? { ...obs, expires: now } : obs,
+  );
+
+  const fileData: LearningsFile = {
+    version: '1.0',
+    agent_role: role,
+    last_updated: new Date().toISOString(),
+    observations: updated.map(toFileObservation),
+  };
+
+  try {
+    await writeFile(filePath, stringify(fileData), 'utf-8');
+    return Ok(undefined);
+  } catch (err) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: `Failed to expire observation for role "${role}": ${String(err)}`,
       recoverable: true,
     });
   }

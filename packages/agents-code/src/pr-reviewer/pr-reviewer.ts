@@ -15,12 +15,18 @@ import type {
   Result,
   EventBus,
   TaskEntry,
+  AgentLearning,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
   runAgent,
   readYaml,
+  readLearnings,
+  addObservation,
+  updateObservationConfidence,
+  expireObservation,
+  formatLearningsForPrompt,
 } from '@agentforge/core';
 
 // ============================================================================
@@ -108,6 +114,127 @@ export const parseReviewOutput = (output: string): ParsedReview => {
 };
 
 // ============================================================================
+// Learnings integration
+// ============================================================================
+
+/**
+ * Extract feedback themes from a REQUEST_CHANGES review body.
+ * Returns a list of concise feedback strings suitable for observations.
+ */
+export const extractFeedbackThemes = (reviewBody: string): string[] => {
+  const themes: string[] = [];
+  // Look for markdown list items with issues/fixes
+  const issuePattern = /\*\*Issue\*\*:\s*(.+)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = issuePattern.exec(reviewBody)) !== null) {
+    themes.push(match[1].trim());
+  }
+  // Fallback: if no structured issues, extract sentences containing "should", "must", "missing"
+  if (themes.length === 0) {
+    const sentences = reviewBody.split(/[.!?\n]/).filter((s) => s.trim().length > 10);
+    for (const sentence of sentences) {
+      if (/\b(should|must|missing|required|forbidden|avoid)\b/i.test(sentence)) {
+        themes.push(sentence.trim());
+      }
+    }
+  }
+  return themes;
+};
+
+/**
+ * Create observations from human feedback (changes_requested).
+ * Each feedback theme becomes a high-confidence observation.
+ */
+export const createObservationsFromFeedback = async (
+  role: string,
+  taskId: string,
+  feedbackThemes: string[],
+  learningsPath: string,
+): Promise<void> => {
+  for (const theme of feedbackThemes) {
+    await addObservation(role, {
+      date: new Date().toISOString(),
+      source: `human_feedback_on_${taskId}`,
+      learning: theme,
+      confidence: 'high',
+      taskRef: taskId,
+      active: true,
+    }, learningsPath);
+  }
+};
+
+/**
+ * Check if a feedback theme contradicts an existing learning.
+ * Simple heuristic: if the new feedback directly opposes an existing learning
+ * (e.g., "use named exports" vs "use default exports"), expire the old one.
+ */
+export const handleContradictions = async (
+  role: string,
+  feedbackThemes: string[],
+  existingLearnings: AgentLearning[],
+  learningsPath: string,
+): Promise<void> => {
+  // Build a simple contradiction map: keywords that oppose each other
+  const opposites: ReadonlyArray<readonly [RegExp, RegExp]> = [
+    [/named exports/i, /default exports/i],
+    [/default exports/i, /named exports/i],
+    [/camelCase/i, /snake_case/i],
+    [/snake_case/i, /camelCase/i],
+    [/class components/i, /functional components/i],
+    [/functional components/i, /class components/i],
+  ];
+
+  for (const theme of feedbackThemes) {
+    for (const [feedbackPattern, learningPattern] of opposites) {
+      if (feedbackPattern.test(theme)) {
+        for (const existing of existingLearnings) {
+          if (learningPattern.test(existing.learning) && existing.active) {
+            await expireObservation(role, existing.id, learningsPath);
+          }
+        }
+      }
+    }
+  }
+};
+
+/**
+ * Check for recurring patterns across learnings.
+ * If the same feedback appears 3+ times (from different tasks),
+ * promote the first occurrence from "medium" to "high" confidence.
+ */
+export const promoteRecurringPatterns = async (
+  role: string,
+  learningsPath: string,
+): Promise<void> => {
+  const result = await readLearnings(role, learningsPath);
+  if (!result.ok) return;
+
+  const observations = result.value.filter((obs) => obs.active);
+
+  // Group by normalized learning text
+  const grouped = new Map<string, AgentLearning[]>();
+  for (const obs of observations) {
+    const key = obs.learning.toLowerCase().trim();
+    const group = grouped.get(key) ?? [];
+    group.push(obs);
+    grouped.set(key, group);
+  }
+
+  // Promote patterns seen 3+ times from different tasks
+  for (const [, group] of grouped) {
+    const uniqueTasks = new Set(group.map((obs) => obs.taskRef).filter(Boolean));
+    if (uniqueTasks.size >= 3) {
+      // Promote any medium-confidence observations in this group to high
+      for (const obs of group) {
+        if (obs.confidence === 'medium') {
+          await updateObservationConfidence(role, obs.id, 'high', learningsPath);
+        }
+      }
+    }
+  }
+};
+
+// ============================================================================
 // Work function
 // ============================================================================
 
@@ -157,13 +284,16 @@ export const prReviewerWork: AgentWorkFn<PRReviewerInput, PRReviewerOutput> = as
   const stackConfig = loadStackConfig(stackConfigPath);
   const promptTemplate = loadPromptTemplate(promptTemplatePath);
 
-  // 4. Build the system prompt
+  // 4. Build the system prompt (with Team Conventions from learnings)
+  const typedLearnings = learnings as AgentLearning[];
+  const conventionsSection = formatLearningsForPrompt(typedLearnings);
   const systemPrompt = [
     promptTemplate,
     '\n## Stack Configuration\n',
     '```yaml',
     stackConfig,
     '```',
+    conventionsSection,
   ].join('\n');
 
   // 5. Build the user message
@@ -223,8 +353,24 @@ export const prReviewerWork: AgentWorkFn<PRReviewerInput, PRReviewerOutput> = as
     agentId: PR_REVIEWER_CONTRACT.role,
     prNumber,
     decision: review.decision,
+    source: `agent:${PR_REVIEWER_CONTRACT.role}`,
     timestamp: Date.now(),
   });
+
+  // 10. Post-review learnings: create observations from feedback
+  const lPath = join(context.projectRoot, '.agentforge/learnings');
+  if (review.decision === 'REQUEST_CHANGES') {
+    const themes = extractFeedbackThemes(review.body);
+    if (themes.length > 0) {
+      // Create high-confidence observations from the review feedback
+      await createObservationsFromFeedback(PR_REVIEWER_CONTRACT.role, task.id, themes, lPath);
+      // Handle contradictions against existing learnings
+      await handleContradictions(PR_REVIEWER_CONTRACT.role, themes, typedLearnings, lPath);
+    }
+  }
+
+  // 11. Promote recurring patterns (3+ from different tasks → high confidence)
+  await promoteRecurringPatterns(PR_REVIEWER_CONTRACT.role, lPath);
 
   return Ok({
     prNumber,
@@ -272,6 +418,7 @@ export const registerPRReviewer = (
       type: 'AgentStarted',
       agentId: contract.role,
       taskId: event.taskId,
+      source: `agent:${contract.role}`,
       timestamp: Date.now(),
     });
   });

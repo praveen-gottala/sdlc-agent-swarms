@@ -92,10 +92,16 @@ function createMockEventBus(): EventBus & { readonly events: DomainEvent[] } {
     publish(event: DomainEvent): void {
       events.push(event);
     },
+    emit(event: DomainEvent): void {
+      events.push(event);
+    },
     subscribe(): void { /* no-op */ },
     unsubscribe(): void { /* no-op */ },
     clear(): void {
       events.length = 0;
+    },
+    history(): DomainEvent[] {
+      return [...events];
     },
   };
 }

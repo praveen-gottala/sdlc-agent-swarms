@@ -42,11 +42,15 @@ export {
   getActiveLearnings,
   deactivateObservation,
   createLearningsFile,
+  updateObservationConfidence,
+  expireObservation,
 } from './state/learnings-manager.js';
 
 // Events
 export type {
+  BaseDomainEventFields,
   DomainEvent,
+  DomainEventInput,
   DomainEventType,
   AgentStarted,
   AgentCompleted,
@@ -59,14 +63,40 @@ export type {
   SpecLockReleased,
   PRMerged,
   SpecDriftDetected,
+  PageRequested,
+  UXResearchComplete,
+  WireframeComplete,
+  WireframeApproved,
+  VisualDesignComplete,
+  DesignReviewComplete,
   DesignPhaseComplete,
   SpecComplete,
   TasksCreated,
   CodeGenComplete,
+  TestsComplete,
+  PRCreated,
+  ReviewComplete,
+  CIFailed,
+  CIResult,
+  SecurityScanComplete,
+  BuildFixComplete,
+  DeployComplete,
+  DeployFailed,
+  AgentAborted,
+  HITLApproved,
+  HITLTimeout,
+  TrustEscalated,
 } from './events/index.js';
 
-export type { EventBus } from './events/index.js';
+export type { EventBus, EventFilter, EventBusOptions } from './events/index.js';
 export { createEventBus } from './events/index.js';
+
+// File-based event bridge for Python engine interop
+export {
+  writeBridgeEvent,
+  readBridgeEvents,
+  startBridgeWatcher,
+} from './events/index.js';
 
 // Agent runtime
 export type {
@@ -80,7 +110,7 @@ export type {
   AgentRunResult,
   ErrorStrategy,
 } from './agent-runtime/index.js';
-export { runAgent, parseErrorStrategy } from './agent-runtime/index.js';
+export { runAgent, parseErrorStrategy, formatLearningsForPrompt } from './agent-runtime/index.js';
 
 // Filesystem
 export type { FileSystem } from './fs/index.js';
@@ -97,6 +127,20 @@ export {
   updateTaskStatus,
   addTask,
 } from './state/task-manager.js';
+
+// Spec types (PRD v2.0 Section 5.2)
+export type {
+  ComponentProp,
+  ComponentEntry,
+  ComponentSpec,
+  QueryParam,
+  EndpointResponse,
+  EndpointEntry,
+  ApiSpec,
+  ModelField,
+  ModelEntry,
+  ModelsSpec,
+} from './types/spec-types.js';
 
 // State: spec reader
 export type { SpecFiles } from './state/spec-reader.js';

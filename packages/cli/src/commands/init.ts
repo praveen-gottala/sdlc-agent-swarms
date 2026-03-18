@@ -10,6 +10,7 @@ import * as readline from 'node:readline';
 import type { ProjectManifest } from '../types.js';
 import { writeYaml, type FileSystem, realFs } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
+import { renderTemplate, TEMPLATE_MAP } from '../template-renderer.js';
 
 /**
  * Answers collected from the init wizard.
@@ -145,12 +146,73 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
 }
 
 /**
+ * Default agent definitions for Phase 1.
+ */
+function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
+  return {
+    version: '1.0',
+    agents: [
+      {
+        role: 'ux_researcher',
+        phase: 'design',
+        provider: manifest.agents.providers.default,
+        hitl_level: 'notify_only',
+        on_complete: 'UXResearchComplete',
+      },
+      {
+        role: 'wireframer',
+        phase: 'design',
+        provider: manifest.agents.providers.default,
+        hitl_level: 'full_approval',
+        on_complete: 'WireframeComplete',
+      },
+      {
+        role: 'spec_writer',
+        phase: 'spec',
+        provider: manifest.agents.providers.overrides?.['architecture'] ?? manifest.agents.providers.default,
+        hitl_level: 'review_and_override',
+        on_complete: 'SpecComplete',
+      },
+      {
+        role: 'task_decomposer',
+        phase: 'spec',
+        provider: manifest.agents.providers.default,
+        hitl_level: 'notify_only',
+        on_complete: 'TasksCreated',
+      },
+      {
+        role: 'code_generator',
+        phase: 'code',
+        provider: manifest.agents.providers.default,
+        hitl_level: 'review_and_override',
+        on_complete: 'CodeGenComplete',
+      },
+      {
+        role: 'test_writer',
+        phase: 'code',
+        provider: manifest.agents.providers.default,
+        hitl_level: 'notify_only',
+        on_complete: 'TestsComplete',
+      },
+      {
+        role: 'code_reviewer',
+        phase: 'code',
+        provider: manifest.agents.providers.overrides?.['code_review'] ?? manifest.agents.providers.default,
+        hitl_level: 'review_and_override',
+        on_complete: 'ReviewComplete',
+      },
+    ],
+  };
+}
+
+/**
  * Scaffold the project directory structure.
  */
 export function scaffoldProject(
   rootDir: string,
   manifest: ProjectManifest,
   fileSystem: FileSystem = realFs,
+  templateContents?: Map<string, string>,
 ): string[] {
   const created: string[] = [];
 
@@ -170,6 +232,29 @@ export function scaffoldProject(
   fileSystem.mkdir(auditDir);
   created.push('.agentforge/audit/');
 
+  // Create locks directory
+  const locksDir = path.join(rootDir, '.agentforge', 'locks');
+  fileSystem.mkdir(locksDir);
+  created.push('.agentforge/locks/');
+
+  // Write initial trust state
+  const trustStatePath = path.join(rootDir, '.agentforge', 'trust-state.yaml');
+  writeYaml(trustStatePath, { version: '1.0', trust: {} }, fileSystem);
+  created.push('.agentforge/trust-state.yaml');
+
+  // Create app directories
+  const appDirs = [
+    'src/components',
+    'src/pages',
+    'src/api',
+    'src/lib',
+    'prisma',
+  ];
+  for (const dir of appDirs) {
+    fileSystem.mkdir(path.join(rootDir, dir));
+    created.push(`${dir}/`);
+  }
+
   // Write project manifest
   const manifestPath = path.join(rootDir, 'agentforge.yaml');
   writeYaml(manifestPath, manifest, fileSystem);
@@ -179,6 +264,11 @@ export function scaffoldProject(
   const tasksPath = path.join(rootDir, 'agentforge.tasks.yaml');
   writeYaml(tasksPath, { tasks: [] }, fileSystem);
   created.push('agentforge.tasks.yaml');
+
+  // Write agent definitions
+  const agentsPath = path.join(rootDir, 'agentforge', 'agents.yaml');
+  writeYaml(agentsPath, buildAgentsYaml(manifest), fileSystem);
+  created.push('agentforge/agents.yaml');
 
   // Write seed spec files
   const projectSpec = {
@@ -201,7 +291,44 @@ export function scaffoldProject(
   writeYaml(path.join(specDir, 'models.yaml'), { version: '1.0', models: [] }, fileSystem);
   created.push('agentforge/spec/models.yaml');
 
+  // Render and write scaffold templates
+  const vars = { PROJECT_NAME: manifest.project.name };
+  const templates = templateContents ?? loadTemplatesFromDisk(vars);
+  for (const [outputPath, content] of templates) {
+    const fullPath = path.join(rootDir, outputPath);
+    const dir = path.dirname(fullPath);
+    fileSystem.mkdir(dir);
+    fileSystem.writeFile(fullPath, content);
+    created.push(outputPath);
+  }
+
   return created;
+}
+
+/**
+ * Load and render templates from disk (production path).
+ */
+function loadTemplatesFromDisk(vars: Record<string, string>): Map<string, string> {
+  const rendered = new Map<string, string>();
+  try {
+    // Resolve relative to this file's compiled location
+    const templatesDir = path.resolve(
+      __dirname,
+      '../../../stacks/react-node-prisma/templates/scaffold',
+    );
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('node:fs');
+    for (const [templateFile, outputPath] of Object.entries(TEMPLATE_MAP)) {
+      const templatePath = path.join(templatesDir, templateFile);
+      if (fs.existsSync(templatePath)) {
+        const content = fs.readFileSync(templatePath, 'utf-8') as string;
+        rendered.set(outputPath, renderTemplate(content, vars));
+      }
+    }
+  } catch {
+    // Templates may not be available in test environment
+  }
+  return rendered;
 }
 
 /**
@@ -238,8 +365,10 @@ export async function initCommand(
 
   out.write('\n');
   out.write(infoMsg(`Using defaults: React + Node.js + PostgreSQL + Tailwind\n`));
-  out.write(infoMsg(`HITL: review_and_override (design/deploy: full_approval)\n`));
-  out.write(infoMsg(`Budget: $2/task, $25/phase, $200/month\n`));
+  out.write(infoMsg(`HITL: ${manifest.hitl.default} (design/deploy: full_approval)\n`));
+  out.write(infoMsg(`Budget: $${manifest.budget.per_task_max_usd}/task, $${manifest.budget.per_phase_max_usd}/phase, $${manifest.budget.monthly_max_usd}/month\n`));
   out.write('\n');
-  out.write(successMsg('AgentForge is ready. Run: agentforge start design\n'));
+  out.write(infoMsg('Figma not configured. Using code-first design mode.\n'));
+  out.write('\n');
+  out.write(successMsg('AgentForge initialized. Run `agentforge start design` to begin.\n'));
 }

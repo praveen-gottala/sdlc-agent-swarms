@@ -11,6 +11,7 @@ module.exports = {
     '^@agentforge/governance$': '<rootDir>/../governance/src/index.ts',
     '^@agentforge/providers$': '<rootDir>/../providers/src/index.ts',
     '^@agentforge/channels$': '<rootDir>/../channels/src/index.ts',
+    '^@agentforge/agents-design$': '<rootDir>/../agents-design/src/index.ts',
     '^(\\..*)\\.js$': '$1',
   },
 };

@@ -52,3 +52,16 @@ export type {
   TaskEntry,
   TasksFile,
 } from './task.js';
+
+export type {
+  ComponentProp,
+  ComponentEntry,
+  ComponentSpec,
+  QueryParam,
+  EndpointResponse,
+  EndpointEntry,
+  ApiSpec,
+  ModelField,
+  ModelEntry,
+  ModelsSpec,
+} from './spec-types.js';
