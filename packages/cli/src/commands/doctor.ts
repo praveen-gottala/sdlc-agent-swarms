@@ -12,6 +12,7 @@ import type { ProviderConfig } from '@agentforge/providers';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { readYaml, type FileSystem, realFs } from '../fs-utils.js';
 import type { ProjectManifest } from '../types.js';
+import { checkPrerequisites } from '../engine-setup.js';
 
 /** Result of a single integration check. */
 interface CheckResult {
@@ -260,6 +261,23 @@ export async function doctorCommand(
   }
   output.write('\n');
 
+  // Infrastructure checks
+  output.write('\x1b[1mInfrastructure\x1b[0m\n');
+  output.write(`  ${'─'.repeat(60)}\n`);
+
+  const infraStatus = checkPrerequisites(rootDir);
+  const infraResults: CheckResult[] = infraStatus.checks.map((c) => ({
+    name: c.name,
+    status: c.status === 'pass' ? 'pass' as const : 'fail' as const,
+    message: c.status === 'fail' && c.fixHint ? `${c.message} — ${c.fixHint}` : c.message,
+  }));
+
+  for (const result of infraResults) {
+    output.write(formatResult(result) + '\n');
+  }
+
+  output.write('\n');
+
   // Run all checks
   output.write('\x1b[1mLLM Providers\x1b[0m\n');
   output.write(`  ${'─'.repeat(60)}\n`);
@@ -290,7 +308,7 @@ export async function doctorCommand(
   }
 
   // Summary
-  const allResults = [...providerChecks, ...channelChecks];
+  const allResults = [...infraResults, ...providerChecks, ...channelChecks];
   const passed = allResults.filter((r) => r.status === 'pass').length;
   const failed = allResults.filter((r) => r.status === 'fail').length;
   const skipped = allResults.filter((r) => r.status === 'skip').length;

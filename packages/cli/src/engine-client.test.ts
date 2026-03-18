@@ -1,3 +1,9 @@
+// Mock engine-setup to avoid real filesystem calls during import
+jest.mock('./engine-setup.js', () => ({
+  getUvicornPath: jest.fn().mockReturnValue('uvicorn'),
+  getEnginePythonPath: jest.fn().mockReturnValue('/engine/src'),
+}));
+
 import { getEnginePort, isEngineRunning, createEngineClient } from './engine-client.js';
 
 describe('getEnginePort', () => {
@@ -95,10 +101,10 @@ describe('createEngineClient', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('http://127.0.0.1:9999/health');
   });
 
-  it('startPhase() calls POST /api/phases/start', async () => {
+  it('startPhase() calls POST /phase/start', async () => {
     globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ threadId: 'thread-123' }),
+      json: async () => ({ thread_id: 'thread-123', phase: 'design', status: 'running' }),
     });
 
     const client = createEngineClient(9999);
@@ -109,15 +115,15 @@ describe('createEngineClient', () => {
       expect(result.value.threadId).toBe('thread-123');
     }
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://127.0.0.1:9999/api/phases/start',
+      'http://127.0.0.1:9999/phase/start',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ phase: 'design', projectRoot: '/project' }),
+        body: JSON.stringify({ phase: 'design', project_root: '/project' }),
       }),
     );
   });
 
-  it('approveGate() calls POST /api/gates/approve', async () => {
+  it('approveGate() calls POST /gate/approve', async () => {
     globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({}),
@@ -128,12 +134,12 @@ describe('createEngineClient', () => {
 
     expect(result.ok).toBe(true);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://127.0.0.1:9999/api/gates/approve',
+      'http://127.0.0.1:9999/gate/approve',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
-          threadId: 'thread-1',
-          gateId: 'gate-1',
+          thread_id: 'thread-1',
+          gate_id: 'gate-1',
           decision: 'approved',
           feedback: 'looks good',
         }),
@@ -141,7 +147,7 @@ describe('createEngineClient', () => {
     );
   });
 
-  it('abortTask() calls POST /api/tasks/abort', async () => {
+  it('abortTask() calls POST /task/abort', async () => {
     globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({}),
@@ -152,10 +158,10 @@ describe('createEngineClient', () => {
 
     expect(result.ok).toBe(true);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://127.0.0.1:9999/api/tasks/abort',
+      'http://127.0.0.1:9999/task/abort',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ taskId: 'task-1' }),
+        body: JSON.stringify({ task_id: 'task-1' }),
       }),
     );
   });
@@ -197,7 +203,7 @@ describe('createEngineClient', () => {
     });
 
     const client = createEngineClient(9999);
-    const result = await client.startPhase('design', '/project');
+    const result = await client.abortTask('task-1');
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

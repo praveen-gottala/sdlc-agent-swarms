@@ -11,6 +11,7 @@ import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import type { Result } from '@agentforge/core';
 import { Ok, Err } from '@agentforge/core';
+import { getUvicornPath, getEnginePythonPath } from './engine-setup.js';
 
 const DEFAULT_PORT = 8321;
 const HEALTH_POLL_INTERVAL_MS = 500;
@@ -74,13 +75,20 @@ export async function spawnEngine(
     fs.mkdirSync(pidDir, { recursive: true });
   }
 
+  const uvicornBin = getUvicornPath(rootDir);
+  const enginePythonPath = getEnginePythonPath(rootDir);
+
   const child = spawn(
-    'uvicorn',
+    uvicornBin,
     ['agentforge_engine.server:app', '--port', String(port)],
     {
       cwd: rootDir,
       detached: true,
       stdio: 'ignore',
+      env: {
+        ...process.env,
+        PYTHONPATH: enginePythonPath,
+      },
     },
   );
 
@@ -185,17 +193,19 @@ export function createEngineClient(port: number = getEnginePort()): EngineClient
   }
 
   return {
-    startPhase(phase, projectRoot) {
-      return post<{ threadId: string }>('/api/phases/start', { phase, projectRoot });
+    async startPhase(phase, projectRoot) {
+      const result = await post<{ thread_id: string }>('/phase/start', { phase, project_root: projectRoot });
+      if (!result.ok) return result;
+      return Ok({ threadId: result.value.thread_id });
     },
     approveGate(threadId, gateId, decision, feedback) {
-      return post<void>('/api/gates/approve', { threadId, gateId, decision, feedback });
+      return post<void>('/gate/approve', { thread_id: threadId, gate_id: gateId, decision, feedback });
     },
     abortTask(taskId) {
-      return post<void>('/api/tasks/abort', { taskId });
+      return post<void>('/task/abort', { task_id: taskId });
     },
     pausePhase(threadId) {
-      return post<void>('/api/phases/pause', { threadId });
+      return post<void>('/phase/pause', { thread_id: threadId });
     },
     health() {
       return get<{ status: string }>('/health');

@@ -11,7 +11,14 @@ jest.mock('../engine-client.js', () => ({
   getEnginePort: jest.fn().mockReturnValue(8321),
 }));
 
+// Mock engine-setup to avoid real Python checks
+jest.mock('../engine-setup.js', () => ({
+  isSetupComplete: jest.fn().mockReturnValue(true),
+  setupEngine: jest.fn().mockResolvedValue({ ok: true, value: { engineDir: '/engine', venvDir: '/engine/.venv' } }),
+}));
+
 import { isEngineRunning, spawnEngine } from '../engine-client.js';
+import { isSetupComplete, setupEngine } from '../engine-setup.js';
 
 function createMockFs(files: Record<string, string> = {}): FileSystem & { files: Map<string, string> } {
   const fileMap = new Map(Object.entries(files));
@@ -201,7 +208,45 @@ describe('startCommand', () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it('auto-triggers setup when engine not installed', async () => {
+    (isSetupComplete as jest.Mock).mockReturnValue(false);
+    (setupEngine as jest.Mock).mockResolvedValue({ ok: true, value: { engineDir: '/engine', venvDir: '/engine/.venv' } });
+    (isEngineRunning as jest.Mock).mockReturnValue(true);
+
+    const fs = createMockFs({
+      '/project/agentforge.yaml': MANIFEST_YAML,
+    });
+    const { output, getOutput } = createOutputCapture();
+    const client = createMockClient();
+
+    await startCommand('design', '/project', fs, output, client);
+
+    expect(setupEngine).toHaveBeenCalled();
+    expect(getOutput()).toContain('Engine not found');
+    expect(getOutput()).toContain('setup complete');
+  });
+
+  it('reports setup failure and exits', async () => {
+    (isSetupComplete as jest.Mock).mockReturnValue(false);
+    (setupEngine as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: { code: 'INVALID_STATE', message: 'Python not found', recoverable: false },
+    });
+
+    const fs = createMockFs({
+      '/project/agentforge.yaml': MANIFEST_YAML,
+    });
+    const { output, getOutput } = createOutputCapture();
+
+    await startCommand('design', '/project', fs, output);
+
+    expect(getOutput()).toContain('Engine setup failed');
+    expect(getOutput()).toContain('agentforge setup');
+    expect(process.exitCode).toBe(1);
+  });
+
   it('reports phase start failure', async () => {
+    (isSetupComplete as jest.Mock).mockReturnValue(true);
     (isEngineRunning as jest.Mock).mockReturnValue(true);
 
     const fs = createMockFs({

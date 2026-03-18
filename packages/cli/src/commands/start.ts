@@ -17,6 +17,7 @@ import {
   getEnginePort,
   type EngineClient,
 } from '../engine-client.js';
+import { isSetupComplete, setupEngine } from '../engine-setup.js';
 
 const VALID_PHASES = ['design', 'spec', 'code', 'cicd', 'observe'] as const;
 type Phase = (typeof VALID_PHASES)[number];
@@ -60,6 +61,21 @@ export async function startCommand(
   output.write(infoMsg(`Provider: ${manifest.agents.providers.default}\n`));
   output.write(infoMsg(`Max concurrent agents: ${manifest.agents.orchestration.max_concurrent_agents}\n`));
   output.write('\n');
+
+  // Auto-setup: install Python engine dependencies if not done yet
+  if (!isSetupComplete(rootDir)) {
+    output.write(infoMsg('Engine not found. Setting up... (one-time)\n'));
+    const setupResult = await setupEngine(rootDir, (msg) => {
+      output.write(infoMsg(`${msg}\n`));
+    });
+    if (!setupResult.ok) {
+      output.write(errorMsg(`Engine setup failed: ${setupResult.error.message}\n`));
+      output.write(infoMsg('Run "agentforge setup" for detailed diagnostics.\n'));
+      process.exitCode = 1;
+      return;
+    }
+    output.write(successMsg('Engine setup complete.\n'));
+  }
 
   // Check if engine is running, spawn if not
   const pidPath = path.join(rootDir, '.agentforge', 'engine.pid');

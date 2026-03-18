@@ -22,7 +22,8 @@ from fastapi import FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import BaseModel
 
-from .config import load_manifest, load_tasks
+from .config import load_manifest, load_tasks, save_tasks
+from .models import TasksFile
 from .event_bridge import read_events, truncate
 from .graphs.cicd_phase import build_cicd_graph
 from .graphs.code_gen_phase import build_code_gen_graph
@@ -133,6 +134,23 @@ async def start_phase(req: PhaseStartRequest) -> PhaseStartResponse:
     # Load initial state from YAML.
     manifest = load_manifest(project_root)
     tasks_file = load_tasks(project_root)
+
+    # Seed a task if none exist for this phase.
+    phase_tasks = [t for t in tasks_file.tasks if t.phase == req.phase]
+    if not phase_tasks:
+        from .models import TaskEntry as TE
+
+        seed_task = TE(
+            id=f"{req.phase}-task-{thread_id[:6]}",
+            title=f"{req.phase.capitalize()} phase task",
+            phase=req.phase,
+            agent=f"{req.phase}-agent",
+            status="pending",
+            spec_ref=f"agentforge/spec/{req.phase}.yaml",
+        )
+        all_tasks = list(tasks_file.tasks) + [seed_task]
+        tasks_file = TasksFile(tasks=all_tasks)
+        save_tasks(project_root, tasks_file)
 
     initial_state: dict[str, Any] = {
         "project_root": str(project_root),

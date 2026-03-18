@@ -38,5 +38,16 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# AgentForge runtime / local state
+.agentforge/
+
 .nx/cache
 .nx/workspace-data
+.env
+storyTime/.env
+*/.agentforge

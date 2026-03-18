@@ -18,6 +18,21 @@ jest.mock('node:fs', () => {
   };
 });
 
+// Mock engine-setup to avoid real Python/filesystem checks
+jest.mock('../engine-setup.js', () => ({
+  checkPrerequisites: jest.fn().mockReturnValue({
+    ready: true,
+    checks: [
+      { name: 'Python', status: 'pass', message: 'Python 3.12.1' },
+      { name: 'pip', status: 'pass', message: 'pip 24.0' },
+      { name: 'Engine source', status: 'pass', message: '/engine' },
+      { name: 'Virtual environment', status: 'pass', message: 'Dependencies installed' },
+    ],
+    engineDir: '/engine',
+    venvDir: '/engine/.venv',
+  }),
+}));
+
 // Mock the providers to avoid real API calls
 jest.mock('@agentforge/providers', () => ({
   createClaudeProvider: jest.fn(),
@@ -108,7 +123,9 @@ describe('doctorCommand', () => {
     await doctorCommand(rootDir, mockFs, stream);
 
     expect(text()).toContain('SKIP');
-    expect(text()).toContain('No integrations configured');
+    // With infrastructure checks passing, the summary shows those as passing
+    expect(text()).toContain('passed');
+    expect(text()).toContain('skipped');
   });
 
   it('should pass Anthropic check when API key is valid', async () => {

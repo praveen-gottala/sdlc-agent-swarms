@@ -17,6 +17,7 @@ import { migrateCommand } from './commands/migrate.js';
 import { configCommand } from './commands/config.js';
 import { designCommand } from './commands/design.js';
 import { doctorCommand } from './commands/doctor.js';
+import { setupCommand } from './commands/setup.js';
 
 /**
  * Create the AgentForge CLI program with all commands registered.
@@ -115,6 +116,14 @@ export function createProgram(): Command {
       await doctorCommand(rootDir, realFs);
     });
 
+  program
+    .command('setup')
+    .description('Set up the Python orchestration engine (auto-runs on first "agentforge start")')
+    .action(async () => {
+      const rootDir = findProjectRoot();
+      await setupCommand(rootDir);
+    });
+
   return program;
 }
 
@@ -127,6 +136,7 @@ export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
 export { designCommand } from './commands/design.js';
 export { doctorCommand } from './commands/doctor.js';
+export { setupCommand } from './commands/setup.js';
 export type { InitAnswers } from './commands/init.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
 export { formatTaskTable, formatTaskRow } from './formatter.js';
