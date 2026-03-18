@@ -15,7 +15,6 @@ import {
   resolveEngineDir,
   resolveVenvDir,
   findPythonBinary,
-  checkPrerequisites,
   isSetupComplete,
   getUvicornPath,
   getEnginePythonPath,
@@ -42,14 +41,14 @@ describe('findPythonBinary', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('returns python3 when available', () => {
-    mockExecSync.mockReturnValueOnce('Python 3.12.1' as unknown as Buffer);
+    mockExecSync.mockReturnValueOnce('Python 3.12.1' as ReturnType<typeof childProcess.execSync>);
     expect(findPythonBinary()).toBe('python3');
   });
 
   it('falls back to python when python3 is not available', () => {
     mockExecSync
       .mockImplementationOnce(() => { throw new Error('not found'); })
-      .mockReturnValueOnce('Python 3.11.0' as unknown as Buffer);
+      .mockReturnValueOnce('Python 3.11.0' as ReturnType<typeof childProcess.execSync>);
     expect(findPythonBinary()).toBe('python');
   });
 
@@ -61,7 +60,7 @@ describe('findPythonBinary', () => {
   it('returns null when only Python 2 is found', () => {
     mockExecSync
       .mockImplementationOnce(() => { throw new Error('not found'); })
-      .mockReturnValueOnce('Python 2.7.18' as unknown as Buffer);
+      .mockReturnValueOnce('Python 2.7.18' as ReturnType<typeof childProcess.execSync>);
     expect(findPythonBinary()).toBeNull();
   });
 });
@@ -70,20 +69,20 @@ describe('checkPython', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('passes when Python 3.12 is found', () => {
-    mockExecSync.mockReturnValue('Python 3.12.1' as unknown as Buffer);
+    mockExecSync.mockReturnValue('Python 3.12.1' as ReturnType<typeof childProcess.execSync>);
     const result = checkPython();
     expect(result.status).toBe('pass');
     expect(result.message).toContain('3.12.1');
   });
 
   it('passes for Python 3.10 (minimum)', () => {
-    mockExecSync.mockReturnValue('Python 3.10.0' as unknown as Buffer);
+    mockExecSync.mockReturnValue('Python 3.10.0' as ReturnType<typeof childProcess.execSync>);
     const result = checkPython();
     expect(result.status).toBe('pass');
   });
 
   it('fails for Python 3.9 (below minimum)', () => {
-    mockExecSync.mockReturnValue('Python 3.9.7' as unknown as Buffer);
+    mockExecSync.mockReturnValue('Python 3.9.7' as ReturnType<typeof childProcess.execSync>);
     const result = checkPython();
     expect(result.status).toBe('fail');
     expect(result.message).toContain('3.10');
@@ -102,8 +101,8 @@ describe('checkPip', () => {
 
   it('passes when pip is available', () => {
     mockExecSync
-      .mockReturnValueOnce('Python 3.12.1' as unknown as Buffer) // findPythonBinary
-      .mockReturnValueOnce('pip 24.0 from /usr/lib (python 3.12)' as unknown as Buffer);
+      .mockReturnValueOnce('Python 3.12.1' as ReturnType<typeof childProcess.execSync>) // findPythonBinary
+      .mockReturnValueOnce('pip 24.0 from /usr/lib (python 3.12)' as ReturnType<typeof childProcess.execSync>);
     const result = checkPip();
     expect(result.status).toBe('pass');
     expect(result.message).toContain('pip 24.0');
@@ -111,7 +110,7 @@ describe('checkPip', () => {
 
   it('fails when pip is not available', () => {
     mockExecSync
-      .mockReturnValueOnce('Python 3.12.1' as unknown as Buffer) // findPythonBinary
+      .mockReturnValueOnce('Python 3.12.1' as ReturnType<typeof childProcess.execSync>) // findPythonBinary
       .mockImplementationOnce(() => { throw new Error('not found'); });
     const result = checkPip();
     expect(result.status).toBe('fail');
@@ -146,7 +145,7 @@ describe('checkVenv', () => {
 
   it('passes when venv and uvicorn are present', () => {
     mockExistsSync.mockReturnValue(true);
-    mockExecSync.mockReturnValueOnce('0.27.0' as unknown as Buffer);
+    mockExecSync.mockReturnValueOnce('0.27.0' as ReturnType<typeof childProcess.execSync>);
     const result = checkVenv('/repo/services/engine/.venv');
     expect(result.status).toBe('pass');
     expect(result.message).toContain('uvicorn 0.27.0');

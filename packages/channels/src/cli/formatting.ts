@@ -129,6 +129,7 @@ export function statusEmoji(status: TaskStatus): string {
     paused: '⏸',
     aborting: '⏹',
     aborted: '⊘',
+    blocked: '⊗',
   };
   return map[status];
 }

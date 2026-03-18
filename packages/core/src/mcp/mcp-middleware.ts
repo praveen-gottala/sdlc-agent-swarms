@@ -2,7 +2,8 @@
  * @module @agentforge/core/mcp/mcp-middleware
  *
  * Middleware chain for MCP client calls.
- * Execution order: governance → auth → rateLimit → cache(check) → retry(call) → cache(store) → observability
+ * Execution order: observability → governance → auth → rateLimit → cache(check) → retry(call) → cache(store)
+ * Observability wraps the entire chain so every MCP interaction (including cache hits) produces a trace.
  */
 
 import type { Result, AgentForgeError, AgentContract } from '../types/index.js';
@@ -386,15 +387,23 @@ export interface MCPMiddlewareOptions {
 
 /**
  * Compose the full middleware chain in the correct order:
- * governance → auth → rateLimit → cache → retry → observability
+ * observability → governance → auth → rateLimit → cache → retry
+ *
+ * Observability is outermost so every MCP interaction — including cache hits
+ * and governance-blocked calls — produces an observability trace record.
+ * See ADR-018 for why this ordering was chosen.
  */
 export const composeMCPMiddleware = (
   options: MCPMiddlewareOptions,
 ): ReadonlyArray<MCPMiddlewareFn> => [
+  // DEVIATION: ADR-018
+  // PRD v2.0 Section 18 specifies: "observability hooks" for all MCP interactions
+  // Implementation: observability is outermost to capture cache hits and governance blocks
+  // Rationale: see ADR-018
+  createObservabilityMiddleware(options.traceRecorder),
   createGovernanceMiddleware(options.agent, options.permissionChecker),
   createAuthMiddleware(options.secretProvider),
   createRateLimitMiddleware(options.rateLimitConfigs),
   createCacheMiddleware(options.cacheConfigs),
   createRetryMiddleware(options.maxRetries, options.baseRetryDelayMs, options.sleepFn),
-  createObservabilityMiddleware(options.traceRecorder),
 ];

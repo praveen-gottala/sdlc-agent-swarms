@@ -115,7 +115,9 @@ AgentForge is structured as a layered architecture with clear separation of conc
 
 -   **Fail-safe defaults:** Every destructive action (merge, deploy, delete) requires explicit human approval by default. Teams opt into autonomy, not out of safety.
 
--   **Cost-aware execution:** Every agent call tracks token usage, API cost, and wall-clock time. Budget limits are enforced at three levels: per-agent, per-phase, and per-project. Runaway loops are automatically terminated via circuit breakers.
+-   **Cost-aware execution:** Every agent call tracks token usage, API cost, and wall-clock time. Budget limits are enforced at three levels: per-agent, per-phase, and per-project. Runaway loops are automatically terminated via circuit breakers. The `CostRecord` type carries `inputTokens`, `outputTokens`, and `wallClockMs` fields (optional for backward compatibility during provider migration). All providers should populate these fields. Per-agent cost breakdown is available via `getCostBreakdown()` on the budget tracker.
+
+> Updated per ADR-008 (2026-03-18): Token and timing fields on CostRecord are optional for backward compatibility; providers should populate them.
 
 ## 4.3 Process Architecture
 
@@ -525,7 +527,9 @@ The spec sync agent flags significant deviations to the human rather than silent
 
 ## 8.3 Conflict Rule
 
-**Human always wins.** If a human edits the spec while an agent is also writing to it, the agent discards its changes and re-reads the human\'s version. File locking during agent writes prevents concurrent corruption, but human edits detected mid-agent-write take priority unconditionally.
+**Human always wins.** If a human edits the spec while an agent is also writing to it, the agent discards its changes and re-reads the human\'s version. File locking during agent writes prevents concurrent corruption, but human edits detected mid-agent-write take priority unconditionally. Human edit detection uses content hashing at the lock-manager level: the lock stores a SHA-256 hash of the file at acquisition time, and agents call `checkHumanEdit()` before committing writes. Git commit operations for spec sync are handled by the orchestration layer, not the lock manager.
+
+> Updated per ADR-006 (2026-03-18): Clarified that human edit detection uses content hashing in the lock manager, with git operations handled at the orchestration layer.
 
 # 9. Application Onboarding
 
@@ -563,11 +567,15 @@ The CLI wizard has a quick-start mode with opinionated defaults (5 questions, un
 >
 > Registering agents\... done
 >
-> Connecting Slack\... done
+> Slack channel configured: #agentforge
 >
-> Connecting Telegram\... done
+> Telegram channel configured
 >
 > AgentForge is ready. Run: agentforge start design
+
+> Updated per ADR-005 (2026-03-18): Init records channel preferences but does not establish live connections. Channel connection happens at runtime via environment variables when `agentforge start` is invoked.
+
+> Updated per ADR-019 (2026-03-18): The interactive wizard requires a TTY. A `--non-interactive` flag for CI/automated environments is deferred to Phase 2.
 
 ### 9.1.2 Onboarding Steps
 
@@ -575,9 +583,11 @@ The CLI wizard has a quick-start mode with opinionated defaults (5 questions, un
 
 7.  **Design workspace provisioning:** The design orchestrator creates a Figma file via MCP with seed pages. If Figma is not configured, falls back to code-first design mode using Storybook.
 
-8.  **Agent registration:** Each SDLC phase gets its agents registered in the manifest. The governance layer reads the HITL configuration and sets up approval gates.
+8.  **Agent registration:** Each SDLC phase gets its agents registered in `agentforge/agents.yaml`. Each agent contract includes all 7 sections defined in Section 10.1: role, provider, execution, tools, permissions, hitl_policy, budget. The governance layer reads the HITL configuration and sets up approval gates.
 
-9.  **Ready state:** The framework enters design-loop state. The developer is notified via Slack/Telegram that agents are ready.
+> Updated per ADR-011 (2026-03-18): Agent contracts are stored in `agentforge/agents.yaml`, not embedded in `agentforge.yaml`. The manifest contains project-level agent configuration (providers, sandbox, orchestration).
+
+9.  **Ready state:** The framework enters design-loop state. The developer is notified via configured channels that agents are ready. The ready notification is sent when `agentforge start design` connects channels, not during init.
 
 ## 9.2 Post-Init: AgentForge as Persistent Tooling
 
@@ -627,7 +637,11 @@ AgentForge defines five agent categories plus a future research category. Every 
 
 ## 10.1 Agent Contract Definition
 
-Every agent is defined by a YAML contract in the project manifest specifying what the agent can do, cannot do, and how it coordinates with humans and other agents.
+Every agent is defined by a YAML contract specifying what the agent can do, cannot do, and how it coordinates with humans and other agents. Agent contracts are stored in `agentforge/agents.yaml`. The `agentforge.yaml` manifest contains project-level agent configuration (providers, sandbox, orchestration).
+
+> Updated per ADR-011 (2026-03-18): Agent contracts are stored in `agentforge/agents.yaml`, separate from the project manifest.
+
+> Updated per ADR-013 (2026-03-18): Context injection (spec sections, learnings, ADRs, conventions) is determined at runtime based on the task and injected by the agent runtime, not stored as static fields in the agent contract.
 
 > \# Example: design_wireframe_agent.yaml
 >
@@ -685,9 +699,13 @@ The design phase operates as a collaborative loop between human designers and AI
 
 AgentForge leverages the Figma MCP server for full bidirectional design-to-code workflow. Read path: get_code extracts design context. Write path: generate_figma_design creates editable Figma layers. Code Connect maps Figma component IDs to actual codebase component paths.
 
+> Updated per ADR-016 (2026-03-18): Phase 1 Code Connect is output-only metadata (visual designer emits componentMappings). Automated bidirectional Figma ID → code path resolution is Phase 2.
+
 ### 11.1.3 Design-Tool Abstraction
 
-While Figma is the primary adapter, AgentForge defines a DesignSurface interface that any design tool can implement: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(), lockForAgent(). This enables Framer, Storybook, or code-first workflows in future phases.
+While Figma is the primary adapter, AgentForge defines a DesignSurface interface that any design tool can implement: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(), lockForAgent(). This enables Framer, Storybook, or code-first workflows in future phases. Code-first design mode (Storybook) renders DesignSpec HTML as Storybook stories, enabling visual design review without a Figma connection. The Storybook adapter implements the same DesignSurface interface, using local component rendering instead of Figma layers.
+
+> Updated per ADR-015 (2026-03-18): Clarified code-first design mode specification for Storybook fallback.
 
 ## 11.2 Phase 2: Specification and Planning Agents
 
@@ -747,7 +765,9 @@ The estimation agent analyzes task decomposition and provides effort estimates b
 
 ### 11.3.4 Concurrency Model
 
-Each task gets its own agent instance. The orchestrator spawns up to N concurrent agents (configurable via max_concurrent_agents, default 3). When an agent is blocked waiting for CI results, the slot does not open; instead, the next independent task is assigned to a new agent instance up to the concurrency limit. This avoids context-switching within agents while maintaining parallelism.
+Each task gets its own agent instance. The orchestrator spawns up to N concurrent agents (configurable via max_concurrent_agents, default 3). When an agent is blocked waiting for CI results, the slot does not open; instead, the next independent task is assigned to a new agent instance up to the concurrency limit. This avoids context-switching within agents while maintaining parallelism. The task dependency graph enforces slot accounting (including CI-waiting slots counting toward the limit), while the orchestrator handles agent instance lifecycle and spawning.
+
+> Updated per ADR-007 (2026-03-18): Clarified separation between dependency graph slot accounting and orchestrator agent lifecycle management.
 
 ## 11.4 Phase 4: CI/CD Agents
 
@@ -854,6 +874,8 @@ Slack implements both layers. Telegram implements core plus partial rich capabil
 Approval requests are sent to all configured channels. The first response from any channel wins. This means the developer can approve from their laptop (Slack) or phone (Telegram) without configuring per-channel routing.
 
 Status updates go to the primary channel only. Critical alerts go to all channels.
+
+> Updated per ADR-020 (2026-03-18): When the primary channel is unavailable, status updates return a recoverable error. Automatic failover for status updates is deferred to Phase 2. Critical alerts and approval requests are unaffected.
 
 ## 14.3 Slack Integration (Interactive, Primary)
 
@@ -1055,9 +1077,13 @@ AgentForge implements a least-privilege model. Each agent is granted minimum per
 
 Agent credentials are managed through vault integration. Agents never see raw secrets. They receive scoped, time-limited tokens that are automatically rotated.
 
+> Updated per ADR-017 (2026-03-18): Phase 1 uses environment variables (AGENTFORGE_MCP_{SERVER}_{KEY}) with governance-enforced scoping. Agents never see raw secrets (auth middleware injects tokens). Scope enforcement blocks cross-agent access before any external call. Token rotation is supported via env var changes picked up per-call. Vault integration with time-limited tokens is Phase 2.
+
 ## 19.3 Audit Logging
 
-Every agent action is logged to an immutable audit trail: agent identity, action taken, input context, output produced, approving human, cost incurred, and timestamp. The audit trail is queryable and exportable for compliance.
+Every agent action is logged to an immutable audit trail with the following fields: agent identity (agentId), action taken (action type and target), input context (inputContext — the prompt or spec content provided to the agent), output produced (outputProduced — summary of what was generated), approving human (approvedBy — identity of the human who approved, if HITL), cost incurred (cost — full CostRecord), timestamp, and git commit SHA (gitCommitSha — present when the action produced a git commit). Fields that are not applicable to all action types (inputContext, outputProduced, approvedBy, gitCommitSha) are optional on the type but should be populated whenever applicable. The audit trail is queryable by agent, action type, time range, outcome, and cost threshold. It is exportable in JSON and CSV formats for compliance.
+
+> Updated per ADR-009 (2026-03-18): Explicitly listed all audit fields including git_commit_sha; noted optional typing for fields not applicable to all actions; specified export formats.
 
 ## 19.4 Cost Governance
 
@@ -1104,7 +1130,9 @@ Code generated by AgentForge agents is not covered by the AgentForge Apache 2.0 
   -------- ---------------------------------------- -----------------------------------------------------------------------------------------------------------------------------
   **ID**   **Failure Mode**                         **Recovery**
 
-  F7       Figma MCP server unavailable             Retry 3x. Fall back to code-first design (Storybook). Notify human of degraded state.
+  F7       Figma MCP server unavailable             Retry 3x. Fall back to code-first design (Storybook). Notify human of degraded state. Code-first design mode means rendering component wireframes via Storybook stories, using the same DesignSpec format but targeting local HTML/React rendering instead of Figma layers.
+
+> Updated per ADR-015 (2026-03-18): Phase 1 implements retry + halt + notify human. Storybook fallback adapter is Phase 2.
 
   F8       Architecturally wrong but passing code   PR reviewer catches violations. If missed, human review catches it. HITL full_approval for architecture code.
 

@@ -11,33 +11,61 @@ import { readYaml, writeYaml, type FileSystem, realFs } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
 
 /** A migration transforms data from one version to the next. */
-interface Migration {
+export interface Migration {
   readonly from: string;
   readonly to: string;
   readonly transform: (data: Record<string, unknown>) => Record<string, unknown>;
 }
 
 /**
- * Registry of known migrations. Even if v1.0 has no transforms,
- * the infrastructure exists from day one.
+ * Registry of known migrations.
+ * v1.0 -> v1.1: Adds circuit_breaker and telemetry fields with sensible defaults.
  */
-const MIGRATIONS: readonly Migration[] = [
-  // Placeholder: no migrations yet for v1.0
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    from: '1.0',
+    to: '1.1',
+    transform: (data: Record<string, unknown>): Record<string, unknown> => {
+      const result: Record<string, unknown> = { ...data, version: '1.1' };
+
+      // Add circuit_breaker defaults if not present
+      if (!result['circuit_breaker']) {
+        result['circuit_breaker'] = {
+          max_consecutive_failures: 5,
+          max_calls_without_progress: 5,
+          reset_after_minutes: 5,
+        };
+      }
+
+      // Add telemetry defaults if not present
+      if (!result['telemetry']) {
+        result['telemetry'] = {
+          enabled: false,
+          endpoint: '',
+          sample_rate: 1.0,
+        };
+      }
+
+      return result;
+    },
+  },
 ];
 
 /** YAML files relative to project root that carry a version field. */
-const VERSIONED_FILES = [
+export const VERSIONED_FILES = [
   'agentforge.yaml',
   'agentforge/spec/project.yaml',
   'agentforge/spec/pages.yaml',
   'agentforge/spec/api.yaml',
   'agentforge/spec/models.yaml',
+  'agentforge/tasks.yaml',
+  'agentforge/learnings.yaml',
 ];
 
 /**
  * Find pending migrations for a given current version.
  */
-function findPendingMigrations(currentVersion: string): readonly Migration[] {
+export function findPendingMigrations(currentVersion: string): readonly Migration[] {
   const pending: Migration[] = [];
   let version = currentVersion;
 

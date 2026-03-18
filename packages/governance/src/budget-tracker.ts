@@ -7,7 +7,7 @@
  */
 
 import { Ok, Err } from '@agentforge/core';
-import type { Result, AgentForgeError, AgentContract, CostEstimate } from '@agentforge/core';
+import type { Result, AgentForgeError, AgentContract, CostEstimate, CostRecord, MonthlyCostReport, PhaseCostBreakdown, AgentCostBreakdown } from '@agentforge/core';
 import type { BudgetConfig, BudgetLevel, BudgetState, BudgetAlert } from './types.js';
 
 /**
@@ -25,11 +25,15 @@ export interface BudgetTracker {
   /** Check if budget is available for an estimated cost. */
   checkBudget(agent: AgentContract, taskId: string, phase: string, estimate: CostEstimate): Result<void>;
   /** Record actual spend after an operation completes. */
-  recordSpend(taskId: string, phase: string, amountUsd: number): void;
+  recordSpend(taskId: string, phase: string, amountUsd: number, agentId?: string): void;
+  /** Record a full cost record with all details. */
+  recordCost(record: CostRecord): void;
   /** Get budget state for a specific level and entity. */
   getState(level: BudgetLevel, entityId: string): BudgetState | undefined;
   /** Get total spend for a task. */
   getTaskSpend(taskId: string): number;
+  /** Get monthly cost breakdown by phase and agent. */
+  getCostBreakdown(): MonthlyCostReport;
   /** Reset all spend tracking. */
   reset(): void;
 }
@@ -47,6 +51,8 @@ export const createBudgetTracker = (
 ): BudgetTracker => {
   const taskSpend = new Map<string, number>();
   const phaseSpend = new Map<string, number>();
+  const agentSpend = new Map<string, number>();
+  const costRecords: CostRecord[] = [];
   let monthlySpend = 0;
   const alertsSent = new Set<string>();
 
@@ -128,16 +134,45 @@ export const createBudgetTracker = (
       return Ok(undefined);
     },
 
-    recordSpend(taskId: string, phase: string, amountUsd: number): void {
+    recordSpend(taskId: string, phase: string, amountUsd: number, agentId?: string): void {
       const newTaskTotal = (taskSpend.get(taskId) ?? 0) + amountUsd;
       taskSpend.set(taskId, newTaskTotal);
 
       const newPhaseTotal = (phaseSpend.get(phase) ?? 0) + amountUsd;
       phaseSpend.set(phase, newPhaseTotal);
 
+      if (agentId) {
+        const newAgentTotal = (agentSpend.get(agentId) ?? 0) + amountUsd;
+        agentSpend.set(agentId, newAgentTotal);
+      }
+
       monthlySpend += amountUsd;
 
       // Emit alerts if thresholds reached
+      maybeEmitAlert('task', taskId, newTaskTotal, config.perTaskMaxUsd);
+      maybeEmitAlert('phase', phase, newPhaseTotal, config.perPhaseMaxUsd);
+      maybeEmitAlert('project', 'monthly', monthlySpend, config.monthlyMaxUsd);
+    },
+
+    recordCost(record: CostRecord): void {
+      costRecords.push(record);
+      const taskId = record.taskId ?? 'unknown';
+      const phase = record.phase ?? 'unknown';
+      const agentId = record.agentId;
+
+      const newTaskTotal = (taskSpend.get(taskId) ?? 0) + record.totalCostUsd;
+      taskSpend.set(taskId, newTaskTotal);
+
+      const newPhaseTotal = (phaseSpend.get(phase) ?? 0) + record.totalCostUsd;
+      phaseSpend.set(phase, newPhaseTotal);
+
+      if (agentId) {
+        const newAgentTotal = (agentSpend.get(agentId) ?? 0) + record.totalCostUsd;
+        agentSpend.set(agentId, newAgentTotal);
+      }
+
+      monthlySpend += record.totalCostUsd;
+
       maybeEmitAlert('task', taskId, newTaskTotal, config.perTaskMaxUsd);
       maybeEmitAlert('phase', phase, newPhaseTotal, config.perPhaseMaxUsd);
       maybeEmitAlert('project', 'monthly', monthlySpend, config.monthlyMaxUsd);
@@ -187,9 +222,47 @@ export const createBudgetTracker = (
       return taskSpend.get(taskId) ?? 0;
     },
 
+    getCostBreakdown(): MonthlyCostReport {
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      const byPhase: PhaseCostBreakdown[] = [];
+      for (const [phase, total] of phaseSpend.entries()) {
+        const phaseRecords = costRecords.filter((r) => r.phase === phase);
+        byPhase.push({
+          phase,
+          totalCostUsd: total,
+          totalInputTokens: phaseRecords.reduce((sum, r) => sum + (r.inputTokens ?? 0), 0),
+          totalOutputTokens: phaseRecords.reduce((sum, r) => sum + (r.outputTokens ?? 0), 0),
+          recordCount: phaseRecords.length,
+        });
+      }
+
+      const byAgent: AgentCostBreakdown[] = [];
+      for (const [agentId, total] of agentSpend.entries()) {
+        const agentRecords = costRecords.filter((r) => r.agentId === agentId);
+        byAgent.push({
+          agentId,
+          totalCostUsd: total,
+          totalInputTokens: agentRecords.reduce((sum, r) => sum + (r.inputTokens ?? 0), 0),
+          totalOutputTokens: agentRecords.reduce((sum, r) => sum + (r.outputTokens ?? 0), 0),
+          recordCount: agentRecords.length,
+        });
+      }
+
+      return {
+        month,
+        totalCostUsd: monthlySpend,
+        byPhase,
+        byAgent,
+      };
+    },
+
     reset(): void {
       taskSpend.clear();
       phaseSpend.clear();
+      agentSpend.clear();
+      costRecords.length = 0;
       monthlySpend = 0;
       alertsSent.clear();
     },

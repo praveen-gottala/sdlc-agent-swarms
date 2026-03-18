@@ -26,6 +26,7 @@ const STATUS_EMOJI: Record<TaskStatus, string> = {
   paused: '\u23F8\uFE0F',
   aborting: '\u23F9\uFE0F',
   aborted: '\u26D4',
+  blocked: '\uD83D\uDEAB',
 };
 
 /**

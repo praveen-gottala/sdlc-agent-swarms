@@ -48,6 +48,11 @@ __pycache__/
 
 .nx/cache
 .nx/workspace-data
+
+# Environment files (including nested folders)
 .env
-storyTime/.env
+.env.*
+**/.env
+**/.env.*
+
 */.agentforge

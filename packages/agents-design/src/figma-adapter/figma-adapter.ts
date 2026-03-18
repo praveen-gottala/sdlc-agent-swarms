@@ -19,6 +19,16 @@ const mcpUnavailable = (detail: string) => ({
 /**
  * Figma implementation of DesignSurface.
  * Uses MCP client to communicate with Figma's MCP server.
+ *
+ * DEVIATION: ADR-015
+ * PRD v2.0 Section 20.2 (F7) specifies: Storybook fallback when Figma unavailable
+ * Implementation: Phase 1 only has FigmaAdapter. Figma unavailable → halt + notify human.
+ * Rationale: see ADR-015
+ *
+ * DEVIATION: ADR-016
+ * PRD v2.0 Section 11.1.2 specifies: Code Connect maps Figma IDs to codebase paths automatically
+ * Implementation: componentMappings are output-only metadata, no automated resolution
+ * Rationale: see ADR-016
  */
 export class FigmaAdapter implements DesignSurface {
   private lockedBy: string | null = null;

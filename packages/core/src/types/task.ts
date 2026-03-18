@@ -25,6 +25,7 @@ export interface TaskEntry {
   readonly max_attempts: number;
   readonly hitl_status: string;
   readonly hitl_channel: string | null;
+  readonly blocked_by?: string | null;
 }
 
 /**

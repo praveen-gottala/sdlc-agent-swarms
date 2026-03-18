@@ -1,0 +1,37 @@
+version: "1.0"
+agents:
+  - role: ux_researcher
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: notify_only
+    on_complete: UXResearchComplete
+  - role: wireframer
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: full_approval
+    on_complete: WireframeComplete
+  - role: spec_writer
+    phase: spec
+    provider: claude-opus-4
+    hitl_level: review_and_override
+    on_complete: SpecComplete
+  - role: task_decomposer
+    phase: spec
+    provider: claude-sonnet-4
+    hitl_level: notify_only
+    on_complete: TasksCreated
+  - role: code_generator
+    phase: code
+    provider: claude-sonnet-4
+    hitl_level: review_and_override
+    on_complete: CodeGenComplete
+  - role: test_writer
+    phase: code
+    provider: claude-sonnet-4
+    hitl_level: notify_only
+    on_complete: TestsComplete
+  - role: code_reviewer
+    phase: code
+    provider: claude-haiku-4
+    hitl_level: review_and_override
+    on_complete: ReviewComplete

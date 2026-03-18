@@ -142,6 +142,11 @@ export const runAgent = async <TInput, TOutput>(
   }
 
   // 7. Load learnings
+  // DEVIATION: ADR-013
+  // PRD v2.0 Section 10.1 specifies: agent contracts define context injection fields
+  // Implementation: context injection (learnings, spec sections, ADRs, conventions)
+  // is determined at runtime, not stored as static fields in the agent contract YAML.
+  // Rationale: see ADR-013
   const learningsPath = join(context.projectRoot, '.agentforge/learnings');
   const learningsResult = await getActiveLearnings(contract.role, learningsPath);
   const learnings = learningsResult.ok ? learningsResult.value : [];

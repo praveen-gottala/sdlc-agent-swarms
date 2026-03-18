@@ -297,27 +297,37 @@ export interface GovernanceCheckRecord {
  * An immutable audit trail entry recording a single agent action.
  * Captures who, what, when, cost, result, and approver.
  */
+// DEVIATION: ADR-009
+// PRD v2.0 Section 19.3 specifies: "agent identity, action taken, input context, output produced, approving human, cost incurred, and timestamp"
+// Implementation: inputContext, outputProduced, gitCommitSha are optional fields for backward compatibility
+// Rationale: see ADR-009
 export interface AuditEntry {
   /** Unique identifier for this audit entry. */
   readonly id: string;
   /** ISO-8601 timestamp of when the action occurred. */
   readonly timestamp: string;
-  /** The agent that performed the action. */
+  /** The agent that performed the action (PRD 19.3: agent_identity). */
   readonly agentId: string;
   /** The task the action belonged to. */
   readonly taskId: string;
   /** The SDLC phase. */
   readonly phase: 'design' | 'spec' | 'code' | 'cicd' | 'observe';
-  /** The action that was performed. */
+  /** The action that was performed (PRD 19.3: action_taken). */
   readonly action: AgentAction;
   /** Outcome of the action. */
   readonly outcome: AuditOutcome;
-  /** Cost incurred by this action, if any. */
+  /** Input context for the action (PRD 19.3: input_context). */
+  readonly inputContext?: string;
+  /** Output produced by the action (PRD 19.3: output_produced). */
+  readonly outputProduced?: string;
+  /** Cost incurred by this action, if any (PRD 19.3: cost_incurred). */
   readonly cost?: CostRecord;
   /** The HITL decision that authorized this action, if applicable. */
   readonly hitlDecision?: HITLDecision;
-  /** Identity of the human who approved, if applicable. */
+  /** Identity of the human who approved, if applicable (PRD 19.3: approving_human). */
   readonly approvedBy?: string;
+  /** Git commit SHA if applicable (PRD 19.3: git_commit_sha). */
+  readonly gitCommitSha?: string;
   /** The governance checks that were applied. */
   readonly governanceChecks: GovernanceCheckRecord;
   /** Duration of the action in milliseconds. */
@@ -344,11 +354,18 @@ export interface AuditFilter {
   readonly from?: string;
   /** ISO-8601 end of time range (inclusive). */
   readonly to?: string;
+  /** Filter by minimum cost threshold. */
+  readonly costThresholdUsd?: number;
   /** Maximum number of entries to return. */
   readonly limit?: number;
   /** Offset for pagination. */
   readonly offset?: number;
 }
+
+/**
+ * Supported export formats for the audit log.
+ */
+export type AuditExportFormat = 'json' | 'csv';
 
 // ============================================================================
 // 6. Circuit Breaker Types

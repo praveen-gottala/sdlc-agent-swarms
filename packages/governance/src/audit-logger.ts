@@ -6,7 +6,7 @@
  * Fire-and-forget — audit recording never throws or blocks execution.
  */
 
-import type { AuditEntry, AuditFilter } from './types.js';
+import type { AuditEntry, AuditFilter, AuditExportFormat } from './types.js';
 
 /**
  * Minimal file system interface for audit log persistence.
@@ -29,6 +29,8 @@ export interface AuditLogger {
   recordAudit(entry: AuditEntry): void;
   /** Query audit entries with filters. */
   queryAudit(filter: AuditFilter): AuditEntry[];
+  /** Export audit entries in the specified format. */
+  exportAudit(filter: AuditFilter, format: AuditExportFormat): string;
 }
 
 /**
@@ -91,6 +93,12 @@ export const createAuditLogger = (
         const toDate = filter.to;
         result = result.filter((e) => e.timestamp <= toDate);
       }
+      if (filter.costThresholdUsd !== undefined) {
+        const threshold = filter.costThresholdUsd;
+        result = result.filter(
+          (e) => e.cost !== undefined && e.cost.totalCostUsd >= threshold,
+        );
+      }
 
       if (filter.offset !== undefined && filter.offset > 0) {
         result = result.slice(filter.offset);
@@ -100,6 +108,34 @@ export const createAuditLogger = (
       }
 
       return result;
+    },
+
+    exportAudit(filter: AuditFilter, format: AuditExportFormat): string {
+      const filtered = this.queryAudit(filter);
+
+      if (format === 'json') {
+        return JSON.stringify(filtered, null, 2);
+      }
+
+      // CSV format
+      const headers = [
+        'id', 'timestamp', 'agentId', 'taskId', 'phase',
+        'actionType', 'outcome', 'costUsd', 'approvedBy', 'gitCommitSha',
+      ];
+      const rows = filtered.map((e) => [
+        e.id,
+        e.timestamp,
+        e.agentId,
+        e.taskId,
+        e.phase,
+        e.action.type,
+        e.outcome,
+        e.cost?.totalCostUsd?.toString() ?? '',
+        e.approvedBy ?? '',
+        e.gitCommitSha ?? '',
+      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
+
+      return [headers.join(','), ...rows].join('\n');
     },
   };
 };

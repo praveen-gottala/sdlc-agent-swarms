@@ -11,6 +11,9 @@ export type {
   AgentContract,
   CostRecord,
   CostEstimate,
+  PhaseCostBreakdown,
+  AgentCostBreakdown,
+  MonthlyCostReport,
   ChannelMessageRef,
   ApprovalContext,
   TaskStatus,
@@ -118,6 +121,8 @@ export { createRealFs, readYaml, writeYaml } from './fs/index.js';
 
 // Config
 export { loadProjectManifest } from './config/index.js';
+export type { StackResolution } from './config/index.js';
+export { deriveStackName, resolveStackDir, resolvePromptsDir } from './config/index.js';
 
 // State: task manager
 export {
@@ -127,6 +132,17 @@ export {
   updateTaskStatus,
   addTask,
 } from './state/task-manager.js';
+
+// State: task dependency graph
+export type { AgentSlot, DependencyGraphConfig } from './state/task-dependency-graph.js';
+export {
+  detectCircularDependencies,
+  addTaskWithDependencies,
+  getReadyTasks,
+  onTaskCompleted,
+  onTaskFailed,
+  getSchedulableTasks,
+} from './state/task-dependency-graph.js';
 
 // Spec types (PRD v2.0 Section 5.2)
 export type {
@@ -147,12 +163,14 @@ export type { SpecFiles } from './state/spec-reader.js';
 export { readSpecs, readSpecFile } from './state/spec-reader.js';
 
 // State: lock manager
-export type { LockInfo } from './state/lock-manager.js';
+export type { LockInfo, HumanEditCheckResult } from './state/lock-manager.js';
 export {
   acquireLock,
   releaseLock,
   isLocked,
   cleanExpiredLocks,
+  checkHumanEdit,
+  computeContentHash,
 } from './state/lock-manager.js';
 
 // Spec sync

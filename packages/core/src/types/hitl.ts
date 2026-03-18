@@ -51,7 +51,8 @@ export type TaskStatus =
   | 'failed'
   | 'paused'
   | 'aborting'
-  | 'aborted';
+  | 'aborted'
+  | 'blocked';
 
 /**
  * Minimal task representation for channel display.

@@ -89,9 +89,18 @@ You are solving iteratively.
   - run the cheapest discriminating check first
 
 ## Session Isolation
-- Do not read, reference, modify, or create any Claude memory outside this repository, including files under `~/.claude/`.
-- Do not use auto-memory or prior-session learnings.
-- If context is missing, inspect the repository or ask instead of inferring from external memory or prior sessions.
+
+STRICT: Never write to or read from `~/.claude/` or any path outside this 
+repository. This includes the `/memory` command, memory MCP tools, 
+auto-memory, and feedback/learning hooks. Violations break cross-device 
+consistency — this repo is used across multiple machines.
+
+- If any external memory was loaded at session start, actively disregard it.
+  Treat this CLAUDE.md and the repository as the only valid context.
+- Do not use prior-session learnings or auto-memory under any circumstance.
+- If context is missing, inspect the repository or ask — never infer from 
+  external memory.
+- If you need to persist something, write ONLY to `docs/lessons-learned.md`.
 
 ## Repo-Local Memory
 - When you learn something worth preserving, write it only to `docs/lessons-learned.md`.

@@ -1,28 +1,28 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
-  "files": [],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     {
-      "path": "./packages/governance"
-    },
-    {
-      "path": "./packages/providers"
-    },
-    {
-      "path": "./packages/core"
-    },
-    {
-      "path": "./packages/channels"
-    },
-    {
-      "path": "./packages/cli"
-    },
-    {
-      "path": "./packages/agents-spec"
-    },
-    {
-      "path": "./packages/agents-code"
+      "path": "./packages/integration-tests"
     },
     {
       "path": "./packages/agents-design"
@@ -31,10 +31,28 @@
       "path": "./packages/agents-cicd"
     },
     {
-      "path": "./packages/integration-tests"
+      "path": "./packages/agents-code"
+    },
+    {
+      "path": "./packages/agents-spec"
+    },
+    {
+      "path": "./packages/governance"
+    },
+    {
+      "path": "./packages/providers"
+    },
+    {
+      "path": "./packages/channels"
     },
     {
       "path": "./packages/e2e-test"
+    },
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/cli"
     }
   ]
 }

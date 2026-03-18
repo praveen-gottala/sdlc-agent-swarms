@@ -204,6 +204,10 @@ export function createChannelRouter(
     }
   }
 
+  // DEVIATION: ADR-020
+  // PRD v2.0 Section 14.2 specifies: status updates go to the primary channel only
+  // Implementation: returns CHANNEL_UNAVAILABLE error when primary is down, no failover
+  // Rationale: see ADR-020 — failover for status updates deferred to Phase 2
   /**
    * Broadcast a status update to channels based on routing config.
    */

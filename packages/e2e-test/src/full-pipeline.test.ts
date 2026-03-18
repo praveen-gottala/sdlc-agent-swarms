@@ -27,10 +27,6 @@ import {
   createLearningsFile,
   readYaml,
   writeYaml,
-  diffSpecVsCode,
-  applyMinorSync,
-  acquireLock,
-  releaseLock,
 } from '@agentforge/core';
 import type {
   EventBus,
@@ -45,9 +41,7 @@ import type {
   TaskEntry,
   TasksFile,
   CostEstimate,
-  CostRecord,
   Result,
-  AgentLearning,
 } from '@agentforge/core';
 import {
   createGovernanceMiddleware,
@@ -56,12 +50,11 @@ import {
 import type {
   GovernanceMiddleware,
   GovernanceConfig,
-  HITLConfig,
   AgentAction,
   AuditEntry,
 } from '@agentforge/governance';
-import { buildManifest, scaffoldProject } from '@agentforge/cli/commands/init';
-import type { InitAnswers } from '@agentforge/cli/commands/init';
+import { buildManifest, scaffoldProject } from '@agentforge/cli';
+import type { InitAnswers } from '@agentforge/cli';
 import { handlePageRequest } from '@agentforge/agents-design';
 import type {
   UXResearcherInput,
@@ -91,10 +84,7 @@ import type {
   TestWriterInput,
   TestWriterOutput,
 } from '@agentforge/agents-code';
-import type {
-  PRReviewerInput,
-  PRReviewerOutput,
-} from '@agentforge/agents-code';
+// PRReviewerInput/PRReviewerOutput not used in current test scope
 import type {
   SecurityScannerInput,
   SecurityScannerOutput,
@@ -340,9 +330,9 @@ function createTestContext(
     mcpClient,
     runGovernance: jest.fn().mockResolvedValue(Ok({ status: 'proceed' })),
     resolveProvider: jest.fn().mockReturnValue(Ok(createMockProvider())),
-    recordAudit: jest.fn((entry: AuditEntry) => {
-      auditLog.push(entry);
-      governance.recordAudit(entry);
+    recordAudit: jest.fn((entry: unknown) => {
+      auditLog.push(entry as AuditEntry);
+      governance.recordAudit(entry as AuditEntry);
     }),
   };
 }
@@ -423,14 +413,6 @@ const TEST_WRITER_CONTRACT = makeContract({
   hitl_policy: 'notify_only',
   on_complete: 'TestsComplete',
   on_error: 'retry(max=3) + notify_human',
-});
-
-const PR_REVIEWER_CONTRACT = makeContract({
-  role: 'pr_reviewer',
-  category: 'code',
-  permissions: ['read_code', 'create_pr'],
-  on_complete: 'ReviewComplete',
-  on_error: 'notify_human',
 });
 
 const SECURITY_SCANNER_CONTRACT = makeContract({
@@ -770,7 +752,6 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           pageId: input.pageId,
           taskId: ctx.taskId,
           designRef: output.designRef,
-          tokensApplied: ['primary', 'background', 'heading-lg'] as unknown as string[],
           source: 'test', timestamp: Date.now(),
         });
         return Ok(output);
@@ -787,7 +768,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           pageId: input.pageId,
           taskId: ctx.taskId,
           passed: true,
-          findings: [],
+          issues: [],
           source: 'test', timestamp: Date.now(),
         });
         return Ok(output);
@@ -800,7 +781,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       collector.bus.publish({
         type: 'DesignPhaseComplete',
         specRef: `agentforge/spec/components/dashboard.yaml`,
-        taskId: 'task_design_005',
+        designRef: `figma://file_abc/${pageId}`,
         source: 'test', timestamp: Date.now(),
       });
 
@@ -995,7 +976,6 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           type: 'TasksCreated',
           taskCount: tasks.length,
           taskIds: tasks.map((t) => t.id),
-          taskId: ctx.taskId,
           source: 'test', timestamp: Date.now(),
         });
 
@@ -1097,6 +1077,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           filesGenerated: ['src/components/RevenueChart.tsx'],
           branch: 'agentforge/task-fe-001-revenue-chart',
           totalCostUsd: 0.42,
+          totalAttempts: 1,
         });
       };
 
@@ -1107,8 +1088,8 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       const result = await runAgent(FRONTEND_CODER_CONTRACT, ctx, {
         task: tasksFile.tasks[0],
         projectRoot: PROJECT_ROOT,
-        specRef: 'comp_revenue_chart',
-        designRef: 'figma://file_abc/page_dashboard',
+        stackConfigPath: `${PROJECT_ROOT}/agentforge/stack.yaml`,
+        promptTemplatePath: `${PROJECT_ROOT}/agentforge/prompts/frontend-coder.md`,
       }, 'write_code', 'src/components/RevenueChart.tsx', 'Generate RevenueChart', feWork);
 
       expect(result.ok).toBe(true);
@@ -1205,21 +1186,24 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           taskId: ctx.taskId,
           agentId: 'test_writer',
           branch: 'agentforge/task-fe-001-revenue-chart',
-          testsGenerated: ['src/components/RevenueChart.test.tsx'],
-          testCount: 1,
+          testFilesGenerated: ['src/components/RevenueChart.test.tsx'],
           source: 'test', timestamp: Date.now(),
         });
 
         return Ok({
-          testsGenerated: ['src/components/RevenueChart.test.tsx'],
+          branch: 'agentforge/task-fe-001-revenue-chart',
+          testFilesGenerated: ['src/components/RevenueChart.test.tsx'],
           totalCostUsd: 0.02,
+          totalAttempts: 1,
         });
       };
 
       const result = await runAgent(TEST_WRITER_CONTRACT, ctx, {
         task: makeTask({ id: 'task_test_001' }),
         projectRoot: PROJECT_ROOT,
-        specRef: 'comp_revenue_chart',
+        stackConfigPath: `${PROJECT_ROOT}/agentforge/stack.yaml`,
+        promptTemplatePath: `${PROJECT_ROOT}/agentforge/prompts/test-writer.md`,
+        targetBranch: 'agentforge/task-fe-001-revenue-chart',
         sourceFiles: ['src/components/RevenueChart.tsx'],
       }, 'write_code', 'tests', 'Write tests for RevenueChart', testWork);
 
@@ -1255,13 +1239,15 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
           filesGenerated: ['src/api/revenue.ts'],
           branch: 'agentforge/task-be-001-revenue-api',
           totalCostUsd: 0.35,
+          totalAttempts: 1,
         });
       };
 
       const result = await runAgent(BACKEND_CODER_CONTRACT, ctx, {
         task: makeTask({ id: 'task_be_001' }),
         projectRoot: PROJECT_ROOT,
-        specRef: 'ep_get_revenue',
+        stackConfigPath: `${PROJECT_ROOT}/agentforge/stack.yaml`,
+        promptTemplatePath: `${PROJECT_ROOT}/agentforge/prompts/backend-coder.md`,
       }, 'write_code', 'src/api/revenue.ts', 'Generate revenue API', beWork);
 
       expect(result.ok).toBe(true);
@@ -1323,7 +1309,6 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       // Simulate PR merge
       collector.bus.publish({
         type: 'PRMerged',
-        taskId: 'task_pr_001',
         prNumber: 42,
         branch: 'agentforge/dashboard',
         mergedBy: 'dev@team.com',
@@ -1552,7 +1537,6 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
     it('all events flow via event bus — no direct agent-to-agent calls', async () => {
       // This test verifies the architectural constraint that agents communicate
       // only through the event bus, never through direct calls
-      const ctx = createTestContext(collector.bus, fs, mcpClient, governance, auditLog);
 
       // Subscribe to all event types
       const seenEvents: DomainEventType[] = [];
@@ -1565,7 +1549,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // Simulate the code phase: each agent emits events, next agent subscribes
       collector.bus.publish({ type: 'CodeGenComplete', taskId: 'task_001', agentId: 'frontend_coder', branch: 'feat/a', filesGenerated: ['a.tsx'], source: 'test', timestamp: Date.now() });
-      collector.bus.publish({ type: 'TestsComplete', taskId: 'task_002', agentId: 'test_writer', branch: 'feat/a', testsGenerated: ['a.test.tsx'], testCount: 3, source: 'test', timestamp: Date.now() });
+      collector.bus.publish({ type: 'TestsComplete', taskId: 'task_002', agentId: 'test_writer', branch: 'feat/a', testFilesGenerated: ['a.test.tsx'], source: 'test', timestamp: Date.now() });
       collector.bus.publish({ type: 'PRCreated', taskId: 'task_003', prNumber: 42, branch: 'feat/a', source: 'test', timestamp: Date.now() });
       collector.bus.publish({ type: 'SecurityScanComplete', taskId: 'task_004', prNumber: 42, findingsCount: 0, criticalCount: 0, passed: true, source: 'test', timestamp: Date.now() });
 
@@ -1741,7 +1725,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       };
       await runAgent(WIREFRAME_CONTRACT, ctx, { pageId: 'page_1', taskId: 't2', layoutSuggestions: ['grid'] }, 'write_design', 'wireframe', 'Wireframe', wfWork);
 
-      collector.bus.publish({ type: 'DesignPhaseComplete', specRef: 'spec/dashboard', taskId: 't3', source: 'test', timestamp: Date.now() });
+      collector.bus.publish({ type: 'DesignPhaseComplete', specRef: 'spec/dashboard', designRef: 'figma://ref', source: 'test', timestamp: Date.now() });
 
       // ---- Spec ----
       const specWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = async (_input, _p, _l, ctx) => {
@@ -1752,7 +1736,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       await runAgent(SPEC_WRITER_CONTRACT, ctx, { designRef: 'figma://ref', specRef: 'spec/dashboard' }, 'write_spec', 'spec', 'Spec', specWork);
 
       const decompWork: AgentWorkFn<TaskDecomposerInput, TaskDecomposerOutput> = async (_input, _p, _l, ctx) => {
-        ctx.eventBus.publish({ type: 'TasksCreated', taskCount: 3, taskIds: ['t_fe', 't_test', 't_pr'], taskId: ctx.taskId, source: 'test', timestamp: Date.now() });
+        ctx.eventBus.publish({ type: 'TasksCreated', taskCount: 3, taskIds: ['t_fe', 't_test', 't_pr'], source: 'test', timestamp: Date.now() });
         return Ok({ taskCount: 3, taskIds: ['t_fe', 't_test', 't_pr'] });
       };
       await runAgent(TASK_DECOMPOSER_CONTRACT, ctx, { specRef: 'spec/dashboard', taskId: 't4' }, 'write_tasks', 'tasks', 'Decompose', decompWork);
@@ -1762,16 +1746,16 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         ctx.fs.writeFile(`${ctx.projectRoot}/src/components/Dashboard.tsx`, 'export const Dashboard = () => <div/>;');
         await ctx.mcpClient.callTool('github', 'push', { branch: 'feat/dashboard' });
         ctx.eventBus.publish({ type: 'CodeGenComplete', taskId: ctx.taskId, agentId: 'fe', branch: 'feat/dashboard', filesGenerated: ['Dashboard.tsx'], source: 'test', timestamp: Date.now() });
-        return Ok({ filesGenerated: ['Dashboard.tsx'], branch: 'feat/dashboard', totalCostUsd: 0.40 });
+        return Ok({ filesGenerated: ['Dashboard.tsx'], branch: 'feat/dashboard', totalCostUsd: 0.40, totalAttempts: 1 });
       };
-      await runAgent(FRONTEND_CODER_CONTRACT, ctx, { task: makeTask(), projectRoot: PROJECT_ROOT, specRef: 'comp_1' }, 'write_code', 'code', 'Code gen', codeWork);
+      await runAgent(FRONTEND_CODER_CONTRACT, ctx, { task: makeTask(), projectRoot: PROJECT_ROOT, stackConfigPath: `${PROJECT_ROOT}/agentforge/stack.yaml`, promptTemplatePath: `${PROJECT_ROOT}/agentforge/prompts/frontend-coder.md` }, 'write_code', 'code', 'Code gen', codeWork);
 
       // Tests
       const testWork: AgentWorkFn<TestWriterInput, TestWriterOutput> = async (_input, _p, _l, ctx) => {
-        ctx.eventBus.publish({ type: 'TestsComplete', taskId: ctx.taskId, agentId: 'tw', branch: 'feat/dashboard', testsGenerated: ['Dashboard.test.tsx'], testCount: 2, source: 'test', timestamp: Date.now() });
-        return Ok({ testsGenerated: ['Dashboard.test.tsx'], totalCostUsd: 0.02 });
+        ctx.eventBus.publish({ type: 'TestsComplete', taskId: ctx.taskId, agentId: 'tw', branch: 'feat/dashboard', testFilesGenerated: ['Dashboard.test.tsx'], source: 'test', timestamp: Date.now() });
+        return Ok({ branch: 'feat/dashboard', testFilesGenerated: ['Dashboard.test.tsx'], totalCostUsd: 0.02, totalAttempts: 1 });
       };
-      await runAgent(TEST_WRITER_CONTRACT, ctx, { task: makeTask(), projectRoot: PROJECT_ROOT, specRef: 'comp_1', sourceFiles: ['Dashboard.tsx'] }, 'write_code', 'tests', 'Tests', testWork);
+      await runAgent(TEST_WRITER_CONTRACT, ctx, { task: makeTask(), projectRoot: PROJECT_ROOT, stackConfigPath: `${PROJECT_ROOT}/agentforge/stack.yaml`, promptTemplatePath: `${PROJECT_ROOT}/agentforge/prompts/test-writer.md`, targetBranch: 'feat/dashboard', sourceFiles: ['Dashboard.tsx'] }, 'write_code', 'tests', 'Tests', testWork);
 
       // PR
       const prWork: AgentWorkFn<PRManagerInput, PRManagerOutput> = async (_input, _p, _l, ctx) => {

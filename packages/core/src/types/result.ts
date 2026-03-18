@@ -47,7 +47,12 @@ export type ErrorCode =
   // Agent Errors
   | 'AGENT_LOOP_DETECTED'
   | 'AGENT_ABORTED'
-  | 'AGENT_UNKNOWN';
+  | 'AGENT_UNKNOWN'
+
+  // Dependency Errors
+  | 'CIRCULAR_DEPENDENCY'
+  | 'DEPENDENCY_NOT_FOUND'
+  | 'CONCURRENCY_LIMIT';
 
 /**
  * Structured error type for all AgentForge operations.

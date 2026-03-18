@@ -151,7 +151,7 @@ describe('MCPClient', () => {
   });
 
   describe('middleware chain order', () => {
-    it('should execute middleware in correct order: governance → auth → rateLimit → cache → retry → observability', async () => {
+    it('should execute middleware in correct order: observability → governance → auth → rateLimit → cache → retry', async () => {
       const executionOrder: string[] = [];
 
       // Track which middleware functions are hit by using a custom trace recorder
@@ -183,7 +183,9 @@ describe('MCPClient', () => {
 
       await client.callTool('figma', 'get_code', {});
 
-      // Governance should run first, auth second, observability last
+      // Observability is outermost: starts timing before governance, records trace after result.
+      // The recorder callback fires post-processing, so 'observability' appears last in the array.
+      // Governance runs first in the tracked callbacks, auth second.
       expect(executionOrder[0]).toBe('governance');
       expect(executionOrder[1]).toBe('auth');
       expect(executionOrder[executionOrder.length - 1]).toBe('observability');

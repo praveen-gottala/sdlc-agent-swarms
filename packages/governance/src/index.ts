@@ -8,6 +8,9 @@ export type { AuditLogger } from './audit-logger.js';
 export { createGovernanceMiddleware, executeGovernancePipeline } from './governance-middleware.js';
 export type { GovernanceMiddlewareOptions } from './governance-middleware.js';
 
+export { createProgressiveTrustManager } from './progressive-trust.js';
+export type { ProgressiveTrustManager, TrustState, ProgressiveTrustConfig } from './progressive-trust.js';
+
 export type {
   AgentActionType,
   AgentAction,
@@ -27,6 +30,7 @@ export type {
   GovernanceCheckRecord,
   AuditEntry,
   AuditFilter,
+  AuditExportFormat,
   CircuitBreakerConfig,
   CircuitBreakerState,
   CircuitBreaker,

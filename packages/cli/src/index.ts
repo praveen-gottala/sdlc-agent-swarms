@@ -127,7 +127,7 @@ export function createProgram(): Command {
   return program;
 }
 
-export { initCommand } from './commands/init.js';
+export { initCommand, buildManifest, scaffoldProject } from './commands/init.js';
 export { startCommand } from './commands/start.js';
 export { statusCommand } from './commands/status.js';
 export { approveCommand } from './commands/approve.js';

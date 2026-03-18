@@ -1,5 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
+  testPathIgnorePatterns: ["/dist/", "/node_modules/"],
   displayName: 'agents-cicd',
   transform: {
     '^.+\\.ts$': ['@swc/jest'],

@@ -99,6 +99,7 @@ export interface ProjectManifest {
   };
   readonly stack: StackConfig;
   readonly repo: RepoConfig;
+  // ADR-012: orchestration is nested under agents per PRD v2.0 Section 5.1 YAML example
   readonly agents: {
     readonly providers: ProviderConfig;
     readonly sandbox: SandboxConfig;

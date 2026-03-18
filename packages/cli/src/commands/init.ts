@@ -38,6 +38,10 @@ function prompt(rl: readline.Interface, question: string, defaultValue?: string)
 /**
  * Run the interactive init wizard and return collected answers.
  */
+// DEVIATION: ADR-019
+// PRD v2.0 Section 9.1.1 specifies: interactive CLI wizard with 5 questions
+// Implementation: wizard requires TTY; no --non-interactive flag for CI environments
+// Rationale: see ADR-019 — non-interactive mode deferred to Phase 2
 export async function runWizard(
   input: NodeJS.ReadableStream = process.stdin,
   output: NodeJS.WritableStream = process.stdout,
@@ -147,8 +151,26 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
 
 /**
  * Default agent definitions for Phase 1.
+ *
+ * Each agent contract includes all 7 sections required by PRD v2.0 Section 10.1:
+ * role, provider, execution, tools, permissions, hitl_policy, budget.
+ *
+ * DEVIATION: ADR-010
+ * PRD v2.0 Section 10.1 specifies: 7-section agent contracts
+ * Implementation: previously used 5-field simplified format; now includes all 7 sections
+ * Rationale: see ADR-010
  */
 function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
+  const defaultBudget = {
+    max_tokens_per_task: 50000,
+    max_cost_per_task_usd: manifest.budget.per_task_max_usd,
+  };
+
+  const defaultExecution = {
+    mode: 'stream',
+    progress_events: true,
+  };
+
   return {
     version: '1.0',
     agents: [
@@ -156,50 +178,92 @@ function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
         role: 'ux_researcher',
         phase: 'design',
         provider: manifest.agents.providers.default,
-        hitl_level: 'notify_only',
+        execution: { ...defaultExecution },
+        tools: ['figma_mcp.get_code', 'spec.read_project', 'spec.read_pages'],
+        permissions: ['read_spec', 'read_design_system', 'read_design'],
+        denied: ['write_code', 'deploy', 'merge_pr'],
+        hitl_policy: 'notify_only',
+        budget: { ...defaultBudget },
         on_complete: 'UXResearchComplete',
+        on_error: 'notify_human',
       },
       {
         role: 'wireframer',
         phase: 'design',
         provider: manifest.agents.providers.default,
-        hitl_level: 'full_approval',
+        execution: { ...defaultExecution },
+        tools: ['figma_mcp.get_code', 'figma_mcp.generate_figma_design'],
+        permissions: ['read_spec', 'write_design', 'read_design_system'],
+        denied: ['write_code', 'deploy', 'merge_pr'],
+        hitl_policy: 'full_approval',
+        budget: { ...defaultBudget },
         on_complete: 'WireframeComplete',
+        on_error: 'notify_human',
       },
       {
         role: 'spec_writer',
         phase: 'spec',
         provider: manifest.agents.providers.overrides?.['architecture'] ?? manifest.agents.providers.default,
-        hitl_level: 'review_and_override',
+        execution: { ...defaultExecution },
+        tools: ['spec.read_project', 'spec.write_spec', 'spec.read_pages'],
+        permissions: ['read_spec', 'write_spec', 'read_design'],
+        denied: ['write_code', 'deploy', 'merge_pr', 'write_design'],
+        hitl_policy: 'review_and_override',
+        budget: { ...defaultBudget },
         on_complete: 'SpecComplete',
+        on_error: 'notify_human',
       },
       {
         role: 'task_decomposer',
         phase: 'spec',
         provider: manifest.agents.providers.default,
-        hitl_level: 'notify_only',
+        execution: { ...defaultExecution },
+        tools: ['spec.read_spec', 'tasks.create_task', 'tasks.read_tasks'],
+        permissions: ['read_spec', 'write_tasks'],
+        denied: ['write_code', 'deploy', 'merge_pr', 'write_design'],
+        hitl_policy: 'notify_only',
+        budget: { ...defaultBudget },
         on_complete: 'TasksCreated',
+        on_error: 'notify_human',
       },
       {
         role: 'code_generator',
         phase: 'code',
         provider: manifest.agents.providers.default,
-        hitl_level: 'review_and_override',
+        execution: { ...defaultExecution },
+        tools: ['code.write_file', 'code.read_file', 'spec.read_spec', 'git.create_branch', 'git.commit'],
+        permissions: ['read_spec', 'write_code', 'create_branch', 'create_pr'],
+        denied: ['deploy', 'merge_pr', 'write_design', 'write_spec'],
+        hitl_policy: 'review_and_override',
+        budget: { ...defaultBudget },
         on_complete: 'CodeGenComplete',
+        on_error: 'notify_human',
       },
       {
         role: 'test_writer',
         phase: 'code',
         provider: manifest.agents.providers.default,
-        hitl_level: 'notify_only',
+        execution: { ...defaultExecution },
+        tools: ['code.write_file', 'code.read_file', 'spec.read_spec', 'test.run_tests'],
+        permissions: ['read_spec', 'read_code', 'write_tests'],
+        denied: ['deploy', 'merge_pr', 'write_design', 'write_spec'],
+        hitl_policy: 'notify_only',
+        budget: { ...defaultBudget },
         on_complete: 'TestsComplete',
+        on_error: 'notify_human',
       },
       {
         role: 'code_reviewer',
         phase: 'code',
         provider: manifest.agents.providers.overrides?.['code_review'] ?? manifest.agents.providers.default,
-        hitl_level: 'review_and_override',
+        execution: { ...defaultExecution },
+        tools: ['code.read_file', 'git.read_diff', 'spec.read_spec'],
+        permissions: ['read_code', 'read_spec', 'write_review'],
+        denied: ['write_code', 'deploy', 'merge_pr', 'write_design'],
+        hitl_policy: 'review_and_override',
+        budget: { ...defaultBudget },
         on_complete: 'ReviewComplete',
+        on_error: 'notify_human',
       },
     ],
   };
@@ -265,7 +329,10 @@ export function scaffoldProject(
   writeYaml(tasksPath, { tasks: [] }, fileSystem);
   created.push('agentforge.tasks.yaml');
 
-  // Write agent definitions
+  // DEVIATION: ADR-011
+  // PRD v2.0 Section 10.1 specifies: agent contracts "in the project manifest"
+  // Implementation: agent contracts stored in separate agentforge/agents.yaml
+  // Rationale: see ADR-011 — consistent with PRD's per-file pattern, keeps manifest focused
   const agentsPath = path.join(rootDir, 'agentforge', 'agents.yaml');
   writeYaml(agentsPath, buildAgentsYaml(manifest), fileSystem);
   created.push('agentforge/agents.yaml');
@@ -333,8 +400,10 @@ export async function initCommand(
   const manifest = buildManifest(answers);
   scaffoldProject(rootDir, manifest, fileSystem);
 
-  // ADR-005: Channel setup deferred to runtime via env vars
-  // Init only records channel preferences, actual connection happens in `start` command
+  // DEVIATION: ADR-005
+  // PRD v2.0 Section 9.1.1 specifies: "Connecting Slack... done" / "Connecting Telegram... done"
+  // Implementation: init records channel preferences only, does not connect
+  // Rationale: see ADR-005 — tokens require env vars, connection deferred to `start` command
   out.write('\n');
   out.write(successMsg('✓ Project scaffolded\n'));
   out.write(successMsg('✓ Agent definitions created\n'));

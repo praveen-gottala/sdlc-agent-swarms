@@ -18,6 +18,9 @@ export type {
 export type {
   CostRecord,
   CostEstimate,
+  PhaseCostBreakdown,
+  AgentCostBreakdown,
+  MonthlyCostReport,
 } from './cost.js';
 
 export type {

@@ -6,6 +6,7 @@
  */
 
 import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
 import type { FileSystem } from '../fs/file-system.js';
@@ -14,12 +15,30 @@ import { readYaml, writeYaml } from '../fs/yaml-utils.js';
 /**
  * Information about an acquired lock.
  */
+// DEVIATION: ADR-006
+// PRD v2.0 Section 8.3 specifies: "human edits detected mid-agent-write take priority unconditionally"
+// Implementation: Uses content hashing to detect human edits; git commit operations handled at orchestration layer
+// Rationale: see ADR-006
 export interface LockInfo {
   readonly filePath: string;
   readonly agentId: string;
   readonly acquiredAt: string;
   readonly expiresAt: string;
+  readonly contentHash?: string;
 }
+
+/**
+ * Result of checking for human edits during an agent write lock.
+ */
+export type HumanEditCheckResult =
+  | { readonly humanEdited: true; readonly currentContent: string }
+  | { readonly humanEdited: false };
+
+/**
+ * Compute SHA-256 hash of file content.
+ */
+export const computeContentHash = (content: string): string =>
+  crypto.createHash('sha256').update(content, 'utf-8').digest('hex');
 
 /**
  * Sanitize a file path to create a valid lock file name.
@@ -70,11 +89,19 @@ export const acquireLock = (
   }
 
   const now = new Date();
+  // Compute content hash if file exists for human-edit detection
+  let contentHash: string | undefined;
+  const fileContent = fs.readFile(filePath);
+  if (fileContent.ok) {
+    contentHash = computeContentHash(fileContent.value);
+  }
+
   const lockInfo: LockInfo = {
     filePath,
     agentId,
     acquiredAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+    contentHash,
   };
 
   const writeResult = writeYaml(lockPath, lockInfo, fs);
@@ -157,4 +184,44 @@ export const cleanExpiredLocks = (
   }
 
   return Ok(cleaned);
+};
+
+/**
+ * Check if a human has edited the file since the lock was acquired.
+ * If the current file content hash differs from the hash stored in the lock,
+ * a human edit is detected. Per PRD 8.3: "Human always wins" —
+ * the agent must discard its changes and re-read the human's version.
+ */
+export const checkHumanEdit = (
+  filePath: string,
+  lockDir: string,
+  fs: FileSystem,
+): Result<HumanEditCheckResult> => {
+  const lockPath = lockFilePath(filePath, lockDir);
+
+  if (!fs.exists(lockPath)) {
+    return Ok({ humanEdited: false });
+  }
+
+  const lockResult = readYaml<LockInfo>(lockPath, fs);
+  if (!lockResult.ok) {
+    return Ok({ humanEdited: false });
+  }
+
+  const lock = lockResult.value;
+  if (!lock.contentHash) {
+    return Ok({ humanEdited: false });
+  }
+
+  const fileContent = fs.readFile(filePath);
+  if (!fileContent.ok) {
+    return Ok({ humanEdited: false });
+  }
+
+  const currentHash = computeContentHash(fileContent.value);
+  if (currentHash !== lock.contentHash) {
+    return Ok({ humanEdited: true, currentContent: fileContent.value });
+  }
+
+  return Ok({ humanEdited: false });
 };

@@ -12,6 +12,11 @@ import { Ok, Err } from '../types/result.js';
 /**
  * Interface for retrieving secrets. Phase 1 implementation reads from
  * environment variables. Drop-in replacements can read from vaults.
+ *
+ * DEVIATION: ADR-017
+ * PRD v2.0 Section 19.2 specifies: vault integration with scoped, time-limited tokens
+ * Implementation: Phase 1 uses env vars with governance-enforced scoping, no token TTL
+ * Rationale: see ADR-017
  */
 export interface SecretProvider {
   /**

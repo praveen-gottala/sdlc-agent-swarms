@@ -15,14 +15,15 @@ import { readYaml, writeYaml } from '../fs/yaml-utils.js';
 
 /** Valid task state transitions. */
 const VALID_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
-  pending: ['in_progress'],
-  in_progress: ['awaiting_approval', 'completed', 'failed', 'paused'],
+  pending: ['in_progress', 'blocked'],
+  in_progress: ['awaiting_approval', 'completed', 'failed', 'paused', 'blocked'],
   awaiting_approval: ['approved', 'changes_requested'],
   approved: ['in_progress', 'completed'],
   changes_requested: ['in_progress'],
   failed: ['pending'],
   completed: [],
   paused: ['in_progress'],
+  blocked: ['pending', 'in_progress'],
 };
 
 /**
