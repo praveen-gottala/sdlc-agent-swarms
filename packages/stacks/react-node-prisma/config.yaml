@@ -1,0 +1,60 @@
+version: "1.0"
+
+stack:
+  name: react-node-prisma
+  description: "React + Node.js + Prisma + PostgreSQL full-stack"
+
+frontend:
+  framework: react
+  language: typescript
+  strict_mode: true
+  styling:
+    default: tailwind
+    alternative: css-modules
+  data_fetching: react-query
+  validation: zod
+  state_management: react-query-cache
+  routing: react-router
+
+backend:
+  framework: express
+  alternative_framework: fastify
+  language: typescript
+  strict_mode: true
+  orm: prisma
+  database: postgresql
+  auth: jwt
+
+testing:
+  unit:
+    runner: jest
+    frontend_library: "@testing-library/react"
+    backend_library: supertest
+  e2e:
+    runner: playwright
+  coverage_threshold: 80
+
+conventions:
+  file_naming: kebab-case
+  component_naming: PascalCase
+  type_naming: PascalCase
+  variable_naming: camelCase
+  test_location: co-located
+  test_suffix: ".test.ts"
+  export_pattern: named
+  error_handling: result-pattern
+  imports: absolute-paths
+
+project_structure:
+  frontend:
+    components: "src/components/"
+    pages: "src/pages/"
+    hooks: "src/hooks/"
+    utils: "src/utils/"
+    types: "src/types/"
+  backend:
+    routes: "src/routes/"
+    services: "src/services/"
+    models: "prisma/schema.prisma"
+    middleware: "src/middleware/"
+    utils: "src/utils/"

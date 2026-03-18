@@ -1,0 +1,192 @@
+import { buildManifest, scaffoldProject } from './init.js';
+import type { InitAnswers } from './init.js';
+import type { FileSystem } from '../fs-utils.js';
+
+function createMockFs(): FileSystem & { files: Map<string, string>; dirs: Set<string> } {
+  const files = new Map<string, string>();
+  const dirs = new Set<string>();
+
+  return {
+    files,
+    dirs,
+    readFile(filePath: string) {
+      const content = files.get(filePath);
+      if (content === undefined) {
+        return { ok: false, error: { code: 'INVALID_STATE' as const, message: `Not found: ${filePath}`, recoverable: false } };
+      }
+      return { ok: true, value: content };
+    },
+    writeFile(filePath: string, content: string) {
+      files.set(filePath, content);
+      return { ok: true, value: undefined };
+    },
+    writeFileAtomic(filePath: string, content: string) {
+      files.set(filePath, content);
+      return { ok: true, value: undefined };
+    },
+    exists(filePath: string) {
+      return files.has(filePath) || dirs.has(filePath);
+    },
+    mkdir(dirPath: string) {
+      dirs.add(dirPath);
+      return { ok: true, value: undefined };
+    },
+    rename(_oldPath: string, _newPath: string) {
+      return { ok: false as const, error: { code: 'INVALID_STATE' as const, message: 'Not implemented in mock', recoverable: false } };
+    },
+    remove(filePath: string) {
+      files.delete(filePath);
+      return { ok: true, value: undefined };
+    },
+    listDir(_dirPath: string) {
+      return { ok: true, value: [] as readonly string[] };
+    },
+    appendFile(filePath: string, content: string) {
+      const existing = files.get(filePath) ?? '';
+      files.set(filePath, existing + content);
+      return { ok: true, value: undefined };
+    },
+  };
+}
+
+const DEFAULT_ANSWERS: InitAnswers = {
+  name: 'TaskFlow',
+  description: 'A project management tool',
+  repo: 'praveen/taskflow',
+  slackChannel: '#agentforge',
+  telegramEnabled: true,
+};
+
+describe('buildManifest', () => {
+  it('creates a valid manifest from wizard answers', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.version).toBe('1.0');
+    expect(manifest.project.name).toBe('TaskFlow');
+    expect(manifest.project.description).toBe('A project management tool');
+    expect(manifest.project.platforms).toEqual(['web']);
+    expect(manifest.project.id).toMatch(/^proj_taskflow_[a-z0-9]+$/);
+  });
+
+  it('sets opinionated stack defaults', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.stack).toEqual({
+      frontend: 'react',
+      backend: 'node',
+      database: 'postgresql',
+      styling: 'tailwind',
+    });
+  });
+
+  it('parses org/repo from the repo string', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.repo.provider).toBe('github');
+    expect(manifest.repo.org).toBe('praveen');
+    expect(manifest.repo.name).toBe('taskflow');
+  });
+
+  it('handles repo string without org', () => {
+    const manifest = buildManifest({ ...DEFAULT_ANSWERS, repo: 'taskflow' });
+
+    expect(manifest.repo.org).toBe('');
+    expect(manifest.repo.name).toBe('taskflow');
+  });
+
+  it('sets HITL defaults for Persona B', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.hitl.default).toBe('review_and_override');
+    expect(manifest.hitl.overrides).toEqual({
+      design: 'full_approval',
+      production_deploy: 'full_approval',
+      test_generation: 'notify_only',
+    });
+  });
+
+  it('includes Telegram channel when enabled', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.channels).toHaveLength(3);
+    expect(manifest.channels[0]).toEqual({ type: 'slack', capabilities: 'full', priority: 1 });
+    expect(manifest.channels[1]).toEqual({ type: 'telegram', capabilities: 'approvals', priority: 2 });
+    expect(manifest.channels[2]).toEqual({ type: 'cli', capabilities: 'basic', priority: 3 });
+  });
+
+  it('excludes Telegram channel when disabled', () => {
+    const manifest = buildManifest({ ...DEFAULT_ANSWERS, telegramEnabled: false });
+
+    expect(manifest.channels).toHaveLength(2);
+    expect(manifest.channels.map((c) => c.type)).toEqual(['slack', 'cli']);
+  });
+
+  it('sets budget defaults', () => {
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    expect(manifest.budget).toEqual({
+      per_task_max_usd: 2.0,
+      per_phase_max_usd: 25.0,
+      monthly_max_usd: 200.0,
+      alert_threshold: 0.8,
+    });
+  });
+});
+
+describe('scaffoldProject', () => {
+  it('creates the spec directory structure', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs);
+
+    expect(fs.dirs.has('/project/agentforge/spec/components')).toBe(true);
+    expect(fs.dirs.has('/project/.agentforge/learnings')).toBe(true);
+    expect(fs.dirs.has('/project/.agentforge/audit')).toBe(true);
+  });
+
+  it('writes the project manifest', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs);
+
+    expect(fs.files.has('/project/agentforge.yaml')).toBe(true);
+    const content = fs.files.get('/project/agentforge.yaml')!;
+    expect(content).toContain('TaskFlow');
+  });
+
+  it('writes an empty tasks file', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs);
+
+    expect(fs.files.has('/project/agentforge.tasks.yaml')).toBe(true);
+    const content = fs.files.get('/project/agentforge.tasks.yaml')!;
+    expect(content).toContain('tasks');
+  });
+
+  it('writes seed spec files', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs);
+
+    expect(fs.files.has('/project/agentforge/spec/project.yaml')).toBe(true);
+    expect(fs.files.has('/project/agentforge/spec/pages.yaml')).toBe(true);
+    expect(fs.files.has('/project/agentforge/spec/api.yaml')).toBe(true);
+    expect(fs.files.has('/project/agentforge/spec/models.yaml')).toBe(true);
+  });
+
+  it('returns list of created files and directories', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    const created = scaffoldProject('/project', manifest, fs);
+
+    expect(created).toContain('agentforge.yaml');
+    expect(created).toContain('agentforge.tasks.yaml');
+    expect(created).toContain('agentforge/spec/project.yaml');
+  });
+});
