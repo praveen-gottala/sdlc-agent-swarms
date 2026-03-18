@@ -5,6 +5,7 @@
  * Entry point for the `agentforge` binary.
  */
 
+import * as path from 'node:path';
 import { Command } from 'commander';
 import { findProjectRoot, realFs } from './fs-utils.js';
 import { initCommand } from './commands/init.js';
@@ -15,6 +16,7 @@ import { abortCommand } from './commands/abort.js';
 import { migrateCommand } from './commands/migrate.js';
 import { configCommand } from './commands/config.js';
 import { designCommand } from './commands/design.js';
+import { doctorCommand } from './commands/doctor.js';
 
 /**
  * Create the AgentForge CLI program with all commands registered.
@@ -30,8 +32,11 @@ export function createProgram(): Command {
   program
     .command('init')
     .description('Initialize a new AgentForge project with guided wizard')
-    .action(async () => {
-      const rootDir = process.cwd();
+    .argument('[directory]', 'Target directory for the new project (created if it does not exist, defaults to current directory)')
+    .action(async (directory: string | undefined) => {
+      const rootDir = directory
+        ? path.resolve(process.cwd(), directory)
+        : process.cwd();
       await initCommand(rootDir, realFs);
     });
 
@@ -102,6 +107,14 @@ export function createProgram(): Command {
       await designCommand(description, rootDir, realFs);
     });
 
+  program
+    .command('doctor')
+    .description('Verify that configured integrations (LLM providers, channels) are reachable')
+    .action(async () => {
+      const rootDir = findProjectRoot();
+      await doctorCommand(rootDir, realFs);
+    });
+
   return program;
 }
 
@@ -113,6 +126,7 @@ export { abortCommand } from './commands/abort.js';
 export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
 export { designCommand } from './commands/design.js';
+export { doctorCommand } from './commands/doctor.js';
 export type { InitAnswers } from './commands/init.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
 export { formatTaskTable, formatTaskRow } from './formatter.js';

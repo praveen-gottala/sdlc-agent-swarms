@@ -132,14 +132,27 @@ export interface LLMProvider {
 
 // ── Provider Registry Types ─────────────────────────────────────────
 
+/** Authentication method for provider. */
+export type AuthMethod =
+  | { readonly type: 'api_key'; readonly key: string }
+  | { readonly type: 'adc' }  // Application Default Credentials (Google Cloud)
+  | { readonly type: 'service_account'; readonly keyFile: string }
+  | { readonly type: 'bearer_token'; readonly token: string };
+
 /** Configuration for instantiating a provider. */
 export interface ProviderConfig {
-  /** API key from vault or env. */
+  /** API key from vault or env (deprecated - use auth.type: 'api_key' instead). */
   readonly apiKey?: string;
+  /** Authentication method (supports multiple patterns). */
+  readonly auth?: AuthMethod;
   /** For Ollama or custom endpoints. */
   readonly baseUrl?: string;
   /** Request timeout in ms. */
   readonly timeout?: number;
+  /** Google Cloud project ID (required for Vertex AI). */
+  readonly projectId?: string;
+  /** Google Cloud region (for Vertex AI, default: us-central1). */
+  readonly region?: string;
 }
 
 /** Factory function that creates a provider instance. */

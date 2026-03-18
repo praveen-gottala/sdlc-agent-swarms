@@ -10,7 +10,7 @@ import * as readline from 'node:readline';
 import type { ProjectManifest } from '../types.js';
 import { writeYaml, type FileSystem, realFs } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
-import { renderTemplate, TEMPLATE_MAP } from '../template-renderer.js';
+import { renderAllTemplates } from '../template-renderer.js';
 
 /**
  * Answers collected from the init wizard.
@@ -293,7 +293,7 @@ export function scaffoldProject(
 
   // Render and write scaffold templates
   const vars = { PROJECT_NAME: manifest.project.name };
-  const templates = templateContents ?? loadTemplatesFromDisk(vars);
+  const templates = templateContents ?? renderAllTemplates(vars);
   for (const [outputPath, content] of templates) {
     const fullPath = path.join(rootDir, outputPath);
     const dir = path.dirname(fullPath);
@@ -305,31 +305,6 @@ export function scaffoldProject(
   return created;
 }
 
-/**
- * Load and render templates from disk (production path).
- */
-function loadTemplatesFromDisk(vars: Record<string, string>): Map<string, string> {
-  const rendered = new Map<string, string>();
-  try {
-    // Resolve relative to this file's compiled location
-    const templatesDir = path.resolve(
-      __dirname,
-      '../../../stacks/react-node-prisma/templates/scaffold',
-    );
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs = require('node:fs');
-    for (const [templateFile, outputPath] of Object.entries(TEMPLATE_MAP)) {
-      const templatePath = path.join(templatesDir, templateFile);
-      if (fs.existsSync(templatePath)) {
-        const content = fs.readFileSync(templatePath, 'utf-8') as string;
-        rendered.set(outputPath, renderTemplate(content, vars));
-      }
-    }
-  } catch {
-    // Templates may not be available in test environment
-  }
-  return rendered;
-}
 
 /**
  * Execute the full init command.
@@ -342,9 +317,14 @@ export async function initCommand(
 ): Promise<void> {
   const out = output ?? process.stdout;
 
+  // Create target directory if it doesn't exist
+  if (!fileSystem.exists(rootDir)) {
+    fileSystem.mkdir(rootDir);
+  }
+
   // Check if already initialized
   if (fileSystem.exists(path.join(rootDir, 'agentforge.yaml'))) {
-    out.write(errorMsg('This directory already has an agentforge.yaml. Aborting.\n'));
+    out.write(errorMsg(`${rootDir} already has an agentforge.yaml. Aborting.\n`));
     process.exitCode = 1;
     return;
   }
@@ -353,22 +333,44 @@ export async function initCommand(
   const manifest = buildManifest(answers);
   scaffoldProject(rootDir, manifest, fileSystem);
 
+  // ADR-005: Channel setup deferred to runtime via env vars
+  // Init only records channel preferences, actual connection happens in `start` command
   out.write('\n');
-  out.write(successMsg('Scaffolding project... done\n'));
-  out.write(successMsg('Registering agents... done\n'));
+  out.write(successMsg('✓ Project scaffolded\n'));
+  out.write(successMsg('✓ Agent definitions created\n'));
   if (answers.slackChannel) {
-    out.write(successMsg(`Connecting Slack (${answers.slackChannel})... done\n`));
+    out.write(infoMsg(`  Slack channel configured: ${answers.slackChannel}\n`));
   }
   if (answers.telegramEnabled) {
-    out.write(successMsg('Connecting Telegram... done\n'));
+    out.write(infoMsg('  Telegram channel configured\n'));
   }
 
   out.write('\n');
-  out.write(infoMsg(`Using defaults: React + Node.js + PostgreSQL + Tailwind\n`));
+  out.write(infoMsg('Stack: React + Node.js + PostgreSQL + Tailwind\n'));
   out.write(infoMsg(`HITL: ${manifest.hitl.default} (design/deploy: full_approval)\n`));
   out.write(infoMsg(`Budget: $${manifest.budget.per_task_max_usd}/task, $${manifest.budget.per_phase_max_usd}/phase, $${manifest.budget.monthly_max_usd}/month\n`));
   out.write('\n');
-  out.write(infoMsg('Figma not configured. Using code-first design mode.\n'));
+
+  // Next steps based on enabled channels
+  out.write(successMsg('Next steps:\n'));
   out.write('\n');
-  out.write(successMsg('AgentForge initialized. Run `agentforge start design` to begin.\n'));
+  out.write(infoMsg('1. Set up environment variables (see .env.example):\n'));
+  if (answers.slackChannel) {
+    out.write(infoMsg('   export AGENTFORGE_SLACK_BOT_TOKEN=xoxb-...\n'));
+    out.write(infoMsg('   export AGENTFORGE_SLACK_APP_TOKEN=xapp-...\n'));
+  }
+  if (answers.telegramEnabled) {
+    out.write(infoMsg('   export AGENTFORGE_TELEGRAM_BOT_TOKEN=123456:ABC...\n'));
+  }
+  out.write('\n');
+  out.write(infoMsg('2. Configure your LLM provider API key:\n'));
+  out.write(infoMsg('   export ANTHROPIC_API_KEY=sk-ant-...\n'));
+  out.write('\n');
+  out.write(infoMsg('3. Verify your integrations:\n'));
+  out.write(infoMsg('   agentforge doctor\n'));
+  out.write('\n');
+  out.write(infoMsg('4. Start the design phase:\n'));
+  out.write(infoMsg('   agentforge start design\n'));
+  out.write('\n');
+  out.write(infoMsg('Note: Figma not configured. Using code-first design mode.\n'));
 }

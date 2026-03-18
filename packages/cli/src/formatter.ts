@@ -73,6 +73,13 @@ export function errorMsg(message: string): string {
 }
 
 /**
+ * Format a warning message.
+ */
+export function warnMsg(message: string): string {
+  return `\x1b[33m⚠\x1b[0m ${message}`;
+}
+
+/**
  * Format an info message.
  */
 export function infoMsg(message: string): string {

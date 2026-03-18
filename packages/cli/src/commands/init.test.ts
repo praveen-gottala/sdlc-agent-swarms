@@ -1,6 +1,7 @@
-import { buildManifest, scaffoldProject } from './init.js';
+import { buildManifest, scaffoldProject, initCommand } from './init.js';
 import type { InitAnswers } from './init.js';
 import type { FileSystem } from '../fs-utils.js';
+import { PassThrough } from 'node:stream';
 
 function createMockFs(): FileSystem & { files: Map<string, string>; dirs: Set<string> } {
   const files = new Map<string, string>();
@@ -240,5 +241,61 @@ describe('scaffoldProject', () => {
     expect(fs.files.get('/project/package.json')).toBe('{"name": "TaskFlow"}');
     expect(created).toContain('package.json');
     expect(created).toContain('tsconfig.json');
+  });
+});
+
+/**
+ * Creates a readable stream that feeds answers line-by-line,
+ * with delays to allow readline to process each question sequentially.
+ */
+function createWizardInput(answers: string[]): PassThrough {
+  const stream = new PassThrough();
+  let index = 0;
+  const interval = setInterval(() => {
+    if (index < answers.length) {
+      stream.write(answers[index] + '\n');
+      index++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 50);
+  return stream;
+}
+
+describe('initCommand', () => {
+  it('creates the target directory if it does not exist', async () => {
+    const fs = createMockFs();
+    const input = createWizardInput(['MyApp', 'desc', 'org/repo', '#dev', 'y']);
+    const output = new PassThrough();
+
+    await initCommand('/new-project', fs, input, output);
+
+    expect(fs.dirs.has('/new-project')).toBe(true);
+    expect(fs.files.has('/new-project/agentforge.yaml')).toBe(true);
+  });
+
+  it('scaffolds into an existing empty directory', async () => {
+    const fs = createMockFs();
+    fs.dirs.add('/existing-dir');
+    const input = createWizardInput(['MyApp', 'desc', 'org/repo', '#dev', 'y']);
+    const output = new PassThrough();
+
+    await initCommand('/existing-dir', fs, input, output);
+
+    expect(fs.files.has('/existing-dir/agentforge.yaml')).toBe(true);
+  });
+
+  it('aborts if target directory already has agentforge.yaml', async () => {
+    const fs = createMockFs();
+    fs.files.set('/existing-dir/agentforge.yaml', 'version: "1.0"');
+    const input = createWizardInput([]);
+    const output = new PassThrough();
+
+    const origExitCode = process.exitCode;
+    await initCommand('/existing-dir', fs, input, output);
+
+    expect(process.exitCode).toBe(1);
+    expect(fs.files.get('/existing-dir/agentforge.yaml')).toBe('version: "1.0"');
+    process.exitCode = origExitCode;
   });
 });

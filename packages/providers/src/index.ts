@@ -21,6 +21,7 @@ export type {
   ProviderConfig,
   ProviderFactory,
   ProviderInfo,
+  AuthMethod,
 } from './types.js';
 
 // Registry
@@ -38,3 +39,6 @@ export {
   calculateCost,
 } from './cost-table.js';
 export type { ModelCost } from './cost-table.js';
+
+// Vertex AI config detection
+export { detectVertexConfig, getVertexSetupHelp } from './vertex-config.js';

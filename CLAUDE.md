@@ -68,6 +68,36 @@ and test written in this project.
   the end of each prompt's output under a "PRD Issues Found" heading so they can 
   be fed back into the next PRD revision.
 
+### Teach Yourself
+
+After every task, if something is not working, document the reason.
+
+You are solving iteratively.
+
+#### Rules
+- Track failed approaches in a **Do Not Repeat** list.
+- When an attempt fails, record:
+  - the attempt
+  - why it failed
+  - the observable signal
+  - the rule to avoid repeating it
+- Before any new attempt, check whether it overlaps with a failed approach.
+- If overlap exists, do not proceed unless you can explain why this attempt is materially different.
+- If the same error persists after 2 attempts, switch to diagnosis mode:
+  - restate the problem
+  - list the top 3 hypotheses
+  - run the cheapest discriminating check first
+
+## Session Isolation
+- Do not read, reference, modify, or create any Claude memory outside this repository, including files under `~/.claude/`.
+- Do not use auto-memory or prior-session learnings.
+- If context is missing, inspect the repository or ask instead of inferring from external memory or prior sessions.
+
+## Repo-Local Memory
+- When you learn something worth preserving, write it only to `docs/lessons-learned.md`.
+- Do not store lessons in any external Claude memory location.
+- Keep entries short and actionable.
+
 ## Tech Stack
 - Monorepo: Nx with TypeScript
 - CLI: Commander.js (packages/cli)
