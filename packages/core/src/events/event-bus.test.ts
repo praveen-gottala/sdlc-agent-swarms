@@ -346,6 +346,16 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'orchestrator',
     timestamp: now,
   },
+  FigmaDesignReady: {
+    type: 'FigmaDesignReady',
+    moduleId: 'pipeline-view',
+    taskId: 'task-ux-1',
+    figmaFileId: 'file-abc123',
+    figmaPageId: 'page-001',
+    figmaNodeIds: { PipelineView: 'node-1', PhaseColumn: 'node-2', AgentCard: 'node-3' },
+    source: 'agent:ux_dashboard_design',
+    timestamp: now,
+  },
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -539,6 +549,7 @@ describe('EventBus', () => {
       'UXReviewCompleted',
       'UXTestSuiteCompleted',
       'UXModuleDeployed',
+      'FigmaDesignReady',
     ];
 
     it('has a fixture for every defined domain event type', () => {
@@ -561,7 +572,7 @@ describe('EventBus', () => {
       },
     );
 
-    it('fixture map covers all 39 event types in the DomainEvent union', () => {
+    it('fixture map covers all 40 event types in the DomainEvent union', () => {
       const fixtureTypes = Object.keys(fixtures).sort();
       const expectedTypes = [...allEventTypes].sort();
       expect(fixtureTypes).toEqual(expectedTypes);
@@ -970,6 +981,21 @@ describe('EventBus', () => {
       });
 
       bus.publish(fixtures.UXTestSuiteCompleted);
+      expect(received).toHaveLength(1);
+    });
+
+    it('FigmaDesignReady carries moduleId, taskId, figmaFileId, figmaPageId, figmaNodeIds', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('FigmaDesignReady', (e) => {
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.figmaFileId).toBe('file-abc123');
+        expect(e.figmaPageId).toBe('page-001');
+        expect(e.figmaNodeIds).toEqual({ PipelineView: 'node-1', PhaseColumn: 'node-2', AgentCard: 'node-3' });
+        received.push(e);
+      });
+
+      bus.publish(fixtures.FigmaDesignReady);
       expect(received).toHaveLength(1);
     });
 

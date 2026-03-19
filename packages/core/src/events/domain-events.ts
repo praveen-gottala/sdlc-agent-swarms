@@ -381,6 +381,16 @@ export interface UXModuleDeployed extends BaseDomainEventFields {
   readonly figmaContextRef: string;
 }
 
+/** Fired when the Design Agent creates a Figma design from a component spec. */
+export interface FigmaDesignReady extends BaseDomainEventFields {
+  readonly type: 'FigmaDesignReady';
+  readonly moduleId: string;
+  readonly taskId: string;
+  readonly figmaFileId: string;
+  readonly figmaPageId: string;
+  readonly figmaNodeIds: Readonly<Record<string, string>>;
+}
+
 /**
  * Discriminated union of every domain event in the system.
  *
@@ -428,7 +438,8 @@ export type DomainEvent =
   | ImplementationDraftReady
   | UXReviewCompleted
   | UXTestSuiteCompleted
-  | UXModuleDeployed;
+  | UXModuleDeployed
+  | FigmaDesignReady;
 
 /** Union of all possible `type` values on a `DomainEvent`. */
 export type DomainEventType = DomainEvent['type'];
