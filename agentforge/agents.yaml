@@ -35,3 +35,30 @@ agents:
     provider: claude-haiku-4
     hitl_level: review_and_override
     on_complete: ReviewComplete
+
+  # === UX Dashboard Squad (V3) ===
+  - role: ux_dashboard_research
+    phase: design
+    provider: claude-opus-4
+    hitl_level: notify_only
+    on_complete: DesignBriefCompleted
+  - role: ux_dashboard_planning
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: review_and_override
+    on_complete: ComponentSpecReady
+  - role: ux_dashboard_implementation
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: review_and_override
+    on_complete: ImplementationDraftReady
+  - role: ux_dashboard_review
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: notify_only
+    on_complete: UXReviewCompleted
+  - role: ux_dashboard_testing
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: notify_only
+    on_complete: UXTestSuiteCompleted
