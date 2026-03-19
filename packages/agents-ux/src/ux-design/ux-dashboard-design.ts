@@ -138,8 +138,15 @@ const loadSystemPrompt = (): string => {
 
 /** Parse LLM output into FigmaCreationStep[] with tool name validation. */
 export const parseDesignSteps = (output: string): Result<{ steps: FigmaCreationStep[]; breakpoints: string[] }> => {
-  const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
+  // Try closed fence first, then open fence (truncated output), then raw
+  const closedFence = /```json\s*\n?([\s\S]*?)```/.exec(output);
+  const openFence = /```json\s*\n?([\s\S]+)/.exec(output);
+  let jsonStr = closedFence ? closedFence[1].trim()
+    : openFence ? openFence[1].trim()
+    : output.trim();
+
+  // Strip trailing ``` if present (open fence matched it)
+  jsonStr = jsonStr.replace(/```\s*$/, '').trim();
 
   try {
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
@@ -219,7 +226,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
 
   const completionResult = await llm.complete(prompt, {
     model: UX_DASHBOARD_DESIGN_CONTRACT.provider,
-    maxTokens: 8000,
+    maxTokens: 16000,
     temperature: 0,
   });
 
