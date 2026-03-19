@@ -40,7 +40,7 @@ Use `"ref:<componentRef>"` to reference nodes created by earlier steps:
       "tool": "create_frame",
       "params": {
         "name": "DashboardLayout [cost-dashboard-desktop]",
-        "x": 0, "y": 0, "width": 1440, "height": 900,
+        "x": 0, "y": 0, "width": 1440, "height": 1100,
         "layoutMode": "VERTICAL", "itemSpacing": 24,
         "paddingTop": 32, "paddingRight": 32, "paddingBottom": 32, "paddingLeft": 32,
         "fillColor": { "r": 0.97, "g": 0.97, "b": 0.96 }
@@ -176,25 +176,83 @@ Create a VISUALLY COMPLETE dashboard, not just empty boxes. Include:
 - Danger: `{ r: 0.94, g: 0.27, b: 0.27 }` (red)
 
 ### Required text content — populate every component with realistic data
-- Header: "Cost Dashboard" title + "Export CSV" button text + "Daily / Weekly / Monthly" toggle labels
-- Metric cards (3-4 cards in a row): Each card needs a LABEL ("Total Cost", "Per Agent Avg", "Budget Used") AND a VALUE ("$2,847.50", "$47.50/agent", "72%")
-- Budget gauge: label + percentage + "Warning at 80%" description
-- Chart area: "Cost Over Time" title + axis labels
-- Table: "Cost Breakdown" header + column headers ("Agent", "Model", "Tokens", "Cost") + 2-3 sample rows with data
+- Header: "Cost Dashboard" title + toggle + export button
+- Metric cards (4 cards, EQUAL WIDTH): Each card needs a LABEL + VALUE + trend
+- Chart area: "Cost Over Time" title + placeholder
+- Table: column headers + data rows
+
+### CRITICAL: Tables and multi-column rows
+
+**Every table row and column header row MUST be a horizontal auto-layout frame with SEPARATE text nodes for each column.** Never concatenate column values into a single text string.
+
+WRONG (all data in one text node):
+```json
+{ "tool": "create_text", "params": { "text": "Customer SupportGPT-4485,230$1,247.80" } }
+```
+
+CORRECT (each cell is a separate text node with fixed width inside a horizontal row):
+```json
+{ "tool": "create_frame", "params": { "name": "TableRow", "x": 0, "y": 0, "width": 1328, "height": 48, "parentId": "ref:TableBody", "layoutMode": "HORIZONTAL", "itemSpacing": 0, "counterAxisAlignItems": "CENTER", "paddingLeft": 16, "paddingRight": 16 }, "componentRef": "Row1" },
+{ "tool": "create_text", "params": { "x": 0, "y": 0, "text": "Customer Support", "fontSize": 14, "fontWeight": 400, "parentId": "ref:Row1" }, "componentRef": "" },
+{ "tool": "create_text", "params": { "x": 0, "y": 0, "text": "GPT-4", "fontSize": 14, "fontWeight": 400, "parentId": "ref:Row1" }, "componentRef": "" },
+{ "tool": "create_text", "params": { "x": 0, "y": 0, "text": "485,230", "fontSize": 14, "fontWeight": 400, "parentId": "ref:Row1" }, "componentRef": "" },
+{ "tool": "create_text", "params": { "x": 0, "y": 0, "text": "$1,247.80", "fontSize": 14, "fontWeight": 700, "parentId": "ref:Row1" }, "componentRef": "" }
+```
+
+Apply the same pattern to the column header row ("Agent", "Model", "Tokens", "Cost" as 4 separate text nodes).
+
+### CRITICAL: Equal-width metric cards
+
+All metric cards in the MetricsRow MUST have the SAME fixed width. Calculate: (row_width - padding - gaps) / num_cards. For a 1376px row with 32px padding each side and 16px gaps between 4 cards: (1376 - 16*3) / 4 = 332px each.
+
+### CRITICAL: Toggle with proper spacing
+
+The time granularity toggle ("Daily", "Weekly", "Monthly") must be a horizontal frame with SEPARATE text nodes — one for each option — with spacing between them. Never combine them into one text node.
 
 ### Layout structure
-- Root frame (1440×900, vertical layout, 24px spacing, 32px padding, warm gray bg)
-  - Header row (horizontal layout, white bg, bottom border)
-    - Title text + action buttons
+- Root frame (1440×1100, vertical layout, 24px spacing, 32px padding, warm gray bg)
+  - Header row (horizontal, white bg, border, `primaryAxisAlignItems: "SPACE_BETWEEN"`, `counterAxisAlignItems: "CENTER"`)
+    - Title text (24px bold)
+    - Right section (horizontal, 16px spacing)
+      - Toggle frame (horizontal, 8px spacing, rounded, light gray bg)
+        - "Daily" text (14px)
+        - "Weekly" text (14px)
+        - "Monthly" text (14px)
+      - Export button frame (blue bg, rounded, horizontal, padding)
+        - "Export CSV" text (14px bold, white)
   - Metrics row (horizontal layout, 16px spacing)
-    - 3-4 metric cards (white bg, border, rounded corners, vertical layout)
-      - Label text (14px, gray) + Value text (32px, bold, dark)
-  - Chart section (white bg, border, rounded, vertical layout)
-    - Chart title + chart placeholder rectangle
-  - Table section (white bg, border, rounded, vertical layout)
-    - Table header row + 2-3 data rows with text
+    - 4 metric cards (332px × 140, SAME WIDTH, white bg, border, corner radius 12, vertical layout, 8px spacing, 20px/24px padding)
+      - Label text (14px, gray)
+      - Value text (32px, bold, dark)
+      - Trend text (12px, green for positive / red for negative)
+  - Chart section (white bg, border, rounded 12, vertical layout, 24px padding)
+    - "Cost Over Time" title (18px bold)
+    - Chart placeholder rectangle (light gray fill, 1328 × 280, rounded 8)
+  - Table section (white bg, border, rounded 12, vertical layout)
+    - Section header (padding 20/24, border bottom)
+      - "Cost Breakdown" title (18px bold)
+    - Column header row (horizontal, 48px height, padding 12/16, light gray bg)
+      - "Agent" text (14px bold, gray) — separate text node
+      - "Model" text (14px bold, gray) — separate text node
+      - "Tokens" text (14px bold, gray) — separate text node
+      - "Cost" text (14px bold, gray) — separate text node
+    - Data row 1 (horizontal, 48px height, padding 12/16, border bottom)
+      - "Customer Support" — separate text node
+      - "GPT-4" — separate text node
+      - "485,230" — separate text node
+      - "$1,247.80" — separate text node (bold)
+    - Data row 2 (horizontal, 48px height, padding 12/16, border bottom)
+      - "Sales Assistant" — separate text node
+      - "Claude-3" — separate text node
+      - "342,150" — separate text node
+      - "$892.40" — separate text node (bold)
+    - Data row 3 (horizontal, 48px height, padding 12/16)
+      - "Code Review" — separate text node
+      - "Sonnet-4" — separate text node
+      - "218,400" — separate text node
+      - "$534.20" — separate text node (bold)
 
 ### Step budget
-Keep total steps between 25-45. Each `create_frame` with inline layout/color params replaces 3-4 separate set_ calls.
+Keep total steps between 40-60. Each `create_frame` with inline layout/color params replaces 3-4 separate set_ calls.
 
 Respond ONLY with a JSON object. No additional text.
