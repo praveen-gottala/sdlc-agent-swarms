@@ -347,7 +347,11 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       delete resolvedParams.paddingBottom;
     }
 
-    // create_frame: wrap fillColor/strokeColor into objects if flat r,g,b
+    // create_frame: wrap colors, remap mode, strip FILL sizing (unreliable inline)
+    let postCreateLayoutMode: string | undefined;
+    let postCreateSpacing: number | undefined;
+    let postCreatePadding: Record<string, number> | undefined;
+
     if (step.tool === 'create_frame') {
       if (resolvedParams.fillColor && typeof resolvedParams.fillColor !== 'object') {
         const rgb = typeof resolvedParams.fillColor === 'string' ? hexToRgb(resolvedParams.fillColor as string) : null;
@@ -361,6 +365,31 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       if (resolvedParams.mode && !resolvedParams.layoutMode) {
         resolvedParams.layoutMode = resolvedParams.mode;
         delete resolvedParams.mode;
+      }
+      // Strip FILL sizing — requires confirmed parent auto-layout which is unreliable inline
+      if (resolvedParams.layoutSizingHorizontal === 'FILL') {
+        delete resolvedParams.layoutSizingHorizontal;
+      }
+      if (resolvedParams.layoutSizingVertical === 'FILL') {
+        delete resolvedParams.layoutSizingVertical;
+      }
+      // Capture layout params for post-creation enforcement
+      if (resolvedParams.layoutMode && resolvedParams.layoutMode !== 'NONE') {
+        postCreateLayoutMode = resolvedParams.layoutMode as string;
+        if (typeof resolvedParams.itemSpacing === 'number') {
+          postCreateSpacing = resolvedParams.itemSpacing as number;
+        }
+        const pt = resolvedParams.paddingTop as number | undefined;
+        const pr = resolvedParams.paddingRight as number | undefined;
+        const pb = resolvedParams.paddingBottom as number | undefined;
+        const pl = resolvedParams.paddingLeft as number | undefined;
+        if (pt !== undefined || pr !== undefined || pb !== undefined || pl !== undefined) {
+          postCreatePadding = {};
+          if (pt !== undefined) postCreatePadding.paddingTop = pt;
+          if (pr !== undefined) postCreatePadding.paddingRight = pr;
+          if (pb !== undefined) postCreatePadding.paddingBottom = pb;
+          if (pl !== undefined) postCreatePadding.paddingLeft = pl;
+        }
       }
     }
 
@@ -381,15 +410,37 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
 
     if (toolResult.ok) {
       const result = toolResult.value as Record<string, unknown>;
-      if (step.componentRef) {
-        const nodeId = String(result.nodeId ?? result.id ?? '');
-        if (nodeId) {
-          figmaNodeIds[step.componentRef] = nodeId;
-          lastCreatedNodeId = nodeId;
-        }
+      const createdNodeId = String(result.nodeId ?? result.id ?? '');
+      if (step.componentRef && createdNodeId) {
+        figmaNodeIds[step.componentRef] = createdNodeId;
+        lastCreatedNodeId = createdNodeId;
       }
       // eslint-disable-next-line no-console
       console.log(`        [step ${i + 1}/${stepCount}] ${step.tool} → OK (${stepMs}ms)`);
+
+      // Post-creation: enforce auto-layout with separate calls (inline layoutMode is unreliable)
+      if (step.tool === 'create_frame' && postCreateLayoutMode && createdNodeId) {
+        const layoutResult = await context.mcpClient.callTool('figma-write', 'set_layout_mode', {
+          nodeId: createdNodeId,
+          layoutMode: postCreateLayoutMode,
+        });
+        if (layoutResult.ok) {
+          // eslint-disable-next-line no-console
+          console.log(`          ↳ set_layout_mode ${postCreateLayoutMode} → OK`);
+        }
+        if (postCreateSpacing !== undefined) {
+          await context.mcpClient.callTool('figma-write', 'set_item_spacing', {
+            nodeId: createdNodeId,
+            itemSpacing: postCreateSpacing,
+          });
+        }
+        if (postCreatePadding) {
+          await context.mcpClient.callTool('figma-write', 'set_padding', {
+            nodeId: createdNodeId,
+            ...postCreatePadding,
+          });
+        }
+      }
     } else {
       // eslint-disable-next-line no-console
       console.warn(`        [step ${i + 1}/${stepCount}] ${step.tool} → ERR: ${toolResult.error.message} (${stepMs}ms)`);
