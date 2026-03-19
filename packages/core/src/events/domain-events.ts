@@ -314,6 +314,73 @@ export interface DeployFailed extends BaseDomainEventFields {
   readonly reason: string;
 }
 
+// ─── UX Dashboard Squad Events ──────────────────────────────────────
+
+/** Fired when a dashboard module is requested, triggering the UX agent pipeline. */
+export interface DashboardModuleRequested extends BaseDomainEventFields {
+  readonly type: 'DashboardModuleRequested';
+  readonly moduleId: string;
+  readonly taskId: string;
+  readonly description: string;
+  readonly prdRequirements: readonly string[];
+}
+
+/** Fired when the Research Agent completes a design brief for a module. */
+export interface DesignBriefCompleted extends BaseDomainEventFields {
+  readonly type: 'DesignBriefCompleted';
+  readonly briefId: string;
+  readonly moduleId: string;
+  readonly taskId: string;
+  readonly requirementIds: readonly string[];
+}
+
+/** Fired when the Planning Agent produces a component specification. */
+export interface ComponentSpecReady extends BaseDomainEventFields {
+  readonly type: 'ComponentSpecReady';
+  readonly specRef: string;
+  readonly moduleId: string;
+  readonly taskId: string;
+  readonly componentTree: readonly string[];
+  readonly tokenBindings: Readonly<Record<string, string>>;
+}
+
+/** Fired when the Implementation Agent produces a draft for review. */
+export interface ImplementationDraftReady extends BaseDomainEventFields {
+  readonly type: 'ImplementationDraftReady';
+  readonly taskId: string;
+  readonly moduleId: string;
+  readonly branch: string;
+  readonly componentPaths: readonly string[];
+}
+
+/** Fired when the Review Agent completes a multi-dimensional UX review. */
+export interface UXReviewCompleted extends BaseDomainEventFields {
+  readonly type: 'UXReviewCompleted';
+  readonly reviewId: string;
+  readonly taskId: string;
+  readonly moduleId: string;
+  readonly issueCount: number;
+  readonly severitySummary: Readonly<Record<string, number>>;
+}
+
+/** Fired when the Testing Agent completes a UI test suite run. */
+export interface UXTestSuiteCompleted extends BaseDomainEventFields {
+  readonly type: 'UXTestSuiteCompleted';
+  readonly testRunId: string;
+  readonly taskId: string;
+  readonly passCount: number;
+  readonly failCount: number;
+  readonly healedCount: number;
+}
+
+/** Fired when a UX dashboard module is deployed to an environment. */
+export interface UXModuleDeployed extends BaseDomainEventFields {
+  readonly type: 'UXModuleDeployed';
+  readonly moduleId: string;
+  readonly deploymentId: string;
+  readonly figmaContextRef: string;
+}
+
 /**
  * Discriminated union of every domain event in the system.
  *
@@ -354,7 +421,14 @@ export type DomainEvent =
   | AgentAborted
   | HITLApproved
   | HITLTimeout
-  | TrustEscalated;
+  | TrustEscalated
+  | DashboardModuleRequested
+  | DesignBriefCompleted
+  | ComponentSpecReady
+  | ImplementationDraftReady
+  | UXReviewCompleted
+  | UXTestSuiteCompleted
+  | UXModuleDeployed;
 
 /** Union of all possible `type` values on a `DomainEvent`. */
 export type DomainEventType = DomainEvent['type'];

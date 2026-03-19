@@ -281,6 +281,71 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'agent:deployer',
     timestamp: now,
   },
+  DashboardModuleRequested: {
+    type: 'DashboardModuleRequested',
+    moduleId: 'pipeline-view',
+    taskId: 'task-ux-1',
+    description: 'Real-time pipeline status view',
+    prdRequirements: ['SEC-24.2-pipeline'],
+    source: 'orchestrator',
+    timestamp: now,
+  },
+  DesignBriefCompleted: {
+    type: 'DesignBriefCompleted',
+    briefId: 'brief-1',
+    moduleId: 'pipeline-view',
+    taskId: 'task-ux-1',
+    requirementIds: ['SEC-24.2-pipeline'],
+    source: 'agent:ux_dashboard_research',
+    timestamp: now,
+  },
+  ComponentSpecReady: {
+    type: 'ComponentSpecReady',
+    specRef: 'spec/components/pipeline-view.yaml',
+    moduleId: 'pipeline-view',
+    taskId: 'task-ux-1',
+    componentTree: ['PipelineView', 'PhaseColumn', 'AgentCard'],
+    tokenBindings: { primary: 'var(--color-primary)', spacing: 'var(--space-4)' },
+    source: 'agent:ux_dashboard_planning',
+    timestamp: now,
+  },
+  ImplementationDraftReady: {
+    type: 'ImplementationDraftReady',
+    taskId: 'task-ux-1',
+    moduleId: 'pipeline-view',
+    branch: 'feat/ux-pipeline-view',
+    componentPaths: ['src/dashboard/pipeline-view.tsx'],
+    source: 'agent:ux_dashboard_implementation',
+    timestamp: now,
+  },
+  UXReviewCompleted: {
+    type: 'UXReviewCompleted',
+    reviewId: 'review-1',
+    taskId: 'task-ux-1',
+    moduleId: 'pipeline-view',
+    issueCount: 2,
+    severitySummary: { critical: 0, major: 1, minor: 1 },
+    source: 'agent:ux_dashboard_review',
+    timestamp: now,
+  },
+  UXTestSuiteCompleted: {
+    type: 'UXTestSuiteCompleted',
+    testRunId: 'test-run-1',
+    taskId: 'task-ux-1',
+    passCount: 15,
+    failCount: 1,
+    healedCount: 1,
+    source: 'agent:ux_dashboard_testing',
+    timestamp: now,
+  },
+  UXModuleDeployed: {
+    type: 'UXModuleDeployed',
+    moduleId: 'pipeline-view',
+    deploymentId: 'deploy-1',
+    figmaContextRef: 'figma://file/abc123/pipeline-view',
+    source: 'orchestrator',
+    timestamp: now,
+  },
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -466,6 +531,14 @@ describe('EventBus', () => {
       'BuildFixComplete',
       'DeployComplete',
       'DeployFailed',
+      // UX Dashboard Squad
+      'DashboardModuleRequested',
+      'DesignBriefCompleted',
+      'ComponentSpecReady',
+      'ImplementationDraftReady',
+      'UXReviewCompleted',
+      'UXTestSuiteCompleted',
+      'UXModuleDeployed',
     ];
 
     it('has a fixture for every defined domain event type', () => {
@@ -488,7 +561,7 @@ describe('EventBus', () => {
       },
     );
 
-    it('fixture map covers all 34 event types in the DomainEvent union', () => {
+    it('fixture map covers all 39 event types in the DomainEvent union', () => {
       const fixtureTypes = Object.keys(fixtures).sort();
       const expectedTypes = [...allEventTypes].sort();
       expect(fixtureTypes).toEqual(expectedTypes);
@@ -809,6 +882,130 @@ describe('EventBus', () => {
     });
 
     bus.publish(fixtures.AgentFailed);
+  });
+
+  // ── UX Dashboard Squad events ──
+
+  describe('UX Dashboard Squad events', () => {
+    it('DashboardModuleRequested carries moduleId, taskId, description, prdRequirements', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('DashboardModuleRequested', (e) => {
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.description).toBe('Real-time pipeline status view');
+        expect(e.prdRequirements).toEqual(['SEC-24.2-pipeline']);
+        received.push(e);
+      });
+
+      bus.publish(fixtures.DashboardModuleRequested);
+      expect(received).toHaveLength(1);
+    });
+
+    it('DesignBriefCompleted carries briefId, moduleId, taskId, requirementIds', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('DesignBriefCompleted', (e) => {
+        expect(e.briefId).toBe('brief-1');
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.requirementIds).toEqual(['SEC-24.2-pipeline']);
+        received.push(e);
+      });
+
+      bus.publish(fixtures.DesignBriefCompleted);
+      expect(received).toHaveLength(1);
+    });
+
+    it('ComponentSpecReady carries specRef, moduleId, componentTree, tokenBindings', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('ComponentSpecReady', (e) => {
+        expect(e.specRef).toBe('spec/components/pipeline-view.yaml');
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.componentTree).toEqual(['PipelineView', 'PhaseColumn', 'AgentCard']);
+        expect(e.tokenBindings).toEqual({ primary: 'var(--color-primary)', spacing: 'var(--space-4)' });
+        received.push(e);
+      });
+
+      bus.publish(fixtures.ComponentSpecReady);
+      expect(received).toHaveLength(1);
+    });
+
+    it('ImplementationDraftReady carries taskId, moduleId, branch, componentPaths', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('ImplementationDraftReady', (e) => {
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.branch).toBe('feat/ux-pipeline-view');
+        expect(e.componentPaths).toEqual(['src/dashboard/pipeline-view.tsx']);
+        received.push(e);
+      });
+
+      bus.publish(fixtures.ImplementationDraftReady);
+      expect(received).toHaveLength(1);
+    });
+
+    it('UXReviewCompleted carries reviewId, issueCount, severitySummary', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('UXReviewCompleted', (e) => {
+        expect(e.reviewId).toBe('review-1');
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.issueCount).toBe(2);
+        expect(e.severitySummary).toEqual({ critical: 0, major: 1, minor: 1 });
+        received.push(e);
+      });
+
+      bus.publish(fixtures.UXReviewCompleted);
+      expect(received).toHaveLength(1);
+    });
+
+    it('UXTestSuiteCompleted carries testRunId, passCount, failCount, healedCount', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('UXTestSuiteCompleted', (e) => {
+        expect(e.testRunId).toBe('test-run-1');
+        expect(e.taskId).toBe('task-ux-1');
+        expect(e.passCount).toBe(15);
+        expect(e.failCount).toBe(1);
+        expect(e.healedCount).toBe(1);
+        received.push(e);
+      });
+
+      bus.publish(fixtures.UXTestSuiteCompleted);
+      expect(received).toHaveLength(1);
+    });
+
+    it('UXModuleDeployed carries moduleId, deploymentId, figmaContextRef', () => {
+      const received: DomainEvent[] = [];
+      bus.subscribe('UXModuleDeployed', (e) => {
+        expect(e.moduleId).toBe('pipeline-view');
+        expect(e.deploymentId).toBe('deploy-1');
+        expect(e.figmaContextRef).toBe('figma://file/abc123/pipeline-view');
+        received.push(e);
+      });
+
+      bus.publish(fixtures.UXModuleDeployed);
+      expect(received).toHaveLength(1);
+    });
+
+    it('UX squad events appear in history with correct type filtering', () => {
+      bus.publish(fixtures.DashboardModuleRequested);
+      bus.publish(fixtures.DesignBriefCompleted);
+      bus.publish(fixtures.ComponentSpecReady);
+      bus.publish(fixtures.ImplementationDraftReady);
+      bus.publish(fixtures.UXReviewCompleted);
+      bus.publish(fixtures.UXTestSuiteCompleted);
+      bus.publish(fixtures.UXModuleDeployed);
+
+      const allHistory = bus.history();
+      expect(allHistory).toHaveLength(7);
+
+      const briefEvents = bus.history({ type: 'DesignBriefCompleted' });
+      expect(briefEvents).toHaveLength(1);
+      expect(briefEvents[0].type).toBe('DesignBriefCompleted');
+
+      const reviewEvents = bus.history({ type: 'UXReviewCompleted' });
+      expect(reviewEvents).toHaveLength(1);
+      expect(reviewEvents[0].type).toBe('UXReviewCompleted');
+    });
   });
 
   // ── New event types: CIResult, HITLTimeout, TrustEscalated ──

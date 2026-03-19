@@ -37,6 +37,13 @@ export type {
   HITLApproved,
   HITLTimeout,
   TrustEscalated,
+  DashboardModuleRequested,
+  DesignBriefCompleted,
+  ComponentSpecReady,
+  ImplementationDraftReady,
+  UXReviewCompleted,
+  UXTestSuiteCompleted,
+  UXModuleDeployed,
 } from './domain-events.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './event-bus.js';
