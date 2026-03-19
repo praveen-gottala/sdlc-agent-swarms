@@ -3,6 +3,13 @@
  *
  * Shared agent execution wrapper. All agent packages call `runAgent()`
  * instead of manually orchestrating governance, providers, and learnings.
+ *
+ * DEVIATION: ADR-022
+ * PRD v2.0 Section 4.3 specifies: Python/LangGraph engine with TypeScript
+ * CLI calling via REST/gRPC bridge.
+ * Implementation: TypeScript-only, no Python process, no bridge. All
+ * orchestration runs in-process via this module and the governance middleware.
+ * Rationale: see ADR-022
  */
 
 import { join } from 'node:path';
@@ -174,7 +181,12 @@ export const runAgent = async <TInput, TOutput>(
         return Err(postAbort.error);
       }
 
-      // On success: emit on_complete event, record audit
+      // DEVIATION: ADR-021
+      // PRD v2.0 Section 10.1 specifies: on_complete fires once per task completion.
+      // Implementation: runAgent auto-emits on_complete; workFn implementations
+      // must NOT manually emit the same event type to prevent duplicate events.
+      // This is the single source of on_complete emission for all agents.
+      // Rationale: see ADR-021
       if (contract.on_complete) {
         context.eventBus.publish({
           type: contract.on_complete,

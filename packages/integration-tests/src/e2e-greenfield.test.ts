@@ -138,10 +138,10 @@ describe('E2E Greenfield Flow', () => {
     }
 
     // Phase 1: Design
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
     const designWork: AgentWorkFn<{ pageId: string }, { designRef: string }> = async (input, _provider, _learnings, ctx) => {
       const result = await ctx.mcpClient.callTool('figma', 'get_design', { page: input.pageId });
       if (!result.ok) return Err({ code: 'INVALID_STATE' as const, message: 'Design failed', recoverable: false });
-      ctx.eventBus.publish({ type: 'UXResearchComplete', pageId: input.pageId, taskId: ctx.taskId, layoutSuggestions: ['grid'], source: 'test', timestamp: Date.now() });
       return Ok({ designRef: 'figma://page/123' });
     };
 
@@ -150,8 +150,8 @@ describe('E2E Greenfield Flow', () => {
     expect(designResult.ok).toBe(true);
 
     // Phase 2: Spec generation
-    const specWork: AgentWorkFn<{ designRef: string }, { specRef: string }> = async (input, _provider, _learnings, ctx) => {
-      ctx.eventBus.publish({ type: 'SpecComplete', specRef: 'spec/dashboard.yaml', taskId: ctx.taskId, source: 'test', timestamp: Date.now() });
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
+    const specWork: AgentWorkFn<{ designRef: string }, { specRef: string }> = async (_input, _provider, _learnings, _ctx) => {
       return Ok({ specRef: 'spec/dashboard.yaml' });
     };
 
@@ -159,8 +159,8 @@ describe('E2E Greenfield Flow', () => {
     expect(specResult.ok).toBe(true);
 
     // Phase 3: Code generation
-    const codeWork: AgentWorkFn<{ specRef: string }, { branch: string; files: string[] }> = async (input, _provider, _learnings, ctx) => {
-      ctx.eventBus.publish({ type: 'CodeGenComplete', taskId: ctx.taskId, agentId: 'code_generator', branch: 'feat/dashboard', filesGenerated: ['src/dashboard.tsx'], source: 'test', timestamp: Date.now() });
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
+    const codeWork: AgentWorkFn<{ specRef: string }, { branch: string; files: string[] }> = async (_input, _provider, _learnings, _ctx) => {
       return Ok({ branch: 'feat/dashboard', files: ['src/dashboard.tsx'] });
     };
 
@@ -168,10 +168,10 @@ describe('E2E Greenfield Flow', () => {
     expect(codeResult.ok).toBe(true);
 
     // Phase 4: PR creation
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
     const prWork: AgentWorkFn<{ branch: string }, { prNumber: number }> = async (input, _provider, _learnings, ctx) => {
       const result = await ctx.mcpClient.callTool('github', 'create_pr', { branch: input.branch });
       if (!result.ok) return Err({ code: 'INVALID_STATE' as const, message: 'PR creation failed', recoverable: false });
-      ctx.eventBus.publish({ type: 'PRCreated', taskId: ctx.taskId, prNumber: 1, branch: input.branch, source: 'test', timestamp: Date.now() });
       return Ok({ prNumber: 1 });
     };
 
@@ -179,8 +179,8 @@ describe('E2E Greenfield Flow', () => {
     expect(prResult.ok).toBe(true);
 
     // Phase 5: Security scan
-    const scanWork: AgentWorkFn<{ prNumber: number }, { passed: boolean }> = async (input, _provider, _learnings, ctx) => {
-      ctx.eventBus.publish({ type: 'SecurityScanComplete', taskId: ctx.taskId, prNumber: input.prNumber, findingsCount: 0, criticalCount: 0, passed: true, source: 'test', timestamp: Date.now() });
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
+    const scanWork: AgentWorkFn<{ prNumber: number }, { passed: boolean }> = async (_input, _provider, _learnings, _ctx) => {
       return Ok({ passed: true });
     };
 
@@ -188,8 +188,8 @@ describe('E2E Greenfield Flow', () => {
     expect(scanResult.ok).toBe(true);
 
     // Phase 6: Deploy
-    const deployWork: AgentWorkFn<{ prNumber: number }, { environment: string }> = async (input, _provider, _learnings, ctx) => {
-      ctx.eventBus.publish({ type: 'DeployComplete', taskId: ctx.taskId, environment: 'staging', healthy: true, source: 'test', timestamp: Date.now() });
+    // ADR-021: workFn must NOT manually emit on_complete — runAgent handles it
+    const deployWork: AgentWorkFn<{ prNumber: number }, { environment: string }> = async (_input, _provider, _learnings, _ctx) => {
       return Ok({ environment: 'staging' });
     };
 
