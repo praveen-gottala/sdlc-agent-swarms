@@ -35,3 +35,13 @@ agents:
     provider: claude-haiku-4
     hitl_level: review_and_override
     on_complete: ReviewComplete
+  - role: ux_dashboard_design
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: full_approval
+    on_complete: FigmaDesignReady
+  - role: ux_dashboard_implementation
+    phase: design
+    provider: claude-sonnet-4
+    hitl_level: review_and_override
+    on_complete: ImplementationDraftReady

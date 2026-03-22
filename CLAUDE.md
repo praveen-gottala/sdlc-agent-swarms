@@ -145,6 +145,17 @@ agents-* depend on: core, governance, providers
 - Error handling: Result pattern (never throw), see docs/error-handling.md
 - File naming: kebab-case for files, PascalCase for types/interfaces
 
+## Documentation
+- When adding or modifying CLI commands, update the corresponding doc in `docs/cli/`.
+  - Setup & config commands: `docs/cli/setup.md`
+  - Design commands: `docs/cli/design.md`
+  - Orchestration commands: `docs/cli/orchestration.md`
+  - Index/overview: `docs/cli/README.md`
+- When adding a new feature, module, or public API, ensure documentation exists.
+  If there is no doc for the area you changed, create one.
+- Keep docs concise: command signature, options table, 1-2 examples, and any
+  relevant env vars or prerequisites.
+
 ## IMPORTANT
 - ALWAYS run typecheck after making changes across packages
 - NEVER modify packages/stacks/react-node-prisma/prompts/ without asking

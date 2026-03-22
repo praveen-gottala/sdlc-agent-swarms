@@ -23,6 +23,16 @@ import { calculateCost } from '../cost-table.js';
 
 const CLAUDE_MODELS = ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'];
 
+/** Map short model aliases to full Anthropic API model IDs. */
+const MODEL_ALIASES: Record<string, string> = {
+  'claude-opus-4': 'claude-opus-4-20250514',
+  'claude-sonnet-4': 'claude-sonnet-4-20250514',
+  'claude-haiku-4': 'claude-haiku-4-20250506',
+};
+
+/** Resolve a model name to its API model ID, falling through if already full. */
+const resolveModelId = (model: string): string => MODEL_ALIASES[model] ?? model;
+
 /** Map Prompt to Anthropic API message format. */
 function toAnthropicMessages(
   prompt: Prompt,
@@ -61,6 +71,16 @@ function toAnthropicMessages(
             id: block.id,
             name: block.name,
             input: block.input,
+          };
+        }
+        if (block.type === 'image') {
+          return {
+            type: 'image' as const,
+            source: {
+              type: 'base64' as const,
+              media_type: block.source.media_type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+              data: block.source.data,
+            },
           };
         }
         return { type: 'text' as const, text: block.type === 'text' ? block.text : '' };
@@ -136,7 +156,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       try {
         const response = await client.messages.create(
           {
-            model: options.model,
+            model: resolveModelId(options.model),
             max_tokens: options.maxTokens ?? 4096,
             system: prompt.system,
             messages: toAnthropicMessages(prompt),
@@ -203,7 +223,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       try {
         const stream = client.messages.stream(
           {
-            model: options.model,
+            model: resolveModelId(options.model),
             max_tokens: options.maxTokens ?? 4096,
             system: prompt.system,
             messages: toAnthropicMessages(prompt),

@@ -5,11 +5,5 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../core" },
-    { "path": "../governance" },
-    { "path": "../providers" },
-    { "path": "../channels" },
-    { "path": "../agents-code" }
-  ]
+  "references": []
 }

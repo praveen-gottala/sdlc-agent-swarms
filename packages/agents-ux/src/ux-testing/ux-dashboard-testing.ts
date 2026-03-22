@@ -13,8 +13,10 @@ import type {
   AgentContract,
   AgentContext,
   AgentWorkFn,
+  LLMProviderRef,
   Result,
   EventBus,
+  ImplementationDraftReady,
 } from '@agentforge/core';
 import {
   Ok,
@@ -243,10 +245,10 @@ interface LLMProvider {
  * 3-stage sequential pipeline: Plan → Generate → Heal.
  */
 export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDashboardTestingOutput> = async (
-  input,
-  provider,
-  _learnings,
-  _context,
+  input: UXDashboardTestingInput,
+  provider: LLMProviderRef,
+  _learnings: unknown[],
+  _context: AgentContext,
 ) => {
   const { moduleId, componentPaths } = input;
   const systemPrompt = loadSystemPrompt();
@@ -379,7 +381,7 @@ export const registerUXDashboardTesting = (
   context: AgentContext,
   contract: AgentContract = UX_DASHBOARD_TESTING_CONTRACT,
 ): void => {
-  eventBus.subscribe('ImplementationDraftReady', (event) => {
+  eventBus.subscribe('ImplementationDraftReady', (event: ImplementationDraftReady) => {
     const input: UXDashboardTestingInput = {
       taskId: event.taskId,
       branch: event.branch,

@@ -9,19 +9,13 @@
   "exclude": ["src/**/*.test.ts"],
   "references": [
     {
-      "path": "../agents-design/tsconfig.lib.json"
+      "path": "../core/tsconfig.lib.json"
     },
     {
-      "path": "../channels"
+      "path": "../agents-ux/tsconfig.lib.json"
     },
     {
       "path": "../providers/tsconfig.lib.json"
-    },
-    {
-      "path": "../governance/tsconfig.lib.json"
-    },
-    {
-      "path": "../core/tsconfig.lib.json"
     }
   ]
 }

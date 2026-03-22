@@ -44,6 +44,7 @@ export type {
   UXReviewCompleted,
   UXTestSuiteCompleted,
   UXModuleDeployed,
+  FigmaDesignReady,
 } from './domain-events.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './event-bus.js';

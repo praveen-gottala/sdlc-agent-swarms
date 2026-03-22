@@ -5,7 +5,7 @@
  * from component specs produced by the planning agent. Uses streaming mode.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
@@ -214,6 +214,31 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
   };
 
   return Ok(result);
+};
+
+// ============================================================================
+// File writing helper
+// ============================================================================
+
+/**
+ * Write implementation output files to disk.
+ * Creates directories as needed and returns the list of written paths.
+ */
+export const writeImplementationFiles = (
+  files: readonly GeneratedFile[],
+  targetDir: string,
+): string[] => {
+  const writtenPaths: string[] = [];
+
+  for (const file of files) {
+    const fullPath = join(targetDir, file.filePath);
+    const dir = dirname(fullPath);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(fullPath, file.content, 'utf-8');
+    writtenPaths.push(fullPath);
+  }
+
+  return writtenPaths;
 };
 
 // ============================================================================

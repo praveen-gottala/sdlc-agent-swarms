@@ -15,11 +15,9 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import {
   Ok,
-  Err,
   createEventBus,
   runAgent,
   loadTasks,
-  saveTasks,
   getTask,
   updateTaskStatus,
   addTask,
@@ -39,7 +37,6 @@ import type {
   EventBus,
   AgentWorkFn,
   TaskEntry,
-  TasksFile,
   CostEstimate,
 } from '@agentforge/core';
 import {
@@ -47,19 +44,14 @@ import {
   executeGovernancePipeline,
   createAuditLogger,
   createProgressiveTrustManager,
-  createBudgetTracker,
 } from '@agentforge/governance';
 import type {
   AgentAction,
   AuditEntry,
-  AuditFilter,
-  TrustState,
-  GovernanceMiddleware,
 } from '@agentforge/governance';
 import {
   createEventCollector,
   createMockFs,
-  createMockMCPClient,
   createTestContext,
   makeContract,
   makeTask,
@@ -283,51 +275,6 @@ pages:
     name: Dashboard
     route: /dashboard
 `;
-
-// ============================================================================
-// Agent Contracts (from Wave 6)
-// ============================================================================
-
-const DESIGN_CONTRACT = makeContract({
-  role: 'ux_researcher',
-  category: 'design',
-  permissions: ['read_spec', 'write_design'],
-  on_complete: 'UXResearchComplete',
-  on_error: 'retry(max=2) + notify_human',
-});
-
-const SPEC_CONTRACT = makeContract({
-  role: 'spec_writer',
-  category: 'spec',
-  permissions: ['read_design', 'read_spec', 'write_spec'],
-  on_complete: 'SpecComplete',
-  on_error: 'retry(max=2) + notify_human',
-});
-
-const CODE_CONTRACT = makeContract({
-  role: 'frontend_coder',
-  category: 'code',
-  permissions: ['read_spec', 'read_design', 'read_code', 'write_code', 'create_branch', 'trigger_ci'],
-  on_complete: 'CodeGenComplete',
-  on_error: 'retry(max=3) + notify_human',
-});
-
-const CI_CONTRACT = makeContract({
-  role: 'ci_runner',
-  category: 'cicd',
-  permissions: ['read_code', 'trigger_ci'],
-  on_complete: 'CIResult',
-  on_error: 'retry(max=2) + notify_human',
-});
-
-const DEPLOY_CONTRACT = makeContract({
-  role: 'deployer',
-  category: 'cicd',
-  permissions: ['deploy_staging'],
-  hitl_policy: 'full_approval',
-  on_complete: 'DeployComplete',
-  on_error: 'notify_human + pause',
-});
 
 // ============================================================================
 // P31 — Event Bus Full Event Catalog Verification
@@ -1087,11 +1034,13 @@ describe('P32 — Dashboard API Contract Dry Run', () => {
           phase: 'design', action: { ...baseAction, agentId: 'ux_researcher', taskId: 'task_001', type: 'write_design' },
           outcome: 'success', cost: { inputCostUsd: 0.05, outputCostUsd: 0.07, totalCostUsd: 0.12, model: 'claude-3-opus', timestamp: '2026-03-18T10:00:00Z' },
           gitCommitSha: 'abc123',
+          governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
         },
         {
           id: 'audit_002', timestamp: '2026-03-18T10:05:00Z', agentId: 'spec_writer', taskId: 'task_004',
           phase: 'spec', action: { ...baseAction, agentId: 'spec_writer', taskId: 'task_004', type: 'write_spec' },
           outcome: 'success', cost: { inputCostUsd: 0.03, outputCostUsd: 0.05, totalCostUsd: 0.08, model: 'claude-3-opus', timestamp: '2026-03-18T10:05:00Z' },
+          governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
         },
         {
           id: 'audit_003', timestamp: '2026-03-18T10:10:00Z', agentId: 'frontend_coder', taskId: 'task_006',
@@ -1099,18 +1048,21 @@ describe('P32 — Dashboard API Contract Dry Run', () => {
           outcome: 'success', approvedBy: 'developer@company.com',
           cost: { inputCostUsd: 0.08, outputCostUsd: 0.12, totalCostUsd: 0.20, model: 'claude-3-opus', timestamp: '2026-03-18T10:10:00Z' },
           gitCommitSha: 'def456',
+          governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
         },
         {
           id: 'audit_004', timestamp: '2026-03-18T10:15:00Z', agentId: 'backend_coder', taskId: 'task_007',
           phase: 'code', action: { ...baseAction, agentId: 'backend_coder', taskId: 'task_007', target: 'src/auth-routes.ts' },
           outcome: 'success', cost: { inputCostUsd: 0.09, outputCostUsd: 0.13, totalCostUsd: 0.22, model: 'claude-3-opus', timestamp: '2026-03-18T10:15:00Z' },
           gitCommitSha: 'ghi789',
+          governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
         },
         {
           id: 'audit_005', timestamp: '2026-03-18T10:20:00Z', agentId: 'deployer', taskId: 'task_010',
           phase: 'cicd', action: { ...baseAction, agentId: 'deployer', taskId: 'task_010', type: 'deploy_staging', target: 'staging' },
           outcome: 'success', approvedBy: 'lead@company.com',
           cost: { inputCostUsd: 0.10, outputCostUsd: 0.15, totalCostUsd: 0.25, model: 'claude-3-opus', timestamp: '2026-03-18T10:20:00Z' },
+          governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
         },
       ];
 
@@ -1398,9 +1350,10 @@ describe('P32 — Dashboard API Contract Dry Run', () => {
           phase: 'cicd',
           timestamp: new Date().toISOString(),
         },
-        outcome: 'approved',
+        outcome: 'success',
         approvedBy: 'lead@company.com',
         hitlDecision: 'approved',
+        governanceChecks: { permissionGranted: true, budgetApproved: true, hitlResult: 'proceed' },
       });
 
       const entries = auditLogger.queryAudit({ agentId: 'deployer' });

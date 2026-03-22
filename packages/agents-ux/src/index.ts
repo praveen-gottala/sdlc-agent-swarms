@@ -35,6 +35,7 @@ export {
   UX_DASHBOARD_IMPLEMENTATION_CONTRACT,
   parseImplementationOutput,
   uxDashboardImplementationWork,
+  writeImplementationFiles,
   executeUXDashboardImplementation,
   registerUXDashboardImplementation,
 } from './ux-implementation/ux-dashboard-implementation.js';
@@ -70,6 +71,30 @@ export {
 } from './ux-design/ux-dashboard-design.js';
 
 // Design Collaboration
-export type { DesignCollaborationSession } from './ux-design/design-collaboration.js';
-export { createDesignCollaborationSession, applyDesignFeedback } from './ux-design/design-collaboration.js';
+export type { DesignCollaborationSession, DesignSystemContext } from './ux-design/design-collaboration.js';
+export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, loadDesignSystemPrompt } from './ux-design/design-collaboration.js';
+
+// Figma Screenshot
+export type { ScreenshotResult } from './ux-design/figma-screenshot.js';
+export { captureFigmaScreenshot } from './ux-design/figma-screenshot.js';
+
+// Design Evaluator
+export type { DesignIssue, DesignEvaluation } from './ux-design/design-evaluator.js';
+export { evaluateDesign } from './ux-design/design-evaluator.js';
+
+// Design Fixer
+export type { FixResult } from './ux-design/design-fixer.js';
+export { executeDesignFixes } from './ux-design/design-fixer.js';
+
+// Design Feedback Loop
+export type { FeedbackLoopOptions, FeedbackLoopResult, ReviewCallback, ImplementCallback } from './ux-design/design-feedback-loop.js';
+export { runDesignFeedbackLoop, createReviewCallback } from './ux-design/design-feedback-loop.js';
+
+// Param Transforms (shared helper)
+export type { ParamTransformContext, TransformResult } from './ux-design/param-transforms.js';
+export { resolveAndTransformParams, hexToRgb } from './ux-design/param-transforms.js';
+
+// Figma Preflight
+export type { FigmaSession, PreflightOptions } from './scripts/figma-preflight.js';
+export { loadFigmaSession, checkWebSocketServer, startFigmaBridgeDocker, runFigmaPreflight, discoverChannels } from './scripts/figma-preflight.js';
 

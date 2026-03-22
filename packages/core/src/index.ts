@@ -96,6 +96,7 @@ export type {
   UXReviewCompleted,
   UXTestSuiteCompleted,
   UXModuleDeployed,
+  FigmaDesignReady,
 } from './events/index.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './events/index.js';
@@ -213,6 +214,8 @@ export type {
   ToolDefinition,
   MCPClient,
   MCPClientConfig,
+  TalkToFigmaConfig,
+  TalkToFigmaConnection,
 } from './mcp/index.js';
 export {
   createEnvSecretProvider,
@@ -224,4 +227,6 @@ export {
   createObservabilityMiddleware,
   composeMCPMiddleware,
   createMCPClient,
+  createTalkToFigmaTransport,
+  TALK_TO_FIGMA_TOOLS,
 } from './mcp/index.js';

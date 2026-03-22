@@ -16,6 +16,8 @@ import { abortCommand } from './commands/abort.js';
 import { migrateCommand } from './commands/migrate.js';
 import { configCommand } from './commands/config.js';
 import { designCommand } from './commands/design.js';
+import { designFigmaCommand } from './commands/design-figma.js';
+import { designCollaborateCommand } from './commands/design-collaborate.js';
 import { doctorCommand } from './commands/doctor.js';
 import { setupCommand } from './commands/setup.js';
 
@@ -109,6 +111,31 @@ export function createProgram(): Command {
     });
 
   program
+    .command('design:figma')
+    .description('Create a Figma design via the UX agent pipeline (Research → Planning → Design)')
+    .argument('<description>', 'Natural language description of what to design')
+    .option('--stage <stage>', 'Skip to a stage: research, planning, design (loads prior from cache)')
+    .option('--module <id>', 'Module ID (default: derived from description)')
+    .option('--no-wait', 'Exit after design without waiting for approval')
+    .option('--implement', 'Skip feedback loop and generate code directly after design')
+    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean }) => {
+      await designFigmaCommand(description, process.stdout, {
+        stage: options.stage as 'research' | 'planning' | 'design' | undefined,
+        module: options.module,
+        noWait: options.wait === false,
+        implement: options.implement,
+      });
+    });
+
+  program
+    .command('design:collaborate')
+    .description('Resume an existing Figma design for interactive human-agent collaboration')
+    .requiredOption('--module <id>', 'Module ID of the design to collaborate on')
+    .action(async (options: { module: string }) => {
+      await designCollaborateCommand(process.stdout, { module: options.module });
+    });
+
+  program
     .command('doctor')
     .description('Verify that configured integrations (LLM providers, channels) are reachable')
     .action(async () => {
@@ -135,6 +162,8 @@ export { abortCommand } from './commands/abort.js';
 export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
 export { designCommand } from './commands/design.js';
+export { designFigmaCommand } from './commands/design-figma.js';
+export { designCollaborateCommand } from './commands/design-collaborate.js';
 export { doctorCommand } from './commands/doctor.js';
 export { setupCommand } from './commands/setup.js';
 export type { InitAnswers } from './commands/init.js';

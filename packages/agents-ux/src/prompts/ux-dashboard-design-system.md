@@ -143,8 +143,8 @@ Use `"ref:<componentRef>"` to reference nodes created by earlier steps:
 4. `create_text` — create text (params: x, y, text, fontSize?, fontWeight? (numeric: 400/700), fontColor? ({r,g,b,a?}), name?, parentId?)
 
 ### Write tools — modify existing nodes
-5. `set_fill_color` — set fill (params: nodeId, r, g, b, a?)
-6. `set_stroke_color` — set stroke (params: nodeId, r, g, b, a?, weight?)
+5. `set_fill_color` — set fill (params: nodeId, color: { r, g, b, a? })
+6. `set_stroke_color` — set stroke (params: nodeId, color: { r, g, b, a? }, weight?)
 7. `set_layout_mode` — set auto-layout direction (params: nodeId, layoutMode: "HORIZONTAL"|"VERTICAL"|"NONE", layoutWrap?)
 8. `set_padding` — set padding (params: nodeId, paddingTop?, paddingRight?, paddingBottom?, paddingLeft?)
 9. `set_item_spacing` — set child spacing (params: nodeId, itemSpacing)
@@ -252,7 +252,31 @@ The time granularity toggle ("Daily", "Weekly", "Monthly") must be a horizontal 
       - "218,400" — separate text node
       - "$534.20" — separate text node (bold)
 
+### NEVER do these
+- NEVER create all-white frames with no visible content — every frame must have either a background color, text, or children
+- NEVER omit text nodes — every card, header, and section MUST contain at least one text node
+- NEVER use hex color strings — always use `{ r, g, b, a }` float objects (0-1 range)
+- NEVER create frames without a `name` parameter — name every frame descriptively
+- NEVER use `set_fill_color` or `set_stroke_color` with flat r, g, b params — always wrap in `color: { r, g, b, a }`
+
+### Default colors (use if spec does not override)
+- Page background: `{ r: 0.97, g: 0.96, b: 0.95 }` (#F7F6F3 warm gray)
+- Card background: `{ r: 1, g: 1, b: 1 }` (white) with border `strokeColor: { r: 0.9, g: 0.91, b: 0.92 }` (#E5E7EB)
+- Header background: `{ r: 0.1, g: 0.1, b: 0.18 }` (#1A1A2E dark navy)
+- Accent: `{ r: 0.06, g: 0.48, b: 0.42 }` (#0F7B6C teal)
+
 ### Step budget
 Keep total steps between 40-60. Each `create_frame` with inline layout/color params replaces 3-4 separate set_ calls.
+
+### Pre-submission validation checklist
+Before outputting your JSON, verify:
+1. Every component frame contains at least one `create_text` child
+2. All colors are `{ r, g, b, a }` objects with 0-1 float values
+3. All `set_fill_color` and `set_stroke_color` use `color: { r, g, b, a }` (nested object)
+4. All `fontWeight` values are numeric (400, 500, 600, 700)
+5. All metric cards have the same width
+6. Table rows use separate text nodes per column (not concatenated strings)
+7. Root frame has a non-white background color
+8. Every `create_text` has a non-empty `text` parameter
 
 Respond ONLY with a JSON object. No additional text.

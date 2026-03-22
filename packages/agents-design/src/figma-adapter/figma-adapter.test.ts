@@ -109,7 +109,7 @@ describe('FigmaAdapter', () => {
   });
 
   describe('getTokens', () => {
-    it('returns design tokens from get_variables', async () => {
+    it('returns design tokens from get_variables (Enterprise path)', async () => {
       const mcp = makeMCPClient();
       (mcp.callTool as jest.Mock).mockResolvedValue(Ok({
         colors: { primary: '#007AFF' },
@@ -123,6 +123,52 @@ describe('FigmaAdapter', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value.colors).toEqual({ primary: '#007AFF' });
+      }
+    });
+
+    it('ADR-024: falls back to get_code when get_variables returns 403', async () => {
+      const mcp = makeMCPClient();
+      (mcp.callTool as jest.Mock)
+        // get_variables fails (403 Enterprise-only)
+        .mockResolvedValueOnce(Err({ code: 'MCP_UNAVAILABLE', message: 'Figma API 403: Forbidden', recoverable: false }))
+        // get_code fallback
+        .mockResolvedValueOnce(Ok({ nodes: {} }))
+        // get_metadata fallback
+        .mockResolvedValueOnce(Ok({
+          document: {
+            children: [{
+              name: 'Primary',
+              fills: [{ type: 'SOLID', color: { r: 0, g: 0.478, b: 1, a: 1 } }],
+              children: [],
+            }],
+          },
+        }));
+      const adapter = new FigmaAdapter(mcp, 'file-abc');
+
+      const result = await adapter.getTokens();
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.colors).toHaveProperty('Primary');
+      }
+      // Verify fallback calls were made
+      expect(mcp.callTool).toHaveBeenCalledWith('figma', 'get_variables', { fileId: 'file-abc' });
+      expect(mcp.callTool).toHaveBeenCalledWith('figma', 'get_code', { fileId: 'file-abc' });
+      expect(mcp.callTool).toHaveBeenCalledWith('figma', 'get_metadata', { fileId: 'file-abc' });
+    });
+
+    it('ADR-024: returns error when both get_variables and fallback fail', async () => {
+      const mcp = makeMCPClient();
+      (mcp.callTool as jest.Mock)
+        .mockResolvedValueOnce(Err({ code: 'MCP_UNAVAILABLE', message: '403', recoverable: false }))
+        .mockResolvedValueOnce(Err({ code: 'MCP_UNAVAILABLE', message: 'get_code failed', recoverable: false }));
+      const adapter = new FigmaAdapter(mcp, 'file-abc');
+
+      const result = await adapter.getTokens();
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toContain('fallback');
       }
     });
   });

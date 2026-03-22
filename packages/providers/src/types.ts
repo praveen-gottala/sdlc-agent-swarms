@@ -29,7 +29,8 @@ export interface Message {
 export type ContentBlock =
   | { readonly type: 'text'; readonly text: string }
   | { readonly type: 'tool_use'; readonly id: string; readonly name: string; readonly input: Record<string, unknown> }
-  | { readonly type: 'tool_result'; readonly tool_use_id: string; readonly content: string };
+  | { readonly type: 'tool_result'; readonly tool_use_id: string; readonly content: string }
+  | { readonly type: 'image'; readonly source: { readonly type: 'base64'; readonly media_type: string; readonly data: string } };
 
 // ── Tool Types ──────────────────────────────────────────────────────
 

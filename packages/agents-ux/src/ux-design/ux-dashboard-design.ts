@@ -26,6 +26,10 @@ import {
 } from '@agentforge/core';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
 import type { FigmaCreationStep } from '../types.js';
+import { resolveAndTransformParams } from './param-transforms.js';
+import { captureFigmaScreenshot } from './figma-screenshot.js';
+import { evaluateDesign } from './design-evaluator.js';
+import { executeDesignFixes } from './design-fixer.js';
 
 // ============================================================================
 // Types
@@ -153,9 +157,22 @@ export const parseDesignSteps = (output: string): Result<{ steps: FigmaCreationS
     const rawSteps = (parsed.steps as Record<string, unknown>[]) ?? [];
     const breakpoints = (parsed.breakpoints as string[]) ?? [];
 
+    // Common LLM misnaming → correct tool name
+    const TOOL_ALIASES: Readonly<Record<string, string>> = {
+      'set_stroke': 'set_stroke_color',
+      'set_fill': 'set_fill_color',
+      'set_color': 'set_fill_color',
+      'set_background': 'set_fill_color',
+      'set_text': 'set_text_content',
+      'set_spacing': 'set_item_spacing',
+      'set_radius': 'set_corner_radius',
+    };
+
     const steps: FigmaCreationStep[] = [];
     for (const step of rawSteps) {
-      const tool = String(step.tool ?? '');
+      // Accept "tool" or "name" (LLMs sometimes use either), then normalize aliases
+      const rawTool = String(step.tool ?? step.name ?? '');
+      const tool = TOOL_ALIASES[rawTool] ?? rawTool;
       if (!ALLOWED_TOOLS.has(tool)) {
         return Err({
           code: 'INVALID_STATE',
@@ -250,13 +267,18 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
   let figmaPageId = '';
 
   // Use env var for file ID if available, fall back to document info
-  const envFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID;
+  // Support both AGENTFORGE_MCP_FIGMA_* and legacy FIGMA_* naming conventions
+  const envFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? process.env.FIGMA_TEST_FILE_ID;
 
   const docResult = await context.mcpClient.callTool('figma', 'get_document_info', {});
   if (docResult.ok) {
     const docInfo = docResult.value as Record<string, unknown>;
     const currentPage = docInfo.currentPage as Record<string, unknown> | undefined;
-    figmaFileId = envFileId ?? String(docInfo.fileId ?? `file-${moduleId}`);
+    figmaFileId = envFileId ?? `file-${moduleId}`;
+    if (!envFileId) {
+      // eslint-disable-next-line no-console
+      console.warn('        [design] AGENTFORGE_MCP_FIGMA_FILE_ID not set — using placeholder. Set it for Figma REST API features.');
+    }
     figmaPageId = String(currentPage?.id ?? docInfo.id ?? `page-${moduleId}`);
   } else {
     figmaFileId = envFileId ?? `file-${moduleId}`;
@@ -266,143 +288,20 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
   // Execute each creation step, resolving ref: placeholders to real node IDs
   let lastCreatedNodeId = '';
   const stepCount = steps.length;
-
-  /** Convert hex color string to {r,g,b} 0-1 floats for Figma API. */
-  const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
-    const m = /^#?([0-9a-fA-F]{6})$/.exec(hex);
-    if (!m) return null;
-    const n = parseInt(m[1], 16);
-    return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
-  };
+  // Track the Figma node type for each componentRef (FRAME, RECTANGLE, TEXT, etc.)
+  const figmaNodeTypes: Record<string, string> = {};
 
   for (let i = 0; i < stepCount; i++) {
     const step = steps[i];
     const stepT0 = Date.now();
 
-    // Resolve ref:<componentRef> and legacy <parent> placeholders in params
-    const resolvedParams: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(step.params)) {
-      if (typeof value === 'string') {
-        const refMatch = /^ref:(.+)$/.exec(value);
-        if (refMatch) {
-          const refName = refMatch[1];
-          const realId = figmaNodeIds[refName];
-          if (realId) {
-            resolvedParams[key] = realId;
-          } else {
-            // eslint-disable-next-line no-console
-            console.warn(`        [step ${i + 1}/${stepCount}] unresolved ref:${refName} — known refs: ${Object.keys(figmaNodeIds).join(', ')}`);
-            resolvedParams[key] = value; // leave unresolved (will error in Figma)
-          }
-        } else if (value === '<parent>' && lastCreatedNodeId) {
-          // Legacy fallback: <parent> → last created node
-          resolvedParams[key] = lastCreatedNodeId;
-        } else {
-          resolvedParams[key] = value;
-        }
-      } else {
-        resolvedParams[key] = value;
-      }
-    }
-
-    // ── Param transforms: bridge bypasses MCP server, so we must match plugin's expected format ──
-
-    /** Wrap flat r,g,b,a or hex string into { r, g, b, a } color object. */
-    const wrapColor = (params: Record<string, unknown>, colorKey: string): void => {
-      const raw = params[colorKey];
-      if (typeof raw === 'string') {
-        const rgb = hexToRgb(raw);
-        if (rgb) params[colorKey] = { ...rgb, a: 1 };
-      } else if (raw === undefined && typeof params.r === 'number') {
-        params[colorKey] = {
-          r: params.r, g: params.g, b: params.b,
-          a: typeof params.a === 'number' ? params.a : 1,
-        };
-        delete params.r; delete params.g; delete params.b; delete params.a;
-      }
-    };
-
-    // set_fill_color: plugin expects { nodeId, color: { r, g, b, a } }
-    if (step.tool === 'set_fill_color') {
-      wrapColor(resolvedParams, 'color');
-    }
-
-    // set_stroke_color: plugin expects { nodeId, color: { r, g, b, a }, weight? }
-    if (step.tool === 'set_stroke_color') {
-      wrapColor(resolvedParams, 'color');
-    }
-
-    // set_layout_mode: plugin expects { nodeId, layoutMode, layoutWrap? }
-    // LLM may send "mode" instead of "layoutMode"
-    if (step.tool === 'set_layout_mode') {
-      if (resolvedParams.mode && !resolvedParams.layoutMode) {
-        resolvedParams.layoutMode = resolvedParams.mode;
-        delete resolvedParams.mode;
-      }
-      // spacing/padding are separate commands — strip them here
-      delete resolvedParams.spacing;
-      delete resolvedParams.paddingLeft;
-      delete resolvedParams.paddingRight;
-      delete resolvedParams.paddingTop;
-      delete resolvedParams.paddingBottom;
-    }
-
-    // create_frame: wrap colors, remap mode, strip FILL sizing (unreliable inline)
-    let postCreateLayoutMode: string | undefined;
-    let postCreateSpacing: number | undefined;
-    let postCreatePadding: Record<string, number> | undefined;
-
-    if (step.tool === 'create_frame') {
-      if (resolvedParams.fillColor && typeof resolvedParams.fillColor !== 'object') {
-        const rgb = typeof resolvedParams.fillColor === 'string' ? hexToRgb(resolvedParams.fillColor as string) : null;
-        if (rgb) resolvedParams.fillColor = { ...rgb, a: 1 };
-      }
-      if (resolvedParams.strokeColor && typeof resolvedParams.strokeColor !== 'object') {
-        const rgb = typeof resolvedParams.strokeColor === 'string' ? hexToRgb(resolvedParams.strokeColor as string) : null;
-        if (rgb) resolvedParams.strokeColor = { ...rgb, a: 1 };
-      }
-      // Remap "mode" → "layoutMode" if present
-      if (resolvedParams.mode && !resolvedParams.layoutMode) {
-        resolvedParams.layoutMode = resolvedParams.mode;
-        delete resolvedParams.mode;
-      }
-      // Strip FILL sizing — requires confirmed parent auto-layout which is unreliable inline
-      if (resolvedParams.layoutSizingHorizontal === 'FILL') {
-        delete resolvedParams.layoutSizingHorizontal;
-      }
-      if (resolvedParams.layoutSizingVertical === 'FILL') {
-        delete resolvedParams.layoutSizingVertical;
-      }
-      // Capture layout params for post-creation enforcement
-      if (resolvedParams.layoutMode && resolvedParams.layoutMode !== 'NONE') {
-        postCreateLayoutMode = resolvedParams.layoutMode as string;
-        if (typeof resolvedParams.itemSpacing === 'number') {
-          postCreateSpacing = resolvedParams.itemSpacing as number;
-        }
-        const pt = resolvedParams.paddingTop as number | undefined;
-        const pr = resolvedParams.paddingRight as number | undefined;
-        const pb = resolvedParams.paddingBottom as number | undefined;
-        const pl = resolvedParams.paddingLeft as number | undefined;
-        if (pt !== undefined || pr !== undefined || pb !== undefined || pl !== undefined) {
-          postCreatePadding = {};
-          if (pt !== undefined) postCreatePadding.paddingTop = pt;
-          if (pr !== undefined) postCreatePadding.paddingRight = pr;
-          if (pb !== undefined) postCreatePadding.paddingBottom = pb;
-          if (pl !== undefined) postCreatePadding.paddingLeft = pl;
-        }
-      }
-    }
-
-    // create_text: fontWeight must be numeric, fontColor must be object
-    if (step.tool === 'create_text') {
-      if (typeof resolvedParams.fontWeight === 'string') {
-        resolvedParams.fontWeight = parseInt(resolvedParams.fontWeight as string, 10) || 400;
-      }
-      if (resolvedParams.fontColor && typeof resolvedParams.fontColor === 'string') {
-        const rgb = hexToRgb(resolvedParams.fontColor as string);
-        if (rgb) resolvedParams.fontColor = { ...rgb, a: 1 };
-      }
-    }
+    const { resolvedParams, postCreateLayoutMode, postCreateSpacing, postCreatePadding } =
+      resolveAndTransformParams(step, {
+        nodeIds: figmaNodeIds,
+        lastCreatedNodeId,
+        stepIndex: i,
+        stepCount,
+      });
 
     const prefix = step.tool.startsWith('get_') ? 'figma' : 'figma-write';
     const toolResult = await context.mcpClient.callTool(prefix, step.tool, resolvedParams);
@@ -414,6 +313,15 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       if (step.componentRef && createdNodeId) {
         figmaNodeIds[step.componentRef] = createdNodeId;
         lastCreatedNodeId = createdNodeId;
+        // Track node type based on creation tool
+        const toolToType: Record<string, string> = {
+          create_frame: 'FRAME', create_rectangle: 'RECTANGLE',
+          create_text: 'TEXT', create_ellipse: 'ELLIPSE',
+          create_component: 'COMPONENT',
+        };
+        if (toolToType[step.tool]) {
+          figmaNodeTypes[step.componentRef] = toolToType[step.tool];
+        }
       }
       // eslint-disable-next-line no-console
       console.log(`        [step ${i + 1}/${stepCount}] ${step.tool} → OK (${stepMs}ms)`);
@@ -429,22 +337,135 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
           console.log(`          ↳ set_layout_mode ${postCreateLayoutMode} → OK`);
         }
         if (postCreateSpacing !== undefined) {
-          await context.mcpClient.callTool('figma-write', 'set_item_spacing', {
+          const spacingResult = await context.mcpClient.callTool('figma-write', 'set_item_spacing', {
             nodeId: createdNodeId,
             itemSpacing: postCreateSpacing,
           });
+          if (!spacingResult.ok) {
+            // eslint-disable-next-line no-console
+            console.warn(`          ↳ set_item_spacing ${postCreateSpacing} → ERR: ${spacingResult.error.message}`);
+          }
         }
         if (postCreatePadding) {
-          await context.mcpClient.callTool('figma-write', 'set_padding', {
+          const paddingResult = await context.mcpClient.callTool('figma-write', 'set_padding', {
             nodeId: createdNodeId,
             ...postCreatePadding,
           });
+          if (!paddingResult.ok) {
+            // eslint-disable-next-line no-console
+            console.warn(`          ↳ set_padding → ERR: ${paddingResult.error.message}`);
+          }
         }
       }
     } else {
       // eslint-disable-next-line no-console
       console.warn(`        [step ${i + 1}/${stepCount}] ${step.tool} → ERR: ${toolResult.error.message} (${stepMs}ms)`);
     }
+  }
+
+  // ── Phase C: Visual self-correction loop (optional) ──
+
+  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN ?? process.env.FIGMA_ACCESS_TOKEN;
+  const hasRealFileId = envFileId && !envFileId.startsWith('file-');
+
+  if (figmaToken && hasRealFileId) {
+    const MAX_CORRECTIONS = 3;
+    const QUALITY_THRESHOLD = 80;
+
+    // eslint-disable-next-line no-console
+    console.log('\n        [Phase C] Visual self-correction loop');
+
+    // Find the root node ID (first created node)
+    const rootNodeId = Object.values(figmaNodeIds)[0];
+
+    if (rootNodeId) {
+      // Wait for Figma to finish rendering newly created nodes before first screenshot
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      for (let correction = 0; correction < MAX_CORRECTIONS; correction++) {
+        // Capture screenshot
+        const screenshotResult = await captureFigmaScreenshot(
+          figmaToken,
+          figmaFileId,
+          rootNodeId,
+        );
+
+        if (!screenshotResult.ok) {
+          // eslint-disable-next-line no-console
+          console.warn(`        [correction ${correction + 1}] Screenshot failed: ${screenshotResult.error.message}`);
+          break;
+        }
+
+        // Evaluate design
+        const evalProvider = provider as unknown as import('@agentforge/providers').LLMProvider;
+        const evalResult = await evaluateDesign(
+          screenshotResult.value.base64,
+          JSON.stringify(planningOutput, null, 2),
+          evalProvider,
+        );
+
+        if (!evalResult.ok) {
+          // eslint-disable-next-line no-console
+          console.warn(`        [correction ${correction + 1}] Evaluation failed: ${evalResult.error.message}`);
+          break;
+        }
+
+        const evaluation = evalResult.value;
+        // eslint-disable-next-line no-console
+        console.log(`        [correction ${correction + 1}] Score: ${evaluation.score}/100 (${evaluation.overallQuality}), issues: ${evaluation.issues.length}`);
+
+        if (evaluation.score >= QUALITY_THRESHOLD) {
+          // eslint-disable-next-line no-console
+          console.log(`        [correction] Quality threshold met (${evaluation.score} >= ${QUALITY_THRESHOLD})`);
+          break;
+        }
+
+        if (evaluation.issues.length === 0) {
+          break;
+        }
+
+        // Execute fixes
+        const fixResult = await executeDesignFixes(
+          evaluation.issues,
+          context.mcpClient,
+          figmaNodeIds,
+          evalProvider,
+          figmaNodeTypes,
+        );
+
+        if (fixResult.ok) {
+          // Remove deleted nodes from nodeMap and nodeTypes
+          for (const deletedId of fixResult.value.deletedNodeIds) {
+            for (const [name, id] of Object.entries(figmaNodeIds)) {
+              if (id === deletedId) {
+                delete figmaNodeIds[name];
+                delete figmaNodeTypes[name];
+              }
+            }
+          }
+
+          // Merge newly created nodes into the nodeMap for subsequent corrections
+          for (const [name, id] of Object.entries(fixResult.value.createdNodes)) {
+            figmaNodeIds[name] = id;
+          }
+          for (const [name, type] of Object.entries(fixResult.value.createdNodeTypes)) {
+            figmaNodeTypes[name] = type;
+          }
+          // eslint-disable-next-line no-console
+          console.log(`        [correction ${correction + 1}] Fixed: ${fixResult.value.fixed}, Failed: ${fixResult.value.failed}`);
+
+          // Wait for Figma to render the changes before next screenshot
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn(`        [correction ${correction + 1}] Fix execution failed: ${fixResult.error.message}`);
+          break;
+        }
+      }
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('\n        [Phase C] Skipped — set AGENTFORGE_MCP_FIGMA_TOKEN and AGENTFORGE_MCP_FIGMA_FILE_ID for visual self-correction');
   }
 
   return Ok({

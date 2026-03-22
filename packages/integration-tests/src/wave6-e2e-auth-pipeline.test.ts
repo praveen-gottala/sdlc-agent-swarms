@@ -31,9 +31,6 @@ import {
   acquireLock,
   releaseLock,
   isLocked,
-  extractPropsFromCode,
-  extractEndpointsFromCode,
-  extractFieldsFromPrisma,
 } from '@agentforge/core';
 import type {
   DomainEventType,
@@ -58,7 +55,6 @@ import {
   makeContract,
   makeTask,
   makeTasksFile,
-  tasksToYaml,
   DEFAULT_GOVERNANCE_CONFIG,
   DEFAULT_HITL_CONFIG,
 } from './helpers.js';
@@ -1013,7 +1009,7 @@ describe('P26: Permissions Enforcement', () => {
   const testPermissionDenial = (
     contractName: string,
     contract: ReturnType<typeof makeContract>,
-    actionType: string,
+    actionType: AgentAction['type'],
     target: string,
   ) => {
     it(`${contractName} blocked from ${actionType}`, () => {
@@ -1230,7 +1226,7 @@ describe('P30: Code Generation with CI and PR Flow', () => {
     let receivedLearnings: unknown[] = [];
 
     // ADR-021: workFn must NOT emit on_complete — runAgent handles it
-    const codeWork: AgentWorkFn<{ task: typeof makeTask extends (...args: unknown[]) => infer R ? R : never }, { branch: string; files: string[] }> = async (_input, _provider, learnings, _ctx) => {
+    const codeWork: AgentWorkFn<{ task: TaskEntry }, { branch: string; files: string[] }> = async (_input, _provider, learnings, _ctx) => {
       receivedLearnings = learnings;
       return Ok({ branch: 'agentforge/task-login-form', files: ['src/components/LoginForm.tsx'] });
     };
@@ -1604,8 +1600,6 @@ describe('P19: Failure Mode Recovery', () => {
     it('NEVER auto-approve confirmed — explicit negative test', () => {
       // This is a critical check: on timeout, the system must NOT auto-approve
       let autoApproved = false;
-      const hitlPolicy = DEFAULT_GOVERNANCE_CONFIG.hitl;
-
       // Simulate timeout
       collector.bus.publish({
         type: 'HITLTimeout',
@@ -1625,7 +1619,7 @@ describe('P19: Failure Mode Recovery', () => {
     });
 
     it('escalation sent to secondary channel on primary timeout', async () => {
-      const slackChannel = createMockChannel('slack', true);
+      void createMockChannel('slack', true);
       const telegramChannel = createMockChannel('telegram', true);
 
       // Primary (Slack) timeout → escalate to Telegram

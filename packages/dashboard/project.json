@@ -1,0 +1,21 @@
+{
+  "name": "@agentforge/dashboard",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "packages/dashboard", "command": "next dev" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "packages/dashboard", "command": "next build" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "packages/dashboard", "command": "jest" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "packages/dashboard", "command": "tsc --noEmit" }
+    }
+  }
+}

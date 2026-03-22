@@ -53,6 +53,9 @@
     },
     {
       "path": "./packages/cli"
+    },
+    {
+      "path": "./packages/agents-ux"
     }
   ]
 }

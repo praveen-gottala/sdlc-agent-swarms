@@ -76,6 +76,10 @@ export const TALK_TO_FIGMA_TOOLS: readonly ToolDefinition[] = [
   { name: 'delete_node', description: 'Delete a node', inputSchema: {} },
   { name: 'get_document_info', description: 'Get current document info', inputSchema: {} },
   { name: 'get_selection', description: 'Get current selection', inputSchema: {} },
+  { name: 'create_ellipse', description: 'Create an ellipse shape', inputSchema: {} },
+  { name: 'create_component', description: 'Create a component node', inputSchema: {} },
+  { name: 'create_instance', description: 'Create an instance of a component', inputSchema: {} },
+  { name: 'set_opacity', description: 'Set opacity on a node', inputSchema: {} },
 ] as const;
 
 // ============================================================================

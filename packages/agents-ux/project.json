@@ -1,0 +1,13 @@
+{
+  "name": "@agentforge/agents-ux",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/agents-ux",
+        "command": "jest"
+      },
+      "configurations": {}
+    }
+  }
+}

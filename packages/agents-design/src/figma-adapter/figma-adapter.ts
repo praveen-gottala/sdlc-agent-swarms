@@ -95,25 +95,118 @@ export class FigmaAdapter implements DesignSurface {
     return Ok(undefined);
   }
 
+  /**
+   * Get design tokens. Attempts get_variables (Figma Variables API) first,
+   * falls back to extracting tokens from get_code + get_metadata when the
+   * Variables API is unavailable (requires Enterprise plan — see ADR-024).
+   */
   async getTokens(): Promise<Result<DesignTokens>> {
+    // Primary path: Figma Variables API (Enterprise only)
     const result = await this.mcpClient.callTool('figma', 'get_variables', {
       fileId: this.fileId,
     });
-    if (!result.ok) {
-      return Err(mcpUnavailable('getTokens failed'));
+    if (result.ok) {
+      const data = result.value as {
+        colors?: Record<string, string>;
+        typography?: Record<string, unknown>;
+        spacing?: Record<string, string>;
+      };
+
+      return Ok({
+        colors: data.colors ?? {},
+        typography: data.typography ?? {},
+        spacing: data.spacing ?? {},
+      });
     }
 
-    const data = result.value as {
-      colors?: Record<string, string>;
-      typography?: Record<string, unknown>;
-      spacing?: Record<string, string>;
-    };
+    // ADR-024: Fallback — extract tokens from get_code node styles
+    return this.extractTokensFromCode();
+  }
 
-    return Ok({
-      colors: data.colors ?? {},
-      typography: data.typography ?? {},
-      spacing: data.spacing ?? {},
+  /**
+   * ADR-024 fallback: extract design tokens from get_code response.
+   * The Figma node tree includes inline style data (fills, strokes,
+   * effects, text styles) even when the Variables API is inaccessible.
+   */
+  private async extractTokensFromCode(): Promise<Result<DesignTokens>> {
+    const codeResult = await this.mcpClient.callTool('figma', 'get_code', {
+      fileId: this.fileId,
     });
+    if (!codeResult.ok) {
+      return Err(mcpUnavailable('getTokens fallback (get_code) failed'));
+    }
+
+    const metaResult = await this.mcpClient.callTool('figma', 'get_metadata', {
+      fileId: this.fileId,
+    });
+    if (!metaResult.ok) {
+      return Err(mcpUnavailable('getTokens fallback (get_metadata) failed'));
+    }
+
+    const colors: Record<string, string> = {};
+    const typography: Record<string, unknown> = {};
+    const spacing: Record<string, string> = {};
+
+    // Extract colors and styles from node tree
+    const meta = metaResult.value as { document?: { children?: readonly Record<string, unknown>[] } };
+    const nodes = meta.document?.children ?? [];
+    this.extractStylesFromNodes(nodes, colors, typography, spacing);
+
+    return Ok({ colors, typography, spacing });
+  }
+
+  /** Recursively extract inline style data from Figma nodes. */
+  private extractStylesFromNodes(
+    nodes: readonly Record<string, unknown>[],
+    colors: Record<string, string>,
+    typography: Record<string, unknown>,
+    spacing: Record<string, string>,
+  ): void {
+    for (const node of nodes) {
+      // Extract fill colors
+      const fills = node.fills as ReadonlyArray<{ type?: string; color?: { r?: number; g?: number; b?: number; a?: number } }> | undefined;
+      if (fills) {
+        for (const fill of fills) {
+          if (fill.type === 'SOLID' && fill.color) {
+            const { r = 0, g = 0, b = 0 } = fill.color;
+            const hex = `#${Math.round(r * 255).toString(16).padStart(2, '0')}${Math.round(g * 255).toString(16).padStart(2, '0')}${Math.round(b * 255).toString(16).padStart(2, '0')}`;
+            const name = (node.name as string) ?? 'unnamed';
+            colors[name] = hex;
+          }
+        }
+      }
+
+      // Extract text styles
+      const style = node.style as Record<string, unknown> | undefined;
+      if (style && node.type === 'TEXT') {
+        const name = (node.name as string) ?? 'unnamed';
+        typography[name] = {
+          fontFamily: style.fontFamily,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          lineHeight: style.lineHeightPx,
+          letterSpacing: style.letterSpacing,
+        };
+      }
+
+      // Extract spacing from auto-layout
+      const itemSpacing = node.itemSpacing as number | undefined;
+      if (itemSpacing !== undefined) {
+        const name = (node.name as string) ?? 'unnamed';
+        spacing[`${name}.gap`] = `${itemSpacing}px`;
+      }
+      const padding = node.paddingLeft as number | undefined;
+      if (padding !== undefined) {
+        const name = (node.name as string) ?? 'unnamed';
+        spacing[`${name}.padding`] = `${padding}px`;
+      }
+
+      // Recurse into children
+      const children = node.children as readonly Record<string, unknown>[] | undefined;
+      if (children) {
+        this.extractStylesFromNodes(children, colors, typography, spacing);
+      }
+    }
   }
 
   onUserEdit(callback: (change: DesignChange) => void): void {

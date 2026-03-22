@@ -28,3 +28,7 @@ export {
 // MCP Client
 export type { ToolDefinition, MCPClient, MCPClientConfig } from './mcp-client.js';
 export { createMCPClient } from './mcp-client.js';
+
+// TalkToFigma WebSocket Transport
+export type { TalkToFigmaConfig, TalkToFigmaConnection } from './talk-to-figma-transport.js';
+export { createTalkToFigmaTransport, TALK_TO_FIGMA_TOOLS } from './talk-to-figma-transport.js';

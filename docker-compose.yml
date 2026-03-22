@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  figma-bridge:
+    build:
+      context: ./docker/talk-to-figma
+      dockerfile: Dockerfile
+    ports:
+      - "3055:3055"
+    restart: unless-stopped
+    container_name: agentforge-figma-bridge

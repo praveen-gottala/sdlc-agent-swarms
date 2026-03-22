@@ -13,6 +13,7 @@ module.exports = {
     '^@agentforge/providers$': '<rootDir>/../providers/src/index.ts',
     '^@agentforge/channels$': '<rootDir>/../channels/src/index.ts',
     '^@agentforge/agents-design$': '<rootDir>/../agents-design/src/index.ts',
+    '^@agentforge/agents-ux$': '<rootDir>/../agents-ux/src/index.ts',
     '^(\\..*)\\.js$': '$1',
   },
 };

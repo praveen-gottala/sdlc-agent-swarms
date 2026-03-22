@@ -24,7 +24,7 @@ import type {
   AgentContext,
   MCPClient,
   FileSystem,
-  Result,
+  LLMProviderRef,
 } from '@agentforge/core';
 import { Ok, Err, createEventBus } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
@@ -110,7 +110,7 @@ const createMockContext = (): AgentContext => ({
   fs: createMockFs(),
   mcpClient: createMockMCPClient(),
   runGovernance: createMockGovernance(),
-  resolveProvider: () => Err({ code: 'PROVIDER_DOWN' as const, message: 'mock', recoverable: false }),
+  resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'mock', recoverable: false }),
   recordAudit: () => {},
 });
 
@@ -140,7 +140,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const t1 = Date.now();
   const researchResult = await uxDashboardResearchWork(
     COST_DASHBOARD_INPUT,
-    opusProvider,
+    opusProvider as unknown as LLMProviderRef,
     [],
     context,
   );
@@ -163,7 +163,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const t2 = Date.now();
   const planningResult = await uxDashboardPlanningWork(
     planningInput,
-    sonnetProvider,
+    sonnetProvider as unknown as LLMProviderRef,
     [],
     context,
   );
@@ -187,7 +187,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const t3 = Date.now();
   const implResult = await uxDashboardImplementationWork(
     implInput,
-    sonnetProvider,
+    sonnetProvider as unknown as LLMProviderRef,
     [],
     context,
   );
@@ -211,7 +211,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const t4 = Date.now();
   const reviewResult = await uxDashboardReviewWork(
     reviewInput,
-    sonnetProvider,
+    sonnetProvider as unknown as LLMProviderRef,
     [],
     context,
   );
@@ -234,7 +234,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const t5 = Date.now();
   const testingResult = await uxDashboardTestingWork(
     testingInput,
-    sonnetProvider,
+    sonnetProvider as unknown as LLMProviderRef,
     [],
     context,
   );
