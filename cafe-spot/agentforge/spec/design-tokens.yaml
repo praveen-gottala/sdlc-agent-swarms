@@ -1,0 +1,63 @@
+version: "1.0"
+created_by: agentforge-init-llm
+colors:
+  primitive:
+    white: "#FFFFFF"
+    slate: "#334155"
+    blue-accent: "#2563EB"
+    light-gray: "#F1F5F9"
+    dark-gray: "#1E293B"
+  semantic:
+    background-primary: white
+    text-primary: dark-gray
+    cta-primary: blue-accent
+    error: "#DC2626"
+typography:
+  font_families:
+    display: DM Sans
+    body: Inter
+  scale:
+    - role: heading-1
+      size: 32
+      weight: 700
+      family: display
+    - role: heading-2
+      size: 24
+      weight: 700
+      family: display
+    - role: heading-3
+      size: 18
+      weight: 600
+      family: display
+    - role: body
+      size: 14
+      weight: 400
+      family: body
+    - role: label
+      size: 12
+      weight: 500
+      family: body
+    - role: small
+      size: 11
+      weight: 400
+      family: body
+spacing:
+  unit: 8
+  scale:
+    - 4
+    - 8
+    - 12
+    - 16
+    - 24
+    - 32
+    - 48
+    - 64
+borders:
+  radius:
+    small: 8
+    medium: 12
+    large: 16
+    pill: 9999
+touch_targets:
+  minimum_height: 44
+  minimum_width: 44

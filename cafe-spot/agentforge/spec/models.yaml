@@ -1,0 +1,264 @@
+version: "1.0"
+models:
+  - id: product
+    name: Product
+    fields:
+      - name: id
+        type: string
+      - name: name
+        type: string
+      - name: description
+        type: text
+      - name: price
+        type: decimal
+      - name: image_urls
+        type: array
+      - name: category_id
+        type: string
+      - name: roast_level
+        type: string
+      - name: origin
+        type: string
+      - name: flavor_notes
+        type: array
+      - name: grind_options
+        type: array
+      - name: weight_options
+        type: array
+      - name: stock_quantity
+        type: integer
+      - name: is_featured
+        type: boolean
+      - name: average_rating
+        type: decimal
+      - name: review_count
+        type: integer
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: products
+  - id: category
+    name: Category
+    fields:
+      - name: id
+        type: string
+      - name: name
+        type: string
+      - name: slug
+        type: string
+      - name: description
+        type: text
+      - name: image_url
+        type: string
+      - name: sort_order
+        type: integer
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: categories
+  - id: user
+    name: User
+    fields:
+      - name: id
+        type: string
+      - name: email
+        type: string
+      - name: password_hash
+        type: string
+      - name: first_name
+        type: string
+      - name: last_name
+        type: string
+      - name: phone
+        type: string
+      - name: email_verified
+        type: boolean
+      - name: newsletter_subscribed
+        type: boolean
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: users
+  - id: cart-item
+    name: CartItem
+    fields:
+      - name: id
+        type: string
+      - name: user_id
+        type: string
+      - name: product_id
+        type: string
+      - name: quantity
+        type: integer
+      - name: grind_type
+        type: string
+      - name: weight
+        type: string
+      - name: unit_price
+        type: decimal
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: cart_items
+  - id: order
+    name: Order
+    fields:
+      - name: id
+        type: string
+      - name: user_id
+        type: string
+      - name: order_number
+        type: string
+      - name: status
+        type: string
+      - name: subtotal
+        type: decimal
+      - name: tax_amount
+        type: decimal
+      - name: shipping_amount
+        type: decimal
+      - name: discount_amount
+        type: decimal
+      - name: total_amount
+        type: decimal
+      - name: shipping_address_id
+        type: string
+      - name: billing_address_id
+        type: string
+      - name: payment_method
+        type: string
+      - name: payment_status
+        type: string
+      - name: tracking_number
+        type: string
+      - name: shipped_at
+        type: datetime
+      - name: delivered_at
+        type: datetime
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: orders
+  - id: order-item
+    name: OrderItem
+    fields:
+      - name: id
+        type: string
+      - name: order_id
+        type: string
+      - name: product_id
+        type: string
+      - name: product_name
+        type: string
+      - name: quantity
+        type: integer
+      - name: grind_type
+        type: string
+      - name: weight
+        type: string
+      - name: unit_price
+        type: decimal
+      - name: total_price
+        type: decimal
+      - name: created_at
+        type: datetime
+    db_table: order_items
+  - id: review
+    name: Review
+    fields:
+      - name: id
+        type: string
+      - name: user_id
+        type: string
+      - name: product_id
+        type: string
+      - name: order_id
+        type: string
+      - name: rating
+        type: integer
+      - name: title
+        type: string
+      - name: comment
+        type: text
+      - name: is_verified_purchase
+        type: boolean
+      - name: is_approved
+        type: boolean
+      - name: helpful_votes
+        type: integer
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: reviews
+  - id: address
+    name: Address
+    fields:
+      - name: id
+        type: string
+      - name: user_id
+        type: string
+      - name: type
+        type: string
+      - name: first_name
+        type: string
+      - name: last_name
+        type: string
+      - name: company
+        type: string
+      - name: address_line_1
+        type: string
+      - name: address_line_2
+        type: string
+      - name: city
+        type: string
+      - name: state
+        type: string
+      - name: postal_code
+        type: string
+      - name: country
+        type: string
+      - name: phone
+        type: string
+      - name: is_default
+        type: boolean
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: addresses
+  - id: promo-code
+    name: PromoCode
+    fields:
+      - name: id
+        type: string
+      - name: code
+        type: string
+      - name: description
+        type: string
+      - name: discount_type
+        type: string
+      - name: discount_value
+        type: decimal
+      - name: minimum_order_amount
+        type: decimal
+      - name: usage_limit
+        type: integer
+      - name: usage_count
+        type: integer
+      - name: is_active
+        type: boolean
+      - name: starts_at
+        type: datetime
+      - name: expires_at
+        type: datetime
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: promo_codes

@@ -1,0 +1,30 @@
+library_id: mui
+library_name: MUI v5
+install_hint: npm install @mui/material @emotion/react @emotion/styled
+docs_url: https://mui.com
+react_mappings:
+  button:
+    import_path: "@mui/material/Button"
+    component_name: Button
+    variant_prop: variant
+  card:
+    import_path: "@mui/material/Card"
+    component_name: Card
+  input:
+    import_path: "@mui/material/TextField"
+    component_name: TextField
+    variant_prop: variant
+  badge:
+    import_path: "@mui/material/Chip"
+    component_name: Chip
+    variant_prop: variant
+  tabs:
+    import_path: "@mui/material/Tabs"
+    component_name: Tabs
+  avatar:
+    import_path: "@mui/material/Avatar"
+    component_name: Avatar
+  progress:
+    import_path: "@mui/material/LinearProgress"
+    component_name: LinearProgress
+    variant_prop: variant
