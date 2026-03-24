@@ -23,6 +23,7 @@ import {
   acquireLock,
   releaseLock,
   writeYaml,
+  SPEC_SCHEMA_HEADERS,
 } from '@agentforge/core';
 
 // ============================================================================
@@ -170,6 +171,10 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
 
   for (const [name, content] of Object.entries(sections)) {
     const filePath = join(specDir, `${name}.yaml`);
+    const isNewFile = !context.fs.exists(filePath);
+    const header = isNewFile
+      ? (SPEC_SCHEMA_HEADERS[name] ?? `# ${name}.yaml — created by spec_writer`)
+      : undefined;
 
     const lockResult = acquireLock(filePath, agentId, lockDir, 60000, context.fs);
     if (!lockResult.ok) {
@@ -184,7 +189,7 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
       timestamp: Date.now(),
     });
 
-    const writeResult = writeYaml(filePath, content, context.fs);
+    const writeResult = writeYaml(filePath, content, context.fs, header);
     if (!writeResult.ok) {
       releaseLock(filePath, agentId, lockDir, context.fs);
       return Err(writeResult.error);

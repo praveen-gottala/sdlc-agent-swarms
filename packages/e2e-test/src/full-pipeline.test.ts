@@ -561,7 +561,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       expect(fs.dirs.has(`${PROJECT_ROOT}/prisma`)).toBe(true);
 
       // Spec directory created
-      expect(fs.dirs.has(`${PROJECT_ROOT}/agentforge/spec/components`)).toBe(true);
+      expect(fs.dirs.has(`${PROJECT_ROOT}/agentforge/spec`)).toBe(true);
 
       // .agentforge internals created
       expect(fs.dirs.has(`${PROJECT_ROOT}/.agentforge/learnings`)).toBe(true);
@@ -577,11 +577,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       // Agent definitions
       expect(fs.exists(`${PROJECT_ROOT}/agentforge/agents.yaml`)).toBe(true);
 
-      // Spec seed files
       expect(fs.exists(`${PROJECT_ROOT}/agentforge/spec/project.yaml`)).toBe(true);
-      expect(fs.exists(`${PROJECT_ROOT}/agentforge/spec/pages.yaml`)).toBe(true);
-      expect(fs.exists(`${PROJECT_ROOT}/agentforge/spec/api.yaml`)).toBe(true);
-      expect(fs.exists(`${PROJECT_ROOT}/agentforge/spec/models.yaml`)).toBe(true);
 
       // Verify manifest content
       const manifestResult = readYaml<Record<string, unknown>>(`${PROJECT_ROOT}/agentforge.yaml`, fs);

@@ -8,7 +8,7 @@
 
 import { join } from 'node:path';
 import type { EventBus, FileSystem, Result, TaskEntry } from '@agentforge/core';
-import { Ok, Err, readYaml, writeYaml, loadTasks, addTask, saveTasks } from '@agentforge/core';
+import { Ok, Err, readYaml, writeYaml, loadTasks, addTask, saveTasks, SPEC_SCHEMA_HEADERS } from '@agentforge/core';
 
 /** Input for the page request handler. */
 export interface PageRequestInput {
@@ -56,6 +56,7 @@ export const handlePageRequest = (
   // 1. Update pages.yaml with the new page entry
   const pagesPath = join(projectRoot, 'agentforge/spec/pages.yaml');
   const existingPages = readYaml<{ pages?: unknown[] }>(pagesPath, fs);
+  const isNewFile = !existingPages.ok;
   const pages = existingPages.ok ? (existingPages.value.pages ?? []) : [];
 
   const newPage = {
@@ -65,7 +66,12 @@ export const handlePageRequest = (
     created_at: new Date().toISOString(),
   };
 
-  const writeResult = writeYaml(pagesPath, { pages: [...pages, newPage] }, fs);
+  const writeResult = writeYaml(
+    pagesPath,
+    { pages: [...pages, newPage] },
+    fs,
+    isNewFile ? SPEC_SCHEMA_HEADERS['pages'] : undefined,
+  );
   if (!writeResult.ok) {
     return Err(writeResult.error);
   }

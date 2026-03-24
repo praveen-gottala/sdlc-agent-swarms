@@ -30,8 +30,8 @@ export function readYaml<T>(filePath: string, fileSystem: FileSystem = realFs): 
 /**
  * Serialize data and write to a YAML file.
  */
-export function writeYaml(filePath: string, data: unknown, fileSystem: FileSystem = realFs): Result<void> {
-  return coreWriteYaml(filePath, data, fileSystem);
+export function writeYaml(filePath: string, data: unknown, fileSystem: FileSystem = realFs, header?: string): Result<void> {
+  return coreWriteYaml(filePath, data, fileSystem, header);
 }
 
 /**

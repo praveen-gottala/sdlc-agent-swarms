@@ -272,9 +272,6 @@ describe('P22: CLI Commands Complete Coverage', () => {
       expect(created).toContain('agentforge.tasks.yaml');
       expect(created).toContain('agentforge/agents.yaml');
       expect(created).toContain('agentforge/spec/project.yaml');
-      expect(created).toContain('agentforge/spec/pages.yaml');
-      expect(created).toContain('agentforge/spec/api.yaml');
-      expect(created).toContain('agentforge/spec/models.yaml');
       expect(created).toContain('.agentforge/trust-state.yaml');
       expect(fs.dirs.has('/proj/.agentforge/learnings')).toBe(true);
       expect(fs.dirs.has('/proj/.agentforge/audit')).toBe(true);

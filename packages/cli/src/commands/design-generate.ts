@@ -12,7 +12,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
-import { loadDesignTokens, loadBrandSpec, loadPRD } from '@agentforge/core';
+import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
@@ -687,7 +687,7 @@ function writeSpecFiles(
       data_sources: [...p.data_sources],
     })),
   };
-  writeYaml(path.join(specDir, 'pages.yaml'), pagesData, fileSystem);
+  writeYaml(path.join(specDir, 'pages.yaml'), pagesData, fileSystem, SPEC_SCHEMA_HEADERS['pages']);
 
   // Write models.yaml
   const modelsData = {
@@ -699,7 +699,7 @@ function writeSpecFiles(
       db_table: m.db_table,
     })),
   };
-  writeYaml(path.join(specDir, 'models.yaml'), modelsData, fileSystem);
+  writeYaml(path.join(specDir, 'models.yaml'), modelsData, fileSystem, SPEC_SCHEMA_HEADERS['models']);
 
   // Write api.yaml
   const apiData = {
@@ -716,7 +716,7 @@ function writeSpecFiles(
       status: 'planned',
     })),
   };
-  writeYaml(path.join(specDir, 'api.yaml'), apiData, fileSystem);
+  writeYaml(path.join(specDir, 'api.yaml'), apiData, fileSystem, SPEC_SCHEMA_HEADERS['api']);
 }
 
 // ============================================================================

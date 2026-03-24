@@ -69,6 +69,8 @@ export type {
   ModelsSpec,
 } from './spec-types.js';
 
+export { SPEC_SCHEMA_HEADERS } from './spec-headers.js';
+
 export type {
   PrimitiveColors,
   SemanticColors,

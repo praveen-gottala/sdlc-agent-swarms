@@ -38,6 +38,7 @@ export type {
 } from './types/index.js';
 
 export { Ok, Err } from './types/index.js';
+export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
 export {
   readLearnings,

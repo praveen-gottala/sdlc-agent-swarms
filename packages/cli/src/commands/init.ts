@@ -604,11 +604,11 @@ export function scaffoldProject(
 ): string[] {
   const created: string[] = [];
 
-  // Create spec directory structure
+  // Create spec directory (on-demand spec files like pages.yaml, api.yaml,
+  // models.yaml are NOT created here — they are written by the first agent
+  // that needs them, with schema comment headers for context)
   const specDir = path.join(rootDir, 'agentforge', 'spec');
-  const componentsDir = path.join(specDir, 'components');
-  fileSystem.mkdir(componentsDir);
-  created.push('agentforge/spec/components/');
+  fileSystem.mkdir(specDir);
 
   // Create learnings directory
   const learningsDir = path.join(rootDir, '.agentforge', 'learnings');
@@ -672,20 +672,6 @@ export function scaffoldProject(
   };
   writeYaml(path.join(specDir, 'project.yaml'), projectSpec, fileSystem);
   created.push('agentforge/spec/project.yaml');
-
-  writeYaml(path.join(specDir, 'pages.yaml'), { version: '1.0', pages: [] }, fileSystem);
-  created.push('agentforge/spec/pages.yaml');
-
-  writeYaml(path.join(specDir, 'api.yaml'), { version: '1.0', base_url: '/api', endpoints: [] }, fileSystem);
-  created.push('agentforge/spec/api.yaml');
-
-  writeYaml(path.join(specDir, 'models.yaml'), { version: '1.0', models: [] }, fileSystem);
-  created.push('agentforge/spec/models.yaml');
-
-  // Create journeys directory for visual verification
-  const journeysDir = path.join(specDir, 'journeys');
-  fileSystem.mkdir(journeysDir);
-  created.push('agentforge/spec/journeys/');
 
   // Create docs directory for PRD
   const docsDir = path.join(rootDir, 'docs');

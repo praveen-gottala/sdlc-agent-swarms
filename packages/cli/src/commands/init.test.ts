@@ -141,7 +141,7 @@ describe('scaffoldProject', () => {
 
     scaffoldProject('/project', manifest, fs, new Map());
 
-    expect(fs.dirs.has('/project/agentforge/spec/components')).toBe(true);
+    expect(fs.dirs.has('/project/agentforge/spec')).toBe(true);
     expect(fs.dirs.has('/project/.agentforge/learnings')).toBe(true);
     expect(fs.dirs.has('/project/.agentforge/audit')).toBe(true);
   });
@@ -168,16 +168,13 @@ describe('scaffoldProject', () => {
     expect(content).toContain('tasks');
   });
 
-  it('writes seed spec files', () => {
+  it('writes seed spec files (project.yaml only, no empty placeholders)', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
 
     scaffoldProject('/project', manifest, fs, new Map());
 
     expect(fs.files.has('/project/agentforge/spec/project.yaml')).toBe(true);
-    expect(fs.files.has('/project/agentforge/spec/pages.yaml')).toBe(true);
-    expect(fs.files.has('/project/agentforge/spec/api.yaml')).toBe(true);
-    expect(fs.files.has('/project/agentforge/spec/models.yaml')).toBe(true);
   });
 
   it('does NOT create design system files during init', () => {

@@ -178,7 +178,7 @@ describe('Wave 2 Criterion 2: Project scaffold matches expected structure', () =
   });
 
   it('has spec directory structure for Nx mono-repo seed', () => {
-    expect(fs.dirs.has('/testapp/agentforge/spec/components')).toBe(true);
+    expect(fs.dirs.has('/testapp/agentforge/spec')).toBe(true);
     expect(fs.files.has('/testapp/package.json')).toBe(true);
     expect(fs.files.has('/testapp/tsconfig.json')).toBe(true);
   });
@@ -598,15 +598,6 @@ describe('Wave 2 Criterion 9: All fixture files present for Waves 3-7', () => {
   it('spec files are present and valid', () => {
     const project = parseYaml(fs, '/testapp/agentforge/spec/project.yaml');
     expect((project['app'] as Record<string, unknown>)['name']).toBe('TestApp');
-
-    const pages = parseYaml(fs, '/testapp/agentforge/spec/pages.yaml');
-    expect(pages['pages']).toEqual([]);
-
-    const api = parseYaml(fs, '/testapp/agentforge/spec/api.yaml');
-    expect(api['base_url']).toBe('/api');
-
-    const models = parseYaml(fs, '/testapp/agentforge/spec/models.yaml');
-    expect(models['models']).toEqual([]);
   });
 
   it('trust-state.yaml is present', () => {

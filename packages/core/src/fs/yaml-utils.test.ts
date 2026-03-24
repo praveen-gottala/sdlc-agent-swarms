@@ -137,6 +137,40 @@ describe('writeYaml', () => {
     expect(content).toContain('- 1');
   });
 
+  it('prepends header when provided', () => {
+    const files = new Map<string, string>();
+    const fs = createMockFs(files);
+    const data = { version: '1.0', pages: [] };
+    const header = '# pages.yaml — created on-demand\n# schema: { version, pages[] }';
+
+    const result = writeYaml('/out.yaml', data, fs, header);
+
+    expect(result.ok).toBe(true);
+    const content = files.get('/out.yaml')!;
+    expect(content).toMatch(/^# pages\.yaml/);
+    expect(content).toContain('version: "1.0"');
+
+    // Verify readYaml can still parse the file (YAML ignores comments)
+    const readResult = readYaml<{ version: string; pages: unknown[] }>('/out.yaml', fs);
+    expect(readResult.ok).toBe(true);
+    if (readResult.ok) {
+      expect(readResult.value.version).toBe('1.0');
+      expect(readResult.value.pages).toEqual([]);
+    }
+  });
+
+  it('does not prepend header when not provided', () => {
+    const files = new Map<string, string>();
+    const fs = createMockFs(files);
+    const data = { name: 'test' };
+
+    writeYaml('/out.yaml', data, fs);
+
+    const content = files.get('/out.yaml')!;
+    expect(content).not.toMatch(/^#/);
+    expect(content).toContain('name: test');
+  });
+
   it('handles write errors', () => {
     const fs = createFailingWriteFs();
     const result = writeYaml('/out.yaml', { data: 1 }, fs);
