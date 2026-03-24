@@ -221,6 +221,8 @@ describe('P22: CLI Commands Complete Coverage', () => {
         repo: 'org/test-project',
         slackChannel: '#dev',
         telegramEnabled: true,
+        designArchetype: 'professional',
+        targetAudience: 'developers',
       };
       const manifest = buildManifest(answers);
       const created = scaffoldProject('/new-project', manifest, fs, new Map());
@@ -240,6 +242,8 @@ describe('P22: CLI Commands Complete Coverage', () => {
         repo: 'org/test-app',
         slackChannel: '#agentforge',
         telegramEnabled: true,
+        designArchetype: 'professional',
+        targetAudience: 'developers',
       };
 
       const manifest = buildManifest(answers);
@@ -259,6 +263,7 @@ describe('P22: CLI Commands Complete Coverage', () => {
       const answers: InitAnswers = {
         name: 'Test', description: '', repo: 'test',
         slackChannel: '#agentforge', telegramEnabled: true,
+        designArchetype: 'professional', targetAudience: 'general',
       };
       const manifest = buildManifest(answers);
       const created = scaffoldProject('/proj', manifest, fs, new Map());
@@ -283,6 +288,7 @@ describe('P22: CLI Commands Complete Coverage', () => {
       const manifest = buildManifest({
         name: 'TestApp', description: 'desc', repo: 'org/repo',
         slackChannel: '#dev', telegramEnabled: true,
+        designArchetype: 'professional', targetAudience: 'general',
       });
 
       // Channels are stored as config entries, not live connections

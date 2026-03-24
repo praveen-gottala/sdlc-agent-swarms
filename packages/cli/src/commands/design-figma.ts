@@ -10,36 +10,48 @@
  * 2. Auto-connects to the Figma plugin via well-known channel
  * 3. Runs Research → Planning → Design stages
  * 4. Optionally runs visual self-correction loop
+ *
+ * Connection is managed through the FigmaAdapter (DesignToolAdapter interface),
+ * which encapsulates the env-var → session → Docker preflight strategies.
  */
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
+import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
+import { verifyImplementation } from './impl-verify.js';
 import {
   Ok,
   Err,
   createEventBus,
-  createTalkToFigmaTransport,
-  TALK_TO_FIGMA_TOOLS,
+  createFigmaAdapter,
+  createRealFs,
+  loadDesignTokens,
+  loadBrandSpec,
+  toDesignTokens,
 } from '@agentforge/core';
 import type {
   MCPClient,
   LLMProviderRef,
+  DesignTokensSpec,
+  BrandSpec,
+  DesignToolSession,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
-  loadFigmaSession,
   runFigmaPreflight,
-  discoverChannels,
+  PLUGIN_MANIFEST_REL,
   uxDashboardResearchWork,
   uxDashboardPlanningWork,
   uxDashboardDesignWork,
+  executeDesignSteps,
   uxDashboardImplementationWork,
   writeImplementationFiles,
   createDesignCollaborationSession,
   runDesignFeedbackLoop,
   createReviewCallback,
   buildDesignSystemContext,
+  buildDesignSystemContextFromSpec,
   loadDesignSystemPrompt,
 } from '@agentforge/agents-ux';
 import type {
@@ -48,6 +60,7 @@ import type {
   UXDashboardPlanningInput,
   UXDashboardPlanningOutput,
   UXDashboardDesignInput,
+  UXDashboardDesignOutput,
   UXDashboardImplementationInput,
   ImplementCallback,
 } from '@agentforge/agents-ux';
@@ -57,8 +70,14 @@ import type {
 // ============================================================================
 
 interface DesignFigmaOptions {
-  /** Skip to a specific stage (loads prior stages from artifacts). */
-  readonly stage?: 'research' | 'planning' | 'design';
+  /**
+   * Skip to a specific stage (loads prior stages from artifacts).
+   * - 'planning': skip research, load from cache
+   * - 'design': skip research + planning, load from cache
+   * - 'replay': re-execute cached design steps into Figma (no LLM calls)
+   * - 'connect': skip all stages, load design from cache — only tests connection
+   */
+  readonly stage?: 'research' | 'planning' | 'design' | 'replay' | 'connect';
   /** Module ID for the design. Default: derived from description. */
   readonly module?: string;
   /** Exit immediately after design without waiting for approval. */
@@ -102,28 +121,6 @@ const createMockMCPClient = (): MCPClient => ({
   isAvailable: async () => true,
 });
 
-/** Create an MCP client backed by TalkToFigma. */
-const createFigmaMCPClient = (wsUrl: string, channel: string): { client: MCPClient; disconnect: () => void } => {
-  const { connection } = createTalkToFigmaTransport({
-    websocketUrl: wsUrl,
-    channel,
-  });
-
-  const client: MCPClient = {
-    callTool: async (_server: string, method: string, params: Readonly<Record<string, unknown>>) => {
-      if (!connection.isConnected()) {
-        const r = await connection.connect();
-        if (!r.ok) return r;
-      }
-      return connection.callTool(method, params);
-    },
-    listTools: async () => Ok([...TALK_TO_FIGMA_TOOLS]),
-    isAvailable: async () => connection.isConnected(),
-  };
-
-  return { client, disconnect: () => connection.disconnect() };
-};
-
 /** Create an agent context. */
 const createContext = (taskId: string, mcpClient: MCPClient) => ({
   taskId,
@@ -159,6 +156,24 @@ const loadArtifact = <T>(dir: string, filename: string): T | null => {
   return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
 };
 
+/**
+ * Map a FigmaSession (from agents-ux preflight) to a DesignToolSession.
+ * The agents-ux preflight returns FigmaSession with `wsUrl` field,
+ * while DesignToolAdapter uses `url`.
+ */
+function mapPreflightToSession(
+  preflightResult: { wsUrl: string; channel: string; connectedAt: string; documentName?: string; supportedTools?: readonly string[] },
+): DesignToolSession {
+  return {
+    kind: 'figma',
+    url: preflightResult.wsUrl,
+    channel: preflightResult.channel,
+    connectedAt: preflightResult.connectedAt,
+    documentName: preflightResult.documentName,
+    supportedTools: preflightResult.supportedTools,
+  };
+}
+
 // ============================================================================
 // Command
 // ============================================================================
@@ -177,6 +192,9 @@ export async function designFigmaCommand(
   const skipToStage = options.stage;
   const outputDir = ensureOutputDir(moduleId);
 
+  // Load .env file so ANTHROPIC_API_KEY is available
+  loadDotEnv(findProjectRoot());
+
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  AgentForge Figma Design Pipeline\n`));
   output.write(infoMsg(`  Module: ${moduleId}\n`));
@@ -191,10 +209,44 @@ export async function designFigmaCommand(
     return;
   }
 
+  // ── Load PRD for app context ──
+  const projectRoot = findProjectRoot();
+  const prdPath = join(projectRoot, 'docs', 'prd.md');
+  let prdContent: string | undefined;
+  if (existsSync(prdPath)) {
+    prdContent = readFileSync(prdPath, 'utf-8');
+    output.write(infoMsg('  PRD loaded from docs/prd.md\n'));
+  } else {
+    output.write(warnMsg('  No PRD found at docs/prd.md — design will use description only.\n'));
+    output.write(warnMsg('  Run `agentforge describe` first for better results.\n'));
+  }
+
+  // ── Load design system (tokens + brand) ──
+  const realFs = createRealFs();
+  let designTokens: DesignTokensSpec | undefined;
+  let brandSpec: BrandSpec | undefined;
+
+  const tokensResult = loadDesignTokens(projectRoot, realFs);
+  if (tokensResult.ok) {
+    designTokens = tokensResult.value;
+    output.write(infoMsg('  Design tokens loaded from agentforge/spec/design-tokens.yaml\n'));
+  }
+
+  const brandResult = loadBrandSpec(projectRoot, realFs);
+  if (brandResult.ok) {
+    brandSpec = brandResult.value;
+    output.write(infoMsg('  Brand spec loaded from agentforge/spec/brand.yaml\n'));
+  }
+
+  if (!designTokens && !brandSpec) {
+    output.write(warnMsg('  No design system found — using defaults.\n'));
+    output.write(warnMsg('  Run `agentforge design:system` first for brand-accurate designs.\n'));
+  }
+
   // ── Stage 1: Research ──
   let researchOutput: UXDashboardResearchOutput;
 
-  if (skipToStage === 'planning' || skipToStage === 'design') {
+  if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
     const cached = loadArtifact<UXDashboardResearchOutput>(outputDir, 'research-brief.json');
     if (!cached) {
       output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
@@ -208,10 +260,16 @@ export async function designFigmaCommand(
     const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
     const context = createContext(taskId, createMockMCPClient());
 
+    const prdRequirements: string[] = [description];
+    if (prdContent) {
+      prdRequirements.push(prdContent);
+    }
+
     const input: UXDashboardResearchInput = {
       moduleId,
       taskId,
-      prdRequirements: [description],
+      prdRequirements,
+      ...(designTokens ? { existingTokens: toDesignTokens(designTokens) } : {}),
     };
 
     const t0 = Date.now();
@@ -232,7 +290,7 @@ export async function designFigmaCommand(
   // ── Stage 2: Planning ──
   let planningOutput: UXDashboardPlanningOutput;
 
-  if (skipToStage === 'design') {
+  if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
     const cached = loadArtifact<UXDashboardPlanningOutput>(outputDir, 'planning-spec.json');
     if (!cached) {
       output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
@@ -268,93 +326,130 @@ export async function designFigmaCommand(
     output.write(successMsg(`  Planning complete (${(ms / 1000).toFixed(1)}s)\n`));
   }
 
-  // ── Stage 3: Design (Figma) ──
-  output.write(infoMsg('\n  [3/3] Design — creating Figma components...\n'));
+  // ── Figma connection ──
+  // Create the Figma adapter with full preflight delegate from agents-ux.
+  // The adapter encapsulates three connection strategies:
+  //   1. Env-var: AGENTFORGE_MCP_FIGMA_WRITE_URL + AGENTFORGE_MCP_FIGMA_CHANNEL
+  //   2. Cached session: .agentforge/figma-session.json
+  //   3. Full preflight: Docker startup, plugin build, channel discovery
+  const adapter = createFigmaAdapter({
+    fullPreflight: async (opts) => {
+      const result = await runFigmaPreflight(opts as Record<string, unknown> | undefined);
+      if (!result.ok) return result;
+      return Ok(mapPreflightToSession(result.value));
+    },
+  });
 
-  // Connect to Figma
   let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
 
-  const envWsUrl = process.env.AGENTFORGE_MCP_FIGMA_WRITE_URL;
-  const envChannel = process.env.AGENTFORGE_MCP_FIGMA_CHANNEL;
+  const manifestPath = resolve(process.cwd(), PLUGIN_MANIFEST_REL);
+  const preflightResult = await adapter.runPreflight({
+    log: (msg: string) => output.write(infoMsg(`  ${msg}\n`)),
+    pluginManifestPath: manifestPath,
+  });
 
-  if (envWsUrl) {
-    let channelToUse = envChannel;
-
-    if (!channelToUse) {
-      // Discover the Figma plugin's channel via the bridge
-      const bridgeHttpUrl = envWsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-      const channels = await discoverChannels(bridgeHttpUrl);
-
-      if (channels.length > 0) {
-        channelToUse = channels[channels.length - 1];
-        output.write(infoMsg(`  Figma bridge: ${envWsUrl} (discovered channel: ${channelToUse})\n`));
-      } else {
-        output.write(infoMsg(`  Figma bridge: ${envWsUrl}\n`));
-        output.write(warnMsg('\n  No Figma plugin detected.\n'));
-        output.write(infoMsg('  1. Open Figma\n'));
-        output.write(infoMsg('  2. Open the TalkToFigma plugin (Plugins → TalkToFigma)\n'));
-        output.write(infoMsg('  3. Click "Connect" in the plugin\n\n'));
-        output.write(infoMsg('  Waiting for plugin to connect...\n'));
-
-        const pollStart = Date.now();
-        const maxWaitMs = 120000;
-        while (Date.now() - pollStart < maxWaitMs) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          const found = await discoverChannels(bridgeHttpUrl);
-          if (found.length > 0) {
-            channelToUse = found[0];
-            output.write(successMsg(`  Figma plugin connected! (channel: ${channelToUse})\n`));
-            break;
-          }
-          const elapsed = Math.round((Date.now() - pollStart) / 1000);
-          output.write(infoMsg(`  Waiting for Figma plugin... (${elapsed}s)\n`));
-        }
-
-        if (!channelToUse) {
-          channelToUse = 'agentforge';
-          output.write(warnMsg(`  Plugin not detected within ${maxWaitMs / 1000}s — using fallback channel\n`));
-        }
-      }
-    } else {
-      output.write(infoMsg(`  Figma bridge: ${envWsUrl} (channel: ${channelToUse})\n`));
-    }
-
-    const bridge = createFigmaMCPClient(envWsUrl, channelToUse);
-    mcpClient = bridge.client;
-    disconnectFn = bridge.disconnect;
+  if (preflightResult.ok) {
+    const session = preflightResult.value;
+    const handle = adapter.createMCPClient({
+      url: session.url,
+      channel: session.channel,
+      supportedTools: session.supportedTools as string[] | undefined,
+    });
+    mcpClient = handle.client;
+    disconnectFn = handle.disconnect;
   } else {
-    // Try session, then preflight
-    const sessionResult = loadFigmaSession();
-    if (sessionResult.ok) {
-      output.write(infoMsg(`  Figma: reusing session (doc: ${sessionResult.value.documentName})\n`));
-      const bridge = createFigmaMCPClient(sessionResult.value.wsUrl, sessionResult.value.channel);
-      mcpClient = bridge.client;
-      disconnectFn = bridge.disconnect;
-    } else {
-      output.write(infoMsg('  Figma: running preflight...\n'));
-      const preflightResult = await runFigmaPreflight();
-      if (preflightResult.ok) {
-        output.write(successMsg(`  Figma: connected (doc: ${preflightResult.value.documentName})\n`));
-        const bridge = createFigmaMCPClient(preflightResult.value.wsUrl, preflightResult.value.channel);
-        mcpClient = bridge.client;
-        disconnectFn = bridge.disconnect;
-      } else {
-        output.write(warnMsg(`  Figma: ${preflightResult.error.message}\n`));
-        output.write(warnMsg('  Continuing with mock MCP (no Figma output)\n'));
-        mcpClient = createMockMCPClient();
-      }
-    }
+    output.write(warnMsg(`  Figma: ${preflightResult.error.message}\n`));
+    output.write(warnMsg('  Continuing with mock MCP (no Figma output)\n'));
+    mcpClient = createMockMCPClient();
   }
+
+  // ── Stage 3: Design (Figma) ──
+  if (skipToStage === 'connect') {
+    // --stage connect: skip design, load from cache, only test connection
+    const cached = loadArtifact<UXDashboardDesignOutput>(outputDir, 'figma-design.json');
+    if (!cached) {
+      output.write(errorMsg(`No cached design output found at ${outputDir}/figma-design.json\n`));
+      process.exitCode = 1;
+      disconnectFn?.();
+      return;
+    }
+    output.write(infoMsg('  [3/3] Design — loaded from cache\n'));
+    output.write('\n');
+    output.write(infoMsg('='.repeat(60) + '\n'));
+    output.write(infoMsg('  CONNECTION TEST COMPLETE\n'));
+    output.write(infoMsg('='.repeat(60) + '\n'));
+    output.write(infoMsg(`  Module: ${moduleId}\n`));
+    output.write(infoMsg(`  Components: ${Object.keys(cached.figmaNodeIds).length}\n`));
+    output.write(infoMsg(`  Figma File: ${cached.figmaFileId}\n`));
+    output.write(infoMsg('='.repeat(60) + '\n'));
+    disconnectFn?.();
+    return;
+  }
+
+  if (skipToStage === 'replay') {
+    // --stage replay: re-execute cached design steps into Figma (no LLM calls)
+    const cached = loadArtifact<UXDashboardDesignOutput>(outputDir, 'figma-design.json');
+    if (!cached?.steps || cached.steps.length === 0) {
+      output.write(errorMsg(`No cached design steps found in ${outputDir}/figma-design.json\n`));
+      output.write(errorMsg('Run a full design first (without --stage) to generate steps.\n'));
+      process.exitCode = 1;
+      disconnectFn?.();
+      return;
+    }
+
+    output.write(infoMsg(`\n  [3/3] Design — replaying ${cached.steps.length} cached steps into Figma...\n`));
+    const t0 = Date.now();
+
+    try {
+      const result = await executeDesignSteps(cached.steps, mcpClient, moduleId);
+      const ms = Date.now() - t0;
+
+      // Save updated artifact with new node IDs (Figma assigns fresh IDs on replay)
+      const updatedOutput: UXDashboardDesignOutput = {
+        ...cached,
+        figmaFileId: result.figmaFileId,
+        figmaPageId: result.figmaPageId,
+        figmaNodeIds: result.figmaNodeIds,
+      };
+      const artifactPath = saveArtifact(outputDir, 'figma-design.json', updatedOutput);
+
+      output.write(successMsg(`  Replay complete (${(ms / 1000).toFixed(1)}s)\n`));
+      output.write('\n');
+      output.write(infoMsg('='.repeat(60) + '\n'));
+      output.write(infoMsg('  REPLAY COMPLETE\n'));
+      output.write(infoMsg('='.repeat(60) + '\n'));
+      output.write(infoMsg(`  Module: ${moduleId}\n`));
+      output.write(infoMsg(`  Steps: ${cached.steps.length}\n`));
+      output.write(infoMsg(`  Components: ${Object.keys(result.figmaNodeIds).length}\n`));
+      output.write(infoMsg(`  Figma File: ${result.figmaFileId}\n`));
+      output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
+      output.write(infoMsg('='.repeat(60) + '\n'));
+    } finally {
+      disconnectFn?.();
+    }
+    return;
+  }
+
+  output.write(infoMsg('\n  [3/3] Design — creating Figma components...\n'));
 
   const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
   const context = createContext(taskId, mcpClient);
+
+  // Build project-specific design system prompt from tokens + brand
+  let projectDesignSystemPrompt: string | undefined;
+  if (designTokens && brandSpec) {
+    const dsCtx = buildDesignSystemContextFromSpec(designTokens, brandSpec, planningOutput);
+    projectDesignSystemPrompt = dsCtx.designSystemPrompt;
+  }
 
   const input: UXDashboardDesignInput = {
     specRef: planningOutput.specRef,
     moduleId,
     taskId,
     planningOutput,
+    description,
+    ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
   };
 
   const t0 = Date.now();
@@ -388,12 +483,18 @@ export async function designFigmaCommand(
         const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
         const implContext = createContext(`${taskId}_impl`, mcpClient);
 
+        // Pass design snapshot data (screenshots + extracted styles) to the implementation agent
         const implInput: UXDashboardImplementationInput = {
           specRef: planningOutput.specRef,
           moduleId,
           taskId: `${taskId}_impl`,
           componentSpec: planningOutput,
           stage: 'layout',
+          designSnapshot: design.screenshotPath || design.componentSnapshots
+            ? { screenshotPath: design.screenshotPath, componentSnapshots: design.componentSnapshots }
+            : undefined,
+          designNodeIds: design.figmaNodeIds,
+          designFileId: design.figmaFileId,
         };
 
         const implResult = await uxDashboardImplementationWork(
@@ -407,7 +508,7 @@ export async function designFigmaCommand(
           return implResult as import('@agentforge/core').Result<never>;
         }
 
-        const targetDir = resolve(process.cwd(), 'packages', 'dashboard', 'src', 'components', 'dashboard');
+        const targetDir = process.cwd();
         const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
 
         return Ok({ files: implResult.value.files, writtenPaths });
@@ -424,6 +525,20 @@ export async function designFigmaCommand(
         for (const path of implResult.value.writtenPaths) {
           output.write(infoMsg(`    ${path}\n`));
         }
+
+        // ── Post-implementation verification ──
+        output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
+        await verifyImplementation({
+          projectRoot: process.cwd(),
+          moduleId,
+          output,
+          provider: provider as unknown as {
+            complete: (
+              prompt: { system: string; messages: { role: 'user'; content: string }[] },
+              opts: { model: string; maxTokens: number; temperature: number },
+            ) => Promise<import('@agentforge/core').Result<{ content: string }>>;
+          },
+        });
       } else {
         output.write(errorMsg(`  Implementation failed: ${implResult.error.message}\n`));
       }
@@ -432,7 +547,9 @@ export async function designFigmaCommand(
     // ── Interactive feedback loop ──
     const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
     if (!options.noWait && !options.implement && isTTY) {
-      const designSystemCtx = buildDesignSystemContext(planningOutput, loadDesignSystemPrompt());
+      const designSystemCtx = designTokens && brandSpec
+        ? buildDesignSystemContextFromSpec(designTokens, brandSpec, planningOutput)
+        : buildDesignSystemContext(planningOutput, loadDesignSystemPrompt());
       const session = createDesignCollaborationSession(
         mcpClient,
         provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },

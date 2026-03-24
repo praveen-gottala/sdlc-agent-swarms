@@ -21,9 +21,12 @@ import {
   Err,
   runAgent,
   readSpecs,
+  loadComponentLibrary,
+  loadDesignTokens,
+  loadBrandSpec,
 } from '@agentforge/core';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
-import type { ImplementationStage } from '../types.js';
+import type { ImplementationStage, DesignSnapshotData } from '../types.js';
 
 // ============================================================================
 // Types
@@ -36,6 +39,21 @@ export interface UXDashboardImplementationInput {
   readonly taskId: string;
   readonly componentSpec: UXDashboardPlanningOutput;
   readonly stage: ImplementationStage['stage'];
+  /**
+   * Design snapshot data from the design stage (screenshots + extracted styles).
+   * When provided, the implementation agent uses visual references and extracted
+   * colors/typography/spacing to produce more accurate code.
+   */
+  readonly designSnapshot?: DesignSnapshotData;
+  /**
+   * Figma/Penpot node IDs mapped by component name.
+   * Allows the implementation agent to reference specific design nodes.
+   */
+  readonly designNodeIds?: Readonly<Record<string, string>>;
+  /**
+   * Figma file/page IDs for reference links.
+   */
+  readonly designFileId?: string;
 }
 
 /** A single generated file with path and content. */
@@ -164,21 +182,110 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
   learnings,
   context,
 ) => {
-  const { moduleId, componentSpec, stage } = input;
+  const { moduleId, componentSpec, stage, designSnapshot, designNodeIds, designFileId } = input;
 
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);
   const specsContent = existingSpecs.ok ? JSON.stringify(existingSpecs.value) : '{}';
 
-  // 2. Build prompt
-  const systemPrompt = loadSystemPrompt();
+  // 1b. Load component library spec if available (for React import mappings)
+  const componentLibResult = loadComponentLibrary(context.projectRoot, context.fs);
+
+  // 2. Build prompt — replace {{MODULE_ID}} so file paths use the real module
+  const systemPrompt = loadSystemPrompt().replace(/\{\{MODULE_ID\}\}/g, moduleId);
   const userMessageParts = [
     `Module ID: ${moduleId}`,
     `Implementation Stage: ${stage}`,
     `\nComponent Spec:\n${JSON.stringify(componentSpec, null, 2)}`,
     `\nExisting specs:\n${specsContent}`,
   ];
+
+  // Inject component library import mappings if configured
+  if (componentLibResult.ok) {
+    const lib = componentLibResult.value;
+    const mappingLines = Object.entries(lib.react_mappings).map(([component, mapping]) => {
+      const variantNote = mapping.variant_prop ? ` (variant prop: ${mapping.variant_prop})` : '';
+      return `- ${component}: import { ${mapping.component_name} } from '${mapping.import_path}'${variantNote}`;
+    });
+    userMessageParts.push(
+      `\n## Component Library Import Mappings`,
+      `Library: ${lib.library_name}`,
+      ...mappingLines,
+      `\nUse these exact import paths and component names. Do not use generic or hardcoded imports.`,
+    );
+  }
+
+  // 1c. Load design tokens for accurate Tailwind class generation
+  const designTokensResult = loadDesignTokens(context.projectRoot, context.fs);
+  if (designTokensResult.ok) {
+    const tokens = designTokensResult.value;
+    const tokenParts: string[] = ['\n## Design Tokens'];
+    tokenParts.push(`\n### Colors`);
+    for (const [name, hex] of Object.entries(tokens.colors.primitive)) {
+      tokenParts.push(`- ${name}: ${hex}`);
+    }
+    if (tokens.colors.semantic) {
+      tokenParts.push(`\n### Semantic Colors`);
+      for (const [role, ref] of Object.entries(tokens.colors.semantic)) {
+        tokenParts.push(`- ${role}: ${ref}`);
+      }
+    }
+    tokenParts.push(`\n### Typography`);
+    for (const entry of tokens.typography.scale) {
+      tokenParts.push(`- ${entry.role}: ${entry.size}px, weight ${entry.weight}, family "${entry.family}"`);
+    }
+    tokenParts.push(`\n### Spacing`);
+    tokenParts.push(`Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`);
+    tokenParts.push(`\nUse these exact values for colors, typography, and spacing. Map to Tailwind classes where possible.`);
+    userMessageParts.push(tokenParts.join('\n'));
+
+    // Also inject brand spec if available for tone/accessibility context
+    const brandResult = loadBrandSpec(context.projectRoot, context.fs);
+    if (brandResult.ok) {
+      const brand = brandResult.value;
+      userMessageParts.push(
+        `\n## Brand Direction`,
+        `Tone: ${brand.identity.tone}`,
+        `Audience: ${brand.identity.audience}`,
+        `WCAG Level: ${brand.accessibility.wcag_level}`,
+      );
+    }
+  }
+
+  // Include design snapshot data if available (colors, typography, spacing from Figma/Penpot)
+  if (designSnapshot) {
+    const snapshotContext: string[] = ['\n## Design Visual References'];
+
+    if (designSnapshot.screenshotPath) {
+      snapshotContext.push(`Full-page screenshot: ${designSnapshot.screenshotPath}`);
+    }
+
+    if (designSnapshot.componentSnapshots && designSnapshot.componentSnapshots.length > 0) {
+      snapshotContext.push('\n### Extracted Component Styles');
+      for (const snap of designSnapshot.componentSnapshots) {
+        const parts = [`- **${snap.name}** (${snap.nodeType ?? 'unknown'})`];
+        if (snap.screenshotPath) {
+          parts.push(`  Screenshot: ${snap.screenshotPath}`);
+        }
+        if (snap.properties) {
+          parts.push(`  Styles: ${JSON.stringify(snap.properties)}`);
+        }
+        snapshotContext.push(parts.join('\n'));
+      }
+    }
+
+    if (designNodeIds) {
+      snapshotContext.push(`\nDesign node mapping: ${JSON.stringify(designNodeIds)}`);
+    }
+    if (designFileId) {
+      snapshotContext.push(`Design file: https://www.figma.com/file/${designFileId}`);
+    }
+
+    snapshotContext.push('\nUse these extracted styles to produce pixel-accurate Tailwind classes.');
+    snapshotContext.push('Map the exact colors, font sizes, spacing, and border radii from the design to your output.');
+    userMessageParts.push(snapshotContext.join('\n'));
+  }
 
   if (learnings.length > 0) {
     userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);

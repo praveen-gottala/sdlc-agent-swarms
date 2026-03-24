@@ -28,6 +28,8 @@ const defaultAnswers: InitAnswers = {
   repo: 'testorg/test-app',
   slackChannel: '#agentforge',
   telegramEnabled: true,
+  designArchetype: 'professional',
+  targetAudience: 'developers',
 };
 
 /**

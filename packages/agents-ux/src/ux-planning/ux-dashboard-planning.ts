@@ -20,9 +20,12 @@ import {
   Err,
   runAgent,
   readSpecs,
+  loadDesignTokens,
+  loadBrandSpec,
+  loadComponentLibrary,
 } from '@agentforge/core';
 import type { UXDashboardResearchOutput } from '../ux-research/ux-dashboard-research.js';
-import type { ComponentTreeNode, ResponsiveRule, ImplementationStage } from '../types.js';
+import type { ComponentTreeNode, ResponsiveRule, ImplementationStage, ScreenDefinition } from '../types.js';
 
 // ============================================================================
 // Types
@@ -44,6 +47,8 @@ export interface UXDashboardPlanningOutput {
   readonly tokenBindings: Readonly<Record<string, string>>;
   readonly responsiveRules: readonly ResponsiveRule[];
   readonly implementationStages: readonly ImplementationStage[];
+  /** Optional screen partitioning for per-screen design generation. */
+  readonly screens?: readonly ScreenDefinition[];
 }
 
 // ============================================================================
@@ -98,6 +103,7 @@ export const parsePlanningOutput = (output: string): Result<UXDashboardPlanningO
       tokenBindings: (parsed.tokenBindings as Record<string, string>) ?? {},
       responsiveRules: (parsed.responsiveRules as ResponsiveRule[]) ?? [],
       implementationStages: (parsed.implementationStages as ImplementationStage[]) ?? [],
+      screens: (parsed.screens as ScreenDefinition[] | undefined),
     });
   } catch {
     return Err({
@@ -124,22 +130,57 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
 ) => {
   const { moduleId, designBrief } = input;
 
+  // ── Input validation guards ──
+  if (!moduleId) {
+    return Err({ code: 'INVALID_STATE' as const, message: 'Planning input missing moduleId', recoverable: false });
+  }
+  if (!designBrief || !designBrief.briefId) {
+    return Err({ code: 'INVALID_STATE' as const, message: 'Planning input missing designBrief — run research stage first', recoverable: false });
+  }
+  if (designBrief.designConstraints.length === 0 && designBrief.referencePatterns.length === 0) {
+    // eslint-disable-next-line no-console
+    console.warn('[planning] Warning: designBrief has no constraints or reference patterns — research output may be incomplete.');
+  }
+
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);
   const specsContent = existingSpecs.ok ? JSON.stringify(existingSpecs.value) : '{}';
 
-  // 2. Fetch design tokens — ADR-024: try get_variable_defs, fall back to get_code
+  // 2. Fetch design tokens — ADR-024: try get_variable_defs, fall back to disk tokens, then get_code
   let tokenContext = '';
   const varResult = await context.mcpClient.callTool('figma', 'get_variable_defs', { moduleId });
   if (varResult.ok) {
     tokenContext = `\nDesign Tokens (from Figma Variables API):\n${JSON.stringify(varResult.value, null, 2)}`;
   } else {
-    // ADR-024 fallback: extract tokens from get_code inline styles
-    const codeResult = await context.mcpClient.callTool('figma', 'get_code', { moduleId });
-    if (codeResult.ok) {
-      tokenContext = `\nDesign Tokens (extracted from inline styles — Variables API unavailable, see ADR-024):\n${JSON.stringify(codeResult.value, null, 2)}`;
+    // Fallback 1: Load design tokens from agentforge/spec/design-tokens.yaml
+    const diskTokens = loadDesignTokens(context.projectRoot, context.fs);
+    if (diskTokens.ok) {
+      tokenContext = `\nDesign Tokens (from project spec — design-tokens.yaml):\n${JSON.stringify(diskTokens.value, null, 2)}`;
+      // Also inject brand spec if available
+      const diskBrand = loadBrandSpec(context.projectRoot, context.fs);
+      if (diskBrand.ok) {
+        tokenContext += `\n\nBrand Spec (from project spec — brand.yaml):\n${JSON.stringify(diskBrand.value, null, 2)}`;
+      }
+    } else {
+      // Fallback 2: ADR-024 extract tokens from get_code inline styles
+      const codeResult = await context.mcpClient.callTool('figma', 'get_code', { moduleId });
+      if (codeResult.ok) {
+        tokenContext = `\nDesign Tokens (extracted from inline styles — Variables API unavailable, see ADR-024):\n${JSON.stringify(codeResult.value, null, 2)}`;
+      }
     }
+  }
+
+  // 2b. Load component library for reference in token bindings
+  const componentLibResult = loadComponentLibrary(context.projectRoot, context.fs);
+  let componentLibContext = '';
+  if (componentLibResult.ok) {
+    const lib = componentLibResult.value;
+    const mappingLines = Object.entries(lib.react_mappings).map(([component, mapping]) => {
+      const variantNote = mapping.variant_prop ? ` (variant prop: ${mapping.variant_prop})` : '';
+      return `- ${component}: ${mapping.component_name}${variantNote}`;
+    });
+    componentLibContext = `\nComponent Library: ${lib.library_name}\nAvailable components:\n${mappingLines.join('\n')}\n\nUse these component names in your componentTree and tokenBindings where applicable.`;
   }
 
   // 3. Build prompt
@@ -152,6 +193,10 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
 
   if (tokenContext) {
     userMessageParts.push(tokenContext);
+  }
+
+  if (componentLibContext) {
+    userMessageParts.push(componentLibContext);
   }
 
   if (learnings.length > 0) {

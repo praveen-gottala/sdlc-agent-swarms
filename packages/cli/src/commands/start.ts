@@ -110,4 +110,14 @@ export async function startCommand(
   );
 
   output.write(successMsg(`Phase "${phase}" started (thread: ${startResult.value.threadId}).\n`));
+
+  // Show next steps for the active phase
+  output.write('\n');
+  output.write(infoMsg('Agents are now working. You can:\n'));
+  output.write(infoMsg('  agentforge status            — view task progress\n'));
+  output.write(infoMsg('  agentforge status --watch     — live-updating progress\n'));
+  output.write(infoMsg('  agentforge approve <task>     — approve tasks awaiting review\n'));
+  output.write(infoMsg('  agentforge design:preview     — view design system + spec in browser\n'));
+  output.write(infoMsg('  agentforge abort              — stop all running tasks\n'));
+  output.write('\n');
 }

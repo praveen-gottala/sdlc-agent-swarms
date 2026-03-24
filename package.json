@@ -18,7 +18,8 @@
     "figma:start": "docker compose up -d figma-bridge",
     "figma:stop": "docker compose down",
     "figma:logs": "docker compose logs -f figma-bridge",
-    "figma:status": "docker compose ps figma-bridge"
+    "figma:status": "docker compose ps figma-bridge",
+    "figma:build-plugin": "bash docker/talk-to-figma/build-figma-plugin.sh"
   },
   "dependencies": {
     "@nx/js": "^22.6.0",

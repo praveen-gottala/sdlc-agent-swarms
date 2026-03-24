@@ -42,6 +42,10 @@ export interface TransformResult {
   readonly postCreateSpacing?: number;
   /** If set, run set_padding after frame creation with these values. */
   readonly postCreatePadding?: Record<string, number>;
+  /** If true, the step should be skipped because a ref could not be resolved. */
+  readonly skipped?: boolean;
+  /** Human-readable reason when skipped is true. */
+  readonly skipReason?: string;
 }
 
 // ============================================================================
@@ -54,6 +58,32 @@ export const hexToRgb = (hex: string): { r: number; g: number; b: number } | nul
   if (!m) return null;
   const n = parseInt(m[1], 16);
   return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
+};
+
+// ============================================================================
+// Fuzzy ref matching
+// ============================================================================
+
+/**
+ * Attempt a fuzzy match for an unresolved ref name against known node IDs.
+ * Tries: (1) case-insensitive match, (2) substring match.
+ * Returns the matched key if exactly one match is found, otherwise null.
+ */
+export const fuzzyMatchRef = (refName: string, nodeIds: Readonly<Record<string, string>>): string | null => {
+  const keys = Object.keys(nodeIds);
+  const refLower = refName.toLowerCase();
+
+  // 1. Case-insensitive exact match
+  const ciMatches = keys.filter((k) => k.toLowerCase() === refLower);
+  if (ciMatches.length === 1) return ciMatches[0];
+
+  // 2. Substring match — ref is contained in a key, or key is contained in ref
+  const subMatches = keys.filter(
+    (k) => k.toLowerCase().includes(refLower) || refLower.includes(k.toLowerCase()),
+  );
+  if (subMatches.length === 1) return subMatches[0];
+
+  return null;
 };
 
 // ============================================================================
@@ -86,6 +116,8 @@ export const resolveAndTransformParams = (
   // ── Phase 1: Resolve ref:<componentRef> and <parent> placeholders ──
 
   const resolvedParams: Record<string, unknown> = {};
+  let hasUnresolvedRef = false;
+  let unresolvedRefName = '';
   for (const [key, value] of Object.entries(step.params)) {
     if (typeof value === 'string') {
       const refMatch = /^ref:(.+)$/.exec(value);
@@ -95,9 +127,19 @@ export const resolveAndTransformParams = (
         if (realId) {
           resolvedParams[key] = realId;
         } else {
-          // eslint-disable-next-line no-console
-          console.warn(`        [step ${ctx.stepIndex + 1}/${ctx.stepCount}] unresolved ref:${refName} — known refs: ${Object.keys(ctx.nodeIds).join(', ')}`);
-          resolvedParams[key] = value; // leave unresolved (will error in Figma)
+          // Attempt fuzzy match before giving up
+          const fuzzyKey = fuzzyMatchRef(refName, ctx.nodeIds);
+          if (fuzzyKey) {
+            // eslint-disable-next-line no-console
+            console.warn(`        [step ${ctx.stepIndex + 1}/${ctx.stepCount}] fuzzy-matched ref:${refName} → ${fuzzyKey}`);
+            resolvedParams[key] = ctx.nodeIds[fuzzyKey];
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn(`        [step ${ctx.stepIndex + 1}/${ctx.stepCount}] unresolved ref:${refName} — known refs: ${Object.keys(ctx.nodeIds).join(', ')}`);
+            hasUnresolvedRef = true;
+            unresolvedRefName = refName;
+            resolvedParams[key] = value; // leave unresolved marker for logging
+          }
         }
       } else if (value === '<parent>' && ctx.lastCreatedNodeId) {
         resolvedParams[key] = ctx.lastCreatedNodeId;
@@ -107,6 +149,15 @@ export const resolveAndTransformParams = (
     } else {
       resolvedParams[key] = value;
     }
+  }
+
+  // If any ref could not be resolved, signal the caller to skip this step
+  if (hasUnresolvedRef) {
+    return {
+      resolvedParams,
+      skipped: true,
+      skipReason: `unresolved ref:${unresolvedRefName}`,
+    };
   }
 
   // ── Phase 2: Param transforms ──
@@ -128,6 +179,20 @@ export const resolveAndTransformParams = (
     delete resolvedParams.paddingRight;
     delete resolvedParams.paddingTop;
     delete resolvedParams.paddingBottom;
+  }
+
+  // set_axis_align: normalize invalid enum values
+  if (step.tool === 'set_axis_align') {
+    const validCounter = new Set(['MIN', 'MAX', 'CENTER', 'BASELINE']);
+    const validPrimary = new Set(['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN']);
+    if (resolvedParams.counterAxisAlignItems &&
+        !validCounter.has(resolvedParams.counterAxisAlignItems as string)) {
+      resolvedParams.counterAxisAlignItems = 'MIN';
+    }
+    if (resolvedParams.primaryAxisAlignItems &&
+        !validPrimary.has(resolvedParams.primaryAxisAlignItems as string)) {
+      resolvedParams.primaryAxisAlignItems = 'MIN';
+    }
   }
 
   // create_text: fontWeight must be numeric, fontColor must be object
@@ -159,6 +224,19 @@ export const resolveAndTransformParams = (
     if (resolvedParams.mode && !resolvedParams.layoutMode) {
       resolvedParams.layoutMode = resolvedParams.mode;
       delete resolvedParams.mode;
+    }
+    // Normalize counterAxisAlignItems — Figma only accepts MIN|MAX|CENTER|BASELINE.
+    // LLMs often generate 'STRETCH' which is invalid (stretch is done via layoutAlign on children).
+    const validCounterAxisValues = new Set(['MIN', 'MAX', 'CENTER', 'BASELINE']);
+    if (resolvedParams.counterAxisAlignItems &&
+        !validCounterAxisValues.has(resolvedParams.counterAxisAlignItems as string)) {
+      resolvedParams.counterAxisAlignItems = 'MIN';
+    }
+    // Same for primaryAxisAlignItems — valid: MIN|MAX|CENTER|SPACE_BETWEEN
+    const validPrimaryAxisValues = new Set(['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN']);
+    if (resolvedParams.primaryAxisAlignItems &&
+        !validPrimaryAxisValues.has(resolvedParams.primaryAxisAlignItems as string)) {
+      resolvedParams.primaryAxisAlignItems = 'MIN';
     }
     // Strip FILL sizing — requires confirmed parent auto-layout which is unreliable inline
     if (resolvedParams.layoutSizingHorizontal === 'FILL') {

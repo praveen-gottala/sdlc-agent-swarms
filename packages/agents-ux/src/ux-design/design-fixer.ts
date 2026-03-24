@@ -7,9 +7,34 @@
 
 import type { Result, MCPClient } from '@agentforge/core';
 import { Ok } from '@agentforge/core';
-import type { LLMProvider } from '@agentforge/providers';
-import type { DesignIssue } from './design-evaluator.js';
+import type { LLMProvider, ContentBlock, ToolDefinition } from '@agentforge/providers';
+import type { DesignIssue, FixAttemptRecord } from './design-evaluator.js';
 import type { FigmaCreationStep } from '../types.js';
+
+/** Tool definition that forces the LLM to return structured fix steps. */
+const FIX_STEPS_TOOL: ToolDefinition = {
+  name: 'apply_fixes',
+  description: 'Apply a list of Figma fix steps to resolve the design issue.',
+  parameters: {
+    type: 'object',
+    properties: {
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            tool: { type: 'string', description: 'Figma tool name (e.g., set_fill_color, create_text)' },
+            params: { type: 'object', description: 'Tool parameters' },
+            componentRef: { type: 'string', description: 'Component reference key for node tracking' },
+            description: { type: 'string', description: 'Why this step is needed' },
+          },
+          required: ['tool', 'params'],
+        },
+      },
+    },
+    required: ['steps'],
+  },
+};
 
 /** Result of executing design fixes. */
 export interface FixResult {
@@ -21,7 +46,47 @@ export interface FixResult {
   readonly createdNodeTypes: Readonly<Record<string, string>>;
   /** Node IDs deleted during fixes — caller should remove from nodeMap/nodeTypes. */
   readonly deletedNodeIds: readonly string[];
+  /** Per-issue fix attempt records for feeding back into evaluator history. */
+  readonly fixAttempts: readonly FixAttemptRecord[];
+  /** Steps that were successfully executed (write operations only). Used to build a consolidated replay script. */
+  readonly successfulSteps: readonly FigmaCreationStep[];
 }
+
+/** Options for the design fixer. */
+export interface FixerOptions {
+  /** Base64-encoded screenshot so the fixer LLM can see the current visual state. */
+  readonly screenshotBase64?: string;
+  /** Previous fix attempts for this correction loop (helps avoid repeating failed approaches). */
+  readonly previousAttempts?: readonly FixAttemptRecord[];
+  /** Planning output (tokens, colors, typography, component spec) for design-aware fixes. */
+  readonly planningOutput?: Record<string, unknown>;
+  /** Design system prompt for consistent styling. */
+  readonly designSystemPrompt?: string;
+}
+
+/** Tools that the TalkToFigma bridge supports (upstream + AgentForge patch). */
+const SUPPORTED_TOOLS = new Set([
+  // Creation (upstream)
+  'create_frame', 'create_rectangle', 'create_text', 'create_component_instance',
+  // Creation (patched)
+  'create_ellipse', 'create_line', 'create_vector', 'create_polygon', 'create_star',
+  'create_component', 'create_boolean_operation',
+  // Styling (upstream)
+  'set_fill_color', 'set_stroke_color', 'set_text_content', 'set_multiple_text_contents',
+  'set_corner_radius',
+  // Styling (patched)
+  'set_effects', 'set_gradient_fill', 'set_image_fill', 'set_font_properties',
+  'set_opacity', 'set_name', 'set_constraints',
+  // Layout
+  'set_layout_mode', 'set_padding', 'set_item_spacing', 'set_axis_align', 'set_layout_sizing',
+  // Transform
+  'resize_node', 'move_node', 'clone_node', 'delete_node', 'delete_multiple_nodes',
+  'group_nodes', 'flatten_node',
+  // Read (fixer may use these for inspection)
+  'get_node_info', 'get_nodes_info', 'scan_nodes_by_types', 'scan_text_nodes',
+  // Navigation
+  'set_focus',
+]);
 
 /** Tools that only work on FRAME nodes (with auto-layout). */
 const FRAME_ONLY_TOOLS = new Set([
@@ -35,8 +100,66 @@ const TEXT_ONLY_TOOLS = new Set(['set_text_content']);
 /** Node types that can have children. */
 const CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'GROUP']);
 
-const FIX_GENERATION_SYSTEM_PROMPT = `You are a Figma design fix generator. Given a design issue and the current node map
-(with node types), generate the minimal set of Figma tool calls to fix the issue.
+/**
+ * Validate numeric parameters before sending to MCP.
+ * Returns an error message if any parameter is invalid, undefined if OK.
+ */
+function validateNumericParams(
+  tool: string,
+  params: Record<string, unknown>,
+): string | undefined {
+  const isFinitePositive = (v: unknown): boolean =>
+    typeof v === 'number' && Number.isFinite(v) && v > 0;
+  const isFiniteNumber = (v: unknown): boolean =>
+    typeof v === 'number' && Number.isFinite(v);
+  const isUnitRange = (v: unknown): boolean =>
+    typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
+
+  // Dimension params must be positive
+  for (const key of ['width', 'height', 'fontSize']) {
+    if (key in params && !isFinitePositive(params[key])) {
+      return `${key} must be a positive number, got ${JSON.stringify(params[key])}`;
+    }
+  }
+
+  // Position params must be finite (zero is valid)
+  for (const key of ['x', 'y']) {
+    if (key in params && !isFiniteNumber(params[key])) {
+      return `${key} must be a finite number, got ${JSON.stringify(params[key])}`;
+    }
+  }
+
+  // Opacity must be 0-1
+  if ('opacity' in params && !isUnitRange(params.opacity)) {
+    return `opacity must be 0-1, got ${JSON.stringify(params.opacity)}`;
+  }
+
+  // Color component validation (inside color object)
+  if (params.color && typeof params.color === 'object') {
+    const color = params.color as Record<string, unknown>;
+    for (const ch of ['r', 'g', 'b']) {
+      if (ch in color && !isUnitRange(color[ch])) {
+        return `color.${ch} must be 0-1, got ${JSON.stringify(color[ch])}`;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+const FIX_GENERATION_SYSTEM_PROMPT = `You are a Figma design fix generator. Given a design issue, the current node map
+(with node types), and optionally a screenshot of the current design state,
+generate the minimal set of Figma tool calls to fix the issue.
+
+If a screenshot is provided, use it to understand the actual visual state — look at
+what is visible, what is missing, what is misaligned, and generate fixes that
+address the specific visual problem you can see.
+
+DESIGN COHERENCE:
+- If a design system context is provided, ALWAYS use its exact token values for colors,
+  typography, and spacing. Never use arbitrary values.
+- Match the visual style of existing elements (same font family, same color palette).
+- Use the planning spec's component hierarchy to understand parent-child relationships.
 
 CRITICAL RULES:
 1. ALWAYS modify EXISTING nodes — do NOT create duplicates of nodes that already exist.
@@ -44,7 +167,9 @@ CRITICAL RULES:
    - FRAME: supports set_layout_mode, set_padding, set_item_spacing, set_fill_color, resize_node, and can have children
    - RECTANGLE: supports set_fill_color, set_corner_radius, resize_node, move_node. Does NOT support set_layout_mode, set_padding, children.
    - TEXT: supports set_text_content, set_fill_color, move_node, resize_node. Does NOT support set_layout_mode, children.
-   - ELLIPSE: supports set_fill_color, resize_node, move_node.
+   - ELLIPSE: supports set_fill_color, set_effects, resize_node, move_node. Use create_ellipse to create circles/ovals.
+   - LINE: supports set_stroke_color, move_node. Use create_line for chart axes and separators.
+   - VECTOR: supports set_fill_color, set_stroke_color, resize_node. Use create_vector with SVG path data for chart lines.
 3. Only FRAME nodes can be parents (parentId) for create_* operations.
 4. If a node is a RECTANGLE but needs to be a FRAME (e.g., needs children or auto-layout), you must
    delete it and create a new FRAME in its parent. Use "delete_node" then "create_frame".
@@ -54,14 +179,84 @@ CRITICAL RULES:
 8. move_node MUST include both "x" and "y".
 9. set_item_spacing uses "itemSpacing" (not "spacing").
 10. Keep fixes minimal — 1-5 steps per issue.
+11. counterAxisAlignItems ONLY accepts: "MIN"|"MAX"|"CENTER"|"BASELINE". NEVER use "STRETCH".
+12. primaryAxisAlignItems ONLY accepts: "MIN"|"MAX"|"CENTER"|"SPACE_BETWEEN".
+13. All numeric parameters (width, height, x, y, fontSize) MUST be positive numbers. Never pass null, undefined, or NaN.
+14. NEVER add children to ELLIPSE, RECTANGLE, LINE, VECTOR, POLYGON, or STAR nodes. Only FRAME and COMPONENT nodes can contain children.
+15. Only emit write operations (create, resize, set_fill, move) as fix steps. Do NOT emit read operations (scan_text_nodes, get_node_info) — they don't change anything.
 
 Available tools:
-  Modify: set_fill_color, set_stroke_color, set_text_content, set_layout_mode, set_padding,
-          set_item_spacing, set_corner_radius, set_opacity, resize_node, move_node, delete_node
-  Create: create_frame, create_rectangle, create_text, create_ellipse
+  Read:   get_node_info (nodeId), scan_nodes_by_types (nodeId, types[]), scan_text_nodes (nodeId)
+  Create: create_frame, create_rectangle, create_text, create_ellipse, create_line,
+          create_vector (SVG path data), create_polygon, create_star,
+          create_component, create_component_instance (componentId/componentKey)
+  Style:  set_fill_color, set_stroke_color, set_text_content, set_multiple_text_contents,
+          set_corner_radius, set_effects (drop shadow, blur), set_gradient_fill,
+          set_font_properties (fontFamily, fontSize, lineHeight), set_opacity, set_name
+  Layout: set_layout_mode, set_padding, set_item_spacing, set_corner_radius,
+          set_axis_align, set_layout_sizing, set_constraints, resize_node, move_node, clone_node
+  Group:  group_nodes (nodeIds[]), create_boolean_operation (UNION/SUBTRACT/INTERSECT/EXCLUDE)
+  Delete: delete_node, delete_multiple_nodes (nodeIds[]), flatten_node
+  TIP: Use scan_nodes_by_types to find existing child nodes before creating duplicates.
+  TIP: Use get_node_info to inspect a node's current properties before modifying it.
+  TIP: Use create_vector with vectorPaths [{data: "M0 0 L100 50 L200 20", windingRule: "EVENODD"}] for chart lines.
+  TIP: Use set_effects for card shadows: [{type:"DROP_SHADOW",offsetX:0,offsetY:2,radius:4,color:{r:0,g:0,b:0,a:0.1}}]
 
-Respond ONLY with a JSON array:
-[{ "tool": "<name>", "params": { ... }, "componentRef": "<key>", "description": "<why>" }]`;
+Use the apply_fixes tool to return your fix steps. Each step needs "tool" (Figma tool name) and "params" (tool parameters).
+Optionally include "componentRef" (node reference key) and "description" (why this step is needed).`;
+
+/**
+ * Parse LLM-generated fix steps from raw output.
+ * Handles: markdown fences, trailing commas, text around JSON,
+ * single object instead of array, and multiple JSON blocks.
+ */
+function parseFixSteps(content: string): FigmaCreationStep[] {
+  // 1. Try extracting from markdown fence
+  const fenceMatch = /```(?:json)?\s*\n?([\s\S]*?)```/.exec(content);
+  let jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
+
+  // 2. If no fence, try to find the JSON array in the text
+  if (!fenceMatch) {
+    const arrayStart = jsonStr.indexOf('[');
+    const arrayEnd = jsonStr.lastIndexOf(']');
+    if (arrayStart !== -1 && arrayEnd > arrayStart) {
+      jsonStr = jsonStr.slice(arrayStart, arrayEnd + 1);
+    }
+  }
+
+  // 3. Strip trailing commas before ] or } (common LLM mistake)
+  jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
+
+  // 4. Try parsing
+  try {
+    const parsed = JSON.parse(jsonStr) as unknown;
+    // If LLM returned a single object instead of array, wrap it
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return [parsed as FigmaCreationStep];
+    }
+    if (Array.isArray(parsed)) {
+      return parsed as FigmaCreationStep[];
+    }
+    throw new Error('Expected array or object');
+  } catch (firstErr) {
+    // 5. Last resort: try to find and parse individual JSON objects
+    const objectPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+    const matches = jsonStr.match(objectPattern);
+    if (matches && matches.length > 0) {
+      const steps: FigmaCreationStep[] = [];
+      for (const m of matches) {
+        try {
+          const obj = JSON.parse(m.replace(/,\s*([}\]])/g, '$1')) as FigmaCreationStep;
+          if (obj.tool) steps.push(obj);
+        } catch {
+          // skip unparseable objects
+        }
+      }
+      if (steps.length > 0) return steps;
+    }
+    throw firstErr;
+  }
+}
 
 /**
  * Reorder steps so set_layout_mode comes before set_padding/set_item_spacing for the same node.
@@ -158,7 +353,8 @@ function checkParentCompatibility(
  * @param nodeMap - Map of componentRef to Figma node IDs
  * @param provider - LLM provider for generating fix commands
  * @param nodeTypes - Map of componentRef to Figma node types (FRAME, RECTANGLE, TEXT, etc.)
- * @returns Count of fixed and failed issues
+ * @param options - Optional screenshot and previous attempt history
+ * @returns Count of fixed and failed issues, plus per-issue attempt records
  */
 export async function executeDesignFixes(
   issues: readonly DesignIssue[],
@@ -166,6 +362,7 @@ export async function executeDesignFixes(
   nodeMap: Readonly<Record<string, string>>,
   provider: LLMProvider,
   nodeTypes?: Readonly<Record<string, string>>,
+  options?: FixerOptions,
 ): Promise<Result<FixResult>> {
   const types = nodeTypes ?? {};
 
@@ -175,7 +372,7 @@ export async function executeDesignFixes(
   );
 
   if (actionableIssues.length === 0) {
-    return Ok({ fixed: 0, failed: 0, createdNodes: {}, createdNodeTypes: {}, deletedNodeIds: [] });
+    return Ok({ fixed: 0, failed: 0, createdNodes: {}, createdNodeTypes: {}, deletedNodeIds: [], fixAttempts: [], successfulSteps: [] });
   }
 
   let fixed = 0;
@@ -183,6 +380,8 @@ export async function executeDesignFixes(
   const allCreatedNodes: Record<string, string> = {};
   const allCreatedNodeTypes: Record<string, string> = {};
   const allDeletedNodeIds: string[] = [];
+  const allFixAttempts: FixAttemptRecord[] = [];
+  const allSuccessfulSteps: FigmaCreationStep[] = [];
 
   for (const issue of actionableIssues) {
     try {
@@ -192,13 +391,50 @@ export async function executeDesignFixes(
         return `  "${name}": "${id}" (${type})`;
       }).join('\n');
 
-      const fixResult = await provider.complete(
-        {
-          system: FIX_GENERATION_SYSTEM_PROMPT,
-          messages: [
-            {
-              role: 'user',
-              content: `Issue to fix:
+      // Build message content — include screenshot if available
+      const messageContent: ContentBlock[] = [];
+
+      if (options?.screenshotBase64) {
+        messageContent.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/png',
+            data: options.screenshotBase64,
+          },
+        });
+      }
+
+      // Build previous attempts context for this component
+      let previousContext = '';
+      if (options?.previousAttempts && options.previousAttempts.length > 0) {
+        const relevant = options.previousAttempts.filter(
+          (a) => a.issueComponent === issue.component,
+        );
+        if (relevant.length > 0) {
+          previousContext = `\n\nPREVIOUS FIX ATTEMPTS for "${issue.component}" (these did NOT solve the problem — try a DIFFERENT approach):
+${relevant.map((a) => `  - "${a.issueDescription}": ${a.stepsSucceeded}/${a.stepsAttempted} steps succeeded, ${a.stepsSkipped} skipped`).join('\n')}`;
+        }
+      }
+
+      // Build design context section if available
+      let designContext = '';
+      if (options?.planningOutput) {
+        const spec = options.planningOutput;
+        // Extract the most useful parts: tokens (colors, typography, spacing) and component tree
+        const tokens = spec.tokens ?? spec.designTokens;
+        const components = spec.components ?? spec.componentTree;
+        if (tokens) {
+          designContext += `\n\nDESIGN TOKENS (use these exact values — do NOT use arbitrary colors/sizes):\n${JSON.stringify(tokens, null, 2)}`;
+        }
+        if (components) {
+          designContext += `\n\nCOMPONENT SPEC:\n${JSON.stringify(components, null, 2)}`;
+        }
+      }
+
+      messageContent.push({
+        type: 'text',
+        text: `Issue to fix:
   Component: ${issue.component}
   Severity: ${issue.severity}
   Problem: ${issue.description}
@@ -206,10 +442,21 @@ export async function executeDesignFixes(
 
 Existing Figma nodes (name: "nodeId" (TYPE)):
 ${nodeInfo}
+${designContext}${previousContext}
 
-Generate the minimal fix steps. Check node types before choosing tools.`,
+Generate the minimal fix steps using the apply_fixes tool. Check node types before choosing tools.${options?.screenshotBase64 ? ' Use the screenshot above to understand the current visual state.' : ''}`,
+      });
+
+      const fixResult = await provider.complete(
+        {
+          system: FIX_GENERATION_SYSTEM_PROMPT,
+          messages: [
+            {
+              role: 'user',
+              content: messageContent,
             },
           ],
+          tools: [FIX_STEPS_TOOL],
         },
         {
           model: 'claude-sonnet-4',
@@ -225,19 +472,24 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
         continue;
       }
 
-      // Parse fix steps
-      const content = fixResult.value.content;
-      const fenceMatch = /```json\s*\n?([\s\S]*?)```/.exec(content);
-      const jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
-
+      // Extract fix steps — prefer structured tool_use, fall back to text parsing
       let steps: FigmaCreationStep[];
-      try {
-        steps = JSON.parse(jsonStr) as FigmaCreationStep[];
-      } catch {
-        // eslint-disable-next-line no-console
-        console.warn(`        [fix] Failed to parse fix steps for ${issue.component}`);
-        failed++;
-        continue;
+      const toolCall = fixResult.value.toolCalls?.find((tc) => tc.name === 'apply_fixes');
+      if (toolCall) {
+        // Structured output via tool use — guaranteed valid JSON
+        const args = toolCall.args as { steps?: FigmaCreationStep[] };
+        steps = args.steps ?? [];
+      } else {
+        // Fallback: parse from text content (legacy behavior)
+        const content = fixResult.value.content;
+        try {
+          steps = parseFixSteps(content);
+        } catch (parseErr) {
+          // eslint-disable-next-line no-console
+          console.warn(`        [fix] Failed to parse fix steps for ${issue.component}: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
+          failed++;
+          continue;
+        }
       }
 
       if (!Array.isArray(steps) || steps.length === 0) {
@@ -258,9 +510,15 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
       let stepSucceeded = false;
       let hasBrokenDependency = false;
       const createdNodeIds: Record<number, string> = {};
+      let issueStepsAttempted = 0;
+      let issueStepsSucceeded = 0;
+      let issueStepsFailed = 0;
+      let issueStepsSkipped = 0;
 
       for (let stepIdx = 0; stepIdx < steps.length; stepIdx++) {
         const step = steps[stepIdx];
+
+        issueStepsAttempted++;
 
         // If a dependency failed, skip all steps that reference it
         if (hasBrokenDependency) {
@@ -268,6 +526,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
             (v) => typeof v === 'string' && /^\$step:\d+$/.test(v),
           );
           if (hasStepRef) {
+            issueStepsSkipped++;
             continue; // silently skip — dependency chain is broken
           }
         }
@@ -323,6 +582,17 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           }
         }
 
+        // Auto-link mutation tools to preceding create_* if nodeId missing (issue #22b)
+        if (!resolvedParams.nodeId && !step.tool.startsWith('create_') && step.tool !== 'delete_node') {
+          // Find the most recent create_* step and use its output
+          for (let k = stepIdx - 1; k >= 0; k--) {
+            if (steps[k].tool.startsWith('create_') && createdNodeIds[k]) {
+              resolvedParams.nodeId = createdNodeIds[k];
+              break;
+            }
+          }
+        }
+
         // Normalize set_item_spacing params
         if (step.tool === 'set_item_spacing') {
           if (!resolvedParams.itemSpacing && !resolvedParams.counterAxisSpacing) {
@@ -339,7 +609,22 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
         if (step.tool === 'set_text_content' && !resolvedParams.text) {
           // eslint-disable-next-line no-console
           console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: missing text parameter`);
+          issueStepsSkipped++;
           continue;
+        }
+
+        // Validate set_corner_radius has radius param (normalize cornerRadius → radius)
+        if (step.tool === 'set_corner_radius') {
+          if (resolvedParams.cornerRadius != null && resolvedParams.radius == null) {
+            resolvedParams.radius = resolvedParams.cornerRadius;
+            delete resolvedParams.cornerRadius;
+          }
+          if (resolvedParams.radius == null) {
+            // eslint-disable-next-line no-console
+            console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: missing radius parameter`);
+            issueStepsSkipped++;
+            continue;
+          }
         }
 
         // Validate color params are objects (not strings)
@@ -347,6 +632,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           if (typeof resolvedParams.color !== 'object') {
             // eslint-disable-next-line no-console
             console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: color must be an object`);
+            issueStepsSkipped++;
             continue;
           }
         }
@@ -355,6 +641,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
         if (step.tool === 'move_node' && (resolvedParams.x == null || resolvedParams.y == null)) {
           // eslint-disable-next-line no-console
           console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: missing x or y`);
+          issueStepsSkipped++;
           continue;
         }
 
@@ -364,6 +651,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           if (!nid || nid === 'undefined' || nid === 'null') {
             // eslint-disable-next-line no-console
             console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: no valid nodeId`);
+            issueStepsSkipped++;
             continue;
           }
         }
@@ -374,6 +662,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           if (!nid || nid === 'undefined' || nid === 'null') {
             // eslint-disable-next-line no-console
             console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: no valid nodeId`);
+            issueStepsSkipped++;
             continue;
           }
         }
@@ -385,6 +674,7 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           if (incompatible) {
             // eslint-disable-next-line no-console
             console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: ${incompatible}`);
+            issueStepsSkipped++;
             continue;
           }
         }
@@ -395,20 +685,70 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
             resolvedParams.parentId as string, types, nodeMap,
           );
           if (incompatible) {
-            // eslint-disable-next-line no-console
-            console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: ${incompatible}`);
-            hasBrokenDependency = true; // downstream $step:N refs will fail too
-            continue;
+            // Auto-fix: redirect to the leaf node's parent container
+            let autoFixed = false;
+            try {
+              const leafInfo = await mcpClient.callTool('figma', 'get_node_info', {
+                nodeId: resolvedParams.parentId,
+              });
+              if (leafInfo.ok) {
+                const info = leafInfo.value as Record<string, unknown>;
+                const leafParentId = info.parentId as string | undefined;
+                if (leafParentId) {
+                  // eslint-disable-next-line no-console
+                  console.warn(`        [fix] ${step.tool} for ${issue.component} -> AUTO-FIX: redirecting parent from leaf node to its container ${leafParentId}`);
+                  resolvedParams.parentId = leafParentId;
+                  autoFixed = true;
+                }
+              }
+            } catch {
+              // fall through to skip
+            }
+            if (!autoFixed) {
+              // eslint-disable-next-line no-console
+              console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: ${incompatible}`);
+              issueStepsSkipped++;
+              hasBrokenDependency = true;
+              continue;
+            }
           }
         }
 
-        const prefix = step.tool.startsWith('get_') ? 'figma' : 'figma-write';
+        // Check tool is supported by the bridge
+        if (!SUPPORTED_TOOLS.has(step.tool)) {
+          // eslint-disable-next-line no-console
+          console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: unsupported tool`);
+          issueStepsSkipped++;
+          if (step.tool.startsWith('create_')) hasBrokenDependency = true;
+          continue;
+        }
+
+        // Pre-flight: validate numeric parameters
+        const numericError = validateNumericParams(step.tool, resolvedParams);
+        if (numericError) {
+          // eslint-disable-next-line no-console
+          console.warn(`        [fix] ${step.tool} for ${issue.component} -> SKIP: ${numericError}`);
+          issueStepsSkipped++;
+          if (step.tool.startsWith('create_')) hasBrokenDependency = true;
+          continue;
+        }
+
+        const prefix = (step.tool.startsWith('get_') || step.tool.startsWith('scan_') || step.tool === 'read_my_design' || step.tool === 'export_node_as_image')
+          ? 'figma' : 'figma-write';
         const toolResult = await mcpClient.callTool(prefix, step.tool, resolvedParams);
 
         if (toolResult.ok) {
           stepSucceeded = true;
+          issueStepsSucceeded++;
           // eslint-disable-next-line no-console
           console.log(`        [fix] ${step.tool} for ${issue.component} -> OK`);
+
+          // Collect successful write operations for consolidated replay script
+          const isWriteOp = !step.tool.startsWith('get_') && !step.tool.startsWith('scan_')
+            && step.tool !== 'read_my_design' && step.tool !== 'export_node_as_image';
+          if (isWriteOp) {
+            allSuccessfulSteps.push(step);
+          }
 
           // Track created node IDs for subsequent steps and for caller
           if (step.tool.startsWith('create_')) {
@@ -422,6 +762,10 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
               const toolTypeMap: Record<string, string> = {
                 create_frame: 'FRAME', create_rectangle: 'RECTANGLE',
                 create_text: 'TEXT', create_ellipse: 'ELLIPSE',
+                create_line: 'LINE', create_vector: 'VECTOR',
+                create_polygon: 'POLYGON', create_star: 'STAR',
+                create_component: 'COMPONENT',
+                create_component_instance: 'INSTANCE',
               };
               allCreatedNodeTypes[nodeName] = toolTypeMap[step.tool] ?? 'FRAME';
             }
@@ -431,7 +775,11 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
           if (step.tool === 'delete_node' && resolvedParams.nodeId) {
             allDeletedNodeIds.push(resolvedParams.nodeId as string);
           }
+          if (step.tool === 'delete_multiple_nodes' && Array.isArray(resolvedParams.nodeIds)) {
+            allDeletedNodeIds.push(...(resolvedParams.nodeIds as string[]));
+          }
         } else {
+          issueStepsFailed++;
           // eslint-disable-next-line no-console
           console.warn(`        [fix] ${step.tool} for ${issue.component} -> ERR: ${toolResult.error.message}`);
 
@@ -442,6 +790,16 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
         }
       }
 
+      // Record this issue's fix attempt for history tracking
+      allFixAttempts.push({
+        issueComponent: issue.component,
+        issueDescription: issue.description,
+        stepsAttempted: issueStepsAttempted,
+        stepsSucceeded: issueStepsSucceeded,
+        stepsFailed: issueStepsFailed,
+        stepsSkipped: issueStepsSkipped,
+      });
+
       if (stepSucceeded) {
         fixed++;
       } else {
@@ -451,8 +809,16 @@ Generate the minimal fix steps. Check node types before choosing tools.`,
       // eslint-disable-next-line no-console
       console.warn(`        [fix] Unexpected error fixing ${issue.component}: ${err instanceof Error ? err.message : String(err)}`);
       failed++;
+      allFixAttempts.push({
+        issueComponent: issue.component,
+        issueDescription: issue.description,
+        stepsAttempted: 0,
+        stepsSucceeded: 0,
+        stepsFailed: 0,
+        stepsSkipped: 0,
+      });
     }
   }
 
-  return Ok({ fixed, failed, createdNodes: allCreatedNodes, createdNodeTypes: allCreatedNodeTypes, deletedNodeIds: allDeletedNodeIds });
+  return Ok({ fixed, failed, createdNodes: allCreatedNodes, createdNodeTypes: allCreatedNodeTypes, deletedNodeIds: allDeletedNodeIds, fixAttempts: allFixAttempts, successfulSteps: allSuccessfulSteps });
 }

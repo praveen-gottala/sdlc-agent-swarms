@@ -1,5 +1,0 @@
-version: "1.0"
-app:
-  name: test-app
-  description: just a desc
-adrs: []

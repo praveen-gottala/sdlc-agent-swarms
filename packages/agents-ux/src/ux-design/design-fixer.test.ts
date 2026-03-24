@@ -285,8 +285,9 @@ describe('executeDesignFixes', () => {
     const provider = createMockProvider(fixSteps);
     await executeDesignFixes(issues, mcpClient, nodeMap, provider, nodeTypes);
 
-    // All 3 steps should be skipped (parent incompatible → dependency chain broken)
-    expect(capturedCalls).toHaveLength(0);
+    // Auto-fix attempts get_node_info on the leaf parent, then all 3 steps are skipped
+    // (parent incompatible → auto-fix fails → dependency chain broken)
+    expect(capturedCalls).toEqual(['get_node_info']);
   });
 
   it('filters out minor issues', async () => {

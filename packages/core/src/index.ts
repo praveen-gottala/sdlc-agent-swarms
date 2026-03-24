@@ -141,6 +141,23 @@ export {
   addTask,
 } from './state/task-manager.js';
 
+// State: PRD reader
+export { loadPRD, prdExists } from './state/prd-reader.js';
+
+// State: design system reader
+export type { DesignTokensFlat } from './state/design-system-reader.js';
+export {
+  loadDesignTokens,
+  loadBrandSpec,
+  saveDesignTokens,
+  saveBrandSpec,
+  loadComponentLibrary,
+  saveComponentLibrary,
+  toDesignTokens,
+  validateDesignTokens,
+  validateBrandSpec,
+} from './state/design-system-reader.js';
+
 // State: task dependency graph
 export type { AgentSlot, DependencyGraphConfig } from './state/task-dependency-graph.js';
 export {
@@ -151,6 +168,26 @@ export {
   onTaskFailed,
   getSchedulableTasks,
 } from './state/task-dependency-graph.js';
+
+// Design system types
+export type {
+  PrimitiveColors,
+  SemanticColors,
+  ColorSpec,
+  TypographyScaleEntry,
+  TypographySpec,
+  SpacingSpec,
+  BorderSpec,
+  TouchTargetSpec,
+  DesignTokensSpec,
+  BrandIdentity,
+  IllustrationStyle,
+  MotionPrinciples,
+  AccessibilitySpec,
+  BrandSpec,
+  ReactComponentMapping,
+  ComponentLibrarySpec,
+} from './types/design-system.js';
 
 // Spec types (PRD v2.0 Section 5.2)
 export type {
@@ -216,6 +253,17 @@ export type {
   MCPClientConfig,
   TalkToFigmaConfig,
   TalkToFigmaConnection,
+  DesignToolKind,
+  DesignToolConnectionConfig,
+  DesignToolSession,
+  DesignToolAdapter,
+  DesignToolScreenshotResult,
+  FigmaAdapterConfig,
+  FigmaAdapterLog,
+  PenpotTransportConfig,
+  PenpotConnection,
+  PlaywrightTransportConfig,
+  PlaywrightTransportHandle,
 } from './mcp/index.js';
 export {
   createEnvSecretProvider,
@@ -229,4 +277,13 @@ export {
   createMCPClient,
   createTalkToFigmaTransport,
   TALK_TO_FIGMA_TOOLS,
+  createFigmaAdapter,
+  discoverFigmaChannels,
+  discoverFigmaTools,
+  createPenpotConnection,
+  createPenpotTransport,
+  createPenpotAdapter,
+  createPlaywrightTransport,
+  createPlaywrightTransportFromPage,
+  PLAYWRIGHT_TOOLS,
 } from './mcp/index.js';

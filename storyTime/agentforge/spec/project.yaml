@@ -1,5 +1,0 @@
-version: "1.0"
-app:
-  name: storyTime
-  description: tell stories to children
-adrs: []

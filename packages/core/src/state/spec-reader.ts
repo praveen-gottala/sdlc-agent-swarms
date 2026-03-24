@@ -10,6 +10,7 @@ import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
 import type { FileSystem } from '../fs/file-system.js';
 import type { ComponentSpec, ApiSpec, ModelsSpec } from '../types/spec-types.js';
+import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '../types/design-system.js';
 import { readYaml } from '../fs/yaml-utils.js';
 
 /**
@@ -22,6 +23,12 @@ export interface SpecFiles {
   readonly api?: ApiSpec;
   readonly models?: ModelsSpec;
   readonly components: Readonly<Record<string, ComponentSpec>>;
+  /** Design tokens (colors, typography, spacing). Loaded from design-tokens.yaml if present. */
+  readonly designTokens?: DesignTokensSpec;
+  /** Brand direction (tone, audience, accessibility). Loaded from brand.yaml if present. */
+  readonly brand?: BrandSpec;
+  /** Component library mappings (import paths, variant props). Loaded from component-library.yaml if present. */
+  readonly componentLibrary?: ComponentLibrarySpec;
 }
 
 /**
@@ -65,6 +72,9 @@ export const readSpecs = (specDir: string, fs: FileSystem): Result<SpecFiles> =>
     api: readOptional<ApiSpec>('api'),
     models: readOptional<ModelsSpec>('models'),
     components,
+    designTokens: readOptional<DesignTokensSpec>('design-tokens'),
+    brand: readOptional<BrandSpec>('brand'),
+    componentLibrary: readOptional<ComponentLibrarySpec>('component-library'),
   });
 };
 

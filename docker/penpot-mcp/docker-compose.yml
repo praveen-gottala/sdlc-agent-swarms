@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  penpot-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4401:4401"
+      - "4402:4402"
+    restart: unless-stopped
+    container_name: agentforge-penpot-mcp

@@ -7,9 +7,11 @@
 import { Ok } from '@agentforge/core';
 import {
   buildDesignSystemContext,
+  buildDesignSystemContextFromSpec,
   applyDesignFeedback,
   createDesignCollaborationSession,
 } from './design-collaboration.js';
+import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 
 // ============================================================================
@@ -303,5 +305,152 @@ describe('createDesignCollaborationSession', () => {
     const secondCallMessages = provider.complete.mock.calls[1][0].messages as Array<{ role: string; content: string }>;
     // Should have prior user + assistant messages + current user message
     expect(secondCallMessages.length).toBe(3);
+  });
+});
+
+// ============================================================================
+// buildDesignSystemContextFromSpec tests
+// ============================================================================
+
+const VALID_TOKENS: DesignTokensSpec = {
+  version: '1.0',
+  created_by: 'test',
+  colors: {
+    primitive: {
+      white: '#FFFFFF',
+      slate: '#334155',
+      blue: '#2563EB',
+    },
+    semantic: {
+      'background-primary': 'white',
+      'text-primary': 'slate',
+      'cta-primary': 'blue',
+      error: '#DC2626',
+    },
+  },
+  typography: {
+    font_families: { display: 'DM Sans', body: 'Inter' },
+    scale: [
+      { role: 'heading-1', size: 32, weight: 700, family: 'display' },
+      { role: 'body', size: 14, weight: 400, family: 'body' },
+    ],
+  },
+  spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32] },
+  borders: { radius: { small: 8, medium: 12 } },
+  touch_targets: { minimum_height: 44, minimum_width: 44 },
+};
+
+const VALID_BRAND: BrandSpec = {
+  version: '1.0',
+  created_by: 'test',
+  identity: { tone: 'professional', audience: 'developers' },
+  illustration_style: { direction: 'minimal', description: 'Clean lines' },
+  motion_principles: {
+    page_transitions: 'fade',
+    interaction_feel: 'snappy',
+    easing: 'ease-out',
+    duration_base_ms: 200,
+  },
+  accessibility: { wcag_level: 'AA' },
+};
+
+const SPEC_PLANNING_OUTPUT = {
+  componentTree: [
+    { name: 'DashboardLayout', props: ['width', 'height'], children: [{ name: 'Header' }] },
+    { name: 'Header', props: ['title'], children: [] },
+  ],
+  tokenBindings: {
+    'Header.fill': 'color.surface.header',
+    'MetricCard.fill': 'color.surface.card',
+  } as Record<string, string>,
+};
+
+describe('buildDesignSystemContextFromSpec', () => {
+  it('produces designSystemPrompt from spec', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.designSystemPrompt).toContain('professional');
+    expect(ctx.designSystemPrompt).toContain('AA');
+    expect(ctx.designSystemPrompt).toContain('developers');
+  });
+
+  it('maps primitive colors to colorPalette RGB entries', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.colorPalette.length).toBe(3); // white, slate, blue
+
+    const white = ctx.colorPalette.find(c => c.name === 'white');
+    expect(white).toBeDefined();
+    // #FFFFFF → r:1, g:1, b:1
+    expect(white!.rgb.r).toBeCloseTo(1, 2);
+    expect(white!.rgb.g).toBeCloseTo(1, 2);
+    expect(white!.rgb.b).toBeCloseTo(1, 2);
+
+    const slate = ctx.colorPalette.find(c => c.name === 'slate');
+    expect(slate).toBeDefined();
+    // #334155 → r:0.2, g:0.255, b:0.333
+    expect(slate!.rgb.r).toBeCloseTo(0.2, 1);
+    expect(slate!.rgb.g).toBeCloseTo(0.255, 1);
+    expect(slate!.rgb.b).toBeCloseTo(0.333, 1);
+  });
+
+  it('maps typography scale entries', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.typographyScale).toHaveLength(2);
+
+    const heading = ctx.typographyScale.find(t => t.role === 'heading-1');
+    expect(heading).toEqual({ role: 'heading-1', fontSize: 32, fontWeight: 700 });
+
+    const body = ctx.typographyScale.find(t => t.role === 'body');
+    expect(body).toEqual({ role: 'body', fontSize: 14, fontWeight: 400 });
+  });
+
+  it('maps spacing scale entries', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.spacingScale).toHaveLength(6);
+    expect(ctx.spacingScale[0]).toEqual({ role: 'spacing-0', value: 4 });
+    expect(ctx.spacingScale[3]).toEqual({ role: 'spacing-3', value: 16 });
+    expect(ctx.spacingScale[5]).toEqual({ role: 'spacing-5', value: 32 });
+  });
+
+  it('preserves componentTree and tokenBindings from planning', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.componentTree).toBe(SPEC_PLANNING_OUTPUT.componentTree);
+    expect(ctx.tokenBindings).toBe(SPEC_PLANNING_OUTPUT.tokenBindings);
+    expect(ctx.tokenBindings['Header.fill']).toBe('color.surface.header');
+    expect(ctx.tokenBindings['MetricCard.fill']).toBe('color.surface.card');
+  });
+
+  it('includes component tokens section in prompt when present', () => {
+    const tokensWithComponents: DesignTokensSpec = {
+      ...VALID_TOKENS,
+      components: {
+        button: {
+          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24 },
+          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'slate' },
+          ghost: { bg: 'transparent', text: 'cta-primary' },
+        },
+        card: {
+          default: { bg: 'background-primary', border_color: 'slate', radius: 'medium', padding: 24 },
+        },
+      },
+    };
+
+    const ctx = buildDesignSystemContextFromSpec(tokensWithComponents, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.designSystemPrompt).toContain('## Component Tokens');
+    expect(ctx.designSystemPrompt).toContain('### Button');
+    expect(ctx.designSystemPrompt).toContain('bg={cta-primary}');
+    expect(ctx.designSystemPrompt).toContain('### Card');
+    expect(ctx.designSystemPrompt).toContain('do not choose colors independently');
+  });
+
+  it('omits component tokens section when components is undefined', () => {
+    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
+
+    expect(ctx.designSystemPrompt).not.toContain('## Component Tokens');
   });
 });

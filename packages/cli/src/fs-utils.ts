@@ -6,6 +6,7 @@
  */
 
 import * as path from 'node:path';
+import * as nodeFs from 'node:fs';
 import {
   createRealFs,
   readYaml as coreReadYaml,
@@ -37,6 +38,42 @@ export function writeYaml(filePath: string, data: unknown, fileSystem: FileSyste
  * Resolve the project root by walking up from cwd looking for agentforge.yaml.
  * Returns cwd if no manifest found (for init command).
  */
+/**
+ * Load a .env file into process.env. Keys already set in process.env are NOT overwritten.
+ * Handles comments, blank lines, and quoted values.
+ */
+export function loadDotEnv(projectRoot: string): void {
+  const envPath = path.join(projectRoot, '.env');
+  let content: string;
+  try {
+    content = nodeFs.readFileSync(envPath, 'utf-8');
+  } catch {
+    return; // no .env file — nothing to load
+  }
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+
+    const key = trimmed.slice(0, eqIndex).trim();
+    let value = trimmed.slice(eqIndex + 1).trim();
+
+    // Strip surrounding quotes
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    // Don't overwrite existing env vars
+    if (key && value && !process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+}
+
 export function findProjectRoot(cwd: string = process.cwd(), fileSystem: FileSystem = realFs): string {
   let dir = cwd;
   while (true) {

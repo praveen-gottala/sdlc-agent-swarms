@@ -68,3 +68,24 @@ export type {
   ModelEntry,
   ModelsSpec,
 } from './spec-types.js';
+
+export type {
+  PrimitiveColors,
+  SemanticColors,
+  ColorSpec,
+  TypographyScaleEntry,
+  TypographySpec,
+  SpacingSpec,
+  BorderSpec,
+  TouchTargetSpec,
+  ComponentVariantTokens,
+  ComponentTokens,
+  DesignTokensSpec,
+  BrandIdentity,
+  IllustrationStyle,
+  MotionPrinciples,
+  AccessibilitySpec,
+  BrandSpec,
+  ReactComponentMapping,
+  ComponentLibrarySpec,
+} from './design-system.js';

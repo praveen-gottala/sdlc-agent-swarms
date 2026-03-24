@@ -134,7 +134,7 @@ describe('doctorCommand', () => {
       name: 'claude',
       models: ['claude-haiku-4'],
       isAvailable: jest.fn().mockResolvedValue(true),
-      complete: jest.fn(),
+      complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),
       estimateCost: jest.fn(),
     });
@@ -155,7 +155,7 @@ describe('doctorCommand', () => {
       name: 'claude',
       models: ['claude-haiku-4'],
       isAvailable: jest.fn().mockResolvedValue(false),
-      complete: jest.fn(),
+      complete: jest.fn().mockResolvedValue({ ok: false, error: { code: 'AUTH_FAILED', message: 'Invalid API key' } }),
       stream: jest.fn(),
       estimateCost: jest.fn(),
     });
@@ -199,7 +199,7 @@ describe('doctorCommand', () => {
       name: 'claude',
       models: ['claude-haiku-4'],
       isAvailable: jest.fn().mockResolvedValue(true),
-      complete: jest.fn(),
+      complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),
       estimateCost: jest.fn(),
     });
@@ -296,7 +296,7 @@ describe('doctorCommand', () => {
       name: 'claude',
       models: ['claude-haiku-4'],
       isAvailable: jest.fn().mockResolvedValue(true),
-      complete: jest.fn(),
+      complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),
       estimateCost: jest.fn(),
     });

@@ -69,13 +69,20 @@
 | 17 | **No plugin connection prompt** | Bridge connects to random channel; Figma plugin on different channel | Added channel discovery via `/channels` endpoint + user prompt to connect plugin |
 | 18 | **Screenshot returns null** | `Figma returned null image URL after 2 attempts` | Increased retries to 4 with progressive delay (3s, 6s, 9s); added 5s pre-screenshot delay |
 
+| 22 | **`create_ellipse` unsupported by bridge** | `ERR: Unknown command: create_ellipse` | Tool is in `TALK_TO_FIGMA_TOOLS` list but bridge doesn't implement it; LLM generates it for chart data points | **Root cause fix (ADR-027):** Removed `create_ellipse` from `TALK_TO_FIGMA_TOOLS`, agent contract, and `ALLOWED_TOOLS`. Added `GET /tools` endpoint to bridge patch for dynamic tool discovery. `discoverTools()` queries bridge at runtime and filters `TALK_TO_FIGMA_TOOLS` in `listTools()`. Prompt suggests `create_rectangle` + `set_corner_radius` as alternative. | `talk-to-figma-transport.ts`, `ux-dashboard-design.ts`, `design-fixer.ts`, `figma-preflight.ts`, `patch-channels-endpoint.js` |
+
+| 23 | **`set_corner_radius` missing `radius` param** | `ERR: TalkToFigma: Missing radius parameter` | LLM generates `set_corner_radius` without `radius` or uses `cornerRadius` instead | Pre-flight validation: normalize `cornerRadius` → `radius`, skip if still missing | `design-fixer.ts` |
+| 24 | **`set_fill_color`/`set_corner_radius` SKIP after create** | `SKIP: no valid nodeId` | LLM generates mutation tool after `create_*` but doesn't use `$step:N` — nodeId is empty | Auto-link: if mutation tool has no nodeId, find the most recent preceding `create_*` step's output | `design-fixer.ts` |
+| 25 | **4 phantom tools never worked** | `create_component`, `create_instance`, `set_name`, `set_opacity` listed in TALK_TO_FIGMA_TOOLS but not implemented by upstream plugin | **ADR-028:** Removed all 4. Real upstream tool is `create_component_instance`. Full tool list aligned with upstream (39 tools). | `talk-to-figma-transport.ts`, `ux-dashboard-design.ts`, `design-fixer.ts`, `design-collaboration.ts` |
+| 26 | **17 upstream tools missing** | Agent had no access to `get_node_info`, `scan_nodes_by_types`, `export_node_as_image`, batch tools, etc. | **ADR-028:** Added all 21 upstream tools we were missing. Fixer now has `scan_nodes_by_types` (find existing nodes) and `get_node_info` (inspect before modify). | All tool files |
+
 ### Known Remaining Issues
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 19 | **Score plateau at 72-75** | Open | Corrections execute successfully but score barely improves. The evaluator may report the same issues even after valid fixes. Possible causes: (a) fixes create new nodes in wrong position, (b) evaluator doesn't see the fixed nodes, (c) chart/table components need structural changes the fixer can't do with available tools |
-| 20 | **Table duplicate headers** | Open | CostDataTable gets duplicate column headers (Agent/Model/Tokens/Cost appears twice). Fixer creates new text nodes instead of modifying existing ones for sub-components |
-| 21 | **Chart area mostly empty** | Open | CostTrendChart placeholder is a rectangle — fixer replaces it with a frame but can't draw actual chart lines/bars with available Figma tools |
+| 19 | **Score plateau at 72-75** | Mitigated | Previously: fixer was blind — couldn't inspect nodes. Now has `get_node_info`, `scan_nodes_by_types`, `set_effects` (shadows), `set_font_properties`. Re-test needed. |
+| 20 | **Table duplicate headers** | Mitigated | Previously: fixer couldn't find existing text nodes. Now has `scan_text_nodes` and `scan_nodes_by_types`. Prompt updated with TIP to scan before creating. Re-test needed. |
+| 21 | **Chart area mostly empty** | Fixed | **ADR-029:** Patched plugin with `create_vector` (SVG paths for trend lines), `create_line` (axes/grid), `create_ellipse` (data points). Design prompt updated with chart drawing instructions. Re-test needed. |
 
 ### Design Principles Learned
 
@@ -84,3 +91,41 @@
 3. **Track all state changes** — Deletes, creates, and type changes must all flow back to the caller's nodeMap.
 4. **Cap LLM output** — Hard limits on step count prevent runaway fix generation.
 5. **Dependency chains need explicit tracking** — When step 2 depends on step 0's output, failure of step 0 must cascade cleanly.
+
+---
+
+## No Shortcuts — Ever
+
+**Context:** Penpot design tool integration (ADR-030)
+**Rule:** Never take shortcuts to get something "working". If a design is wrong, fix it properly — don't patch around it.
+
+### Shortcuts taken (and regretted):
+1. **Manual `cp` of prompt files** — The build system (`tsc`) doesn't copy `.md` files. Instead of fixing the build pipeline properly, we manually ran `cp -r src/prompts dist/prompts` and forgot it across runs. This caused the LLM to use a stale prompt and generate Figma-style output for Penpot.
+2. **Copy-pasted self-correction loop** — Phase C was copy-pasted from the Figma pipeline with quick edits instead of building a shared `DesignCorrectionLoop` that takes an adapter. This led to duplicated logic, inconsistent error handling, and the fixer LLM using `createFrame` (Figma) instead of `createBoard` (Penpot).
+3. **Many micro-steps instead of one script** — Generated 57-107 individual `execute_code` calls instead of one consolidated script. Each micro-step adds network overhead, storage reference fragility, and makes debugging harder.
+4. **Hardcoded API docs in prompt** — Instead of dynamically fetching the actual Penpot API via `high_level_overview` and `penpot_api_info` tools, we hand-wrote API docs in the prompt. The LLM then hallucinated methods that don't exist.
+
+### The proper approach:
+1. **Fix the build system** — Non-TS assets must be part of the build pipeline, not manual steps.
+2. **Dynamic API discovery** — Feed the LLM the real API from the tool's own documentation endpoint, not handwritten summaries.
+3. **Single script generation** — One `execute_code` call with the full design script. No storage fragility, no 100+ network calls.
+4. **Shared abstractions** — The correction loop, evaluator, and screenshot capture should be adapter-aware and shared, not copy-pasted per tool.
+5. **Tests first** — Parser tests, transport tests, and integration tests before shipping.
+
+---
+
+## Mock-Only Tests Hide Wiring Bugs
+
+**Context:** `design:figma` pipeline — PRD not passed, design system not wired
+**Rule:** Mock-only tests are insufficient for multi-stage pipelines. Every file-loading path and stage-to-stage data handoff needs at least one test that verifies real data flows through.
+
+### Bugs that went undetected:
+1. **PRD not passed** — Research stage received `["home"]` instead of full PRD content. Every test mocked the LLM provider, so nobody noticed the prompt contained one word instead of a full document.
+2. **Design system not wired** — `buildDesignSystemContextFromSpec` was exported, tested in isolation, but never called from `design:figma`. Every test mocked the filesystem, so nobody noticed design tokens were never loaded.
+
+### What we added to prevent recurrence:
+1. **CLI file-loading integration tests** — Use `mkdtempSync` + real files on disk. See `design-figma-integration.test.ts`.
+2. **Pipeline wiring smoke test** — Spy provider captures prompts; asserts that PRD content, design tokens, and design system prompt actually appear in LLM calls. See `pipeline-wiring-smoke.test.ts`. Runs in CI, no API key needed.
+3. **Runtime input validation guards** — Each pipeline stage now validates its inputs and warns/errors on degenerate data (e.g., `prdRequirements` with only short labels).
+4. **Dead-code detection script** — `scripts/check-unused-exports.sh` finds exported symbols with zero external consumers.
+5. **CLAUDE.md rules** — "CLI Command File-Loading Tests" and "Data Flow Coverage" sections codify the testing requirements.

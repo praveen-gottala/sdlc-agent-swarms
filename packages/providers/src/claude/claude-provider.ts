@@ -154,7 +154,9 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       const startMs = Date.now();
 
       try {
-        const response = await client.messages.create(
+        // Use streaming internally to avoid SDK timeout on long-running completions.
+        // The SDK throws if a non-streaming request takes >10 minutes.
+        const stream = client.messages.stream(
           {
             model: resolveModelId(options.model),
             max_tokens: options.maxTokens ?? 4096,
@@ -168,6 +170,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
             signal: options.signal ?? undefined,
           },
         );
+        const response = await stream.finalMessage();
 
         const latencyMs = Date.now() - startMs;
 
@@ -312,9 +315,9 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
 
     async isAvailable(): Promise<boolean> {
       try {
-        // A lightweight check — attempt to list models or make a tiny request
+        // A lightweight check — attempt to make a tiny request
         await client.messages.create({
-          model: 'claude-haiku-4',
+          model: resolveModelId('claude-haiku-4'),
           max_tokens: 1,
           messages: [{ role: 'user', content: 'hi' }],
         });

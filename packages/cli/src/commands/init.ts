@@ -11,6 +11,15 @@ import type { ProjectManifest } from '../types.js';
 import { writeYaml, type FileSystem, realFs } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
 import { renderAllTemplates } from '../template-renderer.js';
+import { setupEngine, checkPrerequisites } from '../engine-setup.js';
+import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
+import { saveDesignTokens, saveBrandSpec } from '@agentforge/core';
+import { pickComponentLibrary } from './design-system.js';
+import { generateDesignOptions } from './generate-design-options.js';
+import { promptOnce } from './generate-design-options.js';
+
+/** Design archetype choice for project visual identity. */
+export type DesignArchetype = 'warm' | 'professional' | 'bold';
 
 /**
  * Answers collected from the init wizard.
@@ -21,6 +30,301 @@ export interface InitAnswers {
   readonly repo: string;
   readonly slackChannel: string;
   readonly telegramEnabled: boolean;
+  readonly designArchetype?: DesignArchetype;
+  readonly targetAudience: string;
+}
+
+/**
+ * Configuration for init command behavior (e.g. in tests).
+ */
+export interface InitConfig {
+  /** Override browser opener. Return true if browser opened. */
+  readonly openBrowser?: (url: string) => Promise<boolean>;
+}
+
+/** Shared layout tokens across all archetypes. */
+const SHARED_LAYOUT = {
+  spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32, 48, 64] as readonly number[] },
+  borders: { radius: { small: 8, medium: 12, large: 16, pill: 9999 } },
+  touch_targets: { minimum_height: 44, minimum_width: 44 },
+} as const;
+
+/** Build DesignTokensSpec from archetype choice. */
+export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensSpec {
+  const archetypes: Record<DesignArchetype, Pick<DesignTokensSpec, 'colors' | 'typography' | 'components'>> = {
+    warm: {
+      colors: {
+        primitive: {
+          'warm-cream': '#FFF8E7',
+          'deep-teal': '#0F6E56',
+          'coral-accent': '#E8593C',
+          'warm-gray': '#444441',
+          'soft-white': '#FAFAF8',
+        },
+        semantic: {
+          'background-primary': 'warm-cream',
+          'text-primary': 'warm-gray',
+          'cta-primary': 'deep-teal',
+          error: 'coral-accent',
+        },
+      },
+      typography: {
+        font_families: { display: 'Nunito', body: 'Open Sans' },
+        scale: [
+          { role: 'heading-1', size: 32, weight: 700, family: 'display' },
+          { role: 'heading-2', size: 24, weight: 700, family: 'display' },
+          { role: 'heading-3', size: 18, weight: 600, family: 'display' },
+          { role: 'body', size: 14, weight: 400, family: 'body' },
+          { role: 'label', size: 12, weight: 500, family: 'body' },
+          { role: 'small', size: 11, weight: 400, family: 'body' },
+        ],
+      },
+      components: {
+        button: {
+          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
+          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'warm-gray', border_width: 1, radius: 'medium' },
+          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
+        },
+        card: {
+          default: { bg: 'background-primary', border_color: 'soft-white', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
+          highlighted: { bg: 'soft-white', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
+        },
+        input: {
+          default: { bg: 'background-primary', text: 'text-primary', border_color: 'warm-gray', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
+          focus: { border_color: 'cta-primary', border_width: 2 },
+          error: { border_color: 'error', border_width: 2 },
+        },
+        tab_bar: {
+          active: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
+          inactive: { bg: 'transparent', text: 'text-primary' },
+        },
+        badge: {
+          success: { bg: 'deep-teal', text: 'background-primary', radius: 'pill' },
+          warning: { bg: 'warm-cream', text: 'text-primary', radius: 'pill' },
+          error: { bg: 'error', text: 'background-primary', radius: 'pill' },
+          info: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
+        },
+        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'warm-gray', border_width: 2 } },
+        progress_bar: {
+          track: { bg: 'soft-white', radius: 'pill', height: 8 },
+          fill: { bg: 'cta-primary', radius: 'pill' },
+        },
+      },
+    },
+    professional: {
+      colors: {
+        primitive: {
+          white: '#FFFFFF',
+          slate: '#334155',
+          'blue-accent': '#2563EB',
+          'light-gray': '#F1F5F9',
+          'dark-gray': '#1E293B',
+        },
+        semantic: {
+          'background-primary': 'white',
+          'text-primary': 'dark-gray',
+          'cta-primary': 'blue-accent',
+          error: '#DC2626',
+        },
+      },
+      typography: {
+        font_families: { display: 'DM Sans', body: 'Inter' },
+        scale: [
+          { role: 'heading-1', size: 32, weight: 700, family: 'display' },
+          { role: 'heading-2', size: 24, weight: 700, family: 'display' },
+          { role: 'heading-3', size: 18, weight: 600, family: 'display' },
+          { role: 'body', size: 14, weight: 400, family: 'body' },
+          { role: 'label', size: 12, weight: 500, family: 'body' },
+          { role: 'small', size: 11, weight: 400, family: 'body' },
+        ],
+      },
+      components: {
+        button: {
+          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
+          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'slate', border_width: 1, radius: 'medium' },
+          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
+        },
+        card: {
+          default: { bg: 'background-primary', border_color: 'light-gray', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
+          highlighted: { bg: 'light-gray', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
+        },
+        input: {
+          default: { bg: 'background-primary', text: 'text-primary', border_color: 'light-gray', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
+          focus: { border_color: 'cta-primary', border_width: 2 },
+          error: { border_color: 'error', border_width: 2 },
+        },
+        tab_bar: {
+          active: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
+          inactive: { bg: 'transparent', text: 'text-primary' },
+        },
+        badge: {
+          success: { bg: 'light-gray', text: 'text-primary', radius: 'pill' },
+          warning: { bg: 'light-gray', text: 'dark-gray', radius: 'pill' },
+          error: { bg: 'error', text: 'background-primary', radius: 'pill' },
+          info: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
+        },
+        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'light-gray', border_width: 2 } },
+        progress_bar: {
+          track: { bg: 'light-gray', radius: 'pill', height: 8 },
+          fill: { bg: 'cta-primary', radius: 'pill' },
+        },
+      },
+    },
+    bold: {
+      colors: {
+        primitive: {
+          'near-black': '#0A0A0A',
+          'electric-violet': '#7C3AED',
+          'lime-accent': '#84CC16',
+          zinc: '#3F3F46',
+          'off-white': '#FAFAFA',
+        },
+        semantic: {
+          'background-primary': 'near-black',
+          'text-primary': 'off-white',
+          'cta-primary': 'electric-violet',
+          error: '#EF4444',
+        },
+      },
+      typography: {
+        font_families: { display: 'Space Grotesk', body: 'IBM Plex Sans' },
+        scale: [
+          { role: 'heading-1', size: 32, weight: 700, family: 'display' },
+          { role: 'heading-2', size: 24, weight: 700, family: 'display' },
+          { role: 'heading-3', size: 18, weight: 600, family: 'display' },
+          { role: 'body', size: 14, weight: 400, family: 'body' },
+          { role: 'label', size: 12, weight: 500, family: 'body' },
+          { role: 'small', size: 11, weight: 400, family: 'body' },
+        ],
+      },
+      components: {
+        button: {
+          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
+          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'zinc', border_width: 1, radius: 'medium' },
+          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
+        },
+        card: {
+          default: { bg: 'background-primary', border_color: 'zinc', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
+          highlighted: { bg: 'zinc', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
+        },
+        input: {
+          default: { bg: 'background-primary', text: 'text-primary', border_color: 'zinc', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
+          focus: { border_color: 'cta-primary', border_width: 2 },
+          error: { border_color: 'error', border_width: 2 },
+        },
+        tab_bar: {
+          active: { bg: 'cta-primary', text: 'text-primary', radius: 'pill' },
+          inactive: { bg: 'transparent', text: 'text-primary' },
+        },
+        badge: {
+          success: { bg: 'lime-accent', text: 'near-black', radius: 'pill' },
+          warning: { bg: 'zinc', text: 'text-primary', radius: 'pill' },
+          error: { bg: 'error', text: 'text-primary', radius: 'pill' },
+          info: { bg: 'cta-primary', text: 'text-primary', radius: 'pill' },
+        },
+        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'zinc', border_width: 2 } },
+        progress_bar: {
+          track: { bg: 'zinc', radius: 'pill', height: 8 },
+          fill: { bg: 'cta-primary', radius: 'pill' },
+        },
+      },
+    },
+  };
+
+  const preset = archetypes[archetype];
+  return {
+    version: '1.0',
+    created_by: 'agentforge-init',
+    colors: preset.colors,
+    typography: preset.typography,
+    spacing: SHARED_LAYOUT.spacing,
+    borders: SHARED_LAYOUT.borders,
+    touch_targets: SHARED_LAYOUT.touch_targets,
+    ...(preset.components ? { components: preset.components } : {}),
+  };
+}
+
+/** Map archetype to brand tone. */
+const ARCHETYPE_TONES: Record<DesignArchetype, string> = {
+  warm: 'playful-warm',
+  professional: 'professional-clean',
+  bold: 'bold-modern',
+};
+
+/** Build BrandSpec from archetype + audience. */
+export function buildBrandSpec(archetype: DesignArchetype, audience: string): BrandSpec {
+  return {
+    version: '1.0',
+    created_by: 'agentforge-init',
+    identity: {
+      tone: ARCHETYPE_TONES[archetype],
+      audience: audience || 'general',
+    },
+    illustration_style: {
+      direction: 'minimal',
+      description: 'Clean illustrations with accent color highlights',
+    },
+    motion_principles: {
+      page_transitions: 'fade',
+      interaction_feel: 'snappy',
+      easing: 'ease-out',
+      duration_base_ms: 200,
+    },
+    accessibility: {
+      wcag_level: 'AA',
+    },
+  };
+}
+
+/** Generate tailwind.config.ts content from design tokens. */
+export function generateTailwindConfig(tokens: DesignTokensSpec): string {
+  const colorEntries = Object.entries(tokens.colors.primitive)
+    .map(([name, hex]) => `        '${name}': '${hex}',`)
+    .join('\n');
+  const spacingEntries = tokens.spacing.scale
+    .map((v) => `        '${v}': '${v}px',`)
+    .join('\n');
+  const radiusEntries = Object.entries(tokens.borders.radius)
+    .map(([name, val]) => `        '${name}': '${val}px',`)
+    .join('\n');
+
+  return `import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+${colorEntries}
+      },
+      spacing: {
+${spacingEntries}
+      },
+      borderRadius: {
+${radiusEntries}
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+`;
+}
+
+/** Generate global.css with Google Fonts import. */
+export function generateGlobalCss(tokens: DesignTokensSpec): string {
+  const families = Object.values(tokens.typography.font_families)
+    .map((f) => f.replace(/\s+/g, '+'))
+    .join('&family=');
+  const importUrl = `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
+
+  return `@import url('${importUrl}');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`;
 }
 
 /**
@@ -52,13 +356,12 @@ export async function runWizard(
     output.write('\nWelcome to AgentForge!\n\n');
 
     const name = await prompt(rl, 'Project name');
-    const description = await prompt(rl, 'Description');
     const repo = await prompt(rl, 'GitHub org/repo');
     const slackChannel = await prompt(rl, 'Primary Slack channel', '#agentforge');
     const telegramAnswer = await prompt(rl, 'Enable Telegram? (y/n)', 'y');
     const telegramEnabled = telegramAnswer.toLowerCase() !== 'n';
 
-    return { name, description, repo, slackChannel, telegramEnabled };
+    return { name, description: '', repo, slackChannel, telegramEnabled, targetAudience: '' };
   } finally {
     rl.close();
   }
@@ -271,6 +574,9 @@ function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
 
 /**
  * Scaffold the project directory structure.
+ * Creates the minimal project layout without design system files.
+ * Design system is generated later via `agentforge design:generate` after
+ * the user provides a PRD via `agentforge describe`.
  */
 export function scaffoldProject(
   rootDir: string,
@@ -358,6 +664,16 @@ export function scaffoldProject(
   writeYaml(path.join(specDir, 'models.yaml'), { version: '1.0', models: [] }, fileSystem);
   created.push('agentforge/spec/models.yaml');
 
+  // Create journeys directory for visual verification
+  const journeysDir = path.join(specDir, 'journeys');
+  fileSystem.mkdir(journeysDir);
+  created.push('agentforge/spec/journeys/');
+
+  // Create docs directory for PRD
+  const docsDir = path.join(rootDir, 'docs');
+  fileSystem.mkdir(docsDir);
+  created.push('docs/');
+
   // Render and write scaffold templates
   const vars = { PROJECT_NAME: manifest.project.name };
   const templates = templateContents ?? renderAllTemplates(vars);
@@ -381,12 +697,27 @@ export async function initCommand(
   fileSystem: FileSystem = realFs,
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream,
+  _config?: InitConfig,
 ): Promise<void> {
   const out = output ?? process.stdout;
 
   // Create target directory if it doesn't exist
   if (!fileSystem.exists(rootDir)) {
     fileSystem.mkdir(rootDir);
+  }
+
+  // Guard: prevent initializing inside the AgentForge monorepo itself
+  const monorepoMarkers = ['nx.json', 'packages'];
+  const isMonorepo = monorepoMarkers.every((marker) =>
+    fileSystem.exists(path.join(rootDir, marker)),
+  );
+  if (isMonorepo) {
+    out.write(errorMsg('This looks like the AgentForge monorepo, not a user project.\n'));
+    out.write(infoMsg('  Create a project in a separate directory:\n'));
+    out.write(infoMsg('    agentforge init ./my-app\n'));
+    out.write(infoMsg('    agentforge init /path/to/my-app\n'));
+    process.exitCode = 1;
+    return;
   }
 
   // Check if already initialized
@@ -398,6 +729,7 @@ export async function initCommand(
 
   const answers = await runWizard(input, output);
   const manifest = buildManifest(answers);
+
   scaffoldProject(rootDir, manifest, fileSystem);
 
   // DEVIATION: ADR-005
@@ -414,32 +746,84 @@ export async function initCommand(
     out.write(infoMsg('  Telegram channel configured\n'));
   }
 
+  // Design system setup — two independent steps:
+  //   1. Component library (code architecture)
+  //   2. Visual theme (LLM-generated colors/fonts/brand)
+  const inp = input ?? process.stdin;
+  out.write(infoMsg('\n--- Design System ---\n'));
+  out.write(infoMsg('Set up your design system now?\n'));
+  out.write(infoMsg('  1. Yes — pick component library + generate theme\n'));
+  out.write(infoMsg('  2. Skip for now\n'));
+
+  let designPathChoice: number | undefined;
+  while (designPathChoice === undefined) {
+    const answer = await promptOnce(inp, out, '\nChoose 1 or 2: ');
+    const num = parseInt(answer, 10);
+    if (num === 1 || num === 2) {
+      designPathChoice = num;
+    } else {
+      out.write(infoMsg('Please enter 1 or 2.\n'));
+    }
+  }
+
+  if (designPathChoice === 1) {
+    // Step 1: Component library
+    await pickComponentLibrary(rootDir, inp, out, fileSystem);
+
+    // Step 2: Visual theme (LLM or fallback archetypes)
+    out.write(infoMsg('\nNow let\'s pick your visual theme...\n'));
+    const designResult = await generateDesignOptions(
+      { appName: answers.name, description: answers.description, targetAudience: answers.targetAudience || 'general' },
+      inp,
+      out,
+      _config,
+    );
+    saveDesignTokens(rootDir, designResult.tokens, fileSystem);
+    saveBrandSpec(rootDir, designResult.brand, fileSystem);
+    const tailwindContent = generateTailwindConfig(designResult.tokens);
+    fileSystem.writeFile(path.join(rootDir, 'tailwind.config.ts'), tailwindContent);
+    const stylesDir = path.join(rootDir, 'src', 'styles');
+    fileSystem.mkdir(stylesDir);
+    const cssContent = generateGlobalCss(designResult.tokens);
+    fileSystem.writeFile(path.join(stylesDir, 'global.css'), cssContent);
+    out.write(successMsg('✓ Design system configured\n'));
+  } else {
+    out.write(infoMsg('Skipped. Run `agentforge design-system update` later to configure.\n'));
+  }
+
+  // Show cd hint when project was created in a subdirectory
+  const cwd = process.cwd();
+  const isSubdir = path.resolve(rootDir) !== path.resolve(cwd);
+  const relPath = isSubdir ? path.relative(cwd, rootDir) : '';
+
   out.write('\n');
-  out.write(infoMsg('Stack: React + Node.js + PostgreSQL + Tailwind\n'));
-  out.write(infoMsg(`HITL: ${manifest.hitl.default} (design/deploy: full_approval)\n`));
-  out.write(infoMsg(`Budget: $${manifest.budget.per_task_max_usd}/task, $${manifest.budget.per_phase_max_usd}/phase, $${manifest.budget.monthly_max_usd}/month\n`));
+  out.write(successMsg('Next steps:\n'));
+  if (relPath) {
+    out.write(infoMsg(`  cd ${relPath}\n`));
+  }
+  out.write(infoMsg('  1. Describe your app:    agentforge describe\n'));
+  out.write(infoMsg('  2. Set up env vars:      see .env.example\n'));
+  out.write(infoMsg('  3. Verify integrations:  agentforge doctor\n'));
   out.write('\n');
 
-  // Next steps based on enabled channels
-  out.write(successMsg('Next steps:\n'));
-  out.write('\n');
-  out.write(infoMsg('1. Set up environment variables (see .env.example):\n'));
-  if (answers.slackChannel) {
-    out.write(infoMsg('   export AGENTFORGE_SLACK_BOT_TOKEN=xoxb-...\n'));
-    out.write(infoMsg('   export AGENTFORGE_SLACK_APP_TOKEN=xapp-...\n'));
+  // Offer optional engine setup
+  const engineStatus = checkPrerequisites(rootDir);
+  if (!engineStatus.ready) {
+    const rl = readline.createInterface({ input: input ?? process.stdin, output: out });
+    const setupAnswer = await prompt(rl, '\nSet up the Python orchestration engine now? (y/n)', 'y');
+    rl.close();
+
+    if (setupAnswer.toLowerCase() !== 'n') {
+      out.write(infoMsg('\nSetting up engine...\n'));
+      const result = await setupEngine(rootDir, (msg) => {
+        out.write(infoMsg(`${msg}\n`));
+      });
+      if (result.ok) {
+        out.write(successMsg('✓ Engine ready.\n\n'));
+      } else {
+        out.write(errorMsg(`Engine setup failed: ${result.error.message}\n`));
+        out.write(infoMsg('You can retry later with: agentforge setup\n\n'));
+      }
+    }
   }
-  if (answers.telegramEnabled) {
-    out.write(infoMsg('   export AGENTFORGE_TELEGRAM_BOT_TOKEN=123456:ABC...\n'));
-  }
-  out.write('\n');
-  out.write(infoMsg('2. Configure your LLM provider API key:\n'));
-  out.write(infoMsg('   export ANTHROPIC_API_KEY=sk-ant-...\n'));
-  out.write('\n');
-  out.write(infoMsg('3. Verify your integrations:\n'));
-  out.write(infoMsg('   agentforge doctor\n'));
-  out.write('\n');
-  out.write(infoMsg('4. Start the design phase:\n'));
-  out.write(infoMsg('   agentforge start design\n'));
-  out.write('\n');
-  out.write(infoMsg('Note: Figma not configured. Using code-first design mode.\n'));
 }

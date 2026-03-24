@@ -24,6 +24,7 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import type { Result } from '@agentforge/core';
@@ -46,6 +47,7 @@ export interface FigmaSession {
   readonly channel: string;
   readonly connectedAt: string;
   readonly documentName?: string;
+  readonly supportedTools?: readonly string[];
 }
 
 /** Options for the preflight check. */
@@ -182,6 +184,117 @@ export async function checkWebSocketServer(
 }
 
 // ============================================================================
+// Plugin auto-build
+// ============================================================================
+
+/** Path to the built plugin directory, relative to repo root. */
+export const PLUGIN_DIST_DIR = 'docker/talk-to-figma/figma-plugin/dist';
+/** Path to the build metadata written by build-figma-plugin.sh. */
+const PLUGIN_BUILD_META = `${PLUGIN_DIST_DIR}/.build-meta.json`;
+/** Path to the plugin manifest, relative to repo root. */
+export const PLUGIN_MANIFEST_REL = `${PLUGIN_DIST_DIR}/manifest.json`;
+/** Path to the build script, relative to repo root. */
+const PLUGIN_BUILD_SCRIPT = 'docker/talk-to-figma/build-figma-plugin.sh';
+/** Path to the patch source, relative to repo root. */
+const PLUGIN_PATCH_SOURCE = 'docker/talk-to-figma/patch-plugin-commands.js';
+
+/** Build metadata written by the build script. */
+interface BuildMeta {
+  readonly upstreamSha: string;
+  readonly patchHash: string;
+  readonly builtAt: string;
+}
+
+/**
+ * Compute SHA-256 hash of a file's contents.
+ */
+function fileHash(filePath: string): string {
+  const content = readFileSync(filePath);
+  return createHash('sha256').update(content).digest('hex');
+}
+
+/**
+ * Check if the plugin dist is stale.
+ *
+ * Stale when:
+ * - dist/ doesn't exist at all (no build meta)
+ * - patch-plugin-commands.js hash differs from what was used to build
+ *
+ * The build script writes .build-meta.json with the upstream SHA and
+ * patch hash used for the build, so we can detect drift in either.
+ */
+function isPluginDistStale(repoRoot: string): boolean {
+  const metaPath = resolve(repoRoot, PLUGIN_BUILD_META);
+  if (!existsSync(metaPath)) return true;
+
+  const patchPath = resolve(repoRoot, PLUGIN_PATCH_SOURCE);
+  if (!existsSync(patchPath)) return false;
+
+  try {
+    const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as BuildMeta;
+    const currentPatchHash = fileHash(patchPath);
+    return meta.patchHash !== currentPatchHash;
+  } catch {
+    // Corrupt meta file — rebuild
+    return true;
+  }
+}
+
+/** Result of plugin build check. */
+export interface PluginBuildResult {
+  /** Whether a rebuild was performed (vs already up to date). */
+  readonly rebuilt: boolean;
+  /** Whether the rebuild was due to a patch update (vs first build). */
+  readonly wasUpdate: boolean;
+}
+
+/**
+ * Ensure the patched Figma plugin has been built and is up to date.
+ * Rebuilds if `dist/code.js` doesn't exist or if `patch-plugin-commands.js`
+ * has been modified since the last build.
+ *
+ * Returns `rebuilt: true` when the dist was regenerated. Callers should
+ * prompt the user to re-run the plugin in Figma since Figma only reads
+ * code.js when the plugin starts — a disk rebuild doesn't hot-reload.
+ */
+export function ensureFigmaPluginBuilt(repoRoot: string): Result<PluginBuildResult> {
+  if (!isPluginDistStale(repoRoot)) {
+    return Ok({ rebuilt: false, wasUpdate: false });
+  }
+
+  const scriptPath = resolve(repoRoot, PLUGIN_BUILD_SCRIPT);
+  if (!existsSync(scriptPath)) {
+    return Err({
+      code: 'INVALID_STATE' as const,
+      message: `Plugin build script not found: ${scriptPath}`,
+      recoverable: true,
+    });
+  }
+
+  const metaPath = resolve(repoRoot, PLUGIN_BUILD_META);
+  const wasUpdate = existsSync(metaPath);
+  const reason = wasUpdate ? 'patch changed, rebuilding' : 'not found, building';
+  // eslint-disable-next-line no-console
+  console.log(`  [preflight] Patched Figma plugin ${reason}...`);
+  try {
+    execSync(`bash "${scriptPath}"`, {
+      cwd: repoRoot,
+      stdio: 'pipe',
+      timeout: 120000,
+    });
+    // eslint-disable-next-line no-console
+    console.log('  [preflight] Plugin built successfully');
+    return Ok({ rebuilt: true, wasUpdate });
+  } catch (err) {
+    return Err({
+      code: 'INVALID_STATE' as const,
+      message: `Plugin build failed: ${err instanceof Error ? err.message : String(err)}`,
+      recoverable: true,
+    });
+  }
+}
+
+// ============================================================================
 // Docker auto-start
 // ============================================================================
 
@@ -235,6 +348,29 @@ export async function discoverChannels(bridgeHttpUrl: string): Promise<string[]>
 }
 
 // ============================================================================
+// Tool discovery
+// ============================================================================
+
+/**
+ * Discover supported tools from the patched bridge's /tools endpoint.
+ * Returns the list of verified tool names the bridge supports.
+ *
+ * Falls back to empty array if the endpoint is not available (unpatched bridge).
+ */
+export async function discoverTools(bridgeHttpUrl: string): Promise<string[]> {
+  try {
+    const response = await fetch(`${bridgeHttpUrl}/tools`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) return [];
+    const data = await response.json() as { tools?: string[] };
+    return data.tools ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================================
 // System notification
 // ============================================================================
 
@@ -266,6 +402,7 @@ function sendSystemNotification(title: string, message: string): void {
  * Run the full Figma preflight check:
  *
  * 1. Try reusing existing session (< 30 min old)
+ * 1b. Auto-build patched Figma plugin if dist/ not present
  * 2. Check WS server → auto-start Docker if needed
  * 3. Discover the plugin's channel via GET /channels
  *    - If no channels found, notify user to open the plugin and poll
@@ -296,6 +433,31 @@ export async function runFigmaPreflight(
     }
     // eslint-disable-next-line no-console
     console.log('  [preflight] Cached session invalid, reconnecting...');
+  }
+
+  // 1b. Auto-build patched Figma plugin if not present or outdated
+  const pluginBuild = ensureFigmaPluginBuilt(repoRoot);
+  let pluginRebuilt = false;
+  if (!pluginBuild.ok) {
+    // Non-fatal — warn but continue (plugin may have been built manually elsewhere)
+    // eslint-disable-next-line no-console
+    console.warn(`  [preflight] Plugin build warning: ${pluginBuild.error.message}`);
+  } else if (pluginBuild.value.rebuilt) {
+    pluginRebuilt = true;
+    const manifestAbsPath = resolve(repoRoot, PLUGIN_MANIFEST_REL);
+    if (pluginBuild.value.wasUpdate) {
+      // Patch was updated — plugin in Figma is running stale code
+      // eslint-disable-next-line no-console
+      console.log('  [preflight] Plugin commands were updated and rebuilt.');
+      // eslint-disable-next-line no-console
+      console.log('  [preflight] Please re-run the plugin in Figma to load the new version.');
+    } else {
+      // First build — user needs to import the manifest into Figma
+      // eslint-disable-next-line no-console
+      console.log('  [preflight] Load in Figma: Plugins > Development > Import plugin from manifest...');
+      // eslint-disable-next-line no-console
+      console.log(`  [preflight] Select: ${manifestAbsPath}`);
+    }
   }
 
   // 2. Check WS server
@@ -344,14 +506,24 @@ export async function runFigmaPreflight(
       console.log(`  [preflight] Multiple channels found (${channels.join(', ')}), using: ${channelToJoin}`);
     } else {
       // No channels yet — plugin not connected. Notify user and poll.
+      const manifestAbsPath = resolve(repoRoot, PLUGIN_MANIFEST_REL);
       // eslint-disable-next-line no-console
       console.log('  [preflight] No active Figma plugin detected.');
+      if (pluginRebuilt) {
+        // eslint-disable-next-line no-console
+        console.log('  [preflight] Plugin was just rebuilt — re-run it in Figma to pick up changes.');
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(`  [preflight] Load plugin: Figma > Plugins > Development > Import plugin from manifest...`);
+        // eslint-disable-next-line no-console
+        console.log(`  [preflight] Manifest: ${manifestAbsPath}`);
+      }
       sendSystemNotification(
         'AgentForge — Figma Connection Needed',
-        'Open Figma and start the TalkToFigma plugin to continue.',
+        pluginRebuilt
+          ? 'Plugin rebuilt — re-run TalkToFigma in Figma and click Connect.'
+          : 'Load the patched plugin in Figma and click Connect.',
       );
-      // eslint-disable-next-line no-console
-      console.log('  [preflight] Open Figma > Plugins > TalkToFigma > Connect');
       // eslint-disable-next-line no-console
       console.log('  [preflight] Waiting for plugin to connect...');
 
@@ -411,17 +583,41 @@ export async function runFigmaPreflight(
     console.log('  [preflight] Plugin on channel but no document info — continuing anyway');
   }
 
-  // 6. Save session
+  // 6. Discover supported tools and validate plugin has custom commands
+  const supportedTools = await discoverTools(bridgeHttpUrl);
+  if (supportedTools.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`  [preflight] Discovered ${supportedTools.length} supported tools from bridge`);
+  }
+
+  // Validate the plugin supports AgentForge custom commands by sending a
+  // lightweight test command. If the plugin returns "Unknown command", the
+  // user is running the unpatched upstream plugin and needs to rebuild.
+  const customCommandCheck = await connection.callTool('get_pages', {});
+  if (!customCommandCheck.ok) {
+    const errMsg = customCommandCheck.error?.message ?? '';
+    if (errMsg.includes('Unknown command')) {
+      // eslint-disable-next-line no-console
+      console.warn('  [preflight] WARNING: Figma plugin is missing AgentForge custom commands.');
+      // eslint-disable-next-line no-console
+      console.warn('  [preflight] Run "npm run figma:build-plugin" and reload the plugin in Figma.');
+      // eslint-disable-next-line no-console
+      console.warn('  [preflight] See docs/cli/design.md for setup instructions.');
+    }
+  }
+
+  // 7. Save session
   const session: FigmaSession = {
     wsUrl,
     channel: connection.channel,
     connectedAt: new Date().toISOString(),
     documentName,
+    ...(supportedTools.length > 0 ? { supportedTools } : {}),
   };
 
   saveFigmaSession(session, sessionPath);
   // eslint-disable-next-line no-console
-  console.log(`  [preflight] Session saved to ${sessionPath}`);
+  console.log(`  [preflight] Session saved to ${sessionPath} (step 7)`);
 
   connection.disconnect();
 

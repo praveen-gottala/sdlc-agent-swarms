@@ -30,6 +30,20 @@ jest.mock('@anthropic-ai/sdk', () => {
   return { __esModule: true, default: MockAnthropic, APIError: MockAPIError };
 });
 
+/** Helper: make mockStream return an object whose finalMessage() resolves to the given response. */
+function mockStreamResolving(response: Record<string, unknown>): void {
+  mockStream.mockReturnValue({
+    finalMessage: () => Promise.resolve(response),
+  });
+}
+
+/** Helper: make mockStream return an object whose finalMessage() rejects with the given error. */
+function mockStreamRejecting(error: unknown): void {
+  mockStream.mockReturnValue({
+    finalMessage: () => Promise.reject(error),
+  });
+}
+
 const testPrompt: Prompt = {
   system: 'You are a helpful assistant.',
   messages: [{ role: 'user', content: 'Hello' }],
@@ -58,7 +72,7 @@ describe('ClaudeProvider', () => {
 
   describe('complete', () => {
     it('returns a successful CompletionResult', async () => {
-      mockCreate.mockResolvedValue({
+      mockStreamResolving({
         content: [{ type: 'text', text: 'Hello! How can I help?' }],
         usage: { input_tokens: 20, output_tokens: 10 },
         stop_reason: 'end_turn',
@@ -82,7 +96,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('extracts tool calls from response', async () => {
-      mockCreate.mockResolvedValue({
+      mockStreamResolving({
         content: [
           { type: 'text', text: 'Let me check that.' },
           {
@@ -113,7 +127,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('tracks cache tokens when present', async () => {
-      mockCreate.mockResolvedValue({
+      mockStreamResolving({
         content: [{ type: 'text', text: 'cached response' }],
         usage: {
           input_tokens: 100,
@@ -137,7 +151,7 @@ describe('ClaudeProvider', () => {
 
     it('maps 429 to RATE_LIMITED error', async () => {
       const { APIError } = jest.requireMock('@anthropic-ai/sdk') as { APIError: new (status: number, message: string, headers?: Record<string, string>) => Error };
-      mockCreate.mockRejectedValue(
+      mockStreamRejecting(
         new APIError(429, 'Rate limited', { 'retry-after': '30' }),
       );
 
@@ -155,7 +169,7 @@ describe('ClaudeProvider', () => {
 
     it('maps 401 to AUTH_FAILED error', async () => {
       const { APIError } = jest.requireMock('@anthropic-ai/sdk') as { APIError: new (status: number, message: string) => Error };
-      mockCreate.mockRejectedValue(new APIError(401, 'Invalid API key'));
+      mockStreamRejecting(new APIError(401, 'Invalid API key'));
 
       const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'bad-key' });
       const result = await provider.complete(testPrompt, testOptions);
@@ -168,7 +182,7 @@ describe('ClaudeProvider', () => {
 
     it('maps 500 to PROVIDER_DOWN error', async () => {
       const { APIError } = jest.requireMock('@anthropic-ai/sdk') as { APIError: new (status: number, message: string) => Error };
-      mockCreate.mockRejectedValue(new APIError(500, 'Internal server error'));
+      mockStreamRejecting(new APIError(500, 'Internal server error'));
 
       const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
@@ -180,7 +194,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('maps unknown errors to INVALID_RESPONSE', async () => {
-      mockCreate.mockRejectedValue(new Error('Network failure'));
+      mockStreamRejecting(new Error('Network failure'));
 
       const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
@@ -192,7 +206,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('passes tools to Anthropic format', async () => {
-      mockCreate.mockResolvedValue({
+      mockStreamResolving({
         content: [{ type: 'text', text: 'ok' }],
         usage: { input_tokens: 10, output_tokens: 5 },
         stop_reason: 'end_turn',
@@ -212,7 +226,7 @@ describe('ClaudeProvider', () => {
       const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
       await provider.complete(promptWithTools, testOptions);
 
-      const callArgs = mockCreate.mock.calls[0][0];
+      const callArgs = mockStream.mock.calls[0][0];
       expect(callArgs.tools).toBeDefined();
       expect(callArgs.tools[0].name).toBe('read_file');
       expect(callArgs.tools[0].input_schema).toBeDefined();

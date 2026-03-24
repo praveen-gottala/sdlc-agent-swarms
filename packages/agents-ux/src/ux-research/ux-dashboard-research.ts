@@ -126,6 +126,18 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
 ) => {
   const { moduleId, prdRequirements, existingTokens } = input;
 
+  // ── Input validation guards ──
+  if (!moduleId) {
+    return Err({ code: 'INVALID_STATE' as const, message: 'Research input missing moduleId', recoverable: false });
+  }
+  if (!prdRequirements || prdRequirements.length === 0) {
+    return Err({ code: 'INVALID_STATE' as const, message: 'Research input missing prdRequirements — pass at least one requirement or the full PRD content', recoverable: false });
+  }
+  if (prdRequirements.every(r => r.length < 50)) {
+    // eslint-disable-next-line no-console
+    console.warn('[research] Warning: prdRequirements appear to contain only short labels, not full PRD content. Pass the full PRD text for better results.');
+  }
+
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);

@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Result } from '@agentforge/core';
+import type { Result, DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import { Ok, Err } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 import { parseDesignSteps } from './ux-dashboard-design.js';
@@ -210,6 +210,10 @@ export const loadDesignSystemPrompt = (): string => {
 /**
  * Build a DesignSystemContext from the planning output and design system prompt.
  * Captures the full design system knowledge for use in feedback loop modifications.
+ *
+ * When structured `tokens` and `brand` are provided, uses actual project values
+ * instead of regex-parsing the markdown prompt. Falls back to markdown parsing
+ * only when tokens are unavailable.
  */
 export const buildDesignSystemContext = (
   planningOutput: {
@@ -217,7 +221,25 @@ export const buildDesignSystemContext = (
     tokenBindings: Record<string, string>;
   },
   designSystemPrompt: string,
+  tokens?: DesignTokensSpec,
+  brand?: BrandSpec,
 ): DesignSystemContext => {
+  // When structured tokens are available, prefer them over regex-parsing markdown
+  if (tokens) {
+    return buildDesignSystemContextFromSpec(
+      tokens,
+      brand ?? {
+        version: '1.0',
+        created_by: 'fallback',
+        identity: { tone: 'professional', audience: 'general' },
+        illustration_style: { direction: 'minimal', description: 'Simple and clean' },
+        motion_principles: { page_transitions: 'fade', interaction_feel: 'snappy', easing: 'ease-in-out', duration_base_ms: 200 },
+        accessibility: { wcag_level: 'AA' },
+      },
+      planningOutput,
+    );
+  }
+
   return {
     designSystemPrompt,
     colorPalette: parseColorPalette(designSystemPrompt),
@@ -226,6 +248,102 @@ export const buildDesignSystemContext = (
     tokenBindings: planningOutput.tokenBindings,
     typographyScale: TYPOGRAPHY_SCALE,
     spacingScale: SPACING_SCALE,
+  };
+};
+
+/**
+ * Build a DesignSystemContext from structured DesignTokensSpec and BrandSpec
+ * instead of parsing from markdown. This is the primary path when project-specific
+ * design tokens are available.
+ */
+export const buildDesignSystemContextFromSpec = (
+  tokens: DesignTokensSpec,
+  brand: BrandSpec,
+  planningOutput: {
+    componentTree: readonly { name: string; props: readonly string[]; children: readonly unknown[] }[];
+    tokenBindings: Record<string, string>;
+  },
+): DesignSystemContext => {
+  // Convert hex colors to RGB palette entries
+  const colorPalette: DesignSystemContext['colorPalette'] = Object.entries(tokens.colors.primitive).map(([name, hex]) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return {
+      name,
+      rgb: { r, g, b },
+      usage: name,
+      family: 'custom',
+      shade: '',
+    };
+  });
+
+  // Map typography scale
+  const typographyScale: DesignSystemContext['typographyScale'] = tokens.typography.scale.map((entry) => ({
+    role: entry.role,
+    fontSize: entry.size,
+    fontWeight: entry.weight,
+  }));
+
+  // Map spacing scale
+  const spacingScale: DesignSystemContext['spacingScale'] = tokens.spacing.scale.map((value, i) => ({
+    role: `spacing-${i}`,
+    value,
+  }));
+
+  // Build a design system prompt from the spec
+  const promptLines = [
+    `# Design System — ${brand.identity.tone}`,
+    `Audience: ${brand.identity.audience}`,
+    `WCAG: ${brand.accessibility.wcag_level}`,
+    '',
+    '## Colors',
+    ...Object.entries(tokens.colors.primitive).map(([name, hex]) => {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      return `- ${name}: \`{ r: ${r.toFixed(2)}, g: ${g.toFixed(2)}, b: ${b.toFixed(2)} }\``;
+    }),
+    '',
+    '## Typography',
+    ...tokens.typography.scale.map((e) => `- ${e.role}: ${e.size}px, weight ${e.weight} (${e.family})`),
+    '',
+    '## Spacing',
+    `Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`,
+  ];
+
+  // Serialize component tokens if present
+  if (tokens.components) {
+    promptLines.push('');
+    promptLines.push('## Component Tokens');
+    promptLines.push('When creating any UI element, check these component token bindings first.');
+    promptLines.push('Use the exact token references specified — do not choose colors independently.');
+    promptLines.push('If a component variant is not defined below, use the closest matching variant.');
+    promptLines.push('');
+
+    for (const [componentName, variants] of Object.entries(tokens.components)) {
+      if (!variants || typeof variants !== 'object') continue;
+      const title = componentName.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      promptLines.push(`### ${title}`);
+      for (const [variantName, props] of Object.entries(variants as Record<string, Record<string, unknown>>)) {
+        if (!props || typeof props !== 'object') continue;
+        const propStr = Object.entries(props)
+          .map(([k, v]) => `${k}={${String(v)}}`)
+          .join(', ');
+        promptLines.push(`- ${variantName}: ${propStr}`);
+      }
+      promptLines.push('');
+    }
+  }
+
+  return {
+    designSystemPrompt: promptLines.join('\n'),
+    colorPalette,
+    shadeScales: SHADE_SCALES,
+    componentTree: planningOutput.componentTree,
+    tokenBindings: planningOutput.tokenBindings,
+    typographyScale,
+    spacingScale,
   };
 };
 
@@ -449,20 +567,46 @@ export const applyDesignFeedback = async (
 
   // 3. Build system prompt — with or without design system context
   const toolReference = `Available tools (use ONLY these exact names):
-- get_document_info, get_selection
-- create_frame, create_rectangle, create_text, create_ellipse, create_component, create_instance
-- set_fill_color (params: nodeId, color: {r,g,b,a} with 0-1 floats)
-- set_stroke_color (params: nodeId, color: {r,g,b,a}, weight?)
+
+READ (inspection):
+- get_document_info, get_selection, read_my_design
+- get_node_info (params: nodeId) — get full details of a specific node
+- get_nodes_info (params: nodeIds[]) — batch node inspection
+- scan_text_nodes (params: nodeId) — find all text nodes in a subtree
+- scan_nodes_by_types (params: nodeId, types[]) — find child nodes by type (e.g. ["TEXT", "FRAME"])
+- get_styles — get all document styles
+- get_local_components — list all local components
+- get_instance_overrides (params: nodeId?) — get override properties from instance
+- export_node_as_image (params: nodeId, format?: "PNG"|"JPG"|"SVG"|"PDF", scale?)
+
+CREATE:
+- create_frame (params: x, y, width, height, name?, parentId?, fillColor?, layoutMode?, padding*, itemSpacing?)
+- create_rectangle (params: x, y, width, height, name?, parentId?)
+- create_text (params: x, y, text, fontSize?, fontWeight?, fontColor?, name?, parentId?)
+- create_component_instance (params: componentId or componentKey, x, y, parentId?)
+
+STYLE:
+- set_fill_color (params: nodeId, r, g, b, a? — 0-1 floats)
+- set_stroke_color (params: nodeId, r, g, b, a?, weight?)
 - set_text_content (params: nodeId, text)
-- set_layout_mode (params: nodeId, layoutMode: "HORIZONTAL"|"VERTICAL"|"NONE")
+- set_multiple_text_contents (params: nodeId, text: [{nodeId, text}])
+- set_corner_radius (params: nodeId, radius, corners?: [bool,bool,bool,bool])
+
+LAYOUT:
+- set_layout_mode (params: nodeId, layoutMode: "HORIZONTAL"|"VERTICAL"|"NONE", layoutWrap?)
 - set_padding (params: nodeId, paddingTop?, paddingRight?, paddingBottom?, paddingLeft?)
-- set_item_spacing (params: nodeId, itemSpacing)
+- set_item_spacing (params: nodeId, itemSpacing?, counterAxisSpacing?)
 - set_axis_align (params: nodeId, primaryAxisAlignItems?, counterAxisAlignItems?)
 - set_layout_sizing (params: nodeId, layoutSizingHorizontal?, layoutSizingVertical?)
+
+TRANSFORM:
 - resize_node (params: nodeId, width, height)
 - move_node (params: nodeId, x, y)
-- set_corner_radius (params: nodeId, radius)
-- set_opacity (params: nodeId, opacity)`;
+- clone_node (params: nodeId, x?, y?)
+- delete_node (params: nodeId)
+- delete_multiple_nodes (params: nodeIds[])
+- set_instance_overrides (params: sourceInstanceId, targetNodeIds[])
+- set_focus (params: nodeId) — select and center viewport on node`;
 
   let systemPrompt: string;
 

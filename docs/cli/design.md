@@ -93,6 +93,37 @@ agentforge design:figma "cost dashboard" --stage design
 
 ---
 
+## `agentforge design:list`
+
+List all designs in the `.agentforge/previews/` directory with their status and metadata.
+
+```bash
+agentforge design:list
+```
+
+Scans each module directory for stage artifacts and displays a summary table:
+
+| Column | Description |
+|--------|-------------|
+| MODULE ID | Kebab-case identifier for the design module |
+| TOOL | Design tool used: `figma`, `penpot`, or `-` (no design stage) |
+| STAGES | Completed/total stages (e.g. `3/3`) |
+| LAST MODIFIED | Timestamp of the most recently modified artifact |
+| COMPONENTS | Number of components (from design or planning output) |
+
+**Example output:**
+```
+Found 3 design(s):
+
+  MODULE ID          TOOL    STAGES  LAST MODIFIED     COMPONENTS
+  ──────────────────────────────────────────────────────────────
+✔ cost-dashboard     figma   3/3     2026-03-22 00:48  12
+● bookshelf-catalog  penpot  2/3     2026-03-22 17:22  8
+○ dashboard-design   -       0/3     2026-03-21 15:30  -
+```
+
+---
+
 ## `agentforge design:collaborate`
 
 Resume an existing Figma design for interactive human-agent collaboration without re-running the pipeline.
@@ -193,21 +224,148 @@ Use `--no-wait` for explicit non-interactive mode.
 
 The design commands communicate with Figma through the TalkToFigma WebSocket bridge.
 
-### Docker setup
+### 1. Build the patched Figma plugin
+
+The upstream TalkToFigma plugin doesn't include AgentForge's 37 custom commands (`create_ellipse`, `set_effects`, `create_table`, etc.). The patched plugin is **built automatically** the first time you run `design:figma` or `design:collaborate` — the preflight step detects the missing `dist/` directory and runs the build.
+
+You can also build it manually:
+
+```bash
+npm run figma:build-plugin
+```
+
+This clones the upstream plugin, applies `patch-plugin-commands.js`, and outputs a loadable plugin to `docker/talk-to-figma/figma-plugin/dist/`. The build is cached — subsequent runs skip it unless you delete `dist/`.
+
+### 2. Load the plugin in Figma
+
+1. Open **Figma Desktop**
+2. Go to **Plugins > Development > Import plugin from manifest...**
+3. Select `docker/talk-to-figma/figma-plugin/dist/manifest.json`
+
+The plugin now appears under **Plugins > Development > cursor-talk-to-figma-mcp**.
+
+### 3. Start the Docker bridge
 
 ```bash
 docker compose build figma-bridge
 docker compose up -d figma-bridge
 ```
 
-### Connecting the plugin
+### 4. Connect
 
 1. Open Figma desktop app
-2. Go to **Plugins > TalkToFigma**
+2. Run the TalkToFigma plugin (from Development plugins)
 3. The bridge auto-discovers the plugin channel, or set `AGENTFORGE_MCP_FIGMA_CHANNEL` explicitly
 
 ### Troubleshooting
 
 - **"No active Figma plugin detected"** — Open Figma and start the TalkToFigma plugin
 - **Channel not discovered** — Rebuild the Docker bridge (`docker compose build --no-cache figma-bridge`) to apply the `/channels` endpoint patch, or set `AGENTFORGE_MCP_FIGMA_CHANNEL` manually
-- **"Invalid tool name"** — The LLM generated an unrecognized Figma operation; try rephrasing your feedback
+- **"Invalid tool name"** -- The LLM generated an unrecognized Figma operation; try rephrasing your feedback
+
+---
+
+## `agentforge design:penpot`
+
+Create a Penpot design via the UX agent pipeline (Research, Planning, Design) with Penpot integration through the Penpot MCP HTTP/SSE server.
+
+```bash
+agentforge design:penpot <description> [options]
+```
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `description` | Yes | Natural language description of what to design |
+
+| Option | Description |
+|--------|-------------|
+| `--stage <stage>` | Skip to a stage: `research`, `planning`, `design`, `replay`, `connect` |
+| `--module <id>` | Module ID (default: derived from description) |
+| `--no-wait` | Exit immediately after design without entering the feedback loop |
+| `--implement` | Skip feedback loop and generate React + Tailwind code directly after design |
+
+### Stages
+
+| Stage | Description |
+|-------|-------------|
+| `research` | Run from research stage (default) |
+| `planning` | Skip research, load from cache |
+| `design` | Skip research + planning, load from cache |
+| `replay` | Re-execute the cached design script without LLM calls |
+| `connect` | Test Penpot connection only, load design from cache |
+
+### Interactive Feedback Loop
+
+After design completes (on TTY, without `--implement` or `--no-wait`), an interactive feedback loop starts — identical to the Figma feedback loop:
+
+| Command | Description |
+|---------|-------------|
+| `approve` or `y` | Accept the design and exit |
+| `quit` or `q` | Reject the design and exit |
+| `review` or `r` | Capture screenshot via `export_shape` and evaluate |
+| `implement` or `impl` | Generate React + Tailwind code from the design |
+| Any other text | Send as feedback to modify the design |
+
+Feedback is applied by generating a Penpot Plugin API fix script via LLM and executing it through `execute_code`.
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `AGENTFORGE_MCP_PENPOT_URL` | `http://localhost:4401/mcp` | Penpot MCP server URL |
+| `ANTHROPIC_API_KEY` | -- | Required for LLM calls |
+
+### Prerequisites
+
+1. Docker installed and running
+2. Penpot MCP server: `docker compose up penpot-mcp`
+3. Penpot desktop app open with a project
+
+### Artifacts
+
+All artifacts are saved to `.agentforge/previews/<module-id>/`:
+- `research-brief.json` -- research stage output
+- `planning-spec.json` -- planning stage output
+- `penpot-design.json` -- design stage output (includes `script` field for replay)
+
+### Examples
+
+```bash
+# Full pipeline
+agentforge design:penpot "cost monitoring dashboard"
+
+# Resume from design stage
+agentforge design:penpot "cost dashboard" --stage design --module cost-dashboard
+
+# Skip feedback loop, generate code directly
+agentforge design:penpot "cost dashboard" --implement
+
+# Re-execute cached design script (no LLM calls)
+agentforge design:penpot "cost dashboard" --stage replay --module cost-dashboard
+
+# Test connection only
+agentforge design:penpot "cost dashboard" --stage connect --module cost-dashboard
+
+# Skip feedback loop (CI/automation)
+agentforge design:penpot "cost dashboard" --no-wait
+```
+
+### Architecture
+
+See [ADR-030](../adrs/ADR-030-penpot-design-tool-support.md) for details on the Penpot adapter pattern, transport differences from Figma, and dynamic tool discovery.
+
+---
+
+## `design:collaborate` with Penpot
+
+The `design:collaborate` command supports Penpot via the `--tool` option:
+
+```bash
+agentforge design:collaborate --module <id> --tool penpot
+```
+
+| Option | Description |
+|--------|-------------|
+| `--tool <tool>` | Design tool to use: `figma` (default) or `penpot` |
+
+This loads the `penpot-design.json` artifact (instead of `figma-design.json`) and connects to the Penpot MCP server for the collaboration session.

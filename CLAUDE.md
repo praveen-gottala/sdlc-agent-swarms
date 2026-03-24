@@ -26,9 +26,32 @@ and test written in this project.
   not yet built.
 
 ### Testing Integrity
-- Tests must exercise the real server/API codepath, not internal functions directly. 
-  Never work around a server bug by calling internal methods — if the endpoint is 
+- Tests must exercise the real server/API codepath, not internal functions directly.
+  Never work around a server bug by calling internal methods — if the endpoint is
   broken, flag it as a deviation. Tests that bypass the server give false confidence.
+
+### CLI Command File-Loading Tests
+- Every CLI command that reads project files from disk (PRD, design tokens, brand
+  spec, YAML configs) MUST have at least one integration test that uses real
+  filesystem via `mkdtempSync`. Mock-only tests are insufficient for verifying
+  file-loading paths.
+- Pattern: create a temp directory, write the expected files (agentforge.yaml,
+  docs/prd.md, agentforge/spec/*.yaml), mock `process.cwd()` to point there,
+  run the command, and assert that file contents are loaded and reported.
+- See `packages/cli/src/commands/design-figma-integration.test.ts` for the
+  reference implementation.
+
+### Data Flow Coverage
+- When a pipeline has multiple stages, at least one test must verify that data
+  from stage N actually influences stage N+1 output. Mock-only tests that
+  validate output structure but not content flow are insufficient.
+- When a function is exported but has zero call sites outside its own file and
+  test file, it must either be wired into the pipeline or removed. Do not leave
+  "defined but unwired" code — this is how the `buildDesignSystemContextFromSpec`
+  bug went undetected.
+- Pipeline stage functions must include runtime input validation guards that
+  warn or fail early when inputs are degenerate (e.g., prdRequirements containing
+  only short labels instead of full PRD content).
 
 ### Deviation Documentation
 - When the implementation deviates from PRD wording, always document with:

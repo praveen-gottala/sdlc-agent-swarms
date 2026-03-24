@@ -52,10 +52,11 @@ function createMockFs(): FileSystem & { files: Map<string, string>; dirs: Set<st
 
 const DEFAULT_ANSWERS: InitAnswers = {
   name: 'TaskFlow',
-  description: 'A project management tool',
+  description: '',
   repo: 'praveen/taskflow',
   slackChannel: '#agentforge',
   telegramEnabled: true,
+  targetAudience: '',
 };
 
 describe('buildManifest', () => {
@@ -64,7 +65,6 @@ describe('buildManifest', () => {
 
     expect(manifest.version).toBe('1.0');
     expect(manifest.project.name).toBe('TaskFlow');
-    expect(manifest.project.description).toBe('A project management tool');
     expect(manifest.project.platforms).toEqual(['web']);
     expect(manifest.project.id).toMatch(/^proj_taskflow_[a-z0-9]+$/);
   });
@@ -180,6 +180,27 @@ describe('scaffoldProject', () => {
     expect(fs.files.has('/project/agentforge/spec/models.yaml')).toBe(true);
   });
 
+  it('does NOT create design system files during init', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs, new Map());
+
+    expect(fs.files.has('/project/agentforge/spec/design-tokens.yaml')).toBe(false);
+    expect(fs.files.has('/project/agentforge/spec/brand.yaml')).toBe(false);
+    expect(fs.files.has('/project/tailwind.config.ts')).toBe(false);
+    expect(fs.files.has('/project/src/styles/global.css')).toBe(false);
+  });
+
+  it('creates docs/ directory', () => {
+    const fs = createMockFs();
+    const manifest = buildManifest(DEFAULT_ANSWERS);
+
+    scaffoldProject('/project', manifest, fs, new Map());
+
+    expect(fs.dirs.has('/project/docs')).toBe(true);
+  });
+
   it('returns list of created files and directories', () => {
     const fs = createMockFs();
     const manifest = buildManifest(DEFAULT_ANSWERS);
@@ -189,6 +210,7 @@ describe('scaffoldProject', () => {
     expect(created).toContain('agentforge.yaml');
     expect(created).toContain('agentforge.tasks.yaml');
     expect(created).toContain('agentforge/spec/project.yaml');
+    expect(created).toContain('docs/');
   });
 
   it('creates app directories', () => {
@@ -245,10 +267,11 @@ describe('scaffoldProject', () => {
 });
 
 /**
- * Creates a readable stream that feeds answers line-by-line,
- * with delays to allow readline to process each question sequentially.
+ * Creates a readable stream that feeds answers line-by-line.
+ * Uses a delay between answers to avoid readline buffering issues
+ * when multiple readline consumers share the same input stream.
  */
-function createWizardInput(answers: string[]): PassThrough {
+function createWizardInput(answers: string[], delayMs = 50): PassThrough {
   const stream = new PassThrough();
   let index = 0;
   const interval = setInterval(() => {
@@ -258,31 +281,57 @@ function createWizardInput(answers: string[]): PassThrough {
     } else {
       clearInterval(interval);
     }
-  }, 50);
+  }, delayMs);
   return stream;
 }
+
+/** No-op config for tests. */
+const noOpConfig = { openBrowser: async () => false };
 
 describe('initCommand', () => {
   it('creates the target directory if it does not exist', async () => {
     const fs = createMockFs();
-    const input = createWizardInput(['MyApp', 'desc', 'org/repo', '#dev', 'y']);
+    // Wizard: name, repo, slack, telegram → design system (2=skip) → engine setup 'n'
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '2', 'n'], 500);
     const output = new PassThrough();
 
-    await initCommand('/new-project', fs, input, output);
+    await initCommand('/new-project', fs, input, output, noOpConfig);
 
     expect(fs.dirs.has('/new-project')).toBe(true);
     expect(fs.files.has('/new-project/agentforge.yaml')).toBe(true);
-  });
+  }, 15000);
 
   it('scaffolds into an existing empty directory', async () => {
     const fs = createMockFs();
     fs.dirs.add('/existing-dir');
-    const input = createWizardInput(['MyApp', 'desc', 'org/repo', '#dev', 'y']);
+    // Wizard: name, repo, slack, telegram → design system (2=skip) → engine setup 'n'
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '2', 'n'], 500);
     const output = new PassThrough();
 
-    await initCommand('/existing-dir', fs, input, output);
+    await initCommand('/existing-dir', fs, input, output, noOpConfig);
 
     expect(fs.files.has('/existing-dir/agentforge.yaml')).toBe(true);
+  }, 15000);
+
+  it('aborts if target directory is the AgentForge monorepo', async () => {
+    const fs = createMockFs();
+    // Simulate monorepo markers
+    fs.files.set('/monorepo/nx.json', '{}');
+    fs.dirs.add('/monorepo/packages');
+    const input = createWizardInput([]);
+    const output = new PassThrough();
+    let outputStr = '';
+    output.on('data', (d: Buffer) => { outputStr += d.toString(); });
+
+    const origExitCode = process.exitCode;
+    await initCommand('/monorepo', fs, input, output, noOpConfig);
+
+    expect(process.exitCode).toBe(1);
+    expect(outputStr).toContain('monorepo');
+    expect(outputStr).toContain('agentforge init ./my-app');
+    // Should NOT have created agentforge.yaml
+    expect(fs.files.has('/monorepo/agentforge.yaml')).toBe(false);
+    process.exitCode = origExitCode;
   });
 
   it('aborts if target directory already has agentforge.yaml', async () => {
@@ -292,10 +341,48 @@ describe('initCommand', () => {
     const output = new PassThrough();
 
     const origExitCode = process.exitCode;
-    await initCommand('/existing-dir', fs, input, output);
+    await initCommand('/existing-dir', fs, input, output, noOpConfig);
 
     expect(process.exitCode).toBe(1);
     expect(fs.files.get('/existing-dir/agentforge.yaml')).toBe('version: "1.0"');
     process.exitCode = origExitCode;
   });
+
+  it('post-scaffold message mentions agentforge describe', async () => {
+    const fs = createMockFs();
+    // Wizard: name, repo, slack, telegram → design system (2=skip) → engine setup 'n'
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '2', 'n'], 500);
+    const output = new PassThrough();
+    let outputStr = '';
+    output.on('data', (d: Buffer) => { outputStr += d.toString(); });
+
+    await initCommand('/project', fs, input, output, noOpConfig);
+
+    expect(outputStr).toContain('agentforge describe');
+  }, 15000);
+
+  it('design system path writes component-library.yaml + theme files', async () => {
+    const fs = createMockFs();
+    // More answers needed: wizard(4) + design-yes(1) + library(1) + theme-choice(1) + engine(1)
+    // Use shorter delay to avoid timeout — the stream feeds answers as each prompt appears
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '1', '1', '1', 'n'], 200);
+    const output = new PassThrough();
+    let outputStr = '';
+    output.on('data', (d: Buffer) => { outputStr += d.toString(); });
+
+    await initCommand('/project', fs, input, output, noOpConfig);
+
+    // Component library should be written
+    expect(fs.files.has('/project/agentforge/spec/component-library.yaml')).toBe(true);
+    const libContent = fs.files.get('/project/agentforge/spec/component-library.yaml')!;
+    expect(libContent).toContain('shadcn');
+    expect(libContent).toContain('@/components/ui/button');
+
+    // Theme files should also be written (from LLM fallback archetypes)
+    expect(fs.files.has('/project/agentforge/spec/design-tokens.yaml')).toBe(true);
+    expect(fs.files.has('/project/agentforge/spec/brand.yaml')).toBe(true);
+    expect(fs.files.has('/project/tailwind.config.ts')).toBe(true);
+
+    expect(outputStr).toContain('Design system configured');
+  }, 60000);
 });

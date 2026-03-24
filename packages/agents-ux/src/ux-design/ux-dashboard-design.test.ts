@@ -1,12 +1,15 @@
 import {
   UX_DASHBOARD_DESIGN_CONTRACT,
   parseDesignSteps,
+  buildPerScreenPrompt,
   registerUXDashboardDesign,
 } from './ux-dashboard-design.js';
 import { applyDesignFeedback } from './design-collaboration.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { ScreenDefinition } from '../types.js';
+import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
 
 // ============================================================================
 // Helpers
@@ -106,7 +109,7 @@ describe('UX_DASHBOARD_DESIGN_CONTRACT', () => {
     expect(UX_DASHBOARD_DESIGN_CONTRACT.role).toBe('ux_dashboard_design');
     expect(UX_DASHBOARD_DESIGN_CONTRACT.category).toBe('design');
     expect(UX_DASHBOARD_DESIGN_CONTRACT.provider).toBe('claude-sonnet-4');
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.tools).toHaveLength(20);
+    expect(UX_DASHBOARD_DESIGN_CONTRACT.tools).toHaveLength(41);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.denied).toEqual(['write_code', 'create_branch', 'merge_pr']);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
@@ -128,7 +131,9 @@ describe('UX_DASHBOARD_DESIGN_CONTRACT', () => {
     expect(tools).toContain('figma-write:create_frame');
     expect(tools).toContain('figma-write:set_fill_color');
     expect(tools).toContain('figma-write:set_layout_mode');
-    expect(tools).toContain('figma-write:set_opacity');
+    expect(tools).toContain('figma-write:set_corner_radius');
+    expect(tools).toContain('figma:get_node_info');
+    expect(tools).toContain('figma:scan_nodes_by_types');
   });
 });
 
@@ -283,5 +288,108 @@ describe('registerUXDashboardDesign', () => {
       'ComponentSpecReady',
       expect.any(Function),
     );
+  });
+});
+
+// ============================================================================
+// Per-screen prompt building
+// ============================================================================
+
+describe('buildPerScreenPrompt', () => {
+  const makePlanningOutput = (): UXDashboardPlanningOutput => ({
+    specRef: 'spec-001',
+    moduleId: 'mod-001',
+    componentTree: [
+      { name: 'AppLayout', props: ['columns'], children: [] },
+      { name: 'MetricsRow', props: [], children: [] },
+    ],
+    tokenBindings: {},
+    responsiveRules: [],
+    implementationStages: [],
+  });
+
+  const screen: ScreenDefinition = {
+    screenId: 'home',
+    name: 'Home Dashboard',
+    componentNames: ['AppLayout', 'MetricsRow'],
+    route: '/',
+  };
+
+  it('includes screen name in prompt', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 0,
+      screenPlanningOutput: makePlanningOutput(),
+      moduleId: 'mod-001',
+      previousScreenRefs: [],
+      learnings: [],
+    });
+    expect(prompt.messages[0].content).toContain('Home Dashboard');
+    expect(prompt.messages[0].content).toContain('home');
+  });
+
+  it('includes previous screen refs when provided', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 1,
+      screenPlanningOutput: makePlanningOutput(),
+      moduleId: 'mod-001',
+      previousScreenRefs: ['SidebarNav', 'HeaderBar'],
+      learnings: [],
+    });
+    expect(prompt.messages[0].content).toContain('SidebarNav');
+    expect(prompt.messages[0].content).toContain('do NOT recreate');
+  });
+
+  it('includes grid position for non-zero screen index', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 2,
+      screenPlanningOutput: makePlanningOutput(),
+      moduleId: 'mod-001',
+      previousScreenRefs: [],
+      learnings: [],
+    });
+    expect(prompt.messages[0].content).toContain('x=3000');
+    expect(prompt.messages[0].content).toContain('y=0');
+  });
+
+  it('appends design system prompt when provided', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 0,
+      screenPlanningOutput: makePlanningOutput(),
+      designSystemPrompt: '# Custom tokens\nprimary: #FF0000',
+      moduleId: 'mod-001',
+      previousScreenRefs: [],
+      learnings: [],
+    });
+    expect(prompt.system).toContain('Custom tokens');
+    expect(prompt.system).toContain('PROJECT DESIGN SYSTEM');
+  });
+
+  it('includes description when provided', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 0,
+      screenPlanningOutput: makePlanningOutput(),
+      description: 'A gaming leaderboard app',
+      moduleId: 'mod-001',
+      previousScreenRefs: [],
+      learnings: [],
+    });
+    expect(prompt.messages[0].content).toContain('gaming leaderboard app');
+  });
+
+  it('omits previous screen refs section when empty', () => {
+    const prompt = buildPerScreenPrompt({
+      screen,
+      screenIndex: 0,
+      screenPlanningOutput: makePlanningOutput(),
+      moduleId: 'mod-001',
+      previousScreenRefs: [],
+      learnings: [],
+    });
+    expect(prompt.messages[0].content).not.toContain('do NOT recreate');
   });
 });

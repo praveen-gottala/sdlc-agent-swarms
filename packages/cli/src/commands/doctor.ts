@@ -66,6 +66,7 @@ function getEnv(key: string, envFile: Map<string, string>): string | undefined {
 
 /**
  * Check Anthropic Claude connectivity.
+ * Makes a minimal API call to verify the key works.
  */
 async function checkAnthropic(envFile: Map<string, string>): Promise<CheckResult> {
   const apiKey = getEnv('ANTHROPIC_API_KEY', envFile);
@@ -74,16 +75,22 @@ async function checkAnthropic(envFile: Map<string, string>): Promise<CheckResult
   }
 
   const config: ProviderConfig = { apiKey };
-  const provider = createClaudeProvider('claude-haiku-4', config);
+  const provider = createClaudeProvider('claude-sonnet-4', config);
 
   try {
-    const available = await provider.isAvailable();
-    if (available) {
+    // Use a minimal completion call to verify the key — isAvailable() swallows errors
+    const result = await provider.complete(
+      { system: 'Reply with OK', messages: [{ role: 'user', content: 'ping' }] },
+      { model: 'claude-sonnet-4', maxTokens: 4, temperature: 0 },
+    );
+    if (result.ok) {
       return { name: 'Anthropic Claude', status: 'pass', message: 'API key valid, connection successful' };
     }
-    return { name: 'Anthropic Claude', status: 'fail', message: 'API key rejected or provider unreachable' };
-  } catch {
-    return { name: 'Anthropic Claude', status: 'fail', message: 'Connection failed' };
+    const errMsg = 'error' in result ? JSON.stringify(result.error) : 'unknown error';
+    return { name: 'Anthropic Claude', status: 'fail', message: errMsg };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    return { name: 'Anthropic Claude', status: 'fail', message: `Connection failed: ${detail}` };
   }
 }
 

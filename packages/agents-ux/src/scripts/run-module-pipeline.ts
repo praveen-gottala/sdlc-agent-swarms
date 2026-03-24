@@ -5,6 +5,8 @@
  * (Research → Planning → Design) and stops for human approval before
  * implementation begins.
  *
+ * Supports both Figma and Penpot via the DesignToolAdapter abstraction.
+ *
  * Usage:
  *   RUN_E2E_PROOF=true ANTHROPIC_API_KEY=sk-ant-... \
  *   npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts --module cost-dashboard
@@ -12,6 +14,10 @@
  * To resume from a specific stage (loads prior stage outputs from JSON):
  *   npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts \
  *     --module cost-dashboard --stage design
+ *
+ * To use Penpot instead of Figma:
+ *   npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts \
+ *     --module cost-dashboard --tool penpot
  */
 
 import { config as dotenvConfig } from 'dotenv';
@@ -27,15 +33,21 @@ import type {
   MCPClient,
   FileSystem,
   LLMProviderRef,
+  DesignToolAdapter,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
   createEventBus,
-  createTalkToFigmaTransport,
-  TALK_TO_FIGMA_TOOLS,
+  createFigmaAdapter,
+  createPenpotAdapter,
+  loadDesignTokens,
+  loadBrandSpec,
+  loadComponentLibrary,
+  createRealFs,
 } from '@agentforge/core';
-import { loadFigmaSession, runFigmaPreflight, discoverChannels } from './figma-preflight.js';
+import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '@agentforge/core';
+import { runFigmaPreflight, PLUGIN_MANIFEST_REL } from './figma-preflight.js';
 
 import { createClaudeProvider } from '@agentforge/providers';
 import type {
@@ -46,13 +58,16 @@ import type {
   UXDashboardDesignInput,
   UXDashboardDesignOutput,
 } from '../index.js';
+import type { PenpotDesignInput, PenpotDesignOutput } from '../ux-design/ux-penpot-design.js';
 import {
   uxDashboardResearchWork,
   uxDashboardPlanningWork,
   uxDashboardDesignWork,
+  penpotDesignWork,
   createDesignCollaborationSession,
   runDesignFeedbackLoop,
   buildDesignSystemContext,
+  buildDesignSystemContextFromSpec,
   loadDesignSystemPrompt,
 } from '../index.js';
 
@@ -60,6 +75,7 @@ import {
 // Configuration
 // ============================================================================
 
+type DesignTool = 'figma' | 'penpot';
 type PipelineStage = 'research' | 'planning' | 'design';
 
 /** Configuration for a module pipeline run. */
@@ -67,10 +83,12 @@ interface PipelineRunConfig {
   readonly moduleId: string;
   readonly taskId: string;
   readonly prdRequirements: readonly string[];
+  readonly tool: DesignTool;
+  readonly description?: string;
 }
 
 /** Registry of known modules and their PRD requirements. */
-const MODULE_REGISTRY: Readonly<Record<string, PipelineRunConfig>> = {
+const MODULE_REGISTRY: Readonly<Record<string, Omit<PipelineRunConfig, 'tool'>>> = {
   'cost-dashboard': {
     moduleId: 'cost-dashboard',
     taskId: 'pipeline-001',
@@ -86,7 +104,7 @@ const MODULE_REGISTRY: Readonly<Record<string, PipelineRunConfig>> = {
 };
 
 // ============================================================================
-// Mock factories (same pattern as e2e-cost-dashboard.test.ts)
+// Mock factories
 // ============================================================================
 
 /** Mock FileSystem — returns Err for reads, Ok for writes. */
@@ -114,41 +132,33 @@ const createMockGovernance = () => async () =>
   Ok({ status: 'proceed' as const });
 
 // ============================================================================
-// MCP Client adapter for TalkToFigma
+// Adapter factory
 // ============================================================================
 
-interface FigmaBridgeHandle {
-  readonly client: MCPClient;
-  readonly disconnect: () => void;
-}
-
 /**
- * Create an MCPClient backed by the TalkToFigma WebSocket bridge.
- * Routes all tool calls (regardless of server prefix) through the bridge.
+ * Create the appropriate DesignToolAdapter based on the selected tool.
+ * For Figma, wires in the full preflight delegate from agents-ux.
  */
-const createFigmaBridgeMCPClient = (wsUrl: string, channel?: string): FigmaBridgeHandle => {
-  const { connection } = createTalkToFigmaTransport({
-    websocketUrl: wsUrl,
-    channel,
-  });
+function createAdapter(tool: DesignTool): DesignToolAdapter {
+  if (tool === 'penpot') {
+    return createPenpotAdapter();
+  }
 
-  const client: MCPClient = {
-    callTool: async (_server: string, method: string, params: Readonly<Record<string, unknown>>) => {
-      if (!connection.isConnected()) {
-        const r = await connection.connect();
-        if (!r.ok) return r;
-      }
-      return connection.callTool(method, params);
+  return createFigmaAdapter({
+    fullPreflight: async (opts) => {
+      const result = await runFigmaPreflight(opts as Record<string, unknown> | undefined);
+      if (!result.ok) return result;
+      return Ok({
+        kind: 'figma' as const,
+        url: result.value.wsUrl,
+        channel: result.value.channel,
+        connectedAt: result.value.connectedAt,
+        documentName: result.value.documentName,
+        supportedTools: result.value.supportedTools,
+      });
     },
-    listTools: async () => Ok([...TALK_TO_FIGMA_TOOLS]),
-    isAvailable: async () => connection.isConnected(),
-  };
-
-  return {
-    client,
-    disconnect: () => connection.disconnect(),
-  };
-};
+  });
+}
 
 // ============================================================================
 // Context factory
@@ -195,6 +205,10 @@ const loadArtifact = <T>(dir: string, filename: string): T => {
   return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
 };
 
+/** Get the design artifact filename for the given tool. */
+const designArtifactName = (tool: DesignTool): string =>
+  tool === 'penpot' ? 'penpot-design.json' : 'figma-design.json';
+
 // ============================================================================
 // Stage runners
 // ============================================================================
@@ -218,9 +232,7 @@ const runResearch = async (
     prdRequirements: [...config.prdRequirements],
   };
 
-  const provider = createClaudeProvider('claude-opus-4', {
-    apiKey,
-  });
+  const provider = createClaudeProvider('claude-opus-4', { apiKey });
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -259,9 +271,7 @@ const runPlanning = async (
     designBrief: researchOutput,
   };
 
-  const provider = createClaudeProvider('claude-sonnet-4', {
-    apiKey,
-  });
+  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -286,8 +296,19 @@ const runPlanning = async (
   return { output: result.value, durationMs, artifactPath };
 };
 
-/** Extended result from runDesign that exposes the Figma connection for reuse. */
-interface DesignStageResult extends StageResult<UXDashboardDesignOutput> {
+/** Unified design output that normalizes Figma/Penpot differences. */
+interface UnifiedDesignOutput {
+  readonly moduleId: string;
+  readonly nodeIds: Readonly<Record<string, string>>;
+  readonly fileId: string;
+  readonly pageId: string;
+  readonly breakpoints: readonly string[];
+  /** Raw output from the tool-specific design agent. */
+  readonly raw: UXDashboardDesignOutput | PenpotDesignOutput;
+}
+
+/** Extended result from runDesign that exposes the connection for reuse. */
+interface DesignStageResult extends StageResult<UnifiedDesignOutput> {
   readonly disconnectFn?: () => void;
   readonly mcpClient: MCPClient;
   readonly provider: ReturnType<typeof createClaudeProvider>;
@@ -298,135 +319,111 @@ const runDesign = async (
   planningOutput: UXDashboardPlanningOutput,
   apiKey: string,
   outputDir: string,
+  projectDesignSystemPrompt?: string,
 ): Promise<DesignStageResult> => {
-  console.log('\n  [3/3] Design — creating Figma components...');
+  const tool = config.tool;
+  console.log(`\n  [3/3] Design — creating ${tool === 'penpot' ? 'Penpot' : 'Figma'} components...`);
 
-  const input: UXDashboardDesignInput = {
-    specRef: planningOutput.specRef,
-    moduleId: config.moduleId,
-    taskId: config.taskId,
-    planningOutput,
-  };
-
-  // Priority: env var override > session file > preflight auto-detect > mock
-  const envWsUrl = process.env.AGENTFORGE_MCP_FIGMA_WRITE_URL;
-  const envChannel = process.env.AGENTFORGE_MCP_FIGMA_CHANNEL;
-
-  let mcpClient: MCPClient | undefined;
+  // ── Connect via adapter ──
+  const adapter = createAdapter(tool);
+  let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
 
-  if (envWsUrl) {
-    // Explicit env var — run channel discovery if no channel specified
-    const wsUrl = envWsUrl;
-    let channelToUse = envChannel;
+  const preflightOpts: Record<string, unknown> = {
+    log: (msg: string) => console.log(`        ${msg}`),
+  };
 
-    if (!channelToUse) {
-      // Discover the Figma plugin's channel via the bridge's /channels endpoint
-      const bridgeHttpUrl = wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-      const channels = await discoverChannels(bridgeHttpUrl);
-
-      if (channels.length > 0) {
-        channelToUse = channels[channels.length - 1];
-        console.log(`        Figma bridge: ${wsUrl} (discovered channel: ${channelToUse})`);
-      } else {
-        // No plugin connected — prompt user and poll
-        console.log(`        Figma bridge: ${wsUrl}`);
-        console.log('');
-        console.log('  ┌──────────────────────────────────────────────────────────────┐');
-        console.log('  │  No Figma plugin detected.                                  │');
-        console.log('  │                                                              │');
-        console.log('  │  1. Open Figma                                               │');
-        console.log('  │  2. Open the TalkToFigma plugin (Plugins → TalkToFigma)      │');
-        console.log('  │  3. Click "Connect" in the plugin                            │');
-        console.log('  │                                                              │');
-        console.log('  │  Waiting for plugin to connect...                            │');
-        console.log('  └──────────────────────────────────────────────────────────────┘');
-        console.log('');
-
-        const pollStart = Date.now();
-        const maxWaitMs = 120000;
-        while (Date.now() - pollStart < maxWaitMs) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          const found = await discoverChannels(bridgeHttpUrl);
-          if (found.length > 0) {
-            channelToUse = found[0];
-            console.log(`        Figma plugin connected! (channel: ${channelToUse})`);
-            break;
-          }
-          const elapsed = Math.round((Date.now() - pollStart) / 1000);
-          process.stdout.write(`\r        Waiting for Figma plugin... (${elapsed}s)`);
-        }
-
-        if (!channelToUse) {
-          console.log(`\n        Figma plugin not detected within ${maxWaitMs / 1000}s — using mock MCP`);
-          mcpClient = createMockMCPClient();
-        }
-      }
-    } else {
-      console.log(`        Figma bridge: ${wsUrl} (channel: ${channelToUse})`);
-    }
-
-    if (!mcpClient) {
-      const bridge = createFigmaBridgeMCPClient(wsUrl, channelToUse);
-      mcpClient = bridge.client;
-      disconnectFn = bridge.disconnect;
-    }
-  } else {
-    // Try session file first
-    const sessionResult = loadFigmaSession();
-    if (sessionResult.ok) {
-      const session = sessionResult.value;
-      console.log(`        Figma bridge: reusing session (channel: ${session.channel}, doc: ${session.documentName ?? 'unknown'})`);
-      const bridge = createFigmaBridgeMCPClient(session.wsUrl, session.channel);
-      mcpClient = bridge.client;
-      disconnectFn = bridge.disconnect;
-    } else {
-      // Try preflight auto-detect
-      console.log('        Figma bridge: running preflight...');
-      const preflightResult = await runFigmaPreflight();
-      if (preflightResult.ok) {
-        const session = preflightResult.value;
-        console.log(`        Figma bridge: connected (channel: ${session.channel}, doc: ${session.documentName ?? 'unknown'})`);
-        const bridge = createFigmaBridgeMCPClient(session.wsUrl, session.channel);
-        mcpClient = bridge.client;
-        disconnectFn = bridge.disconnect;
-      } else {
-        console.log(`        Figma bridge: preflight failed (${preflightResult.error.message}) — using mock MCP`);
-        mcpClient = createMockMCPClient();
-      }
-    }
+  if (tool === 'figma') {
+    const manifestPath = resolve(process.cwd(), PLUGIN_MANIFEST_REL);
+    preflightOpts.pluginManifestPath = manifestPath;
   }
 
-  // Fallback — should never reach here unset, but satisfies TypeScript
-  if (!mcpClient) {
+  const preflightResult = await adapter.runPreflight(preflightOpts);
+
+  if (preflightResult.ok) {
+    const session = preflightResult.value;
+    const handle = adapter.createMCPClient({
+      url: session.url,
+      channel: session.channel,
+      supportedTools: session.supportedTools as string[] | undefined,
+    });
+    mcpClient = handle.client;
+    disconnectFn = handle.disconnect;
+  } else {
+    console.warn(`        ${tool}: ${preflightResult.error.message}`);
+    console.warn(`        Continuing with mock MCP (no ${tool} output)`);
     mcpClient = createMockMCPClient();
   }
 
-  const provider = createClaudeProvider('claude-sonnet-4', {
-    apiKey,
-  });
+  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
   const context = createPipelineContext(config.taskId, mcpClient);
 
   const t0 = Date.now();
-  const result = await uxDashboardDesignWork(
-    input,
-    provider as unknown as LLMProviderRef,
-    [],
-    context,
-  );
-  const durationMs = Date.now() - t0;
+  let unified: UnifiedDesignOutput;
 
-  if (!result.ok) {
-    disconnectFn?.();
-    throw new Error(`Design failed: ${result.error.message}`);
+  if (tool === 'penpot') {
+    // Penpot design path
+    const input: PenpotDesignInput = {
+      specRef: planningOutput.specRef,
+      moduleId: config.moduleId,
+      taskId: config.taskId,
+      planningOutput,
+      description: config.description,
+    };
+
+    const result = await penpotDesignWork(input, provider, mcpClient);
+    if (!result.ok) {
+      disconnectFn?.();
+      throw new Error(`Design failed: ${result.error.message}`);
+    }
+
+    unified = {
+      moduleId: config.moduleId,
+      nodeIds: result.value.penpotNodeIds,
+      fileId: result.value.penpotProjectId,
+      pageId: result.value.penpotPageId,
+      breakpoints: result.value.breakpoints,
+      raw: result.value,
+    };
+  } else {
+    // Figma design path
+    const input: UXDashboardDesignInput = {
+      specRef: planningOutput.specRef,
+      moduleId: config.moduleId,
+      taskId: config.taskId,
+      planningOutput,
+      designSystemPrompt: projectDesignSystemPrompt,
+    };
+
+    const result = await uxDashboardDesignWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      context,
+    );
+    if (!result.ok) {
+      disconnectFn?.();
+      throw new Error(`Design failed: ${result.error.message}`);
+    }
+
+    unified = {
+      moduleId: config.moduleId,
+      nodeIds: result.value.figmaNodeIds,
+      fileId: result.value.figmaFileId,
+      pageId: result.value.figmaPageId,
+      breakpoints: result.value.breakpoints,
+      raw: result.value,
+    };
   }
 
-  const artifactPath = saveArtifact(outputDir, 'figma-design.json', result.value);
-  console.log(`        figmaFileId=${result.value.figmaFileId}, ` +
-    `nodes=${Object.keys(result.value.figmaNodeIds).length}, ` +
-    `breakpoints=${result.value.breakpoints.join(',')}`);
+  const durationMs = Date.now() - t0;
+  const artifactPath = saveArtifact(outputDir, designArtifactName(tool), unified.raw);
 
-  return { output: result.value, durationMs, artifactPath, disconnectFn, mcpClient, provider };
+  console.log(`        fileId=${unified.fileId}, ` +
+    `nodes=${Object.keys(unified.nodeIds).length}, ` +
+    `breakpoints=${unified.breakpoints.join(',')}`);
+
+  return { output: unified, durationMs, artifactPath, disconnectFn, mcpClient, provider };
 };
 
 // ============================================================================
@@ -439,12 +436,71 @@ interface PipelineSummary {
   readonly design: DesignStageResult;
 }
 
+/** Load project design tokens from disk and build a design system prompt string. */
+const loadProjectDesignSystemPrompt = (projectRoot: string): string | undefined => {
+  const fs = createRealFs();
+  const tokensResult = loadDesignTokens(projectRoot, fs);
+  const brandResult = loadBrandSpec(projectRoot, fs);
+
+  if (!tokensResult.ok) {
+    return undefined;
+  }
+
+  const tokens = tokensResult.value;
+  const brand = brandResult.ok ? brandResult.value : undefined;
+
+  // Build structured design system context and extract the prompt string
+  const placeholderPlanning = {
+    componentTree: [] as { name: string; props: readonly string[]; children: readonly unknown[] }[],
+    tokenBindings: {} as Record<string, string>,
+  };
+  const ctx = buildDesignSystemContextFromSpec(
+    tokens,
+    brand ?? {
+      version: '1.0',
+      created_by: 'pipeline',
+      identity: { tone: 'professional', audience: 'general' },
+      illustration_style: { direction: 'minimal', description: 'Simple and clean' },
+      motion_principles: { page_transitions: 'fade', interaction_feel: 'snappy', easing: 'ease-in-out', duration_base_ms: 200 },
+      accessibility: { wcag_level: 'AA' },
+    },
+    placeholderPlanning,
+  );
+  return ctx.designSystemPrompt;
+};
+
+/** Load project design tokens and brand for structured use. */
+const loadProjectTokens = (projectRoot: string): { tokens?: DesignTokensSpec; brand?: BrandSpec; componentLibrary?: ComponentLibrarySpec } => {
+  const fs = createRealFs();
+  const tokensResult = loadDesignTokens(projectRoot, fs);
+  const brandResult = loadBrandSpec(projectRoot, fs);
+  const componentLibResult = loadComponentLibrary(projectRoot, fs);
+  return {
+    tokens: tokensResult.ok ? tokensResult.value : undefined,
+    brand: brandResult.ok ? brandResult.value : undefined,
+    componentLibrary: componentLibResult.ok ? componentLibResult.value : undefined,
+  };
+};
+
 const runPipeline = async (
   config: PipelineRunConfig,
   apiKey: string,
   skipToStage?: PipelineStage,
 ): Promise<PipelineSummary> => {
   const outputDir = ensureOutputDir(config.moduleId);
+  const projectRoot = process.cwd();
+
+  // ── Load project design tokens ──
+  const projectTokens = loadProjectTokens(projectRoot);
+  const designSystemPrompt = loadProjectDesignSystemPrompt(projectRoot);
+  if (designSystemPrompt) {
+    console.log('  Design tokens loaded from agentforge/spec/design-tokens.yaml');
+  } else {
+    console.log('  No project design tokens found — agents will use LLM judgment');
+  }
+  if (projectTokens.componentLibrary) {
+    console.log(`  Component library: ${projectTokens.componentLibrary.library_name}`);
+  }
 
   // --- Research ---
   let research: StageResult<UXDashboardResearchOutput>;
@@ -471,7 +527,7 @@ const runPipeline = async (
   }
 
   // --- Design ---
-  const design = await runDesign(config, planning.output, apiKey, outputDir);
+  const design = await runDesign(config, planning.output, apiKey, outputDir, designSystemPrompt);
 
   return { research, planning, design };
 };
@@ -482,9 +538,10 @@ const runPipeline = async (
 
 const printApprovalSummary = (config: PipelineRunConfig, summary: PipelineSummary): void => {
   const { research, planning, design } = summary;
-  const figmaUrl = design.output.figmaFileId
-    ? `https://www.figma.com/file/${design.output.figmaFileId}`
-    : '(mock — no Figma bridge configured)';
+  const tool = config.tool;
+  const designUrl = tool === 'figma'
+    ? (design.output.fileId ? `https://www.figma.com/file/${design.output.fileId}` : '(mock — no Figma bridge configured)')
+    : (design.output.fileId ? `Penpot project: ${design.output.fileId}` : '(mock — no Penpot connection)');
 
   const formatTime = (ms: number): string =>
     ms > 0 ? `${(ms / 1000).toFixed(1)}s` : 'cached';
@@ -493,22 +550,23 @@ const printApprovalSummary = (config: PipelineRunConfig, summary: PipelineSummar
   console.log('  PIPELINE COMPLETE — APPROVAL REQUIRED');
   console.log('='.repeat(72));
   console.log(`  Module: ${config.moduleId}`);
+  console.log(`  Tool: ${tool}`);
   console.log('');
   console.log('  Stages:');
   console.log(`    [OK] Research  (${formatTime(research.durationMs)}) → ${research.artifactPath}`);
   console.log(`    [OK] Planning  (${formatTime(planning.durationMs)}) → ${planning.artifactPath}`);
   console.log(`    [OK] Design    (${formatTime(design.durationMs)}) → ${design.artifactPath}`);
   console.log('');
-  console.log('  Figma:');
-  console.log(`    File: ${figmaUrl}`);
-  console.log(`    Components created: ${Object.keys(design.output.figmaNodeIds).length}`);
+  console.log(`  ${tool === 'figma' ? 'Figma' : 'Penpot'}:`);
+  console.log(`    ${designUrl}`);
+  console.log(`    Components created: ${Object.keys(design.output.nodeIds).length}`);
   console.log(`    Breakpoints: ${design.output.breakpoints.join(', ') || 'none'}`);
   console.log('');
-  console.log('  Review the design in Figma, then approve to continue.');
+  console.log(`  Review the design in ${tool === 'figma' ? 'Figma' : 'Penpot'}, then approve to continue.`);
   console.log('');
   console.log('  To resume with implementation:');
   console.log(`    npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts \\`);
-  console.log(`      --module ${config.moduleId} --stage implementation`);
+  console.log(`      --module ${config.moduleId} --tool ${tool} --stage implementation`);
   console.log('='.repeat(72));
 };
 
@@ -520,12 +578,14 @@ interface CLIArgs {
   readonly module: string;
   readonly stage?: PipelineStage;
   readonly noWait?: boolean;
+  readonly tool: DesignTool;
 }
 
 const parseArgs = (argv: readonly string[]): CLIArgs => {
   let moduleId: string | undefined;
   let stage: PipelineStage | undefined;
   let noWait = false;
+  let tool: DesignTool = 'figma';
 
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--module' && i + 1 < argv.length) {
@@ -538,18 +598,26 @@ const parseArgs = (argv: readonly string[]): CLIArgs => {
         console.error(`Unknown stage: ${val}. Valid: research, planning, design`);
         process.exit(1);
       }
+    } else if (argv[i] === '--tool' && i + 1 < argv.length) {
+      const val = argv[++i];
+      if (val === 'figma' || val === 'penpot') {
+        tool = val;
+      } else {
+        console.error(`Unknown tool: ${val}. Valid: figma, penpot`);
+        process.exit(1);
+      }
     } else if (argv[i] === '--no-wait') {
       noWait = true;
     }
   }
 
   if (!moduleId) {
-    console.error('Usage: run-module-pipeline.ts --module <id> [--stage <research|planning|design>] [--no-wait]');
+    console.error('Usage: run-module-pipeline.ts --module <id> [--tool figma|penpot] [--stage <research|planning|design>] [--no-wait]');
     console.error(`Available modules: ${Object.keys(MODULE_REGISTRY).join(', ')}`);
     process.exit(1);
   }
 
-  return { module: moduleId, stage, noWait };
+  return { module: moduleId, stage, noWait, tool };
 };
 
 // ============================================================================
@@ -559,12 +627,14 @@ const parseArgs = (argv: readonly string[]): CLIArgs => {
 const main = async (): Promise<void> => {
   const args = parseArgs(process.argv);
 
-  const config = MODULE_REGISTRY[args.module];
-  if (!config) {
+  const moduleConfig = MODULE_REGISTRY[args.module];
+  if (!moduleConfig) {
     console.error(`Unknown module: ${args.module}`);
     console.error(`Available modules: ${Object.keys(MODULE_REGISTRY).join(', ')}`);
     process.exit(1);
   }
+
+  const config: PipelineRunConfig = { ...moduleConfig, tool: args.tool };
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -573,38 +643,48 @@ const main = async (): Promise<void> => {
   }
 
   console.log('='.repeat(72));
-  console.log(`  AgentForge UX Pipeline — ${config.moduleId}`);
+  console.log(`  AgentForge UX Pipeline — ${config.moduleId} (${config.tool})`);
   console.log('='.repeat(72));
   if (args.stage) {
     console.log(`  Skipping to: ${args.stage} (loading prior stages from artifacts)`);
   }
+
+  // Load project tokens for use in the feedback loop
+  const mainProjectTokens = loadProjectTokens(process.cwd());
+  const mainDesignSystemPrompt = loadProjectDesignSystemPrompt(process.cwd());
 
   let summary: PipelineSummary | undefined;
   try {
     summary = await runPipeline(config, apiKey, args.stage);
     printApprovalSummary(config, summary);
 
-    // ── Interactive feedback loop ──
+    // ── Interactive feedback loop (Figma only for now) ──
     const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
-    if (!args.noWait && isTTY && summary.design.mcpClient) {
-      const designSystemCtx = buildDesignSystemContext(summary.planning.output, loadDesignSystemPrompt());
+    if (!args.noWait && isTTY && summary.design.mcpClient && config.tool === 'figma') {
+      const rawDesign = summary.design.output.raw as UXDashboardDesignOutput;
+      const designSystemCtx = buildDesignSystemContext(
+        summary.planning.output,
+        mainDesignSystemPrompt ?? loadDesignSystemPrompt(),
+        mainProjectTokens.tokens,
+        mainProjectTokens.brand,
+      );
       const session = createDesignCollaborationSession(
         summary.design.mcpClient,
         summary.design.provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },
-        summary.design.output,
+        rawDesign,
         designSystemCtx,
       );
 
       const loopResult = await runDesignFeedbackLoop({
         session,
-        initialDesign: summary.design.output,
+        initialDesign: rawDesign,
         input: process.stdin,
         output: process.stdout,
       });
 
       if (loopResult.changeCount > 0) {
         const outputDir = ensureOutputDir(config.moduleId);
-        saveArtifact(outputDir, 'figma-design.json', loopResult.finalDesign);
+        saveArtifact(outputDir, designArtifactName(config.tool), loopResult.finalDesign);
         console.log(`  Updated artifact with ${loopResult.changeCount} change(s).`);
       }
 

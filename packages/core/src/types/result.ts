@@ -14,6 +14,7 @@ export type ErrorCode =
   | 'LLM_RATE_LIMIT'
   | 'LLM_API_ERROR'
   | 'LLM_MALFORMED_OUTPUT'
+  | 'LLM_TRUNCATED'
   | 'LLM_CONTEXT_OVERFLOW'
   | 'LLM_TIMEOUT'
 

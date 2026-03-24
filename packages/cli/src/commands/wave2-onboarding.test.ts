@@ -72,11 +72,15 @@ function createMockFs(): FileSystem & { files: Map<string, string>; dirs: Set<st
 
 const WAVE2_ANSWERS: InitAnswers = {
   name: 'TestApp',
-  description: 'A project management tool for small teams',
+  description: '',
   repo: 'testorg/testapp',
   slackChannel: '#agentforge',
   telegramEnabled: true,
+  targetAudience: '',
 };
+
+/** No-op browser config for tests. */
+const noOpDesignConfig = { openBrowser: async () => false };
 
 /* ---------- helper to parse YAML from mock FS ---------- */
 
@@ -107,7 +111,8 @@ describe('Wave 2 Criterion 1: init completes without errors', () => {
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
     // Feed answers with delays for readline
-    const answers = ['TestApp', 'A project management tool for small teams', 'testorg/testapp', '#agentforge', 'y'];
+    // Wizard: name, desc, repo, slack, telegram, audience → then design choice '1', then engine setup 'n'
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {
@@ -116,16 +121,16 @@ describe('Wave 2 Criterion 1: init completes without errors', () => {
       } else {
         clearInterval(interval);
       }
-    }, 50);
+    }, 500);
 
-    await initCommand('/testapp', fs, input, output);
+    await initCommand('/testapp', fs, input, output, noOpDesignConfig);
 
     expect(fs.files.has('/testapp/agentforge.yaml')).toBe(true);
     expect(outputText).toContain('Project scaffolded');
     expect(outputText).not.toContain('Error');
     // Should not have set a non-zero exit code
     expect(process.exitCode).toBeUndefined();
-  });
+  }, 15000);
 });
 
 /* ====================================================================
@@ -217,7 +222,8 @@ describe('Wave 2 Criterion 3: agentforge.yaml contains all required sections', (
     expect(manifest).toHaveProperty('project');
     const project = manifest['project'] as Record<string, unknown>;
     expect(project['name']).toBe('TestApp');
-    expect(project['description']).toBe('A project management tool for small teams');
+    // Description is now set via `agentforge describe`, not during init
+    expect(project['description']).toBeUndefined();
     expect(project['id']).toMatch(/^proj_testapp_[a-z0-9]+$/);
     expect(project['platforms']).toEqual(['web']);
   });
@@ -434,7 +440,7 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
     let outputText = '';
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
-    const answers = ['TestApp', 'A project management tool for small teams', 'testorg/testapp', '#agentforge', 'y'];
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {
@@ -443,12 +449,12 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
       } else {
         clearInterval(interval);
       }
-    }, 50);
+    }, 500);
 
-    await initCommand('/testapp', fs, input, output);
+    await initCommand('/testapp', fs, input, output, noOpDesignConfig);
 
     expect(outputText).toContain('Slack channel configured: #agentforge');
-  });
+  }, 15000);
 
   it('init output includes Telegram configuration', async () => {
     const fs = createMockFs();
@@ -457,7 +463,7 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
     let outputText = '';
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
-    const answers = ['TestApp', 'A project management tool for small teams', 'testorg/testapp', '#agentforge', 'y'];
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {
@@ -466,12 +472,12 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
       } else {
         clearInterval(interval);
       }
-    }, 50);
+    }, 500);
 
-    await initCommand('/testapp', fs, input, output);
+    await initCommand('/testapp', fs, input, output, noOpDesignConfig);
 
     expect(outputText).toContain('Telegram channel configured');
-  });
+  }, 15000);
 
   /**
    * WAVE2-DEVIATION-002: Slack notification not sent during init.
