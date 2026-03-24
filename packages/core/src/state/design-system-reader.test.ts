@@ -5,9 +5,13 @@ import {
   toDesignTokens,
   validateDesignTokens,
   validateBrandSpec,
+  loadComponentCatalog,
+  saveComponentCatalog,
+  validateComponentCatalog,
 } from './design-system-reader.js';
-import type { DesignTokensSpec, BrandSpec } from '../types/design-system.js';
+import type { DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '../types/design-system.js';
 import type { FileSystem } from '../fs/file-system.js';
+import { stringify as yamlStringify } from 'yaml';
 
 function createMockFs(): FileSystem & { files: Map<string, string>; dirs: Set<string> } {
   const files = new Map<string, string>();
@@ -96,6 +100,34 @@ const VALID_BRAND: BrandSpec = {
     duration_base_ms: 200,
   },
   accessibility: { wcag_level: 'AA' },
+};
+
+const VALID_CATALOG: ComponentCatalogSpec = {
+  version: '1.0',
+  created_by: 'test',
+  components: {
+    Card: {
+      description: 'Content container',
+      category: 'layout',
+      anatomy: [
+        { name: 'header', contents: 'title (heading-3)', optional: true },
+        { name: 'body', contents: 'Primary content area' },
+      ],
+      states: {
+        default: { bg: 'surface-primary', text: 'text-primary', border: 'border-default' },
+        hover: { bg: 'surface-primary', text: 'text-primary', shadow: 'shadow-md' },
+      },
+      spacing: { padding: '16 20', internal_gap: '12' },
+      library_mapping: {
+        shadcn: {
+          component_name: 'Card',
+          import_path: '@/components/ui/card',
+          slot_mapping: { header: 'CardHeader', body: 'CardContent' },
+        },
+      },
+      accessibility: { focus_visible: true, aria_labels: ['role=article'] },
+    },
+  },
 };
 
 describe('loadDesignTokens', () => {
@@ -315,5 +347,95 @@ describe('validateBrandSpec', () => {
   it('passes for valid spec', () => {
     const result = validateBrandSpec(VALID_BRAND);
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('loadComponentCatalog', () => {
+  it('returns Ok for valid YAML', () => {
+    const fs = createMockFs();
+    fs.files.set('/project/agentforge/spec/component-catalog.yaml', yamlStringify(VALID_CATALOG));
+    const result = loadComponentCatalog('/project', fs);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.version).toBe('1.0');
+      expect(result.value.components.Card.category).toBe('layout');
+    }
+  });
+
+  it('returns recoverable Err when file missing', () => {
+    const fs = createMockFs();
+    const result = loadComponentCatalog('/project', fs);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.recoverable).toBe(true);
+      expect(result.error.message).toContain('Component catalog not found');
+    }
+  });
+});
+
+describe('saveComponentCatalog', () => {
+  it('writes to correct path', () => {
+    const fs = createMockFs();
+    const result = saveComponentCatalog('/project', VALID_CATALOG, fs);
+    expect(result.ok).toBe(true);
+    expect(fs.files.has('/project/agentforge/spec/component-catalog.yaml')).toBe(true);
+  });
+});
+
+describe('validateComponentCatalog', () => {
+  it('passes for valid catalog', () => {
+    const result = validateComponentCatalog(VALID_CATALOG);
+    expect(result.ok).toBe(true);
+  });
+
+  it('catches missing default state', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadComponent: {
+          ...VALID_CATALOG.components.Card,
+          states: { hover: { bg: 'surface-primary', text: 'text-primary' } },
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('missing required "default" state');
+    }
+  });
+
+  it('catches invalid category', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadComponent: {
+          ...VALID_CATALOG.components.Card,
+          category: 'invalid_category',
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('invalid category');
+    }
+  });
+
+  it('catches empty anatomy', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadComponent: {
+          ...VALID_CATALOG.components.Card,
+          anatomy: [],
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('empty anatomy');
+    }
   });
 });

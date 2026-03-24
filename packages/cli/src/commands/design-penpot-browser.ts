@@ -16,14 +16,14 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
-import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
+import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
+import { ensureDesignToolConnection, createMockMCPClient } from './design-preflight.js';
 import {
   Ok,
   Err,
   createEventBus,
-  createPenpotAdapter,
 } from '@agentforge/core';
 import type {
   MCPClient,
@@ -31,8 +31,6 @@ import type {
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
-  runPenpotPreflight,
-  loadPenpotSession,
   uxDashboardResearchWork,
   uxDashboardPlanningWork,
   penpotBrowserDesignWork,
@@ -63,6 +61,8 @@ interface DesignPenpotBrowserOptions {
   readonly noWait?: boolean;
   /** Skip feedback loop and generate code directly after design. */
   readonly implement?: boolean;
+  /** Use mock MCP client (no design tool connection required). */
+  readonly mock?: boolean;
 }
 
 // ============================================================================
@@ -90,12 +90,6 @@ const createMockFs = () => ({
   remove: () => Ok(undefined),
   listDir: () => Ok([] as readonly string[]),
   appendFile: () => Ok(undefined),
-});
-
-const createMockMCPClient = (): MCPClient => ({
-  callTool: async (_server: string) => Ok({}),
-  listTools: async (_server: string) => Ok([]),
-  isAvailable: async (_server: string) => true,
 });
 
 const createContext = (taskId: string, mcpClient: MCPClient) => ({
@@ -164,6 +158,15 @@ export async function designPenpotBrowserCommand(
     process.exitCode = 1;
     return;
   }
+
+  // -- Penpot connection (early check — before any LLM work) --
+  const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
+  if (!connectionResult) {
+    return;
+  }
+  const { mcpClient, disconnectFn } = connectionResult;
+
+  try {
 
   // -- Stage 1: Research --
   let researchOutput: UXDashboardResearchOutput;
@@ -245,33 +248,6 @@ export async function designPenpotBrowserCommand(
   // -- Stage 3: Design (Penpot + Browser) --
   output.write(infoMsg('\n  [3/3] Design -- creating Penpot components (browser mode)...\n'));
 
-  // Connect to Penpot MCP for execute_code
-  let mcpClient: MCPClient;
-  let disconnectFn: (() => void) | undefined;
-  const adapter = createPenpotAdapter();
-  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
-
-  const sessionResult = loadPenpotSession();
-  if (sessionResult.ok) {
-    output.write(infoMsg(`  Penpot MCP: reusing session (tools: ${sessionResult.value.supportedTools?.length ?? 0})\n`));
-    const handle = adapter.createMCPClient({ url: sessionResult.value.url });
-    mcpClient = handle.client;
-    disconnectFn = handle.disconnect;
-  } else {
-    output.write(infoMsg('  Penpot MCP: running preflight...\n'));
-    const preflightResult = await runPenpotPreflight({ mcpUrl });
-    if (preflightResult.ok) {
-      output.write(successMsg(`  Penpot MCP: connected (tools: ${preflightResult.value.supportedTools?.length ?? 0})\n`));
-      const handle = adapter.createMCPClient({ url: preflightResult.value.url });
-      mcpClient = handle.client;
-      disconnectFn = handle.disconnect;
-    } else {
-      output.write(warnMsg(`  Penpot MCP: ${preflightResult.error.message}\n`));
-      output.write(warnMsg('  Continuing with mock MCP (no Penpot output)\n'));
-      mcpClient = createMockMCPClient();
-    }
-  }
-
   const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
   const penpotUrl = process.env.PENPOT_URL ?? 'http://localhost:9001';
   const penpotEmail = process.env.PENPOT_EMAIL ?? '';
@@ -285,82 +261,82 @@ export async function designPenpotBrowserCommand(
   };
 
   const t0 = Date.now();
-  try {
-    const result = await penpotBrowserDesignWork(browserInput, provider, mcpClient, {
-      headless: options.headless ?? false,
-      penpotUrl,
-      email: penpotEmail,
-      password: penpotPassword,
-    });
-    const ms = Date.now() - t0;
+  const result = await penpotBrowserDesignWork(browserInput, provider, mcpClient, {
+    headless: options.headless ?? false,
+    penpotUrl,
+    email: penpotEmail,
+    password: penpotPassword,
+  });
+  const ms = Date.now() - t0;
 
-    if (!result.ok) {
-      output.write(errorMsg(`Design failed: ${result.error.message}\n`));
-      process.exitCode = 1;
-      return;
-    }
+  if (!result.ok) {
+    output.write(errorMsg(`Design failed: ${result.error.message}\n`));
+    process.exitCode = 1;
+    return;
+  }
 
-    const designOutput = result.value;
-    const artifactPath = saveArtifact(outputDir, 'penpot-browser-design.json', designOutput);
+  const designOutput = result.value;
+  const artifactPath = saveArtifact(outputDir, 'penpot-browser-design.json', designOutput);
 
-    output.write(successMsg(`  Design complete (${(ms / 1000).toFixed(1)}s)\n`));
-    output.write('\n');
-    output.write(infoMsg('='.repeat(60) + '\n'));
-    output.write(infoMsg('  PIPELINE COMPLETE (Browser Mode)\n'));
-    output.write(infoMsg('='.repeat(60) + '\n'));
-    output.write(infoMsg(`  Module: ${moduleId}\n`));
-    output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
-    output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
-    output.write(infoMsg('='.repeat(60) + '\n'));
+  output.write(successMsg(`  Design complete (${(ms / 1000).toFixed(1)}s)\n`));
+  output.write('\n');
+  output.write(infoMsg('='.repeat(60) + '\n'));
+  output.write(infoMsg('  PIPELINE COMPLETE (Browser Mode)\n'));
+  output.write(infoMsg('='.repeat(60) + '\n'));
+  output.write(infoMsg(`  Module: ${moduleId}\n`));
+  output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
+  output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
+  output.write(infoMsg('='.repeat(60) + '\n'));
 
-    // ── --implement flag: generate code from design ──
-    if (options.implement) {
-      output.write(infoMsg('\n  [implement] Generating code from design...\n'));
-      const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
-      const implContext = createContext(`${taskId}_impl`, mcpClient);
+  // ── --implement flag: generate code from design ──
+  if (options.implement) {
+    output.write(infoMsg('\n  [implement] Generating code from design...\n'));
+    const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    const implContext = createContext(`${taskId}_impl`, mcpClient);
 
-      const implInput: UXDashboardImplementationInput = {
-        specRef: planningOutput.specRef,
-        moduleId,
-        taskId: `${taskId}_impl`,
-        componentSpec: planningOutput,
-        stage: 'layout',
-        designNodeIds: designOutput.penpotNodeIds as Record<string, string>,
-        designFileId: designOutput.penpotProjectId,
-      };
+    const implInput: UXDashboardImplementationInput = {
+      specRef: planningOutput.specRef,
+      moduleId,
+      taskId: `${taskId}_impl`,
+      componentSpec: planningOutput,
+      stage: 'layout',
+      designNodeIds: designOutput.penpotNodeIds as Record<string, string>,
+      designFileId: designOutput.penpotProjectId,
+    };
 
-      const implResult = await uxDashboardImplementationWork(
-        implInput,
-        implProvider as unknown as LLMProviderRef,
-        [],
-        implContext,
-      );
+    const implResult = await uxDashboardImplementationWork(
+      implInput,
+      implProvider as unknown as LLMProviderRef,
+      [],
+      implContext,
+    );
 
-      if (implResult.ok) {
-        const targetDir = process.cwd();
-        const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
-        output.write(successMsg(`  Generated ${implResult.value.files.length} file(s):\n`));
-        for (const p of writtenPaths) {
-          output.write(infoMsg(`    ${p}\n`));
-        }
-
-        // ── Post-implementation verification ──
-        output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
-        await verifyImplementation({
-          projectRoot: process.cwd(),
-          moduleId,
-          output,
-          provider: provider as unknown as {
-            complete: (
-              prompt: { system: string; messages: { role: 'user'; content: string }[] },
-              opts: { model: string; maxTokens: number; temperature: number },
-            ) => Promise<import('@agentforge/core').Result<{ content: string }>>;
-          },
-        });
-      } else {
-        output.write(errorMsg(`  Implementation failed: ${implResult.error.message}\n`));
+    if (implResult.ok) {
+      const targetDir = process.cwd();
+      const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
+      output.write(successMsg(`  Generated ${implResult.value.files.length} file(s):\n`));
+      for (const p of writtenPaths) {
+        output.write(infoMsg(`    ${p}\n`));
       }
+
+      // ── Post-implementation verification ──
+      output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
+      await verifyImplementation({
+        projectRoot: process.cwd(),
+        moduleId,
+        output,
+        provider: provider as unknown as {
+          complete: (
+            prompt: { system: string; messages: { role: 'user'; content: string }[] },
+            opts: { model: string; maxTokens: number; temperature: number },
+          ) => Promise<import('@agentforge/core').Result<{ content: string }>>;
+        },
+      });
+    } else {
+      output.write(errorMsg(`  Implementation failed: ${implResult.error.message}\n`));
     }
+  }
+
   } finally {
     disconnectFn?.();
   }

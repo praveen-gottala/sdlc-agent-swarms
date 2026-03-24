@@ -17,14 +17,15 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
+import { ensureDesignToolConnection, createMockMCPClient } from './design-preflight.js';
 import {
   Ok,
   Err,
   createEventBus,
-  createPenpotAdapter,
   createRealFs,
   loadDesignTokens,
   loadBrandSpec,
+  loadComponentCatalog,
   toDesignTokens,
 } from '@agentforge/core';
 import type {
@@ -32,15 +33,15 @@ import type {
   LLMProviderRef,
   DesignTokensSpec,
   BrandSpec,
+  PromptTrace,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
-  runPenpotPreflight,
-  loadPenpotSession,
   uxDashboardResearchWork,
   uxDashboardPlanningWork,
   penpotDesignWork,
   buildDesignSystemContextFromSpec,
+  buildComponentCatalogPrompt,
   uxDashboardImplementationWork,
   writeImplementationFiles,
   runDesignFeedbackLoop,
@@ -77,6 +78,8 @@ interface DesignPenpotOptions {
   readonly noWait?: boolean;
   /** Skip feedback loop and generate code directly after design. */
   readonly implement?: boolean;
+  /** Use mock MCP client (no design tool connection required). */
+  readonly mock?: boolean;
 }
 
 // ============================================================================
@@ -107,15 +110,8 @@ const createMockFs = () => ({
   appendFile: () => Ok(undefined),
 });
 
-/** Create a mock MCP client. */
-const createMockMCPClient = (): MCPClient => ({
-  callTool: async (_server: string) => Ok({}),
-  listTools: async (_server: string) => Ok([]),
-  isAvailable: async (_server: string) => true,
-});
-
 /** Create an agent context. */
-const createContext = (taskId: string, mcpClient: MCPClient) => ({
+const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: PromptTrace[]) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
@@ -124,6 +120,7 @@ const createContext = (taskId: string, mcpClient: MCPClient) => ({
   runGovernance: async () => Ok({ status: 'proceed' as const }),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
   recordAudit: () => {},
+  promptTraces,
 });
 
 /** Ensure output directory exists and return path. */
@@ -141,6 +138,36 @@ const saveArtifact = (dir: string, filename: string, data: unknown): string => {
   writeFileSync(filePath, JSON.stringify(data, null, 2));
   return filePath;
 };
+
+/** Save a text artifact (e.g. markdown prompt traces). */
+const saveTextArtifact = (dir: string, filename: string, text: string): string => {
+  const filePath = join(dir, filename);
+  writeFileSync(filePath, text);
+  return filePath;
+};
+
+/** Format a prompt trace as a markdown document. */
+function formatPromptTrace(trace: PromptTrace): string {
+  return [
+    `# Prompt: ${trace.stage}`,
+    ``,
+    `**Timestamp**: ${trace.timestamp}  `,
+    `**Model**: ${trace.model}  `,
+    `**Max Tokens**: ${trace.maxTokens}`,
+    ``,
+    `---`,
+    ``,
+    `## System Prompt`,
+    ``,
+    trace.system,
+    ``,
+    `---`,
+    ``,
+    `## User Message`,
+    ``,
+    trace.userMessage,
+  ].join('\n');
+}
 
 /** Load a JSON artifact. */
 const loadArtifact = <T>(dir: string, filename: string): T | null => {
@@ -166,6 +193,7 @@ export async function designPenpotCommand(
   const taskId = `task_design_penpot_${Date.now()}`;
   const skipToStage = options.stage;
   const outputDir = ensureOutputDir(moduleId);
+  const promptTraces: PromptTrace[] = [];
 
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  AgentForge Penpot Design Pipeline\n`));
@@ -204,6 +232,12 @@ export async function designPenpotCommand(
     output.write(infoMsg('  Brand spec loaded from agentforge/spec/brand.yaml\n'));
   }
 
+  const catalogResult = loadComponentCatalog(projectRoot, realFs);
+  const componentCatalog = catalogResult.ok ? catalogResult.value : undefined;
+  if (componentCatalog) {
+    output.write(infoMsg('  Component catalog loaded\n'));
+  }
+
   if (!designTokens && !brandSpec) {
     output.write(warnMsg('  No design system found — using defaults.\n'));
     output.write(warnMsg('  Run `agentforge design:system` first for brand-accurate designs.\n'));
@@ -216,6 +250,15 @@ export async function designPenpotCommand(
     process.exitCode = 1;
     return;
   }
+
+  // -- Penpot connection (early check — before any LLM work) --
+  const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
+  if (!connectionResult) {
+    return;
+  }
+  const { mcpClient, disconnectFn } = connectionResult;
+
+  try {
 
   // -- Stage 1: Research --
   let researchOutput: UXDashboardResearchOutput;
@@ -232,7 +275,7 @@ export async function designPenpotCommand(
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
     const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
-    const context = createContext(taskId, createMockMCPClient());
+    const context = createContext(taskId, createMockMCPClient(), promptTraces);
 
     const prdRequirements: string[] = [description];
     if (prdContent) {
@@ -258,6 +301,9 @@ export async function designPenpotCommand(
 
     researchOutput = result.value;
     saveArtifact(outputDir, 'research-brief.json', researchOutput);
+    for (const trace of promptTraces) {
+      saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
+    }
     output.write(successMsg(`  Research complete (${(ms / 1000).toFixed(1)}s)\n`));
   }
 
@@ -276,7 +322,7 @@ export async function designPenpotCommand(
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
     const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
-    const context = createContext(taskId, createMockMCPClient());
+    const context = createContext(taskId, createMockMCPClient(), promptTraces);
 
     const input: UXDashboardPlanningInput = {
       briefId: researchOutput.briefId,
@@ -297,36 +343,10 @@ export async function designPenpotCommand(
 
     planningOutput = result.value;
     saveArtifact(outputDir, 'planning-spec.json', planningOutput);
-    output.write(successMsg(`  Planning complete (${(ms / 1000).toFixed(1)}s)\n`));
-  }
-
-  // -- Penpot connection --
-  let mcpClient: MCPClient;
-  let disconnectFn: (() => void) | undefined;
-  const adapter = createPenpotAdapter();
-
-  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
-
-  // Try session, then preflight
-  const sessionResult = loadPenpotSession();
-  if (sessionResult.ok) {
-    output.write(infoMsg(`  Penpot: reusing session (tools: ${sessionResult.value.supportedTools?.length ?? 0})\n`));
-    const handle = adapter.createMCPClient({ url: sessionResult.value.url });
-    mcpClient = handle.client;
-    disconnectFn = handle.disconnect;
-  } else {
-    output.write(infoMsg('  Penpot: running preflight...\n'));
-    const preflightResult = await runPenpotPreflight({ mcpUrl });
-    if (preflightResult.ok) {
-      output.write(successMsg(`  Penpot: connected (tools: ${preflightResult.value.supportedTools?.length ?? 0})\n`));
-      const handle = adapter.createMCPClient({ url: preflightResult.value.url });
-      mcpClient = handle.client;
-      disconnectFn = handle.disconnect;
-    } else {
-      output.write(warnMsg(`  Penpot: ${preflightResult.error.message}\n`));
-      output.write(warnMsg('  Continuing with mock MCP (no Penpot output)\n'));
-      mcpClient = createMockMCPClient();
+    for (const trace of promptTraces) {
+      saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
     }
+    output.write(successMsg(`  Planning complete (${(ms / 1000).toFixed(1)}s)\n`));
   }
 
   // -- Stage: connect (test connection only) --
@@ -335,7 +355,6 @@ export async function designPenpotCommand(
     if (!cached) {
       output.write(errorMsg(`No cached design output found at ${outputDir}/penpot-design.json\n`));
       process.exitCode = 1;
-      disconnectFn?.();
       return;
     }
     output.write(infoMsg('  [3/3] Design -- loaded from cache\n'));
@@ -347,7 +366,6 @@ export async function designPenpotCommand(
     output.write(infoMsg(`  Components: ${Object.keys(cached.penpotNodeIds).length}\n`));
     output.write(infoMsg(`  Project: ${cached.penpotProjectId}\n`));
     output.write(infoMsg('='.repeat(60) + '\n'));
-    disconnectFn?.();
     return;
   }
 
@@ -365,64 +383,60 @@ export async function designPenpotCommand(
     output.write(infoMsg('\n  [3/3] Design -- replaying cached script into Penpot...\n'));
     const t0 = Date.now();
 
-    try {
-      const wrappedScript = `
+    const wrappedScript = `
 try {
   ${cached.script}
 } catch (e) {
   return { __error: true, message: e.message || String(e), stack: e.stack };
 }
 `;
-      const toolResult = await mcpClient.callTool('penpot', 'execute_code', { code: wrappedScript });
-      const ms = Date.now() - t0;
+    const toolResult = await mcpClient.callTool('penpot', 'execute_code', { code: wrappedScript });
+    const ms = Date.now() - t0;
 
-      if (!toolResult.ok) {
-        output.write(errorMsg(`Replay failed: ${toolResult.error.message}\n`));
+    if (!toolResult.ok) {
+      output.write(errorMsg(`Replay failed: ${toolResult.error.message}\n`));
+      process.exitCode = 1;
+      return;
+    }
+
+    // Parse result for node IDs
+    const content = toolResult.value as { content?: Array<{ text?: string }> };
+    const text = Array.isArray(content.content)
+      ? content.content.map(c => c.text ?? '').join('')
+      : '';
+    let replayNodeIds: Record<string, string> = {};
+
+    try {
+      const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
+      if (parsed.result?.__error) {
+        output.write(errorMsg(`Replay script error: ${String(parsed.result.message)}\n`));
         process.exitCode = 1;
         return;
       }
-
-      // Parse result for node IDs
-      const content = toolResult.value as { content?: Array<{ text?: string }> };
-      const text = Array.isArray(content.content)
-        ? content.content.map(c => c.text ?? '').join('')
-        : '';
-      let replayNodeIds: Record<string, string> = {};
-
-      try {
-        const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
-        if (parsed.result?.__error) {
-          output.write(errorMsg(`Replay script error: ${String(parsed.result.message)}\n`));
-          process.exitCode = 1;
-          return;
-        }
-        const nodeIds = parsed.result?.nodeIds as Record<string, string> | undefined;
-        if (nodeIds) {
-          replayNodeIds = nodeIds;
-        }
-      } catch {
-        // Non-JSON is acceptable for replay
+      const nodeIds = parsed.result?.nodeIds as Record<string, string> | undefined;
+      if (nodeIds) {
+        replayNodeIds = nodeIds;
       }
-
-      // Save updated artifact
-      const updatedOutput: PenpotDesignOutput = {
-        ...cached,
-        penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : cached.penpotNodeIds,
-      };
-      const artifactPath = saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
-
-      output.write(successMsg(`  Replay complete (${(ms / 1000).toFixed(1)}s)\n`));
-      output.write('\n');
-      output.write(infoMsg('='.repeat(60) + '\n'));
-      output.write(infoMsg('  REPLAY COMPLETE\n'));
-      output.write(infoMsg('='.repeat(60) + '\n'));
-      output.write(infoMsg(`  Module: ${moduleId}\n`));
-      output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds).length}\n`));
-      output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
-      output.write(infoMsg('='.repeat(60) + '\n'));
-    } finally {
-      disconnectFn?.();
+    } catch {
+      // Non-JSON is acceptable for replay
     }
+
+    // Save updated artifact
+    const updatedOutput: PenpotDesignOutput = {
+      ...cached,
+      penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : cached.penpotNodeIds,
+    };
+    const artifactPath = saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
+
+    output.write(successMsg(`  Replay complete (${(ms / 1000).toFixed(1)}s)\n`));
+    output.write('\n');
+    output.write(infoMsg('='.repeat(60) + '\n'));
+    output.write(infoMsg('  REPLAY COMPLETE\n'));
+    output.write(infoMsg('='.repeat(60) + '\n'));
+    output.write(infoMsg(`  Module: ${moduleId}\n`));
+    output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds).length}\n`));
+    output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
+    output.write(infoMsg('='.repeat(60) + '\n'));
     return;
   }
 
@@ -438,6 +452,8 @@ try {
     projectDesignSystemPrompt = dsCtx.designSystemPrompt;
   }
 
+  const componentCatalogPrompt = buildComponentCatalogPrompt(componentCatalog);
+
   const penpotInput: PenpotDesignInput = {
     specRef: planningOutput.specRef,
     moduleId,
@@ -445,159 +461,163 @@ try {
     planningOutput,
     description,
     ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
+    ...(componentCatalogPrompt ? { componentCatalogPrompt } : {}),
   };
 
   const t0 = Date.now();
-  try {
-    const result = await penpotDesignWork(penpotInput, provider, mcpClient);
-    const ms = Date.now() - t0;
+  const result = await penpotDesignWork(penpotInput, provider, mcpClient, { promptTraces });
+  const ms = Date.now() - t0;
 
-    if (!result.ok) {
-      output.write(errorMsg(`Design failed: ${result.error.message}\n`));
-      process.exitCode = 1;
-      return;
+  if (!result.ok) {
+    output.write(errorMsg(`Design failed: ${result.error.message}\n`));
+    process.exitCode = 1;
+    return;
+  }
+
+  const designOutput = result.value;
+  const artifactPath = saveArtifact(outputDir, 'penpot-design.json', designOutput);
+  for (const trace of promptTraces) {
+    saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
+  }
+
+  output.write(successMsg(`  Design complete (${(ms / 1000).toFixed(1)}s)\n`));
+  output.write('\n');
+  output.write(infoMsg('='.repeat(60) + '\n'));
+  output.write(infoMsg('  PIPELINE COMPLETE\n'));
+  output.write(infoMsg('='.repeat(60) + '\n'));
+  output.write(infoMsg(`  Module: ${moduleId}\n`));
+  output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
+  output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
+  output.write(infoMsg('='.repeat(60) + '\n'));
+
+  // ── Build implement callback ──
+  const createImplementFn = (): ImplementCallback => {
+    return async (design) => {
+      const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
+      const implContext = createContext(`${taskId}_impl`, mcpClient);
+
+      const implInput: UXDashboardImplementationInput = {
+        specRef: planningOutput.specRef,
+        moduleId,
+        taskId: `${taskId}_impl`,
+        componentSpec: planningOutput,
+        stage: 'layout',
+        designSnapshot: design.screenshotPath || design.componentSnapshots
+          ? { screenshotPath: design.screenshotPath, componentSnapshots: design.componentSnapshots }
+          : undefined,
+        designNodeIds: design.figmaNodeIds,
+        designFileId: design.figmaFileId,
+      };
+
+      const implResult = await uxDashboardImplementationWork(
+        implInput,
+        implProvider as unknown as LLMProviderRef,
+        [],
+        implContext,
+      );
+
+      if (!implResult.ok) {
+        return implResult as import('@agentforge/core').Result<never>;
+      }
+
+      const targetDir = process.cwd();
+      const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
+
+      return Ok({ files: implResult.value.files, writtenPaths });
+    };
+  };
+
+  // ── --implement flag: skip feedback loop, go straight to code gen ──
+  if (options.implement) {
+    output.write(infoMsg('\n  [implement] Generating code from design...\n'));
+    const mappedDesign = mapPenpotToDesignOutput(designOutput);
+    const implementFn = createImplementFn();
+    const implResult = await implementFn(mappedDesign);
+    if (implResult.ok) {
+      output.write(successMsg(`  Generated ${implResult.value.files.length} file(s):\n`));
+      for (const p of implResult.value.writtenPaths) {
+        output.write(infoMsg(`    ${p}\n`));
+      }
+
+      // ── Post-implementation verification ──
+      output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
+      await verifyImplementation({
+        projectRoot: process.cwd(),
+        moduleId,
+        output,
+        provider: provider as unknown as {
+          complete: (
+            prompt: { system: string; messages: { role: 'user'; content: string }[] },
+            opts: { model: string; maxTokens: number; temperature: number },
+          ) => Promise<import('@agentforge/core').Result<{ content: string }>>;
+        },
+      });
+    } else {
+      output.write(errorMsg(`  Implementation failed: ${implResult.error.message}\n`));
     }
+  }
 
-    const designOutput = result.value;
-    const artifactPath = saveArtifact(outputDir, 'penpot-design.json', designOutput);
+  // ── Interactive feedback loop ──
+  const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
+  if (!options.noWait && !options.implement && isTTY) {
+    // Discover Penpot API docs for the collaboration session
+    const apiDocs = await discoverPenpotAPI(mcpClient);
 
-    output.write(successMsg(`  Design complete (${(ms / 1000).toFixed(1)}s)\n`));
-    output.write('\n');
-    output.write(infoMsg('='.repeat(60) + '\n'));
-    output.write(infoMsg('  PIPELINE COMPLETE\n'));
-    output.write(infoMsg('='.repeat(60) + '\n'));
-    output.write(infoMsg(`  Module: ${moduleId}\n`));
-    output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
-    output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
-    output.write(infoMsg('='.repeat(60) + '\n'));
-
-    // ── Build implement callback ──
-    const createImplementFn = (): ImplementCallback => {
-      return async (design) => {
-        const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
-        const implContext = createContext(`${taskId}_impl`, mcpClient);
-
-        const implInput: UXDashboardImplementationInput = {
-          specRef: planningOutput.specRef,
-          moduleId,
-          taskId: `${taskId}_impl`,
-          componentSpec: planningOutput,
-          stage: 'layout',
-          designSnapshot: design.screenshotPath || design.componentSnapshots
-            ? { screenshotPath: design.screenshotPath, componentSnapshots: design.componentSnapshots }
-            : undefined,
-          designNodeIds: design.figmaNodeIds,
-          designFileId: design.figmaFileId,
+    // Build design system context
+    const designSystemCtx = designTokens && brandSpec
+      ? buildDesignSystemContextFromSpec(designTokens, brandSpec, planningOutput)
+      : {
+          designSystemPrompt: projectDesignSystemPrompt ?? '',
+          colorPalette: [],
+          shadeScales: {},
+          componentTree: planningOutput.componentTree ?? [],
+          tokenBindings: planningOutput.tokenBindings ?? {},
+          typographyScale: [],
+          spacingScale: [],
         };
 
-        const implResult = await uxDashboardImplementationWork(
-          implInput,
-          implProvider as unknown as LLMProviderRef,
-          [],
-          implContext,
-        );
+    const session = createPenpotCollaborationSession(
+      mcpClient,
+      provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },
+      designOutput,
+      designSystemCtx,
+      apiDocs,
+    );
 
-        if (!implResult.ok) {
-          return implResult as import('@agentforge/core').Result<never>;
-        }
+    // Create review callback using root shape ID
+    const rootShapeId = Object.values(designOutput.penpotNodeIds)[0] ?? '';
+    const planningSpec = JSON.stringify(planningOutput, null, 2);
+    const reviewFn = createPenpotReviewCallback(
+      provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },
+      planningSpec,
+      mcpClient,
+      rootShapeId,
+    );
 
-        const targetDir = process.cwd();
-        const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
+    const implementFn = createImplementFn();
+    const mappedDesign = mapPenpotToDesignOutput(designOutput);
 
-        return Ok({ files: implResult.value.files, writtenPaths });
-      };
-    };
+    const loopResult = await runDesignFeedbackLoop({
+      session,
+      initialDesign: mappedDesign,
+      input: process.stdin,
+      output,
+      reviewFn,
+      implementFn,
+    });
 
-    // ── --implement flag: skip feedback loop, go straight to code gen ──
-    if (options.implement) {
-      output.write(infoMsg('\n  [implement] Generating code from design...\n'));
-      const mappedDesign = mapPenpotToDesignOutput(designOutput);
-      const implementFn = createImplementFn();
-      const implResult = await implementFn(mappedDesign);
-      if (implResult.ok) {
-        output.write(successMsg(`  Generated ${implResult.value.files.length} file(s):\n`));
-        for (const p of implResult.value.writtenPaths) {
-          output.write(infoMsg(`    ${p}\n`));
-        }
-
-        // ── Post-implementation verification ──
-        output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
-        await verifyImplementation({
-          projectRoot: process.cwd(),
-          moduleId,
-          output,
-          provider: provider as unknown as {
-            complete: (
-              prompt: { system: string; messages: { role: 'user'; content: string }[] },
-              opts: { model: string; maxTokens: number; temperature: number },
-            ) => Promise<import('@agentforge/core').Result<{ content: string }>>;
-          },
-        });
-      } else {
-        output.write(errorMsg(`  Implementation failed: ${implResult.error.message}\n`));
-      }
+    if (loopResult.changeCount > 0) {
+      saveArtifact(outputDir, 'penpot-design.json', designOutput);
+      output.write(infoMsg(`  Updated artifact with ${loopResult.changeCount} change(s).\n`));
     }
 
-    // ── Interactive feedback loop ──
-    const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
-    if (!options.noWait && !options.implement && isTTY) {
-      // Discover Penpot API docs for the collaboration session
-      const apiDocs = await discoverPenpotAPI(mcpClient);
-
-      // Build design system context
-      const designSystemCtx = designTokens && brandSpec
-        ? buildDesignSystemContextFromSpec(designTokens, brandSpec, planningOutput)
-        : {
-            designSystemPrompt: projectDesignSystemPrompt ?? '',
-            colorPalette: [],
-            shadeScales: {},
-            componentTree: planningOutput.componentTree ?? [],
-            tokenBindings: planningOutput.tokenBindings ?? {},
-            typographyScale: [],
-            spacingScale: [],
-          };
-
-      const session = createPenpotCollaborationSession(
-        mcpClient,
-        provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },
-        designOutput,
-        designSystemCtx,
-        apiDocs,
-      );
-
-      // Create review callback using root shape ID
-      const rootShapeId = Object.values(designOutput.penpotNodeIds)[0] ?? '';
-      const planningSpec = JSON.stringify(planningOutput, null, 2);
-      const reviewFn = createPenpotReviewCallback(
-        provider as unknown as { complete: (prompt: { system: string; messages: { role: 'user' | 'assistant'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<import('@agentforge/core').Result<{ content: string }>> },
-        planningSpec,
-        mcpClient,
-        rootShapeId,
-      );
-
-      const implementFn = createImplementFn();
-      const mappedDesign = mapPenpotToDesignOutput(designOutput);
-
-      const loopResult = await runDesignFeedbackLoop({
-        session,
-        initialDesign: mappedDesign,
-        input: process.stdin,
-        output,
-        reviewFn,
-        implementFn,
-      });
-
-      if (loopResult.changeCount > 0) {
-        saveArtifact(outputDir, 'penpot-design.json', designOutput);
-        output.write(infoMsg(`  Updated artifact with ${loopResult.changeCount} change(s).\n`));
-      }
-
-      if (loopResult.approved) {
-        output.write(successMsg('  Design approved.\n'));
-      } else {
-        output.write(warnMsg('  Design not approved.\n'));
-      }
+    if (loopResult.approved) {
+      output.write(successMsg('  Design approved.\n'));
+    } else {
+      output.write(warnMsg('  Design not approved.\n'));
     }
+  }
+
   } finally {
     disconnectFn?.();
   }

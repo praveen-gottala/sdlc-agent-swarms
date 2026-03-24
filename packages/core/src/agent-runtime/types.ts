@@ -62,6 +62,34 @@ export type RecordAuditFn = (entry: unknown) => void;
 // Agent context and execution types
 // ============================================================================
 
+/** A captured prompt sent to an LLM provider for tracing. */
+export interface PromptTrace {
+  readonly stage: string;
+  readonly timestamp: string;
+  readonly system: string;
+  readonly userMessage: string;
+  readonly model: string;
+  readonly maxTokens: number;
+}
+
+/** Record a prompt trace if the context has a trace collector. */
+export function recordPromptTrace(
+  context: { promptTraces?: PromptTrace[] },
+  stage: string,
+  prompt: { system: string; messages: { role: string; content: string }[] },
+  opts: { model: string; maxTokens: number },
+): void {
+  if (!context.promptTraces) return;
+  context.promptTraces.push({
+    stage,
+    timestamp: new Date().toISOString(),
+    system: prompt.system,
+    userMessage: prompt.messages.map(m => m.content).join('\n'),
+    model: opts.model,
+    maxTokens: opts.maxTokens,
+  });
+}
+
 /** Everything an agent needs to execute, passed as a single object. */
 export interface AgentContext {
   readonly taskId: string;
@@ -73,6 +101,7 @@ export interface AgentContext {
   readonly resolveProvider: ResolveProviderFn;
   readonly recordAudit: RecordAuditFn;
   readonly abortSignal?: AbortSignal;
+  readonly promptTraces?: PromptTrace[];
 }
 
 /**

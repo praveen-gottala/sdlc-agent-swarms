@@ -61,6 +61,12 @@ When design snapshot data is provided (extracted colors, typography, spacing, bo
 
 When both token bindings (from the component spec) and extracted styles (from the design snapshot) are available, prefer the extracted styles — they represent what was actually designed.
 
+## Component Anatomy Reference
+
+{{COMPONENT_CATALOG}}
+
+When this section is populated, use the anatomy definitions to structure JSX and the library_mapping for exact import paths and sub-component names.
+
 ## Rules
 
 - Generate code ONLY for the requested implementation stage

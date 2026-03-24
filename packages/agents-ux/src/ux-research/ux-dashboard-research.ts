@@ -21,6 +21,7 @@ import {
   Err,
   runAgent,
   readSpecs,
+  recordPromptTrace,
 } from '@agentforge/core';
 import type { DesignTokens } from '@agentforge/agents-design';
 
@@ -163,6 +164,12 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
     system: systemPrompt,
     messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
   };
+
+  // 2b. Record prompt trace
+  recordPromptTrace(context, 'research', prompt, {
+    model: UX_DASHBOARD_RESEARCH_CONTRACT.provider,
+    maxTokens: 8000,
+  });
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {

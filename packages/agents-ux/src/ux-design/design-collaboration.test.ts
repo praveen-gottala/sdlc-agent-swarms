@@ -10,8 +10,10 @@ import {
   buildDesignSystemContextFromSpec,
   applyDesignFeedback,
   createDesignCollaborationSession,
+  buildComponentCatalogPrompt,
+  buildComponentCatalogImplPrompt,
 } from './design-collaboration.js';
-import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 
 // ============================================================================
@@ -452,5 +454,117 @@ describe('buildDesignSystemContextFromSpec', () => {
     const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
 
     expect(ctx.designSystemPrompt).not.toContain('## Component Tokens');
+  });
+});
+
+// ============================================================================
+// Component Catalog Prompt Builders
+// ============================================================================
+
+const SAMPLE_CATALOG: ComponentCatalogSpec = {
+  version: '1.0',
+  created_by: 'test',
+  components: {
+    Card: {
+      description: 'Content container',
+      category: 'layout',
+      anatomy: [
+        { name: 'header', contents: 'title (heading-3)', typography_role: 'heading-3', optional: true },
+        { name: 'body', contents: 'Primary content area' },
+      ],
+      states: {
+        default: { bg: 'surface-primary', text: 'text-primary', border: 'border-default' },
+        hover: { bg: 'surface-primary', text: 'text-primary', shadow: 'shadow-md' },
+      },
+      spacing: { padding: '16 20', internal_gap: '12' },
+      library_mapping: {
+        shadcn: {
+          component_name: 'Card',
+          import_path: '@/components/ui/card',
+          slot_mapping: { header: 'CardHeader', body: 'CardContent' },
+        },
+        mui: {
+          component_name: 'Card',
+          import_path: '@mui/material/Card',
+        },
+      },
+      accessibility: { focus_visible: true, aria_labels: ['role=article'] },
+    },
+    Button: {
+      description: 'Interactive button',
+      category: 'input',
+      anatomy: [
+        { name: 'label', contents: 'button text (label)', typography_role: 'label' },
+      ],
+      states: {
+        default: { bg: 'cta-primary', text: 'text-on-primary' },
+      },
+      spacing: { padding: '8 16', internal_gap: '8' },
+      library_mapping: {
+        shadcn: {
+          component_name: 'Button',
+          import_path: '@/components/ui/button',
+        },
+      },
+      accessibility: { focus_visible: true, aria_labels: ['aria-label when icon-only'], keyboard_nav: 'Enter or Space to activate' },
+    },
+  },
+};
+
+describe('buildComponentCatalogPrompt', () => {
+  it('returns empty string for undefined', () => {
+    expect(buildComponentCatalogPrompt(undefined)).toBe('');
+  });
+
+  it('includes anatomy, states, and accessibility for each component', () => {
+    const result = buildComponentCatalogPrompt(SAMPLE_CATALOG);
+    // Anatomy
+    expect(result).toContain('**header**');
+    expect(result).toContain('title (heading-3)');
+    expect(result).toContain('[heading-3]');
+    // States
+    expect(result).toContain('**default**');
+    expect(result).toContain('bg=surface-primary');
+    // Accessibility
+    expect(result).toContain('role=article');
+    expect(result).toContain('Enter or Space to activate');
+  });
+
+  it('groups by category', () => {
+    const result = buildComponentCatalogPrompt(SAMPLE_CATALOG);
+    expect(result).toContain('## Layout');
+    expect(result).toContain('## Input');
+    // Card is layout, Button is input — they should be in separate sections
+    const layoutIdx = result.indexOf('## Layout');
+    const inputIdx = result.indexOf('## Input');
+    const cardIdx = result.indexOf('### Card');
+    const buttonIdx = result.indexOf('### Button');
+    expect(cardIdx).toBeGreaterThan(layoutIdx);
+    expect(buttonIdx).toBeGreaterThan(inputIdx);
+  });
+});
+
+describe('buildComponentCatalogImplPrompt', () => {
+  it('returns empty string for undefined', () => {
+    expect(buildComponentCatalogImplPrompt(undefined)).toBe('');
+  });
+
+  it('filters to active library', () => {
+    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
+    expect(result).toContain('shadcn');
+    expect(result).toContain('@/components/ui/card');
+    expect(result).not.toContain('@mui/material/Card');
+  });
+
+  it('includes all libraries when no libraryId specified', () => {
+    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG);
+    expect(result).toContain('shadcn');
+    expect(result).toContain('mui');
+  });
+
+  it('includes slot mappings', () => {
+    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
+    expect(result).toContain('CardHeader');
+    expect(result).toContain('CardContent');
   });
 });

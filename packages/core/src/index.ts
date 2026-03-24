@@ -120,8 +120,9 @@ export type {
   AgentWorkFn,
   AgentRunResult,
   ErrorStrategy,
+  PromptTrace,
 } from './agent-runtime/index.js';
-export { runAgent, parseErrorStrategy, formatLearningsForPrompt } from './agent-runtime/index.js';
+export { runAgent, parseErrorStrategy, formatLearningsForPrompt, recordPromptTrace } from './agent-runtime/index.js';
 
 // Filesystem
 export type { FileSystem } from './fs/index.js';
@@ -153,9 +154,12 @@ export {
   saveBrandSpec,
   loadComponentLibrary,
   saveComponentLibrary,
+  loadComponentCatalog,
+  saveComponentCatalog,
   toDesignTokens,
   validateDesignTokens,
   validateBrandSpec,
+  validateComponentCatalog,
 } from './state/design-system-reader.js';
 
 // State: task dependency graph
@@ -187,6 +191,13 @@ export type {
   BrandSpec,
   ReactComponentMapping,
   ComponentLibrarySpec,
+  ComponentAnatomySlot,
+  ComponentStateTokens,
+  ComponentSpacing,
+  ComponentAccessibility,
+  CatalogLibraryMapping,
+  ComponentCatalogEntry,
+  ComponentCatalogSpec,
 } from './types/design-system.js';
 
 // Spec types (PRD v2.0 Section 5.2)

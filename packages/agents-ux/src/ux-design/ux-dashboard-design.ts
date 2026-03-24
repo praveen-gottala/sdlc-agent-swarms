@@ -23,6 +23,7 @@ import {
   Ok,
   Err,
   runAgent,
+  recordPromptTrace,
 } from '@agentforge/core';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
 import type { FigmaCreationStep, DesignSnapshotData, ScreenDefinition, PerScreenResult, ComponentTreeNode } from '../types.js';
@@ -47,6 +48,8 @@ export interface UXDashboardDesignInput {
   readonly description?: string;
   /** Project-specific design system prompt (colors, typography, spacing from design tokens + brand). Overrides hardcoded defaults. */
   readonly designSystemPrompt?: string;
+  /** Component catalog prompt for shared anatomy definitions. */
+  readonly componentCatalogPrompt?: string;
 }
 
 // Re-export ComponentSnapshot from shared types for backward compatibility
@@ -444,16 +447,23 @@ export const buildPerScreenPrompt = (opts: {
   screenPlanningOutput: UXDashboardPlanningOutput;
   description?: string;
   designSystemPrompt?: string;
+  componentCatalogPrompt?: string;
   previousScreenRefs: readonly string[];
   learnings: readonly unknown[];
   moduleId: string;
 }): { system: string; messages: { role: 'user'; content: string }[] } => {
-  const { screen, screenIndex, screenPlanningOutput, description, designSystemPrompt, previousScreenRefs, learnings, moduleId } = opts;
+  const { screen, screenIndex, screenPlanningOutput, description, designSystemPrompt, componentCatalogPrompt, previousScreenRefs, learnings, moduleId } = opts;
 
   const baseSystemPrompt = loadSystemPrompt();
-  const systemPrompt = designSystemPrompt
-    ? baseSystemPrompt + '\n\n# PROJECT DESIGN SYSTEM (use these colors, typography, and spacing — NOT the defaults above)\n\n' + designSystemPrompt
-    : baseSystemPrompt;
+  const systemPrompt = baseSystemPrompt
+    .replace(
+      '{{DESIGN_TOKENS}}',
+      designSystemPrompt || '(No project tokens provided — use fallback palette below)',
+    )
+    .replace(
+      '{{COMPONENT_CATALOG}}',
+      componentCatalogPrompt || '(No component catalog available)',
+    );
 
   const { x, y } = screenGridPosition(screenIndex);
   const userMessageParts = [
@@ -693,7 +703,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
   learnings,
   context,
 ) => {
-  const { moduleId, planningOutput, description, designSystemPrompt } = input;
+  const { moduleId, planningOutput, description, designSystemPrompt, componentCatalogPrompt } = input;
   const llm = provider as unknown as LLMProvider;
 
   // ── Input validation guards ──
@@ -735,9 +745,15 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       screenPlanningOutput,
       description,
       designSystemPrompt,
+      componentCatalogPrompt,
       previousScreenRefs: Object.keys(allNodeIds),
       learnings,
       moduleId,
+    });
+
+    recordPromptTrace(context, `design-screen-${si + 1}-${screen.name}`, prompt, {
+      model: UX_DASHBOARD_DESIGN_CONTRACT.provider,
+      maxTokens: 16000,
     });
 
     const completionResult = await llm.complete(prompt, {
@@ -834,6 +850,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
         screenPlanningOutput: extractScreenSubtree(planningOutput, { ...screen, componentNames: missing }),
         description,
         designSystemPrompt,
+        componentCatalogPrompt,
         previousScreenRefs: Object.keys(allNodeIds),
         learnings,
         moduleId,

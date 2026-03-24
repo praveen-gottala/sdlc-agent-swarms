@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Result, DesignTokensSpec, BrandSpec } from '@agentforge/core';
+import type { Result, DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
 import { Ok, Err } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 import { parseDesignSteps } from './ux-dashboard-design.js';
@@ -86,6 +86,7 @@ export interface DesignSystemContext {
     readonly role: string;
     readonly fontSize: number;
     readonly fontWeight: number;
+    readonly lineHeight?: number;
   }>;
   /** Spacing scale from the design system. */
   readonly spacingScale: ReadonlyArray<{
@@ -283,6 +284,7 @@ export const buildDesignSystemContextFromSpec = (
     role: entry.role,
     fontSize: entry.size,
     fontWeight: entry.weight,
+    ...(entry.line_height !== undefined ? { lineHeight: entry.line_height } : {}),
   }));
 
   // Map spacing scale
@@ -305,8 +307,16 @@ export const buildDesignSystemContextFromSpec = (
       return `- ${name}: \`{ r: ${r.toFixed(2)}, g: ${g.toFixed(2)}, b: ${b.toFixed(2)} }\``;
     }),
     '',
+    '## Semantic Roles',
+    '(Maps semantic names used in component tokens to actual color values)',
+    ...Object.entries(tokens.colors.semantic).map(([role, ref]) => {
+      // Resolve primitive reference to hex, or use direct hex value
+      const resolved = ref.startsWith('#') ? ref : (tokens.colors.primitive[ref] ?? ref);
+      return `- ${role} -> ${ref}${ref !== resolved ? ` (${resolved})` : ''}`;
+    }),
+    '',
     '## Typography',
-    ...tokens.typography.scale.map((e) => `- ${e.role}: ${e.size}px, weight ${e.weight} (${e.family})`),
+    ...tokens.typography.scale.map((e) => `- ${e.role}: ${e.size}px/${e.line_height ?? 'auto'}, weight ${e.weight} (${e.family})`),
     '',
     '## Spacing',
     `Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`,
@@ -345,6 +355,141 @@ export const buildDesignSystemContextFromSpec = (
     typographyScale,
     spacingScale,
   };
+};
+
+// ============================================================================
+// Component catalog prompt builders
+// ============================================================================
+
+/**
+ * Build a design-agent-focused prompt section from the component catalog.
+ * Groups components by category and renders anatomy, states, spacing, and accessibility.
+ * Returns empty string when catalog is undefined (graceful fallback).
+ */
+export const buildComponentCatalogPrompt = (
+  catalog: ComponentCatalogSpec | undefined,
+): string => {
+  if (!catalog) return '';
+
+  const byCategory = new Map<string, string[]>();
+  for (const [name, entry] of Object.entries(catalog.components)) {
+    const lines = byCategory.get(entry.category) ?? [];
+
+    lines.push(`### ${name}`);
+    lines.push(`${entry.description}`);
+    lines.push('');
+
+    // Anatomy
+    lines.push('**Anatomy:**');
+    for (const slot of entry.anatomy) {
+      const opt = slot.optional ? ' *(optional)*' : '';
+      const typo = slot.typography_role ? ` [${slot.typography_role}]` : '';
+      lines.push(`- **${slot.name}**${opt}: ${slot.contents}${typo}`);
+    }
+    lines.push('');
+
+    // States
+    lines.push('**States:**');
+    for (const [state, tokens] of Object.entries(entry.states)) {
+      const parts = [`bg=${tokens.bg}`, `text=${tokens.text}`];
+      if (tokens.border) parts.push(`border=${tokens.border}`);
+      if (tokens.border_width) parts.push(`border-width=${tokens.border_width}px`);
+      if (tokens.shadow) parts.push(`shadow=${tokens.shadow}`);
+      if (tokens.opacity !== undefined) parts.push(`opacity=${tokens.opacity}`);
+      lines.push(`- **${state}**: ${parts.join(', ')}`);
+    }
+    lines.push('');
+
+    // Spacing
+    lines.push(`**Spacing:** padding=${entry.spacing.padding}, gap=${entry.spacing.internal_gap}`);
+    lines.push('');
+
+    // Accessibility
+    lines.push('**Accessibility:**');
+    if (entry.accessibility.focus_visible) lines.push('- Focus ring: visible');
+    for (const label of entry.accessibility.aria_labels) {
+      lines.push(`- ${label}`);
+    }
+    if (entry.accessibility.keyboard_nav) {
+      lines.push(`- Keyboard: ${entry.accessibility.keyboard_nav}`);
+    }
+    lines.push('');
+
+    byCategory.set(entry.category, lines);
+  }
+
+  const sections: string[] = ['# Component Catalog\n'];
+  const categoryLabels: Record<string, string> = {
+    layout: 'Layout',
+    data_display: 'Data Display',
+    input: 'Input',
+    feedback: 'Feedback',
+    navigation: 'Navigation',
+    composite: 'Composite',
+  };
+
+  for (const [cat, label] of Object.entries(categoryLabels)) {
+    const lines = byCategory.get(cat);
+    if (!lines || lines.length === 0) continue;
+    sections.push(`## ${label}\n`);
+    sections.push(lines.join('\n'));
+  }
+
+  return sections.join('\n');
+};
+
+/**
+ * Build an implementation-agent-focused prompt section from the component catalog.
+ * Emphasizes library_mapping (filtered to active library when known) and anatomy for JSX structure.
+ * Omits visual state details (covered by design-tokens.yaml).
+ * Returns empty string when catalog is undefined (graceful fallback).
+ */
+export const buildComponentCatalogImplPrompt = (
+  catalog: ComponentCatalogSpec | undefined,
+  libraryId?: string,
+): string => {
+  if (!catalog) return '';
+
+  const lines: string[] = ['# Component Anatomy Reference\n'];
+  lines.push('Use these definitions to structure JSX components and determine correct import paths.\n');
+
+  for (const [name, entry] of Object.entries(catalog.components)) {
+    lines.push(`### ${name}`);
+    lines.push(`${entry.description} (${entry.category})`);
+    lines.push('');
+
+    // Anatomy → JSX structure
+    lines.push('**Structure:**');
+    for (const slot of entry.anatomy) {
+      const opt = slot.optional ? ' *(optional)*' : '';
+      lines.push(`- ${slot.name}${opt}: ${slot.contents}`);
+    }
+    lines.push('');
+
+    // Library mapping (filtered if libraryId provided)
+    const mappings = libraryId
+      ? Object.entries(entry.library_mapping).filter(([id]) => id === libraryId)
+      : Object.entries(entry.library_mapping);
+
+    if (mappings.length > 0) {
+      lines.push('**Library:**');
+      for (const [libId, mapping] of mappings) {
+        lines.push(`- ${libId}: \`${mapping.component_name}\` from \`${mapping.import_path}\``);
+        if (mapping.slot_mapping) {
+          for (const [slot, component] of Object.entries(mapping.slot_mapping)) {
+            lines.push(`  - ${slot} → \`${component}\``);
+          }
+        }
+      }
+      lines.push('');
+    }
+
+    // Spacing
+    lines.push(`**Spacing:** padding=${entry.spacing.padding}, gap=${entry.spacing.internal_gap}`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
 };
 
 // ============================================================================

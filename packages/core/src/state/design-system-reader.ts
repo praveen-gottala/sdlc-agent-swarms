@@ -8,7 +8,7 @@
 import * as path from 'node:path';
 import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
-import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '../types/design-system.js';
+import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec, ComponentCatalogSpec } from '../types/design-system.js';
 import type { FileSystem } from '../fs/file-system.js';
 import { readYaml, writeYaml } from '../fs/yaml-utils.js';
 
@@ -153,6 +153,102 @@ export const saveComponentLibrary = (
   const dir = path.dirname(filePath);
   fs.mkdir(dir);
   return writeYaml(filePath, spec, fs);
+};
+
+/** Path to component-catalog.yaml within a project. */
+const COMPONENT_CATALOG_PATH = 'agentforge/spec/component-catalog.yaml';
+
+/**
+ * Load component catalog from agentforge/spec/component-catalog.yaml.
+ * Returns Err if the file is missing — this is optional.
+ *
+ * @param projectRoot - Absolute path to the project root directory
+ * @param fs - FileSystem implementation to use for reading
+ * @returns The parsed ComponentCatalogSpec, or Err if file missing
+ */
+export const loadComponentCatalog = (
+  projectRoot: string,
+  fs: FileSystem,
+): Result<ComponentCatalogSpec> => {
+  const filePath = path.join(projectRoot, COMPONENT_CATALOG_PATH);
+  if (!fs.exists(filePath)) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: 'Component catalog not found. Create agentforge/spec/component-catalog.yaml to define shared component anatomy.',
+      recoverable: true,
+    });
+  }
+  return readYaml<ComponentCatalogSpec>(filePath, fs);
+};
+
+/**
+ * Save component catalog to agentforge/spec/component-catalog.yaml.
+ *
+ * @param projectRoot - Absolute path to the project root directory
+ * @param spec - The ComponentCatalogSpec to serialize and write
+ * @param fs - FileSystem implementation to use for writing
+ * @returns Void on success, or an error Result
+ */
+export const saveComponentCatalog = (
+  projectRoot: string,
+  spec: ComponentCatalogSpec,
+  fs: FileSystem,
+): Result<void> => {
+  const filePath = path.join(projectRoot, COMPONENT_CATALOG_PATH);
+  const dir = path.dirname(filePath);
+  fs.mkdir(dir);
+  return writeYaml(filePath, spec, fs);
+};
+
+/** Valid component categories for catalog entries. */
+const VALID_CATEGORIES = new Set([
+  'layout',
+  'data_display',
+  'input',
+  'feedback',
+  'navigation',
+  'composite',
+]);
+
+/**
+ * Validate a ComponentCatalogSpec for internal consistency.
+ * Checks that every component has a 'default' state, uses a valid category,
+ * and has non-empty anatomy.
+ *
+ * @param spec - The ComponentCatalogSpec to validate
+ * @returns Ok if valid, Err with details if not
+ */
+export const validateComponentCatalog = (
+  spec: ComponentCatalogSpec,
+): Result<void> => {
+  const errors: string[] = [];
+
+  for (const [name, entry] of Object.entries(spec.components)) {
+    // Check valid category
+    if (!VALID_CATEGORIES.has(entry.category)) {
+      errors.push(`Component "${name}" has invalid category "${entry.category}" — must be one of: ${[...VALID_CATEGORIES].join(', ')}`);
+    }
+
+    // Check non-empty anatomy
+    if (!entry.anatomy || entry.anatomy.length === 0) {
+      errors.push(`Component "${name}" has empty anatomy — at least one slot is required`);
+    }
+
+    // Check default state exists
+    if (!entry.states || !entry.states['default']) {
+      errors.push(`Component "${name}" is missing required "default" state`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: `Component catalog validation failed:\n${errors.join('\n')}`,
+      recoverable: false,
+    });
+  }
+
+  return Ok(undefined);
 };
 
 /**

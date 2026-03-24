@@ -61,9 +61,10 @@ export interface ComponentVariantTokens {
 }
 
 /**
- * Component-level token bindings.
- * Each component maps variant names to token references.
- * Color values MUST reference semantic or primitive token names, never raw hex.
+ * Component-level token bindings (variant → token references).
+ * @deprecated Use ComponentCatalogSpec for structured component definitions.
+ * This interface only captures variant token bindings, not anatomy or states.
+ * Retained for backward compatibility with existing design-tokens.yaml files.
  */
 export interface ComponentTokens {
   readonly button?: {
@@ -172,4 +173,71 @@ export interface ComponentLibrarySpec {
   readonly install_hint: string;
   readonly docs_url: string;
   readonly react_mappings: Record<string, ReactComponentMapping>;
+}
+
+// ============================================================================
+// Component Catalog — shared anatomy definitions (design ↔ implementation)
+// ============================================================================
+
+/** A single slot in a component's anatomy (e.g., "header", "body", "footer"). */
+export interface ComponentAnatomySlot {
+  readonly name: string;
+  readonly contents: string;
+  readonly typography_role?: string;
+  readonly optional?: boolean;
+}
+
+/** Token bindings for a component state (default, hover, disabled, etc.). */
+export interface ComponentStateTokens {
+  readonly bg: string;
+  readonly text: string;
+  readonly border?: string;
+  readonly border_width?: number;
+  readonly shadow?: string;
+  readonly opacity?: number;
+}
+
+/** Spacing configuration for a component. */
+export interface ComponentSpacing {
+  readonly padding: string;
+  readonly internal_gap: string;
+}
+
+/** Accessibility requirements for a component. */
+export interface ComponentAccessibility {
+  readonly focus_visible: boolean;
+  readonly aria_labels: readonly string[];
+  readonly keyboard_nav?: string;
+}
+
+/** Library-specific mapping for a component (e.g., shadcn, MUI, Chakra). */
+export interface CatalogLibraryMapping {
+  readonly component_name: string;
+  readonly import_path: string;
+  readonly slot_mapping?: Readonly<Record<string, string>>;
+}
+
+/** A single component entry in the catalog. */
+export interface ComponentCatalogEntry {
+  readonly description: string;
+  readonly category: string;
+  readonly anatomy: readonly ComponentAnatomySlot[];
+  readonly states: Readonly<Record<string, ComponentStateTokens>>;
+  readonly spacing: ComponentSpacing;
+  readonly library_mapping: Readonly<Record<string, CatalogLibraryMapping>>;
+  readonly accessibility: ComponentAccessibility;
+}
+
+/**
+ * Component catalog spec file.
+ * Stored at: agentforge/spec/component-catalog.yaml
+ *
+ * Provides the shared "single source of truth" for component anatomy,
+ * states, token bindings, library mappings, and accessibility requirements.
+ * Both design agents and implementation agents reference this catalog.
+ */
+export interface ComponentCatalogSpec {
+  readonly version: string;
+  readonly created_by: string;
+  readonly components: Readonly<Record<string, ComponentCatalogEntry>>;
 }

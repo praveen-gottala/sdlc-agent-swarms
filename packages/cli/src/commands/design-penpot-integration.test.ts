@@ -135,7 +135,7 @@ describe('design:penpot integration — file loading', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true });
+    await designPenpotCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('PRD loaded from docs/prd.md');
   });
@@ -144,7 +144,7 @@ describe('design:penpot integration — file loading', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true });
+    await designPenpotCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Design tokens loaded');
   });
@@ -153,7 +153,7 @@ describe('design:penpot integration — file loading', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true });
+    await designPenpotCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Brand spec loaded');
   });
@@ -166,7 +166,7 @@ describe('design:penpot integration — file loading', () => {
       const { designPenpotCommand } = await import('./design-penpot.js');
       const out = createOutputStream();
 
-      await designPenpotCommand('home', out, { noWait: true });
+      await designPenpotCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No PRD found');
     } finally {
@@ -185,7 +185,7 @@ describe('design:penpot integration — file loading', () => {
       const { designPenpotCommand } = await import('./design-penpot.js');
       const out = createOutputStream();
 
-      await designPenpotCommand('home', out, { noWait: true });
+      await designPenpotCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No design system found');
     } finally {
@@ -303,7 +303,7 @@ describe('design:penpot integration — design system context data flow', () => 
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home dashboard', out, { noWait: true });
+    await designPenpotCommand('home dashboard', out, { noWait: true, mock: true });
 
     // Verify penpotDesignWork was called with design system context
     expect(capturedInput).toBeDefined();
@@ -316,7 +316,7 @@ describe('design:penpot integration — design system context data flow', () => 
     expect(dsPrompt).toContain('blue');    // color name from VALID_TOKENS
     expect(dsPrompt).toContain('slate');   // color name from VALID_TOKENS
     // Typography scale uses family alias (display/body) with size and weight
-    expect(dsPrompt).toContain('heading-1: 32px, weight 700 (display)'); // from VALID_TOKENS
+    expect(dsPrompt).toContain('heading-1: 32px/auto, weight 700 (display)'); // from VALID_TOKENS
     expect(dsPrompt).toContain('professional'); // tone from VALID_BRAND
 
     // Verify description is passed through
@@ -392,7 +392,7 @@ describe('design:penpot integration — stage replay', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('test app', out, { stage: 'replay', module: moduleId });
+    await designPenpotCommand('test app', out, { stage: 'replay', module: moduleId, mock: true });
 
     expect(out.output).toContain('No cached design script');
     expect(process.exitCode).toBe(1);
@@ -429,7 +429,7 @@ describe('design:penpot integration — stage replay', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('replay ok', out, { stage: 'replay', module: moduleId });
+    await designPenpotCommand('replay ok', out, { stage: 'replay', module: moduleId, mock: true });
 
     // With mock MCP, the replay call will succeed (mock returns Ok({}))
     expect(out.output).toContain('replaying cached script');
@@ -499,7 +499,7 @@ describe('design:penpot integration — stage connect', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('connect test', out, { stage: 'connect', module: moduleId });
+    await designPenpotCommand('connect test', out, { stage: 'connect', module: moduleId, mock: true });
 
     expect(out.output).toContain('CONNECTION TEST COMPLETE');
     expect(out.output).toContain('Components: 2');
@@ -533,7 +533,7 @@ describe('design:penpot integration — stage connect', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('connect missing', out, { stage: 'connect', module: moduleId });
+    await designPenpotCommand('connect missing', out, { stage: 'connect', module: moduleId, mock: true });
 
     expect(out.output).toContain('No cached design output');
     expect(process.exitCode).toBe(1);
@@ -613,7 +613,7 @@ describe('design:penpot integration — --implement flag', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { implement: true, noWait: true });
+    await designPenpotCommand('home', out, { implement: true, noWait: true, mock: true });
 
     expect(implCalled).toBe(true);
     expect(out.output).toContain('[implement]');

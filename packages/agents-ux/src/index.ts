@@ -85,7 +85,7 @@ export { extractScreenSubtree, inferSingleScreen, flattenTree, groupMissingByScr
 
 // Design Collaboration
 export type { DesignCollaborationSession, DesignSystemContext } from './ux-design/design-collaboration.js';
-export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt } from './ux-design/design-collaboration.js';
+export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt, buildComponentCatalogImplPrompt } from './ux-design/design-collaboration.js';
 
 // Figma Screenshot
 export type { ScreenshotResult } from './ux-design/figma-screenshot.js';

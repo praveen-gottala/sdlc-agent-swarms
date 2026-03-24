@@ -111,8 +111,8 @@ describe('Wave 2 Criterion 1: init completes without errors', () => {
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
     // Feed answers with delays for readline
-    // Wizard: name, desc, repo, slack, telegram, audience → then design choice '1', then engine setup 'n'
-    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
+    // Wizard: name, repo, slack, telegram → design choice '2' (skip) → engine setup 'n'
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', '2', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {
@@ -440,7 +440,8 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
     let outputText = '';
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
-    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
+    // Wizard: name, repo, slack, telegram → design choice '2' (skip) → engine setup 'n'
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', '2', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {
@@ -463,7 +464,8 @@ describe('Wave 2 Criterion 6: Ready notification', () => {
     let outputText = '';
     output.on('data', (d: Buffer) => { outputText += d.toString(); });
 
-    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', 'n'];
+    // Wizard: name, repo, slack, telegram → design choice '2' (skip) → engine setup 'n'
+    const answers = ['TestApp', 'testorg/testapp', '#agentforge', 'y', '2', 'n'];
     let idx = 0;
     const interval = setInterval(() => {
       if (idx < answers.length) {

@@ -76,3 +76,8 @@ venv/
 
 # TypeScript incremental build files
 *.tsbuildinfo
+
+# Test Projects
+nova-hospital
+cafe-spot
+SplitEase

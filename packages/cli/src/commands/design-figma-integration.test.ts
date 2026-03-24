@@ -136,7 +136,7 @@ describe('design:figma integration — file loading', () => {
     const { designFigmaCommand } = await import('./design-figma.js');
     const out = createOutputStream();
 
-    await designFigmaCommand('home', out, { noWait: true });
+    await designFigmaCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('PRD loaded from docs/prd.md');
   });
@@ -145,7 +145,7 @@ describe('design:figma integration — file loading', () => {
     const { designFigmaCommand } = await import('./design-figma.js');
     const out = createOutputStream();
 
-    await designFigmaCommand('home', out, { noWait: true });
+    await designFigmaCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Design tokens loaded');
   });
@@ -154,7 +154,7 @@ describe('design:figma integration — file loading', () => {
     const { designFigmaCommand } = await import('./design-figma.js');
     const out = createOutputStream();
 
-    await designFigmaCommand('home', out, { noWait: true });
+    await designFigmaCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Brand spec loaded');
   });
@@ -168,7 +168,7 @@ describe('design:figma integration — file loading', () => {
       const { designFigmaCommand } = await import('./design-figma.js');
       const out = createOutputStream();
 
-      await designFigmaCommand('home', out, { noWait: true });
+      await designFigmaCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No PRD found');
     } finally {
@@ -188,13 +188,47 @@ describe('design:figma integration — file loading', () => {
       const { designFigmaCommand } = await import('./design-figma.js');
       const out = createOutputStream();
 
-      await designFigmaCommand('home', out, { noWait: true });
+      await designFigmaCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No design system found');
     } finally {
       // Restore files for other tests
       writeFileSync(tokensPath, yamlStringify(VALID_TOKENS));
       writeFileSync(brandPath, yamlStringify(VALID_BRAND));
+    }
+  });
+
+  it('reports component catalog loaded when file exists', async () => {
+    // Write component catalog
+    const specDir = join(tmpDir, 'agentforge', 'spec');
+    const catalogPath = join(specDir, 'component-catalog.yaml');
+    const catalog = {
+      version: '1.0',
+      created_by: 'test',
+      components: {
+        Card: {
+          description: 'Content container',
+          category: 'layout',
+          anatomy: [{ name: 'body', contents: 'Primary content area' }],
+          states: { default: { bg: 'surface-primary', text: 'text-primary' } },
+          spacing: { padding: '16', internal_gap: '12' },
+          library_mapping: {},
+          accessibility: { focus_visible: true, aria_labels: [] },
+        },
+      },
+    };
+    writeFileSync(catalogPath, yamlStringify(catalog));
+
+    try {
+      const { designFigmaCommand } = await import('./design-figma.js');
+      const out = createOutputStream();
+
+      await designFigmaCommand('home', out, { noWait: true, mock: true });
+
+      expect(out.output).toContain('Component catalog loaded');
+    } finally {
+      // Remove catalog so it doesn't affect other tests
+      rmSync(catalogPath);
     }
   });
 });

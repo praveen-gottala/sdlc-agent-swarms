@@ -139,12 +139,14 @@ export function createProgram(): Command {
     .option('--module <id>', 'Module ID (default: derived from description)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
-    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean }) => {
+    .option('--mock', 'Use mock MCP (no design tool connection)')
+    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
       await designFigmaCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | undefined,
         module: options.module,
         noWait: options.wait === false,
         implement: options.implement,
+        mock: options.mock,
       });
     });
 
@@ -165,12 +167,14 @@ export function createProgram(): Command {
     .option('--module <id>', 'Module ID (default: derived from description)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
-    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean }) => {
+    .option('--mock', 'Use mock MCP (no design tool connection)')
+    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
       await designPenpotCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
         module: options.module,
         noWait: options.wait === false,
         implement: options.implement,
+        mock: options.mock,
       });
     });
 
@@ -192,13 +196,15 @@ export function createProgram(): Command {
     .option('--headless', 'Run browser headless (default: headed)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
-    .action(async (description: string, options: { stage?: string; module?: string; headless?: boolean; wait?: boolean; implement?: boolean }) => {
+    .option('--mock', 'Use mock MCP (no design tool connection)')
+    .action(async (description: string, options: { stage?: string; module?: string; headless?: boolean; wait?: boolean; implement?: boolean; mock?: boolean }) => {
       await designPenpotBrowserCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | undefined,
         module: options.module,
         headless: options.headless ?? false,
         noWait: options.wait === false,
         implement: options.implement,
+        mock: options.mock,
       });
     });
 
@@ -291,6 +297,8 @@ export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
 export { designCommand } from './commands/design.js';
 export { designFigmaCommand } from './commands/design-figma.js';
+export { ensureDesignToolConnection, createMockMCPClient, FIGMA_SETUP_INSTRUCTIONS, PENPOT_SETUP_INSTRUCTIONS } from './commands/design-preflight.js';
+export type { DesignTool, PreflightResult } from './commands/design-preflight.js';
 export { designCollaborateCommand } from './commands/design-collaborate.js';
 export { designPenpotCommand } from './commands/design-penpot.js';
 export { designPenpotAllCommand } from './commands/design-penpot-all.js';

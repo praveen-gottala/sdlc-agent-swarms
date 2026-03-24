@@ -23,6 +23,7 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentLibrary,
+  recordPromptTrace,
 } from '@agentforge/core';
 import type { UXDashboardResearchOutput } from '../ux-research/ux-dashboard-research.js';
 import type { ComponentTreeNode, ResponsiveRule, ImplementationStage, ScreenDefinition } from '../types.js';
@@ -207,6 +208,12 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
     system: systemPrompt,
     messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
   };
+
+  // 3a. Record prompt trace
+  recordPromptTrace(context, 'planning', prompt, {
+    model: UX_DASHBOARD_PLANNING_CONTRACT.provider,
+    maxTokens: 8000,
+  });
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {

@@ -365,7 +365,7 @@ describe('buildPerScreenPrompt', () => {
       learnings: [],
     });
     expect(prompt.system).toContain('Custom tokens');
-    expect(prompt.system).toContain('PROJECT DESIGN SYSTEM');
+    expect(prompt.system).toContain('Project Design Tokens');
   });
 
   it('includes description when provided', () => {

@@ -40,6 +40,7 @@ agentforge design:figma <description> [options]
 | `--stage <stage>` | Skip to a stage: `research`, `planning`, `design` (loads prior stages from cache) |
 | `--module <id>` | Module ID (default: derived from description) |
 | `--no-wait` | Exit immediately after design without entering the feedback loop |
+| `--mock` | Use mock MCP (skip design tool connection, useful for testing LLM stages) |
 
 ### Pipeline stages
 
@@ -283,6 +284,7 @@ agentforge design:penpot <description> [options]
 | `--module <id>` | Module ID (default: derived from description) |
 | `--no-wait` | Exit immediately after design without entering the feedback loop |
 | `--implement` | Skip feedback loop and generate React + Tailwind code directly after design |
+| `--mock` | Use mock MCP (skip design tool connection, useful for testing LLM stages) |
 
 ### Stages
 

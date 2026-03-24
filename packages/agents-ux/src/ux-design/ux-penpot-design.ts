@@ -18,10 +18,12 @@ import type {
   AgentContract,
   Result,
   MCPClient,
+  PromptTrace,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
+  recordPromptTrace,
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
@@ -40,6 +42,8 @@ export interface PenpotDesignInput {
   readonly taskId: string;
   readonly planningOutput: UXDashboardPlanningOutput;
   readonly designSystemPrompt?: string;
+  /** Component catalog prompt for shared anatomy definitions. */
+  readonly componentCatalogPrompt?: string;
   readonly description?: string;
 }
 
@@ -282,8 +286,9 @@ export async function penpotDesignWork(
   input: PenpotDesignInput,
   provider: unknown,
   mcpClient: MCPClient,
+  traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
-  const { moduleId, planningOutput, designSystemPrompt, description } = input;
+  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description } = input;
   const llm = provider as unknown as LLMProvider;
 
   // ── Dynamic API discovery ──
@@ -295,7 +300,9 @@ export async function penpotDesignWork(
   // ── Phase A: Generate design script via LLM ──
 
   const rawPrompt = loadPenpotSystemPrompt();
-  const baseSystemPrompt = rawPrompt.replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)');
+  const baseSystemPrompt = rawPrompt
+    .replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)')
+    .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)');
   const systemPrompt = designSystemPrompt
     ? baseSystemPrompt + '\n\n# PROJECT DESIGN SYSTEM (use these colors, typography, and spacing — NOT the defaults above)\n\n' + designSystemPrompt
     : baseSystemPrompt;
@@ -312,6 +319,12 @@ export async function penpotDesignWork(
   userMessageParts.push(`\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`);
 
   const userMessage = userMessageParts.join('\n');
+
+  if (traceCollector) {
+    recordPromptTrace(traceCollector, 'design-penpot',
+      { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
+      { model: PENPOT_DESIGN_CONTRACT.provider, maxTokens: 32000 });
+  }
 
   const completionResult = await llm.complete(
     {
