@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { existsSync, readFileSync, mkdirSync } from 'node:fs';
 import { infoMsg, successMsg, errorMsg, warnMsg } from '../formatter.js';
 import type { Result } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, PREVIEW_DIR_REL } from '@agentforge/core';
 
 // ============================================================================
 // Types
@@ -150,7 +150,7 @@ async function takeAppScreenshot(
  * Looks for root.png in the Penpot or Figma screenshots directory.
  */
 function findDesignScreenshot(projectRoot: string, moduleId: string): string | undefined {
-  const previewDir = join(projectRoot, '.agentforge', 'previews', moduleId, 'screenshots');
+  const previewDir = join(projectRoot, PREVIEW_DIR_REL, moduleId, 'screenshots');
 
   // Prefer Penpot, then Figma
   for (const tool of ['penpot', 'figma']) {
@@ -206,7 +206,7 @@ RUNNING APP (base64 PNG): data:image/png;base64,${appBase64.slice(0, 100)}...
 Rate how well the running app matches the design mockup.`,
       }],
     },
-    { model: 'claude-sonnet-4', maxTokens: 1000, temperature: 0 },
+    { model: 'claude-sonnet-4-6', maxTokens: 1000, temperature: 0 },
   );
 
   if (!result.ok) {
@@ -264,7 +264,7 @@ export async function verifyImplementation(options: VerifyOptions): Promise<Resu
 
   try {
     // 2. Take screenshot
-    const screenshotDir = join(projectRoot, '.agentforge', 'previews', moduleId, 'screenshots', 'impl');
+    const screenshotDir = join(projectRoot, PREVIEW_DIR_REL, moduleId, 'screenshots', 'impl');
     mkdirSync(screenshotDir, { recursive: true });
     const screenshotPath = join(screenshotDir, 'app.png');
 

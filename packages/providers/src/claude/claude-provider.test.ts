@@ -50,7 +50,7 @@ const testPrompt: Prompt = {
 };
 
 const testOptions: CompletionOptions = {
-  model: 'claude-sonnet-4',
+  model: 'claude-sonnet-4-6',
   maxTokens: 1024,
   temperature: 0,
 };
@@ -62,11 +62,11 @@ describe('ClaudeProvider', () => {
 
   describe('properties', () => {
     it('has correct name and models', () => {
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       expect(provider.name).toBe('claude');
-      expect(provider.models).toContain('claude-sonnet-4');
-      expect(provider.models).toContain('claude-opus-4');
-      expect(provider.models).toContain('claude-haiku-4');
+      expect(provider.models).toContain('claude-sonnet-4-6');
+      expect(provider.models).toContain('claude-opus-4-6');
+      expect(provider.models).toContain('claude-haiku-4-5');
     });
   });
 
@@ -76,10 +76,10 @@ describe('ClaudeProvider', () => {
         content: [{ type: 'text', text: 'Hello! How can I help?' }],
         usage: { input_tokens: 20, output_tokens: 10 },
         stop_reason: 'end_turn',
-        model: 'claude-sonnet-4',
+        model: 'claude-sonnet-4-6',
       });
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(true);
@@ -88,7 +88,7 @@ describe('ClaudeProvider', () => {
         expect(result.value.toolCalls).toEqual([]);
         expect(result.value.usage.inputTokens).toBe(20);
         expect(result.value.usage.outputTokens).toBe(10);
-        expect(result.value.model).toBe('claude-sonnet-4');
+        expect(result.value.model).toBe('claude-sonnet-4-6');
         expect(result.value.finishReason).toBe('stop');
         expect(result.value.cost.totalCostUsd).toBeGreaterThan(0);
         expect(result.value.latencyMs).toBeGreaterThanOrEqual(0);
@@ -108,10 +108,10 @@ describe('ClaudeProvider', () => {
         ],
         usage: { input_tokens: 30, output_tokens: 20 },
         stop_reason: 'tool_use',
-        model: 'claude-sonnet-4',
+        model: 'claude-sonnet-4-6',
       });
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(true);
@@ -136,10 +136,10 @@ describe('ClaudeProvider', () => {
           cache_creation_input_tokens: 20,
         },
         stop_reason: 'end_turn',
-        model: 'claude-sonnet-4',
+        model: 'claude-sonnet-4-6',
       });
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(true);
@@ -155,7 +155,7 @@ describe('ClaudeProvider', () => {
         new APIError(429, 'Rate limited', { 'retry-after': '30' }),
       );
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(false);
@@ -171,7 +171,7 @@ describe('ClaudeProvider', () => {
       const { APIError } = jest.requireMock('@anthropic-ai/sdk') as { APIError: new (status: number, message: string) => Error };
       mockStreamRejecting(new APIError(401, 'Invalid API key'));
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'bad-key' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'bad-key' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(false);
@@ -184,7 +184,7 @@ describe('ClaudeProvider', () => {
       const { APIError } = jest.requireMock('@anthropic-ai/sdk') as { APIError: new (status: number, message: string) => Error };
       mockStreamRejecting(new APIError(500, 'Internal server error'));
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(false);
@@ -196,12 +196,85 @@ describe('ClaudeProvider', () => {
     it('maps unknown errors to INVALID_RESPONSE', async () => {
       mockStreamRejecting(new Error('Network failure'));
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const result = await provider.complete(testPrompt, testOptions);
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.code).toBe('INVALID_RESPONSE');
+      }
+    });
+
+    it('passes output_config when responseSchema is provided', async () => {
+      const jsonContent = JSON.stringify({ name: 'test', value: 42 });
+      mockStreamResolving({
+        content: [{ type: 'text', text: jsonContent }],
+        usage: { input_tokens: 20, output_tokens: 15 },
+        stop_reason: 'end_turn',
+      });
+
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
+      const optionsWithSchema: CompletionOptions = {
+        ...testOptions,
+        responseSchema: {
+          schema: {
+            type: 'object',
+            properties: { name: { type: 'string' }, value: { type: 'number' } },
+            required: ['name', 'value'],
+          },
+        },
+      };
+
+      const result = await provider.complete(testPrompt, optionsWithSchema);
+
+      // Verify output_config was passed to the SDK
+      const callArgs = mockStream.mock.calls[0][0];
+      expect(callArgs.output_config).toEqual({
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: { name: { type: 'string' }, value: { type: 'number' } },
+            required: ['name', 'value'],
+          },
+        },
+      });
+
+      // Verify structured field is populated
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.structured).toEqual({ name: 'test', value: 42 });
+        expect(result.value.content).toBe(jsonContent);
+      }
+    });
+
+    it('does not include output_config when responseSchema is absent', async () => {
+      mockStreamResolving({
+        content: [{ type: 'text', text: 'plain text' }],
+        usage: { input_tokens: 10, output_tokens: 5 },
+        stop_reason: 'end_turn',
+      });
+
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
+      await provider.complete(testPrompt, testOptions);
+
+      const callArgs = mockStream.mock.calls[0][0];
+      expect(callArgs.output_config).toBeUndefined();
+    });
+
+    it('does not set structured when responseSchema is absent', async () => {
+      mockStreamResolving({
+        content: [{ type: 'text', text: 'plain text' }],
+        usage: { input_tokens: 10, output_tokens: 5 },
+        stop_reason: 'end_turn',
+      });
+
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
+      const result = await provider.complete(testPrompt, testOptions);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.structured).toBeUndefined();
       }
     });
 
@@ -223,7 +296,7 @@ describe('ClaudeProvider', () => {
         ],
       };
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       await provider.complete(promptWithTools, testOptions);
 
       const callArgs = mockStream.mock.calls[0][0];
@@ -261,7 +334,7 @@ describe('ClaudeProvider', () => {
         },
       });
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const chunks: unknown[] = [];
 
       for await (const chunk of provider.stream(testPrompt, testOptions)) {
@@ -312,7 +385,7 @@ describe('ClaudeProvider', () => {
         },
       });
 
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const chunks: unknown[] = [];
 
       for await (const chunk of provider.stream(testPrompt, testOptions)) {
@@ -333,7 +406,7 @@ describe('ClaudeProvider', () => {
 
   describe('estimateCost', () => {
     it('estimates cost based on prompt length', () => {
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
       const estimate = provider.estimateCost(testPrompt, testOptions);
 
       expect(estimate.estimatedInputTokens).toBeGreaterThan(0);
@@ -343,7 +416,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('includes tool definitions in token estimate', () => {
-      const provider = createClaudeProvider('claude-sonnet-4', { apiKey: 'test' });
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
 
       const withoutTools = provider.estimateCost(testPrompt, testOptions);
       const withTools = provider.estimateCost(

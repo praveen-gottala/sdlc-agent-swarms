@@ -28,7 +28,7 @@ Produce a JSON object with the following structure:
 - Use `data-testid` attributes as primary selectors; fall back to accessible roles/labels
 - Always test error states (network failure, empty data, malformed responses)
 - Always test loading states (skeleton screens, spinners)
-- Test responsive behavior at standard breakpoints (mobile: 375px, tablet: 768px, desktop: 1280px)
+- Test responsive behavior at standard breakpoints (desktop: 1440px, tablet: 768px, mobile: 375px)
 - Each test file must import from `@playwright/test`
 - Each test must use `test()` blocks with descriptive names
 - Use `test.describe()` to group related scenarios

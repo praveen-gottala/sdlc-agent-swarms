@@ -2,7 +2,7 @@
  * @module @agentforge/agents-cicd/security-scanner
  *
  * Security scanner agent: runs LLM-based static analysis (SAST) on every
- * PR to detect vulnerabilities. Uses claude-sonnet-4 for thorough analysis.
+ * PR to detect vulnerabilities. Uses claude-sonnet-4-6 for thorough analysis.
  * Categorizes findings by severity and blocks critical/high issues.
  */
 
@@ -61,7 +61,7 @@ export const SECURITY_SCANNER_CONTRACT: AgentContract = {
   role: 'security_scanner',
   description: 'Runs SAST scans on every PR, categorizes findings by severity, blocks critical issues',
   category: 'cicd',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 40000 },
   tools: ['github.read_pr', 'github.create_review'],
   permissions: ['read_spec', 'read_code'],
@@ -206,7 +206,7 @@ export const securityScannerWork: AgentWorkFn<SecurityScannerInput, SecurityScan
 
   // 4. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: SECURITY_SCANNER_CONTRACT.provider,
+    model: context.resolvedModel ?? SECURITY_SCANNER_CONTRACT.provider,
     maxTokens: 4000,
     temperature: 0,
   });

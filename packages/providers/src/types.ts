@@ -58,7 +58,7 @@ export interface ToolCall {
 
 /** Options for a completion request. */
 export interface CompletionOptions {
-  /** Specific model ID (e.g. "claude-sonnet-4"). Required. */
+  /** Specific model ID (e.g. "claude-sonnet-4-6"). Required. */
   readonly model: string;
   readonly maxTokens?: number;
   /** Default: 0 for code gen, 0.7 for design. */
@@ -68,6 +68,14 @@ export interface CompletionOptions {
   readonly budgetLimit?: number;
   /** Cancel underlying HTTP stream on budget/abort. */
   readonly signal?: AbortSignal;
+  /**
+   * JSON Schema for structured output. When set, providers that support it
+   * (e.g. Anthropic output_config) guarantee the response matches this schema.
+   * The parsed result is available in CompletionResult.structured.
+   */
+  readonly responseSchema?: {
+    readonly schema: Record<string, unknown>;
+  };
 }
 
 /** Token usage from a completion. */
@@ -89,6 +97,8 @@ export interface CompletionResult {
   readonly model: string;
   readonly latencyMs: number;
   readonly finishReason: 'stop' | 'max_tokens' | 'tool_use';
+  /** Parsed structured output when responseSchema was provided. */
+  readonly structured?: Record<string, unknown>;
 }
 
 /** A chunk emitted during streaming. */

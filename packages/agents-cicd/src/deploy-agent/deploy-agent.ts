@@ -53,7 +53,7 @@ export const DEPLOY_AGENT_CONTRACT: AgentContract = {
   role: 'deploy_agent',
   description: 'Manages deployment to staging, monitors post-deploy health',
   category: 'cicd',
-  provider: 'claude-haiku-4',
+  provider: 'claude-haiku-4-5',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 20000 },
   tools: ['github.trigger_workflow', 'github.read_file'],
   permissions: ['read_code', 'read_ci_logs', 'trigger_ci', 'deploy_staging'],

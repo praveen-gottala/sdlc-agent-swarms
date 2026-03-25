@@ -70,7 +70,7 @@ export const UX_RESEARCHER_CONTRACT: AgentContract = {
   role: 'ux_researcher',
   description: 'Analyzes page descriptions and produces UX layout suggestions',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 20000 },
   tools: [],
   permissions: ['read_spec', 'read_design'],

@@ -258,8 +258,8 @@ describe('DEPLOY_AGENT_CONTRACT', () => {
     expect(DEPLOY_AGENT_CONTRACT.category).toBe('cicd');
   });
 
-  it('uses claude-haiku-4', () => {
-    expect(DEPLOY_AGENT_CONTRACT.provider).toBe('claude-haiku-4');
+  it('uses claude-haiku-4-5', () => {
+    expect(DEPLOY_AGENT_CONTRACT.provider).toBe('claude-haiku-4-5');
   });
 
   it('uses review_and_override HITL policy', () => {

@@ -4,7 +4,7 @@ import {
 } from './backend-coder.js';
 import type { BackendCoderInput } from './backend-coder.js';
 import type { AgentContext, LLMProviderRef, TaskEntry } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { StreamChunk } from '@agentforge/providers';
 
 // ============================================================================
@@ -44,7 +44,7 @@ const makeCostRecord = (totalCostUsd = 0.50) => ({
   inputCostUsd: totalCostUsd * 0.3,
   outputCostUsd: totalCostUsd * 0.7,
   totalCostUsd,
-  model: 'claude-sonnet-4',
+  model: DEFAULT_MODEL,
   timestamp: new Date().toISOString(),
 });
 

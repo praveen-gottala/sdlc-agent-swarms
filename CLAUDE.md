@@ -141,6 +141,25 @@ consistency — this repo is used across multiple machines.
 - Testing: Jest + ts-jest for all packages
 - Linting: ESLint + Prettier (config in root)
 
+### Dependency & Model Versioning (CRITICAL)
+- ALWAYS use the latest stable version of ALL dependencies — not just
+  `@anthropic-ai/sdk` but also `openai`, `langgraph`, `langchain-core`,
+  and every other package. LLM training data is stale — NEVER trust its
+  version suggestions. Check npm/PyPI for the current version before writing
+  or suggesting code that references a specific version.
+- When adding or upgrading any dependency, run the FULL test suite afterwards:
+  `nx run-many -t test` and `nx run-many -t typecheck`. A dependency update
+  is not complete until all tests pass.
+- When referencing Claude model IDs, use the latest model family:
+  - Opus: `claude-opus-4-6`
+  - Sonnet: `claude-sonnet-4-6`
+  - Haiku: `claude-haiku-4-5`
+- Use the latest SDK features (e.g., `output_config` for structured output)
+  instead of workarounds (e.g., tool_use hacks for JSON output).
+- Lesson learned: using outdated SDK versions (e.g., @anthropic-ai/sdk 0.39
+  instead of 0.80) caused 10 days of wasted effort building manual JSON
+  parsing that the SDK now handles natively.
+
 ## Architecture
 See docs/architecture.md for layer diagram.
 See docs/PRD-v2.md for full product spec.

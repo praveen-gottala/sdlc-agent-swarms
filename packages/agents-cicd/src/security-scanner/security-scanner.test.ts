@@ -6,7 +6,7 @@ import {
 } from './security-scanner.js';
 import type { SecurityScannerInput, SecurityFinding } from './security-scanner.js';
 import type { AgentContext, LLMProviderRef, TaskEntry } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Sample outputs
@@ -75,7 +75,7 @@ const makeCostRecord = (totalCostUsd = 0.25) => ({
   inputCostUsd: totalCostUsd * 0.3,
   outputCostUsd: totalCostUsd * 0.7,
   totalCostUsd,
-  model: 'claude-sonnet-4',
+  model: DEFAULT_MODEL,
   timestamp: new Date().toISOString(),
 });
 
@@ -377,8 +377,8 @@ describe('SECURITY_SCANNER_CONTRACT', () => {
     expect(SECURITY_SCANNER_CONTRACT.category).toBe('cicd');
   });
 
-  it('uses claude-sonnet-4 for thorough analysis', () => {
-    expect(SECURITY_SCANNER_CONTRACT.provider).toBe('claude-sonnet-4');
+  it('uses DEFAULT_MODEL for thorough analysis', () => {
+    expect(SECURITY_SCANNER_CONTRACT.provider).toBe(DEFAULT_MODEL);
   });
 
   it('uses notify_only HITL policy', () => {

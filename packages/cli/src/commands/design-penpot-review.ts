@@ -7,12 +7,14 @@
  */
 
 import { findProjectRoot, loadDotEnv, readYaml, realFs } from '../fs-utils.js';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import {
   Ok,
   createPenpotAdapter,
   loadDesignTokens,
   loadBrandSpec,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type { MCPClient, DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import * as path from 'node:path';
@@ -156,7 +158,7 @@ export async function designPenpotReviewCommand(
   let provider: LLMProvider;
   let modelName: string;
   if (anthropicKey) {
-    modelName = 'claude-sonnet-4';
+    modelName = resolveCLIModel();
     provider = createClaudeProvider(modelName, { apiKey: anthropicKey });
     output.write(infoMsg(`  LLM: Anthropic (${modelName})\n`));
   } else if (openaiKey) {
@@ -173,7 +175,7 @@ export async function designPenpotReviewCommand(
   let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
   const adapter = createPenpotAdapter();
-  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
+  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotMcp;
 
   const sessionResult = loadPenpotSession();
   if (sessionResult.ok) {

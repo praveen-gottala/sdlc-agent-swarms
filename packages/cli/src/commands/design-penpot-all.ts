@@ -11,6 +11,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import {
@@ -23,6 +24,8 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
+  PREVIEW_DIR_REL,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
   MCPClient,
@@ -89,7 +92,7 @@ const createContext = (taskId: string, mcpClient: MCPClient) => ({
 });
 
 const ensureOutputDir = (moduleId: string): string => {
-  const dir = resolve(process.cwd(), '.agentforge', 'previews', moduleId);
+  const dir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   return dir;
 };
@@ -232,7 +235,7 @@ export async function designPenpotAllCommand(
   let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
   const adapter = createPenpotAdapter();
-  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
+  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotMcp;
 
   const sessionResult = loadPenpotSession();
   if (sessionResult.ok) {
@@ -287,7 +290,7 @@ export async function designPenpotAllCommand(
         // @ts-expect-error — researchOutput may not be assigned if designOnly + no cache
         if (!researchOutput) {
           output.write(infoMsg('    Research: running...\n'));
-          const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+          const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
           const context = createContext(taskId, createMockMCPClient());
           const input: UXDashboardResearchInput = { moduleId, taskId, prdRequirements: [description] };
           const result = await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
@@ -309,7 +312,7 @@ export async function designPenpotAllCommand(
         // @ts-expect-error — planningOutput may not be assigned
         if (!planningOutput) {
           output.write(infoMsg('    Planning: running...\n'));
-          const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+          const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
           const context = createContext(taskId, createMockMCPClient());
           const input: UXDashboardPlanningInput = {
             briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
@@ -335,7 +338,7 @@ export async function designPenpotAllCommand(
 
         // Design (Penpot) — use browser agent if --browser flag is set
         const useBrowser = options.browser ?? false;
-        const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+        const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
 
         for (const viewportWidth of pageViewports) {
           const vpModuleId = pageViewports.length > 1
@@ -356,7 +359,7 @@ export async function designPenpotAllCommand(
             };
             designResult = await penpotBrowserDesignWork(browserInput, provider, mcpClient, {
               headless: false,
-              penpotUrl: process.env.PENPOT_URL ?? 'http://localhost:9001',
+              penpotUrl: process.env.PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotUi,
               email: process.env.PENPOT_EMAIL ?? '',
               password: process.env.PENPOT_PASSWORD ?? '',
             });

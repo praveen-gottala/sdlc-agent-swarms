@@ -131,7 +131,7 @@ export interface PageEntry {
   readonly status: string;
   readonly components: readonly string[];
   readonly data_sources?: readonly string[];
-  /** Target viewport widths for design generation (e.g. [1440, 768]). Defaults to [1440]. */
+  /** Target viewport widths for design generation. Defaults to [1440] (desktop). Uncomment 768 (tablet) or 390 (mobile) as needed. */
   readonly viewports?: readonly number[];
 }
 

@@ -14,6 +14,7 @@ import type { DesignTokensSpec, BrandSpec, ElevationSpec, PromptTrace } from '@a
 import { validateDesignTokens, validateBrandSpec, recordPromptTrace } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { infoMsg, warnMsg } from '../formatter.js';
 import { buildDesignTokensSpec } from './init.js';
 import type { DesignArchetype } from './init.js';
@@ -883,7 +884,7 @@ async function tryLLMGeneration(
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
   } catch {
     output.write(warnMsg('Failed to create LLM provider, using defaults.\n'));
     return null;
@@ -901,7 +902,7 @@ async function tryLLMGeneration(
           : []),
       ];
       const prompt = { system: systemPrompt, messages };
-      const opts = { model: 'claude-sonnet-4', maxTokens: 8192, temperature: 0.8 };
+      const opts = { model: 'claude-sonnet-4-6', maxTokens: 8192, temperature: 0.8 };
 
       recordPromptTrace(
         { promptTraces },

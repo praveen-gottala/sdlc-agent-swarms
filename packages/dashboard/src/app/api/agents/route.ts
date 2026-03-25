@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     role: body.role as string,
     phase: (body.phase as string) ?? 'Code Gen',
     status: 'idle' as const,
-    model: (body.model as string) ?? 'claude-sonnet-4',
+    model: (body.model as string) ?? 'claude-sonnet-4-6',
     provider: (body.provider as string) ?? 'anthropic',
     trustLevel: 0.5,
     isCustom: true,

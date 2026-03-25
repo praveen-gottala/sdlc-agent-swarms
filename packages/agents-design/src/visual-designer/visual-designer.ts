@@ -48,7 +48,7 @@ export const VISUAL_DESIGNER_CONTRACT: AgentContract = {
   role: 'visual_designer',
   description: 'Applies design tokens to wireframes producing high-fidelity visual designs',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 50000 },
   tools: ['figma.generate_figma_design', 'figma.get_code', 'figma.get_variables'],
   permissions: ['read_design', 'write_design'],
@@ -139,7 +139,7 @@ export const createVisualDesignerWork = (
 
   // 4. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: VISUAL_DESIGNER_CONTRACT.provider,
+    model: context.resolvedModel ?? VISUAL_DESIGNER_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
   });

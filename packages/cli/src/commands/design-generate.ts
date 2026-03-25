@@ -12,9 +12,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import type { DesignTokensSpec, BrandSpec, PromptTrace } from '@agentforge/core';
-import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS, recordPromptTrace } from '@agentforge/core';
+import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS, recordPromptTrace, PREVIEW_DIR_REL } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
 import { readYaml, writeYaml, realFs, loadDotEnv } from '../fs-utils.js';
@@ -99,7 +100,7 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching this exact s
       "route": "/url-path",
       "components": ["ComponentName1", "ComponentName2"],
       "data_sources": ["ModelName1", "ModelName2"],
-      "viewports": [1440, 768]
+      "viewports": [1440]
     }
   ],
   "models": [
@@ -137,7 +138,7 @@ Rules:
 - Pages should include: a landing/home page, main content pages, and detail views
 - Think about the user journey — how do they flow between pages?
 - Component names should be descriptive (e.g., "BookCard", "SearchBar", "NavigationHeader")
-- Each page should include viewports — the target screen widths for design generation. Use [1440] for desktop-only, [1440, 768] for responsive, or [390] for mobile-first apps.
+- Each page MUST include viewports with ONLY [1440] (desktop). Do NOT add 768 or 390 — users will uncomment those manually if needed.
 - Keep it practical — this is a real app that will be built`;
 }
 
@@ -652,7 +653,7 @@ async function tryLLMGeneration(
 ): Promise<GeneratedAppSpec | null> {
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
   } catch {
     output.write(warnMsg('Failed to create LLM provider.\n'));
     return null;
@@ -670,7 +671,7 @@ async function tryLLMGeneration(
           : []),
       ];
       const prompt = { system: systemPrompt, messages };
-      const opts = { model: 'claude-sonnet-4', maxTokens: 8192, temperature: 0.7 };
+      const opts = { model: 'claude-sonnet-4-6', maxTokens: 8192, temperature: 0.7 };
 
       recordPromptTrace(
         { promptTraces },
@@ -717,7 +718,7 @@ function writeSpecFiles(
   const specDir = path.join(rootDir, 'agentforge', 'spec');
   fileSystem.mkdir(specDir);
 
-  // Write pages.yaml
+  // Write pages.yaml — desktop (1440) enabled by default, others commented out
   const pagesData = {
     version: '1.0',
     pages: spec.pages.map((p) => ({
@@ -728,10 +729,21 @@ function writeSpecFiles(
       status: 'approved',
       components: [...p.components],
       data_sources: [...p.data_sources],
-      ...(p.viewports ? { viewports: [...p.viewports] } : {}),
+      viewports: [1440],
     })),
   };
-  writeYaml(path.join(specDir, 'pages.yaml'), pagesData, fileSystem, SPEC_SCHEMA_HEADERS['pages']);
+  const pagesPath = path.join(specDir, 'pages.yaml');
+  writeYaml(pagesPath, pagesData, fileSystem, SPEC_SCHEMA_HEADERS['pages']);
+
+  // Post-process to add commented-out viewport options after each viewports line
+  const pagesResult = fileSystem.readFile(pagesPath);
+  if (pagesResult.ok) {
+    const patched = pagesResult.value.replace(
+      /^(\s+)viewports:\n\s+- 1440$/gm,
+      '$1viewports:\n$1  - 1440\n$1  # - 768  # uncomment for tablet\n$1  # - 390  # uncomment for mobile',
+    );
+    fileSystem.writeFile(pagesPath, patched);
+  }
 
   // Write models.yaml
   const modelsData = {
@@ -788,7 +800,7 @@ export async function designGenerateCommand(
   loadDotEnv(rootDir);
 
   const promptTraces: PromptTrace[] = [];
-  const previewDir = path.join(rootDir, '.agentforge', 'previews', 'design-generate');
+  const previewDir = path.join(rootDir, PREVIEW_DIR_REL, 'design-generate');
 
   // Read project context via proper YAML parsing
   let appName = '';

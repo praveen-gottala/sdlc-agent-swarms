@@ -1,7 +1,7 @@
 /**
  * @module @agentforge/providers/registry
  *
- * Provider registry — resolves provider strings like "claude-sonnet-4"
+ * Provider registry — resolves provider strings like "claude-sonnet-4-6"
  * to configured LLMProvider instances.
  */
 
@@ -25,7 +25,7 @@ const MODEL_PREFIX_MAP: Record<string, string> = {
  * Parse a provider string into provider name and model ID.
  *
  * Examples:
- *   "claude-sonnet-4"  -> { provider: "claude",  model: "claude-sonnet-4" }
+ *   "claude-sonnet-4-6"  -> { provider: "claude",  model: "claude-sonnet-4-6" }
  *   "gpt-4o-mini"      -> { provider: "openai",  model: "gpt-4o-mini" }
  *   "ollama/codellama"  -> { provider: "ollama",  model: "codellama" }
  */

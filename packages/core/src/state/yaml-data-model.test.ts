@@ -62,10 +62,10 @@ function fullManifest(): Record<string, unknown> {
     },
     agents: {
       providers: {
-        default: 'claude-sonnet-4',
+        default: 'claude-sonnet-4-6',
         overrides: {
-          architecture: 'claude-opus-4',
-          code_review: 'claude-haiku-4',
+          architecture: 'claude-opus-4-6',
+          code_review: 'claude-haiku-4-5',
         },
       },
       sandbox: {
@@ -237,8 +237,8 @@ describe('1. Project Manifest (agentforge.yaml)', () => {
       expect(m.repo.org).toBe('org-name');
 
       // agents section
-      expect(m.agents.providers.default).toBe('claude-sonnet-4');
-      expect(m.agents.providers.overrides?.architecture).toBe('claude-opus-4');
+      expect(m.agents.providers.default).toBe('claude-sonnet-4-6');
+      expect(m.agents.providers.overrides?.architecture).toBe('claude-opus-4-6');
       expect(m.agents.sandbox.type).toBe('github_actions');
       expect(m.agents.sandbox.timeout_minutes).toBe(15);
       expect(m.agents.sandbox.max_retries).toBe(3);
@@ -313,7 +313,7 @@ describe('1. Project Manifest (agentforge.yaml)', () => {
       expect(m.project.name).toBe('my-saas-app');
       expect(m.stack.frontend).toBe('react');
       expect(m.repo.provider).toBe('github');
-      expect(m.agents.providers.default).toBe('claude-sonnet-4');
+      expect(m.agents.providers.default).toBe('claude-sonnet-4-6');
       expect(m.channels).toHaveLength(3);
       expect(m.budget.monthly_max_usd).toBe(200.0);
     });
@@ -1195,7 +1195,7 @@ describe('6. PRD v2.0 Section 5 — Field Coverage Audit', () => {
       stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
       repo: { provider: 'github', org: 'test', name: 'test' },
       agents: {
-        providers: { default: 'claude-sonnet-4', overrides: { arch: 'claude-opus-4' } },
+        providers: { default: 'claude-sonnet-4-6', overrides: { arch: 'claude-opus-4-6' } },
         sandbox: { type: 'github_actions', timeout_minutes: 15, max_retries: 3 },
         orchestration: { max_concurrent_agents: 3, ci_wait_strategy: 'spawn_next' },
       },

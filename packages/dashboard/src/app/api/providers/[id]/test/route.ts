@@ -12,7 +12,7 @@ export async function POST(
   const { id } = await params;
 
   const providerModels: Record<string, string> = {
-    anthropic: 'claude-sonnet-4-20250514',
+    anthropic: 'claude-sonnet-4-6-20250514',
     openai: 'gpt-4o',
     google: 'gemini-2.5-pro',
   };

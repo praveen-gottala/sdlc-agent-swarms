@@ -80,7 +80,7 @@ export const BACKEND_CODER_CONTRACT: AgentContract = {
   role: 'backend_coder',
   description: 'Generates API endpoints, business logic, data access layers, and Prisma migrations',
   category: 'code',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 100000 },
   tools: ['github.create_branch', 'github.push_files', 'github.read_file'],
   permissions: ['read_spec', 'read_code', 'write_code', 'create_branch', 'trigger_ci'],
@@ -212,7 +212,7 @@ export const backendCoderWork: AgentWorkFn<BackendCoderInput, BackendCoderOutput
 
     const prompt = { system: systemPrompt, messages };
     const stream = provider.stream(prompt, {
-      model: BACKEND_CODER_CONTRACT.provider,
+      model: context.resolvedModel ?? BACKEND_CODER_CONTRACT.provider,
       maxTokens: 8000,
       temperature: 0,
     });

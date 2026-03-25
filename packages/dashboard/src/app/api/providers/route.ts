@@ -12,9 +12,9 @@ interface ProjectConfig {
 
 /** Known model metadata for cost/context info. */
 const MODEL_META: Record<string, { contextWindow: number; costPer1kInput: number; costPer1kOutput: number }> = {
-  'claude-sonnet-4': { contextWindow: 200000, costPer1kInput: 0.003, costPer1kOutput: 0.015 },
-  'claude-opus-4': { contextWindow: 200000, costPer1kInput: 0.015, costPer1kOutput: 0.075 },
-  'claude-haiku-4': { contextWindow: 200000, costPer1kInput: 0.0008, costPer1kOutput: 0.004 },
+  'claude-sonnet-4-6': { contextWindow: 200000, costPer1kInput: 0.003, costPer1kOutput: 0.015 },
+  'claude-opus-4-6': { contextWindow: 200000, costPer1kInput: 0.015, costPer1kOutput: 0.075 },
+  'claude-haiku-4-5': { contextWindow: 200000, costPer1kInput: 0.0008, costPer1kOutput: 0.004 },
   'gpt-4o': { contextWindow: 128000, costPer1kInput: 0.005, costPer1kOutput: 0.015 },
   'gpt-4o-mini': { contextWindow: 128000, costPer1kInput: 0.00015, costPer1kOutput: 0.0006 },
   'o3-mini': { contextWindow: 128000, costPer1kInput: 0.0011, costPer1kOutput: 0.0044 },

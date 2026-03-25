@@ -131,7 +131,7 @@ function seedTestApp(fs: ReturnType<typeof createMockFs>, rootDir: string): void
     stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
     repo: { provider: 'github', org: '', name: 'test-app' },
     agents: {
-      providers: { default: 'claude-sonnet-4', overrides: { architecture: 'claude-opus-4', code_review: 'claude-haiku-4' } },
+      providers: { default: 'claude-sonnet-4-6', overrides: { architecture: 'claude-opus-4-6', code_review: 'claude-haiku-4-5' } },
       sandbox: { type: 'github_actions', timeout_minutes: 15, max_retries: 3 },
       orchestration: { max_concurrent_agents: 3, ci_wait_strategy: 'spawn_next' },
     },
@@ -251,7 +251,7 @@ describe('P22: CLI Commands Complete Coverage', () => {
       expect(manifest.version).toBe('1.0');
       expect(manifest.project.name).toBe('TestApp');
       expect(manifest.stack.frontend).toBe('react');
-      expect(manifest.agents.providers.default).toBe('claude-sonnet-4');
+      expect(manifest.agents.providers.default).toBe('claude-sonnet-4-6');
       expect(manifest.hitl.default).toBe('review_and_override');
       expect(manifest.channels).toHaveLength(3);
       expect(manifest.routing.approval_requests).toBe('all');

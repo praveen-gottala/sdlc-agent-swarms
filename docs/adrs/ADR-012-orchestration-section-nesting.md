@@ -11,7 +11,7 @@ Section 5.1 — The YAML example shows orchestration nested under the `agents:` 
 ```yaml
 agents:
   providers:
-    default: "claude-sonnet-4"
+    default: "claude-sonnet-4-6"
   sandbox:
     type: "github_actions"
   orchestration:

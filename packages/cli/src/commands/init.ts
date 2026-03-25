@@ -636,10 +636,10 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
     },
     agents: {
       providers: {
-        default: 'claude-sonnet-4',
+        default: 'claude-sonnet-4-6',
         overrides: {
-          architecture: 'claude-opus-4',
-          code_review: 'claude-haiku-4',
+          architecture: 'claude-opus-4-6',
+          code_review: 'claude-haiku-4-5',
         },
       },
       sandbox: {

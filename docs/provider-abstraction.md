@@ -36,7 +36,7 @@ interface Message {
 }
 
 interface CompletionOptions {
-  model: string;                    // REQUIRED — specific model ID ("claude-sonnet-4")
+  model: string;                    // REQUIRED — specific model ID ("claude-sonnet-4-6")
   maxTokens?: number;
   temperature?: number;             // Default: 0 for code gen, 0.7 for design
   stopSequences?: string[];
@@ -122,7 +122,7 @@ interface ProviderRegistry {
   /** Register a provider factory by name */
   register(name: string, factory: ProviderFactory): void;
 
-  /** Resolve a provider string like "claude-sonnet-4" -> Claude provider configured for sonnet-4 */
+  /** Resolve a provider string like "claude-sonnet-4-6" -> Claude provider configured for sonnet-4 */
   get(providerString: string): Result<LLMProvider, ProviderError>;
 
   /** List all registered and available providers */
@@ -149,7 +149,7 @@ interface ProviderInfo {
 The registry parses provider strings to extract provider name and model:
 
 ```
-"claude-sonnet-4"  -> provider: "claude",  model: "claude-sonnet-4"
+"claude-sonnet-4-6"  -> provider: "claude",  model: "claude-sonnet-4-6"
 "gpt-4o-mini"      -> provider: "openai",  model: "gpt-4o-mini"
 "ollama/codellama"  -> provider: "ollama",  model: "codellama"
 ```
@@ -178,7 +178,7 @@ if (agentContract.execution.mode === 'stream') {
 
 ### Claude (Anthropic)
 
-- Models: claude-opus-4, claude-sonnet-4, claude-haiku-4
+- Models: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5
 - SDK: @anthropic-ai/sdk
 - Streaming: Full support via messages.stream()
 - Tool use: Native — map ToolDefinition to Anthropic tool format
@@ -217,9 +217,9 @@ Costs per million tokens. Configurable in provider config for when pricing chang
 ```typescript
 const COST_TABLE: Record<string, { input: number; output: number }> = {
   // Claude
-  'claude-opus-4':   { input: 15.00, output: 75.00 },
-  'claude-sonnet-4': { input: 3.00,  output: 15.00 },
-  'claude-haiku-4':  { input: 0.25,  output: 1.25 },
+  'claude-opus-4-6':   { input: 15.00, output: 75.00 },
+  'claude-sonnet-4-6': { input: 3.00,  output: 15.00 },
+  'claude-haiku-4-5':  { input: 0.25,  output: 1.25 },
   // OpenAI
   'gpt-4o':          { input: 2.50,  output: 10.00 },
   'gpt-4o-mini':     { input: 0.15,  output: 0.60 },

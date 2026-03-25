@@ -168,7 +168,7 @@ When multiple channels receive an approval request, the first response is author
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*task_002: ActivityFeed Component*\n3 files | +142 lines | Tests: 4/4 passing\nCost: $0.38 | Model: claude-sonnet-4"
+        "text": "*task_002: ActivityFeed Component*\n3 files | +142 lines | Tests: 4/4 passing\nCost: $0.38 | Model: claude-sonnet-4-6"
       }
     },
     {

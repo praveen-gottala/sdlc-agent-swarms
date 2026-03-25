@@ -511,7 +511,7 @@ describe('Wave 2 Criterion 7: start design accepts init-produced manifest', () =
 
     // start.ts reads these fields:
     expect(manifest.project.name).toBe('TestApp');
-    expect(manifest.agents.providers.default).toBe('claude-sonnet-4');
+    expect(manifest.agents.providers.default).toBe('claude-sonnet-4-6');
     expect(manifest.agents.orchestration.max_concurrent_agents).toBe(3);
   });
 

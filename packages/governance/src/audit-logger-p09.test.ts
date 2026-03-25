@@ -5,6 +5,7 @@
 
 import { createAuditLogger } from './audit-logger.js';
 import type { AuditEntry, AgentAction } from './types.js';
+import { DEFAULT_MODEL } from '@agentforge/core';
 
 const makeAction = (overrides: Partial<AgentAction> = {}): AgentAction => ({
   agentId: 'code-agent',
@@ -38,7 +39,7 @@ const makeEntry = (overrides: Partial<AuditEntry> = {}): AuditEntry => ({
     inputCostUsd: 0.003,
     outputCostUsd: 0.015,
     totalCostUsd: 0.018,
-    model: 'claude-sonnet-4',
+    model: DEFAULT_MODEL,
     timestamp: '2026-03-17T10:00:00Z',
     inputTokens: 1000,
     outputTokens: 500,

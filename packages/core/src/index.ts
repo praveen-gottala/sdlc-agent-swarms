@@ -40,6 +40,9 @@ export type {
 export { Ok, Err } from './types/index.js';
 export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
+// Constants
+export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
+
 export {
   readLearnings,
   addObservation,
@@ -133,6 +136,7 @@ export { createRealFs, readYaml, writeYaml } from './fs/index.js';
 export { loadProjectManifest } from './config/index.js';
 export type { StackResolution } from './config/index.js';
 export { deriveStackName, resolveStackDir, resolvePromptsDir } from './config/index.js';
+export { resolveModelForRole } from './config/index.js';
 
 // State: task manager
 export {

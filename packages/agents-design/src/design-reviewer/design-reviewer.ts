@@ -50,7 +50,7 @@ export const DESIGN_REVIEWER_CONTRACT: AgentContract = {
   role: 'design_reviewer',
   description: 'Reviews visual designs for accessibility, responsiveness, and compliance',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 30000 },
   tools: ['figma.get_code', 'figma.get_metadata'],
   permissions: ['read_design'],
@@ -135,7 +135,7 @@ export const createDesignReviewerWork = (
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: DESIGN_REVIEWER_CONTRACT.provider,
+    model: context.resolvedModel ?? DESIGN_REVIEWER_CONTRACT.provider,
     maxTokens: 4000,
     temperature: 0,
   });

@@ -27,6 +27,7 @@ Produce a JSON object with the following structure:
 
 ## Rules
 - Use semantic HTML structure in the wireframe
+- Design for desktop (1440px) as the primary viewport, with progressive compression to tablet and mobile
 - Focus on layout and content hierarchy, not visual styling
 - Include all sections identified in the UX research
 - Define responsive behavior for each section

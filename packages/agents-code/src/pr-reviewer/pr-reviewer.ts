@@ -3,7 +3,7 @@
  *
  * PR Reviewer agent: reviews generated code for quality, security, and
  * architecture compliance. Uses complete mode (not streaming) and
- * claude-haiku-4 for fast, cost-effective reviews.
+ * claude-haiku-4-5 for fast, cost-effective reviews.
  */
 
 import { readFileSync } from 'node:fs';
@@ -68,7 +68,7 @@ export const PR_REVIEWER_CONTRACT: AgentContract = {
   role: 'pr_reviewer',
   description: 'Reviews generated code for quality, security, architecture compliance',
   category: 'code',
-  provider: 'claude-haiku-4',
+  provider: 'claude-haiku-4-5',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 50000 },
   tools: ['github.read_pr', 'github.create_review'],
   permissions: ['read_spec', 'read_code', 'read_design'],
@@ -313,7 +313,7 @@ export const prReviewerWork: AgentWorkFn<PRReviewerInput, PRReviewerOutput> = as
   };
 
   const completionResult = await provider.complete(prompt, {
-    model: PR_REVIEWER_CONTRACT.provider,
+    model: context.resolvedModel ?? PR_REVIEWER_CONTRACT.provider,
     maxTokens: 4000,
     temperature: 0,
   });

@@ -48,7 +48,7 @@ export const PR_MANAGER_CONTRACT: AgentContract = {
   role: 'pr_manager',
   description: 'Creates pull requests via MCP client after CI passes',
   category: 'cicd',
-  provider: 'claude-haiku-4',
+  provider: 'claude-haiku-4-5',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 10000 },
   tools: ['github.create_pr'],
   permissions: ['read_code', 'create_pr', 'create_branch'],

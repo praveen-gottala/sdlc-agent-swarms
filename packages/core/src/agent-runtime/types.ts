@@ -6,7 +6,7 @@
  * dependencies — core cannot import governance or providers.
  */
 
-import type { Result, AgentForgeError, AgentContract, CostEstimate } from '../types/index.js';
+import type { Result, AgentForgeError, AgentContract, CostEstimate, ProjectManifest } from '../types/index.js';
 import type { EventBus } from '../events/index.js';
 import type { FileSystem } from '../fs/index.js';
 import type { MCPClient } from '../mcp/mcp-client.js';
@@ -102,6 +102,10 @@ export interface AgentContext {
   readonly recordAudit: RecordAuditFn;
   readonly abortSignal?: AbortSignal;
   readonly promptTraces?: PromptTrace[];
+  /** Project manifest for data-driven model resolution. Optional for backward compatibility. */
+  readonly manifest?: Pick<ProjectManifest, 'agents'>;
+  /** Model resolved via resolveModelForRole(). Set by runAgent, consumed by work functions. */
+  readonly resolvedModel?: string;
 }
 
 /**

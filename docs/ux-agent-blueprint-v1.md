@@ -65,9 +65,9 @@ The architecture deploys five agents with distinct responsibilities, each operat
 
 | Contract Field | Value |
 |----------------|-------|
-| Agent ID | `ux_dashboard_research` |
+| Agent ID | `ux_research` |
 | Role | UX Research and Intent Mapping |
-| Provider | `claude-opus-4` (complex reasoning required) |
+| Provider | `claude-opus-4-6` (complex reasoning required) |
 | Execution mode | request/response |
 | Permissions | READ: `spec/*`, `.agentforge/learnings/*`, design files — WRITE: `.agentforge/briefs/` |
 | HITL policy | `notify_only` (research output reviewed at planning stage) |
@@ -86,9 +86,9 @@ The Research Agent performs upstream discovery before any design or code work be
 
 | Contract Field | Value |
 |----------------|-------|
-| Agent ID | `ux_dashboard_planning` |
+| Agent ID | `ux_planning` |
 | Role | UX Planning and Component Specification |
-| Provider | `claude-sonnet-4` (structured output, high throughput) |
+| Provider | `claude-sonnet-4-6` (structured output, high throughput) |
 | Execution mode | request/response |
 | Permissions | READ: `spec/*`, `briefs/*`, design files — WRITE: `spec/components/`, `.agentforge/plans/` |
 | HITL policy | `review_and_override` (specs require human validation) |
@@ -107,9 +107,9 @@ The Planning Agent translates research briefs into implementation-ready specific
 
 | Contract Field | Value |
 |----------------|-------|
-| Agent ID | `ux_dashboard_implementation` |
+| Agent ID | `ux_implementation` |
 | Role | Frontend Code Generation |
-| Provider | `claude-sonnet-4` (code generation, streaming) |
+| Provider | `claude-sonnet-4-6` (code generation, streaming) |
 | Execution mode | streaming (progress visibility via channels) |
 | Permissions | READ: `spec/*`, `plans/*`, design files — WRITE: `src/dashboard/`, feature branches |
 | HITL policy | `review_and_override` (generated code reviewed via PR) |
@@ -130,9 +130,9 @@ The Implementation Agent connects to Figma MCP's `get_design_context` tool for s
 
 | Contract Field | Value |
 |----------------|-------|
-| Agent ID | `ux_dashboard_review` |
+| Agent ID | `ux_review` |
 | Role | Multi-Dimensional UX Review |
-| Provider | `claude-sonnet-4` (vision capabilities for screenshot comparison) |
+| Provider | `claude-sonnet-4-6` (vision capabilities for screenshot comparison) |
 | Execution mode | request/response (parallel sub-evaluations) |
 | Permissions | READ: `spec/*`, `src/dashboard/*`, design files, rendered UI — WRITE: `.agentforge/reviews/` |
 | HITL policy | `notify_only` (review results fed to Implementation Agent automatically) |
@@ -152,9 +152,9 @@ The parallel execution pattern follows Google ADK's ParallelAgent primitive: eac
 
 | Contract Field | Value |
 |----------------|-------|
-| Agent ID | `ux_dashboard_testing` |
+| Agent ID | `ux_testing` |
 | Role | Automated UI Testing and Visual Regression |
-| Provider | `claude-sonnet-4` (test generation and self-healing) |
+| Provider | `claude-sonnet-4-6` (test generation and self-healing) |
 | Execution mode | request/response |
 | Permissions | READ: `spec/*`, `src/dashboard/*`, rendered UI — WRITE: `tests/dashboard/`, `.agentforge/test-results/` |
 | HITL policy | `notify_only` (test results are informational) |

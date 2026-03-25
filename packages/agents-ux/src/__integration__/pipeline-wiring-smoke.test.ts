@@ -72,7 +72,7 @@ const BOOKSHELF_TOKENS: DesignTokensSpec = {
   created_by: 'smoke-test',
   colors: {
     primitive: { 'forest-green': '#228B22', cream: '#FFFDD0' },
-    semantic: { 'background-primary': 'cream', 'cta-primary': 'forest-green' },
+    semantic: { 'background-primary': 'cream', 'surface-primary': 'cream', 'cta-primary': 'forest-green' },
   },
   typography: {
     font_families: { display: 'Merriweather', body: 'Lato' },

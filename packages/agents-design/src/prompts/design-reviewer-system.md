@@ -34,7 +34,7 @@ Produce a JSON object with the following structure:
 
 ## Rules
 - Check WCAG 2.1 AA compliance for all color combinations
-- Verify responsive behavior at standard breakpoints (375px, 768px, 1440px)
+- Verify responsive behavior at standard breakpoints (1440px, 768px, 375px)
 - Confirm design token usage matches the project's token set
 - Check text hierarchy (headings, body, captions) for readability
 - Verify interactive elements have appropriate touch targets (44x44px minimum)

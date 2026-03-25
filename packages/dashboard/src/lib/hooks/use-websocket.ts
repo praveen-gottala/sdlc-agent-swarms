@@ -22,6 +22,7 @@ export interface UseWebSocketResult {
   subscribe: (eventType: string, callback: WsEventCallback) => () => void;
 }
 
+// Canonical default: DEFAULT_SERVICE_URLS.dashboardWs in @agentforge/core
 const DEFAULT_WS_URL = 'ws://localhost:3001/ws';
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const BASE_RECONNECT_DELAY_MS = 1_000;

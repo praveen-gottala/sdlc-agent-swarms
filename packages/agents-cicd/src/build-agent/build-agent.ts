@@ -2,7 +2,7 @@
  * @module @agentforge/agents-cicd/build-agent
  *
  * Build agent: monitors CI failures, analyzes error logs, and generates
- * fixes for known patterns. Uses claude-haiku-4 for fast, cost-effective
+ * fixes for known patterns. Uses claude-haiku-4-5 for fast, cost-effective
  * analysis. Operates fully autonomously (no HITL approval needed).
  */
 
@@ -58,7 +58,7 @@ export const BUILD_AGENT_CONTRACT: AgentContract = {
   role: 'build_agent',
   description: 'Monitors CI failures, analyzes error logs, generates fixes for known patterns',
   category: 'cicd',
-  provider: 'claude-haiku-4',
+  provider: 'claude-haiku-4-5',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 30000 },
   tools: ['github.read_file', 'github.push_files', 'github.trigger_workflow'],
   permissions: ['read_code', 'write_code', 'read_ci_logs', 'trigger_ci', 'create_branch'],
@@ -154,7 +154,7 @@ export const buildAgentWork: AgentWorkFn<BuildAgentInput, BuildAgentOutput> = as
 
   // 2. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: BUILD_AGENT_CONTRACT.provider,
+    model: context.resolvedModel ?? BUILD_AGENT_CONTRACT.provider,
     maxTokens: 4000,
     temperature: 0,
   });

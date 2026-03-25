@@ -19,10 +19,10 @@ describe('GET /api/providers', () => {
     mockReadYaml.mockReturnValue({
       agents: {
         providers: {
-          default: 'claude-sonnet-4',
+          default: 'claude-sonnet-4-6',
           overrides: {
-            architecture: 'claude-opus-4',
-            code_review: 'claude-haiku-4',
+            architecture: 'claude-opus-4-6',
+            code_review: 'claude-haiku-4-5',
           },
         },
       },
@@ -76,13 +76,13 @@ describe('GET /api/providers', () => {
 
   it('includes model metadata with context window and costs', async () => {
     mockReadYaml.mockReturnValue({
-      agents: { providers: { default: 'claude-sonnet-4' } },
+      agents: { providers: { default: 'claude-sonnet-4-6' } },
     });
 
     const response = await GET();
     const data = await response.json();
     const anthropic = data.providers.find((p: Record<string, unknown>) => p.id === 'anthropic');
-    const sonnet = anthropic.models.find((m: Record<string, unknown>) => m.name === 'claude-sonnet-4');
+    const sonnet = anthropic.models.find((m: Record<string, unknown>) => m.name === 'claude-sonnet-4-6');
 
     expect(sonnet.contextWindow).toBe(200000);
     expect(sonnet.costPer1kInput).toBe(0.003);

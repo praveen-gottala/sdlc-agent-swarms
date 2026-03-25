@@ -9,6 +9,7 @@
 
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { PREVIEW_DIR_REL } from '@agentforge/core';
 import { infoMsg, warnMsg } from '../formatter.js';
 
 // ============================================================================
@@ -200,7 +201,7 @@ export async function designListCommand(
   options: { projectRoot?: string } = {},
 ): Promise<void> {
   const projectRoot = options.projectRoot ?? process.cwd();
-  const previewsDir = resolve(projectRoot, '.agentforge', 'previews');
+  const previewsDir = resolve(projectRoot, PREVIEW_DIR_REL);
 
   if (!existsSync(previewsDir)) {
     output.write(warnMsg('No designs found. Run `agentforge design:figma` or `agentforge design:penpot` first.\n'));

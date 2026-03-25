@@ -9,6 +9,7 @@
  */
 
 import type { HITLLevel } from '@agentforge/core';
+import { DEFAULT_MODEL } from '@agentforge/core';
 import { createHITLEnforcer } from './hitl-enforcer.js';
 import type {
   AgentAction,
@@ -543,7 +544,7 @@ describe('P24: Escalation Policy Enforcement', () => {
         role: 'code_generator',
         description: 'Generates code',
         category: 'code' as const,
-        provider: 'claude-sonnet-4',
+        provider: DEFAULT_MODEL,
         execution: { mode: 'stream' as const, progress_events: true, max_context_tokens: 20000 },
         tools: ['code.write_file'],
         permissions: ['write_code'] as string[],

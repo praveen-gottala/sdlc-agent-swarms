@@ -10,7 +10,7 @@
  */
 
 import type { Result, MCPClient } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { DesignCollaborationSession, DesignChangeRecord, DesignSystemContext } from './design-collaboration.js';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 import type { PenpotDesignOutput } from './ux-penpot-design.js';
@@ -112,7 +112,7 @@ Return ONLY a JSON object: { "code": "..." }`;
             content: `Current node IDs:\n${nodeIdsDesc}\n\nFeedback:\n${feedback}\n\nGenerate Penpot Plugin API JavaScript code to apply this feedback.`,
           }],
         },
-        { model: 'claude-sonnet-4', maxTokens: 8000, temperature: 0 },
+        { model: DEFAULT_MODEL, maxTokens: 8000, temperature: 0 },
       );
 
       if (!completionResult.ok) {

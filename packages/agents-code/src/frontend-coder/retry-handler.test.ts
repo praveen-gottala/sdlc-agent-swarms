@@ -8,7 +8,7 @@ import {
 } from './retry-handler.js';
 import type { RetryConfig, GenerateFn, SelfTestFn, CIPushFn, CIResult } from './retry-handler.js';
 import type { CostRecord } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -18,7 +18,7 @@ const makeCost = (totalCostUsd: number): CostRecord => ({
   inputCostUsd: totalCostUsd * 0.3,
   outputCostUsd: totalCostUsd * 0.7,
   totalCostUsd,
-  model: 'claude-sonnet-4',
+  model: DEFAULT_MODEL,
   timestamp: new Date().toISOString(),
 });
 

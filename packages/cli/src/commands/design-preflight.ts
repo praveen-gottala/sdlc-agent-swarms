@@ -11,6 +11,7 @@ import {
   Ok,
   createFigmaAdapter,
   createPenpotAdapter,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type { MCPClient, DesignToolSession } from '@agentforge/core';
 import {
@@ -55,11 +56,11 @@ export const PENPOT_SETUP_INSTRUCTIONS = `Penpot MCP not connected. To set up:
   1. Start the Penpot stack:
      docker compose up -d penpot-frontend penpot-mcp
 
-  2. Open Penpot at http://localhost:9001
+  2. Open Penpot at ${DEFAULT_SERVICE_URLS.penpotUi}
 
   3. Open a project in the editor
 
-  4. Plugin Manager > install http://localhost:4400/manifest.json
+  4. Plugin Manager > install ${DEFAULT_SERVICE_URLS.penpotPluginUi}/manifest.json
 
   5. Click "CONNECT TO MCP SERVER" in the plugin panel
 
@@ -133,7 +134,7 @@ async function runPenpotConnection(
   output: NodeJS.WritableStream,
 ): Promise<PreflightResult | null> {
   const adapter = createPenpotAdapter();
-  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
+  const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotMcp;
 
   // Try cached session first, then full preflight
   const sessionResult = loadPenpotSession();

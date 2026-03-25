@@ -21,8 +21,8 @@ Cost Dashboard module — the first module targeted by the UX squad.
 | Parameter | Value |
 |---|---|
 | Module | cost-dashboard |
-| Research provider | claude-opus-4 |
-| Planning/Impl/Review/Testing provider | claude-sonnet-4 |
+| Research provider | claude-opus-4-6 |
+| Planning/Impl/Review/Testing provider | claude-sonnet-4-6 |
 | MCP client | Mock (returns Ok for all tool calls) |
 | Governance | Mock (always proceed) |
 | FileSystem | Mock (empty — no existing specs) |
@@ -38,7 +38,7 @@ All 5 stages passed. Total wall-clock time: ~202s. Estimated API cost: ~$0.07.
   requirements, and data model dependencies.
 - **Key metrics**: 6 requirements mapped, 6+ design constraints, 5+ accessibility
   requirements, data model dependencies include CostRecord and related types.
-- **Provider**: claude-opus-4 (deep qualitative analysis)
+- **Provider**: claude-opus-4-6 (deep qualitative analysis)
 
 ### Stage 2: Planning
 - **Status**: PASS
@@ -47,7 +47,7 @@ All 5 stages passed. Total wall-clock time: ~202s. Estimated API cost: ~$0.07.
   responsive rules, and 4 implementation stages.
 - **Key metrics**: 3+ component tree nodes, 5+ token bindings, 2+ responsive
   rules, all 4 stages present (layout, theme, animation, implementation).
-- **Provider**: claude-sonnet-4
+- **Provider**: claude-sonnet-4-6
 
 ### Stage 3: Implementation (layout stage)
 - **Status**: PASS
@@ -55,7 +55,7 @@ All 5 stages passed. Total wall-clock time: ~202s. Estimated API cost: ~$0.07.
 - **Output**: Generated React/Tailwind component files for the layout stage.
 - **Key metrics**: 1+ files generated, React imports present, Tailwind className
   usage confirmed, aria-* accessibility attributes present in output.
-- **Provider**: claude-sonnet-4
+- **Provider**: claude-sonnet-4-6
 - **Cost**: Tracked via totalCostUsd on implementation output.
 
 ### Stage 4: Review (mock MCP)
@@ -86,7 +86,7 @@ avoid truncated JSON responses. Each agent work function sets an appropriate
 
 ### 2. MODEL_ALIASES Resolution
 The `createClaudeProvider` factory initially did not resolve model aliases
-(e.g., `claude-sonnet-4` to the full model ID). This was fixed in the provider
+(e.g., `claude-sonnet-4-6` to the full model ID). This was fixed in the provider
 layer to map convenience names to full Anthropic model IDs.
 
 ### 3. Jest Module Mapper

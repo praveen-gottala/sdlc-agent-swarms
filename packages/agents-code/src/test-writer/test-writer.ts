@@ -63,7 +63,7 @@ export const TEST_WRITER_CONTRACT: AgentContract = {
   role: 'test_writer',
   description: 'Generates unit, integration, and e2e tests from specs',
   category: 'code',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 100000 },
   tools: ['github.read_file', 'github.push_files'],
   permissions: ['read_spec', 'read_code', 'write_code', 'create_branch', 'trigger_ci'],
@@ -204,7 +204,7 @@ export const testWriterWork: AgentWorkFn<TestWriterInput, TestWriterOutput> = as
 
     const prompt = { system: systemPrompt, messages };
     const stream = provider.stream(prompt, {
-      model: TEST_WRITER_CONTRACT.provider,
+      model: context.resolvedModel ?? TEST_WRITER_CONTRACT.provider,
       maxTokens: 8000,
       temperature: 0,
     });

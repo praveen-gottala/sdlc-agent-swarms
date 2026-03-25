@@ -8,6 +8,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import {
@@ -17,9 +18,10 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   createPenpotAdapter,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type { MCPClient } from '@agentforge/core';
-import { createRealFs } from '@agentforge/core';
+import { createRealFs, PREVIEW_DIR_REL } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
   loadFigmaSession,
@@ -93,7 +95,7 @@ export async function designCollaborateCommand(
   options: DesignCollaborateOptions,
 ): Promise<void> {
   const { module: moduleId, tool: designTool = 'figma' } = options;
-  const outputDir = resolve(process.cwd(), '.agentforge', 'previews', moduleId);
+  const outputDir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
   const artifactFilename = designTool === 'penpot' ? 'penpot-design.json' : 'figma-design.json';
   const artifactPath = join(outputDir, artifactFilename);
 
@@ -139,7 +141,7 @@ export async function designCollaborateCommand(
   if (designTool === 'penpot') {
     // Penpot connection
     const penpotAdapter = createPenpotAdapter();
-    const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
+    const mcpUrl = process.env.AGENTFORGE_MCP_PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotMcp;
 
     const penpotSession = loadPenpotSession();
     if (penpotSession.ok) {
@@ -245,7 +247,7 @@ export async function designCollaborateCommand(
   }
 
   // 4. Create collaboration session and enter feedback loop
-  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+  const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
 
   // Build design system context — prefer project-specific tokens, fall back to markdown
   const planningPath = join(outputDir, 'planning-spec.json');

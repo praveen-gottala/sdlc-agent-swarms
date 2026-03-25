@@ -57,7 +57,7 @@ export const UX_DASHBOARD_REVIEW_CONTRACT: AgentContract = {
   role: 'ux_dashboard_review',
   description: 'Runs parallel accessibility, design-system compliance, and visual fidelity evaluations',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: ['playwright:snapshot', 'playwright:screenshot'],
   permissions: ['read_spec', 'read_design', 'read_code', 'read_design_system'],
@@ -148,6 +148,7 @@ const checkAccessibility = async (
   provider: LLMProvider,
   componentPaths: readonly string[],
   systemPrompt: string,
+  model: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
     const toolResult = await context.mcpClient.callTool('playwright', 'snapshot', { componentPaths });
@@ -157,7 +158,7 @@ const checkAccessibility = async (
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: `Evaluate accessibility for these components.\n\nPlaywright snapshot:\n${JSON.stringify(toolResult.value)}\n\nReturn a JSON array of ReviewIssue objects with category "accessibility".` }],
     };
-    const result = await provider.complete(prompt, { model: UX_DASHBOARD_REVIEW_CONTRACT.provider, maxTokens: 4000, temperature: 0 });
+    const result = await provider.complete(prompt, { model, maxTokens: 4000, temperature: 0 });
     if (!result.ok) return [];
 
     return parseIssuesFromResponse((result.value as { content: string }).content);
@@ -174,6 +175,7 @@ const checkDesignSystemCompliance = async (
   designTokens: DesignTokensSpec,
   componentPaths: readonly string[],
   systemPrompt: string,
+  model: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
     const dataSource = 'Design tokens (from project spec — design-tokens.yaml)';
@@ -183,7 +185,7 @@ const checkDesignSystemCompliance = async (
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: `Evaluate design system compliance for these components.\n\nComponents: ${componentPaths.join(', ')}\n\n${dataSource}:\n${JSON.stringify(designData)}\n\nReturn a JSON array of ReviewIssue objects with category "design_system".` }],
     };
-    const result = await provider.complete(prompt, { model: UX_DASHBOARD_REVIEW_CONTRACT.provider, maxTokens: 4000, temperature: 0 });
+    const result = await provider.complete(prompt, { model, maxTokens: 4000, temperature: 0 });
     if (!result.ok) return [];
 
     return parseIssuesFromResponse((result.value as { content: string }).content);
@@ -197,6 +199,7 @@ const checkVisualFidelity = async (
   provider: LLMProvider,
   componentPaths: readonly string[],
   systemPrompt: string,
+  model: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
     const toolResult = await context.mcpClient.callTool('playwright', 'screenshot', { componentPaths });
@@ -206,7 +209,7 @@ const checkVisualFidelity = async (
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: `Evaluate visual fidelity for these components.\n\nPlaywright screenshot data:\n${JSON.stringify(toolResult.value)}\n\nReturn a JSON array of ReviewIssue objects with category "visual_fidelity".` }],
     };
-    const result = await provider.complete(prompt, { model: UX_DASHBOARD_REVIEW_CONTRACT.provider, maxTokens: 4000, temperature: 0 });
+    const result = await provider.complete(prompt, { model, maxTokens: 4000, temperature: 0 });
     if (!result.ok) return [];
 
     return parseIssuesFromResponse((result.value as { content: string }).content);
@@ -240,10 +243,12 @@ export const uxDashboardReviewWork: AgentWorkFn<UXDashboardReviewInput, UXDashbo
 
   const systemPrompt = loadSystemPrompt();
 
+  const effectiveModel = context.resolvedModel ?? UX_DASHBOARD_REVIEW_CONTRACT.provider;
+
   const [accessibilityIssues, designSystemIssues, visualFidelityIssues] = await Promise.all([
-    checkAccessibility(context, provider as unknown as LLMProvider, componentPaths, systemPrompt),
-    checkDesignSystemCompliance(provider as unknown as LLMProvider, diskTokens.value, componentPaths, systemPrompt),
-    checkVisualFidelity(context, provider as unknown as LLMProvider, componentPaths, systemPrompt),
+    checkAccessibility(context, provider as unknown as LLMProvider, componentPaths, systemPrompt, effectiveModel),
+    checkDesignSystemCompliance(provider as unknown as LLMProvider, diskTokens.value, componentPaths, systemPrompt, effectiveModel),
+    checkVisualFidelity(context, provider as unknown as LLMProvider, componentPaths, systemPrompt, effectiveModel),
   ]);
 
   // 4. Merge and sort issues by severity

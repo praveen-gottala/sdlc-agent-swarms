@@ -9,7 +9,7 @@ Produce a JSON object with the following structure:
 ```json
 {
   "layoutSuggestions": [
-    "Use a single-column layout for mobile-first design",
+    "Use a multi-column layout optimized for desktop (1024px+)",
     "Place primary CTA above the fold",
     "Group related form fields with clear section headers"
   ],
@@ -31,7 +31,7 @@ Produce a JSON object with the following structure:
 
 ## Rules
 - Ground suggestions in established UX patterns (Nielsen's heuristics, Material Design, Apple HIG)
-- Consider mobile-first responsive design
+- Consider desktop-first with tablet support
 - Always include accessibility considerations
 - Keep suggestions actionable and specific to the page description
 - Reference existing spec files when available for consistency

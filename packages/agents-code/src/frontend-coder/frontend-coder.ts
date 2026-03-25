@@ -68,7 +68,7 @@ export const FRONTEND_CODER_CONTRACT: AgentContract = {
   role: 'frontend_coder',
   description: 'Generates React components from spec + Figma context',
   category: 'code',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 100000 },
   tools: ['figma.get_code', 'github.create_branch', 'github.push_files'],
   permissions: ['read_spec', 'read_design', 'read_code', 'write_code', 'create_branch', 'trigger_ci'],
@@ -246,7 +246,7 @@ export const frontendCoderWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOut
 
     const prompt = { system: systemPrompt, messages };
     const stream = provider.stream(prompt, {
-      model: FRONTEND_CODER_CONTRACT.provider,
+      model: context.resolvedModel ?? FRONTEND_CODER_CONTRACT.provider,
       maxTokens: 8000,
       temperature: 0,
     });

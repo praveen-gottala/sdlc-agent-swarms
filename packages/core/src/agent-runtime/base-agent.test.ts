@@ -2,6 +2,7 @@ import { runAgent, formatLearningsForPrompt } from './base-agent.js';
 import type { AgentContext, AgentWorkFn, LLMProviderRef } from './types.js';
 import type { AgentContract, AgentLearning } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import { DEFAULT_MODEL } from '../constants.js';
 import * as yaml from 'yaml';
 
 // ============================================================================
@@ -12,7 +13,7 @@ const makeContract = (overrides: Partial<AgentContract> = {}): AgentContract => 
   role: 'test_agent',
   description: 'Test agent',
   category: 'spec',
-  provider: 'claude-sonnet-4',
+  provider: DEFAULT_MODEL,
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 100000 },
   tools: [],
   permissions: ['read_spec', 'write_spec'],

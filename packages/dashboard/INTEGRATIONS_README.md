@@ -75,7 +75,7 @@ AI model providers used for agent reasoning, code generation, and review.
 
 | Provider | Models | Description |
 |----------|--------|-------------|
-| **Anthropic** | `claude-sonnet-4`, `claude-opus-4`, `claude-haiku-4` | Primary provider. Opus for architecture, Sonnet for general tasks, Haiku for fast review. |
+| **Anthropic** | `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-haiku-4-5` | Primary provider. Opus for architecture, Sonnet for general tasks, Haiku for fast review. |
 | **OpenAI** | `gpt-4o`, `gpt-4o-mini`, `o3-mini` | Alternative provider with strong coding capabilities. |
 | **Google** | `gemini-2.5-pro`, `gemini-2.5-flash` | Long-context provider (1M tokens). Good for large codebase analysis. |
 | **Ollama** | `llama-3.3-70b`, `deepseek-r1` | Local/self-hosted models. Zero cost, full privacy. Requires local GPU. |
@@ -126,9 +126,9 @@ mcp:
 
 agents:
   providers:
-    default: claude-sonnet-4
+    default: claude-sonnet-4-6
     overrides:
-      architecture: claude-opus-4
+      architecture: claude-opus-4-6
 
 design:
   figma:

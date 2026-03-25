@@ -4,7 +4,7 @@ import {
   registerUXDashboardTesting,
 } from './ux-dashboard-testing.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -72,7 +72,7 @@ describe('UX_DASHBOARD_TESTING_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(UX_DASHBOARD_TESTING_CONTRACT.role).toBe('ux_dashboard_testing');
     expect(UX_DASHBOARD_TESTING_CONTRACT.category).toBe('code');
-    expect(UX_DASHBOARD_TESTING_CONTRACT.provider).toBe('claude-sonnet-4');
+    expect(UX_DASHBOARD_TESTING_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(UX_DASHBOARD_TESTING_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot', 'fs:read']);
     expect(UX_DASHBOARD_TESTING_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'write_test']);
     expect(UX_DASHBOARD_TESTING_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);

@@ -34,7 +34,7 @@ const makePrompt = (): Prompt => ({
 
 /** Build completion options. */
 const makeOptions = (overrides: Partial<CompletionOptions> = {}): CompletionOptions => ({
-  model: 'claude-sonnet-4',
+  model: 'claude-sonnet-4-6',
   maxTokens: 4096,
   temperature: 0,
   ...overrides,
@@ -50,7 +50,7 @@ function createMockProvider(
     inputCostUsd: 0.003,
     outputCostUsd: 0.015,
     totalCostUsd: 0.018,
-    model: 'claude-sonnet-4',
+    model: 'claude-sonnet-4-6',
     timestamp: new Date().toISOString(),
     inputTokens: 1000,
     outputTokens: 500,
@@ -69,7 +69,7 @@ function createMockProvider(
       toolCalls: [],
       usage: defaultUsage,
       cost: defaultCost,
-      model: 'claude-sonnet-4',
+      model: 'claude-sonnet-4-6',
       latencyMs: 1200,
       finishReason: 'stop',
     } as CompletionResult)),
@@ -104,7 +104,7 @@ describe('P13: LLM Provider Abstraction', () => {
 
   describe('P13.1: complete() and stream() interfaces', () => {
     it('complete() returns CompletionResult with content, toolCalls, usage, cost, model, latencyMs, finishReason', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const result = await provider.complete(makePrompt(), makeOptions());
 
       expect(result.ok).toBe(true);
@@ -115,14 +115,14 @@ describe('P13: LLM Provider Abstraction', () => {
         expect(result.value.usage.inputTokens).toBeGreaterThanOrEqual(0);
         expect(result.value.usage.outputTokens).toBeGreaterThanOrEqual(0);
         expect(result.value.cost.totalCostUsd).toBeGreaterThanOrEqual(0);
-        expect(result.value.model).toBe('claude-sonnet-4');
+        expect(result.value.model).toBe('claude-sonnet-4-6');
         expect(typeof result.value.latencyMs).toBe('number');
         expect(['stop', 'max_tokens', 'tool_use']).toContain(result.value.finishReason);
       }
     });
 
     it('stream() yields AsyncIterable<StreamChunk>', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -133,7 +133,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('complete() returns Err on provider errors', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4'], {
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6'], {
         complete: jest.fn().mockResolvedValue(Err({
           code: 'RATE_LIMITED' as const,
           retryAfterMs: 60000,
@@ -148,13 +148,13 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('isAvailable() returns boolean', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const available = await provider.isAvailable();
       expect(typeof available).toBe('boolean');
     });
 
     it('estimateCost() returns CostEstimate', () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const estimate = provider.estimateCost(makePrompt(), makeOptions());
 
       expect(estimate.estimatedInputTokens).toBeGreaterThan(0);
@@ -170,7 +170,7 @@ describe('P13: LLM Provider Abstraction', () => {
 
   describe('P13.2: StreamChunk types in correct sequence', () => {
     it('stream emits token chunks followed by done chunk', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -188,7 +188,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('token chunk has content and tokenCount', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -207,7 +207,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('done chunk has usage and cost', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -224,14 +224,14 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('tool_call chunk has id, name, and args', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4'], {
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6'], {
         stream: jest.fn(async function* (): AsyncIterable<StreamChunk> {
           yield { type: 'token', content: 'Calling tool...', tokenCount: 3 };
           yield { type: 'tool_call', id: 'call_001', name: 'write_file', args: { path: 'src/app.tsx', content: 'code' } };
           yield {
             type: 'done',
             usage: { inputTokens: 100, outputTokens: 50 },
-            cost: { inputCostUsd: 0.001, outputCostUsd: 0.002, totalCostUsd: 0.003, model: 'claude-sonnet-4', timestamp: new Date().toISOString() },
+            cost: { inputCostUsd: 0.001, outputCostUsd: 0.002, totalCostUsd: 0.003, model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() },
           };
         }) as unknown as LLMProvider['stream'],
       });
@@ -256,10 +256,10 @@ describe('P13: LLM Provider Abstraction', () => {
   // ============================================================================
 
   describe('P13.3: Provider string resolution', () => {
-    it('resolves "claude-sonnet-4" to claude provider', () => {
-      const { provider, model } = parseProviderString('claude-sonnet-4');
+    it('resolves "claude-sonnet-4-6" to claude provider', () => {
+      const { provider, model } = parseProviderString('claude-sonnet-4-6');
       expect(provider).toBe('claude');
-      expect(model).toBe('claude-sonnet-4');
+      expect(model).toBe('claude-sonnet-4-6');
     });
 
     it('resolves "gpt-4o" to openai provider', () => {
@@ -274,10 +274,10 @@ describe('P13: LLM Provider Abstraction', () => {
       expect(model).toBe('codellama');
     });
 
-    it('resolves "claude-opus-4" to claude provider', () => {
-      const { provider, model } = parseProviderString('claude-opus-4');
+    it('resolves "claude-opus-4-6" to claude provider', () => {
+      const { provider, model } = parseProviderString('claude-opus-4-6');
       expect(provider).toBe('claude');
-      expect(model).toBe('claude-opus-4');
+      expect(model).toBe('claude-opus-4-6');
     });
 
     it('resolves "gpt-4o-mini" to openai provider', () => {
@@ -288,10 +288,10 @@ describe('P13: LLM Provider Abstraction', () => {
 
     it('ProviderRegistry.get() resolves registered provider', () => {
       const registry = new ProviderRegistry();
-      const mockClaude = createMockProvider('claude', ['claude-sonnet-4', 'claude-opus-4']);
+      const mockClaude = createMockProvider('claude', ['claude-sonnet-4-6', 'claude-opus-4-6']);
       registry.register('claude', () => mockClaude);
 
-      const result = registry.get('claude-sonnet-4');
+      const result = registry.get('claude-sonnet-4-6');
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value.name).toBe('claude');
@@ -310,13 +310,13 @@ describe('P13: LLM Provider Abstraction', () => {
 
     it('ProviderRegistry routes to correct adapter with 2 providers', () => {
       const registry = new ProviderRegistry();
-      const mockClaude = createMockProvider('claude', ['claude-sonnet-4']);
+      const mockClaude = createMockProvider('claude', ['claude-sonnet-4-6']);
       const mockOpenAI = createMockProvider('openai', ['gpt-4o']);
 
       registry.register('claude', () => mockClaude);
       registry.register('openai', () => mockOpenAI);
 
-      const claudeResult = registry.get('claude-sonnet-4');
+      const claudeResult = registry.get('claude-sonnet-4-6');
       const openaiResult = registry.get('gpt-4o');
 
       expect(claudeResult.ok).toBe(true);
@@ -336,7 +336,7 @@ describe('P13: LLM Provider Abstraction', () => {
       const registry = new ProviderRegistry();
 
       // Primary provider rate limited
-      const primaryProvider = createMockProvider('claude', ['claude-sonnet-4'], {
+      const primaryProvider = createMockProvider('claude', ['claude-sonnet-4-6'], {
         complete: jest.fn().mockResolvedValue(Err({
           code: 'RATE_LIMITED' as const,
           retryAfterMs: 60000,
@@ -378,7 +378,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('ProviderError RATE_LIMITED includes retryAfterMs', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4'], {
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6'], {
         complete: jest.fn().mockResolvedValue(Err({
           code: 'RATE_LIMITED' as const,
           retryAfterMs: 30000,
@@ -399,7 +399,7 @@ describe('P13: LLM Provider Abstraction', () => {
 
   describe('P13.5: Cost recording on every complete() and stream() call', () => {
     it('complete() returns CostRecord with token counts (per ADR-008 optional fields populated)', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const result = await provider.complete(makePrompt(), makeOptions());
 
       expect(result.ok).toBe(true);
@@ -417,7 +417,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('stream() done chunk includes CostRecord', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -432,10 +432,10 @@ describe('P13: LLM Provider Abstraction', () => {
       }
     });
 
-    it('calculateCost returns correct values for claude-sonnet-4', () => {
-      const cost = calculateCost('claude-sonnet-4', 1000, 500);
+    it('calculateCost returns correct values for claude-sonnet-4-6', () => {
+      const cost = calculateCost('claude-sonnet-4-6', 1000, 500);
 
-      // claude-sonnet-4: $3/M input, $15/M output
+      // claude-sonnet-4-6: $3/M input, $15/M output
       expect(cost.inputCostUsd).toBeCloseTo(0.003, 5);
       expect(cost.outputCostUsd).toBeCloseTo(0.0075, 5);
       expect(cost.totalCostUsd).toBeCloseTo(0.0105, 5);
@@ -463,13 +463,13 @@ describe('P13: LLM Provider Abstraction', () => {
 
   describe('P13.6: Execution mode per agent contract', () => {
     it('code_gen agent with streaming mode calls stream()', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
 
       // Agent contract specifies stream mode
       const codeGenContract: Partial<AgentContract> = {
         role: 'code_generator',
         execution: { mode: 'stream', progress_events: true, max_context_tokens: 100000 },
-        provider: 'claude-sonnet-4',
+        provider: 'claude-sonnet-4-6',
       };
 
       if (codeGenContract.execution!.mode === 'stream') {
@@ -483,13 +483,13 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('spec_sync agent with complete mode calls complete()', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
 
       // Agent contract specifies complete mode
       const specSyncContract: Partial<AgentContract> = {
         role: 'spec_writer',
         execution: { mode: 'complete', progress_events: false, max_context_tokens: 100000 },
-        provider: 'claude-opus-4',
+        provider: 'claude-opus-4-6',
       };
 
       if (specSyncContract.execution!.mode === 'complete') {
@@ -500,7 +500,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('stream mode gives progress visibility via token chunks', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const chunks: StreamChunk[] = [];
 
       for await (const chunk of provider.stream(makePrompt(), makeOptions())) {
@@ -513,7 +513,7 @@ describe('P13: LLM Provider Abstraction', () => {
     });
 
     it('complete mode returns full response in single call', async () => {
-      const provider = createMockProvider('claude', ['claude-sonnet-4']);
+      const provider = createMockProvider('claude', ['claude-sonnet-4-6']);
       const result = await provider.complete(makePrompt(), makeOptions());
 
       expect(result.ok).toBe(true);

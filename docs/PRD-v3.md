@@ -419,7 +419,7 @@ Manages LLM provider connections defined in `agentforge.yaml` `agents.providers`
 - **Cost table:** Each card displays the per-model cost table from `provider-abstraction.md`: input and output cost per 1M tokens. This helps teams make informed provider choices for budget optimization.
 - **Usage metrics:** 24-hour call count and 24-hour spend per provider. Enables quick comparison of which providers are consuming budget.
 - **Provider actions:** Available providers show **Rotate Key** and **Test** (sends a minimal completion request to verify connectivity). Unconfigured providers show **Add API Key**. Ollama shows a connection test to localhost.
-- **Provider resolution:** An explanatory panel shows how provider strings are resolved: `claude-sonnet-4` maps to the Claude provider with the sonnet model, `ollama/codellama` maps to the Ollama provider with codellama. References `agentforge.yaml` `agents.providers.default` for the project default.
+- **Provider resolution:** An explanatory panel shows how provider strings are resolved: `claude-sonnet-4-6` maps to the Claude provider with the sonnet model, `ollama/codellama` maps to the Ollama provider with codellama. References `agentforge.yaml` `agents.providers.default` for the project default.
 
 #### 4.10.4 Design Tools
 

@@ -55,7 +55,7 @@ export const UX_DASHBOARD_TESTING_CONTRACT: AgentContract = {
   role: 'ux_dashboard_testing',
   description: 'Generates Playwright tests via a 3-stage Plan → Generate → Heal pipeline',
   category: 'code',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: ['playwright:snapshot', 'playwright:screenshot', 'fs:read'],
   permissions: ['read_spec', 'read_design', 'read_code', 'write_test'],
@@ -248,7 +248,7 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
   input: UXDashboardTestingInput,
   provider: LLMProviderRef,
   _learnings: unknown[],
-  _context: AgentContext,
+  context: AgentContext,
 ) => {
   const { moduleId, componentPaths } = input;
   const systemPrompt = loadSystemPrompt();
@@ -263,7 +263,7 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
         content: `Create a test plan for the following components:\n${componentPaths.join('\n')}\n\nIdentify user flows, edge cases, and responsive breakpoints to test. Return a structured test plan as JSON.`,
       }],
     },
-    { model: UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 4000, temperature: 0 },
+    { model: context.resolvedModel ?? UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 4000, temperature: 0 },
   );
 
   if (!planResult.ok) {
@@ -285,7 +285,7 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
         content: `Based on this test plan:\n${testPlan}\n\nGenerate Playwright test files for the components. Keep tests concise — max 3 test files, each under 60 lines. Return JSON:\n\`\`\`json\n{ "testFiles": [{ "filePath": "...", "content": "..." }] }\n\`\`\`\n\nIMPORTANT: Complete the entire JSON. Close all strings, arrays, and braces.`,
       }],
     },
-    { model: UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 16000, temperature: 0 },
+    { model: context.resolvedModel ?? UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 16000, temperature: 0 },
   );
 
   if (!generateResult.ok) {

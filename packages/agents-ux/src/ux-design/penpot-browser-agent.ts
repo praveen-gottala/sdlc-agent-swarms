@@ -26,6 +26,7 @@ import type {
 import {
   Ok,
   Err,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
@@ -49,6 +50,8 @@ export interface PenpotBrowserDesignInput {
   readonly description?: string;
   /** Target viewport width in pixels (default: 1440). */
   readonly viewportWidth?: number;
+  /** Override model resolved from provider registry. Falls back to contract default. */
+  readonly resolvedModel?: string;
 }
 
 /** Output produced by the browser-based Penpot design agent. */
@@ -82,7 +85,7 @@ export const PENPOT_BROWSER_DESIGN_CONTRACT: AgentContract = {
   role: 'penpot_browser_design',
   description: 'Creates Penpot designs using Playwright browser automation for screenshots and state inspection',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: [
     'penpot:execute_code', 'penpot:high_level_overview',
@@ -172,11 +175,12 @@ export async function penpotBrowserDesignWork(
   mcpClient: MCPClient,
   options: PenpotBrowserDesignOptions = {},
 ): Promise<Result<PenpotBrowserDesignOutput>> {
-  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth } = input;
+  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth, resolvedModel } = input;
   const llm = provider as unknown as LLMProvider;
+  const effectiveModel = resolvedModel ?? PENPOT_BROWSER_DESIGN_CONTRACT.provider;
 
   const headless = options.headless ?? false;
-  const penpotUrl = options.penpotUrl ?? 'http://localhost:9001';
+  const penpotUrl = options.penpotUrl ?? DEFAULT_SERVICE_URLS.penpotUi;
   const email = options.email ?? process.env.PENPOT_EMAIL ?? '';
   const password = options.password ?? process.env.PENPOT_PASSWORD ?? '';
 
@@ -269,7 +273,7 @@ export async function penpotBrowserDesignWork(
         messages: [{ role: 'user' as const, content: userMessage }],
       },
       {
-        model: PENPOT_BROWSER_DESIGN_CONTRACT.provider,
+        model: effectiveModel,
         maxTokens: 32000,
         temperature: 0,
       },

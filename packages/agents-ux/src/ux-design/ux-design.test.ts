@@ -6,7 +6,7 @@ import {
 } from './ux-dashboard-design.js';
 import { applyDesignFeedback } from './design-collaboration.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 import type { ScreenDefinition } from '../types.js';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
@@ -108,7 +108,7 @@ describe('UX_DASHBOARD_DESIGN_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(UX_DASHBOARD_DESIGN_CONTRACT.role).toBe('ux_dashboard_design');
     expect(UX_DASHBOARD_DESIGN_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.provider).toBe('claude-sonnet-4');
+    expect(UX_DASHBOARD_DESIGN_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.tools).toHaveLength(41);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);
     expect(UX_DASHBOARD_DESIGN_CONTRACT.denied).toEqual(['write_code', 'create_branch', 'merge_pr']);

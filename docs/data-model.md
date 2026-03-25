@@ -29,9 +29,9 @@ project:
 
 agents:
   providers:
-    default: string               # e.g., "claude-sonnet-4"
+    default: string               # e.g., "claude-sonnet-4-6"
     overrides:                    # Per-role provider overrides
-      architecture: string        # e.g., "claude-opus-4"
+      architecture: string        # e.g., "claude-opus-4-6"
       code_review: string
       test_generation: string
       scaffolding: string         # e.g., "ollama/codellama"

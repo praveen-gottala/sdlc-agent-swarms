@@ -13,7 +13,7 @@ const createMockFs = (): FileSystem => {
     project: { name: 'TestProject', description: 'Test', platforms: ['web'], id: 'proj_test_123' },
     stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
     repo: { provider: 'github', org: 'test', name: 'project' },
-    agents: { providers: { default: 'claude-sonnet-4' }, orchestration: { max_concurrent_agents: 5 } },
+    agents: { providers: { default: 'claude-sonnet-4-6' }, orchestration: { max_concurrent_agents: 5 } },
     hitl: { default: 'review_and_override', overrides: {} },
     channels: [],
     budget: { per_task_max_usd: 2.0, per_phase_max_usd: 25.0, monthly_max_usd: 200.0, alert_threshold: 0.8 },

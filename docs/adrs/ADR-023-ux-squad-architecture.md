@@ -1,4 +1,4 @@
-# ADR-023: UX Dashboard Squad Architecture
+# ADR-023: UX Squad Architecture
 
 ## Date
 2026-03-19
@@ -15,26 +15,26 @@ Section 6 — Agent Roles:
 > Agents are specialized by role and operate within a specific SDLC phase.
 
 ## Decision
-Implement the V3 UX Dashboard development capability as a squad of 5 specialized
+Implement the V3 UX development capability as a squad of 5 specialized
 agents, all operating in the `design` SDLC phase. The agents are:
 
-1. **ux_dashboard_research** — Qualitative research: analyzes user personas,
+1. **ux_research** — Qualitative research: analyzes user personas,
    pain points, competitor dashboards, and accessibility requirements. Produces
    a structured design brief.
 
-2. **ux_dashboard_planning** — Structural planning: decomposes the design brief
+2. **ux_planning** — Structural planning: decomposes the design brief
    into a component tree with responsive rules, prop contracts, and dependency
    ordering. Produces a component specification.
 
-3. **ux_dashboard_implementation** — Code generation: implements the component
+3. **ux_implementation** — Code generation: implements the component
    spec through a 4-stage pipeline (layout → theme → animation → final). Produces
    generated files with implementation metadata.
 
-4. **ux_dashboard_review** — Quality review: evaluates the implementation across
+4. **ux_review** — Quality review: evaluates the implementation across
    parallel sub-evaluations (accessibility, responsiveness, performance, design
    consistency). Produces scored review issues with fix suggestions.
 
-5. **ux_dashboard_testing** — Test generation and self-healing: generates
+5. **ux_testing** — Test generation and self-healing: generates
    component tests, integration tests, and visual regression tests. Includes a
    Phase 1 simulated self-healing pipeline that detects and patches brittle
    selectors, timing issues, and layout shifts.
@@ -48,7 +48,7 @@ review+testing). The split to 5 was driven by:
   points, competitor analysis) while planning is structural (component trees,
   prop contracts, dependency graphs). Combining them produced unfocused prompts
   that degraded both outputs. Separating them allows the research agent to use
-  `claude-opus-4` for deeper analysis while planning uses `claude-sonnet-4` for
+  `claude-opus-4-6` for deeper analysis while planning uses `claude-sonnet-4-6` for
   structured decomposition.
 
 - **Testing split from Review**: The self-healing testing pipeline (detect flaky
@@ -101,11 +101,11 @@ integration with a real test runner.
 
 | Agent | Provider | Rationale |
 |---|---|---|
-| ux_dashboard_research | claude-opus-4 | Deep qualitative analysis benefits from strongest reasoning |
-| ux_dashboard_planning | claude-sonnet-4 | Structured decomposition; good balance of speed and quality |
-| ux_dashboard_implementation | claude-sonnet-4 | Code generation; Sonnet excels at structured output |
-| ux_dashboard_review | claude-sonnet-4 | Scoring and categorization; speed matters for feedback loops |
-| ux_dashboard_testing | claude-sonnet-4 | Test generation; structured output with moderate reasoning |
+| ux_research | claude-opus-4-6 | Deep qualitative analysis benefits from strongest reasoning |
+| ux_planning | claude-sonnet-4-6 | Structured decomposition; good balance of speed and quality |
+| ux_implementation | claude-sonnet-4-6 | Code generation; Sonnet excels at structured output |
+| ux_review | claude-sonnet-4-6 | Scoring and categorization; speed matters for feedback loops |
+| ux_testing | claude-sonnet-4-6 | Test generation; structured output with moderate reasoning |
 
 ## Budget Recommendation
 UX squad phases involve 5 sequential agent invocations with substantial prompts.
@@ -117,12 +117,12 @@ The UX squad introduces 7 domain events to the event bus:
 
 | Event | Emitted By | Consumed By |
 |---|---|---|
-| DashboardModuleRequested | Orchestrator | ux_dashboard_research |
-| DesignBriefCompleted | ux_dashboard_research | ux_dashboard_planning |
-| ComponentSpecReady | ux_dashboard_planning | ux_dashboard_implementation |
-| ImplementationDraftReady | ux_dashboard_implementation | ux_dashboard_review |
-| UXReviewCompleted | ux_dashboard_review | ux_dashboard_testing |
-| UXTestSuiteCompleted | ux_dashboard_testing | Orchestrator |
+| UXModuleRequested | Orchestrator | ux_research |
+| DesignBriefCompleted | ux_research | ux_planning |
+| ComponentSpecReady | ux_planning | ux_implementation |
+| ImplementationDraftReady | ux_implementation | ux_review |
+| UXReviewCompleted | ux_review | ux_testing |
+| UXTestSuiteCompleted | ux_testing | Orchestrator |
 | UXModuleDeployed | Orchestrator | Dashboard / external consumers |
 
 These events are defined in `@agentforge/core` event bus with typed payloads

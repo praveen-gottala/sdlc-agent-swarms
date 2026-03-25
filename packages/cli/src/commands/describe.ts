@@ -14,6 +14,7 @@ import * as nodeFs from 'node:fs';
 import { prdExists } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
 import { realFs, loadDotEnv } from '../fs-utils.js';
@@ -73,7 +74,7 @@ export async function generatePRD(
 
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
   } catch {
     output.write(warnMsg('Failed to create LLM provider.\n'));
     return null;
@@ -85,7 +86,7 @@ export async function generatePRD(
         system: buildPRDSystemPrompt(),
         messages: [{ role: 'user', content: buildPRDUserPrompt(answers) }],
       },
-      { model: 'claude-sonnet-4', maxTokens: 8192, temperature: 0.7 },
+      { model: 'claude-sonnet-4-6', maxTokens: 8192, temperature: 0.7 },
     );
 
     if (!result.ok) {

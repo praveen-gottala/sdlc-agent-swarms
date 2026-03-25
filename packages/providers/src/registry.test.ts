@@ -3,9 +3,9 @@ import type { LLMProvider, ProviderConfig } from './types.js';
 
 describe('parseProviderString', () => {
   it('parses claude model strings', () => {
-    expect(parseProviderString('claude-sonnet-4')).toEqual({
+    expect(parseProviderString('claude-sonnet-4-6')).toEqual({
       provider: 'claude',
-      model: 'claude-sonnet-4',
+      model: 'claude-sonnet-4-6',
     });
   });
 
@@ -45,10 +45,10 @@ describe('ProviderRegistry', () => {
 
   it('registers and resolves a provider', () => {
     const registry = new ProviderRegistry();
-    const mockProvider = createMockProvider('claude', ['claude-sonnet-4']);
+    const mockProvider = createMockProvider('claude', ['claude-sonnet-4-6']);
 
     registry.register('claude', () => mockProvider);
-    const result = registry.get('claude-sonnet-4');
+    const result = registry.get('claude-sonnet-4-6');
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -68,7 +68,7 @@ describe('ProviderRegistry', () => {
 
   it('lists available providers', () => {
     const registry = new ProviderRegistry();
-    const mockProvider = createMockProvider('claude', ['claude-sonnet-4', 'claude-opus-4']);
+    const mockProvider = createMockProvider('claude', ['claude-sonnet-4-6', 'claude-opus-4-6']);
 
     registry.register('claude', () => mockProvider, { apiKey: 'test-key' });
     const list = registry.listAvailable();
@@ -76,14 +76,14 @@ describe('ProviderRegistry', () => {
     expect(list).toHaveLength(1);
     expect(list[0]).toEqual({
       name: 'claude',
-      models: ['claude-sonnet-4', 'claude-opus-4'],
+      models: ['claude-sonnet-4-6', 'claude-opus-4-6'],
       available: true,
     });
   });
 
   it('marks providers without API key as unavailable', () => {
     const registry = new ProviderRegistry();
-    const mockProvider = createMockProvider('claude', ['claude-sonnet-4']);
+    const mockProvider = createMockProvider('claude', ['claude-sonnet-4-6']);
 
     registry.register('claude', () => mockProvider);
     const list = registry.listAvailable();
@@ -94,13 +94,13 @@ describe('ProviderRegistry', () => {
   it('passes config to factory', () => {
     const registry = new ProviderRegistry();
     const factory = jest.fn((_model: string, _config: ProviderConfig) =>
-      createMockProvider('claude', ['claude-sonnet-4']),
+      createMockProvider('claude', ['claude-sonnet-4-6']),
     );
 
     registry.register('claude', factory, { apiKey: 'sk-test', timeout: 5000 });
-    registry.get('claude-sonnet-4');
+    registry.get('claude-sonnet-4-6');
 
-    expect(factory).toHaveBeenCalledWith('claude-sonnet-4', {
+    expect(factory).toHaveBeenCalledWith('claude-sonnet-4-6', {
       apiKey: 'sk-test',
       timeout: 5000,
     });

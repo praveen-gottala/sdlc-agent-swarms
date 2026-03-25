@@ -6,7 +6,7 @@
  */
 
 import type { Result, DesignTokensSpec } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 
 /** A single design issue found during evaluation. */
@@ -158,7 +158,7 @@ export async function evaluateDesign(
       ],
     },
     {
-      model: 'claude-sonnet-4',
+      model: DEFAULT_MODEL,
       maxTokens: 4096,
       temperature: 0,
     },

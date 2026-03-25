@@ -188,7 +188,7 @@ describeE2E('E2E: PRD + design system data flow through pipeline', () => {
       ...base,
       fs: createMockFsWithDesignTokens(base.projectRoot),
     };
-    const provider = createClaudeProvider('claude-sonnet-4', { apiKey: API_KEY });
+    const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: API_KEY });
 
     // Stage 1: Research — with full PRD content + design tokens
     const researchInput: UXDashboardResearchInput = {

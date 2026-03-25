@@ -22,7 +22,6 @@ import {
   runAgent,
   readSpecs,
   recordPromptTrace,
-  loadDesignTokens,
 } from '@agentforge/core';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 import type { DesignTokens } from '@agentforge/agents-design';
@@ -63,7 +62,7 @@ export const UX_DASHBOARD_RESEARCH_CONTRACT: AgentContract = {
   role: 'ux_dashboard_research',
   description: 'Analyzes PRD requirements for dashboard modules and produces design briefs',
   category: 'design',
-  provider: 'claude-opus-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 40000 },
   tools: [],
   permissions: ['read_spec', 'read_design', 'read_design_system'],
@@ -145,21 +144,22 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
     console.warn('[research] Warning: prdRequirements appear to contain only short labels, not full PRD content. Pass the full PRD text for better results.');
   }
 
-  let effectiveTokensSpec = designTokensSpec;
-  if (!effectiveTokensSpec && !existingTokens) {
-    const disk = loadDesignTokens(context.projectRoot, context.fs);
-    if (!disk.ok) {
-      // eslint-disable-next-line no-console
-      console.error(diskDesignTokensRequiredMessage(context.projectRoot));
-      return diskDesignTokensRequiredErr(context.projectRoot);
-    }
-    effectiveTokensSpec = disk.value;
-  }
-
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);
   const specsContent = existingSpecs.ok ? JSON.stringify(existingSpecs.value) : '{}';
+
+  // Extract design tokens from readSpecs result instead of re-reading from disk
+  let effectiveTokensSpec = designTokensSpec;
+  if (!effectiveTokensSpec && !existingTokens) {
+    const tokensFromSpecs = existingSpecs.ok ? existingSpecs.value.designTokens : undefined;
+    if (!tokensFromSpecs) {
+      // eslint-disable-next-line no-console
+      console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+      return diskDesignTokensRequiredErr(context.projectRoot);
+    }
+    effectiveTokensSpec = tokensFromSpecs;
+  }
 
   // 2. Build prompt
   const systemPrompt = loadSystemPrompt();
@@ -192,7 +192,7 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: UX_DASHBOARD_RESEARCH_CONTRACT.provider,
+    model: context.resolvedModel ?? UX_DASHBOARD_RESEARCH_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
   });

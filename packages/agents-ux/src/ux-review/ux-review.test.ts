@@ -5,7 +5,7 @@ import {
   uxDashboardReviewWork,
 } from './ux-dashboard-review.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -104,7 +104,7 @@ describe('UX_DASHBOARD_REVIEW_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(UX_DASHBOARD_REVIEW_CONTRACT.role).toBe('ux_dashboard_review');
     expect(UX_DASHBOARD_REVIEW_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.provider).toBe('claude-sonnet-4');
+    expect(UX_DASHBOARD_REVIEW_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot']);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'read_design_system']);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);

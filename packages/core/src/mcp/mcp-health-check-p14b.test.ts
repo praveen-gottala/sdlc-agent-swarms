@@ -11,6 +11,7 @@
 
 import type { AgentForgeError, AgentContract } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import { DEFAULT_MODEL } from '../constants.js';
 import { createEnvSecretProvider } from './secret-manager.js';
 import type { MCPTransport, MCPTrace } from './mcp-middleware.js';
 import { createMCPClient } from './mcp-client.js';
@@ -23,7 +24,7 @@ const makeAgent = (overrides?: Partial<AgentContract>): AgentContract => ({
   role: 'spec_writer',
   description: 'Writes specifications',
   category: 'spec',
-  provider: 'claude-sonnet-4',
+  provider: DEFAULT_MODEL,
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 20000 },
   tools: ['github_mcp.read_file', 'github_mcp.list_branches'],
   permissions: ['read_code', 'read_spec', 'mcp_call'],

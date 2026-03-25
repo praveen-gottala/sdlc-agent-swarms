@@ -21,13 +21,13 @@ import type {
 } from '../types.js';
 import { calculateCost } from '../cost-table.js';
 
-const CLAUDE_MODELS = ['claude-opus-4', 'claude-sonnet-4', 'claude-haiku-4'];
+const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 
-/** Map short model aliases to full Anthropic API model IDs. */
+/** Map short model aliases to full Anthropic API model IDs.
+ *  The base IDs (e.g. 'claude-sonnet-4-6') are accepted by the API directly.
+ *  Add date-pinned entries here only when you need to lock to a specific snapshot. */
 const MODEL_ALIASES: Record<string, string> = {
-  'claude-opus-4': 'claude-opus-4-20250514',
-  'claude-sonnet-4': 'claude-sonnet-4-20250514',
-  'claude-haiku-4': 'claude-haiku-4-20250506',
+  // Currently using latest versions — no pinning needed
 };
 
 /** Resolve a model name to its API model ID, falling through if already full. */
@@ -156,21 +156,46 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       try {
         // Use streaming internally to avoid SDK timeout on long-running completions.
         // The SDK throws if a non-streaming request takes >10 minutes.
-        const stream = client.messages.stream(
-          {
-            model: resolveModelId(options.model),
-            max_tokens: options.maxTokens ?? 4096,
-            system: prompt.system,
-            messages: toAnthropicMessages(prompt),
-            ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-            ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
-            ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
-          },
-          {
-            signal: options.signal ?? undefined,
-          },
-        );
-        const response = await stream.finalMessage();
+        const baseParams: Anthropic.MessageCreateParams = {
+          model: resolveModelId(options.model),
+          max_tokens: options.maxTokens ?? 4096,
+          system: prompt.system,
+          messages: toAnthropicMessages(prompt),
+          ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+          ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
+          ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
+        };
+
+        let useStructuredOutput = !!options.responseSchema;
+        let response: Anthropic.Message;
+
+        if (useStructuredOutput) {
+          try {
+            const structuredParams = {
+              ...baseParams,
+              output_config: {
+                format: {
+                  type: 'json_schema' as const,
+                  schema: options.responseSchema!.schema,
+                },
+              },
+            };
+            const stream = client.messages.stream(structuredParams, { signal: options.signal ?? undefined });
+            response = await stream.finalMessage();
+          } catch (error) {
+            // Fall back to text mode if model doesn't support output_config
+            if (error instanceof Anthropic.APIError && error.message.includes('does not support output format')) {
+              useStructuredOutput = false;
+              const stream = client.messages.stream(baseParams, { signal: options.signal ?? undefined });
+              response = await stream.finalMessage();
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          const stream = client.messages.stream(baseParams, { signal: options.signal ?? undefined });
+          response = await stream.finalMessage();
+        }
 
         const latencyMs = Date.now() - startMs;
 
@@ -205,6 +230,16 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           timestamp: new Date().toISOString(),
         };
 
+        // Parse structured output when output_config was actually used
+        let structured: Record<string, unknown> | undefined;
+        if (useStructuredOutput && content) {
+          try {
+            structured = JSON.parse(content) as Record<string, unknown>;
+          } catch {
+            // API guarantees valid JSON with output_config, but handle edge cases
+          }
+        }
+
         return Ok({
           content,
           toolCalls,
@@ -213,6 +248,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           model: options.model,
           latencyMs,
           finishReason: mapFinishReason(response.stop_reason),
+          ...(structured !== undefined ? { structured } : {}),
         });
       } catch (error) {
         return Err(mapApiError(error));
@@ -317,7 +353,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       try {
         // A lightweight check — attempt to make a tiny request
         await client.messages.create({
-          model: resolveModelId('claude-haiku-4'),
+          model: resolveModelId('claude-haiku-4-5'),
           max_tokens: 1,
           messages: [{ role: 'user', content: 'hi' }],
         });

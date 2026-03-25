@@ -44,6 +44,8 @@ import {
   loadBrandSpec,
   loadComponentLibrary,
   createRealFs,
+  PREVIEW_DIR_REL,
+  DEFAULT_MODEL,
 } from '@agentforge/core';
 import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '@agentforge/core';
 import { diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
@@ -85,6 +87,7 @@ interface PipelineRunConfig {
   readonly prdRequirements: readonly string[];
   readonly tool: DesignTool;
   readonly description?: string;
+  readonly dryRun?: boolean;
 }
 
 /** Registry of known modules and their PRD requirements. */
@@ -168,7 +171,7 @@ const createPipelineContext = (taskId: string, mcpClient: MCPClient): AgentConte
 // ============================================================================
 
 const getOutputDir = (moduleId: string): string =>
-  resolve(process.cwd(), '.agentforge', 'previews', moduleId);
+  resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
 
 const ensureOutputDir = (moduleId: string): string => {
   const dir = getOutputDir(moduleId);
@@ -221,7 +224,7 @@ const runResearch = async (
     ...(designTokensSpec ? { designTokensSpec } : {}),
   };
 
-  const provider = createClaudeProvider('claude-opus-4', { apiKey });
+  const provider = createClaudeProvider('claude-opus-4-6', { apiKey });
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -260,7 +263,7 @@ const runPlanning = async (
     designBrief: researchOutput,
   };
 
-  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+  const provider = createClaudeProvider(DEFAULT_MODEL, { apiKey });
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -339,12 +342,19 @@ const runDesign = async (
     mcpClient = handle.client;
     disconnectFn = handle.disconnect;
   } else {
-    console.warn(`        ${tool}: ${preflightResult.error.message}`);
-    console.warn(`        Continuing with mock MCP (no ${tool} output)`);
-    mcpClient = createMockMCPClient();
+    if (config.dryRun) {
+      console.warn(`        ${tool}: ${preflightResult.error.message}`);
+      console.warn(`        [dry-run] Continuing with mock MCP (no ${tool} output)`);
+      mcpClient = createMockMCPClient();
+    } else {
+      throw new Error(
+        `${tool} plugin not connected: ${preflightResult.error.message}\n` +
+        `  Use --dry-run to proceed without a design tool.`
+      );
+    }
   }
 
-  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+  const provider = createClaudeProvider(DEFAULT_MODEL, { apiKey });
   const context = createPipelineContext(config.taskId, mcpClient);
 
   const t0 = Date.now();
@@ -568,6 +578,7 @@ interface CLIArgs {
   readonly stage?: PipelineStage;
   readonly noWait?: boolean;
   readonly tool: DesignTool;
+  readonly dryRun?: boolean;
 }
 
 const parseArgs = (argv: readonly string[]): CLIArgs => {
@@ -575,6 +586,7 @@ const parseArgs = (argv: readonly string[]): CLIArgs => {
   let stage: PipelineStage | undefined;
   let noWait = false;
   let tool: DesignTool = 'figma';
+  let dryRun = false;
 
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--module' && i + 1 < argv.length) {
@@ -597,16 +609,18 @@ const parseArgs = (argv: readonly string[]): CLIArgs => {
       }
     } else if (argv[i] === '--no-wait') {
       noWait = true;
+    } else if (argv[i] === '--dry-run') {
+      dryRun = true;
     }
   }
 
   if (!moduleId) {
-    console.error('Usage: run-module-pipeline.ts --module <id> [--tool figma|penpot] [--stage <research|planning|design>] [--no-wait]');
+    console.error('Usage: run-module-pipeline.ts --module <id> [--tool figma|penpot] [--stage <research|planning|design>] [--no-wait] [--dry-run]');
     console.error(`Available modules: ${Object.keys(MODULE_REGISTRY).join(', ')}`);
     process.exit(1);
   }
 
-  return { module: moduleId, stage, noWait, tool };
+  return { module: moduleId, stage, noWait, tool, dryRun };
 };
 
 // ============================================================================
@@ -623,7 +637,7 @@ const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const config: PipelineRunConfig = { ...moduleConfig, tool: args.tool };
+  const config: PipelineRunConfig = { ...moduleConfig, tool: args.tool, dryRun: args.dryRun };
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

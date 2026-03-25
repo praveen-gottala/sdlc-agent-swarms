@@ -24,6 +24,7 @@ import {
   Ok,
   Err,
   recordPromptTrace,
+  PREVIEW_DIR_REL,
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
@@ -47,6 +48,8 @@ export interface PenpotDesignInput {
   readonly description?: string;
   /** Target viewport width in pixels (default: 1440). */
   readonly viewportWidth?: number;
+  /** Override model resolved from provider registry. Falls back to contract default. */
+  readonly resolvedModel?: string;
 }
 
 /** Output produced by the Penpot design agent. */
@@ -70,7 +73,7 @@ export const PENPOT_DESIGN_CONTRACT: AgentContract = {
   role: 'penpot_design',
   description: 'Creates Penpot designs from component specs using execute_code tool',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: ['penpot:execute_code', 'penpot:high_level_overview', 'penpot:penpot_api_info', 'penpot:export_shape'],
   permissions: ['read_spec', 'read_design', 'write_design', 'read_design_system'],
@@ -290,8 +293,9 @@ export async function penpotDesignWork(
   mcpClient: MCPClient,
   traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
-  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth } = input;
+  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth, resolvedModel } = input;
   const llm = provider as unknown as LLMProvider;
+  const effectiveModel = resolvedModel ?? PENPOT_DESIGN_CONTRACT.provider;
 
   // ── Dynamic API discovery ──
 
@@ -337,7 +341,7 @@ export async function penpotDesignWork(
       messages: [{ role: 'user' as const, content: userMessage }],
     },
     {
-      model: PENPOT_DESIGN_CONTRACT.provider,
+      model: effectiveModel,
       maxTokens: 32000,
       temperature: 0,
     },
@@ -597,7 +601,7 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
       };
 
       const fixResult = await llm.complete(fixPrompt, {
-        model: PENPOT_DESIGN_CONTRACT.provider,
+        model: effectiveModel,
         maxTokens: 8000,
         temperature: 0,
       });
@@ -727,7 +731,7 @@ ${fix.code}
   });
 
   // ── Save scripts as .js files alongside screenshots ──
-  const scriptDir = join(process.cwd(), '.agentforge', 'previews', moduleId, 'scripts');
+  const scriptDir = join(process.cwd(), PREVIEW_DIR_REL, moduleId, 'scripts');
   if (!existsSync(scriptDir)) {
     mkdirSync(scriptDir, { recursive: true });
   }

@@ -16,6 +16,7 @@ import { parseErrorStrategy } from './error-strategy.js';
 import type { AgentContext, AgentWorkFn, LLMProviderRef } from './types.js';
 import type { AgentContract } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import { DEFAULT_MODEL } from '../constants.js';
 import { createEventBus } from '../events/event-bus.js';
 import type { DomainEvent } from '../events/domain-events.js';
 import * as yaml from 'yaml';
@@ -29,7 +30,7 @@ const makeStreamingContract = (overrides: Partial<AgentContract> = {}): AgentCon
   role: 'code_generator',
   description: 'Generates production code from specs',
   category: 'code',
-  provider: 'claude-sonnet-4',
+  provider: DEFAULT_MODEL,
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 100000 },
   tools: ['code.write_file', 'code.read_file'],
   permissions: ['read_spec', 'write_code', 'create_branch'],
@@ -118,14 +119,14 @@ describe('P11: Agent Runtime Lifecycle', () => {
 
     it('resolves provider from contract.provider string', async () => {
       const ctx = makeContext();
-      const contract = makeStreamingContract({ provider: 'claude-opus-4' });
+      const contract = makeStreamingContract({ provider: 'claude-opus-4-6' });
       const workFn: AgentWorkFn<CodeInput, CodeOutput> = jest.fn().mockResolvedValue(
         Ok({ filesWritten: [], branch: 'feat/test' }),
       );
 
       await runAgent(contract, ctx, { specRef: 'specs/', taskDescription: '' }, 'write_code', 'x', 'desc', workFn);
 
-      expect(ctx.resolveProvider).toHaveBeenCalledWith('claude-opus-4');
+      expect(ctx.resolveProvider).toHaveBeenCalledWith('claude-opus-4-6');
     });
 
     it('returns Err when provider resolution fails', async () => {

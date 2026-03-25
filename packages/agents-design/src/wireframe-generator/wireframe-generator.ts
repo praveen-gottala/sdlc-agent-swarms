@@ -48,7 +48,7 @@ export const WIREFRAME_GENERATOR_CONTRACT: AgentContract = {
   role: 'wireframe_generator',
   description: 'Generates wireframe designs from UX research layout suggestions',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 50000 },
   tools: ['figma.generate_figma_design'],
   permissions: ['read_design', 'write_design'],
@@ -126,7 +126,7 @@ export const createWireframeGeneratorWork = (
 
   // 2. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: WIREFRAME_GENERATOR_CONTRACT.provider,
+    model: context.resolvedModel ?? WIREFRAME_GENERATOR_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
   });

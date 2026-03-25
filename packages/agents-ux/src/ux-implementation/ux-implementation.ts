@@ -21,9 +21,6 @@ import {
   Err,
   runAgent,
   readSpecs,
-  loadComponentLibrary,
-  loadDesignTokens,
-  loadBrandSpec,
 } from '@agentforge/core';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
@@ -118,7 +115,7 @@ export const UX_DASHBOARD_IMPLEMENTATION_CONTRACT: AgentContract = {
   role: 'ux_dashboard_implementation',
   description: 'Generates React 19 + Tailwind CSS code from component specs with design token bindings',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 60000 },
   tools: ['github.create_branch', 'github.push_files'],
   permissions: ['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch'],
@@ -185,21 +182,20 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
 ) => {
   const { moduleId, componentSpec, stage, designSnapshot, designNodeIds, designFileId } = input;
 
-  const designTokensResult = loadDesignTokens(context.projectRoot, context.fs);
-  if (!designTokensResult.ok) {
-    // eslint-disable-next-line no-console
-    console.error(diskDesignTokensRequiredMessage(context.projectRoot));
-    return diskDesignTokensRequiredErr(context.projectRoot);
-  }
-  const tokens = designTokensResult.value;
-
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);
   const specsContent = existingSpecs.ok ? JSON.stringify(existingSpecs.value) : '{}';
 
-  // 1b. Load component library spec if available (for React import mappings)
-  const componentLibResult = loadComponentLibrary(context.projectRoot, context.fs);
+  // Extract design tokens, component library, and brand from readSpecs (no redundant disk reads)
+  const tokens = existingSpecs.ok ? existingSpecs.value.designTokens : undefined;
+  if (!tokens) {
+    // eslint-disable-next-line no-console
+    console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+    return diskDesignTokensRequiredErr(context.projectRoot);
+  }
+
+  const componentLibSpec = existingSpecs.ok ? existingSpecs.value.componentLibrary : undefined;
 
   // 2. Build prompt — replace {{MODULE_ID}} so file paths use the real module
   const systemPrompt = loadSystemPrompt().replace(/\{\{MODULE_ID\}\}/g, moduleId);
@@ -211,8 +207,8 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
   ];
 
   // Inject component library import mappings if configured
-  if (componentLibResult.ok) {
-    const lib = componentLibResult.value;
+  if (componentLibSpec) {
+    const lib = componentLibSpec;
     const mappingLines = Object.entries(lib.react_mappings).map(([component, mapping]) => {
       const variantNote = mapping.variant_prop ? ` (variant prop: ${mapping.variant_prop})` : '';
       return `- ${component}: import { ${mapping.component_name} } from '${mapping.import_path}'${variantNote}`;
@@ -245,14 +241,13 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
   tokenParts.push(`\nUse these exact values for colors, typography, and spacing. Map to Tailwind classes where possible.`);
   userMessageParts.push(tokenParts.join('\n'));
 
-  const brandResult = loadBrandSpec(context.projectRoot, context.fs);
-  if (brandResult.ok) {
-    const brand = brandResult.value;
+  const brandSpec = existingSpecs.ok ? existingSpecs.value.brand : undefined;
+  if (brandSpec) {
     userMessageParts.push(
       `\n## Brand Direction`,
-      `Tone: ${brand.identity.tone}`,
-      `Audience: ${brand.identity.audience}`,
-      `WCAG Level: ${brand.accessibility.wcag_level}`,
+      `Tone: ${brandSpec.identity.tone}`,
+      `Audience: ${brandSpec.identity.audience}`,
+      `WCAG Level: ${brandSpec.accessibility.wcag_level}`,
     );
   }
 
@@ -301,7 +296,7 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
 
   // 3. Call LLM via streaming
   const stream = provider.stream(prompt, {
-    model: UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider,
+    model: context.resolvedModel ?? UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider,
     maxTokens: 16000,
     temperature: 0,
   });

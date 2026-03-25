@@ -60,7 +60,7 @@ function createOutput(): { stream: NodeJS.WritableStream; text: () => string } {
   return { stream, text: () => buf };
 }
 
-const MANIFEST_YAML = 'version: "1.0"\nproject:\n  name: test\n  id: proj_test\n  platforms: [web]\nstack:\n  frontend: react\n  backend: node\n  database: postgresql\n  styling: tailwind\nrepo:\n  provider: github\n  org: test\n  name: test\nagents:\n  providers:\n    default: claude-sonnet-4\n    overrides: {}\n  sandbox:\n    type: github_actions\n    timeout_minutes: 15\n    max_retries: 3\n  orchestration:\n    max_concurrent_agents: 3\n    ci_wait_strategy: spawn_next\nhitl:\n  default: review_and_override\n  overrides: {}\nchannels: []\nrouting:\n  approval_requests: all\n  status_updates: primary\n  critical_alerts: all\nbudget:\n  per_task_max_usd: 2.0\n  per_phase_max_usd: 25.0\n  monthly_max_usd: 200.0\n  alert_threshold: 0.8\n';
+const MANIFEST_YAML = 'version: "1.0"\nproject:\n  name: test\n  id: proj_test\n  platforms: [web]\nstack:\n  frontend: react\n  backend: node\n  database: postgresql\n  styling: tailwind\nrepo:\n  provider: github\n  org: test\n  name: test\nagents:\n  providers:\n    default: claude-sonnet-4-6\n    overrides: {}\n  sandbox:\n    type: github_actions\n    timeout_minutes: 15\n    max_retries: 3\n  orchestration:\n    max_concurrent_agents: 3\n    ci_wait_strategy: spawn_next\nhitl:\n  default: review_and_override\n  overrides: {}\nchannels: []\nrouting:\n  approval_requests: all\n  status_updates: primary\n  critical_alerts: all\nbudget:\n  per_task_max_usd: 2.0\n  per_phase_max_usd: 25.0\n  monthly_max_usd: 200.0\n  alert_threshold: 0.8\n';
 
 /** Minimal file system mock that has agentforge.yaml. */
 function createMockFs(hasManifest = true): FileSystem {
@@ -132,7 +132,7 @@ describe('doctorCommand', () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test123';
     mockCreateClaude.mockReturnValue({
       name: 'claude',
-      models: ['claude-haiku-4'],
+      models: ['claude-haiku-4-5'],
       isAvailable: jest.fn().mockResolvedValue(true),
       complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),
@@ -153,7 +153,7 @@ describe('doctorCommand', () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-bad';
     mockCreateClaude.mockReturnValue({
       name: 'claude',
-      models: ['claude-haiku-4'],
+      models: ['claude-haiku-4-5'],
       isAvailable: jest.fn().mockResolvedValue(false),
       complete: jest.fn().mockResolvedValue({ ok: false, error: { code: 'AUTH_FAILED', message: 'Invalid API key' } }),
       stream: jest.fn(),
@@ -197,7 +197,7 @@ describe('doctorCommand', () => {
 
     mockCreateClaude.mockReturnValue({
       name: 'claude',
-      models: ['claude-haiku-4'],
+      models: ['claude-haiku-4-5'],
       isAvailable: jest.fn().mockResolvedValue(true),
       complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),
@@ -294,7 +294,7 @@ describe('doctorCommand', () => {
 
     mockCreateClaude.mockReturnValue({
       name: 'claude',
-      models: ['claude-haiku-4'],
+      models: ['claude-haiku-4-5'],
       isAvailable: jest.fn().mockResolvedValue(true),
       complete: jest.fn().mockResolvedValue({ ok: true, value: { content: 'OK' } }),
       stream: jest.fn(),

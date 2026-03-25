@@ -95,7 +95,7 @@ describe('UX_DASHBOARD_RESEARCH_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.role).toBe('ux_dashboard_research');
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.provider).toBe('claude-opus-4');
+    expect(UX_DASHBOARD_RESEARCH_CONTRACT.provider).toBe('claude-sonnet-4-6');
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.tools).toEqual([]);
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system']);
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch']);

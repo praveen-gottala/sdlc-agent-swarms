@@ -12,7 +12,7 @@ You are the UX Design agent. Create a real Figma design from a component specifi
 
 ## Input
 
-You receive a `UXDashboardPlanningOutput` with:
+You receive a `UXPlanningOutput` with:
 - `componentTree`: hierarchical component decomposition
 - `tokenBindings`: design token mappings
 - `responsiveRules`: breakpoint behaviors
@@ -187,9 +187,9 @@ In multi-step flows:
 - Tables should fill 100% of their container width
 - Forms in a card should use at least 80% of the card's horizontal space
 
-## Working Example — Dashboard
+## Working Example — Card Layout
 
-This example shows a metric dashboard. Adapt the structure, content, and components to match whatever app the componentTree describes.
+This example shows a generic card-based layout. Adapt the structure, content, and components to match whatever app the componentTree describes.
 
 ```json
 {

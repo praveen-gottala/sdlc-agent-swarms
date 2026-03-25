@@ -64,7 +64,7 @@ const makeCostRecord = (totalCostUsd = 0.10) => ({
   inputCostUsd: totalCostUsd * 0.3,
   outputCostUsd: totalCostUsd * 0.7,
   totalCostUsd,
-  model: 'claude-haiku-4',
+  model: 'claude-haiku-4-5',
   timestamp: new Date().toISOString(),
 });
 
@@ -413,8 +413,8 @@ describe('PR_REVIEWER_CONTRACT', () => {
     expect(PR_REVIEWER_CONTRACT.execution.progress_events).toBe(false);
   });
 
-  it('uses claude-haiku-4 provider (fast, cost-effective)', () => {
-    expect(PR_REVIEWER_CONTRACT.provider).toBe('claude-haiku-4');
+  it('uses claude-haiku-4-5 provider (fast, cost-effective)', () => {
+    expect(PR_REVIEWER_CONTRACT.provider).toBe('claude-haiku-4-5');
   });
 
   it('uses review_and_override HITL policy', () => {

@@ -109,10 +109,10 @@ Or stick with Anthropic Claude:
 ```yaml
 agents:
   providers:
-    default: claude-sonnet-4
+    default: claude-sonnet-4-6
     overrides:
-      architecture: claude-opus-4
-      code_review: claude-haiku-4
+      architecture: claude-opus-4-6
+      code_review: claude-haiku-4-5
 ```
 
 You can **mix and match** providers per agent role!

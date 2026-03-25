@@ -38,7 +38,7 @@ const makeCostRecord = (totalCostUsd = 0.05) => ({
   inputCostUsd: totalCostUsd * 0.3,
   outputCostUsd: totalCostUsd * 0.7,
   totalCostUsd,
-  model: 'claude-haiku-4',
+  model: 'claude-haiku-4-5',
   timestamp: new Date().toISOString(),
 });
 
@@ -311,8 +311,8 @@ describe('BUILD_AGENT_CONTRACT', () => {
     expect(BUILD_AGENT_CONTRACT.category).toBe('cicd');
   });
 
-  it('uses claude-haiku-4 (fast, cost-effective)', () => {
-    expect(BUILD_AGENT_CONTRACT.provider).toBe('claude-haiku-4');
+  it('uses claude-haiku-4-5 (fast, cost-effective)', () => {
+    expect(BUILD_AGENT_CONTRACT.provider).toBe('claude-haiku-4-5');
   });
 
   it('is fully autonomous (no HITL approval needed)', () => {

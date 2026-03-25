@@ -6,7 +6,7 @@
  */
 
 import type { Result, MCPClient } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 import type { LLMProvider, ContentBlock, ToolDefinition } from '@agentforge/providers';
 import type { DesignIssue, FixAttemptRecord } from './design-evaluator.js';
 import type { FigmaCreationStep } from '../types.js';
@@ -459,7 +459,7 @@ Generate the minimal fix steps using the apply_fixes tool. Check node types befo
           tools: [FIX_STEPS_TOOL],
         },
         {
-          model: 'claude-sonnet-4',
+          model: DEFAULT_MODEL,
           maxTokens: 2048,
           temperature: 0,
         },

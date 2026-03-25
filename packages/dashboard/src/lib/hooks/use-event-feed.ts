@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** A single event in the activity feed */
 export interface FeedEvent {
@@ -23,115 +23,102 @@ export interface UseEventFeedResult {
   clearEvents: () => void;
 }
 
+/** Shape of an entry returned by /api/audit */
+export interface AuditEntry {
+  readonly id: string;
+  readonly timestamp: string;
+  readonly agent: string;
+  readonly action: string;
+  readonly resource: string;
+  readonly details: string;
+  readonly phase: string;
+  readonly severity: string;
+}
+
 const MAX_EVENTS = 50;
+const POLL_INTERVAL_MS = 5_000;
 
-/** Generate mock development events for a React+Node+Prisma project */
-function createMockEvents(): FeedEvent[] {
-  const now = Date.now();
-  const minute = 60_000;
+/** Derive severity from the event type name when the raw data has no explicit severity */
+export function deriveSeverityFromType(
+  action: string,
+): 'info' | 'warning' | 'error' | 'success' {
+  if (/failed/i.test(action)) return 'error';
+  if (/complete/i.test(action) || /approved/i.test(action)) return 'success';
+  if (/alert/i.test(action) || /requested/i.test(action)) return 'warning';
+  return 'info';
+}
 
-  return [
-    {
-      id: 'evt-001',
-      type: 'AgentStarted',
-      message: 'Frontend Coder agent started task: Create UserProfile component',
-      timestamp: now - 1 * minute,
-      severity: 'info',
-      source: 'orchestrator',
-      metadata: { agentId: 'frontend-coder', taskId: 'task-007' },
-    },
-    {
-      id: 'evt-002',
-      type: 'TaskStatusChanged',
-      message: 'Task "Setup Prisma schema" moved from in_progress to awaiting_approval',
-      timestamp: now - 3 * minute,
-      severity: 'warning',
-      source: 'orchestrator',
-      metadata: { taskId: 'task-003', from: 'in_progress', to: 'awaiting_approval' },
-    },
-    {
-      id: 'evt-003',
-      type: 'AgentCompleted',
-      message: 'API Designer agent completed: Define REST endpoints for /api/users',
-      timestamp: now - 5 * minute,
-      severity: 'success',
-      source: 'orchestrator',
-      metadata: { agentId: 'api-designer', taskId: 'task-005' },
-    },
-    {
-      id: 'evt-004',
-      type: 'HITLApprovalRequested',
-      message: 'Approval needed: Database migration adds 3 new tables',
-      timestamp: now - 8 * minute,
-      severity: 'warning',
-      source: 'governance',
-      metadata: { gateId: 'gate-db-migration', agentId: 'backend-coder', taskId: 'task-004' },
-    },
-    {
-      id: 'evt-005',
-      type: 'BudgetAlert',
-      message: 'Design phase at 78% of budget ($3.12 / $4.00)',
-      timestamp: now - 12 * minute,
-      severity: 'warning',
-      source: 'governance',
-      metadata: { level: 'phase', currentSpendUsd: 3.12, limitUsd: 4.0 },
-    },
-    {
-      id: 'evt-006',
-      type: 'CodeGenComplete',
-      message: 'Generated 4 files for UserList component (React + tests)',
-      timestamp: now - 15 * minute,
-      severity: 'success',
-      source: 'frontend-coder',
-      metadata: { taskId: 'task-006', filesGenerated: 4 },
-    },
-    {
-      id: 'evt-007',
-      type: 'TestsComplete',
-      message: 'Test suite passed: 12/12 tests for authentication module',
-      timestamp: now - 20 * minute,
-      severity: 'success',
-      source: 'test-writer',
-      metadata: { taskId: 'task-002', passCount: 12, failCount: 0 },
-    },
-    {
-      id: 'evt-008',
-      type: 'AgentFailed',
-      message: 'Build Fixer agent failed: Could not resolve TypeScript error in prisma/client',
-      timestamp: now - 25 * minute,
-      severity: 'error',
-      source: 'orchestrator',
-      metadata: { agentId: 'build-fixer', taskId: 'task-009', error: 'TS2307' },
-    },
-    {
-      id: 'evt-009',
-      type: 'PRCreated',
-      message: 'PR #42 created: Add user authentication endpoints',
-      timestamp: now - 30 * minute,
-      severity: 'info',
-      source: 'backend-coder',
-      metadata: { taskId: 'task-002', prNumber: 42, branch: 'feat/auth-endpoints' },
-    },
-    {
-      id: 'evt-010',
-      type: 'ReviewComplete',
-      message: 'Code review approved: PR #41 — Prisma schema and migrations',
-      timestamp: now - 35 * minute,
-      severity: 'success',
-      source: 'reviewer',
-      metadata: { taskId: 'task-003', prNumber: 41, decision: 'approved' },
-    },
-  ];
+/** Convert an audit API entry to a FeedEvent */
+export function mapAuditEntryToFeedEvent(entry: AuditEntry): FeedEvent {
+  let metadata: Record<string, unknown> | undefined;
+  let message = entry.action;
+
+  try {
+    const parsed = JSON.parse(entry.details) as Record<string, unknown>;
+    metadata = parsed;
+    if (typeof parsed['description'] === 'string') {
+      message = parsed['description'];
+    }
+  } catch {
+    // details is not valid JSON — use action as message
+  }
+
+  const severity = deriveSeverityFromType(entry.action);
+
+  return {
+    id: entry.id,
+    type: entry.action,
+    message,
+    timestamp: new Date(entry.timestamp).getTime(),
+    severity,
+    source: entry.agent,
+    metadata,
+  };
 }
 
 /**
  * Activity feed hook that maintains a list of recent events (max 50).
- * Provides mock events for development.
+ * Polls /api/audit for real events. Starts with an empty feed.
  */
 export function useEventFeed(): UseEventFeedResult {
-  const [events, setEvents] = useState<FeedEvent[]>(() => createMockEvents());
+  const [events, setEvents] = useState<FeedEvent[]>([]);
+  const localEventsRef = useRef<FeedEvent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchEvents(): Promise<void> {
+      try {
+        const res = await fetch(`/api/audit?limit=${MAX_EVENTS}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as { entries: AuditEntry[] };
+        if (!active) return;
+
+        const fetched = data.entries.map(mapAuditEntryToFeedEvent);
+        const local = localEventsRef.current;
+
+        // Merge: local events first (newest), then fetched, deduplicated
+        const fetchedIds = new Set(fetched.map((e) => e.id));
+        const uniqueLocal = local.filter((e) => !fetchedIds.has(e.id));
+        const merged = [...uniqueLocal, ...fetched].slice(0, MAX_EVENTS);
+
+        setEvents(merged);
+      } catch {
+        // Silently ignore fetch errors — dashboard should not crash
+      }
+    }
+
+    void fetchEvents();
+    const interval = setInterval(() => void fetchEvents(), POLL_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const addEvent = useCallback((event: FeedEvent) => {
+    localEventsRef.current = [event, ...localEventsRef.current];
     setEvents((prev) => {
       const next = [event, ...prev];
       return next.length > MAX_EVENTS ? next.slice(0, MAX_EVENTS) : next;
@@ -139,6 +126,7 @@ export function useEventFeed(): UseEventFeedResult {
   }, []);
 
   const clearEvents = useCallback(() => {
+    localEventsRef.current = [];
     setEvents([]);
   }, []);
 

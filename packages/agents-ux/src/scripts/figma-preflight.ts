@@ -28,14 +28,13 @@ import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import type { Result } from '@agentforge/core';
-import { Ok, Err, createTalkToFigmaTransport } from '@agentforge/core';
+import { Ok, Err, createTalkToFigmaTransport, DEFAULT_MAX_AGE_MS, DEFAULT_SERVICE_URLS } from '@agentforge/core';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const DEFAULT_SESSION_PATH = '.agentforge/figma-session.json';
-const DEFAULT_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 
 // ============================================================================
 // Types
@@ -413,7 +412,7 @@ function sendSystemNotification(title: string, message: string): void {
 export async function runFigmaPreflight(
   options?: PreflightOptions,
 ): Promise<Result<FigmaSession>> {
-  const wsUrl = options?.wsUrl ?? 'ws://localhost:3055';
+  const wsUrl = options?.wsUrl ?? DEFAULT_SERVICE_URLS.figmaWsBridge;
   const sessionPath = options?.sessionPath ?? DEFAULT_SESSION_PATH;
   const maxAgeMs = options?.maxAgeMs ?? DEFAULT_MAX_AGE_MS;
   const repoRoot = options?.repoRoot ?? process.cwd();

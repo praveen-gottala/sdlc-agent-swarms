@@ -19,9 +19,9 @@ import type {
   ScreenshotResult,
 } from './design-tool-adapter.js';
 import { createPenpotConnection } from './penpot-transport.js';
+import { DEFAULT_MAX_AGE_MS, DEFAULT_SERVICE_URLS } from '../constants.js';
 
 const DEFAULT_SESSION_PATH = '.agentforge/penpot-session.json';
-const DEFAULT_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Create a Penpot adapter implementing DesignToolAdapter.
@@ -62,7 +62,7 @@ export function createPenpotAdapter(): DesignToolAdapter {
     },
 
     async runPreflight(options?: Record<string, unknown>): Promise<Result<DesignToolSession>> {
-      const mcpUrl = (options?.mcpUrl as string) ?? process.env.AGENTFORGE_MCP_PENPOT_URL ?? 'http://localhost:4401/mcp';
+      const mcpUrl = (options?.mcpUrl as string) ?? process.env.AGENTFORGE_MCP_PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotMcp;
       const sessionPath = (options?.sessionPath as string) ?? DEFAULT_SESSION_PATH;
 
       // 1. Check cached session + verify plugin is still connected
@@ -118,9 +118,9 @@ export function createPenpotAdapter(): DesignToolAdapter {
             timeout: 120000,
           });
           // eslint-disable-next-line no-console
-          console.log('  [preflight] Penpot UI: http://localhost:9001');
+          console.log(`  [preflight] Penpot UI: ${DEFAULT_SERVICE_URLS.penpotUi}`);
           // eslint-disable-next-line no-console
-          console.log('  [preflight] Penpot MCP Plugin UI: http://localhost:4400');
+          console.log(`  [preflight] Penpot MCP Plugin UI: ${DEFAULT_SERVICE_URLS.penpotPluginUi}`);
           // Wait for MCP server to become ready
           await new Promise((res) => setTimeout(res, 8000));
           health = await connection.healthCheck();
@@ -191,17 +191,15 @@ export function createPenpotAdapter(): DesignToolAdapter {
           // eslint-disable-next-line no-console
           console.warn('  │  The MCP server is running but no Penpot project is linked.     │');
           // eslint-disable-next-line no-console
-          console.warn('  │  Design steps will execute but nothing will appear on canvas.   │');
-          // eslint-disable-next-line no-console
           console.warn('  │                                                                 │');
           // eslint-disable-next-line no-console
           console.warn('  │  To fix:                                                        │');
           // eslint-disable-next-line no-console
-          console.warn('  │    1. Open Penpot at http://localhost:9001                       │');
+          console.warn(`  │    1. Open Penpot at ${DEFAULT_SERVICE_URLS.penpotUi}                       │`);
           // eslint-disable-next-line no-console
           console.warn('  │    2. Open a project in the editor                              │');
           // eslint-disable-next-line no-console
-          console.warn('  │    3. Plugin Manager → install http://localhost:4400/manifest.json│');
+          console.warn(`  │    3. Plugin Manager → install ${DEFAULT_SERVICE_URLS.penpotPluginUi}/manifest.json│`);
           // eslint-disable-next-line no-console
           console.warn('  │    4. Click "CONNECT TO MCP SERVER" in the plugin panel         │');
           // eslint-disable-next-line no-console
@@ -228,11 +226,11 @@ export function createPenpotAdapter(): DesignToolAdapter {
         // eslint-disable-next-line no-console
         console.warn('  │  To fix:                                                        │');
         // eslint-disable-next-line no-console
-        console.warn('  │    1. Open Penpot at http://localhost:9001                       │');
+        console.warn(`  │    1. Open Penpot at ${DEFAULT_SERVICE_URLS.penpotUi}                       │`);
         // eslint-disable-next-line no-console
         console.warn('  │    2. Open a project in the editor                              │');
         // eslint-disable-next-line no-console
-        console.warn('  │    3. Plugin Manager → install http://localhost:4400/manifest.json│');
+        console.warn(`  │    3. Plugin Manager → install ${DEFAULT_SERVICE_URLS.penpotPluginUi}/manifest.json│`);
         // eslint-disable-next-line no-console
         console.warn('  │    4. Click "CONNECT TO MCP SERVER" in the plugin panel         │');
         // eslint-disable-next-line no-console

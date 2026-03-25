@@ -62,7 +62,7 @@ export const TASK_DECOMPOSER_CONTRACT: AgentContract = {
   role: 'task_decomposer',
   description: 'Decomposes technical specs into discrete implementable tasks',
   category: 'spec',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 200000 },
   tools: [],
   permissions: ['read_spec', 'write_tasks'],
@@ -149,7 +149,7 @@ export const taskDecomposerWork: AgentWorkFn<TaskDecomposerInput, TaskDecomposer
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: TASK_DECOMPOSER_CONTRACT.provider,
+    model: context.resolvedModel ?? TASK_DECOMPOSER_CONTRACT.provider,
     maxTokens: 4000,
     temperature: 0,
   });

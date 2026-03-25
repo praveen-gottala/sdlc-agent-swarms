@@ -11,7 +11,7 @@ description: string             # What this agent does
 category: "design" | "spec" | "code" | "cicd" | "observe" | "research"
 
 # LLM Configuration
-provider: string                # e.g., "claude-sonnet-4" (overrides project default)
+provider: string                # e.g., "claude-sonnet-4-6" (overrides project default)
 execution:
   mode: "stream" | "complete"   # Streaming for progress visibility, complete for simple tasks
   progress_events: boolean      # Emit progress to HITL channels during execution
@@ -79,7 +79,7 @@ Error states:
 role: ux_researcher
 description: Analyzes design requests against spec, identifies data models, suggests layout patterns
 category: design
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: complete
   progress_events: false
@@ -104,7 +104,7 @@ context:
 role: wireframe_generator
 description: Generates low-fidelity wireframes in Figma with auto-layout
 category: design
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: stream
   progress_events: true
@@ -129,7 +129,7 @@ context:
 role: visual_designer
 description: Applies design system tokens to approved wireframes, transforming low-fidelity into high-fidelity visual designs
 category: design
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: stream
   progress_events: true
@@ -154,7 +154,7 @@ context:
 role: design_reviewer
 description: Validates designs for accessibility, responsiveness, and design system compliance
 category: design
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: complete
   progress_events: false
@@ -181,7 +181,7 @@ context:
 role: spec_writer
 description: Generates component specs, API specs, data model specs, and ADRs from finalized design output
 category: spec
-provider: claude-opus-4
+provider: claude-opus-4-6
 execution:
   mode: complete
   progress_events: false
@@ -207,7 +207,7 @@ context:
 role: task_decomposer
 description: Breaks completed specs into atomic, independently implementable tasks with dependency ordering
 category: spec
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: complete
   progress_events: false
@@ -234,7 +234,7 @@ context:
 role: frontend_coder
 description: Generates React components from spec + Figma context
 category: code
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: stream
   progress_events: true
@@ -259,7 +259,7 @@ context:
 role: backend_coder
 description: Generates API endpoints, business logic, data access layers, and Prisma migrations
 category: code
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: stream
   progress_events: true
@@ -284,7 +284,7 @@ context:
 role: test_writer
 description: Generates unit, integration, and e2e tests from specs
 category: code
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: stream
   progress_events: true
@@ -309,7 +309,7 @@ context:
 role: pr_reviewer
 description: Reviews generated code for quality, security, architecture compliance
 category: code
-provider: claude-haiku-4
+provider: claude-haiku-4-5
 execution:
   mode: complete
   progress_events: false
@@ -336,7 +336,7 @@ context:
 role: build_agent
 description: Monitors CI failures, analyzes error logs, generates fixes for known patterns
 category: cicd
-provider: claude-haiku-4
+provider: claude-haiku-4-5
 execution:
   mode: complete
   progress_events: false
@@ -361,7 +361,7 @@ context:
 role: security_scanner
 description: Runs SAST scans on every PR, categorizes findings by severity, blocks critical issues
 category: cicd
-provider: claude-sonnet-4
+provider: claude-sonnet-4-6
 execution:
   mode: complete
   progress_events: false
@@ -386,7 +386,7 @@ context:
 role: deploy_agent
 description: Manages deployment to staging (Phase 1) and production (Phase 2+), monitors post-deploy health
 category: cicd
-provider: claude-haiku-4
+provider: claude-haiku-4-5
 execution:
   mode: complete
   progress_events: true

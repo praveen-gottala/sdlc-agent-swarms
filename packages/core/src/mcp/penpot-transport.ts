@@ -15,6 +15,7 @@
 
 import type { Result } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import { DEFAULT_SERVICE_URLS } from '../constants.js';
 import type { MCPRequest, MCPTransport } from './mcp-middleware.js';
 import type { ToolDefinition } from './mcp-client.js';
 
@@ -70,7 +71,7 @@ function parseSSEResponse(text: string): Record<string, unknown> | null {
  * Handles the MCP Streamable HTTP protocol with session management.
  */
 export function createPenpotConnection(config: PenpotTransportConfig = {}): PenpotConnection {
-  const mcpUrl = config.mcpUrl ?? 'http://localhost:4401/mcp';
+  const mcpUrl = config.mcpUrl ?? DEFAULT_SERVICE_URLS.penpotMcp;
   const requestTimeout = config.requestTimeoutMs ?? 30000;
   let initialized = false;
   let sessionId: string | null = null;

@@ -4,6 +4,7 @@
  */
 
 import type { AgentContract, CostEstimate, CostRecord } from '@agentforge/core';
+import { DEFAULT_MODEL } from '@agentforge/core';
 import { createBudgetTracker } from './budget-tracker.js';
 import type { BudgetConfig } from './types.js';
 
@@ -35,7 +36,7 @@ const makeCostRecord = (overrides: Partial<CostRecord> = {}): CostRecord => ({
   inputCostUsd: 0.10,
   outputCostUsd: 0.15,
   totalCostUsd: 0.25,
-  model: 'claude-sonnet-4',
+  model: DEFAULT_MODEL,
   timestamp: new Date().toISOString(),
   inputTokens: 1000,
   outputTokens: 500,
@@ -107,7 +108,7 @@ describe('P08: Cost Tracking Accuracy', () => {
         inputCostUsd: 0.003, // 1000 tokens * $3/MTok
         outputCostUsd: 0.0075, // 500 tokens * $15/MTok
         totalCostUsd: 0.0105,
-        model: 'claude-sonnet-4',
+        model: DEFAULT_MODEL,
         inputTokens: 1000,
         outputTokens: 500,
       });

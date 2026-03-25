@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Result, DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
 import { parseDesignSteps } from './ux-dashboard-design.js';
 import { resolveAndTransformParams } from './param-transforms.js';
@@ -891,7 +891,7 @@ IMPORTANT: The "tool" field must be one of the exact names above. Use nodeId val
   // 5. Send to LLM (Change 7: maxTokens 4000 → 8000)
   const completionResult = await provider.complete(
     { system: systemPrompt, messages },
-    { model: 'claude-sonnet-4', maxTokens: 8000, temperature: 0 },
+    { model: DEFAULT_MODEL, maxTokens: 8000, temperature: 0 },
   );
 
   if (!completionResult.ok) {

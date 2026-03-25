@@ -53,7 +53,7 @@ export const SPEC_WRITER_CONTRACT: AgentContract = {
   role: 'spec_writer',
   description: 'Translates design artifacts into structured technical specifications',
   category: 'spec',
-  provider: 'claude-opus-4',
+  provider: 'claude-opus-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 200000 },
   tools: ['figma.get_code'],
   permissions: ['read_spec', 'write_spec', 'read_design'],
@@ -152,7 +152,7 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
 
   // 4. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: SPEC_WRITER_CONTRACT.provider,
+    model: context.resolvedModel ?? SPEC_WRITER_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
   });

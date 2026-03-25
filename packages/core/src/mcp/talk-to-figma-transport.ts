@@ -10,6 +10,7 @@
 
 import type { Result } from '../types/index.js';
 import { Ok, Err } from '../types/index.js';
+import { DEFAULT_SERVICE_URLS } from '../constants.js';
 import type { MCPRequest, MCPTransport } from './mcp-middleware.js';
 import type { ToolDefinition } from './mcp-client.js';
 
@@ -176,7 +177,7 @@ export const TALK_TO_FIGMA_TOOLS: readonly ToolDefinition[] = [
  * Closure-based factory — follows the project's functional style.
  */
 export const createTalkToFigmaConnection = (config: TalkToFigmaConfig = {}): TalkToFigmaConnection => {
-  const wsUrl = config.websocketUrl ?? 'ws://localhost:3055';
+  const wsUrl = config.websocketUrl ?? DEFAULT_SERVICE_URLS.figmaWsBridge;
   const channelName = config.channel ?? crypto.randomUUID();
   const reconnectInterval = config.reconnectIntervalMs ?? 3000;
   const connectionTimeout = config.connectionTimeoutMs ?? 10000;

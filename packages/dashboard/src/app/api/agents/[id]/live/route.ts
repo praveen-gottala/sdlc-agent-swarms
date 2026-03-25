@@ -40,13 +40,13 @@ export async function GET(
       timestamp: new Date(now.getTime() - 20000).toISOString(),
       level: 'debug',
       message: `[${id}] LLM call started`,
-      metadata: { model: 'claude-sonnet-4-20250514', tokens: 4200 },
+      metadata: { model: 'claude-sonnet-4-6-20250514', tokens: 4200 },
     },
     {
       timestamp: new Date(now.getTime() - 15000).toISOString(),
       level: 'info',
       message: `[${id}] LLM response received`,
-      metadata: { model: 'claude-sonnet-4-20250514', durationMs: 3200, outputTokens: 1850 },
+      metadata: { model: 'claude-sonnet-4-6-20250514', durationMs: 3200, outputTokens: 1850 },
     },
     {
       timestamp: new Date(now.getTime() - 10000).toISOString(),

@@ -16,6 +16,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
@@ -28,6 +29,8 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
+  PREVIEW_DIR_REL,
+  DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
   MCPClient,
@@ -100,7 +103,7 @@ const createContext = (taskId: string, mcpClient: MCPClient) => ({
 });
 
 const ensureOutputDir = (moduleId: string): string => {
-  const dir = resolve(process.cwd(), '.agentforge', 'previews', moduleId);
+  const dir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
@@ -178,7 +181,7 @@ export async function designPenpotBrowserCommand(
     output.write(infoMsg('  [1/3] Research -- loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
-    const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const context = createContext(taskId, createMockMCPClient());
 
     const input: UXDashboardResearchInput = {
@@ -216,7 +219,7 @@ export async function designPenpotBrowserCommand(
     output.write(infoMsg('  [2/3] Planning -- loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
-    const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const context = createContext(taskId, createMockMCPClient());
 
     const input: UXDashboardPlanningInput = {
@@ -269,8 +272,8 @@ export async function designPenpotBrowserCommand(
   // -- Stage 3: Design (Penpot + Browser) --
   output.write(infoMsg('\n  [3/3] Design -- creating Penpot components (browser mode)...\n'));
 
-  const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
-  const penpotUrl = process.env.PENPOT_URL ?? 'http://localhost:9001';
+  const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+  const penpotUrl = process.env.PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotUi;
   const penpotEmail = process.env.PENPOT_EMAIL ?? '';
   const penpotPassword = process.env.PENPOT_PASSWORD ?? '';
 
@@ -316,7 +319,7 @@ export async function designPenpotBrowserCommand(
   // ── --implement flag: generate code from design ──
   if (options.implement) {
     output.write(infoMsg('\n  [implement] Generating code from design...\n'));
-    const implProvider = createClaudeProvider('claude-sonnet-4', { apiKey });
+    const implProvider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const implContext = createContext(`${taskId}_impl`, mcpClient);
 
     const implInput: UXDashboardImplementationInput = {

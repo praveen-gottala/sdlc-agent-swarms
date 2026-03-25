@@ -2,6 +2,7 @@ import {
   parsePenpotDesignScript,
   PENPOT_DESIGN_CONTRACT,
 } from './ux-penpot-design.js';
+import { DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -40,7 +41,7 @@ describe('PENPOT_DESIGN_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(PENPOT_DESIGN_CONTRACT.role).toBe('penpot_design');
     expect(PENPOT_DESIGN_CONTRACT.category).toBe('design');
-    expect(PENPOT_DESIGN_CONTRACT.provider).toBe('claude-sonnet-4');
+    expect(PENPOT_DESIGN_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(PENPOT_DESIGN_CONTRACT.tools).toContain('penpot:execute_code');
     expect(PENPOT_DESIGN_CONTRACT.tools).toContain('penpot:export_shape');
     expect(PENPOT_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);

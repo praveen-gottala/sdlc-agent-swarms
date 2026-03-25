@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@agentforge/core": "0.1.0",
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.80.0",
     "openai": "^4.77.0"
   },
   "devDependencies": {

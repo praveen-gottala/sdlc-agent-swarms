@@ -10,7 +10,7 @@
  */
 
 import type { Result, MCPClient } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { CorrectionAdapter, CorrectionFixResult } from './correction-loop.js';
 import type { DesignIssue, CorrectionHistory, FixAttemptRecord } from './design-evaluator.js';
 import { takeCanvasScreenshot, readShapeState, waitForCanvasRender } from './penpot-browser-actions.js';
@@ -108,7 +108,7 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
       };
 
       const fixResult = await llm.complete(fixPrompt, {
-        model: 'claude-sonnet-4',
+        model: DEFAULT_MODEL,
         maxTokens: 8000,
         temperature: 0,
       });

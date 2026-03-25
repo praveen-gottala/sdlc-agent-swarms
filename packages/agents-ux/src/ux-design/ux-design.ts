@@ -81,7 +81,7 @@ export const UX_DASHBOARD_DESIGN_CONTRACT: AgentContract = {
   role: 'ux_dashboard_design',
   description: 'Creates Figma designs from component specs using TalkToFigma MCP bridge',
   category: 'design',
-  provider: 'claude-sonnet-4',
+  provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: [
     // Read tools (figma: prefix)
@@ -757,7 +757,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
     });
 
     const completionResult = await llm.complete(prompt, {
-      model: UX_DASHBOARD_DESIGN_CONTRACT.provider,
+      model: context.resolvedModel ?? UX_DASHBOARD_DESIGN_CONTRACT.provider,
       maxTokens: 16000,
       temperature: 0,
     });
@@ -857,7 +857,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       });
 
       const followUpResult = await llm.complete(followUpPrompt, {
-        model: UX_DASHBOARD_DESIGN_CONTRACT.provider,
+        model: context.resolvedModel ?? UX_DASHBOARD_DESIGN_CONTRACT.provider,
         maxTokens: 8000,
         temperature: 0,
       });

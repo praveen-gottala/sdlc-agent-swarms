@@ -5,7 +5,7 @@ import {
   uxDashboardImplementationWork,
 } from './ux-dashboard-implementation.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -35,7 +35,7 @@ async function* mockStream(content: string) {
       inputCostUsd: 0.01,
       outputCostUsd: 0.04,
       totalCostUsd: 0.05,
-      model: 'claude-sonnet-4',
+      model: DEFAULT_MODEL,
       timestamp: new Date().toISOString(),
     },
   };
@@ -86,7 +86,7 @@ describe('UX_DASHBOARD_IMPLEMENTATION_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.role).toBe('ux_dashboard_implementation');
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider).toBe('claude-sonnet-4');
+    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.tools).toEqual(['github.create_branch', 'github.push_files']);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch']);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.denied).toEqual(['deploy_staging', 'deploy_production', 'merge_pr']);
@@ -231,7 +231,7 @@ describe('uxDashboardImplementationWork — disk design tokens required', () => 
       }
       return Ok('pages: []');
     });
-    (ctx.fs.exists as jest.Mock).mockImplementation((path: string) => path.includes('design-tokens.yaml'));
+    (ctx.fs.exists as jest.Mock).mockImplementation((path: string) => path.endsWith('agentforge/spec') || path.includes('design-tokens.yaml'));
 
     const input = {
       specRef: 'spec-1',

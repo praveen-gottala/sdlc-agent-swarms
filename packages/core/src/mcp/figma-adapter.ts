@@ -22,13 +22,13 @@ import type {
   ScreenshotResult,
 } from './design-tool-adapter.js';
 import { createTalkToFigmaTransport, TALK_TO_FIGMA_TOOLS } from './talk-to-figma-transport.js';
+import { DEFAULT_MAX_AGE_MS } from '../constants.js';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const DEFAULT_SESSION_PATH = '.agentforge/figma-session.json';
-const DEFAULT_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 
 // ============================================================================
 // Types

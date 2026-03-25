@@ -105,7 +105,7 @@ repo:
   name: app
 agents:
   providers:
-    default: claude-sonnet-4
+    default: claude-sonnet-4-6
     overrides: {}
   sandbox:
     type: github_actions

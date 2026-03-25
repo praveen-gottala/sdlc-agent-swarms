@@ -9,7 +9,7 @@
 
 import { createInterface } from 'node:readline/promises';
 import type { Result, MCPClient } from '@agentforge/core';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import { evaluateDesign } from './design-evaluator.js';
 import type { DesignEvaluation } from './design-evaluator.js';
@@ -40,7 +40,7 @@ export interface PenpotBrowserReviewOptions {
   readonly headless?: boolean;
   /** Optional design specification text for evaluation context. */
   readonly designSpec?: string;
-  /** LLM model to use (default: 'claude-sonnet-4'). Pass 'gpt-4o' for OpenAI. */
+  /** LLM model to use (default: DEFAULT_MODEL from @agentforge/core). Pass 'gpt-4o' for OpenAI. */
   readonly model?: string;
 }
 
@@ -259,7 +259,7 @@ export async function runPenpotBrowserReview(
     output,
     headless = false,
     designSpec = 'General design quality review',
-    model = provider.models?.[0] ?? 'claude-sonnet-4',
+    model = provider.models?.[0] ?? DEFAULT_MODEL,
   } = options;
 
   // Wrap provider to override model in evaluateDesign calls

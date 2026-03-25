@@ -9,6 +9,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { createClaudeProvider, createOpenAIProvider } from '@agentforge/providers';
 import type { ProviderConfig } from '@agentforge/providers';
+import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { readYaml, type FileSystem, realFs } from '../fs-utils.js';
 import type { ProjectManifest } from '../types.js';
@@ -75,13 +76,13 @@ async function checkAnthropic(envFile: Map<string, string>): Promise<CheckResult
   }
 
   const config: ProviderConfig = { apiKey };
-  const provider = createClaudeProvider('claude-sonnet-4', config);
+  const provider = createClaudeProvider(resolveCLIModel(), config);
 
   try {
     // Use a minimal completion call to verify the key — isAvailable() swallows errors
     const result = await provider.complete(
       { system: 'Reply with OK', messages: [{ role: 'user', content: 'ping' }] },
-      { model: 'claude-sonnet-4', maxTokens: 4, temperature: 0 },
+      { model: 'claude-sonnet-4-6', maxTokens: 4, temperature: 0 },
     );
     if (result.ok) {
       return { name: 'Anthropic Claude', status: 'pass', message: 'API key valid, connection successful' };

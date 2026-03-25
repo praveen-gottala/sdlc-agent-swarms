@@ -21,6 +21,7 @@ import { getActiveLearnings } from '../state/learnings-manager.js';
 import type { DomainEvent } from '../events/index.js';
 import type { AgentContext, AgentWorkFn, AgentRunResult } from './types.js';
 import { parseErrorStrategy } from './error-strategy.js';
+import { resolveModelForRole } from '../config/model-resolver.js';
 
 /**
  * Format active learnings into a "Team Conventions" section for system prompt injection.
@@ -109,17 +110,20 @@ export const runAgent = async <TInput, TOutput>(
   description: string,
   workFn: AgentWorkFn<TInput, TOutput>,
 ): Promise<Result<AgentRunResult<TOutput>>> => {
-  // 1. Resolve provider
-  const providerResult = context.resolveProvider(contract.provider);
+  // 1. Resolve model via data-driven configuration (ADR-033)
+  const resolvedModel = resolveModelForRole(contract.role, contract.provider, context.manifest);
+
+  // 2. Resolve provider using resolved model
+  const providerResult = context.resolveProvider(resolvedModel);
   if (!providerResult.ok) {
     return Err(providerResult.error);
   }
   const provider = providerResult.value;
 
-  // 2. Build cost estimate
-  const costEstimate = provider.estimateCost(null, { model: contract.provider });
+  // 3. Build cost estimate
+  const costEstimate = provider.estimateCost(null, { model: resolvedModel });
 
-  // 3. Run governance
+  // 4. Run governance
   const govResult = await context.runGovernance(
     contract,
     actionType,
@@ -133,24 +137,24 @@ export const runAgent = async <TInput, TOutput>(
 
   const outcome = govResult.value;
 
-  // 4. Handle pause
+  // 5. Handle pause
   if (outcome.status === 'pause') {
     return Ok({ status: 'paused', gateId: outcome.gateId });
   }
 
-  // 5. Handle denied
+  // 6. Handle denied
   if (outcome.status === 'denied') {
     return Ok({ status: 'denied', reason: outcome.reason });
   }
 
-  // 6. Check abort before execution
+  // 7. Check abort before execution
   const preAbort = await checkAbort(context, contract);
   if (!preAbort.ok) {
     emitAbortEvent(context, contract, preAbort.error.message);
     return Err(preAbort.error);
   }
 
-  // 7. Load learnings
+  // 8. Load learnings
   // DEVIATION: ADR-013
   // PRD v2.0 Section 10.1 specifies: agent contracts define context injection fields
   // Implementation: context injection (learnings, spec sections, ADRs, conventions)
@@ -160,7 +164,7 @@ export const runAgent = async <TInput, TOutput>(
   const learningsResult = await getActiveLearnings(contract.role, learningsPath);
   const learnings = learningsResult.ok ? learningsResult.value : [];
 
-  // 8. Execute work function with retry support
+  // 9. Execute work function with retry support
   const strategy = parseErrorStrategy(contract.on_error);
   const maxAttempts = strategy.retryMax + 1;
   let lastError: AgentForgeError | undefined;
@@ -173,7 +177,8 @@ export const runAgent = async <TInput, TOutput>(
       return Err(retryAbort.error);
     }
 
-    const workResult = await workFn(input, provider, learnings, context);
+    const enrichedContext = { ...context, resolvedModel };
+    const workResult = await workFn(input, provider, learnings, enrichedContext);
 
     if (workResult.ok) {
       // Check abort after success, before emitting completion

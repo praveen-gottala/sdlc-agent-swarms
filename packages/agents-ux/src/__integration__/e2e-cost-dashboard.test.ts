@@ -179,8 +179,8 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   const context = createMockContext();
 
   // Providers: Opus for research, Sonnet for the rest
-  const opusProvider = createClaudeProvider('claude-opus-4', { apiKey: API_KEY });
-  const sonnetProvider = createClaudeProvider('claude-sonnet-4', { apiKey: API_KEY });
+  const opusProvider = createClaudeProvider('claude-opus-4-6', { apiKey: API_KEY });
+  const sonnetProvider = createClaudeProvider('claude-sonnet-4-6', { apiKey: API_KEY });
 
   // Stage 1: Research
   const t1 = Date.now();
