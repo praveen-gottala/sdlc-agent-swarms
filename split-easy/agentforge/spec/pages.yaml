@@ -1,0 +1,94 @@
+# pages.yaml — created on-demand, not by init
+# schema: { version, pages: [{ id, name, description, route, status, components[], data_sources[], viewports?[] }] }
+version: "1.0"
+pages:
+  - id: bill-entry
+    name: Bill Entry
+    description: The primary input screen where users enter all bill details. Users input the bill subtotal, optional tax
+      amount, select a tip percentage (15%, 18%, 20%, 25%, or custom), choose between equal or custom split mode, set
+      the number of people (2–20), and optionally name each person. In custom mode, per-person subtotal inputs appear
+      with a live running balance indicator. All totals (tip amount, grand total) update in real-time. The 'Calculate
+      Split' CTA is full-width, high-contrast, and disabled until validation passes. On first visit, the tagline is
+      shown via localStorage flag. State is persisted to sessionStorage for back-navigation support.
+    route: /
+    status: approved
+    components:
+      - AppHeader
+      - FirstVisitTagline
+      - BillTotalInput
+      - TaxAmountInput
+      - TipSegmentedControl
+      - CustomTipInput
+      - TipAmountDisplay
+      - GrandTotalDisplay
+      - PeopleCountStepper
+      - PersonNameInput
+      - SplitModeToggle
+      - CustomSplitPersonRow
+      - RemainingBalanceIndicator
+      - CalculateSplitButton
+    data_sources:
+      - BillState
+      - PersonEntry
+    viewports:
+      - 1440
+      # - 768  # uncomment for tablet
+      # - 390  # uncomment for mobile
+  - id: split-breakdown
+    name: Split Breakdown
+    description: The results screen showing each person's calculated share. Displays a summary header with grand total,
+      split mode badge, and headcount. Each person gets a breakdown card showing their name, total share (large,
+      prominent), and an expandable row revealing their subtotal, tax share, and tip share. A rounding notice appears
+      when penny adjustments are made (assigned to the first person). A sticky action bar at the bottom provides Share
+      (Web Share API with clipboard fallback), Edit (returns to Screen 1 with state preserved), and New Split (clears
+      state) actions. State is reconstructible from sessionStorage or URL query params on refresh. Venmo deep-link icon
+      buttons appear on each person card.
+    route: /breakdown
+    status: approved
+    components:
+      - AppHeader
+      - SummaryHeader
+      - SplitModeBadge
+      - PersonBreakdownCard
+      - ShareBreakdownRow
+      - RoundingNotice
+      - VenmoDeepLinkButton
+      - StickyActionBar
+      - ShareButton
+      - EditButton
+      - NewSplitLink
+      - CopiedToClipboardToast
+    data_sources:
+      - BillState
+      - PersonEntry
+      - SplitResult
+    viewports:
+      - 1440
+      # - 768  # uncomment for tablet
+      # - 390  # uncomment for mobile
+  - id: shared-result
+    name: Shared Result
+    description: A read-only snapshot view of a completed split, accessible via a shareable URL with encoded query params.
+      Renders the same breakdown cards as Screen 2 but without the Edit or Share action bar — only a 'Start Your Own
+      Split' CTA that navigates to Screen 1 fresh. This page reconstructs BillState entirely from URL query parameters,
+      requiring no backend. Includes OG meta tags for rich social sharing previews. Displays a banner indicating this is
+      a shared view.
+    route: /result
+    status: approved
+    components:
+      - AppHeader
+      - SharedResultBanner
+      - SummaryHeader
+      - SplitModeBadge
+      - PersonBreakdownCard
+      - ShareBreakdownRow
+      - RoundingNotice
+      - StartNewSplitCTA
+    data_sources:
+      - BillState
+      - PersonEntry
+      - SplitResult
+    viewports:
+      - 1440
+      # - 768  # uncomment for tablet
+      # - 390  # uncomment for mobile
