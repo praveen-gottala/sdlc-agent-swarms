@@ -25,14 +25,23 @@ AgentForge is a CLI-driven framework that orchestrates AI agents across every ph
 
 ## Installation
 
+Clone the repo and link the CLI locally:
+
 ```bash
-npm install -g @agentforge/cli
+git clone https://github.com/praveengottala/sdlc-agent-swarms.git
+cd sdlc-agent-swarms
+npm install
+npx nx build cli
+npm link --prefix packages/cli
 ```
 
-Or run from the monorepo:
+> **Note:** Do NOT run `npm install -g @agentforge/cli` -- that installs an
+> unrelated package from the npm registry, not this project.
+
+After linking, the `agentforge` command is available globally and points to your
+local build. To rebuild after making changes:
 
 ```bash
-npm install
 npx nx build cli
 ```
 

@@ -378,7 +378,15 @@ export async function designFigmaCommand(
     output.write(infoMsg(`\n  [3/3] Design — replaying ${cached.steps.length} cached steps into Figma...\n`));
     const t0 = Date.now();
 
-    const result = await executeDesignSteps(cached.steps, mcpClient, moduleId);
+    let result: Awaited<ReturnType<typeof executeDesignSteps>>;
+    try {
+      result = await executeDesignSteps(cached.steps, mcpClient, moduleId);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      output.write(errorMsg(`Replay failed: ${msg}\n`));
+      process.exitCode = 1;
+      return;
+    }
     const ms = Date.now() - t0;
 
     // Save updated artifact with new node IDs (Figma assigns fresh IDs on replay)

@@ -65,7 +65,7 @@
 
 | # | Issue | Symptom | Fix |
 |---|-------|---------|-----|
-| 16 | **Env var naming mismatch** | Phase C skipped — token/fileId not found | Fall back to `FIGMA_ACCESS_TOKEN` / `FIGMA_TEST_FILE_ID` when `AGENTFORGE_MCP_FIGMA_*` not set |
+| 16 | **Env var naming mismatch** | Phase C skipped — token/fileId not found | Set `AGENTFORGE_MCP_FIGMA_TOKEN` and `AGENTFORGE_MCP_FIGMA_FILE_ID` (no alternate names) |
 | 17 | **No plugin connection prompt** | Bridge connects to random channel; Figma plugin on different channel | Added channel discovery via `/channels` endpoint + user prompt to connect plugin |
 | 18 | **Screenshot returns null** | `Figma returned null image URL after 2 attempts` | Increased retries to 4 with progressive delay (3s, 6s, 9s); added 5s pre-screenshot delay |
 

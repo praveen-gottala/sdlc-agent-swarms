@@ -5,7 +5,7 @@
  * MCP server works end-to-end through the adapter layer.
  *
  * Skipped by default. Enable with:
- *   RUN_MCP_SPIKES=true FIGMA_ACCESS_TOKEN=... FIGMA_TEST_FILE_ID=... npx jest
+ *   RUN_MCP_SPIKES=true AGENTFORGE_MCP_FIGMA_TOKEN=... AGENTFORGE_MCP_FIGMA_FILE_ID=... npx jest
  *
  * See docs/mcp-spike-setup.md for full setup instructions.
  */
@@ -28,8 +28,8 @@ import type { DesignContext } from '@agentforge/agents-design';
 // ============================================================================
 
 const SPIKE_ENABLED = process.env.RUN_MCP_SPIKES === 'true';
-const FIGMA_TOKEN = process.env.FIGMA_ACCESS_TOKEN ?? '';
-const FIGMA_FILE_ID = process.env.FIGMA_TEST_FILE_ID ?? '';
+const FIGMA_TOKEN = process.env.AGENTFORGE_MCP_FIGMA_TOKEN ?? '';
+const FIGMA_FILE_ID = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? '';
 
 const describeSpike = SPIKE_ENABLED ? describe : describe.skip;
 
@@ -63,7 +63,7 @@ const spikeAgent: AgentContract = {
 /** Permissive permission checker for spike tests. */
 const allowAll: PermissionChecker = () => Ok(undefined);
 
-/** Secret provider that reads FIGMA_ACCESS_TOKEN from env. */
+/** Secret provider that reads AGENTFORGE_MCP_FIGMA_TOKEN from env. */
 const envSecrets: SecretProvider = {
   getSecret(server: string, key: string): Result<string> {
     if (server === 'figma' && key === 'TOKEN' && FIGMA_TOKEN) {
@@ -192,10 +192,10 @@ describeSpike('Figma MCP Spike', () => {
 
   beforeAll(() => {
     if (!FIGMA_TOKEN) {
-      throw new Error('FIGMA_ACCESS_TOKEN must be set when RUN_MCP_SPIKES=true');
+      throw new Error('AGENTFORGE_MCP_FIGMA_TOKEN must be set when RUN_MCP_SPIKES=true');
     }
     if (!FIGMA_FILE_ID) {
-      throw new Error('FIGMA_TEST_FILE_ID must be set when RUN_MCP_SPIKES=true');
+      throw new Error('AGENTFORGE_MCP_FIGMA_FILE_ID must be set when RUN_MCP_SPIKES=true');
     }
 
     const middlewareOptions: MCPMiddlewareOptions = {

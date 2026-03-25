@@ -5,7 +5,7 @@
  * the TalkToFigma WebSocket bridge (create frames, shapes, text, styles).
  *
  * Skipped by default. Enable with:
- *   RUN_MCP_SPIKES=true FIGMA_ACCESS_TOKEN=... FIGMA_TEST_FILE_ID=... npx jest
+ *   RUN_MCP_SPIKES=true AGENTFORGE_MCP_FIGMA_TOKEN=... AGENTFORGE_MCP_FIGMA_FILE_ID=... npx jest
  *
  * Optionally set TALK_TO_FIGMA_CHANNEL to reuse an existing channel.
  *
@@ -28,8 +28,8 @@ import type { AgentContract } from '@agentforge/core';
 // ============================================================================
 
 const SPIKE_ENABLED = process.env.RUN_MCP_SPIKES === 'true';
-const FIGMA_TOKEN = process.env.FIGMA_ACCESS_TOKEN ?? '';
-const FIGMA_FILE_ID = process.env.FIGMA_TEST_FILE_ID ?? '';
+const FIGMA_TOKEN = process.env.AGENTFORGE_MCP_FIGMA_TOKEN ?? '';
+const FIGMA_FILE_ID = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? '';
 const TALK_TO_FIGMA_CHANNEL = process.env.TALK_TO_FIGMA_CHANNEL;
 
 const describeSpike = SPIKE_ENABLED ? describe : describe.skip;
@@ -69,7 +69,7 @@ const spikeAgent: AgentContract = {
 /** Permissive permission checker for spike tests. */
 const allowAll: PermissionChecker = () => Ok(undefined);
 
-/** Secret provider — reads FIGMA_ACCESS_TOKEN for 'figma' server. */
+/** Secret provider — reads AGENTFORGE_MCP_FIGMA_TOKEN for 'figma' server. */
 const envSecrets: SecretProvider = {
   getSecret(server: string, key: string): Result<string> {
     if (server === 'figma' && key === 'TOKEN' && FIGMA_TOKEN) {
@@ -176,10 +176,10 @@ describeSpike('TalkToFigma MCP Spike', () => {
 
   beforeAll(() => {
     if (!FIGMA_TOKEN) {
-      throw new Error('FIGMA_ACCESS_TOKEN must be set when RUN_MCP_SPIKES=true');
+      throw new Error('AGENTFORGE_MCP_FIGMA_TOKEN must be set when RUN_MCP_SPIKES=true');
     }
     if (!FIGMA_FILE_ID) {
-      throw new Error('FIGMA_TEST_FILE_ID must be set when RUN_MCP_SPIKES=true');
+      throw new Error('AGENTFORGE_MCP_FIGMA_FILE_ID must be set when RUN_MCP_SPIKES=true');
     }
 
     // Create TalkToFigma transport (write)

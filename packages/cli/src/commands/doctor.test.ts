@@ -103,7 +103,7 @@ describe('doctorCommand', () => {
     delete process.env.AGENTFORGE_SLACK_BOT_TOKEN;
     delete process.env.AGENTFORGE_SLACK_APP_TOKEN;
     delete process.env.AGENTFORGE_TELEGRAM_BOT_TOKEN;
-    delete process.env.FIGMA_ACCESS_TOKEN;
+    delete process.env.AGENTFORGE_MCP_FIGMA_TOKEN;
   });
 
   it('should fail if no agentforge.yaml exists', async () => {

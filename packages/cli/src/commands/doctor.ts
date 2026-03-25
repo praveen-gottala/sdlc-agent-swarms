@@ -221,10 +221,10 @@ function checkTelegram(envFile: Map<string, string>): CheckResult {
  * Check Figma integration.
  */
 function checkFigma(envFile: Map<string, string>): CheckResult {
-  const token = getEnv('FIGMA_ACCESS_TOKEN', envFile);
+  const token = getEnv('AGENTFORGE_MCP_FIGMA_TOKEN', envFile);
 
   if (!token) {
-    return { name: 'Figma', status: 'skip', message: 'FIGMA_ACCESS_TOKEN not set' };
+    return { name: 'Figma', status: 'skip', message: 'AGENTFORGE_MCP_FIGMA_TOKEN not set' };
   }
 
   return { name: 'Figma', status: 'pass', message: 'Access token configured' };

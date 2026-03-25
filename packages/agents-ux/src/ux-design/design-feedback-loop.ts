@@ -93,8 +93,8 @@ export function createReviewCallback(
   provider: { complete: (...args: readonly unknown[]) => Promise<Result<{ content: string }>> },
   planningSpec: string,
 ): ReviewCallback | undefined {
-  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN ?? process.env.FIGMA_ACCESS_TOKEN;
-  const figmaFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? process.env.FIGMA_TEST_FILE_ID;
+  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN;
+  const figmaFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID;
 
   if (!figmaToken || !figmaFileId) {
     return undefined;

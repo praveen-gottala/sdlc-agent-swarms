@@ -15,16 +15,16 @@ Integration spikes proving MCP communication works end-to-end through the adapte
 | Variable | Required | Description |
 |---|---|---|
 | `RUN_MCP_SPIKES` | Yes | Set to `true` to enable spike tests |
-| `FIGMA_ACCESS_TOKEN` | Yes | Figma Personal Access Token ([Settings > Personal Access Tokens](https://www.figma.com/developers/api#access-tokens)) |
-| `FIGMA_TEST_FILE_ID` | Yes | File ID from a Figma URL: `figma.com/design/<FILE_ID>/...` |
+| `AGENTFORGE_MCP_FIGMA_TOKEN` | Yes | Figma Personal Access Token ([Settings > Personal Access Tokens](https://www.figma.com/developers/api#access-tokens)) |
+| `AGENTFORGE_MCP_FIGMA_FILE_ID` | Yes | File ID from a Figma URL: `figma.com/design/<FILE_ID>/...` |
 
 ### Running the Spike
 
 ```bash
 # From repo root
 RUN_MCP_SPIKES=true \
-  FIGMA_ACCESS_TOKEN=figd_xxx \
-  FIGMA_TEST_FILE_ID=abc123 \
+  AGENTFORGE_MCP_FIGMA_TOKEN=figd_xxx \
+  AGENTFORGE_MCP_FIGMA_FILE_ID=abc123 \
   npx jest --config packages/agents-ux/jest.config.cjs \
     --testPathPattern="__integration__/figma" \
     --verbose
@@ -99,7 +99,7 @@ npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts --module cost-dash
 
 The design pipeline automatically connects to Figma using this priority:
 
-1. **Env var override**: `AGENTFORGE_MCP_FIGMA_WRITE_URL` — explicit WebSocket URL (backwards compatible)
+1. **Env var override**: `AGENTFORGE_MCP_FIGMA_WRITE_URL` — explicit WebSocket URL
 2. **Session file**: `.agentforge/figma-session.json` — reuses a recent connection (< 30 min old)
 3. **Preflight auto-detect**: Checks `ws://localhost:3055`, starts Docker if needed, polls for plugin connection
 4. **Mock MCP fallback**: If nothing works, uses a mock client (no Figma output)
@@ -137,8 +137,8 @@ the design agent automatically:
 
 ```bash
 RUN_MCP_SPIKES=true \
-  FIGMA_ACCESS_TOKEN=figd_xxx \
-  FIGMA_TEST_FILE_ID=abc123 \
+  AGENTFORGE_MCP_FIGMA_TOKEN=figd_xxx \
+  AGENTFORGE_MCP_FIGMA_FILE_ID=abc123 \
   npx jest --config packages/agents-ux/jest.config.cjs \
     --testPathPattern="__integration__/talk-to-figma" \
     --verbose

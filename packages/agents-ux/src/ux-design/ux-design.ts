@@ -327,22 +327,51 @@ export async function executeDesignSteps(
   let figmaFileId = existingContext?.figmaFileId ?? '';
   let figmaPageId = existingContext?.figmaPageId ?? '';
 
-  // Resolve file/page IDs from env or document info (skip if already provided)
+  // Resolve file/page IDs from env or document info (skip if already provided).
+  // AGENTFORGE_MCP_FIGMA_FILE_ID is required whenever we do not already have a file id
+  // (REST API, Phase C, snapshots). No placeholders — fail fast.
   if (!figmaFileId || !figmaPageId) {
-    const envFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? process.env.FIGMA_TEST_FILE_ID;
+    const envFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID?.trim() ?? '';
     const docResult = await mcpClient.callTool('figma', 'get_document_info', {});
     if (docResult.ok) {
       const docInfo = docResult.value as Record<string, unknown>;
       const currentPage = docInfo.currentPage as Record<string, unknown> | undefined;
-      figmaFileId = figmaFileId || envFileId || `file-${moduleId}`;
-      if (!envFileId) {
-        // eslint-disable-next-line no-console
-        console.warn('        [design] AGENTFORGE_MCP_FIGMA_FILE_ID not set — using placeholder. Set it for Figma REST API features.');
+
+      if (!figmaFileId) {
+        if (!envFileId) {
+          throw new Error(
+            'AGENTFORGE_MCP_FIGMA_FILE_ID is required. Set it to the file key from your Figma URL (figma.com/design/<FILE_ID>/...).',
+          );
+        }
+        figmaFileId = envFileId;
       }
-      figmaPageId = figmaPageId || String(currentPage?.id ?? docInfo.id ?? `page-${moduleId}`);
+
+      if (!figmaPageId) {
+        const resolvedPageId = currentPage?.id ?? docInfo.id;
+        const raw =
+          resolvedPageId !== undefined && resolvedPageId !== null ? String(resolvedPageId) : '';
+        if (raw.length > 0 && raw !== 'undefined') {
+          figmaPageId = raw;
+        } else {
+          throw new Error(
+            'Could not resolve Figma page ID from get_document_info. Open a document in Figma and ensure the TalkToFigma plugin returns currentPage.',
+          );
+        }
+      }
     } else {
-      figmaFileId = figmaFileId || envFileId || `file-${moduleId}`;
-      figmaPageId = figmaPageId || `page-${moduleId}`;
+      if (!figmaFileId) {
+        if (!envFileId) {
+          throw new Error(
+            'AGENTFORGE_MCP_FIGMA_FILE_ID is required. Set it to the file key from your Figma URL (figma.com/design/<FILE_ID>/...).',
+          );
+        }
+        figmaFileId = envFileId;
+      }
+      if (!figmaPageId) {
+        throw new Error(
+          `Cannot resolve Figma page ID: get_document_info failed (${docResult.error.message}). Ensure the Figma bridge is running, the plugin is connected, and a document is open.`,
+        );
+      }
     }
   }
 
@@ -548,8 +577,8 @@ async function runScreenCorrection(opts: {
   const { rootNodeId, screenPlanningOutput, figmaNodeIds, figmaNodeTypes, figmaFileId, steps, provider, context } = opts;
 
   const hasBridge = await context.mcpClient.isAvailable('figma');
-  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN ?? process.env.FIGMA_ACCESS_TOKEN;
-  const envFileIdForPhaseC = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID ?? process.env.FIGMA_TEST_FILE_ID;
+  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN;
+  const envFileIdForPhaseC = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID;
   const hasRealFileId = envFileIdForPhaseC && !envFileIdForPhaseC.startsWith('file-');
   const canRunPhaseC = hasBridge || (figmaToken && hasRealFileId);
 
@@ -781,12 +810,18 @@ export const uxDesignWork: AgentWorkFn<UXDesignInput, UXDesignOutput> = async (
     validateRefs(screenSteps, screenPlanningOutput.componentTree);
 
     // Phase B: Execute steps for THIS screen
-    const execResult = await executeDesignSteps(
-      screenSteps,
-      context.mcpClient,
-      moduleId,
-      sharedContext,
-    );
+    let execResult: StepExecutionResult;
+    try {
+      execResult = await executeDesignSteps(
+        screenSteps,
+        context.mcpClient,
+        moduleId,
+        sharedContext,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return Err({ code: 'INVALID_STATE' as const, message: msg, recoverable: false });
+    }
 
     // Merge results
     Object.assign(allNodeIds, execResult.figmaNodeIds);
@@ -865,12 +900,18 @@ export const uxDesignWork: AgentWorkFn<UXDesignInput, UXDesignOutput> = async (
       if (followUpResult.ok) {
         const followUpParsed = parseDesignSteps((followUpResult.value as { content: string }).content);
         if (followUpParsed.ok) {
-          const followUpExec = await executeDesignSteps(
-            followUpParsed.value.steps,
-            context.mcpClient,
-            moduleId,
-            sharedContext,
-          );
+          let followUpExec: StepExecutionResult;
+          try {
+            followUpExec = await executeDesignSteps(
+              followUpParsed.value.steps,
+              context.mcpClient,
+              moduleId,
+              sharedContext,
+            );
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return Err({ code: 'INVALID_STATE' as const, message: msg, recoverable: false });
+          }
           Object.assign(allNodeIds, followUpExec.figmaNodeIds);
           Object.assign(allNodeTypes, followUpExec.figmaNodeTypes);
           allSteps.push(...followUpParsed.value.steps);
