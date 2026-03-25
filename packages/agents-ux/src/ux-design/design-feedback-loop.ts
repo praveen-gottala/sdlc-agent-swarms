@@ -9,7 +9,7 @@
 import { createInterface } from 'node:readline/promises';
 import type { Result } from '@agentforge/core';
 import type { DesignCollaborationSession } from './design-collaboration.js';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
 import type { DesignEvaluation } from './design-evaluator.js';
 import { evaluateDesign } from './design-evaluator.js';
 import { captureFigmaScreenshot } from './figma-screenshot.js';
@@ -20,18 +20,18 @@ import { captureFigmaScreenshot } from './figma-screenshot.js';
 
 /** Callback for reviewing the current design via screenshot + evaluator. */
 export interface ReviewCallback {
-  (design: UXDashboardDesignOutput): Promise<Result<DesignEvaluation>>;
+  (design: UXDesignOutput): Promise<Result<DesignEvaluation>>;
 }
 
 /** Callback for generating implementation code from the approved design. */
 export interface ImplementCallback {
-  (design: UXDashboardDesignOutput): Promise<Result<{ files: readonly { filePath: string; content: string }[]; writtenPaths: string[] }>>;
+  (design: UXDesignOutput): Promise<Result<{ files: readonly { filePath: string; content: string }[]; writtenPaths: string[] }>>;
 }
 
 /** Options for the interactive feedback loop. */
 export interface FeedbackLoopOptions {
   readonly session: DesignCollaborationSession;
-  readonly initialDesign: UXDashboardDesignOutput;
+  readonly initialDesign: UXDesignOutput;
   readonly input: NodeJS.ReadableStream;
   readonly output: NodeJS.WritableStream;
   /** If provided, enables automatic post-feedback review and the `review` command. */
@@ -43,7 +43,7 @@ export interface FeedbackLoopOptions {
 /** Result of the feedback loop. */
 export interface FeedbackLoopResult {
   readonly approved: boolean;
-  readonly finalDesign: UXDashboardDesignOutput;
+  readonly finalDesign: UXDesignOutput;
   readonly changeCount: number;
   /** If the user ran `implement`, the paths of generated files. */
   readonly implementedFiles?: readonly string[];
@@ -100,7 +100,7 @@ export function createReviewCallback(
     return undefined;
   }
 
-  return async (design: UXDashboardDesignOutput): Promise<Result<DesignEvaluation>> => {
+  return async (design: UXDesignOutput): Promise<Result<DesignEvaluation>> => {
     const rootNodeId = Object.values(design.figmaNodeIds)[0];
     if (!rootNodeId) {
       return { ok: false, error: { code: 'INVALID_STATE' as const, message: 'No Figma nodes to review', recoverable: false } };

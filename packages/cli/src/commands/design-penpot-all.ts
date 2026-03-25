@@ -24,6 +24,8 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
+  loadProjectManifest,
+  resolveViewports,
   PREVIEW_DIR_REL,
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
@@ -31,23 +33,24 @@ import type {
   MCPClient,
   LLMProviderRef,
   PageEntry,
+  DesignConfig,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
   runPenpotPreflight,
   loadPenpotSession,
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
+  uxResearchWork,
+  uxPlanningWork,
   penpotDesignWork,
   penpotBrowserDesignWork,
   buildDesignSystemContextFromSpec,
   buildComponentCatalogPrompt,
 } from '@agentforge/agents-ux';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
   PenpotDesignInput,
   PenpotBrowserDesignInput,
 } from '@agentforge/agents-ux';
@@ -167,6 +170,11 @@ export async function designPenpotAllCommand(
     return;
   }
 
+  // Load project manifest for design config
+  const manifestFs = createRealFs();
+  const manifestResult = loadProjectManifest(projectRoot, manifestFs);
+  const designConfig: DesignConfig | undefined = manifestResult.ok ? manifestResult.value.design : undefined;
+
   // Load pages.yaml
   const pagesPath = join(projectRoot, 'agentforge', 'spec', 'pages.yaml');
   if (!existsSync(pagesPath)) {
@@ -276,9 +284,9 @@ export async function designPenpotAllCommand(
 
       try {
         // Research
-        let researchOutput: UXDashboardResearchOutput;
+        let researchOutput: UXResearchOutput;
         if (options.designOnly) {
-          const cached = loadArtifact<UXDashboardResearchOutput>(outputDir, 'research-brief.json');
+          const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
           if (!cached) {
             output.write(warnMsg(`    No cached research for ${page.id}, running fresh...\n`));
             options.designOnly; // fall through to fresh run
@@ -292,8 +300,8 @@ export async function designPenpotAllCommand(
           output.write(infoMsg('    Research: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
           const context = createContext(taskId, createMockMCPClient());
-          const input: UXDashboardResearchInput = { moduleId, taskId, prdRequirements: [description] };
-          const result = await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+          const input: UXResearchInput = { moduleId, taskId, prdRequirements: [description] };
+          const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
           if (!result.ok) throw new Error(`Research failed: ${result.error.message}`);
           researchOutput = result.value;
           saveArtifact(outputDir, 'research-brief.json', researchOutput);
@@ -301,9 +309,9 @@ export async function designPenpotAllCommand(
         }
 
         // Planning
-        let planningOutput: UXDashboardPlanningOutput;
+        let planningOutput: UXPlanningOutput;
         if (options.designOnly) {
-          const cached = loadArtifact<UXDashboardPlanningOutput>(outputDir, 'planning-spec.json');
+          const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
           if (cached) {
             planningOutput = cached;
             output.write(infoMsg('    Planning: cached\n'));
@@ -314,10 +322,11 @@ export async function designPenpotAllCommand(
           output.write(infoMsg('    Planning: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
           const context = createContext(taskId, createMockMCPClient());
-          const input: UXDashboardPlanningInput = {
+          const input: UXPlanningInput = {
             briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
+            ...(designConfig ? { designConfig } : {}),
           };
-          const result = await uxDashboardPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
+          const result = await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
           if (!result.ok) throw new Error(`Planning failed: ${result.error.message}`);
           planningOutput = result.value;
           saveArtifact(outputDir, 'planning-spec.json', planningOutput);
@@ -331,10 +340,12 @@ export async function designPenpotAllCommand(
           projectDesignSystemPrompt = dsCtx.designSystemPrompt;
         }
 
-        // Resolve viewports: CLI --width overrides > page viewports > default [1440]
-        const pageViewports: readonly number[] = options.width
-          ? [options.width]
-          : (page.viewports?.length ? page.viewports : [1440]);
+        // Resolve viewports: CLI --width > page viewports > manifest design config > default [1440]
+        const pageViewports = resolveViewports({
+          cliWidth: options.width,
+          pageViewports: page.viewports,
+          designConfig,
+        });
 
         // Design (Penpot) — use browser agent if --browser flag is set
         const useBrowser = options.browser ?? false;

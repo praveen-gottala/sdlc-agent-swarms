@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-design
+ * @module @agentforge/agents-ux/ux-design
  *
  * UX Dashboard Design agent: creates Figma designs from component specs
  * using the TalkToFigma MCP WebSocket bridge. Enables a collaborative
@@ -25,7 +25,7 @@ import {
   runAgent,
   recordPromptTrace,
 } from '@agentforge/core';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { FigmaCreationStep, DesignSnapshotData, ScreenDefinition, PerScreenResult, ComponentTreeNode } from '../types.js';
 import { resolveAndTransformParams } from './param-transforms.js';
 import { captureFigmaScreenshotViaBridge, captureFigmaScreenshot } from './figma-screenshot.js';
@@ -39,11 +39,11 @@ import { extractScreenSubtree, inferSingleScreen, flattenTree, screenGridPositio
 // ============================================================================
 
 /** Input for the UX dashboard design agent. */
-export interface UXDashboardDesignInput {
+export interface UXDesignInput {
   readonly specRef: string;
   readonly moduleId: string;
   readonly taskId: string;
-  readonly planningOutput: UXDashboardPlanningOutput;
+  readonly planningOutput: UXPlanningOutput;
   /** Human-readable description of the app/page being designed. */
   readonly description?: string;
   /** Project-specific design system prompt (colors, typography, spacing from design tokens + brand). Overrides hardcoded defaults. */
@@ -56,7 +56,7 @@ export interface UXDashboardDesignInput {
 export type { ComponentSnapshot } from '../types.js';
 
 /** Output produced by the UX dashboard design agent. */
-export interface UXDashboardDesignOutput extends DesignSnapshotData {
+export interface UXDesignOutput extends DesignSnapshotData {
   readonly figmaFileId: string;
   readonly figmaPageId: string;
   readonly figmaNodeIds: Readonly<Record<string, string>>;
@@ -77,8 +77,8 @@ export interface UXDashboardDesignOutput extends DesignSnapshotData {
 // ============================================================================
 
 /** The agent contract for the UX dashboard design agent. */
-export const UX_DASHBOARD_DESIGN_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_design',
+export const UX_DESIGN_CONTRACT: AgentContract = {
+  role: 'ux_design',
   description: 'Creates Figma designs from component specs using TalkToFigma MCP bridge',
   category: 'design',
   provider: 'claude-sonnet-4-6',
@@ -209,7 +209,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-design-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-design-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -444,7 +444,7 @@ export async function executeDesignSteps(
 export const buildPerScreenPrompt = (opts: {
   screen: ScreenDefinition;
   screenIndex: number;
-  screenPlanningOutput: UXDashboardPlanningOutput;
+  screenPlanningOutput: UXPlanningOutput;
   description?: string;
   designSystemPrompt?: string;
   componentCatalogPrompt?: string;
@@ -537,7 +537,7 @@ const validateRefs = (
 /** Run Phase C visual self-correction for a single screen's root node. */
 async function runScreenCorrection(opts: {
   rootNodeId: string;
-  screenPlanningOutput: UXDashboardPlanningOutput;
+  screenPlanningOutput: UXPlanningOutput;
   figmaNodeIds: Record<string, string>;
   figmaNodeTypes: Record<string, string>;
   figmaFileId: string;
@@ -697,7 +697,7 @@ async function runScreenCorrection(opts: {
  * - For each screen: Phase A (prompt → LLM → steps) → Phase B (execute) → Phase C (correction)
  * - Phase D: Completeness check + snapshot capture
  */
-export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashboardDesignOutput> = async (
+export const uxDesignWork: AgentWorkFn<UXDesignInput, UXDesignOutput> = async (
   input,
   provider,
   learnings,
@@ -752,12 +752,12 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
     });
 
     recordPromptTrace(context, `design-screen-${si + 1}-${screen.name}`, prompt, {
-      model: UX_DASHBOARD_DESIGN_CONTRACT.provider,
+      model: UX_DESIGN_CONTRACT.provider,
       maxTokens: 16000,
     });
 
     const completionResult = await llm.complete(prompt, {
-      model: context.resolvedModel ?? UX_DASHBOARD_DESIGN_CONTRACT.provider,
+      model: context.resolvedModel ?? UX_DESIGN_CONTRACT.provider,
       maxTokens: 16000,
       temperature: 0,
     });
@@ -857,7 +857,7 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
       });
 
       const followUpResult = await llm.complete(followUpPrompt, {
-        model: context.resolvedModel ?? UX_DASHBOARD_DESIGN_CONTRACT.provider,
+        model: context.resolvedModel ?? UX_DESIGN_CONTRACT.provider,
         maxTokens: 8000,
         temperature: 0,
       });
@@ -914,10 +914,10 @@ export const uxDashboardDesignWork: AgentWorkFn<UXDashboardDesignInput, UXDashbo
 /**
  * Execute the UX dashboard design agent through the full governance pipeline.
  */
-export const executeUXDashboardDesign = async (
+export const executeUXDesign = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardDesignInput,
+  input: UXDesignInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -926,20 +926,20 @@ export const executeUXDashboardDesign = async (
     'write_design',
     `module:${input.moduleId}`,
     `UX dashboard design for module: ${input.moduleId}`,
-    uxDashboardDesignWork,
+    uxDesignWork,
   );
 };
 
 /**
  * Register the UX dashboard design agent to respond to ComponentSpecReady events.
  */
-export const registerUXDashboardDesign = (
+export const registerUXDesign = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_DESIGN_CONTRACT,
+  contract: AgentContract = UX_DESIGN_CONTRACT,
 ): void => {
   eventBus.subscribe('ComponentSpecReady', (event: ComponentSpecReady) => {
-    const input: UXDashboardDesignInput = {
+    const input: UXDesignInput = {
       specRef: event.specRef,
       moduleId: event.moduleId,
       taskId: event.taskId,
@@ -952,6 +952,6 @@ export const registerUXDashboardDesign = (
         implementationStages: [],
       },
     };
-    void executeUXDashboardDesign(contract, context, input);
+    void executeUXDesign(contract, context, input);
   });
 };

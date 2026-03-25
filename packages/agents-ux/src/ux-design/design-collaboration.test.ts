@@ -14,7 +14,7 @@ import {
   buildComponentCatalogImplPrompt,
 } from './design-collaboration.js';
 import type { DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
 
 // ============================================================================
 // Helpers
@@ -44,7 +44,7 @@ const SAMPLE_PLANNING_OUTPUT = {
   } as Record<string, string>,
 };
 
-const SAMPLE_DESIGN: UXDashboardDesignOutput = {
+const SAMPLE_DESIGN: UXDesignOutput = {
   figmaFileId: 'file-123',
   figmaPageId: 'page-123',
   figmaNodeIds: { Header: 'node-1', MetricsRow: 'node-2' },

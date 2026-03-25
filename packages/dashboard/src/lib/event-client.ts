@@ -3,7 +3,7 @@
  * Subscribes to V3 domain events as defined in PRD Section 27.
  *
  * The 13 V3-required events:
- * - DashboardModuleRequested
+ * - UXModuleRequested
  * - DesignBriefCompleted
  * - ComponentSpecReady
  * - ImplementationDraftReady

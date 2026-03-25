@@ -281,8 +281,8 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'agent:deployer',
     timestamp: now,
   },
-  DashboardModuleRequested: {
-    type: 'DashboardModuleRequested',
+  UXModuleRequested: {
+    type: 'UXModuleRequested',
     moduleId: 'pipeline-view',
     taskId: 'task-ux-1',
     description: 'Real-time pipeline status view',
@@ -296,7 +296,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     moduleId: 'pipeline-view',
     taskId: 'task-ux-1',
     requirementIds: ['SEC-24.2-pipeline'],
-    source: 'agent:ux_dashboard_research',
+    source: 'agent:ux_research',
     timestamp: now,
   },
   ComponentSpecReady: {
@@ -306,7 +306,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     taskId: 'task-ux-1',
     componentTree: ['PipelineView', 'PhaseColumn', 'AgentCard'],
     tokenBindings: { primary: 'var(--color-primary)', spacing: 'var(--space-4)' },
-    source: 'agent:ux_dashboard_planning',
+    source: 'agent:ux_planning',
     timestamp: now,
   },
   ImplementationDraftReady: {
@@ -315,7 +315,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     moduleId: 'pipeline-view',
     branch: 'feat/ux-pipeline-view',
     componentPaths: ['src/dashboard/pipeline-view.tsx'],
-    source: 'agent:ux_dashboard_implementation',
+    source: 'agent:ux_implementation',
     timestamp: now,
   },
   UXReviewCompleted: {
@@ -325,7 +325,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     moduleId: 'pipeline-view',
     issueCount: 2,
     severitySummary: { critical: 0, major: 1, minor: 1 },
-    source: 'agent:ux_dashboard_review',
+    source: 'agent:ux_review',
     timestamp: now,
   },
   UXTestSuiteCompleted: {
@@ -335,7 +335,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     passCount: 15,
     failCount: 1,
     healedCount: 1,
-    source: 'agent:ux_dashboard_testing',
+    source: 'agent:ux_testing',
     timestamp: now,
   },
   UXModuleDeployed: {
@@ -353,7 +353,7 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     figmaFileId: 'file-abc123',
     figmaPageId: 'page-001',
     figmaNodeIds: { PipelineView: 'node-1', PhaseColumn: 'node-2', AgentCard: 'node-3' },
-    source: 'agent:ux_dashboard_design',
+    source: 'agent:ux_design',
     timestamp: now,
   },
 };
@@ -542,7 +542,7 @@ describe('EventBus', () => {
       'DeployComplete',
       'DeployFailed',
       // UX Dashboard Squad
-      'DashboardModuleRequested',
+      'UXModuleRequested',
       'DesignBriefCompleted',
       'ComponentSpecReady',
       'ImplementationDraftReady',
@@ -898,9 +898,9 @@ describe('EventBus', () => {
   // ── UX Dashboard Squad events ──
 
   describe('UX Dashboard Squad events', () => {
-    it('DashboardModuleRequested carries moduleId, taskId, description, prdRequirements', () => {
+    it('UXModuleRequested carries moduleId, taskId, description, prdRequirements', () => {
       const received: DomainEvent[] = [];
-      bus.subscribe('DashboardModuleRequested', (e) => {
+      bus.subscribe('UXModuleRequested', (e) => {
         expect(e.moduleId).toBe('pipeline-view');
         expect(e.taskId).toBe('task-ux-1');
         expect(e.description).toBe('Real-time pipeline status view');
@@ -908,7 +908,7 @@ describe('EventBus', () => {
         received.push(e);
       });
 
-      bus.publish(fixtures.DashboardModuleRequested);
+      bus.publish(fixtures.UXModuleRequested);
       expect(received).toHaveLength(1);
     });
 
@@ -1013,7 +1013,7 @@ describe('EventBus', () => {
     });
 
     it('UX squad events appear in history with correct type filtering', () => {
-      bus.publish(fixtures.DashboardModuleRequested);
+      bus.publish(fixtures.UXModuleRequested);
       bus.publish(fixtures.DesignBriefCompleted);
       bus.publish(fixtures.ComponentSpecReady);
       bus.publish(fixtures.ImplementationDraftReady);

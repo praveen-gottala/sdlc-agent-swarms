@@ -7,7 +7,7 @@
  */
 
 import type { ComponentTreeNode, ScreenDefinition } from '../types.js';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 
 // ============================================================================
 // Tree helpers
@@ -33,15 +33,15 @@ export const flattenTree = (nodes: readonly ComponentTreeNode[]): string[] => {
 // ============================================================================
 
 /**
- * Extract a sliced UXDashboardPlanningOutput containing only the components
+ * Extract a sliced UXPlanningOutput containing only the components
  * belonging to a given screen. Filters `componentTree` by matching top-level
  * node names against `screen.componentNames`. Token bindings and responsive
  * rules are kept intact (they're lightweight and may reference cross-screen tokens).
  */
 export const extractScreenSubtree = (
-  planningOutput: UXDashboardPlanningOutput,
+  planningOutput: UXPlanningOutput,
   screen: ScreenDefinition,
-): UXDashboardPlanningOutput => {
+): UXPlanningOutput => {
   const nameSet = new Set(screen.componentNames);
   const filteredTree = planningOutput.componentTree.filter((node) => nameSet.has(node.name));
 
@@ -57,7 +57,7 @@ export const extractScreenSubtree = (
  * per-screen loop runs exactly once — identical behavior to the old code path.
  */
 export const inferSingleScreen = (
-  planningOutput: UXDashboardPlanningOutput,
+  planningOutput: UXPlanningOutput,
 ): readonly ScreenDefinition[] => {
   const allNames = planningOutput.componentTree.map((node) => node.name);
   return [

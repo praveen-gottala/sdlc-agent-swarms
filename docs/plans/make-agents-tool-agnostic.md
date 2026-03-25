@@ -21,7 +21,7 @@ Now that `agentforge init` generates complete spec files on disk, the research a
 
 ### 1. Research agent — remove Figma tools from contract
 
-**File:** `packages/agents-ux/src/ux-research/ux-dashboard-research.ts`
+**File:** `packages/agents-ux/src/ux-research/ux-research.ts`
 
 Change the contract tools (line 63) from:
 ```typescript
@@ -36,7 +36,7 @@ The research agent reads PRD requirements and design tokens from disk. It never 
 
 ### 2. Planning agent — remove Figma tools from contract
 
-**File:** `packages/agents-ux/src/ux-planning/ux-dashboard-planning.ts`
+**File:** `packages/agents-ux/src/ux-planning/ux-planning.ts`
 
 Change the contract tools (line 66) from:
 ```typescript
@@ -49,7 +49,7 @@ tools: ['spec.read_project', 'spec.read_pages', 'spec.read_spec'],
 
 ### 3. Planning agent — invert token loading priority to disk-first
 
-**File:** `packages/agents-ux/src/ux-planning/ux-dashboard-planning.ts`
+**File:** `packages/agents-ux/src/ux-planning/ux-planning.ts`
 
 Replace the entire token loading block (currently around lines 264-290) with a disk-first approach:
 
@@ -113,7 +113,7 @@ The comment `// ADR-024: try get_variable_defs, fall back to disk tokens, then g
 
 ## What NOT to change
 
-- **Design agents** (`ux-penpot-design.ts`, `ux-dashboard-design.ts`, `penpot-browser-agent.ts`) — these ARE tool-specific and must remain so. They generate Penpot scripts or Figma API calls.
+- **Design agents** (`ux-penpot-design.ts`, `ux-design.ts`, `penpot-browser-agent.ts`) — these ARE tool-specific and must remain so. They generate Penpot scripts or Figma API calls.
 - **`discoverPenpotAPI()`** — this is design-agent-level functionality, not planning-level.
 - **Interface names, file names, event names** — no renaming in this task.
 - **The `existingTokens` / `designTokensSpec` fields on research input** — these were just fixed in the previous task, leave them as-is.
@@ -122,14 +122,14 @@ The comment `// ADR-024: try get_variable_defs, fall back to disk tokens, then g
 
 ## Tests
 
-**File:** `packages/agents-ux/src/ux-planning/ux-dashboard-planning.test.ts`
+**File:** `packages/agents-ux/src/ux-planning/ux-planning.test.ts`
 
 - Add test: when disk tokens exist, no MCP call is made at all (verify `mcpClient.callTool` is NOT called)
 - Add test: when disk tokens are missing and MCP returns empty `{}`, the agent warns but still produces valid output
 - Update any existing test that mocks `figma:get_variable_defs` as the primary path — it should now mock `loadDesignTokens` instead
 - Add test: when both `figma` and `penpot` MCP fail, the agent still produces output with a warning
 
-**File:** `packages/agents-ux/src/ux-research/ux-dashboard-research.test.ts`
+**File:** `packages/agents-ux/src/ux-research/ux-research.test.ts`
 
 - Verify no MCP calls are made by the research agent (it receives tokens via input, not MCP)
 

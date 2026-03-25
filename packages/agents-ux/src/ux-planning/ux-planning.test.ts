@@ -1,13 +1,13 @@
 import {
-  UX_DASHBOARD_PLANNING_CONTRACT,
+  UX_PLANNING_CONTRACT,
   parsePlanningOutput,
-  registerUXDashboardPlanning,
+  registerUXPlanning,
   extractValidTokenNames,
   validateTokenBindings,
   parseTokenBindingsCorrection,
   applyDotNotationFallback,
-  uxDashboardPlanningWork,
-} from './ux-dashboard-planning.js';
+  uxPlanningWork,
+} from './ux-planning.js';
 import type { AgentContext, LLMProviderRef, DesignTokensSpec } from '@agentforge/core';
 import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
@@ -98,22 +98,22 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_PLANNING_CONTRACT', () => {
+describe('UX_PLANNING_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.role).toBe('ux_dashboard_planning');
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.provider).toBe(DEFAULT_MODEL);
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.tools).toEqual([]);
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_spec']);
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.denied).toEqual(['write_code', 'create_branch']);
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.budget).toEqual({ max_tokens_per_task: 30000, max_cost_per_task_usd: 1.0 });
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: false, max_context_tokens: 30000 });
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.hitl_policy).toBe('review_and_override');
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.on_complete).toBe('ComponentSpecReady');
+    expect(UX_PLANNING_CONTRACT.role).toBe('ux_planning');
+    expect(UX_PLANNING_CONTRACT.category).toBe('design');
+    expect(UX_PLANNING_CONTRACT.provider).toBe(DEFAULT_MODEL);
+    expect(UX_PLANNING_CONTRACT.tools).toEqual([]);
+    expect(UX_PLANNING_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_spec']);
+    expect(UX_PLANNING_CONTRACT.denied).toEqual(['write_code', 'create_branch']);
+    expect(UX_PLANNING_CONTRACT.budget).toEqual({ max_tokens_per_task: 30000, max_cost_per_task_usd: 1.0 });
+    expect(UX_PLANNING_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: false, max_context_tokens: 30000 });
+    expect(UX_PLANNING_CONTRACT.hitl_policy).toBe('review_and_override');
+    expect(UX_PLANNING_CONTRACT.on_complete).toBe('ComponentSpecReady');
   });
 
   it('contract on_complete matches ComponentSpecReady event', () => {
-    expect(UX_DASHBOARD_PLANNING_CONTRACT.on_complete).toBe('ComponentSpecReady');
+    expect(UX_PLANNING_CONTRACT.on_complete).toBe('ComponentSpecReady');
   });
 });
 
@@ -151,7 +151,7 @@ describe('parsePlanningOutput', () => {
   });
 });
 
-describe('registerUXDashboardPlanning', () => {
+describe('registerUXPlanning', () => {
   it('subscribes to DesignBriefCompleted', () => {
     const ctx = makeContext();
     const mockEventBus = {
@@ -163,7 +163,7 @@ describe('registerUXDashboardPlanning', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardPlanning(mockEventBus, ctx);
+    registerUXPlanning(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(
@@ -431,7 +431,7 @@ const PLANNING_INPUT = {
   },
 };
 
-describe('uxDashboardPlanningWork — disk-first token loading', () => {
+describe('uxPlanningWork — disk-first token loading', () => {
   it('uses disk tokens when available, no MCP call made', async () => {
     const provider = makeProvider();
     const ctx = makeContext();
@@ -447,7 +447,7 @@ describe('uxDashboardPlanningWork — disk-first token loading', () => {
       return path.endsWith('agentforge/spec') || path.includes('design-tokens.yaml');
     });
 
-    const result = await uxDashboardPlanningWork(
+    const result = await uxPlanningWork(
       PLANNING_INPUT,
       provider as unknown as LLMProviderRef,
       [],
@@ -475,7 +475,7 @@ describe('uxDashboardPlanningWork — disk-first token loading', () => {
 
     const errSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    const result = await uxDashboardPlanningWork(
+    const result = await uxPlanningWork(
       PLANNING_INPUT,
       provider as unknown as LLMProviderRef,
       [],
@@ -693,7 +693,7 @@ describe('validateTokenBindings — regression for missing categories', () => {
 // Token binding retry loop (integration)
 // ============================================================================
 
-describe('uxDashboardPlanningWork — token binding retry loop', () => {
+describe('uxPlanningWork — token binding retry loop', () => {
   const BAD_PLANNING_OUTPUT = JSON.stringify({
     specRef: 'spec-mod-001-1234',
     moduleId: 'mod-001',
@@ -741,7 +741,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -758,7 +758,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
     const provider = makeProvider();
     const ctx = setupContext();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     // Only the initial call, no retries
@@ -774,7 +774,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -800,7 +800,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-    await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     // Second call should be the retry with correction prompt
     const retryCallArgs = (provider.complete as jest.Mock).mock.calls[1][0];
@@ -824,7 +824,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -848,7 +848,7 @@ describe('uxDashboardPlanningWork — token binding retry loop', () => {
 // Structured output integration
 // ============================================================================
 
-describe('uxDashboardPlanningWork — structured output', () => {
+describe('uxPlanningWork — structured output', () => {
   const setupContext = () => {
     const ctx = makeContext();
     (ctx.fs.readFile as jest.Mock).mockImplementation((path: string) => {
@@ -865,7 +865,7 @@ describe('uxDashboardPlanningWork — structured output', () => {
     const provider = makeProvider();
     const ctx = setupContext();
 
-    await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     const callOptions = (provider.complete as jest.Mock).mock.calls[0][1];
     expect(callOptions.responseSchema).toBeDefined();
@@ -877,7 +877,7 @@ describe('uxDashboardPlanningWork — structured output', () => {
     const provider = makeProvider(PLANNING_OUTPUT, true);
     const ctx = setupContext();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -890,7 +890,7 @@ describe('uxDashboardPlanningWork — structured output', () => {
     const provider = makeProvider(PLANNING_OUTPUT, false);
     const ctx = setupContext();
 
-    const result = await uxDashboardPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
+    const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
     if (result.ok) {

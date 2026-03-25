@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-research
+ * @module @agentforge/agents-ux/ux-research
  *
  * UX Dashboard Research agent: analyzes PRD requirements for a dashboard
  * module and produces structured design briefs with accessibility
@@ -32,7 +32,7 @@ import type { DesignTokensSpec } from '@agentforge/core';
 // ============================================================================
 
 /** Input for the UX dashboard research agent. */
-export interface UXDashboardResearchInput {
+export interface UXResearchInput {
   readonly moduleId: string;
   readonly taskId: string;
   readonly prdRequirements: readonly string[];
@@ -43,7 +43,7 @@ export interface UXDashboardResearchInput {
 }
 
 /** Output produced by the UX dashboard research agent. */
-export interface UXDashboardResearchOutput {
+export interface UXResearchOutput {
   readonly briefId: string;
   readonly moduleId: string;
   readonly requirementIds: readonly string[];
@@ -58,8 +58,8 @@ export interface UXDashboardResearchOutput {
 // ============================================================================
 
 /** The agent contract for the UX dashboard research agent. */
-export const UX_DASHBOARD_RESEARCH_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_research',
+export const UX_RESEARCH_CONTRACT: AgentContract = {
+  role: 'ux_research',
   description: 'Analyzes PRD requirements for dashboard modules and produces design briefs',
   category: 'design',
   provider: 'claude-sonnet-4-6',
@@ -82,7 +82,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-research-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-research-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -92,7 +92,7 @@ const loadSystemPrompt = (): string => {
 // ============================================================================
 
 /** Parse the LLM output as a UX dashboard research JSON object. */
-export const parseResearchOutput = (output: string): Result<UXDashboardResearchOutput> => {
+export const parseResearchOutput = (output: string): Result<UXResearchOutput> => {
   const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
 
@@ -124,7 +124,7 @@ export const parseResearchOutput = (output: string): Result<UXDashboardResearchO
  * The UX dashboard research agent's work function.
  * Called by runAgent after governance clears.
  */
-export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDashboardResearchOutput> = async (
+export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = async (
   input,
   provider,
   learnings,
@@ -186,13 +186,13 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
 
   // 2b. Record prompt trace
   recordPromptTrace(context, 'research', prompt, {
-    model: UX_DASHBOARD_RESEARCH_CONTRACT.provider,
+    model: UX_RESEARCH_CONTRACT.provider,
     maxTokens: 8000,
   });
 
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {
-    model: context.resolvedModel ?? UX_DASHBOARD_RESEARCH_CONTRACT.provider,
+    model: context.resolvedModel ?? UX_RESEARCH_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
   });
@@ -218,10 +218,10 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
 /**
  * Execute the UX dashboard research agent through the full governance pipeline.
  */
-export const executeUXDashboardResearch = async (
+export const executeUXResearch = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardResearchInput,
+  input: UXResearchInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -230,24 +230,24 @@ export const executeUXDashboardResearch = async (
     'read_design',
     `module:${input.moduleId}`,
     `UX dashboard research for module: ${input.moduleId}`,
-    uxDashboardResearchWork,
+    uxResearchWork,
   );
 };
 
 /**
- * Register the UX dashboard research agent to respond to DashboardModuleRequested events.
+ * Register the UX dashboard research agent to respond to UXModuleRequested events.
  */
-export const registerUXDashboardResearch = (
+export const registerUXResearch = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_RESEARCH_CONTRACT,
+  contract: AgentContract = UX_RESEARCH_CONTRACT,
 ): void => {
-  eventBus.subscribe('DashboardModuleRequested', (event) => {
-    const input: UXDashboardResearchInput = {
+  eventBus.subscribe('UXModuleRequested', (event) => {
+    const input: UXResearchInput = {
       moduleId: event.moduleId,
       taskId: event.taskId,
       prdRequirements: event.prdRequirements,
     };
-    void executeUXDashboardResearch(contract, context, input);
+    void executeUXResearch(contract, context, input);
   });
 };

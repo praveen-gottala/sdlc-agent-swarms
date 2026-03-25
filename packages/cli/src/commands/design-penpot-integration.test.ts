@@ -265,7 +265,7 @@ describe('design:penpot integration — design system context data flow', () => 
       return {
         ...actual,
         // Research: return minimal valid output
-        uxDashboardResearchWork: jest.fn().mockResolvedValue({
+        uxResearchWork: jest.fn().mockResolvedValue({
           ok: true,
           value: {
             briefId: 'brief-test',
@@ -277,7 +277,7 @@ describe('design:penpot integration — design system context data flow', () => 
           },
         }),
         // Planning: return minimal valid output with tokenBindings for buildDesignSystemContextFromSpec
-        uxDashboardPlanningWork: jest.fn().mockResolvedValue({
+        uxPlanningWork: jest.fn().mockResolvedValue({
           ok: true,
           value: {
             specRef: 'spec-test',
@@ -592,11 +592,11 @@ describe('design:penpot integration — --implement flag', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxDashboardResearchWork: jest.fn().mockResolvedValue({
+        uxResearchWork: jest.fn().mockResolvedValue({
           ok: true,
           value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
         }),
-        uxDashboardPlanningWork: jest.fn().mockResolvedValue({
+        uxPlanningWork: jest.fn().mockResolvedValue({
           ok: true,
           value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
         }),
@@ -613,7 +613,7 @@ describe('design:penpot integration — --implement flag', () => {
             penpotNodeIds: { Header: 'n1' }, moduleId: 'home', breakpoints: [],
           },
         }),
-        uxDashboardImplementationWork: jest.fn().mockImplementation(() => {
+        uxImplementationWork: jest.fn().mockImplementation(() => {
           implCalled = true;
           return Promise.resolve({
             ok: true,
@@ -632,5 +632,194 @@ describe('design:penpot integration — --implement flag', () => {
     expect(implCalled).toBe(true);
     expect(out.output).toContain('[implement]');
     expect(out.output).toContain('Generated 1 file');
+  });
+});
+
+// ============================================================================
+// Viewport config integration tests
+// ============================================================================
+
+describe('design:penpot integration — viewport config from manifest', () => {
+  let tmpDir: string;
+  let cwdSpy: jest.SpyInstance;
+  const originalEnv = { ...process.env };
+
+  beforeAll(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-viewport-'));
+
+    mkdirSync(join(tmpDir, 'docs'), { recursive: true });
+    writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n\nA test app.\n');
+    mkdirSync(join(tmpDir, 'agentforge', 'spec'), { recursive: true });
+    writeFileSync(
+      join(tmpDir, 'agentforge', 'spec', 'design-tokens.yaml'),
+      yamlStringify(VALID_TOKENS),
+    );
+    writeFileSync(
+      join(tmpDir, 'agentforge', 'spec', 'brand.yaml'),
+      yamlStringify(VALID_BRAND),
+    );
+  });
+
+  afterAll(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
+    cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+    process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+    process.env = { ...originalEnv };
+    process.exitCode = undefined;
+  });
+
+  it('uses design config primary_viewport when page has no viewports', async () => {
+    // Write manifest with design config specifying 1280 primary viewport
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), yamlStringify({
+      version: '1.0',
+      project: { name: 'test', id: 'test-1', platforms: ['web'] },
+      stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
+      repo: { provider: 'github', org: 'test', name: 'test' },
+      agents: { providers: { default: 'claude-sonnet-4-6' }, sandbox: { type: 'github_actions', timeout_minutes: 15, max_retries: 3 }, orchestration: { max_concurrent_agents: 3, ci_wait_strategy: 'spawn_next' } },
+      hitl: { default: 'review_and_override' },
+      channels: [{ type: 'cli', capabilities: 'basic', priority: 1 }],
+      routing: { approval_requests: 'all', status_updates: 'primary', critical_alerts: 'all' },
+      budget: { per_task_max_usd: 2, per_phase_max_usd: 25, monthly_max_usd: 200, alert_threshold: 0.8 },
+      design: { primary_viewport: 1280, layout_strategy: 'desktop-first', responsive_breakpoints: false },
+    }));
+
+    let capturedInput: Record<string, unknown> | undefined;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+        }),
+        uxPlanningWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
+        }),
+        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+          });
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('home', out, { noWait: true, mock: true });
+
+    expect(capturedInput).toBeDefined();
+    expect(capturedInput!.viewportWidth).toBe(1280);
+  });
+
+  it('CLI --width overrides manifest design config', async () => {
+    // Same manifest with 1280 primary viewport
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), yamlStringify({
+      version: '1.0',
+      project: { name: 'test', id: 'test-1', platforms: ['web'] },
+      stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
+      repo: { provider: 'github', org: 'test', name: 'test' },
+      agents: { providers: { default: 'claude-sonnet-4-6' }, sandbox: { type: 'github_actions', timeout_minutes: 15, max_retries: 3 }, orchestration: { max_concurrent_agents: 3, ci_wait_strategy: 'spawn_next' } },
+      hitl: { default: 'review_and_override' },
+      channels: [{ type: 'cli', capabilities: 'basic', priority: 1 }],
+      routing: { approval_requests: 'all', status_updates: 'primary', critical_alerts: 'all' },
+      budget: { per_task_max_usd: 2, per_phase_max_usd: 25, monthly_max_usd: 200, alert_threshold: 0.8 },
+      design: { primary_viewport: 1280, layout_strategy: 'desktop-first', responsive_breakpoints: false },
+    }));
+
+    let capturedInput: Record<string, unknown> | undefined;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+        }),
+        uxPlanningWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
+        }),
+        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+          });
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('home', out, { width: 768, noWait: true, mock: true });
+
+    expect(capturedInput).toBeDefined();
+    expect(capturedInput!.viewportWidth).toBe(768);
+  });
+
+  it('passes designConfig to planning agent for viewport constraint injection', async () => {
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), yamlStringify({
+      version: '1.0',
+      project: { name: 'test', id: 'test-1', platforms: ['web'] },
+      stack: { frontend: 'react', backend: 'node', database: 'postgresql', styling: 'tailwind' },
+      repo: { provider: 'github', org: 'test', name: 'test' },
+      agents: { providers: { default: 'claude-sonnet-4-6' }, sandbox: { type: 'github_actions', timeout_minutes: 15, max_retries: 3 }, orchestration: { max_concurrent_agents: 3, ci_wait_strategy: 'spawn_next' } },
+      hitl: { default: 'review_and_override' },
+      channels: [{ type: 'cli', capabilities: 'basic', priority: 1 }],
+      routing: { approval_requests: 'all', status_updates: 'primary', critical_alerts: 'all' },
+      budget: { per_task_max_usd: 2, per_phase_max_usd: 25, monthly_max_usd: 200, alert_threshold: 0.8 },
+      design: { primary_viewport: 1440, layout_strategy: 'desktop-first', responsive_breakpoints: false },
+    }));
+
+    let capturedPlanningInput: Record<string, unknown> | undefined;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+        }),
+        uxPlanningWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPlanningInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
+          });
+        }),
+        penpotDesignWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('home', out, { noWait: true, mock: true });
+
+    expect(capturedPlanningInput).toBeDefined();
+    expect(capturedPlanningInput!.designConfig).toEqual({
+      primary_viewport: 1440,
+      layout_strategy: 'desktop-first',
+      responsive_breakpoints: false,
+    });
   });
 });

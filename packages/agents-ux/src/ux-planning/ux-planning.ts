@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-planning
+ * @module @agentforge/agents-ux/ux-planning
  *
  * UX Dashboard Planning agent: translates design briefs into component specs
  * with token bindings, responsive rules, and 4-stage implementation sequences.
@@ -16,6 +16,7 @@ import type {
   EventBus,
   DesignTokensSpec,
   BrandSpec,
+  DesignConfig,
 } from '@agentforge/core';
 import {
   Ok,
@@ -24,7 +25,7 @@ import {
   readSpecs,
   recordPromptTrace,
 } from '@agentforge/core';
-import type { UXDashboardResearchOutput } from '../ux-research/ux-dashboard-research.js';
+import type { UXResearchOutput } from '../ux-research/ux-research.js';
 import type { ComponentTreeNode, ResponsiveRule, ImplementationStage, ScreenDefinition } from '../types.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
@@ -33,15 +34,17 @@ import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '..
 // ============================================================================
 
 /** Input for the UX dashboard planning agent. */
-export interface UXDashboardPlanningInput {
+export interface UXPlanningInput {
   readonly briefId: string;
   readonly moduleId: string;
   readonly taskId: string;
-  readonly designBrief: UXDashboardResearchOutput;
+  readonly designBrief: UXResearchOutput;
+  /** Optional design config from project manifest for viewport constraints. */
+  readonly designConfig?: DesignConfig;
 }
 
 /** Output produced by the UX dashboard planning agent. */
-export interface UXDashboardPlanningOutput {
+export interface UXPlanningOutput {
   readonly specRef: string;
   readonly moduleId: string;
   readonly componentTree: readonly ComponentTreeNode[];
@@ -57,8 +60,8 @@ export interface UXDashboardPlanningOutput {
 // ============================================================================
 
 /** The agent contract for the UX dashboard planning agent. */
-export const UX_DASHBOARD_PLANNING_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_planning',
+export const UX_PLANNING_CONTRACT: AgentContract = {
+  role: 'ux_planning',
   description: 'Translates design briefs into component specs with token bindings, responsive rules, and 4-stage implementation sequences',
   category: 'design',
   provider: 'claude-sonnet-4-6',
@@ -81,7 +84,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-planning-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-planning-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -186,10 +189,10 @@ const normalizeTokenBindings = (raw: unknown): Record<string, string> => {
 };
 
 /**
- * Extract a UXDashboardPlanningOutput from a parsed JSON object.
+ * Extract a UXPlanningOutput from a parsed JSON object.
  * Used by both the structured output path and the text-fallback parser.
  */
-const extractPlanningFields = (parsed: Record<string, unknown>): UXDashboardPlanningOutput => ({
+const extractPlanningFields = (parsed: Record<string, unknown>): UXPlanningOutput => ({
   specRef: (parsed.specRef as string) ?? '',
   moduleId: (parsed.moduleId as string) ?? '',
   componentTree: (parsed.componentTree as ComponentTreeNode[]) ?? [],
@@ -204,7 +207,7 @@ const extractPlanningFields = (parsed: Record<string, unknown>): UXDashboardPlan
 // ============================================================================
 
 /** Parse the LLM output as a UX dashboard planning JSON object (text fallback). */
-export const parsePlanningOutput = (output: string): Result<UXDashboardPlanningOutput> => {
+export const parsePlanningOutput = (output: string): Result<UXPlanningOutput> => {
   const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
 
@@ -536,7 +539,7 @@ export const applyDotNotationFallback = (
  * The UX dashboard planning agent's work function.
  * Called by runAgent after governance clears.
  */
-export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDashboardPlanningOutput> = async (
+export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = async (
   input,
   provider,
   learnings,
@@ -606,6 +609,27 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
     userMessageParts.push(componentLibContext);
   }
 
+  // Inject viewport configuration constraints from project manifest
+  if (input.designConfig) {
+    const { responsive_breakpoints, primary_viewport, layout_strategy } = input.designConfig;
+    if (responsive_breakpoints === false) {
+      userMessageParts.push(
+        `\n## Viewport Configuration\nThis project is configured for desktop-only at ${primary_viewport}px. Generate responsiveRules for desktop only. Do NOT include tablet or mobile breakpoints — they will be added later when responsive_breakpoints is enabled.`,
+      );
+    } else if (responsive_breakpoints === true) {
+      const breakpoints = layout_strategy === 'mobile-first'
+        ? [375, 768, 1440]
+        : [1440, 768, 375];
+      userMessageParts.push(
+        `\n## Viewport Configuration\nTarget breakpoints: ${breakpoints.join('px, ')}px (${layout_strategy}). Generate responsiveRules for all listed breakpoints.`,
+      );
+    } else if (Array.isArray(responsive_breakpoints) && responsive_breakpoints.length > 0) {
+      userMessageParts.push(
+        `\n## Viewport Configuration\nTarget breakpoints: ${responsive_breakpoints.join('px, ')}px (${layout_strategy}). Generate responsiveRules for all listed breakpoints.`,
+      );
+    }
+  }
+
   if (learnings.length > 0) {
     userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);
   }
@@ -617,13 +641,13 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
 
   // 3a. Record prompt trace
   recordPromptTrace(context, 'planning', prompt, {
-    model: UX_DASHBOARD_PLANNING_CONTRACT.provider,
+    model: UX_PLANNING_CONTRACT.provider,
     maxTokens: 8000,
   });
 
   // 3. Call LLM with structured output schema
   const completionResult = await provider.complete(prompt, {
-    model: context.resolvedModel ?? UX_DASHBOARD_PLANNING_CONTRACT.provider,
+    model: context.resolvedModel ?? UX_PLANNING_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
     responseSchema: PLANNING_OUTPUT_SCHEMA,
@@ -667,12 +691,12 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
       };
 
       recordPromptTrace(context, 'planning-token-correction', retryPrompt, {
-        model: UX_DASHBOARD_PLANNING_CONTRACT.provider,
+        model: UX_PLANNING_CONTRACT.provider,
         maxTokens: 2000,
       });
 
       const retryResult = await provider.complete(retryPrompt, {
-        model: context.resolvedModel ?? UX_DASHBOARD_PLANNING_CONTRACT.provider,
+        model: context.resolvedModel ?? UX_PLANNING_CONTRACT.provider,
         maxTokens: 2000,
         temperature: 0,
       });
@@ -725,10 +749,10 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
 /**
  * Execute the UX dashboard planning agent through the full governance pipeline.
  */
-export const executeUXDashboardPlanning = async (
+export const executeUXPlanning = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardPlanningInput,
+  input: UXPlanningInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -737,25 +761,25 @@ export const executeUXDashboardPlanning = async (
     'read_design',
     `module:${input.moduleId}`,
     `UX dashboard planning for module: ${input.moduleId}`,
-    uxDashboardPlanningWork,
+    uxPlanningWork,
   );
 };
 
 /**
  * Register the UX dashboard planning agent to respond to DesignBriefCompleted events.
  */
-export const registerUXDashboardPlanning = (
+export const registerUXPlanning = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_PLANNING_CONTRACT,
+  contract: AgentContract = UX_PLANNING_CONTRACT,
 ): void => {
   eventBus.subscribe('DesignBriefCompleted', (event) => {
-    const input: UXDashboardPlanningInput = {
+    const input: UXPlanningInput = {
       briefId: event.briefId,
       moduleId: event.moduleId,
       taskId: event.taskId,
-      designBrief: event as unknown as UXDashboardResearchOutput,
+      designBrief: event as unknown as UXResearchOutput,
     };
-    void executeUXDashboardPlanning(contract, context, input);
+    void executeUXPlanning(contract, context, input);
   });
 };

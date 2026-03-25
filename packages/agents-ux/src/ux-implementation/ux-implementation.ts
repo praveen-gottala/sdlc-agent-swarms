@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-implementation
+ * @module @agentforge/agents-ux/ux-implementation
  *
  * UX Dashboard Implementation agent: generates React 19 + Tailwind CSS code
  * from component specs produced by the planning agent. Uses streaming mode.
@@ -22,7 +22,7 @@ import {
   runAgent,
   readSpecs,
 } from '@agentforge/core';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
@@ -31,11 +31,11 @@ import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '..
 // ============================================================================
 
 /** Input for the UX dashboard implementation agent. */
-export interface UXDashboardImplementationInput {
+export interface UXImplementationInput {
   readonly specRef: string;
   readonly moduleId: string;
   readonly taskId: string;
-  readonly componentSpec: UXDashboardPlanningOutput;
+  readonly componentSpec: UXPlanningOutput;
   readonly stage: ImplementationStage['stage'];
   /**
    * Design snapshot data from the design stage (screenshots + extracted styles).
@@ -61,7 +61,7 @@ export interface GeneratedFile {
 }
 
 /** Output produced by the UX dashboard implementation agent. */
-export interface UXDashboardImplementationOutput {
+export interface UXImplementationOutput {
   readonly moduleId: string;
   readonly stage: ImplementationStage['stage'];
   readonly files: readonly GeneratedFile[];
@@ -111,8 +111,8 @@ const collectStreamOutput = async (
 // ============================================================================
 
 /** The agent contract for the UX dashboard implementation agent. */
-export const UX_DASHBOARD_IMPLEMENTATION_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_implementation',
+export const UX_IMPLEMENTATION_CONTRACT: AgentContract = {
+  role: 'ux_implementation',
   description: 'Generates React 19 + Tailwind CSS code from component specs with design token bindings',
   category: 'design',
   provider: 'claude-sonnet-4-6',
@@ -135,7 +135,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-implementation-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-implementation-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -145,7 +145,7 @@ const loadSystemPrompt = (): string => {
 // ============================================================================
 
 /** Parse the LLM output as a UX dashboard implementation JSON object. */
-export const parseImplementationOutput = (output: string): Result<UXDashboardImplementationOutput> => {
+export const parseImplementationOutput = (output: string): Result<UXImplementationOutput> => {
   const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
 
@@ -174,7 +174,7 @@ export const parseImplementationOutput = (output: string): Result<UXDashboardImp
  * The UX dashboard implementation agent's work function.
  * Called by runAgent after governance clears. Uses streaming mode.
  */
-export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementationInput, UXDashboardImplementationOutput> = async (
+export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplementationOutput> = async (
   input,
   provider,
   learnings,
@@ -296,7 +296,7 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
 
   // 3. Call LLM via streaming
   const stream = provider.stream(prompt, {
-    model: context.resolvedModel ?? UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider,
+    model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
     maxTokens: 16000,
     temperature: 0,
   });
@@ -313,7 +313,7 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
   }
 
   // Attach actual cost from stream
-  const result: UXDashboardImplementationOutput = {
+  const result: UXImplementationOutput = {
     ...parseResult.value,
     totalCostUsd: collectResult.value.cost.totalCostUsd,
   };
@@ -353,10 +353,10 @@ export const writeImplementationFiles = (
 /**
  * Execute the UX dashboard implementation agent through the full governance pipeline.
  */
-export const executeUXDashboardImplementation = async (
+export const executeUXImplementation = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardImplementationInput,
+  input: UXImplementationInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -365,7 +365,7 @@ export const executeUXDashboardImplementation = async (
     'write_code',
     `module:${input.moduleId}`,
     `UX dashboard implementation (${input.stage}) for module: ${input.moduleId}`,
-    uxDashboardImplementationWork,
+    uxImplementationWork,
   );
 };
 
@@ -373,19 +373,19 @@ export const executeUXDashboardImplementation = async (
  * Register the UX dashboard implementation agent to respond to FigmaDesignReady events.
  * Uses the Figma-native workflow instead of the old wireframe preview HITL gate.
  */
-export const registerUXDashboardImplementation = (
+export const registerUXImplementation = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_IMPLEMENTATION_CONTRACT,
+  contract: AgentContract = UX_IMPLEMENTATION_CONTRACT,
 ): void => {
   eventBus.subscribe('FigmaDesignReady', (event) => {
-    const input: UXDashboardImplementationInput = {
+    const input: UXImplementationInput = {
       specRef: `figma://${event.figmaFileId}/${event.figmaPageId}`,
       moduleId: event.moduleId,
       taskId: event.taskId,
-      componentSpec: event as unknown as UXDashboardPlanningOutput,
+      componentSpec: event as unknown as UXPlanningOutput,
       stage: 'layout',
     };
-    void executeUXDashboardImplementation(contract, context, input);
+    void executeUXImplementation(contract, context, input);
   });
 };

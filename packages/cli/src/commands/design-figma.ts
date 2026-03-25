@@ -41,11 +41,11 @@ import type {
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
-  uxDashboardDesignWork,
+  uxResearchWork,
+  uxPlanningWork,
+  uxDesignWork,
   executeDesignSteps,
-  uxDashboardImplementationWork,
+  uxImplementationWork,
   writeImplementationFiles,
   createDesignCollaborationSession,
   runDesignFeedbackLoop,
@@ -56,13 +56,13 @@ import {
   buildComponentCatalogPrompt,
 } from '@agentforge/agents-ux';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
-  UXDashboardDesignInput,
-  UXDashboardDesignOutput,
-  UXDashboardImplementationInput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
+  UXDesignInput,
+  UXDesignOutput,
+  UXImplementationInput,
   ImplementCallback,
 } from '@agentforge/agents-ux';
 
@@ -256,10 +256,10 @@ export async function designFigmaCommand(
   try {
 
   // ── Stage 1: Research ──
-  let researchOutput: UXDashboardResearchOutput;
+  let researchOutput: UXResearchOutput;
 
   if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXDashboardResearchOutput>(outputDir, 'research-brief.json');
+    const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
     if (!cached) {
       output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
       process.exitCode = 1;
@@ -277,7 +277,7 @@ export async function designFigmaCommand(
       prdRequirements.push(prdContent);
     }
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId,
       taskId,
       prdRequirements,
@@ -285,7 +285,7 @@ export async function designFigmaCommand(
     };
 
     const t0 = Date.now();
-    const result = await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
     const ms = Date.now() - t0;
 
     if (!result.ok) {
@@ -303,10 +303,10 @@ export async function designFigmaCommand(
   }
 
   // ── Stage 2: Planning ──
-  let planningOutput: UXDashboardPlanningOutput;
+  let planningOutput: UXPlanningOutput;
 
   if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXDashboardPlanningOutput>(outputDir, 'planning-spec.json');
+    const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
     if (!cached) {
       output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
       process.exitCode = 1;
@@ -319,7 +319,7 @@ export async function designFigmaCommand(
     const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const context = createContext(taskId, createMockMCPClient(), promptTraces);
 
-    const input: UXDashboardPlanningInput = {
+    const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
       moduleId,
       taskId,
@@ -327,7 +327,7 @@ export async function designFigmaCommand(
     };
 
     const t0 = Date.now();
-    const result = await uxDashboardPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
     const ms = Date.now() - t0;
 
     if (!result.ok) {
@@ -347,7 +347,7 @@ export async function designFigmaCommand(
   // ── Stage 3: Design (Figma) ──
   if (skipToStage === 'connect') {
     // --stage connect: skip design, load from cache, only test connection
-    const cached = loadArtifact<UXDashboardDesignOutput>(outputDir, 'figma-design.json');
+    const cached = loadArtifact<UXDesignOutput>(outputDir, 'figma-design.json');
     if (!cached) {
       output.write(errorMsg(`No cached design output found at ${outputDir}/figma-design.json\n`));
       process.exitCode = 1;
@@ -367,7 +367,7 @@ export async function designFigmaCommand(
 
   if (skipToStage === 'replay') {
     // --stage replay: re-execute cached design steps into Figma (no LLM calls)
-    const cached = loadArtifact<UXDashboardDesignOutput>(outputDir, 'figma-design.json');
+    const cached = loadArtifact<UXDesignOutput>(outputDir, 'figma-design.json');
     if (!cached?.steps || cached.steps.length === 0) {
       output.write(errorMsg(`No cached design steps found in ${outputDir}/figma-design.json\n`));
       output.write(errorMsg('Run a full design first (without --stage) to generate steps.\n'));
@@ -382,7 +382,7 @@ export async function designFigmaCommand(
     const ms = Date.now() - t0;
 
     // Save updated artifact with new node IDs (Figma assigns fresh IDs on replay)
-    const updatedOutput: UXDashboardDesignOutput = {
+    const updatedOutput: UXDesignOutput = {
       ...cached,
       figmaFileId: result.figmaFileId,
       figmaPageId: result.figmaPageId,
@@ -418,7 +418,7 @@ export async function designFigmaCommand(
 
   const componentCatalogPrompt = buildComponentCatalogPrompt(componentCatalog);
 
-  const input: UXDashboardDesignInput = {
+  const input: UXDesignInput = {
     specRef: planningOutput.specRef,
     moduleId,
     taskId,
@@ -429,7 +429,7 @@ export async function designFigmaCommand(
   };
 
   const t0 = Date.now();
-  const result = await uxDashboardDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+  const result = await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
   const ms = Date.now() - t0;
 
   if (!result.ok) {
@@ -462,7 +462,7 @@ export async function designFigmaCommand(
       const implContext = createContext(`${taskId}_impl`, mcpClient);
 
       // Pass design snapshot data (screenshots + extracted styles) to the implementation agent
-      const implInput: UXDashboardImplementationInput = {
+      const implInput: UXImplementationInput = {
         specRef: planningOutput.specRef,
         moduleId,
         taskId: `${taskId}_impl`,
@@ -475,7 +475,7 @@ export async function designFigmaCommand(
         designFileId: design.figmaFileId,
       };
 
-      const implResult = await uxDashboardImplementationWork(
+      const implResult = await uxImplementationWork(
         implInput,
         implProvider as unknown as LLMProviderRef,
         [],

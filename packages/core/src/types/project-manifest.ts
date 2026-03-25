@@ -87,6 +87,24 @@ export interface BudgetManifestConfig {
 }
 
 /**
+ * Design generation configuration.
+ * Controls viewport widths, layout strategy, and responsive breakpoint generation.
+ */
+export interface DesignConfig {
+  /** Primary viewport width in pixels. Default: 1440 */
+  readonly primary_viewport: number;
+  /** Layout approach: 'desktop-first' or 'mobile-first'. Default: 'desktop-first' */
+  readonly layout_strategy: 'desktop-first' | 'mobile-first';
+  /**
+   * Which breakpoints to generate designs for.
+   * - `false`: only the primary_viewport is generated.
+   * - `true`: generates for all standard breakpoints (desktop, tablet, mobile).
+   * - `number[]`: explicit list of widths to generate.
+   */
+  readonly responsive_breakpoints: boolean | readonly number[];
+}
+
+/**
  * The full agentforge.yaml project manifest.
  */
 export interface ProjectManifest {
@@ -109,4 +127,6 @@ export interface ProjectManifest {
   readonly channels: readonly ChannelEntry[];
   readonly routing: RoutingManifestConfig;
   readonly budget: BudgetManifestConfig;
+  /** Design generation settings (viewport, responsive breakpoints). */
+  readonly design?: DesignConfig;
 }

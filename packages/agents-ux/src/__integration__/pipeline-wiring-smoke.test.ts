@@ -23,15 +23,15 @@ import type {
 import { Ok, Err, createEventBus } from '@agentforge/core';
 import { stringify } from 'yaml';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
-  uxDashboardDesignWork,
+  uxResearchWork,
+  uxPlanningWork,
+  uxDesignWork,
   buildDesignSystemContextFromSpec,
 } from '../index.js';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardPlanningInput,
-  UXDashboardDesignInput,
+  UXResearchInput,
+  UXPlanningInput,
+  UXDesignInput,
 } from '../index.js';
 
 // ============================================================================
@@ -189,14 +189,14 @@ describe('Pipeline wiring smoke test', () => {
     const { provider, calls } = createSpyProvider(CANNED_RESEARCH);
     const context = createMockContext();
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
       designTokensSpec: BOOKSHELF_TOKENS,
     };
 
-    await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(calls).toHaveLength(1);
     // The full PRD content must appear in the user message, not just "home"
@@ -209,14 +209,14 @@ describe('Pipeline wiring smoke test', () => {
     const { provider, calls } = createSpyProvider(CANNED_RESEARCH);
     const context = createMockContext();
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
       designTokensSpec: BOOKSHELF_TOKENS,
     };
 
-    await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(calls[0].userContent).toContain('forest-green');
     expect(calls[0].userContent).toContain('#228B22');
@@ -234,14 +234,14 @@ describe('Pipeline wiring smoke test', () => {
     };
 
     const researchOutput = JSON.parse(CANNED_RESEARCH);
-    const input: UXDashboardPlanningInput = {
+    const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       designBrief: researchOutput,
     };
 
-    await uxDashboardPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(calls).toHaveLength(1);
     expect(calls[0].userContent).toContain('brief-smoke-001');
@@ -257,7 +257,7 @@ describe('Pipeline wiring smoke test', () => {
     // Build design system prompt from spec — the path that was previously unwired
     const dsCtx = buildDesignSystemContextFromSpec(BOOKSHELF_TOKENS, BOOKSHELF_BRAND, planningOutput);
 
-    const input: UXDashboardDesignInput = {
+    const input: UXDesignInput = {
       specRef: planningOutput.specRef,
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -266,7 +266,7 @@ describe('Pipeline wiring smoke test', () => {
       designSystemPrompt: dsCtx.designSystemPrompt,
     };
 
-    await uxDashboardDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
 
     // At least 1 call for the main screen; may have additional for completeness follow-up
     expect(calls.length).toBeGreaterThanOrEqual(1);
@@ -283,7 +283,7 @@ describe('Pipeline wiring smoke test', () => {
 
     const planningOutput = JSON.parse(CANNED_PLANNING);
 
-    const input: UXDashboardDesignInput = {
+    const input: UXDesignInput = {
       specRef: planningOutput.specRef,
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -292,7 +292,7 @@ describe('Pipeline wiring smoke test', () => {
       // intentionally no designSystemPrompt
     };
 
-    await uxDashboardDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
 
     // At least 1 call for the main screen; may have additional for completeness follow-up
     expect(calls.length).toBeGreaterThanOrEqual(1);
@@ -310,13 +310,13 @@ describe('Pipeline wiring smoke test', () => {
     const { provider } = createSpyProvider(CANNED_RESEARCH);
     const context = createMockContext();
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: [],
     };
 
-    const result = await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -329,14 +329,14 @@ describe('Pipeline wiring smoke test', () => {
     const context = createMockContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home'],
       designTokensSpec: BOOKSHELF_TOKENS,
     };
 
-    await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('short labels'),
@@ -348,7 +348,7 @@ describe('Pipeline wiring smoke test', () => {
     const { provider } = createSpyProvider(CANNED_DESIGN);
     const context = createMockContext();
 
-    const input: UXDashboardDesignInput = {
+    const input: UXDesignInput = {
       specRef: 'spec-001',
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -363,7 +363,7 @@ describe('Pipeline wiring smoke test', () => {
       description: 'test',
     };
 
-    const result = await uxDashboardDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

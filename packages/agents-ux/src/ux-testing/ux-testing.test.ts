@@ -1,8 +1,8 @@
 import {
-  UX_DASHBOARD_TESTING_CONTRACT,
+  UX_TESTING_CONTRACT,
   parseTestingOutput,
-  registerUXDashboardTesting,
-} from './ux-dashboard-testing.js';
+  registerUXTesting,
+} from './ux-testing.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
@@ -68,21 +68,21 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_TESTING_CONTRACT', () => {
+describe('UX_TESTING_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_TESTING_CONTRACT.role).toBe('ux_dashboard_testing');
-    expect(UX_DASHBOARD_TESTING_CONTRACT.category).toBe('code');
-    expect(UX_DASHBOARD_TESTING_CONTRACT.provider).toBe(DEFAULT_MODEL);
-    expect(UX_DASHBOARD_TESTING_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot', 'fs:read']);
-    expect(UX_DASHBOARD_TESTING_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'write_test']);
-    expect(UX_DASHBOARD_TESTING_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);
-    expect(UX_DASHBOARD_TESTING_CONTRACT.budget).toEqual({ max_tokens_per_task: 50000, max_cost_per_task_usd: 2.0 });
-    expect(UX_DASHBOARD_TESTING_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
-    expect(UX_DASHBOARD_TESTING_CONTRACT.hitl_policy).toBe('notify_only');
+    expect(UX_TESTING_CONTRACT.role).toBe('ux_testing');
+    expect(UX_TESTING_CONTRACT.category).toBe('code');
+    expect(UX_TESTING_CONTRACT.provider).toBe(DEFAULT_MODEL);
+    expect(UX_TESTING_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot', 'fs:read']);
+    expect(UX_TESTING_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'write_test']);
+    expect(UX_TESTING_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);
+    expect(UX_TESTING_CONTRACT.budget).toEqual({ max_tokens_per_task: 50000, max_cost_per_task_usd: 2.0 });
+    expect(UX_TESTING_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
+    expect(UX_TESTING_CONTRACT.hitl_policy).toBe('notify_only');
   });
 
   it('contract on_complete matches UXTestSuiteCompleted event', () => {
-    expect(UX_DASHBOARD_TESTING_CONTRACT.on_complete).toBe('UXTestSuiteCompleted');
+    expect(UX_TESTING_CONTRACT.on_complete).toBe('UXTestSuiteCompleted');
   });
 });
 
@@ -147,7 +147,7 @@ describe('parseTestingOutput', () => {
   });
 });
 
-describe('registerUXDashboardTesting', () => {
+describe('registerUXTesting', () => {
   it('subscribes to ImplementationDraftReady', () => {
     const ctx = makeContext();
     const mockEventBus = {
@@ -159,7 +159,7 @@ describe('registerUXDashboardTesting', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardTesting(mockEventBus, ctx);
+    registerUXTesting(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(

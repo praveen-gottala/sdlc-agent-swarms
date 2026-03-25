@@ -1,9 +1,9 @@
 import {
-  UX_DASHBOARD_IMPLEMENTATION_CONTRACT,
+  UX_IMPLEMENTATION_CONTRACT,
   parseImplementationOutput,
-  registerUXDashboardImplementation,
-  uxDashboardImplementationWork,
-} from './ux-dashboard-implementation.js';
+  registerUXImplementation,
+  uxImplementationWork,
+} from './ux-implementation.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok, DEFAULT_MODEL } from '@agentforge/core';
 
@@ -82,21 +82,21 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_IMPLEMENTATION_CONTRACT', () => {
+describe('UX_IMPLEMENTATION_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.role).toBe('ux_dashboard_implementation');
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider).toBe(DEFAULT_MODEL);
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.tools).toEqual(['github.create_branch', 'github.push_files']);
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch']);
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.denied).toEqual(['deploy_staging', 'deploy_production', 'merge_pr']);
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.budget).toEqual({ max_tokens_per_task: 60000, max_cost_per_task_usd: 2.0 });
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.execution).toEqual({ mode: 'stream', progress_events: true, max_context_tokens: 60000 });
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.hitl_policy).toBe('review_and_override');
+    expect(UX_IMPLEMENTATION_CONTRACT.role).toBe('ux_implementation');
+    expect(UX_IMPLEMENTATION_CONTRACT.category).toBe('design');
+    expect(UX_IMPLEMENTATION_CONTRACT.provider).toBe(DEFAULT_MODEL);
+    expect(UX_IMPLEMENTATION_CONTRACT.tools).toEqual(['github.create_branch', 'github.push_files']);
+    expect(UX_IMPLEMENTATION_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch']);
+    expect(UX_IMPLEMENTATION_CONTRACT.denied).toEqual(['deploy_staging', 'deploy_production', 'merge_pr']);
+    expect(UX_IMPLEMENTATION_CONTRACT.budget).toEqual({ max_tokens_per_task: 60000, max_cost_per_task_usd: 2.0 });
+    expect(UX_IMPLEMENTATION_CONTRACT.execution).toEqual({ mode: 'stream', progress_events: true, max_context_tokens: 60000 });
+    expect(UX_IMPLEMENTATION_CONTRACT.hitl_policy).toBe('review_and_override');
   });
 
   it('contract on_complete matches ImplementationDraftReady event', () => {
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.on_complete).toBe('ImplementationDraftReady');
+    expect(UX_IMPLEMENTATION_CONTRACT.on_complete).toBe('ImplementationDraftReady');
   });
 });
 
@@ -132,7 +132,7 @@ describe('parseImplementationOutput', () => {
   });
 });
 
-describe('registerUXDashboardImplementation', () => {
+describe('registerUXImplementation', () => {
   it('subscribes to FigmaDesignReady', () => {
     const ctx = makeContext();
     const mockEventBus = {
@@ -144,7 +144,7 @@ describe('registerUXDashboardImplementation', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardImplementation(mockEventBus, ctx);
+    registerUXImplementation(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ touch_targets:
   minimum_height: 44
   minimum_width: 44`;
 
-describe('uxDashboardImplementationWork — disk design tokens required', () => {
+describe('uxImplementationWork — disk design tokens required', () => {
   it('returns Err when design-tokens.yaml is missing', async () => {
     const provider = makeProvider();
     const ctx = makeContext();
@@ -206,7 +206,7 @@ describe('uxDashboardImplementationWork — disk design tokens required', () => 
       stage: 'layout' as const,
     };
 
-    const result = await uxDashboardImplementationWork(
+    const result = await uxImplementationWork(
       input,
       provider as unknown as LLMProviderRef,
       [],
@@ -248,7 +248,7 @@ describe('uxDashboardImplementationWork — disk design tokens required', () => 
       stage: 'layout' as const,
     };
 
-    const result = await uxDashboardImplementationWork(
+    const result = await uxImplementationWork(
       input,
       provider as unknown as LLMProviderRef,
       [],

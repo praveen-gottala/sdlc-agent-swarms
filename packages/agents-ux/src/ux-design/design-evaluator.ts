@@ -9,6 +9,33 @@ import type { Result, DesignTokensSpec } from '@agentforge/core';
 import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 
+/** JSON Schema for structured evaluation output. */
+const EVALUATION_OUTPUT_SCHEMA = {
+  schema: {
+    type: 'object' as const,
+    properties: {
+      score: { type: 'number' },
+      issues: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            issueId: { type: 'string' },
+            severity: { type: 'string', enum: ['critical', 'major', 'minor'] },
+            component: { type: 'string' },
+            description: { type: 'string' },
+            fix: { type: 'string' },
+          },
+          required: ['severity', 'component', 'description', 'fix'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['score', 'issues'],
+    additionalProperties: false,
+  },
+};
+
 /** A single design issue found during evaluation. */
 export interface DesignIssue {
   readonly severity: 'critical' | 'major' | 'minor';
@@ -65,6 +92,13 @@ Scoring modifiers for content density (apply these deductions):
 - Deduct 5–10 points per section that uses >60px top or bottom padding (excessive whitespace)
 - Deduct 5 points if cards in a row don't fill at least 80% of the available row width
 - If the bottom 30%+ of a tall page (>2000px) appears visually empty → report as critical issue with issueId "excessive-root-height"
+
+Text quality (critical — these indicate broken layout, not just poor design):
+- Deduct 15 points if any text appears truncated (cut off mid-word, or text visibly extends beyond its container)
+- Deduct 10 points if text nodes overlap each other or overlap input field boundaries
+- Deduct 5 points per text node that appears to overflow its parent container
+- If text labels show partial words (e.g., "Enter your bill de" instead of full text) → report as critical issue with issueId "text-truncation-{component}"
+- If a value and its label overlap (e.g., "$0.00" overlapping "Amount") → report as critical issue with issueId "text-overlap-{component}"
 
 IMPORTANT:
 - Give each issue a stable "issueId" (lowercase-kebab-case, e.g., "missing-header-title", "card-spacing-wrong").
@@ -161,6 +195,7 @@ export async function evaluateDesign(
       model: DEFAULT_MODEL,
       maxTokens: 4096,
       temperature: 0,
+      responseSchema: EVALUATION_OUTPUT_SCHEMA,
     },
   );
 
@@ -173,12 +208,18 @@ export async function evaluateDesign(
   }
 
   try {
-    const content = result.value.content;
-    // Extract JSON from possible markdown fence
-    const fenceMatch = /```json\s*\n?([\s\S]*?)```/.exec(content);
-    const jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
+    // Prefer structured output, fall back to text parsing
+    const structured = result.value.structured;
+    let parsed: { score: number; issues: DesignIssue[] };
 
-    const parsed = JSON.parse(jsonStr) as { score: number; issues: DesignIssue[] };
+    if (structured) {
+      parsed = structured as { score: number; issues: DesignIssue[] };
+    } else {
+      const content = result.value.content;
+      const fenceMatch = /```json\s*\n?([\s\S]*?)```/.exec(content);
+      const jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
+      parsed = JSON.parse(jsonStr) as { score: number; issues: DesignIssue[] };
+    }
 
     const score = typeof parsed.score === 'number' ? parsed.score : 0;
     const issues: DesignIssue[] = Array.isArray(parsed.issues) ? parsed.issues : [];

@@ -35,14 +35,14 @@ import { Ok, Err, createEventBus } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import { stringify } from 'yaml';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
 } from '../index.js';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
+  uxResearchWork,
+  uxPlanningWork,
   buildDesignSystemContextFromSpec,
 } from '../index.js';
 
@@ -178,8 +178,8 @@ const createMockContext = (): AgentContext => ({
 // ============================================================================
 
 describeE2E('E2E: PRD + design system data flow through pipeline', () => {
-  let researchOutput: UXDashboardResearchOutput;
-  let planningOutput: UXDashboardPlanningOutput;
+  let researchOutput: UXResearchOutput;
+  let planningOutput: UXPlanningOutput;
   let designSystemPrompt: string;
 
   beforeAll(async () => {
@@ -191,14 +191,14 @@ describeE2E('E2E: PRD + design system data flow through pipeline', () => {
     const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: API_KEY });
 
     // Stage 1: Research — with full PRD content + design tokens
-    const researchInput: UXDashboardResearchInput = {
+    const researchInput: UXResearchInput = {
       moduleId: 'bookshelf-home',
       taskId: 'e2e-dataflow-001',
       prdRequirements: ['home', PRD_CONTENT],
       designTokensSpec: BOOKSHELF_TOKENS,
     };
 
-    const researchResult = await uxDashboardResearchWork(
+    const researchResult = await uxResearchWork(
       researchInput,
       provider as unknown as LLMProviderRef,
       [],
@@ -211,14 +211,14 @@ describeE2E('E2E: PRD + design system data flow through pipeline', () => {
     researchOutput = researchResult.value;
 
     // Stage 2: Planning
-    const planningInput: UXDashboardPlanningInput = {
+    const planningInput: UXPlanningInput = {
       briefId: researchOutput.briefId,
       moduleId: 'bookshelf-home',
       taskId: 'e2e-dataflow-001',
       designBrief: researchOutput,
     };
 
-    const planningResult = await uxDashboardPlanningWork(
+    const planningResult = await uxPlanningWork(
       planningInput,
       provider as unknown as LLMProviderRef,
       [],

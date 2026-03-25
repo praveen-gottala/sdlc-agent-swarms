@@ -16,71 +16,71 @@ export type { CaptureDesignSnapshotConfig, CaptureScreenshotFn, ExtractPropertie
 export { captureDesignSnapshot } from './ux-design/capture-design-snapshot.js';
 
 // UX Dashboard Research
-export type { UXDashboardResearchInput, UXDashboardResearchOutput } from './ux-research/ux-dashboard-research.js';
+export type { UXResearchInput, UXResearchOutput } from './ux-research/ux-research.js';
 export {
-  UX_DASHBOARD_RESEARCH_CONTRACT,
-  uxDashboardResearchWork,
-  executeUXDashboardResearch,
-  registerUXDashboardResearch,
-} from './ux-research/ux-dashboard-research.js';
+  UX_RESEARCH_CONTRACT,
+  uxResearchWork,
+  executeUXResearch,
+  registerUXResearch,
+} from './ux-research/ux-research.js';
 
 // UX Dashboard Planning
-export type { UXDashboardPlanningInput, UXDashboardPlanningOutput } from './ux-planning/ux-dashboard-planning.js';
+export type { UXPlanningInput, UXPlanningOutput } from './ux-planning/ux-planning.js';
 export {
-  UX_DASHBOARD_PLANNING_CONTRACT,
-  uxDashboardPlanningWork,
-  executeUXDashboardPlanning,
-  registerUXDashboardPlanning,
+  UX_PLANNING_CONTRACT,
+  uxPlanningWork,
+  executeUXPlanning,
+  registerUXPlanning,
   extractValidTokenNames,
   validateTokenBindings,
-} from './ux-planning/ux-dashboard-planning.js';
+} from './ux-planning/ux-planning.js';
 
 // UX Dashboard Implementation
 export type {
-  UXDashboardImplementationInput,
-  UXDashboardImplementationOutput,
+  UXImplementationInput,
+  UXImplementationOutput,
   GeneratedFile,
-} from './ux-implementation/ux-dashboard-implementation.js';
+} from './ux-implementation/ux-implementation.js';
 export {
-  UX_DASHBOARD_IMPLEMENTATION_CONTRACT,
+  UX_IMPLEMENTATION_CONTRACT,
   parseImplementationOutput,
-  uxDashboardImplementationWork,
+  uxImplementationWork,
   writeImplementationFiles,
-  executeUXDashboardImplementation,
-  registerUXDashboardImplementation,
-} from './ux-implementation/ux-dashboard-implementation.js';
+  executeUXImplementation,
+  registerUXImplementation,
+} from './ux-implementation/ux-implementation.js';
 
 // UX Dashboard Review
-export type { UXDashboardReviewInput, UXDashboardReviewOutput } from './ux-review/ux-dashboard-review.js';
+export type { UXReviewInput, UXReviewOutput } from './ux-review/ux-review.js';
 export {
-  UX_DASHBOARD_REVIEW_CONTRACT,
+  UX_REVIEW_CONTRACT,
   parseReviewOutput,
-  uxDashboardReviewWork,
-  executeUXDashboardReview,
-  registerUXDashboardReview,
-} from './ux-review/ux-dashboard-review.js';
+  uxReviewWork,
+  executeUXReview,
+  registerUXReview,
+} from './ux-review/ux-review.js';
 
 // UX Dashboard Testing
-export type { UXDashboardTestingInput, UXDashboardTestingOutput } from './ux-testing/ux-dashboard-testing.js';
+export type { UXTestingInput, UXTestingOutput } from './ux-testing/ux-testing.js';
 export {
-  UX_DASHBOARD_TESTING_CONTRACT,
+  UX_TESTING_CONTRACT,
   parseTestingOutput,
-  uxDashboardTestingWork,
-  executeUXDashboardTesting,
-  registerUXDashboardTesting,
-} from './ux-testing/ux-dashboard-testing.js';
+  uxTestingWork,
+  executeUXTesting,
+  registerUXTesting,
+} from './ux-testing/ux-testing.js';
 
 // UX Dashboard Design
-export type { UXDashboardDesignInput, UXDashboardDesignOutput, StepExecutionResult, ExistingDesignContext } from './ux-design/ux-dashboard-design.js';
+export type { UXDesignInput, UXDesignOutput, StepExecutionResult, ExistingDesignContext } from './ux-design/ux-design.js';
 export {
-  UX_DASHBOARD_DESIGN_CONTRACT,
+  UX_DESIGN_CONTRACT,
   parseDesignSteps,
   buildPerScreenPrompt,
   executeDesignSteps,
-  uxDashboardDesignWork,
-  executeUXDashboardDesign,
-  registerUXDashboardDesign,
-} from './ux-design/ux-dashboard-design.js';
+  uxDesignWork,
+  executeUXDesign,
+  registerUXDesign,
+} from './ux-design/ux-design.js';
 
 // Screen Partitioner
 export { extractScreenSubtree, inferSingleScreen, flattenTree, groupMissingByScreen, screenGridPosition } from './ux-design/screen-partitioner.js';

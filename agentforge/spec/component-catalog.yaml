@@ -20,13 +20,10 @@ components:
       default:
         bg: surface-primary
         text: text-primary
-        border: border-default
-        border_width: 1
         shadow: shadow-sm
       hover:
         bg: surface-primary
         text: text-primary
-        border: border-default
         shadow: shadow-md
       selected:
         bg: surface-secondary
@@ -113,7 +110,6 @@ components:
       default:
         bg: surface-primary
         text: text-primary
-        border: border-default
         shadow: shadow-sm
     token_bindings:
       background: surface-primary

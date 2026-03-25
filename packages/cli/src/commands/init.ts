@@ -672,6 +672,11 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
       monthly_max_usd: 200.0,
       alert_threshold: 0.8,
     },
+    design: {
+      primary_viewport: 1440,
+      layout_strategy: 'desktop-first' as const,
+      responsive_breakpoints: false,
+    },
   };
 }
 

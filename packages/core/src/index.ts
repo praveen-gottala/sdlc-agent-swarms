@@ -32,6 +32,7 @@ export type {
   ChannelEntry,
   RoutingManifestConfig,
   BudgetManifestConfig,
+  DesignConfig,
   ProjectManifest,
   TaskEntry,
   TasksFile,
@@ -93,7 +94,7 @@ export type {
   HITLApproved,
   HITLTimeout,
   TrustEscalated,
-  DashboardModuleRequested,
+  UXModuleRequested,
   DesignBriefCompleted,
   ComponentSpecReady,
   ImplementationDraftReady,
@@ -137,6 +138,8 @@ export { loadProjectManifest } from './config/index.js';
 export type { StackResolution } from './config/index.js';
 export { deriveStackName, resolveStackDir, resolvePromptsDir } from './config/index.js';
 export { resolveModelForRole } from './config/index.js';
+export type { ResolveViewportsInput } from './config/index.js';
+export { resolveViewports, STANDARD_BREAKPOINTS_DESKTOP_FIRST, STANDARD_BREAKPOINTS_MOBILE_FIRST } from './config/index.js';
 
 // State: task manager
 export {

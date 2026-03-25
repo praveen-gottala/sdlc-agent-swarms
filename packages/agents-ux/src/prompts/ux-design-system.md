@@ -197,13 +197,13 @@ This example shows a generic card-based layout. Adapt the structure, content, an
     {
       "tool": "create_frame",
       "params": {
-        "name": "DashboardRoot",
+        "name": "AppRoot",
         "x": 0, "y": 0, "width": 1440, "height": 900,
         "layoutMode": "VERTICAL", "itemSpacing": 24,
         "paddingTop": 32, "paddingRight": 32, "paddingBottom": 32, "paddingLeft": 32,
         "fillColor": { "r": 0.97, "g": 0.97, "b": 0.96 }
       },
-      "componentRef": "DashboardRoot",
+      "componentRef": "AppRoot",
       "description": "Root frame — token: surface-secondary"
     },
     {
@@ -211,7 +211,7 @@ This example shows a generic card-based layout. Adapt the structure, content, an
       "params": {
         "name": "Header",
         "x": 0, "y": 0, "width": 1376, "height": 64,
-        "parentId": "ref:DashboardRoot",
+        "parentId": "ref:AppRoot",
         "layoutMode": "HORIZONTAL",
         "counterAxisAlignItems": "CENTER",
         "primaryAxisAlignItems": "SPACE_BETWEEN",
@@ -233,7 +233,7 @@ This example shows a generic card-based layout. Adapt the structure, content, an
       "tool": "create_text",
       "params": {
         "x": 0, "y": 0,
-        "text": "Dashboard",
+        "text": "My App",
         "fontSize": 24, "fontWeight": 700,
         "fontColor": { "r": 0.12, "g": 0.16, "b": 0.23 },
         "parentId": "ref:Header"
@@ -244,40 +244,40 @@ This example shows a generic card-based layout. Adapt the structure, content, an
     {
       "tool": "create_frame",
       "params": {
-        "name": "MetricsRow",
+        "name": "ContentRow",
         "x": 0, "y": 0, "width": 1376, "height": 140,
-        "parentId": "ref:DashboardRoot",
+        "parentId": "ref:AppRoot",
         "layoutMode": "HORIZONTAL", "itemSpacing": 16
       },
-      "componentRef": "MetricsRow",
-      "description": "Horizontal row for metric cards"
+      "componentRef": "ContentRow",
+      "description": "Horizontal row for content cards"
     },
     {
       "tool": "create_frame",
       "params": {
-        "name": "MetricCard-Total",
+        "name": "ContentCard-1",
         "x": 0, "y": 0, "width": 332,
         "layoutSizingVertical": "HUG",
         "layoutSizingHorizontal": "FILL",
-        "parentId": "ref:MetricsRow",
+        "parentId": "ref:ContentRow",
         "layoutMode": "VERTICAL", "itemSpacing": 8,
         "paddingTop": 20, "paddingRight": 24, "paddingBottom": 20, "paddingLeft": 24,
         "fillColor": { "r": 1, "g": 1, "b": 1 },
         "strokeColor": { "r": 0.9, "g": 0.9, "b": 0.89 },
         "strokeWeight": 1
       },
-      "componentRef": "MetricCard1",
-      "description": "Metric card — token: surface-primary, border-default"
+      "componentRef": "ContentCard1",
+      "description": "Content card — token: surface-primary, border-default"
     },
     {
       "tool": "set_corner_radius",
-      "params": { "nodeId": "ref:MetricCard1", "radius": 12 },
+      "params": { "nodeId": "ref:ContentCard1", "radius": 12 },
       "componentRef": "",
       "description": "Round corners — token: radius-medium"
     },
     {
       "tool": "set_effects",
-      "params": { "nodeId": "ref:MetricCard1", "effects": [{ "type": "DROP_SHADOW", "offsetX": 0, "offsetY": 1, "radius": 3, "color": { "r": 0, "g": 0, "b": 0, "a": 0.08 } }] },
+      "params": { "nodeId": "ref:ContentCard1", "effects": [{ "type": "DROP_SHADOW", "offsetX": 0, "offsetY": 1, "radius": 3, "color": { "r": 0, "g": 0, "b": 0, "a": 0.08 } }] },
       "componentRef": "",
       "description": "Elevation Level 1 — shadow-sm"
     },
@@ -288,7 +288,7 @@ This example shows a generic card-based layout. Adapt the structure, content, an
         "text": "Total",
         "fontSize": 14, "fontWeight": 400,
         "fontColor": { "r": 0.42, "g": 0.44, "b": 0.5 },
-        "parentId": "ref:MetricCard1"
+        "parentId": "ref:ContentCard1"
       },
       "componentRef": "",
       "description": "Card label — role: body, token: text-secondary"
@@ -300,7 +300,7 @@ This example shows a generic card-based layout. Adapt the structure, content, an
         "text": "2,847",
         "fontSize": 32, "fontWeight": 700,
         "fontColor": { "r": 0.12, "g": 0.16, "b": 0.23 },
-        "parentId": "ref:MetricCard1"
+        "parentId": "ref:ContentCard1"
       },
       "componentRef": "",
       "description": "Card value — role: heading-1, token: text-primary"
@@ -312,7 +312,7 @@ This example shows a generic card-based layout. Adapt the structure, content, an
         "text": "+12%",
         "fontSize": 12, "fontWeight": 500,
         "fontColor": { "r": 0.13, "g": 0.72, "b": 0.35 },
-        "parentId": "ref:MetricCard1"
+        "parentId": "ref:ContentCard1"
       },
       "componentRef": "",
       "description": "Trend indicator — role: label, token: success"
@@ -1084,7 +1084,7 @@ This example shows a multi-step form with selection cards and inputs. It demonst
 ## Design Rules
 
 0. **CRITICAL — componentRef naming**: `componentRef` names in your steps MUST EXACTLY match the `componentTree` names from the Planning Output. If the tree says "UserProfile", use `componentRef: "UserProfile"` — not "UserInfo", "UserCard", or any variation. Child nodes not in the tree should use the parent name as prefix (e.g., "UserProfile_Avatar", "UserProfile_Name"). Every `ref:X` target must match a `componentRef` from an earlier step. Mismatched names cause step failures.
-1. **Desktop only**: ONE root frame at 1440px. No tablet/mobile variants
+1. **Single viewport**: ONE root frame at the width specified in the user message (default: 1440px). Do NOT create additional viewport variants unless explicitly requested
 2. **Use create_frame with layout params**: Set `layoutMode`, `itemSpacing`, `fillColor`, `strokeColor`, padding ALL in the `create_frame` call — this is more reliable than separate set_ calls
 3. **Always include x, y**: Set `"x": 0, "y": 0` on all create commands (required by plugin)
 4. **fontWeight is numeric**: Use 400 (Regular), 500 (Medium), 600 (SemiBold), 700 (Bold)

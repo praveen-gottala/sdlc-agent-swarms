@@ -7,7 +7,7 @@ Status: TODO — created 2026-03-23 from observed issues in tictactoe-app home s
 ### 1. Unequal card widths
 **Problem**: Game mode cards ("VS Computer", "VS Friend", "Quick Match") have different widths instead of filling the row equally.
 **Root cause**: The design system prompt doesn't enforce equal-width children in horizontal auto-layout. The LLM creates cards with `layoutSizingHorizontal: "HUG"` instead of `"FILL"`.
-**Fix**: Add explicit instruction in `ux-dashboard-design-system.md`: "When creating cards in a horizontal row, set `layoutSizingHorizontal: FILL` on each card so they share available width equally."
+**Fix**: Add explicit instruction in `ux-design-system.md`: "When creating cards in a horizontal row, set `layoutSizingHorizontal: FILL` on each card so they share available width equally."
 
 ### 2. Text clipping / overflow
 **Problem**: Card descriptions are cut off mid-word ("Get matched with a random player instantly. Jump right into th...").
@@ -55,7 +55,7 @@ Status: TODO — created 2026-03-23 from observed issues in tictactoe-app home s
 
 ## Files to modify
 
-- `packages/agents-ux/src/prompts/ux-dashboard-design-system.md` — design rules
+- `packages/agents-ux/src/prompts/ux-design-system.md` — design rules
 - `packages/agents-ux/src/ux-design/design-fixer.ts` — param validation + prompt
 - `packages/agents-ux/src/ux-design/design-evaluator.ts` — skip-on-no-change logic
-- `packages/agents-ux/src/ux-design/ux-dashboard-design.ts` — missing component follow-up
+- `packages/agents-ux/src/ux-design/ux-design.ts` — missing component follow-up

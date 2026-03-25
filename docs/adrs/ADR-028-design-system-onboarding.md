@@ -18,7 +18,7 @@ Section 11 — Design Phase Agents:
 `agentforge init` scaffolds projects with an empty `tailwind.config.ts` and a bare
 `@tailwind base;` CSS file. No project-specific design tokens, brand direction,
 typography, color palette, or spacing scale are captured. Downstream UX agents use
-hardcoded defaults from `packages/agents-ux/src/prompts/ux-dashboard-design-system.md`,
+hardcoded defaults from `packages/agents-ux/src/prompts/ux-design-system.md`,
 making every project look identical regardless of purpose.
 
 ## Decision

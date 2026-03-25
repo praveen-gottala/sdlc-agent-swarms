@@ -317,8 +317,8 @@ export interface DeployFailed extends BaseDomainEventFields {
 // ─── UX Dashboard Squad Events ──────────────────────────────────────
 
 /** Fired when a dashboard module is requested, triggering the UX agent pipeline. */
-export interface DashboardModuleRequested extends BaseDomainEventFields {
-  readonly type: 'DashboardModuleRequested';
+export interface UXModuleRequested extends BaseDomainEventFields {
+  readonly type: 'UXModuleRequested';
   readonly moduleId: string;
   readonly taskId: string;
   readonly description: string;
@@ -432,7 +432,7 @@ export type DomainEvent =
   | HITLApproved
   | HITLTimeout
   | TrustEscalated
-  | DashboardModuleRequested
+  | UXModuleRequested
   | DesignBriefCompleted
   | ComponentSpecReady
   | ImplementationDraftReady

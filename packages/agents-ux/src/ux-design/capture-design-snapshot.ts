@@ -5,7 +5,7 @@
  * via a capture function callback. Saves screenshots as PNG files and
  * extracts per-component properties from the design tool.
  *
- * Used by both uxDashboardDesignWork (Figma) and penpotDesignWork (Penpot)
+ * Used by both uxDesignWork (Figma) and penpotDesignWork (Penpot)
  * after the design stage completes.
  */
 

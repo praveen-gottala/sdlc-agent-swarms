@@ -1,15 +1,15 @@
 import {
-  UX_DASHBOARD_DESIGN_CONTRACT,
+  UX_DESIGN_CONTRACT,
   parseDesignSteps,
   buildPerScreenPrompt,
-  registerUXDashboardDesign,
-} from './ux-dashboard-design.js';
+  registerUXDesign,
+} from './ux-design.js';
 import { applyDesignFeedback } from './design-collaboration.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok, DEFAULT_MODEL } from '@agentforge/core';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
 import type { ScreenDefinition } from '../types.js';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 
 // ============================================================================
 // Helpers
@@ -104,28 +104,28 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_DESIGN_CONTRACT', () => {
+describe('UX_DESIGN_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.role).toBe('ux_dashboard_design');
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.provider).toBe(DEFAULT_MODEL);
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.tools).toHaveLength(41);
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.denied).toEqual(['write_code', 'create_branch', 'merge_pr']);
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
+    expect(UX_DESIGN_CONTRACT.role).toBe('ux_design');
+    expect(UX_DESIGN_CONTRACT.category).toBe('design');
+    expect(UX_DESIGN_CONTRACT.provider).toBe(DEFAULT_MODEL);
+    expect(UX_DESIGN_CONTRACT.tools).toHaveLength(41);
+    expect(UX_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);
+    expect(UX_DESIGN_CONTRACT.denied).toEqual(['write_code', 'create_branch', 'merge_pr']);
+    expect(UX_DESIGN_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
+    expect(UX_DESIGN_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
   });
 
   it('contract on_complete matches FigmaDesignReady event', () => {
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.on_complete).toBe('FigmaDesignReady');
+    expect(UX_DESIGN_CONTRACT.on_complete).toBe('FigmaDesignReady');
   });
 
   it('contract hitl_policy is full_approval', () => {
-    expect(UX_DASHBOARD_DESIGN_CONTRACT.hitl_policy).toBe('full_approval');
+    expect(UX_DESIGN_CONTRACT.hitl_policy).toBe('full_approval');
   });
 
   it('contract tools include TalkToFigma write tools plus read tools', () => {
-    const tools = UX_DASHBOARD_DESIGN_CONTRACT.tools;
+    const tools = UX_DESIGN_CONTRACT.tools;
     expect(tools).toContain('figma:get_document_info');
     expect(tools).toContain('figma:get_selection');
     expect(tools).toContain('figma-write:create_frame');
@@ -245,7 +245,7 @@ describe('applyDesignFeedback', () => {
       complete: jest.fn().mockResolvedValue(Ok({ content: modificationOutput })),
     };
 
-    const currentDesign: UXDashboardDesignOutput = {
+    const currentDesign: UXDesignOutput = {
       figmaFileId: 'file-1',
       figmaPageId: 'page-1',
       figmaNodeIds: { DashboardLayout: 'node-1', MetricsCard: 'node-2' },
@@ -269,7 +269,7 @@ describe('applyDesignFeedback', () => {
   });
 });
 
-describe('registerUXDashboardDesign', () => {
+describe('registerUXDesign', () => {
   it('subscribes to ComponentSpecReady', () => {
     const ctx = makeContext();
     const mockEventBus = {
@@ -281,7 +281,7 @@ describe('registerUXDashboardDesign', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardDesign(mockEventBus, ctx);
+    registerUXDesign(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(
@@ -296,7 +296,7 @@ describe('registerUXDashboardDesign', () => {
 // ============================================================================
 
 describe('buildPerScreenPrompt', () => {
-  const makePlanningOutput = (): UXDashboardPlanningOutput => ({
+  const makePlanningOutput = (): UXPlanningOutput => ({
     specRef: 'spec-001',
     moduleId: 'mod-001',
     componentTree: [

@@ -2,7 +2,7 @@
  * @module @agentforge/agents-ux/param-transforms
  *
  * Shared parameter resolution and transformation logic used by both the
- * initial design path (ux-dashboard-design.ts) and the feedback collaboration
+ * initial design path (ux-design.ts) and the feedback collaboration
  * path (design-collaboration.ts).
  *
  * Handles:

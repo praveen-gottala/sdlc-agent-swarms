@@ -31,23 +31,23 @@ import { Ok, Err, createEventBus } from '@agentforge/core';
 import { stringify } from 'yaml';
 import { createClaudeProvider } from '@agentforge/providers';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
-  UXDashboardImplementationInput,
-  UXDashboardImplementationOutput,
-  UXDashboardReviewInput,
-  UXDashboardReviewOutput,
-  UXDashboardTestingInput,
-  UXDashboardTestingOutput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
+  UXImplementationInput,
+  UXImplementationOutput,
+  UXReviewInput,
+  UXReviewOutput,
+  UXTestingInput,
+  UXTestingOutput,
 } from '../index.js';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
-  uxDashboardImplementationWork,
-  uxDashboardReviewWork,
-  uxDashboardTestingWork,
+  uxResearchWork,
+  uxPlanningWork,
+  uxImplementationWork,
+  uxReviewWork,
+  uxTestingWork,
 } from '../index.js';
 
 // ============================================================================
@@ -94,7 +94,7 @@ const COST_E2E_TOKENS: DesignTokensSpec = {
   z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
-const COST_DASHBOARD_INPUT: UXDashboardResearchInput = {
+const COST_DASHBOARD_INPUT: UXResearchInput = {
   moduleId: 'cost-dashboard',
   taskId: 'e2e-proof-001',
   designTokensSpec: COST_E2E_TOKENS,
@@ -165,11 +165,11 @@ const createMockContext = (): AgentContext => ({
 // ============================================================================
 
 interface PipelineResults {
-  research?: UXDashboardResearchOutput;
-  planning?: UXDashboardPlanningOutput;
-  implementation?: UXDashboardImplementationOutput;
-  review?: UXDashboardReviewOutput;
-  testing?: UXDashboardTestingOutput;
+  research?: UXResearchOutput;
+  planning?: UXPlanningOutput;
+  implementation?: UXImplementationOutput;
+  review?: UXReviewOutput;
+  testing?: UXTestingOutput;
   errors: string[];
   timings: Record<string, number>;
 }
@@ -184,7 +184,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
 
   // Stage 1: Research
   const t1 = Date.now();
-  const researchResult = await uxDashboardResearchWork(
+  const researchResult = await uxResearchWork(
     COST_DASHBOARD_INPUT,
     opusProvider as unknown as LLMProviderRef,
     [],
@@ -199,7 +199,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   results.research = researchResult.value;
 
   // Stage 2: Planning
-  const planningInput: UXDashboardPlanningInput = {
+  const planningInput: UXPlanningInput = {
     briefId: results.research.briefId,
     moduleId: 'cost-dashboard',
     taskId: 'e2e-proof-001',
@@ -207,7 +207,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   };
 
   const t2 = Date.now();
-  const planningResult = await uxDashboardPlanningWork(
+  const planningResult = await uxPlanningWork(
     planningInput,
     sonnetProvider as unknown as LLMProviderRef,
     [],
@@ -222,7 +222,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   results.planning = planningResult.value;
 
   // Stage 3: Implementation (layout stage)
-  const implInput: UXDashboardImplementationInput = {
+  const implInput: UXImplementationInput = {
     specRef: results.planning.specRef,
     moduleId: 'cost-dashboard',
     taskId: 'e2e-proof-001',
@@ -231,7 +231,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   };
 
   const t3 = Date.now();
-  const implResult = await uxDashboardImplementationWork(
+  const implResult = await uxImplementationWork(
     implInput,
     sonnetProvider as unknown as LLMProviderRef,
     [],
@@ -247,7 +247,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
 
   // Stage 4: Review (mock MCP — best-effort LLM output)
   const componentPaths = results.implementation.files.map((f) => f.filePath);
-  const reviewInput: UXDashboardReviewInput = {
+  const reviewInput: UXReviewInput = {
     taskId: 'e2e-proof-001',
     branch: 'e2e-proof/cost-dashboard',
     componentPaths,
@@ -255,7 +255,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   };
 
   const t4 = Date.now();
-  const reviewResult = await uxDashboardReviewWork(
+  const reviewResult = await uxReviewWork(
     reviewInput,
     sonnetProvider as unknown as LLMProviderRef,
     [],
@@ -270,7 +270,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   results.review = reviewResult.value;
 
   // Stage 5: Testing (mock MCP — best-effort LLM output)
-  const testingInput: UXDashboardTestingInput = {
+  const testingInput: UXTestingInput = {
     taskId: 'e2e-proof-001',
     branch: 'e2e-proof/cost-dashboard',
     componentPaths,
@@ -278,7 +278,7 @@ const runUXPipeline = async (): Promise<PipelineResults> => {
   };
 
   const t5 = Date.now();
-  const testingResult = await uxDashboardTestingWork(
+  const testingResult = await uxTestingWork(
     testingInput,
     sonnetProvider as unknown as LLMProviderRef,
     [],
@@ -340,8 +340,8 @@ describeE2E('E2E Cost Dashboard Pipeline', () => {
     if (!p) return;
 
     // componentTree may have a single root with nested children — count total nodes
-    const countNodes = (nodes: readonly { children: readonly unknown[] }[]): number =>
-      nodes.reduce((sum, n) => sum + 1 + countNodes(n.children as typeof nodes), 0);
+    const countNodes = (nodes: readonly { children?: readonly unknown[] }[]): number =>
+      nodes.reduce((sum, n) => sum + 1 + countNodes((n.children ?? []) as typeof nodes), 0);
     expect(countNodes(p.componentTree)).toBeGreaterThanOrEqual(3);
     expect(Object.keys(p.tokenBindings).length).toBeGreaterThanOrEqual(5);
     expect(p.responsiveRules.length).toBeGreaterThanOrEqual(2);

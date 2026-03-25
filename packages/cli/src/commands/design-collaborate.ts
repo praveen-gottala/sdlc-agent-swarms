@@ -38,7 +38,7 @@ import {
   loadPenpotSession,
   runPenpotPreflight,
 } from '@agentforge/agents-ux';
-import type { UXDashboardDesignOutput, DesignSystemContext } from '@agentforge/agents-ux';
+import type { UXDesignOutput, DesignSystemContext } from '@agentforge/agents-ux';
 
 // ============================================================================
 // Types
@@ -108,9 +108,9 @@ export async function designCollaborateCommand(
     return;
   }
 
-  let designOutput: UXDashboardDesignOutput;
+  let designOutput: UXDesignOutput;
   try {
-    designOutput = JSON.parse(readFileSync(artifactPath, 'utf-8')) as UXDashboardDesignOutput;
+    designOutput = JSON.parse(readFileSync(artifactPath, 'utf-8')) as UXDesignOutput;
   } catch {
     output.write(errorMsg(`Failed to parse design artifact at ${artifactPath}\n`));
     process.exitCode = 1;

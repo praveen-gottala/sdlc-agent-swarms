@@ -11,8 +11,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Result, DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
 import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
-import { parseDesignSteps } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
+import { parseDesignSteps } from './ux-design.js';
 import { resolveAndTransformParams } from './param-transforms.js';
 
 // ============================================================================
@@ -51,7 +51,7 @@ export interface DesignCollaborationSession {
   /** Stop watching for Figma changes. */
   stopWatching(): void;
   /** Apply human feedback to the current design. */
-  applyFeedback(feedback: string): Promise<Result<UXDashboardDesignOutput>>;
+  applyFeedback(feedback: string): Promise<Result<UXDesignOutput>>;
   /** Get the history of all changes made during this session. */
   getChangeHistory(): readonly DesignChangeRecord[];
 }
@@ -200,11 +200,11 @@ const parseColorPalette = (markdown: string): DesignSystemContext['colorPalette'
 
 /**
  * Load the design system prompt from disk.
- * Uses the same path resolution pattern as ux-dashboard-design.ts:loadSystemPrompt().
+ * Uses the same path resolution pattern as ux-design.ts:loadSystemPrompt().
  */
 export const loadDesignSystemPrompt = (): string => {
   const promptPath = join(dirname(fileURLToPath(import.meta.url)),
-    '..', 'prompts', 'ux-dashboard-design-system.md');
+    '..', 'prompts', 'ux-design-system.md');
   return readFileSync(promptPath, 'utf-8');
 };
 
@@ -744,12 +744,12 @@ const buildStructuredStateDescription = (
  */
 export const applyDesignFeedback = async (
   feedback: string,
-  currentDesign: UXDashboardDesignOutput,
+  currentDesign: UXDesignOutput,
   mcpClient: MCPClient,
   provider: LLMProvider,
   designSystemContext?: DesignSystemContext,
   conversationHistory?: ConversationMessage[],
-): Promise<Result<UXDashboardDesignOutput>> => {
+): Promise<Result<UXDesignOutput>> => {
   // 1. Read current Figma state
   const docResult = await mcpClient.callTool('figma', 'get_document_info', {});
   const rawDocInfo = docResult.ok ? (docResult.value as Record<string, unknown>) : {};
@@ -1007,7 +1007,7 @@ const POLL_INTERVAL_MS = 30_000;
 export const createDesignCollaborationSession = (
   mcpClient: MCPClient,
   provider: LLMProvider,
-  initialDesign: UXDashboardDesignOutput,
+  initialDesign: UXDesignOutput,
   designSystemContext?: DesignSystemContext,
 ): DesignCollaborationSession => {
   let currentDesign = initialDesign;
@@ -1030,7 +1030,7 @@ export const createDesignCollaborationSession = (
       }
     },
 
-    async applyFeedback(feedback: string): Promise<Result<UXDashboardDesignOutput>> {
+    async applyFeedback(feedback: string): Promise<Result<UXDesignOutput>> {
       const result = await applyDesignFeedback(
         feedback,
         currentDesign,

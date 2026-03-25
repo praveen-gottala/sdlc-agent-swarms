@@ -1,9 +1,9 @@
 import {
-  UX_DASHBOARD_REVIEW_CONTRACT,
+  UX_REVIEW_CONTRACT,
   parseReviewOutput,
-  registerUXDashboardReview,
-  uxDashboardReviewWork,
-} from './ux-dashboard-review.js';
+  registerUXReview,
+  uxReviewWork,
+} from './ux-review.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 
@@ -100,22 +100,22 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_REVIEW_CONTRACT', () => {
+describe('UX_REVIEW_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.role).toBe('ux_dashboard_review');
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.provider).toBe(DEFAULT_MODEL);
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot']);
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'read_design_system']);
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.hitl_policy).toBe('notify_only');
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.on_complete).toBe('UXReviewCompleted');
+    expect(UX_REVIEW_CONTRACT.role).toBe('ux_review');
+    expect(UX_REVIEW_CONTRACT.category).toBe('design');
+    expect(UX_REVIEW_CONTRACT.provider).toBe(DEFAULT_MODEL);
+    expect(UX_REVIEW_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot']);
+    expect(UX_REVIEW_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'read_design_system']);
+    expect(UX_REVIEW_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);
+    expect(UX_REVIEW_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
+    expect(UX_REVIEW_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: true, max_context_tokens: 40000 });
+    expect(UX_REVIEW_CONTRACT.hitl_policy).toBe('notify_only');
+    expect(UX_REVIEW_CONTRACT.on_complete).toBe('UXReviewCompleted');
   });
 
   it('contract on_complete matches UXReviewCompleted event', () => {
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.on_complete).toBe('UXReviewCompleted');
+    expect(UX_REVIEW_CONTRACT.on_complete).toBe('UXReviewCompleted');
   });
 });
 
@@ -148,7 +148,7 @@ describe('parseReviewOutput', () => {
   });
 });
 
-describe('registerUXDashboardReview', () => {
+describe('registerUXReview', () => {
   it('subscribes to ImplementationDraftReady', () => {
     const ctx = makeContext();
     const mockEventBus = {
@@ -160,7 +160,7 @@ describe('registerUXDashboardReview', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardReview(mockEventBus, ctx);
+    registerUXReview(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(
@@ -207,7 +207,7 @@ const COMPLIANCE_ISSUES_JSON = JSON.stringify([
   { severity: 'minor', category: 'design_system', description: 'Hardcoded color', fix: 'Use token' },
 ]);
 
-describe('uxDashboardReviewWork — disk-first compliance', () => {
+describe('uxReviewWork — disk-first compliance', () => {
   it('uses disk tokens for design-system compliance, no Figma MCP call', async () => {
     const provider = makeProvider(`\`\`\`json\n${COMPLIANCE_ISSUES_JSON}\n\`\`\``);
     const ctx = makeContext();
@@ -237,7 +237,7 @@ describe('uxDashboardReviewWork — disk-first compliance', () => {
       moduleId: 'mod-001',
     };
 
-    const result = await uxDashboardReviewWork(
+    const result = await uxReviewWork(
       input,
       provider as unknown as LLMProviderRef,
       [],
@@ -268,7 +268,7 @@ describe('uxDashboardReviewWork — disk-first compliance', () => {
       moduleId: 'mod-001',
     };
 
-    const result = await uxDashboardReviewWork(
+    const result = await uxReviewWork(
       input,
       provider as unknown as LLMProviderRef,
       [],

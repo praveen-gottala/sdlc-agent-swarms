@@ -1,9 +1,9 @@
 import {
-  UX_DASHBOARD_RESEARCH_CONTRACT,
+  UX_RESEARCH_CONTRACT,
   parseResearchOutput,
-  registerUXDashboardResearch,
-  uxDashboardResearchWork,
-} from './ux-dashboard-research.js';
+  registerUXResearch,
+  uxResearchWork,
+} from './ux-research.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok } from '@agentforge/core';
 
@@ -91,22 +91,22 @@ const makeContext = (): AgentContext => ({
 // Tests
 // ============================================================================
 
-describe('UX_DASHBOARD_RESEARCH_CONTRACT', () => {
+describe('UX_RESEARCH_CONTRACT', () => {
   it('contract has all required AgentContract fields', () => {
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.role).toBe('ux_dashboard_research');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.category).toBe('design');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.provider).toBe('claude-sonnet-4-6');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.tools).toEqual([]);
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system']);
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch']);
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: false, max_context_tokens: 40000 });
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.hitl_policy).toBe('notify_only');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.on_complete).toBe('DesignBriefCompleted');
+    expect(UX_RESEARCH_CONTRACT.role).toBe('ux_research');
+    expect(UX_RESEARCH_CONTRACT.category).toBe('design');
+    expect(UX_RESEARCH_CONTRACT.provider).toBe('claude-sonnet-4-6');
+    expect(UX_RESEARCH_CONTRACT.tools).toEqual([]);
+    expect(UX_RESEARCH_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system']);
+    expect(UX_RESEARCH_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch']);
+    expect(UX_RESEARCH_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
+    expect(UX_RESEARCH_CONTRACT.execution).toEqual({ mode: 'complete', progress_events: false, max_context_tokens: 40000 });
+    expect(UX_RESEARCH_CONTRACT.hitl_policy).toBe('notify_only');
+    expect(UX_RESEARCH_CONTRACT.on_complete).toBe('DesignBriefCompleted');
   });
 
   it('contract on_complete matches DesignBriefCompleted event', () => {
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.on_complete).toBe('DesignBriefCompleted');
+    expect(UX_RESEARCH_CONTRACT.on_complete).toBe('DesignBriefCompleted');
   });
 });
 
@@ -144,7 +144,7 @@ describe('parseResearchOutput', () => {
   });
 });
 
-describe('uxDashboardResearchWork — no MCP calls', () => {
+describe('uxResearchWork — no MCP calls', () => {
   it('mcpClient.callTool is never called during work execution', async () => {
     const provider = makeProvider();
     const ctx = makeContext();
@@ -166,7 +166,7 @@ describe('uxDashboardResearchWork — no MCP calls', () => {
       prdRequirements: ['The dashboard must display user metrics including daily active users, revenue, and engagement scores.'],
     };
 
-    const result = await uxDashboardResearchWork(
+    const result = await uxResearchWork(
       input,
       provider as unknown as LLMProviderRef,
       [],
@@ -190,7 +190,7 @@ describe('uxDashboardResearchWork — no MCP calls', () => {
       prdRequirements: ['The dashboard must display user metrics including daily active users, revenue, and engagement scores.'],
     };
 
-    const result = await uxDashboardResearchWork(
+    const result = await uxResearchWork(
       input,
       provider as unknown as LLMProviderRef,
       [],
@@ -207,8 +207,8 @@ describe('uxDashboardResearchWork — no MCP calls', () => {
   });
 });
 
-describe('registerUXDashboardResearch', () => {
-  it('subscribes to DashboardModuleRequested', () => {
+describe('registerUXResearch', () => {
+  it('subscribes to UXModuleRequested', () => {
     const ctx = makeContext();
     const mockEventBus = {
       publish: jest.fn(),
@@ -219,11 +219,11 @@ describe('registerUXDashboardResearch', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXDashboardResearch(mockEventBus, ctx);
+    registerUXResearch(mockEventBus, ctx);
 
     expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
     expect(mockEventBus.subscribe).toHaveBeenCalledWith(
-      'DashboardModuleRequested',
+      'UXModuleRequested',
       expect.any(Function),
     );
   });

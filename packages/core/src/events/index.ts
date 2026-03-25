@@ -37,7 +37,7 @@ export type {
   HITLApproved,
   HITLTimeout,
   TrustEscalated,
-  DashboardModuleRequested,
+  UXModuleRequested,
   DesignBriefCompleted,
   ComponentSpecReady,
   ImplementationDraftReady,

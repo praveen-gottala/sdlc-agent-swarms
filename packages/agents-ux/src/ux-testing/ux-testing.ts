@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-testing
+ * @module @agentforge/agents-ux/ux-testing
  *
  * UX Dashboard Testing agent: generates Playwright tests using a 3-stage
  * sequential LLM pipeline (Plan → Generate → Heal) for implementation drafts,
@@ -29,7 +29,7 @@ import {
 // ============================================================================
 
 /** Input for the UX dashboard testing agent. */
-export interface UXDashboardTestingInput {
+export interface UXTestingInput {
   readonly taskId: string;
   readonly branch: string;
   readonly componentPaths: readonly string[];
@@ -37,7 +37,7 @@ export interface UXDashboardTestingInput {
 }
 
 /** Output produced by the UX dashboard testing agent. */
-export interface UXDashboardTestingOutput {
+export interface UXTestingOutput {
   readonly testRunId: string;
   readonly testFilePaths: readonly string[];
   readonly passCount: number;
@@ -51,8 +51,8 @@ export interface UXDashboardTestingOutput {
 // ============================================================================
 
 /** The agent contract for the UX dashboard testing agent. */
-export const UX_DASHBOARD_TESTING_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_testing',
+export const UX_TESTING_CONTRACT: AgentContract = {
+  role: 'ux_testing',
   description: 'Generates Playwright tests via a 3-stage Plan → Generate → Heal pipeline',
   category: 'code',
   provider: 'claude-sonnet-4-6',
@@ -75,7 +75,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-testing-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-testing-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -205,7 +205,7 @@ const recoverTruncatedTestFiles = (raw: string): { filePath: string; content: st
 // ============================================================================
 
 /** Parse the LLM output as a UX dashboard testing JSON object. */
-export const parseTestingOutput = (output: string): Result<UXDashboardTestingOutput> => {
+export const parseTestingOutput = (output: string): Result<UXTestingOutput> => {
   const jsonStr = extractJsonFromLLMOutput(output);
 
   try {
@@ -244,8 +244,8 @@ interface LLMProvider {
  * The UX dashboard testing agent's work function.
  * 3-stage sequential pipeline: Plan → Generate → Heal.
  */
-export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDashboardTestingOutput> = async (
-  input: UXDashboardTestingInput,
+export const uxTestingWork: AgentWorkFn<UXTestingInput, UXTestingOutput> = async (
+  input: UXTestingInput,
   provider: LLMProviderRef,
   _learnings: unknown[],
   context: AgentContext,
@@ -263,7 +263,7 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
         content: `Create a test plan for the following components:\n${componentPaths.join('\n')}\n\nIdentify user flows, edge cases, and responsive breakpoints to test. Return a structured test plan as JSON.`,
       }],
     },
-    { model: context.resolvedModel ?? UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 4000, temperature: 0 },
+    { model: context.resolvedModel ?? UX_TESTING_CONTRACT.provider, maxTokens: 4000, temperature: 0 },
   );
 
   if (!planResult.ok) {
@@ -285,7 +285,7 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
         content: `Based on this test plan:\n${testPlan}\n\nGenerate Playwright test files for the components. Keep tests concise — max 3 test files, each under 60 lines. Return JSON:\n\`\`\`json\n{ "testFiles": [{ "filePath": "...", "content": "..." }] }\n\`\`\`\n\nIMPORTANT: Complete the entire JSON. Close all strings, arrays, and braces.`,
       }],
     },
-    { model: context.resolvedModel ?? UX_DASHBOARD_TESTING_CONTRACT.provider, maxTokens: 16000, temperature: 0 },
+    { model: context.resolvedModel ?? UX_TESTING_CONTRACT.provider, maxTokens: 16000, temperature: 0 },
   );
 
   if (!generateResult.ok) {
@@ -357,10 +357,10 @@ export const uxDashboardTestingWork: AgentWorkFn<UXDashboardTestingInput, UXDash
 /**
  * Execute the UX dashboard testing agent through the full governance pipeline.
  */
-export const executeUXDashboardTesting = async (
+export const executeUXTesting = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardTestingInput,
+  input: UXTestingInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -369,25 +369,25 @@ export const executeUXDashboardTesting = async (
     'read_code',
     `module:${input.moduleId}`,
     `UX dashboard testing for module: ${input.moduleId}`,
-    uxDashboardTestingWork,
+    uxTestingWork,
   );
 };
 
 /**
  * Register the UX dashboard testing agent to respond to ImplementationDraftReady events.
  */
-export const registerUXDashboardTesting = (
+export const registerUXTesting = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_TESTING_CONTRACT,
+  contract: AgentContract = UX_TESTING_CONTRACT,
 ): void => {
   eventBus.subscribe('ImplementationDraftReady', (event: ImplementationDraftReady) => {
-    const input: UXDashboardTestingInput = {
+    const input: UXTestingInput = {
       taskId: event.taskId,
       branch: event.branch,
       componentPaths: event.componentPaths,
       moduleId: event.moduleId,
     };
-    void executeUXDashboardTesting(contract, context, input);
+    void executeUXTesting(contract, context, input);
   });
 };

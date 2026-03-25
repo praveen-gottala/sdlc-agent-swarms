@@ -29,30 +29,33 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
+  loadProjectManifest,
+  resolveViewports,
   PREVIEW_DIR_REL,
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
   MCPClient,
   LLMProviderRef,
+  DesignConfig,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
+  uxResearchWork,
+  uxPlanningWork,
   penpotBrowserDesignWork,
-  uxDashboardImplementationWork,
+  uxImplementationWork,
   writeImplementationFiles,
   buildDesignSystemContextFromSpec,
   buildComponentCatalogPrompt,
 } from '@agentforge/agents-ux';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
   PenpotBrowserDesignInput,
-  UXDashboardImplementationInput,
+  UXImplementationInput,
 } from '@agentforge/agents-ux';
 
 // ============================================================================
@@ -167,11 +170,22 @@ export async function designPenpotBrowserCommand(
 
   try {
 
+  // Load project manifest for design config (before planning stage to inject viewport constraints)
+  let projectRoot: string;
+  try {
+    projectRoot = findProjectRoot();
+  } catch {
+    projectRoot = process.cwd();
+  }
+  const realFs = createRealFs();
+  const manifestResult = loadProjectManifest(projectRoot, realFs);
+  const designConfig: DesignConfig | undefined = manifestResult.ok ? manifestResult.value.design : undefined;
+
   // -- Stage 1: Research --
-  let researchOutput: UXDashboardResearchOutput;
+  let researchOutput: UXResearchOutput;
 
   if (skipToStage === 'planning' || skipToStage === 'design') {
-    const cached = loadArtifact<UXDashboardResearchOutput>(outputDir, 'research-brief.json');
+    const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
     if (!cached) {
       output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
       process.exitCode = 1;
@@ -184,14 +198,14 @@ export async function designPenpotBrowserCommand(
     const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const context = createContext(taskId, createMockMCPClient());
 
-    const input: UXDashboardResearchInput = {
+    const input: UXResearchInput = {
       moduleId,
       taskId,
       prdRequirements: [description],
     };
 
     const t0 = Date.now();
-    const result = await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
     const ms = Date.now() - t0;
 
     if (!result.ok) {
@@ -206,10 +220,10 @@ export async function designPenpotBrowserCommand(
   }
 
   // -- Stage 2: Planning --
-  let planningOutput: UXDashboardPlanningOutput;
+  let planningOutput: UXPlanningOutput;
 
   if (skipToStage === 'design') {
-    const cached = loadArtifact<UXDashboardPlanningOutput>(outputDir, 'planning-spec.json');
+    const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
     if (!cached) {
       output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
       process.exitCode = 1;
@@ -222,15 +236,16 @@ export async function designPenpotBrowserCommand(
     const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const context = createContext(taskId, createMockMCPClient());
 
-    const input: UXDashboardPlanningInput = {
+    const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
       moduleId,
       taskId,
       designBrief: researchOutput,
+      ...(designConfig ? { designConfig } : {}),
     };
 
     const t0 = Date.now();
-    const result = await uxDashboardPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
     const ms = Date.now() - t0;
 
     if (!result.ok) {
@@ -247,13 +262,6 @@ export async function designPenpotBrowserCommand(
   // -- Load design system (tokens + brand) --
   let projectDesignSystemPrompt: string | undefined;
   let componentCatalogPromptStr: string | undefined;
-  let projectRoot: string;
-  try {
-    projectRoot = findProjectRoot();
-  } catch {
-    projectRoot = process.cwd();
-  }
-  const realFs = createRealFs();
 
   const tokensResult = loadDesignTokens(projectRoot, realFs);
   const brandResult = loadBrandSpec(projectRoot, realFs);
@@ -285,7 +293,7 @@ export async function designPenpotBrowserCommand(
     description,
     ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
     ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
-    ...(options.width ? { viewportWidth: options.width } : {}),
+    viewportWidth: resolveViewports({ cliWidth: options.width, designConfig })[0],
   };
 
   const t0 = Date.now();
@@ -322,7 +330,7 @@ export async function designPenpotBrowserCommand(
     const implProvider = createClaudeProvider(resolveCLIModel(), { apiKey });
     const implContext = createContext(`${taskId}_impl`, mcpClient);
 
-    const implInput: UXDashboardImplementationInput = {
+    const implInput: UXImplementationInput = {
       specRef: planningOutput.specRef,
       moduleId,
       taskId: `${taskId}_impl`,
@@ -332,7 +340,7 @@ export async function designPenpotBrowserCommand(
       designFileId: designOutput.penpotProjectId,
     };
 
-    const implResult = await uxDashboardImplementationWork(
+    const implResult = await uxImplementationWork(
       implInput,
       implProvider as unknown as LLMProviderRef,
       [],

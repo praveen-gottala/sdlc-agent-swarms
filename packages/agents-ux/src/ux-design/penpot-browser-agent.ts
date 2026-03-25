@@ -29,7 +29,7 @@ import {
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import { parsePenpotDesignScript } from './ux-penpot-design.js';
 import { runCorrectionLoop } from './correction-loop.js';
 import { createPenpotBrowserCorrectionAdapter } from './penpot-browser-adapter.js';
@@ -44,7 +44,7 @@ export interface PenpotBrowserDesignInput {
   readonly specRef: string;
   readonly moduleId: string;
   readonly taskId: string;
-  readonly planningOutput: UXDashboardPlanningOutput;
+  readonly planningOutput: UXPlanningOutput;
   readonly designSystemPrompt?: string;
   readonly componentCatalogPrompt?: string;
   readonly description?: string;

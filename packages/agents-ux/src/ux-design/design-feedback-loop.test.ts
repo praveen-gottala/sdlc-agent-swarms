@@ -2,14 +2,14 @@ import { PassThrough } from 'node:stream';
 import { runDesignFeedbackLoop } from './design-feedback-loop.js';
 import type { FeedbackLoopOptions, ReviewCallback, ImplementCallback } from './design-feedback-loop.js';
 import type { DesignCollaborationSession } from './design-collaboration.js';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
 import { Ok, Err } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-const makeDesign = (overrides?: Partial<UXDashboardDesignOutput>): UXDashboardDesignOutput => ({
+const makeDesign = (overrides?: Partial<UXDesignOutput>): UXDesignOutput => ({
   figmaFileId: 'file-test',
   figmaPageId: 'page-test',
   figmaNodeIds: { root: '1:1' },
@@ -36,7 +36,7 @@ const createTTYInput = (): PassThrough & { isTTY: boolean } => {
 const makeOptions = (
   input: NodeJS.ReadableStream,
   session?: DesignCollaborationSession,
-  design?: UXDashboardDesignOutput,
+  design?: UXDesignOutput,
 ): FeedbackLoopOptions => ({
   session: session ?? makeSession(),
   initialDesign: design ?? makeDesign(),

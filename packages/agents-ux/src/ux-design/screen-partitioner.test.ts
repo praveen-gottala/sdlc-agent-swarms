@@ -5,14 +5,14 @@ import {
   groupMissingByScreen,
   screenGridPosition,
 } from './screen-partitioner.js';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { ScreenDefinition } from '../types.js';
 
 // ============================================================================
 // Fixtures
 // ============================================================================
 
-const makePlanningOutput = (overrides?: Partial<UXDashboardPlanningOutput>): UXDashboardPlanningOutput => ({
+const makePlanningOutput = (overrides?: Partial<UXPlanningOutput>): UXPlanningOutput => ({
   specRef: 'spec-001',
   moduleId: 'mod-001',
   componentTree: [

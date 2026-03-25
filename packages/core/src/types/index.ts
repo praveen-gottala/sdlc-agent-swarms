@@ -48,6 +48,7 @@ export type {
   ChannelEntry,
   RoutingManifestConfig,
   BudgetManifestConfig,
+  DesignConfig,
   ProjectManifest,
 } from './project-manifest.js';
 

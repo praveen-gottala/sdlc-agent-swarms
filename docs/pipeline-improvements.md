@@ -10,7 +10,7 @@
 
 **Evidence**:
 - `packages/cli/src/commands/design-figma.ts` lines 465-471: `componentSpec: planningOutput` — design output discarded
-- `packages/agents-ux/src/ux-design/ux-dashboard-design.ts`: returns `figmaNodeIds`, `figmaFileId`, `breakpoints` — none forwarded
+- `packages/agents-ux/src/ux-design/ux-design.ts`: returns `figmaNodeIds`, `figmaFileId`, `breakpoints` — none forwarded
 - Implementation generates code from abstract token names, not from the actual visual design
 
 **Goal**: Generated code should reflect what was actually designed visually, not just the planning spec.
@@ -23,7 +23,7 @@
    - Store as `design-snapshot.json` alongside existing artifacts
 
 2. **Enrich implementation input**
-   - Extend `UXDashboardImplementationInput` with:
+   - Extend `UXImplementationInput` with:
      - `designScreenshots`: base64 screenshots of key components (multimodal input to LLM)
      - `extractedStyles`: actual color values, spacing, typography from the design tool
      - `nodeMap`: component name → design tool node ID (for traceability)
@@ -34,9 +34,9 @@
    - Add screenshot capture step between design approval and implementation
 
 **Files to modify**:
-- `packages/agents-ux/src/types.ts` — extend `UXDashboardImplementationInput`
+- `packages/agents-ux/src/types.ts` — extend `UXImplementationInput`
 - `packages/cli/src/commands/design-figma.ts` — use design output in implement callback
-- `packages/agents-ux/src/ux-design/ux-dashboard-design.ts` — add style extraction to output
+- `packages/agents-ux/src/ux-design/ux-design.ts` — add style extraction to output
 - Implementation system prompt — include visual reference instructions
 
 **Open questions**:
@@ -60,7 +60,7 @@
 **Approach**:
 
 1. **Standardize design output type**
-   - Create `DesignOutput` (tool-agnostic) replacing `UXDashboardDesignOutput`:
+   - Create `DesignOutput` (tool-agnostic) replacing `UXDesignOutput`:
      ```
      toolKind: 'figma' | 'penpot'
      fileId: string          // figmaFileId or penpotProjectId
@@ -94,7 +94,7 @@
 - `packages/core/src/types/index.ts` — add `DesignOutput` type
 - `packages/agents-ux/src/scripts/run-module-pipeline.ts` — refactor to use adapter
 - `packages/agents-ux/src/ux-design/ux-penpot-design.ts` — align function signature
-- `packages/agents-ux/src/ux-design/ux-dashboard-design.ts` — return `DesignOutput` shape
+- `packages/agents-ux/src/ux-design/ux-design.ts` — return `DesignOutput` shape
 
 **Open questions**:
 - Should the pipeline runner auto-detect the available tool (check for running Figma bridge vs Penpot MCP), or always require explicit `--tool`?

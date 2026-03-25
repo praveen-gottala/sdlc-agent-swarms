@@ -53,18 +53,18 @@ import { runFigmaPreflight, PLUGIN_MANIFEST_REL } from './figma-preflight.js';
 
 import { createClaudeProvider } from '@agentforge/providers';
 import type {
-  UXDashboardResearchInput,
-  UXDashboardResearchOutput,
-  UXDashboardPlanningInput,
-  UXDashboardPlanningOutput,
-  UXDashboardDesignInput,
-  UXDashboardDesignOutput,
+  UXResearchInput,
+  UXResearchOutput,
+  UXPlanningInput,
+  UXPlanningOutput,
+  UXDesignInput,
+  UXDesignOutput,
 } from '../index.js';
 import type { PenpotDesignInput, PenpotDesignOutput } from '../ux-design/ux-penpot-design.js';
 import {
-  uxDashboardResearchWork,
-  uxDashboardPlanningWork,
-  uxDashboardDesignWork,
+  uxResearchWork,
+  uxPlanningWork,
+  uxDesignWork,
   penpotDesignWork,
   createDesignCollaborationSession,
   runDesignFeedbackLoop,
@@ -214,10 +214,10 @@ const runResearch = async (
   apiKey: string,
   outputDir: string,
   designTokensSpec?: DesignTokensSpec,
-): Promise<StageResult<UXDashboardResearchOutput>> => {
+): Promise<StageResult<UXResearchOutput>> => {
   console.log('\n  [1/3] Research — analyzing PRD requirements...');
 
-  const input: UXDashboardResearchInput = {
+  const input: UXResearchInput = {
     moduleId: config.moduleId,
     taskId: config.taskId,
     prdRequirements: [...config.prdRequirements],
@@ -228,7 +228,7 @@ const runResearch = async (
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
-  const result = await uxDashboardResearchWork(
+  const result = await uxResearchWork(
     input,
     provider as unknown as LLMProviderRef,
     [],
@@ -250,13 +250,13 @@ const runResearch = async (
 
 const runPlanning = async (
   config: PipelineRunConfig,
-  researchOutput: UXDashboardResearchOutput,
+  researchOutput: UXResearchOutput,
   apiKey: string,
   outputDir: string,
-): Promise<StageResult<UXDashboardPlanningOutput>> => {
+): Promise<StageResult<UXPlanningOutput>> => {
   console.log('\n  [2/3] Planning — building component spec...');
 
-  const input: UXDashboardPlanningInput = {
+  const input: UXPlanningInput = {
     briefId: researchOutput.briefId,
     moduleId: config.moduleId,
     taskId: config.taskId,
@@ -267,7 +267,7 @@ const runPlanning = async (
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
-  const result = await uxDashboardPlanningWork(
+  const result = await uxPlanningWork(
     input,
     provider as unknown as LLMProviderRef,
     [],
@@ -296,7 +296,7 @@ interface UnifiedDesignOutput {
   readonly pageId: string;
   readonly breakpoints: readonly string[];
   /** Raw output from the tool-specific design agent. */
-  readonly raw: UXDashboardDesignOutput | PenpotDesignOutput;
+  readonly raw: UXDesignOutput | PenpotDesignOutput;
 }
 
 /** Extended result from runDesign that exposes the connection for reuse. */
@@ -308,7 +308,7 @@ interface DesignStageResult extends StageResult<UnifiedDesignOutput> {
 
 const runDesign = async (
   config: PipelineRunConfig,
-  planningOutput: UXDashboardPlanningOutput,
+  planningOutput: UXPlanningOutput,
   apiKey: string,
   outputDir: string,
   projectDesignSystemPrompt?: string,
@@ -386,7 +386,7 @@ const runDesign = async (
     };
   } else {
     // Figma design path
-    const input: UXDashboardDesignInput = {
+    const input: UXDesignInput = {
       specRef: planningOutput.specRef,
       moduleId: config.moduleId,
       taskId: config.taskId,
@@ -394,7 +394,7 @@ const runDesign = async (
       designSystemPrompt: projectDesignSystemPrompt,
     };
 
-    const result = await uxDashboardDesignWork(
+    const result = await uxDesignWork(
       input,
       provider as unknown as LLMProviderRef,
       [],
@@ -430,8 +430,8 @@ const runDesign = async (
 // ============================================================================
 
 interface PipelineSummary {
-  readonly research: StageResult<UXDashboardResearchOutput>;
-  readonly planning: StageResult<UXDashboardPlanningOutput>;
+  readonly research: StageResult<UXResearchOutput>;
+  readonly planning: StageResult<UXPlanningOutput>;
   readonly design: DesignStageResult;
 }
 
@@ -502,10 +502,10 @@ const runPipeline = async (
   }
 
   // --- Research ---
-  let research: StageResult<UXDashboardResearchOutput>;
+  let research: StageResult<UXResearchOutput>;
   if (skipToStage === 'planning' || skipToStage === 'design') {
     console.log('\n  [1/3] Research — loading from artifact...');
-    const output = loadArtifact<UXDashboardResearchOutput>(outputDir, 'research-brief.json');
+    const output = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
     const artifactPath = join(outputDir, 'research-brief.json');
     research = { output, durationMs: 0, artifactPath };
     console.log(`        (loaded) constraints=${output.designConstraints.length}`);
@@ -514,10 +514,10 @@ const runPipeline = async (
   }
 
   // --- Planning ---
-  let planning: StageResult<UXDashboardPlanningOutput>;
+  let planning: StageResult<UXPlanningOutput>;
   if (skipToStage === 'design') {
     console.log('\n  [2/3] Planning — loading from artifact...');
-    const output = loadArtifact<UXDashboardPlanningOutput>(outputDir, 'planning-spec.json');
+    const output = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
     const artifactPath = join(outputDir, 'planning-spec.json');
     planning = { output, durationMs: 0, artifactPath };
     console.log(`        (loaded) components=${output.componentTree.length}`);
@@ -664,7 +664,7 @@ const main = async (): Promise<void> => {
     // ── Interactive feedback loop (Figma only for now) ──
     const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
     if (!args.noWait && isTTY && summary.design.mcpClient && config.tool === 'figma') {
-      const rawDesign = summary.design.output.raw as UXDashboardDesignOutput;
+      const rawDesign = summary.design.output.raw as UXDesignOutput;
       const designSystemCtx = buildDesignSystemContext(
         summary.planning.output,
         mainDesignSystemPrompt ?? loadDesignSystemPrompt(),

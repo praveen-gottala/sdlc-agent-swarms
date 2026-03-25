@@ -12,7 +12,7 @@
 import type { Result, MCPClient } from '@agentforge/core';
 import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { DesignCollaborationSession, DesignChangeRecord, DesignSystemContext } from './design-collaboration.js';
-import type { UXDashboardDesignOutput } from './ux-dashboard-design.js';
+import type { UXDesignOutput } from './ux-design.js';
 import type { PenpotDesignOutput } from './ux-penpot-design.js';
 import type { DesignEvaluation } from './design-evaluator.js';
 import { evaluateDesign } from './design-evaluator.js';
@@ -32,11 +32,11 @@ interface LLMProvider {
 // ============================================================================
 
 /**
- * Map a PenpotDesignOutput to UXDashboardDesignOutput shape.
+ * Map a PenpotDesignOutput to UXDesignOutput shape.
  * The feedback loop operates on `figmaNodeIds`/`figmaFileId`/`figmaPageId`;
  * this adapter maps Penpot fields to those names.
  */
-export function mapPenpotToDesignOutput(penpot: PenpotDesignOutput): UXDashboardDesignOutput {
+export function mapPenpotToDesignOutput(penpot: PenpotDesignOutput): UXDesignOutput {
   return {
     figmaFileId: penpot.penpotProjectId,
     figmaPageId: penpot.penpotPageId,
@@ -77,7 +77,7 @@ export function createPenpotCollaborationSession(
       // No-op for Penpot
     },
 
-    async applyFeedback(feedback: string): Promise<Result<UXDashboardDesignOutput>> {
+    async applyFeedback(feedback: string): Promise<Result<UXDesignOutput>> {
       // Build system prompt for generating fix code
       const systemPrompt = `You are a Penpot design modification assistant. Given feedback, generate JavaScript code to modify the design using the Penpot Plugin API.
 
@@ -247,7 +247,7 @@ export function createPenpotReviewCallback(
   mcpClient: MCPClient,
   rootShapeId: string,
 ): ReviewCallback {
-  return async (design: UXDashboardDesignOutput): Promise<Result<DesignEvaluation>> => {
+  return async (design: UXDesignOutput): Promise<Result<DesignEvaluation>> => {
     // Use provided rootShapeId, or fall back to first node ID
     const shapeId = rootShapeId || Object.values(design.figmaNodeIds)[0];
     if (!shapeId) {

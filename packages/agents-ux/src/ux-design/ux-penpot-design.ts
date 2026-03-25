@@ -28,7 +28,7 @@ import {
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
-import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { DesignSnapshotData } from '../types.js';
 import { captureDesignSnapshot } from './capture-design-snapshot.js';
 
@@ -41,7 +41,7 @@ export interface PenpotDesignInput {
   readonly specRef: string;
   readonly moduleId: string;
   readonly taskId: string;
-  readonly planningOutput: UXDashboardPlanningOutput;
+  readonly planningOutput: UXPlanningOutput;
   readonly designSystemPrompt?: string;
   /** Component catalog prompt for shared anatomy definitions. */
   readonly componentCatalogPrompt?: string;
@@ -103,7 +103,12 @@ const loadPenpotSystemPrompt = (): string => {
 // ============================================================================
 
 interface LLMProvider {
-  complete: (prompt: { system: string; messages: { role: 'user'; content: string }[] }, opts: { model: string; maxTokens: number; temperature: number }) => Promise<Result<{ content: string }>>;
+  complete: (prompt: { system: string; messages: { role: 'user'; content: string }[] }, opts: {
+    model: string;
+    maxTokens: number;
+    temperature: number;
+    responseSchema?: { schema: Record<string, unknown> };
+  }) => Promise<Result<{ content: string; structured?: Record<string, unknown> }>>;
 }
 
 // ============================================================================
@@ -190,8 +195,31 @@ export function parsePenpotDesignScript(output: string): Result<{ script: string
 }
 
 // ============================================================================
-// Fix step parser
+// Fix step schema + parser
 // ============================================================================
+
+/** JSON Schema for structured output of Penpot fix steps. */
+const PENPOT_FIX_SCHEMA = {
+  schema: {
+    type: 'object' as const,
+    properties: {
+      fixes: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            code: { type: 'string' },
+            description: { type: 'string' },
+          },
+          required: ['code', 'description'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['fixes'],
+    additionalProperties: false,
+  },
+};
 
 type FixParseResult =
   | { ok: true; fixes: Array<{ code: string; description: string }> }
@@ -604,6 +632,7 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
         model: effectiveModel,
         maxTokens: 8000,
         temperature: 0,
+        responseSchema: PENPOT_FIX_SCHEMA,
       });
 
       if (!fixResult.ok) {
@@ -612,9 +641,15 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
         break;
       }
 
-      // Parse fix steps
-      const fixOutput = (fixResult.value as { content: string }).content;
-      const parseFixResult = parsePenpotFixSteps(fixOutput);
+      // Parse fix steps — prefer structured output, fall back to text parsing
+      const structured = (fixResult.value as { structured?: Record<string, unknown> }).structured;
+      let parseFixResult: FixParseResult;
+      if (structured && Array.isArray(structured.fixes) && structured.fixes.length > 0) {
+        parseFixResult = { ok: true, fixes: structured.fixes as Array<{ code: string; description: string }> };
+      } else {
+        const fixOutput = (fixResult.value as { content: string }).content;
+        parseFixResult = parsePenpotFixSteps(fixOutput);
+      }
       if (!parseFixResult.ok) {
         // eslint-disable-next-line no-console
         console.warn(`        [correction ${correction + 1}] ${parseFixResult.reason}`);

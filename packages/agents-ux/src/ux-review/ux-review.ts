@@ -1,5 +1,5 @@
 /**
- * @module @agentforge/agents-ux/ux-dashboard-review
+ * @module @agentforge/agents-ux/ux-review
  *
  * UX Dashboard Review agent: runs parallel accessibility, design-system
  * compliance, and visual fidelity evaluations on implementation drafts,
@@ -31,7 +31,7 @@ import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '..
 // ============================================================================
 
 /** Input for the UX dashboard review agent. */
-export interface UXDashboardReviewInput {
+export interface UXReviewInput {
   readonly taskId: string;
   readonly branch: string;
   readonly componentPaths: readonly string[];
@@ -39,7 +39,7 @@ export interface UXDashboardReviewInput {
 }
 
 /** Output produced by the UX dashboard review agent. */
-export interface UXDashboardReviewOutput {
+export interface UXReviewOutput {
   readonly reviewId: string;
   readonly issues: readonly ReviewIssue[];
   readonly passedAccessibility: boolean;
@@ -53,8 +53,8 @@ export interface UXDashboardReviewOutput {
 // ============================================================================
 
 /** The agent contract for the UX dashboard review agent. */
-export const UX_DASHBOARD_REVIEW_CONTRACT: AgentContract = {
-  role: 'ux_dashboard_review',
+export const UX_REVIEW_CONTRACT: AgentContract = {
+  role: 'ux_review',
   description: 'Runs parallel accessibility, design-system compliance, and visual fidelity evaluations',
   category: 'design',
   provider: 'claude-sonnet-4-6',
@@ -77,7 +77,7 @@ let systemPromptCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-dashboard-review-system.md');
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-review-system.md');
   systemPromptCache = readFileSync(promptPath, 'utf-8');
   return systemPromptCache;
 };
@@ -87,7 +87,7 @@ const loadSystemPrompt = (): string => {
 // ============================================================================
 
 /** Parse the LLM output as a UX dashboard review JSON object. */
-export const parseReviewOutput = (output: string): Result<UXDashboardReviewOutput> => {
+export const parseReviewOutput = (output: string): Result<UXReviewOutput> => {
   const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
 
@@ -226,7 +226,7 @@ const checkVisualFidelity = async (
  * The UX dashboard review agent's work function.
  * Called by runAgent after governance clears.
  */
-export const uxDashboardReviewWork: AgentWorkFn<UXDashboardReviewInput, UXDashboardReviewOutput> = async (
+export const uxReviewWork: AgentWorkFn<UXReviewInput, UXReviewOutput> = async (
   input,
   provider,
   learnings,
@@ -243,7 +243,7 @@ export const uxDashboardReviewWork: AgentWorkFn<UXDashboardReviewInput, UXDashbo
 
   const systemPrompt = loadSystemPrompt();
 
-  const effectiveModel = context.resolvedModel ?? UX_DASHBOARD_REVIEW_CONTRACT.provider;
+  const effectiveModel = context.resolvedModel ?? UX_REVIEW_CONTRACT.provider;
 
   const [accessibilityIssues, designSystemIssues, visualFidelityIssues] = await Promise.all([
     checkAccessibility(context, provider as unknown as LLMProvider, componentPaths, systemPrompt, effectiveModel),
@@ -291,10 +291,10 @@ export const uxDashboardReviewWork: AgentWorkFn<UXDashboardReviewInput, UXDashbo
 /**
  * Execute the UX dashboard review agent through the full governance pipeline.
  */
-export const executeUXDashboardReview = async (
+export const executeUXReview = async (
   contract: AgentContract,
   context: AgentContext,
-  input: UXDashboardReviewInput,
+  input: UXReviewInput,
 ): Promise<Result<unknown>> => {
   return runAgent(
     contract,
@@ -303,25 +303,25 @@ export const executeUXDashboardReview = async (
     'read_design',
     `module:${input.moduleId}`,
     `UX dashboard review for module: ${input.moduleId}`,
-    uxDashboardReviewWork,
+    uxReviewWork,
   );
 };
 
 /**
  * Register the UX dashboard review agent to respond to ImplementationDraftReady events.
  */
-export const registerUXDashboardReview = (
+export const registerUXReview = (
   eventBus: EventBus,
   context: AgentContext,
-  contract: AgentContract = UX_DASHBOARD_REVIEW_CONTRACT,
+  contract: AgentContract = UX_REVIEW_CONTRACT,
 ): void => {
   eventBus.subscribe('ImplementationDraftReady', (event) => {
-    const input: UXDashboardReviewInput = {
+    const input: UXReviewInput = {
       taskId: event.taskId,
       branch: event.branch,
       componentPaths: event.componentPaths,
       moduleId: event.moduleId,
     };
-    void executeUXDashboardReview(contract, context, input);
+    void executeUXReview(contract, context, input);
   });
 };
