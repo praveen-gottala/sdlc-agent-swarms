@@ -7,12 +7,16 @@ Commands for initializing projects, configuring settings, and verifying integrat
 Scaffold a new AgentForge project with an interactive wizard.
 
 ```bash
-agentforge init [directory]
+agentforge init [directory] [--mock]
 ```
 
 | Argument | Required | Description |
 |----------|----------|-------------|
 | `directory` | No | Target directory (defaults to current directory) |
+
+| Option | Description |
+|--------|-------------|
+| `--mock` | Skip LLM calls and use built-in design archetypes (for testing) |
 
 The wizard asks 7 questions to configure your project, then generates:
 - `agentforge.yaml` — project manifest
@@ -53,8 +57,12 @@ Re-run the design system wizard. Two independent steps:
 These are independent: a cafe app using MUI still gets warm, inviting colors. The component library determines *imports*, the theme determines *visual identity*.
 
 ```bash
-agentforge design-system update
+agentforge design-system update [--mock]
 ```
+
+| Option | Description |
+|--------|-------------|
+| `--mock` | Skip LLM calls and use built-in design archetypes (for testing) |
 
 Writes: `component-library.yaml`, `design-tokens.yaml`, `brand.yaml`, `tailwind.config.ts`, `global.css`.
 

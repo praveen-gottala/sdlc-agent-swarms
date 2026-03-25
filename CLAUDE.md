@@ -200,6 +200,50 @@ agents-* depend on: core, governance, providers
 - Keep docs concise: command signature, options table, 1-2 examples, and any
   relevant env vars or prerequisites.
 
+### CLI Command Change Checklist
+When adding, modifying, or removing a CLI command or option, update ALL of these:
+
+1. `packages/cli/src/commands/<command>.ts` — implementation
+2. `packages/cli/src/index.ts` — Commander registration (`.command()`, `.option()`, `.action()`)
+3. `packages/cli/src/index.ts` (bottom) — re-export types/functions if changed
+4. `docs/cli/setup.md` or `docs/cli/design.md` or `docs/cli/orchestration.md` — detailed docs
+5. `docs/cli/README.md` — CLI index table
+6. `README.md` — top-level CLI Command Reference table
+7. `packages/cli/src/commands/<command>.test.ts` — tests for new behavior
+8. Interfaces/config types — e.g. `InitConfig`, `GenerateDesignOptionsConfig`
+
+### New Domain Event Checklist
+When adding a new event to the system, update ALL of these:
+
+1. `packages/core/src/events/domain-events.ts` — define interface + add to `DomainEvent` union type
+2. `packages/core/src/index.ts` — export the new event type
+3. `packages/core/src/events/event-bus.test.ts` — type safety test for new variant
+4. Governance subscribers (if event needs audit/HITL/budget handling):
+   - `packages/governance/src/audit-logger.ts`
+   - `packages/governance/src/hitl-enforcer.ts`
+   - `packages/governance/src/budget-tracker.ts`
+5. `packages/dashboard/src/lib/event-client.ts` — if event should appear in dashboard UI
+6. Agent files that emit or react to the event
+
+### New Package Checklist
+When adding a new package to the monorepo, create/update ALL of these:
+
+1. `packages/<name>/` — `package.json`, `tsconfig.json` (extends `../../tsconfig.base.json`), `tsconfig.lib.json`, `src/index.ts` barrel
+2. Consumer `package.json` files — add as dependency in packages that import it
+3. `README.md` — update Architecture package list
+4. `CLAUDE.md` — update "Package Dependencies" section above
+
+### New Agent Role Checklist
+When adding a new agent role, update ALL of these:
+
+1. `packages/cli/src/commands/init.ts` — add to `buildAgentsYaml()` with all 7 PRD sections (role, provider, execution, tools, permissions, hitl_policy, budget)
+2. `packages/core/src/events/domain-events.ts` — add `on_complete` event if it doesn't exist
+3. `packages/core/src/index.ts` — export the new event type
+4. Agent implementation in `packages/agents-*/src/` — the actual agent logic
+5. `packages/governance/src/permission-checker.ts` — if role has special permissions
+6. `packages/governance/src/hitl-enforcer.ts` — if role has HITL gates
+7. Tests: agent unit test + integration test in `packages/integration-tests/`
+
 ## IMPORTANT
 - ALWAYS run typecheck after making changes across packages
 - NEVER modify packages/stacks/react-node-prisma/prompts/ without asking

@@ -40,6 +40,8 @@ export interface InitAnswers {
 export interface InitConfig {
   /** Override browser opener. Return true if browser opened. */
   readonly openBrowser?: (url: string) => Promise<boolean>;
+  /** When true, skip LLM calls and use built-in archetypes directly. */
+  readonly mock?: boolean;
 }
 
 /** Build DesignTokensSpec from archetype choice. */
@@ -990,7 +992,7 @@ export async function initCommand(
       { appName: answers.name, description: answers.description, targetAudience: answers.targetAudience || 'general' },
       inp,
       out,
-      _config,
+      { openBrowser: _config?.openBrowser, mock: _config?.mock },
     );
     saveDesignTokens(rootDir, designResult.tokens, fileSystem);
     saveBrandSpec(rootDir, designResult.brand, fileSystem);

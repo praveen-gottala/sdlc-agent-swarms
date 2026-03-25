@@ -15,7 +15,7 @@ Project initialization, settings, and integration verification.
 
 | Command | Description |
 |---------|-------------|
-| `agentforge init [dir]` | Scaffold a new project with interactive wizard |
+| `agentforge init [dir] [--mock]` | Scaffold a new project with interactive wizard |
 | `agentforge setup` | Bootstrap the Python orchestration engine |
 | `agentforge config [key] [value]` | View or update configuration |
 | `agentforge doctor` | Verify integrations are reachable |

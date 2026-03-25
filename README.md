@@ -141,7 +141,7 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 
 | Command | Description |
 |---|---|
-| `agentforge init [dir]` | Scaffold a new project with interactive wizard |
+| `agentforge init [dir] [--mock]` | Scaffold a new project with interactive wizard |
 | `agentforge describe` | Capture app context via PRD (provide or generate) |
 | `agentforge setup` | Bootstrap the Python orchestration engine |
 | `agentforge config [key] [value]` | View or update `agentforge.yaml` (supports dot-notation) |
@@ -153,7 +153,7 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 | Command | Description |
 |---|---|
 | `agentforge design-system show` | Display current design tokens and brand config |
-| `agentforge design-system update` | Re-run archetype selection wizard |
+| `agentforge design-system update [--mock]` | Re-run archetype selection wizard |
 | `agentforge design-system validate` | Validate tokens for internal consistency |
 
 ### Design (UX Agent Pipeline)

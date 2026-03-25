@@ -15,7 +15,7 @@ import { validateDesignTokens, validateBrandSpec, recordPromptTrace } from '@age
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
-import { infoMsg, warnMsg } from '../formatter.js';
+import { infoMsg, warnMsg, successMsg } from '../formatter.js';
 import { buildDesignTokensSpec } from './init.js';
 import type { DesignArchetype } from './init.js';
 
@@ -779,6 +779,8 @@ export function promptOnce(
 export interface GenerateDesignOptionsConfig {
   /** Override browser opener. Return true if browser opened. */
   readonly openBrowser?: (url: string) => Promise<boolean>;
+  /** When true, skip LLM calls and use built-in archetypes directly. */
+  readonly mock?: boolean;
 }
 
 /**
@@ -797,18 +799,24 @@ export async function generateDesignOptions(
   let options: DesignOption[];
   let source: 'llm' | 'fallback' = 'fallback';
 
-  // Try LLM generation
+  // Try LLM generation (unless --mock is set)
   const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (apiKey) {
-    out.write(infoMsg('\nGenerating design options with AI...\n'));
+  if (config?.mock) {
+    out.write(infoMsg('\n--mock: skipping LLM, using built-in archetypes\n'));
+    options = buildFallbackOptions();
+  } else if (apiKey) {
+    out.write(infoMsg('\nCalling Claude Sonnet to generate design themes...\n'));
     const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
     if (llmOptions) {
       options = llmOptions;
       source = 'llm';
+      out.write(successMsg(`✓ ${options.length} design themes generated via LLM\n`));
     } else {
+      out.write(warnMsg('LLM generation failed, falling back to built-in archetypes\n'));
       options = buildFallbackOptions();
     }
   } else {
+    out.write(warnMsg('No ANTHROPIC_API_KEY set, using built-in archetypes\n'));
     options = buildFallbackOptions();
   }
 
@@ -833,8 +841,8 @@ export async function generateDesignOptions(
   while (choice === undefined) {
     const answer = await promptOnce(inp, out, '\nChoose 1, 2, or 3 (or \'r\' to regenerate): ');
 
-    if (answer === 'r' && apiKey) {
-      out.write(infoMsg('Regenerating...\n'));
+    if (answer === 'r' && apiKey && !config?.mock) {
+      out.write(infoMsg('Regenerating via LLM...\n'));
       const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
       if (llmOptions) {
         options = llmOptions;
@@ -885,8 +893,8 @@ async function tryLLMGeneration(
   let provider: LLMProvider;
   try {
     provider = createClaudeProvider(resolveCLIModel(), { apiKey });
-  } catch {
-    output.write(warnMsg('Failed to create LLM provider, using defaults.\n'));
+  } catch (err) {
+    output.write(warnMsg(`Failed to create LLM provider: ${err instanceof Error ? err.message : String(err)}\n`));
     return null;
   }
 

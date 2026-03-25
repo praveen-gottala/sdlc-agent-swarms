@@ -50,11 +50,12 @@ export function createProgram(): Command {
     .command('init')
     .description('Initialize a new AgentForge project with guided wizard')
     .argument('[directory]', 'Target directory for the new project (created if it does not exist, defaults to current directory)')
-    .action(async (directory: string | undefined) => {
+    .option('--mock', 'Skip LLM calls and use built-in design archetypes (for testing)')
+    .action(async (directory: string | undefined, opts: { mock?: boolean }) => {
       const rootDir = directory
         ? path.resolve(process.cwd(), directory)
         : process.cwd();
-      await initCommand(rootDir, realFs);
+      await initCommand(rootDir, realFs, undefined, undefined, opts.mock ? { mock: true } : undefined);
     });
 
   program
@@ -242,9 +243,10 @@ export function createProgram(): Command {
   designSystem
     .command('update')
     .description('Re-run design archetype selection and overwrite design system files')
-    .action(async () => {
+    .option('--mock', 'Skip LLM calls and use built-in design archetypes (for testing)')
+    .action(async (opts: { mock?: boolean }) => {
       const rootDir = findProjectRoot();
-      await designSystemUpdateCommand(rootDir, realFs, process.stdin, process.stdout);
+      await designSystemUpdateCommand(rootDir, realFs, process.stdin, process.stdout, opts.mock ? { mock: true } : undefined);
     });
 
   designSystem

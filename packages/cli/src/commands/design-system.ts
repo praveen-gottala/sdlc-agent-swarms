@@ -95,6 +95,8 @@ export async function designSystemShowCommand(
 export interface DesignSystemUpdateConfig {
   /** Override browser opener. */
   readonly openBrowser?: (url: string) => Promise<boolean>;
+  /** When true, skip LLM calls and use built-in archetypes directly. */
+  readonly mock?: boolean;
 }
 
 /**
@@ -211,7 +213,7 @@ export async function designSystemUpdateCommand(
     { appName, description, targetAudience: audience },
     input,
     output,
-    config,
+    { openBrowser: config?.openBrowser, mock: config?.mock },
   );
 
   writeDesignSystemFiles(rootDir, designResult, fileSystem);
