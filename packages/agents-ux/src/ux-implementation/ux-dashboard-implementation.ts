@@ -27,6 +27,7 @@ import {
 } from '@agentforge/core';
 import type { UXDashboardPlanningOutput } from '../ux-planning/ux-dashboard-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
+import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
 // ============================================================================
 // Types
@@ -119,7 +120,7 @@ export const UX_DASHBOARD_IMPLEMENTATION_CONTRACT: AgentContract = {
   category: 'design',
   provider: 'claude-sonnet-4',
   execution: { mode: 'stream', progress_events: true, max_context_tokens: 60000 },
-  tools: ['figma:get_code_connect_map', 'github.create_branch', 'github.push_files'],
+  tools: ['github.create_branch', 'github.push_files'],
   permissions: ['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch'],
   denied: ['deploy_staging', 'deploy_production', 'merge_pr'],
   hitl_policy: 'review_and_override',
@@ -184,6 +185,14 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
 ) => {
   const { moduleId, componentSpec, stage, designSnapshot, designNodeIds, designFileId } = input;
 
+  const designTokensResult = loadDesignTokens(context.projectRoot, context.fs);
+  if (!designTokensResult.ok) {
+    // eslint-disable-next-line no-console
+    console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+    return diskDesignTokensRequiredErr(context.projectRoot);
+  }
+  const tokens = designTokensResult.value;
+
   // 1. Read existing specs for context
   const specDir = join(context.projectRoot, 'agentforge/spec');
   const existingSpecs = readSpecs(specDir, context.fs);
@@ -216,41 +225,35 @@ export const uxDashboardImplementationWork: AgentWorkFn<UXDashboardImplementatio
     );
   }
 
-  // 1c. Load design tokens for accurate Tailwind class generation
-  const designTokensResult = loadDesignTokens(context.projectRoot, context.fs);
-  if (designTokensResult.ok) {
-    const tokens = designTokensResult.value;
-    const tokenParts: string[] = ['\n## Design Tokens'];
-    tokenParts.push(`\n### Colors`);
-    for (const [name, hex] of Object.entries(tokens.colors.primitive)) {
-      tokenParts.push(`- ${name}: ${hex}`);
+  const tokenParts: string[] = ['\n## Design Tokens'];
+  tokenParts.push(`\n### Colors`);
+  for (const [name, hex] of Object.entries(tokens.colors.primitive)) {
+    tokenParts.push(`- ${name}: ${hex}`);
+  }
+  if (tokens.colors.semantic) {
+    tokenParts.push(`\n### Semantic Colors`);
+    for (const [role, ref] of Object.entries(tokens.colors.semantic)) {
+      tokenParts.push(`- ${role}: ${ref}`);
     }
-    if (tokens.colors.semantic) {
-      tokenParts.push(`\n### Semantic Colors`);
-      for (const [role, ref] of Object.entries(tokens.colors.semantic)) {
-        tokenParts.push(`- ${role}: ${ref}`);
-      }
-    }
-    tokenParts.push(`\n### Typography`);
-    for (const entry of tokens.typography.scale) {
-      tokenParts.push(`- ${entry.role}: ${entry.size}px, weight ${entry.weight}, family "${entry.family}"`);
-    }
-    tokenParts.push(`\n### Spacing`);
-    tokenParts.push(`Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`);
-    tokenParts.push(`\nUse these exact values for colors, typography, and spacing. Map to Tailwind classes where possible.`);
-    userMessageParts.push(tokenParts.join('\n'));
+  }
+  tokenParts.push(`\n### Typography`);
+  for (const entry of tokens.typography.scale) {
+    tokenParts.push(`- ${entry.role}: ${entry.size}px, weight ${entry.weight}, family "${entry.family}"`);
+  }
+  tokenParts.push(`\n### Spacing`);
+  tokenParts.push(`Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`);
+  tokenParts.push(`\nUse these exact values for colors, typography, and spacing. Map to Tailwind classes where possible.`);
+  userMessageParts.push(tokenParts.join('\n'));
 
-    // Also inject brand spec if available for tone/accessibility context
-    const brandResult = loadBrandSpec(context.projectRoot, context.fs);
-    if (brandResult.ok) {
-      const brand = brandResult.value;
-      userMessageParts.push(
-        `\n## Brand Direction`,
-        `Tone: ${brand.identity.tone}`,
-        `Audience: ${brand.identity.audience}`,
-        `WCAG Level: ${brand.accessibility.wcag_level}`,
-      );
-    }
+  const brandResult = loadBrandSpec(context.projectRoot, context.fs);
+  if (brandResult.ok) {
+    const brand = brandResult.value;
+    userMessageParts.push(
+      `\n## Brand Direction`,
+      `Tone: ${brand.identity.tone}`,
+      `Audience: ${brand.identity.audience}`,
+      `WCAG Level: ${brand.accessibility.wcag_level}`,
+    );
   }
 
   // Include design snapshot data if available (colors, typography, spacing from Figma/Penpot)

@@ -14,6 +14,7 @@ import type {
   AgentWorkFn,
   Result,
   EventBus,
+  DesignTokensSpec,
 } from '@agentforge/core';
 import {
   Ok,
@@ -27,6 +28,7 @@ import {
 } from '@agentforge/core';
 import type { UXDashboardResearchOutput } from '../ux-research/ux-dashboard-research.js';
 import type { ComponentTreeNode, ResponsiveRule, ImplementationStage, ScreenDefinition } from '../types.js';
+import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
 // ============================================================================
 // Types
@@ -63,7 +65,7 @@ export const UX_DASHBOARD_PLANNING_CONTRACT: AgentContract = {
   category: 'design',
   provider: 'claude-sonnet-4',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 30000 },
-  tools: ['figma:get_variable_defs', 'figma:get_code_connect_map'],
+  tools: [],
   permissions: ['read_spec', 'read_design', 'read_design_system', 'write_spec'],
   denied: ['write_code', 'create_branch'],
   hitl_policy: 'review_and_override',
@@ -116,6 +118,115 @@ export const parsePlanningOutput = (output: string): Result<UXDashboardPlanningO
 };
 
 // ============================================================================
+// Token name helpers
+// ============================================================================
+
+/**
+ * Extract the set of valid token names from a DesignTokensSpec.
+ * Includes semantic color names, typography role names, spacing scale values,
+ * and border radius names.
+ */
+export const extractValidTokenNames = (spec: DesignTokensSpec): Set<string> => {
+  const names = new Set<string>();
+
+  // Semantic color names (e.g., "background-primary", "surface-primary", "text-primary")
+  for (const name of Object.keys(spec.colors.semantic)) {
+    names.add(name);
+  }
+
+  // Typography role names (e.g., "heading-1", "body", "label")
+  for (const entry of spec.typography.scale) {
+    names.add(entry.role);
+  }
+
+  // Spacing scale values as strings (e.g., "4", "8", "24", "32")
+  for (const value of spec.spacing.scale) {
+    names.add(String(value));
+  }
+
+  // Border radius names (e.g., "small", "medium", "large", "pill")
+  for (const name of Object.keys(spec.borders.radius)) {
+    names.add(name);
+  }
+
+  return names;
+};
+
+/**
+ * Build a token name allowlist section for the user message.
+ * This explicitly tells the LLM which token names are valid.
+ */
+const buildTokenAllowlist = (spec: DesignTokensSpec): string => {
+  const semanticColors = Object.keys(spec.colors.semantic).join(', ');
+  const typographyRoles = spec.typography.scale.map(e => e.role).join(', ');
+  const spacingValues = spec.spacing.scale.join(', ');
+  const radiusNames = Object.keys(spec.borders.radius).join(', ');
+
+  return `\n\nVALID TOKEN NAMES (use ONLY these in tokenBindings — any other name will fail downstream):
+- Semantic colors: ${semanticColors}
+- Typography roles: ${typographyRoles}
+- Spacing values (px): ${spacingValues}
+- Border radius: ${radiusNames}
+
+IMPORTANT: Do NOT invent names like "color.surface.primary", "color.border.input", "spacing.lg", or "color.text.inverse". Use the exact names listed above.`;
+};
+
+/** Common dot-notation → semantic name mappings for warning messages. */
+const DOT_NOTATION_HINTS: Record<string, string> = {
+  'color.background.primary': 'background-primary',
+  'color.surface.primary': 'surface-primary',
+  'color.surface.secondary': 'surface-secondary',
+  'color.surface.tertiary': 'surface-elevated',
+  'color.surface.elevated': 'surface-elevated',
+  'color.surface.accent': 'surface-elevated',
+  'color.surface.disabled': 'surface-secondary',
+  'color.text.primary': 'text-primary',
+  'color.text.secondary': 'text-secondary',
+  'color.text.inverse': 'text-on-cta',
+  'color.text.accent': 'cta-primary',
+  'color.text.disabled': 'text-disabled',
+  'color.border.default': 'border-default',
+  'color.border.input': 'border-default',
+  'color.border.subtle': 'border-default',
+  'color.border.focus': 'border-focus',
+  'color.border.error': 'border-error',
+  'color.primary': 'cta-primary',
+  'color.error': 'error',
+  'color.success': 'success',
+  'color.warning': 'warning',
+  'spacing.xs': '4',
+  'spacing.sm': '8',
+  'spacing.md': '16',
+  'spacing.lg': '24',
+  'spacing.xl': '32',
+  'spacing.2xl': '48',
+};
+
+/**
+ * Validate tokenBindings values against known token names.
+ * Returns a list of warning messages for any unrecognized values.
+ */
+export const validateTokenBindings = (
+  bindings: Readonly<Record<string, string>>,
+  validNames: Set<string>,
+): string[] => {
+  const warnings: string[] = [];
+
+  for (const [key, value] of Object.entries(bindings)) {
+    if (validNames.has(value)) continue;
+
+    const hint = DOT_NOTATION_HINTS[value];
+    if (hint) {
+      warnings.push(`  "${key}": "${value}" → should be "${hint}" (dot-notation is not a valid token name)`);
+    } else {
+      warnings.push(`  "${key}": "${value}" is not a recognized token name`);
+    }
+  }
+
+  return warnings;
+};
+
+// ============================================================================
 // Work function
 // ============================================================================
 
@@ -148,28 +259,21 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
   const existingSpecs = readSpecs(specDir, context.fs);
   const specsContent = existingSpecs.ok ? JSON.stringify(existingSpecs.value) : '{}';
 
-  // 2. Fetch design tokens — ADR-024: try get_variable_defs, fall back to disk tokens, then get_code
-  let tokenContext = '';
-  const varResult = await context.mcpClient.callTool('figma', 'get_variable_defs', { moduleId });
-  if (varResult.ok) {
-    tokenContext = `\nDesign Tokens (from Figma Variables API):\n${JSON.stringify(varResult.value, null, 2)}`;
-  } else {
-    // Fallback 1: Load design tokens from agentforge/spec/design-tokens.yaml
-    const diskTokens = loadDesignTokens(context.projectRoot, context.fs);
-    if (diskTokens.ok) {
-      tokenContext = `\nDesign Tokens (from project spec — design-tokens.yaml):\n${JSON.stringify(diskTokens.value, null, 2)}`;
-      // Also inject brand spec if available
-      const diskBrand = loadBrandSpec(context.projectRoot, context.fs);
-      if (diskBrand.ok) {
-        tokenContext += `\n\nBrand Spec (from project spec — brand.yaml):\n${JSON.stringify(diskBrand.value, null, 2)}`;
-      }
-    } else {
-      // Fallback 2: ADR-024 extract tokens from get_code inline styles
-      const codeResult = await context.mcpClient.callTool('figma', 'get_code', { moduleId });
-      if (codeResult.ok) {
-        tokenContext = `\nDesign Tokens (extracted from inline styles — Variables API unavailable, see ADR-024):\n${JSON.stringify(codeResult.value, null, 2)}`;
-      }
-    }
+  // 2. Design tokens — disk only (agentforge/spec/design-tokens.yaml); no MCP fallback
+  const diskTokens = loadDesignTokens(context.projectRoot, context.fs);
+  if (!diskTokens.ok) {
+    // eslint-disable-next-line no-console
+    console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+    return diskDesignTokensRequiredErr(context.projectRoot);
+  }
+
+  let tokenContext =
+    `\nDesign Tokens (from project spec — design-tokens.yaml):\n${JSON.stringify(diskTokens.value, null, 2)}`;
+  const validTokenNames = extractValidTokenNames(diskTokens.value);
+  tokenContext += buildTokenAllowlist(diskTokens.value);
+  const diskBrand = loadBrandSpec(context.projectRoot, context.fs);
+  if (diskBrand.ok) {
+    tokenContext += `\n\nBrand Spec (from project spec — brand.yaml):\n${JSON.stringify(diskBrand.value, null, 2)}`;
   }
 
   // 2b. Load component library for reference in token bindings
@@ -231,6 +335,15 @@ export const uxDashboardPlanningWork: AgentWorkFn<UXDashboardPlanningInput, UXDa
   const parseResult = parsePlanningOutput(llmOutput);
   if (!parseResult.ok) {
     return parseResult;
+  }
+
+  // 5. Validate tokenBindings against known token names
+  if (validTokenNames && Object.keys(parseResult.value.tokenBindings).length > 0) {
+    const warnings = validateTokenBindings(parseResult.value.tokenBindings, validTokenNames);
+    if (warnings.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`[planning] tokenBindings validation warnings:\n${warnings.join('\n')}`);
+    }
   }
 
   return Ok(parseResult.value);

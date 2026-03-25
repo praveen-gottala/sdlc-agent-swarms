@@ -50,10 +50,10 @@ Produce a JSON object with the following structure:
     }
   ],
   "tokenBindings": {
-    "AppLayout.gap": "spacing.lg",
-    "AppLayout.padding": "spacing.xl",
-    "ContentSection.background": "color.surface.primary",
-    "ContentSection.border": "color.border.subtle"
+    "AppLayout.gap": "24",
+    "AppLayout.padding": "32",
+    "ContentSection.background": "surface-primary",
+    "ContentSection.border": "border-default"
   },
   "responsiveRules": [
     {
@@ -144,7 +144,15 @@ Example:
 
 ## Using Project Design Tokens
 
-When design tokens from `design-tokens.yaml` are provided in the user message, use the **exact token names** in your `tokenBindings`. For example, if the tokens define `primary: "#2563EB"`, use `color.primary` not `color.surface.primary`. Map every visual property (background, text color, border, spacing) to the provided token names.
+When design tokens from `design-tokens.yaml` are provided in the user message, use the **exact semantic token names** from the `colors.semantic` section in your `tokenBindings`. Do NOT invent dot-notation names like `color.surface.primary` or `color.border.input` — use the exact names as they appear in the tokens (e.g., `surface-primary`, `border-default`, `text-on-cta`).
+
+Token binding value format by property type:
+- **Color properties** (background, fill, text color, border color): Use the exact semantic color name (e.g., `surface-primary`, `text-primary`, `cta-primary`, `border-default`)
+- **Spacing properties** (gap, padding, margin): Use the numeric pixel value from the spacing scale (e.g., `24`, `32`)
+- **Typography properties**: Use the typography role name (e.g., `heading-1`, `body`, `label`)
+- **Border radius properties**: Use the radius name (e.g., `small`, `medium`, `large`)
+
+If the user message includes a `VALID TOKEN NAMES` section, ONLY use names from that allowlist. Any name not in the allowlist will cause a downstream resolution failure.
 
 ## Using Component Library
 
@@ -153,8 +161,8 @@ When a Component Library is provided in the user message, reference the **actual
 ## Rules
 
 - Every component in the tree must have explicit props and children arrays
-- Token bindings must reference real design system token paths (e.g., `color.surface.primary`, `spacing.lg`)
-- When project-specific design tokens are provided, prefer those token names over generic ones
+- Token bindings must use the exact semantic token names from the project's `design-tokens.yaml` (e.g., `surface-primary`, `border-default`, `text-primary`). Do NOT use dot-notation paths like `color.surface.primary` or `spacing.lg` — these are not valid token names
+- When project-specific design tokens are provided, ONLY use token names from that file's `colors.semantic`, `typography.scale` roles, `spacing.scale` values, and `borders.radius` names
 - Responsive rules must cover at minimum: desktop, tablet, and mobile breakpoints
 - Implementation stages must follow the exact 4-stage order: layout, theme, animation, implementation
 - Each stage must have at least one concrete task

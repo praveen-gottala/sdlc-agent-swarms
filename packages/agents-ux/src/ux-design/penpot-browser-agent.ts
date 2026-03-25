@@ -44,6 +44,11 @@ export interface PenpotBrowserDesignInput {
   readonly moduleId: string;
   readonly taskId: string;
   readonly planningOutput: UXDashboardPlanningOutput;
+  readonly designSystemPrompt?: string;
+  readonly componentCatalogPrompt?: string;
+  readonly description?: string;
+  /** Target viewport width in pixels (default: 1440). */
+  readonly viewportWidth?: number;
 }
 
 /** Output produced by the browser-based Penpot design agent. */
@@ -167,7 +172,7 @@ export async function penpotBrowserDesignWork(
   mcpClient: MCPClient,
   options: PenpotBrowserDesignOptions = {},
 ): Promise<Result<PenpotBrowserDesignOutput>> {
-  const { moduleId, planningOutput } = input;
+  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth } = input;
   const llm = provider as unknown as LLMProvider;
 
   const headless = options.headless ?? false;
@@ -235,12 +240,28 @@ export async function penpotBrowserDesignWork(
     console.log('\n        [Phase A] Generating design script...');
 
     const rawPrompt = loadPenpotSystemPrompt();
-    const systemPrompt = rawPrompt.replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)');
+    const systemPrompt = rawPrompt
+      .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use the token names from the rules below as guidance)')
+      .replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)')
+      .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)');
 
-    const userMessage = [
+    const userMessageParts = [
       `Module ID: ${moduleId}`,
-      `\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`,
-    ].join('\n');
+    ];
+
+    if (viewportWidth) {
+      userMessageParts.push(`\nViewport Width: ${viewportWidth}px`);
+      userMessageParts.push(`IMPORTANT: The root board MUST use resize(${viewportWidth}, estimatedHeight). All child layouts must fit within ${viewportWidth}px width.`);
+    }
+
+    if (description) {
+      userMessageParts.push(`\nApp Description: ${description}`);
+      userMessageParts.push(`\nIMPORTANT: Design this screen for the app described above. Use the componentTree below to determine which components to create. Populate all text with realistic, domain-appropriate content that matches this app.`);
+    }
+
+    userMessageParts.push(`\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`);
+
+    const userMessage = userMessageParts.join('\n');
 
     const completionResult = await llm.complete(
       {

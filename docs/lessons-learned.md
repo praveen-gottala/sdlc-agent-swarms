@@ -129,3 +129,25 @@
 3. **Runtime input validation guards** — Each pipeline stage now validates its inputs and warns/errors on degenerate data (e.g., `prdRequirements` with only short labels).
 4. **Dead-code detection script** — `scripts/check-unused-exports.sh` finds exported symbols with zero external consumers.
 5. **CLAUDE.md rules** — "CLI Command File-Loading Tests" and "Data Flow Coverage" sections codify the testing requirements.
+
+---
+
+## Mocks Belong Only in Test Files (*.test.ts)
+
+**Context:** `design-figma.ts`, `design-penpot.ts`, `design-penpot-browser.ts`, `design-penpot-all.ts`, `run-module-pipeline.ts`
+**Rule:** `createMock*()` functions and fake/stub implementations must only exist in `*.test.ts` files. Every other file must use real implementations.
+
+### The bug:
+Agent contexts in CLI commands were created with `createMockFs()` — a fake filesystem where `exists()` always returns `false` and `readFile()` always returns `Err`. When the planning stage called `loadDesignTokens(context.projectRoot, context.fs)`, it used this mock filesystem, silently failing to find design tokens that existed on disk. The warning said "no design tokens found" — a plausible message that hid the real cause.
+
+### Why it went undetected:
+- The mock satisfied the TypeScript compiler — no type errors.
+- `exists()` returning `false` is a valid "file not found" response, not a crash.
+- The warning message blamed missing files, not a fake filesystem.
+- `createRealFs()` was already imported in every affected file but wasn't used in context creation.
+
+### Rules to prevent recurrence:
+1. **Mocks belong in `*.test.ts` files only.** If you see `createMock*()` in any other file, it's a bug.
+2. **If an interface dependency isn't needed yet, make it optional** — don't fill it with a fake.
+3. **A stub that returns "not found" is worse than a crash** — crashes get fixed immediately, silent degradation gets shipped.
+4. **When creating contexts/configs, use real implementations** — `createRealFs()`, not `createMockFs()`.

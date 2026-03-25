@@ -388,6 +388,21 @@ export const buildComponentCatalogPrompt = (
     }
     lines.push('');
 
+    // Variants
+    if (entry.variants && Object.keys(entry.variants).length > 0) {
+      lines.push('**Variants:**');
+      for (const [variant, tokens] of Object.entries(entry.variants)) {
+        const parts: string[] = [];
+        if (tokens.bg) parts.push(`bg=${tokens.bg}`);
+        if (tokens.text) parts.push(`text=${tokens.text}`);
+        if (tokens.border) parts.push(`border=${tokens.border}`);
+        if (tokens.shadow) parts.push(`shadow=${tokens.shadow}`);
+        if (tokens.opacity !== undefined) parts.push(`opacity=${tokens.opacity}`);
+        lines.push(`- **${variant}**: ${parts.join(', ')}`);
+      }
+      lines.push('');
+    }
+
     // States
     lines.push('**States:**');
     for (const [state, tokens] of Object.entries(entry.states)) {
@@ -399,6 +414,21 @@ export const buildComponentCatalogPrompt = (
       lines.push(`- **${state}**: ${parts.join(', ')}`);
     }
     lines.push('');
+
+    // Token Bindings
+    if (entry.token_bindings) {
+      lines.push('**Token Bindings:**');
+      for (const [prop, value] of Object.entries(entry.token_bindings)) {
+        lines.push(`- ${prop}: ${value}`);
+      }
+      lines.push('');
+    }
+
+    // Min Height
+    if (entry.min_height) {
+      lines.push(`**Min Height:** ${entry.min_height}px`);
+      lines.push('');
+    }
 
     // Spacing
     lines.push(`**Spacing:** padding=${entry.spacing.padding}, gap=${entry.spacing.internal_gap}`);
@@ -475,11 +505,37 @@ export const buildComponentCatalogImplPrompt = (
       lines.push('**Library:**');
       for (const [libId, mapping] of mappings) {
         lines.push(`- ${libId}: \`${mapping.component_name}\` from \`${mapping.import_path}\``);
+        if (mapping.variant_prop) lines.push(`  - variant_prop: \`${mapping.variant_prop}\``);
+        if (mapping.size_prop) lines.push(`  - size_prop: \`${mapping.size_prop}\``);
         if (mapping.slot_mapping) {
           for (const [slot, component] of Object.entries(mapping.slot_mapping)) {
             lines.push(`  - ${slot} → \`${component}\``);
           }
         }
+      }
+      lines.push('');
+    }
+
+    // Variants
+    if (entry.variants && Object.keys(entry.variants).length > 0) {
+      lines.push('**Variants:**');
+      for (const [variant, tokens] of Object.entries(entry.variants)) {
+        const parts: string[] = [];
+        if (tokens.bg) parts.push(`bg=${tokens.bg}`);
+        if (tokens.text) parts.push(`text=${tokens.text}`);
+        if (tokens.border) parts.push(`border=${tokens.border}`);
+        if (tokens.shadow) parts.push(`shadow=${tokens.shadow}`);
+        if (tokens.opacity !== undefined) parts.push(`opacity=${tokens.opacity}`);
+        lines.push(`- **${variant}**: ${parts.join(', ')}`);
+      }
+      lines.push('');
+    }
+
+    // Token Bindings
+    if (entry.token_bindings) {
+      lines.push('**Token Bindings:**');
+      for (const [prop, value] of Object.entries(entry.token_bindings)) {
+        lines.push(`- ${prop}: ${value}`);
       }
       lines.push('');
     }

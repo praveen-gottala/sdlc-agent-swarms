@@ -238,6 +238,34 @@ export const validateComponentCatalog = (
     if (!entry.states || !entry.states['default']) {
       errors.push(`Component "${name}" is missing required "default" state`);
     }
+
+    // Check min_height is positive when present
+    if (entry.min_height !== undefined) {
+      if (typeof entry.min_height !== 'number' || entry.min_height <= 0) {
+        errors.push(`Component "${name}" has invalid min_height "${entry.min_height}" — must be a positive number`);
+      }
+    }
+
+    // Check token_bindings values do not contain dot-notation
+    if (entry.token_bindings) {
+      for (const [prop, value] of Object.entries(entry.token_bindings)) {
+        if (typeof value === 'string' && value.includes('.')) {
+          errors.push(`Component "${name}" token_bindings.${prop} uses dot-notation "${value}" — use flat semantic names instead`);
+        }
+      }
+    }
+
+    // Check variant_prop / size_prop are non-empty strings when present
+    if (entry.library_mapping) {
+      for (const [libId, mapping] of Object.entries(entry.library_mapping)) {
+        if (mapping.variant_prop !== undefined && (typeof mapping.variant_prop !== 'string' || mapping.variant_prop.trim() === '')) {
+          errors.push(`Component "${name}" library_mapping.${libId}.variant_prop must be a non-empty string`);
+        }
+        if (mapping.size_prop !== undefined && (typeof mapping.size_prop !== 'string' || mapping.size_prop.trim() === '')) {
+          errors.push(`Component "${name}" library_mapping.${libId}.size_prop must be a non-empty string`);
+        }
+      }
+    }
   }
 
   if (errors.length > 0) {
@@ -259,6 +287,9 @@ export interface DesignTokensFlat {
   readonly colors: Readonly<Record<string, string>>;
   readonly typography: Readonly<Record<string, unknown>>;
   readonly spacing: Readonly<Record<string, string>>;
+  readonly elevation: Readonly<Record<string, string>>;
+  readonly layout: Readonly<Record<string, unknown>>;
+  readonly z_index: Readonly<Record<string, number>>;
 }
 
 /**
@@ -291,7 +322,25 @@ export const toDesignTokens = (spec: DesignTokensSpec): DesignTokensFlat => {
     spacing[`${value}`] = `${value}px`;
   }
 
-  return { colors, typography, spacing };
+  // Flatten elevation: { "0": "none", "1": "0 1px 3px ..." }
+  const elevation: Record<string, string> = {};
+  for (const l of spec.elevation.levels) {
+    elevation[`${l.level}`] = l.shadow;
+  }
+
+  // Flatten layout: grid, breakpoints, content_max_width
+  const layout: Record<string, unknown> = {
+    columns: spec.layout.grid.columns,
+    gutter: `${spec.layout.grid.gutter}px`,
+    margin: `${spec.layout.grid.margin}px`,
+    content_max_width: `${spec.layout.content_max_width}px`,
+    breakpoints: spec.layout.breakpoints,
+  };
+
+  // Flatten z_index: direct pass-through
+  const z_index: Record<string, number> = { ...spec.z_index };
+
+  return { colors, typography, spacing, elevation, layout, z_index };
 };
 
 /**
@@ -307,8 +356,8 @@ export const validateDesignTokens = (spec: DesignTokensSpec): Result<void> => {
 
   // Check semantic colors reference existing primitives
   for (const [role, ref] of Object.entries(spec.colors.semantic)) {
-    // Allow raw hex values (starting with #) — they don't need to reference primitives
-    if (!ref.startsWith('#') && !(ref in spec.colors.primitive)) {
+    // Allow raw hex values (starting with #) and rgba values — they don't need to reference primitives
+    if (!ref.startsWith('#') && !ref.startsWith('rgba') && !(ref in spec.colors.primitive)) {
       errors.push(`Semantic color "${role}" references nonexistent primitive "${ref}"`);
     }
   }
@@ -325,6 +374,41 @@ export const validateDesignTokens = (spec: DesignTokensSpec): Result<void> => {
     if (spec.spacing.scale[i] <= spec.spacing.scale[i - 1]) {
       errors.push(`Spacing scale is not sorted ascending: ${spec.spacing.scale[i - 1]} >= ${spec.spacing.scale[i]}`);
       break;
+    }
+  }
+
+  // Validate elevation levels are sequential (each level === its index)
+  if (spec.elevation) {
+    for (let i = 0; i < spec.elevation.levels.length; i++) {
+      if (spec.elevation.levels[i].level !== i) {
+        errors.push(`Elevation level at index ${i} has level ${spec.elevation.levels[i].level} (expected ${i})`);
+      }
+    }
+  }
+
+  // Validate z_index values are non-negative
+  if (spec.z_index) {
+    for (const [name, value] of Object.entries(spec.z_index)) {
+      if (typeof value === 'number' && value < 0) {
+        errors.push(`z_index "${name}" is negative: ${value}`);
+      }
+    }
+  }
+
+  // Validate layout breakpoints are strictly ascending
+  if (spec.layout) {
+    const bp = spec.layout.breakpoints;
+    if (bp.mobile >= bp.tablet || bp.tablet >= bp.desktop || bp.desktop >= bp.wide) {
+      errors.push(`Layout breakpoints must be strictly ascending: mobile(${bp.mobile}) < tablet(${bp.tablet}) < desktop(${bp.desktop}) < wide(${bp.wide})`);
+    }
+    if (spec.layout.grid.columns <= 0) {
+      errors.push(`Layout grid columns must be > 0, got ${spec.layout.grid.columns}`);
+    }
+    if (spec.layout.grid.gutter < 0) {
+      errors.push(`Layout grid gutter must be >= 0, got ${spec.layout.grid.gutter}`);
+    }
+    if (spec.layout.grid.margin < 0) {
+      errors.push(`Layout grid margin must be >= 0, got ${spec.layout.grid.margin}`);
     }
   }
 

@@ -67,6 +67,8 @@ export type {
   ModelField,
   ModelEntry,
   ModelsSpec,
+  PageEntry,
+  PagesSpec,
 } from './spec-types.js';
 
 export { SPEC_SCHEMA_HEADERS } from './spec-headers.js';

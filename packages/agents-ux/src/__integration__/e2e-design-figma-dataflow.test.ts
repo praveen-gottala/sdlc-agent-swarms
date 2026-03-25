@@ -31,8 +31,9 @@ import type {
   DesignTokensSpec,
   BrandSpec,
 } from '@agentforge/core';
-import { Ok, Err, createEventBus, toDesignTokens } from '@agentforge/core';
+import { Ok, Err, createEventBus } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { stringify } from 'yaml';
 import type {
   UXDashboardResearchInput,
   UXDashboardResearchOutput,
@@ -96,6 +97,20 @@ const BOOKSHELF_TOKENS: DesignTokensSpec = {
   spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32] },
   borders: { radius: { small: 8, medium: 12 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+      { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+      { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+      { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
 const BOOKSHELF_BRAND: BrandSpec = {
@@ -128,6 +143,19 @@ const createMockFs = (): FileSystem => ({
   appendFile: () => Ok(undefined),
 });
 
+/** Disk-backed design-tokens.yaml required for planning+ after research (disk-only token policy). */
+const createMockFsWithDesignTokens = (projectRoot: string): FileSystem => {
+  const specDir = `${projectRoot}/agentforge/spec`;
+  const tokensPath = `${specDir}/design-tokens.yaml`;
+  const base = createMockFs();
+  return {
+    ...base,
+    exists: (p: string) => p === specDir || p === tokensPath,
+    readFile: (p: string) =>
+      p === tokensPath ? Ok(stringify(BOOKSHELF_TOKENS)) : base.readFile(p),
+  };
+};
+
 const createMockMCPClient = (): MCPClient => ({
   callTool: async () => Ok({}),
   listTools: async () => Ok([]),
@@ -155,7 +183,11 @@ describeE2E('E2E: PRD + design system data flow through pipeline', () => {
   let designSystemPrompt: string;
 
   beforeAll(async () => {
-    const context = createMockContext();
+    const base = createMockContext();
+    const context: AgentContext = {
+      ...base,
+      fs: createMockFsWithDesignTokens(base.projectRoot),
+    };
     const provider = createClaudeProvider('claude-sonnet-4', { apiKey: API_KEY });
 
     // Stage 1: Research — with full PRD content + design tokens
@@ -163,7 +195,7 @@ describeE2E('E2E: PRD + design system data flow through pipeline', () => {
       moduleId: 'bookshelf-home',
       taskId: 'e2e-dataflow-001',
       prdRequirements: ['home', PRD_CONTENT],
-      existingTokens: toDesignTokens(BOOKSHELF_TOKENS),
+      designTokensSpec: BOOKSHELF_TOKENS,
     };
 
     const researchResult = await uxDashboardResearchWork(

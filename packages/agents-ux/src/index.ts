@@ -31,6 +31,8 @@ export {
   uxDashboardPlanningWork,
   executeUXDashboardPlanning,
   registerUXDashboardPlanning,
+  extractValidTokenNames,
+  validateTokenBindings,
 } from './ux-planning/ux-dashboard-planning.js';
 
 // UX Dashboard Implementation

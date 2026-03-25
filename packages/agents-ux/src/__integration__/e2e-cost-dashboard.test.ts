@@ -25,8 +25,10 @@ import type {
   MCPClient,
   FileSystem,
   LLMProviderRef,
+  DesignTokensSpec,
 } from '@agentforge/core';
 import { Ok, Err, createEventBus } from '@agentforge/core';
+import { stringify } from 'yaml';
 import { createClaudeProvider } from '@agentforge/providers';
 import type {
   UXDashboardResearchInput,
@@ -61,9 +63,41 @@ const describeE2E = E2E_ENABLED ? describe : describe.skip;
 // Test input
 // ============================================================================
 
+const COST_E2E_TOKENS: DesignTokensSpec = {
+  version: '1.0',
+  created_by: 'e2e-cost-dashboard',
+  colors: {
+    primitive: { ink: '#0f172a', surface: '#f8fafc', accent: '#2563eb' },
+    semantic: { 'background-primary': 'surface', 'text-primary': 'ink', 'cta-primary': 'accent' },
+  },
+  typography: {
+    font_families: { display: 'Inter', body: 'Inter' },
+    scale: [
+      { role: 'heading-1', size: 24, weight: 600, family: 'display' },
+      { role: 'body', size: 14, weight: 400, family: 'body' },
+    ],
+  },
+  spacing: { unit: 8, scale: [4, 8, 16, 24] },
+  borders: { radius: { small: 6, medium: 8 } },
+  touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat' },
+      { level: 1, shadow: '0 1px 2px rgba(0,0,0,0.06)', description: 'Card' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
+};
+
 const COST_DASHBOARD_INPUT: UXDashboardResearchInput = {
   moduleId: 'cost-dashboard',
   taskId: 'e2e-proof-001',
+  designTokensSpec: COST_E2E_TOKENS,
   prdRequirements: [
     'Display real-time cost breakdown by agent, phase, and provider',
     'Show budget utilization gauges with configurable thresholds (warning at 80%, critical at 95%)',
@@ -91,6 +125,18 @@ const createMockFs = (): FileSystem => ({
   appendFile: () => Ok(undefined),
 });
 
+const createMockFsWithDesignTokens = (projectRoot: string, tokens: DesignTokensSpec): FileSystem => {
+  const specDir = `${projectRoot}/agentforge/spec`;
+  const tokensPath = `${specDir}/design-tokens.yaml`;
+  const base = createMockFs();
+  return {
+    ...base,
+    exists: (p: string) => p === specDir || p === tokensPath,
+    readFile: (p: string) =>
+      p === tokensPath ? Ok(stringify(tokens)) : base.readFile(p),
+  };
+};
+
 /** Mock MCPClient — returns Ok({}) for all tool calls (ADR-024 fallback). */
 const createMockMCPClient = (): MCPClient => ({
   callTool: async () => Ok({}),
@@ -107,7 +153,7 @@ const createMockContext = (): AgentContext => ({
   taskId: 'e2e-proof-001',
   projectRoot: '/tmp/agentforge-e2e',
   eventBus: createEventBus(),
-  fs: createMockFs(),
+  fs: createMockFsWithDesignTokens('/tmp/agentforge-e2e', COST_E2E_TOKENS),
   mcpClient: createMockMCPClient(),
   runGovernance: createMockGovernance(),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'mock', recoverable: false }),

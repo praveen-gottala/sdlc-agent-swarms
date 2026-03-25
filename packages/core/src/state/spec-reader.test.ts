@@ -151,6 +151,118 @@ describe('spec-reader', () => {
     });
   });
 
+  describe('pages.yaml format validation', () => {
+    it('parses a well-formed pages.yaml with viewports', () => {
+      const pagesYaml = {
+        version: '1.0',
+        pages: [
+          {
+            id: 'home',
+            name: 'Home',
+            description: 'Landing page',
+            route: '/',
+            status: 'approved',
+            components: ['HeroSection', 'BookGrid'],
+            data_sources: ['Book'],
+            viewports: [1440, 768],
+          },
+        ],
+      };
+      const fs = createMockFs({
+        [`${specDir}/pages.yaml`]: stringifyYaml(pagesYaml),
+      });
+
+      const result = readSpecs(specDir, fs);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.pages).toBeDefined();
+        const pages = result.value.pages!;
+        expect(pages.version).toBe('1.0');
+        expect(pages.pages).toHaveLength(1);
+        expect(pages.pages[0].id).toBe('home');
+        expect(pages.pages[0].name).toBe('Home');
+        expect(pages.pages[0].description).toBe('Landing page');
+        expect(pages.pages[0].route).toBe('/');
+        expect(pages.pages[0].status).toBe('approved');
+        expect(pages.pages[0].components).toEqual(['HeroSection', 'BookGrid']);
+        expect(pages.pages[0].viewports).toEqual([1440, 768]);
+      }
+    });
+
+    it('parses pages.yaml without viewports (field is optional)', () => {
+      const pagesYaml = {
+        version: '1.0',
+        pages: [
+          {
+            id: 'settings',
+            name: 'Settings',
+            description: 'User settings page',
+            route: '/settings',
+            status: 'approved',
+            components: ['SettingsForm'],
+          },
+        ],
+      };
+      const fs = createMockFs({
+        [`${specDir}/pages.yaml`]: stringifyYaml(pagesYaml),
+      });
+
+      const result = readSpecs(specDir, fs);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const page = result.value.pages!.pages[0];
+        expect(page.viewports).toBeUndefined();
+        expect(page.id).toBe('settings');
+      }
+    });
+
+    it('preserves all required fields on page entries', () => {
+      const pagesYaml = {
+        version: '1.0',
+        pages: [
+          {
+            id: 'dashboard',
+            name: 'Dashboard',
+            description: 'Main dashboard view',
+            route: '/dashboard',
+            status: 'draft',
+            components: ['Chart', 'Table'],
+            data_sources: ['Analytics'],
+            viewports: [1440],
+          },
+          {
+            id: 'profile',
+            name: 'Profile',
+            description: 'User profile',
+            route: '/profile',
+            status: 'approved',
+            components: ['Avatar', 'Bio'],
+          },
+        ],
+      };
+      const fs = createMockFs({
+        [`${specDir}/pages.yaml`]: stringifyYaml(pagesYaml),
+      });
+
+      const result = readSpecs(specDir, fs);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const pages = result.value.pages!.pages;
+        expect(pages).toHaveLength(2);
+        for (const page of pages) {
+          expect(page.id).toBeTruthy();
+          expect(page.name).toBeTruthy();
+          expect(page.description).toBeTruthy();
+          expect(page.route).toBeTruthy();
+          expect(page.status).toBeTruthy();
+          expect(Array.isArray(page.components)).toBe(true);
+        }
+        expect(pages[0].viewports).toEqual([1440]);
+        expect(pages[1].viewports).toBeUndefined();
+      }
+    });
+  });
+
   describe('readSpecFile', () => {
     it('reads a single spec file', () => {
       const fs = createMockFs({

@@ -117,3 +117,26 @@ export interface ModelsSpec {
   readonly version: string;
   readonly models: readonly ModelEntry[];
 }
+
+// ---------------------------------------------------------------------------
+// Pages Spec (pages.yaml)
+// ---------------------------------------------------------------------------
+
+/** A single page entry in the pages spec. */
+export interface PageEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly route: string;
+  readonly status: string;
+  readonly components: readonly string[];
+  readonly data_sources?: readonly string[];
+  /** Target viewport widths for design generation (e.g. [1440, 768]). Defaults to [1440]. */
+  readonly viewports?: readonly number[];
+}
+
+/** Pages spec file — spec/pages.yaml */
+export interface PagesSpec {
+  readonly version: string;
+  readonly pages: readonly PageEntry[];
+}

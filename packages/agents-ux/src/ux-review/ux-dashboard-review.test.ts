@@ -2,9 +2,10 @@ import {
   UX_DASHBOARD_REVIEW_CONTRACT,
   parseReviewOutput,
   registerUXDashboardReview,
+  uxDashboardReviewWork,
 } from './ux-dashboard-review.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { Ok } from '@agentforge/core';
+import { Ok, Err } from '@agentforge/core';
 
 // ============================================================================
 // Helpers
@@ -104,7 +105,7 @@ describe('UX_DASHBOARD_REVIEW_CONTRACT', () => {
     expect(UX_DASHBOARD_REVIEW_CONTRACT.role).toBe('ux_dashboard_review');
     expect(UX_DASHBOARD_REVIEW_CONTRACT.category).toBe('design');
     expect(UX_DASHBOARD_REVIEW_CONTRACT.provider).toBe('claude-sonnet-4');
-    expect(UX_DASHBOARD_REVIEW_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot', 'figma:get_variable_defs']);
+    expect(UX_DASHBOARD_REVIEW_CONTRACT.tools).toEqual(['playwright:snapshot', 'playwright:screenshot']);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_code', 'read_design_system']);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch', 'merge_pr']);
     expect(UX_DASHBOARD_REVIEW_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
@@ -166,6 +167,121 @@ describe('registerUXDashboardReview', () => {
       'ImplementationDraftReady',
       expect.any(Function),
     );
+  });
+});
+
+// ============================================================================
+// Disk-first design system compliance
+// ============================================================================
+
+const DISK_TOKENS_YAML = `version: "1.0"
+created_by: test
+colors:
+  primitive:
+    cream: "#FFF8E7"
+    teal: "#0F6E56"
+  semantic:
+    background-primary: cream
+    cta-primary: teal
+typography:
+  font_families:
+    display: Inter
+    body: Inter
+  scale:
+    - role: heading-1
+      size: 32
+      weight: 700
+      family: display
+spacing:
+  unit: 8
+  scale: [4, 8, 16, 24, 32]
+borders:
+  radius:
+    small: 8
+    medium: 12
+touch_targets:
+  minimum_height: 44
+  minimum_width: 44`;
+
+const COMPLIANCE_ISSUES_JSON = JSON.stringify([
+  { severity: 'minor', category: 'design_system', description: 'Hardcoded color', fix: 'Use token' },
+]);
+
+describe('uxDashboardReviewWork — disk-first compliance', () => {
+  it('uses disk tokens for design-system compliance, no Figma MCP call', async () => {
+    const provider = makeProvider(`\`\`\`json\n${COMPLIANCE_ISSUES_JSON}\n\`\`\``);
+    const ctx = makeContext();
+
+    // Disk tokens available
+    (ctx.fs.readFile as jest.Mock).mockImplementation((path: string) => {
+      if (path.includes('design-tokens.yaml')) {
+        return Ok(DISK_TOKENS_YAML);
+      }
+      return { ok: false, error: { code: 'INVALID_STATE', message: 'not found', recoverable: false } };
+    });
+    (ctx.fs.exists as jest.Mock).mockImplementation((path: string) => {
+      return path.includes('design-tokens.yaml');
+    });
+
+    // MCP calls for playwright succeed, but figma should NOT be called
+    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((ns: string, tool: string) => {
+      if (ns === 'playwright') return Promise.resolve(Ok({ snapshot: 'data' }));
+      // If figma is called, fail the test explicitly
+      return Promise.resolve(Err({ code: 'NOT_FOUND', message: 'Should not call Figma', recoverable: false }));
+    });
+
+    const input = {
+      taskId: 'task-001',
+      branch: 'feat/mod-001',
+      componentPaths: ['src/components/Dashboard.tsx'],
+      moduleId: 'mod-001',
+    };
+
+    const result = await uxDashboardReviewWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+
+    // Verify no Figma MCP calls were made
+    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const figmaCalls = mcpCalls.filter((call: string[]) => call[0] === 'figma');
+    expect(figmaCalls).toHaveLength(0);
+  });
+
+  it('returns Err when design-tokens.yaml is missing', async () => {
+    const provider = makeProvider(`\`\`\`json\n${COMPLIANCE_ISSUES_JSON}\n\`\`\``);
+    const ctx = makeContext();
+
+    (ctx.fs.readFile as jest.Mock).mockReturnValue({ ok: false, error: { code: 'INVALID_STATE', message: 'not found', recoverable: false } });
+    (ctx.fs.exists as jest.Mock).mockReturnValue(false);
+
+    const errSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const input = {
+      taskId: 'task-001',
+      branch: 'feat/mod-001',
+      componentPaths: ['src/components/Dashboard.tsx'],
+      moduleId: 'mod-001',
+    };
+
+    const result = await uxDashboardReviewWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('DEPENDENCY_NOT_FOUND');
+      expect(result.error.recoverable).toBe(false);
+    }
+    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 });
 

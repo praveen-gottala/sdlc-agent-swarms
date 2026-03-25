@@ -10,6 +10,8 @@
  * Implementation: TypeScript-only, no Python process, no bridge. All
  * orchestration runs in-process via this module and the governance middleware.
  * Rationale: see ADR-022
+ *
+ * ADR-032: When workFn returns Err with recoverable: false, retries are skipped.
  */
 
 import { join } from 'node:path';
@@ -205,6 +207,12 @@ export const runAgent = async <TInput, TOutput>(
     }
 
     lastError = workResult.error;
+
+    // ADR-032: Non-recoverable errors must not retry — configuration/input faults
+    // won't be fixed by re-running the same workFn.
+    if (!workResult.error.recoverable) {
+      break;
+    }
 
     // If this isn't the last attempt, continue retrying
     if (attempt < maxAttempts - 1) {

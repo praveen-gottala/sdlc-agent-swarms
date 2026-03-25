@@ -27,6 +27,7 @@ import {
   designSystemShowCommand,
   designSystemUpdateCommand,
   designSystemValidateCommand,
+  designSystemRegenerateCatalogCommand,
 } from './commands/design-system.js';
 import { designGenerateCommand } from './commands/design-generate.js';
 import { describeCommand } from './commands/describe.js';
@@ -165,13 +166,15 @@ export function createProgram(): Command {
     .argument('<description>', 'Natural language description of what to design')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, connect')
     .option('--module <id>', 'Module ID (default: derived from description)')
+    .option('--width <pixels>', 'Viewport width in pixels (default: 1440)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
     .option('--mock', 'Use mock MCP (no design tool connection)')
-    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
+    .action(async (description: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
       await designPenpotCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
         module: options.module,
+        width: options.width ? parseInt(options.width, 10) : undefined,
         noWait: options.wait === false,
         implement: options.implement,
         mock: options.mock,
@@ -182,9 +185,13 @@ export function createProgram(): Command {
     .command('design:penpot:all')
     .description('Design all screens from pages.yaml in Penpot (reads project spec automatically)')
     .option('--pages <ids>', 'Only design specific pages (comma-separated IDs, e.g. "home,book-detail")')
+    .option('--width <pixels>', 'Viewport width in pixels — overrides per-page viewports (default: 1440)')
     .option('--design-only', 'Skip research+planning, use cached artifacts')
-    .action(async (options: { pages?: string; designOnly?: boolean }) => {
-      await designPenpotAllCommand(process.stdout, options);
+    .action(async (options: { pages?: string; width?: string; designOnly?: boolean }) => {
+      await designPenpotAllCommand(process.stdout, {
+        ...options,
+        width: options.width ? parseInt(options.width, 10) : undefined,
+      });
     });
 
   program
@@ -193,14 +200,16 @@ export function createProgram(): Command {
     .argument('<description>', 'Natural language description of what to design')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design (loads prior from cache)')
     .option('--module <id>', 'Module ID (default: derived from description)')
+    .option('--width <pixels>', 'Viewport width in pixels (default: 1440)')
     .option('--headless', 'Run browser headless (default: headed)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
     .option('--mock', 'Use mock MCP (no design tool connection)')
-    .action(async (description: string, options: { stage?: string; module?: string; headless?: boolean; wait?: boolean; implement?: boolean; mock?: boolean }) => {
+    .action(async (description: string, options: { stage?: string; module?: string; width?: string; headless?: boolean; wait?: boolean; implement?: boolean; mock?: boolean }) => {
       await designPenpotBrowserCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | undefined,
         module: options.module,
+        width: options.width ? parseInt(options.width, 10) : undefined,
         headless: options.headless ?? false,
         noWait: options.wait === false,
         implement: options.implement,
@@ -244,6 +253,14 @@ export function createProgram(): Command {
     .action(async () => {
       const rootDir = findProjectRoot();
       await designSystemValidateCommand(rootDir, realFs, process.stdout);
+    });
+
+  designSystem
+    .command('regenerate-catalog')
+    .description('Regenerate the component catalog from the base catalog')
+    .action(async () => {
+      const rootDir = findProjectRoot();
+      await designSystemRegenerateCatalogCommand(rootDir, realFs, process.stdout);
     });
 
   program
@@ -305,7 +322,7 @@ export { designPenpotAllCommand } from './commands/design-penpot-all.js';
 export { designPenpotBrowserCommand } from './commands/design-penpot-browser.js';
 export { doctorCommand } from './commands/doctor.js';
 export { setupCommand } from './commands/setup.js';
-export { designSystemShowCommand, designSystemUpdateCommand, designSystemValidateCommand, pickComponentLibrary } from './commands/design-system.js';
+export { designSystemShowCommand, designSystemUpdateCommand, designSystemValidateCommand, designSystemRegenerateCatalogCommand, pickComponentLibrary } from './commands/design-system.js';
 export { getComponentLibraryPresets, getComponentLibraryById } from './commands/component-library-presets.js';
 export type { ComponentLibraryPreset, ComponentLibraryId } from './commands/component-library-presets.js';
 export { designGenerateCommand } from './commands/design-generate.js';

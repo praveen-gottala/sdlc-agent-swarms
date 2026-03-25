@@ -9,7 +9,7 @@ import * as path from 'node:path';
 import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
 import type { FileSystem } from '../fs/file-system.js';
-import type { ComponentSpec, ApiSpec, ModelsSpec } from '../types/spec-types.js';
+import type { ComponentSpec, ApiSpec, ModelsSpec, PagesSpec } from '../types/spec-types.js';
 import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '../types/design-system.js';
 import { readYaml } from '../fs/yaml-utils.js';
 
@@ -19,7 +19,7 @@ import { readYaml } from '../fs/yaml-utils.js';
  */
 export interface SpecFiles {
   readonly project?: unknown;
-  readonly pages?: unknown;
+  readonly pages?: PagesSpec;
   readonly api?: ApiSpec;
   readonly models?: ModelsSpec;
   readonly components: Readonly<Record<string, ComponentSpec>>;
@@ -68,7 +68,7 @@ export const readSpecs = (specDir: string, fs: FileSystem): Result<SpecFiles> =>
 
   return Ok({
     project: readOptional('project'),
-    pages: readOptional('pages'),
+    pages: readOptional<PagesSpec>('pages'),
     api: readOptional<ApiSpec>('api'),
     models: readOptional<ModelsSpec>('models'),
     components,

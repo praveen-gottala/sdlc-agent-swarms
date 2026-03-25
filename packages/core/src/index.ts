@@ -163,6 +163,9 @@ export {
   validateComponentCatalog,
 } from './state/design-system-reader.js';
 
+// Catalogs: base catalog + project catalog generation
+export { loadBaseCatalog, generateProjectCatalog } from './catalogs/index.js';
+
 // State: task dependency graph
 export type { AgentSlot, DependencyGraphConfig } from './state/task-dependency-graph.js';
 export {
@@ -184,6 +187,10 @@ export type {
   SpacingSpec,
   BorderSpec,
   TouchTargetSpec,
+  ElevationLevel,
+  ElevationSpec,
+  LayoutSpec,
+  ZIndexSpec,
   DesignTokensSpec,
   BrandIdentity,
   IllustrationStyle,
@@ -195,6 +202,7 @@ export type {
   ComponentAnatomySlot,
   ComponentStateTokens,
   ComponentSpacing,
+  ComponentTokenBindings,
   ComponentAccessibility,
   CatalogLibraryMapping,
   ComponentCatalogEntry,
@@ -213,6 +221,8 @@ export type {
   ModelField,
   ModelEntry,
   ModelsSpec,
+  PageEntry,
+  PagesSpec,
 } from './types/spec-types.js';
 
 // State: spec reader

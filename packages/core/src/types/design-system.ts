@@ -55,6 +55,43 @@ export interface TouchTargetSpec {
   readonly minimum_width: number;
 }
 
+/** A single elevation level with shadow value and usage description. */
+export interface ElevationLevel {
+  readonly level: number;
+  readonly shadow: string;        // CSS box-shadow value
+  readonly description: string;   // e.g., "Cards resting on surface"
+}
+
+/** Elevation system defining shadow depth levels. */
+export interface ElevationSpec {
+  readonly levels: readonly ElevationLevel[];
+}
+
+/** Layout grid and breakpoint configuration. */
+export interface LayoutSpec {
+  readonly grid: {
+    readonly columns: number;
+    readonly gutter: number;
+    readonly margin: number;
+  };
+  readonly content_max_width: number;
+  readonly breakpoints: {
+    readonly mobile: number;
+    readonly tablet: number;
+    readonly desktop: number;
+    readonly wide: number;
+  };
+}
+
+/** Z-index scale for layered UI elements. */
+export interface ZIndexSpec {
+  readonly dropdown: number;
+  readonly sticky: number;
+  readonly modal: number;
+  readonly toast: number;
+  readonly tooltip: number;
+}
+
 /** A single component variant's token bindings. Color values reference semantic or primitive token names. */
 export interface ComponentVariantTokens {
   readonly [key: string]: string | number | undefined;
@@ -112,6 +149,9 @@ export interface DesignTokensSpec {
   readonly spacing: SpacingSpec;
   readonly borders: BorderSpec;
   readonly touch_targets: TouchTargetSpec;
+  readonly elevation: ElevationSpec;
+  readonly layout: LayoutSpec;
+  readonly z_index: ZIndexSpec;
   readonly components?: ComponentTokens;
 }
 
@@ -161,6 +201,7 @@ export interface ReactComponentMapping {
   readonly import_path: string;
   readonly component_name: string;
   readonly variant_prop?: string;
+  readonly size_prop?: string;
 }
 
 /**
@@ -197,6 +238,16 @@ export interface ComponentStateTokens {
   readonly opacity?: number;
 }
 
+/** Flat semantic token bindings for a component's default rendering properties. */
+export interface ComponentTokenBindings {
+  readonly background?: string;
+  readonly text?: string;
+  readonly 'border-radius'?: string;
+  readonly 'padding-x'?: number;
+  readonly 'padding-y'?: number;
+  readonly font?: string;
+}
+
 /** Spacing configuration for a component. */
 export interface ComponentSpacing {
   readonly padding: string;
@@ -215,14 +266,19 @@ export interface CatalogLibraryMapping {
   readonly component_name: string;
   readonly import_path: string;
   readonly slot_mapping?: Readonly<Record<string, string>>;
+  readonly variant_prop?: string;
+  readonly size_prop?: string;
 }
 
 /** A single component entry in the catalog. */
 export interface ComponentCatalogEntry {
   readonly description: string;
   readonly category: string;
+  readonly min_height?: number;
   readonly anatomy: readonly ComponentAnatomySlot[];
+  readonly variants?: Readonly<Record<string, Partial<ComponentStateTokens>>>;
   readonly states: Readonly<Record<string, ComponentStateTokens>>;
+  readonly token_bindings?: ComponentTokenBindings;
   readonly spacing: ComponentSpacing;
   readonly library_mapping: Readonly<Record<string, CatalogLibraryMapping>>;
   readonly accessibility: ComponentAccessibility;

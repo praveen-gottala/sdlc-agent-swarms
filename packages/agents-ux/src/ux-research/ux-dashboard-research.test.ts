@@ -2,9 +2,39 @@ import {
   UX_DASHBOARD_RESEARCH_CONTRACT,
   parseResearchOutput,
   registerUXDashboardResearch,
+  uxDashboardResearchWork,
 } from './ux-dashboard-research.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok } from '@agentforge/core';
+
+const DISK_TOKENS_YAML = `version: "1.0"
+created_by: test
+colors:
+  primitive:
+    cream: "#FFF8E7"
+    teal: "#0F6E56"
+  semantic:
+    background-primary: cream
+    cta-primary: teal
+typography:
+  font_families:
+    display: Inter
+    body: Inter
+  scale:
+    - role: heading-1
+      size: 32
+      weight: 700
+      family: display
+spacing:
+  unit: 8
+  scale: [4, 8, 16, 24, 32]
+borders:
+  radius:
+    small: 8
+    medium: 12
+touch_targets:
+  minimum_height: 44
+  minimum_width: 44`;
 
 // ============================================================================
 // Helpers
@@ -66,7 +96,7 @@ describe('UX_DASHBOARD_RESEARCH_CONTRACT', () => {
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.role).toBe('ux_dashboard_research');
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.category).toBe('design');
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.provider).toBe('claude-opus-4');
-    expect(UX_DASHBOARD_RESEARCH_CONTRACT.tools).toEqual(['figma:get_metadata', 'figma:get_variable_defs']);
+    expect(UX_DASHBOARD_RESEARCH_CONTRACT.tools).toEqual([]);
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system']);
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.denied).toEqual(['write_code', 'write_design', 'create_branch']);
     expect(UX_DASHBOARD_RESEARCH_CONTRACT.budget).toEqual({ max_tokens_per_task: 40000, max_cost_per_task_usd: 1.5 });
@@ -111,6 +141,69 @@ describe('parseResearchOutput', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('LLM_MALFORMED_OUTPUT');
     }
+  });
+});
+
+describe('uxDashboardResearchWork — no MCP calls', () => {
+  it('mcpClient.callTool is never called during work execution', async () => {
+    const provider = makeProvider();
+    const ctx = makeContext();
+
+    (ctx.fs.readFile as jest.Mock).mockImplementation((path: string) => {
+      if (path.includes('design-tokens.yaml')) {
+        return Ok(DISK_TOKENS_YAML);
+      }
+      return Ok('pages: []');
+    });
+    (ctx.fs.exists as jest.Mock).mockImplementation((path: string) => {
+      if (path.includes('design-tokens.yaml')) return true;
+      return true;
+    });
+
+    const input = {
+      moduleId: 'mod-001',
+      taskId: 'task-001',
+      prdRequirements: ['The dashboard must display user metrics including daily active users, revenue, and engagement scores.'],
+    };
+
+    const result = await uxDashboardResearchWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+  });
+
+  it('returns Err when design tokens are missing on disk and not passed in input', async () => {
+    const provider = makeProvider();
+    const ctx = makeContext();
+    (ctx.fs.readFile as jest.Mock).mockReturnValue({ ok: false, error: { code: 'INVALID_STATE', message: 'not found', recoverable: false } });
+    (ctx.fs.exists as jest.Mock).mockReturnValue(false);
+    const errSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const input = {
+      moduleId: 'mod-001',
+      taskId: 'task-001',
+      prdRequirements: ['The dashboard must display user metrics including daily active users, revenue, and engagement scores.'],
+    };
+
+    const result = await uxDashboardResearchWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('DEPENDENCY_NOT_FOUND');
+      expect(result.error.recoverable).toBe(false);
+    }
+    expect(provider.complete).not.toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 });
 

@@ -20,10 +20,14 @@ import {
   createPenpotAdapter,
   readYaml,
   createRealFs,
+  loadDesignTokens,
+  loadBrandSpec,
+  loadComponentCatalog,
 } from '@agentforge/core';
 import type {
   MCPClient,
   LLMProviderRef,
+  PageEntry,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import {
@@ -33,6 +37,8 @@ import {
   uxDashboardPlanningWork,
   penpotDesignWork,
   penpotBrowserDesignWork,
+  buildDesignSystemContextFromSpec,
+  buildComponentCatalogPrompt,
 } from '@agentforge/agents-ux';
 import type {
   UXDashboardResearchInput,
@@ -50,37 +56,20 @@ import type {
 interface DesignPenpotAllOptions {
   /** Only design specific pages (comma-separated IDs). */
   readonly pages?: string;
+  /** Target viewport width in pixels — overrides per-page viewports. */
+  readonly width?: number;
   /** Skip research+planning, use cached artifacts. */
   readonly designOnly?: boolean;
   /** Use Playwright browser agent for screenshots and state reading. */
   readonly browser?: boolean;
 }
 
-interface PageSpec {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly route: string;
-  readonly status: string;
-  readonly components: readonly string[];
-  readonly data_sources?: readonly string[];
-}
+/** @deprecated Use PageEntry from @agentforge/core */
+type PageSpec = PageEntry;
 
 // ============================================================================
 // Helpers
 // ============================================================================
-
-const createMockFs = () => ({
-  readFile: () => Err({ code: 'INVALID_STATE' as const, message: 'mock fs', recoverable: false }),
-  writeFile: () => Ok(undefined),
-  writeFileAtomic: () => Ok(undefined),
-  exists: () => false,
-  mkdir: () => Ok(undefined),
-  rename: () => Ok(undefined),
-  remove: () => Ok(undefined),
-  listDir: () => Ok([] as readonly string[]),
-  appendFile: () => Ok(undefined),
-});
 
 const createMockMCPClient = (): MCPClient => ({
   callTool: async () => Ok({}),
@@ -92,7 +81,7 @@ const createContext = (taskId: string, mcpClient: MCPClient) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
-  fs: createMockFs(),
+  fs: createRealFs(),
   mcpClient,
   runGovernance: async () => Ok({ status: 'proceed' as const }),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
@@ -206,8 +195,16 @@ export async function designPenpotAllCommand(
     }
   }
 
-  // Load design tokens
+  // Load design tokens (summary for page descriptions)
   const designTokens = loadDesignTokensSummary(projectRoot);
+
+  // Load structured design tokens for prompt injection
+  const realFs = createRealFs();
+  const structuredTokensResult = loadDesignTokens(projectRoot, realFs);
+  const brandSpecResult = loadBrandSpec(projectRoot, realFs);
+  const catalogResult = loadComponentCatalog(projectRoot, realFs);
+  const componentCatalog = catalogResult.ok ? catalogResult.value : undefined;
+  const componentCatalogPromptStr = buildComponentCatalogPrompt(componentCatalog);
 
   // Load .env file so ANTHROPIC_API_KEY is available
   loadDotEnv(findProjectRoot());
@@ -324,33 +321,62 @@ export async function designPenpotAllCommand(
           output.write(successMsg('    Planning: done\n'));
         }
 
+        // Build project-specific design system prompt from tokens + brand
+        let projectDesignSystemPrompt: string | undefined;
+        if (structuredTokensResult.ok && brandSpecResult.ok) {
+          const dsCtx = buildDesignSystemContextFromSpec(structuredTokensResult.value, brandSpecResult.value, planningOutput);
+          projectDesignSystemPrompt = dsCtx.designSystemPrompt;
+        }
+
+        // Resolve viewports: CLI --width overrides > page viewports > default [1440]
+        const pageViewports: readonly number[] = options.width
+          ? [options.width]
+          : (page.viewports?.length ? page.viewports : [1440]);
+
         // Design (Penpot) — use browser agent if --browser flag is set
         const useBrowser = options.browser ?? false;
-        output.write(infoMsg(`    Design: creating in Penpot${useBrowser ? ' (browser mode)' : ''}...\n`));
         const provider = createClaudeProvider('claude-sonnet-4', { apiKey });
 
-        let designResult;
-        if (useBrowser) {
-          const browserInput: PenpotBrowserDesignInput = {
-            specRef: planningOutput.specRef, moduleId, taskId, planningOutput,
-          };
-          designResult = await penpotBrowserDesignWork(browserInput, provider, mcpClient, {
-            headless: false,
-            penpotUrl: process.env.PENPOT_URL ?? 'http://localhost:9001',
-            email: process.env.PENPOT_EMAIL ?? '',
-            password: process.env.PENPOT_PASSWORD ?? '',
-          });
-        } else {
-          const penpotInput: PenpotDesignInput = {
-            specRef: planningOutput.specRef, moduleId, taskId, planningOutput,
-          };
-          designResult = await penpotDesignWork(penpotInput, provider, mcpClient);
-        }
-        if (!designResult.ok) throw new Error(`Design failed: ${designResult.error.message}`);
+        for (const viewportWidth of pageViewports) {
+          const vpModuleId = pageViewports.length > 1
+            ? `${moduleId}-${viewportWidth}w`
+            : moduleId;
+          const vpOutputDir = pageViewports.length > 1 ? ensureOutputDir(vpModuleId) : outputDir;
 
-        saveArtifact(outputDir, 'penpot-design.json', designResult.value);
+          output.write(infoMsg(`    Design: creating in Penpot (${viewportWidth}px${useBrowser ? ', browser mode' : ''})...\n`));
+
+          let designResult;
+          if (useBrowser) {
+            const browserInput: PenpotBrowserDesignInput = {
+              specRef: planningOutput.specRef, moduleId: vpModuleId, taskId, planningOutput,
+              description,
+              viewportWidth,
+              ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
+              ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
+            };
+            designResult = await penpotBrowserDesignWork(browserInput, provider, mcpClient, {
+              headless: false,
+              penpotUrl: process.env.PENPOT_URL ?? 'http://localhost:9001',
+              email: process.env.PENPOT_EMAIL ?? '',
+              password: process.env.PENPOT_PASSWORD ?? '',
+            });
+          } else {
+            const penpotInput: PenpotDesignInput = {
+              specRef: planningOutput.specRef, moduleId: vpModuleId, taskId, planningOutput,
+              description,
+              viewportWidth,
+              ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
+              ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
+            };
+            designResult = await penpotDesignWork(penpotInput, provider, mcpClient);
+          }
+          if (!designResult.ok) throw new Error(`Design failed (${viewportWidth}px): ${designResult.error.message}`);
+
+          saveArtifact(vpOutputDir, 'penpot-design.json', designResult.value);
+        }
+
         const durationMs = Date.now() - pageT0;
-        output.write(successMsg(`    Done (${(durationMs / 1000).toFixed(1)}s)\n`));
+        output.write(successMsg(`    Done (${(durationMs / 1000).toFixed(1)}s, ${pageViewports.length} viewport(s))\n`));
         results.push({ id: page.id, name: page.name, status: 'ok', durationMs });
       } catch (err) {
         const durationMs = Date.now() - pageT0;

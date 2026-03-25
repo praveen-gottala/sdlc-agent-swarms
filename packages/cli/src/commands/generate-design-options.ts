@@ -10,8 +10,8 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { exec } from 'node:child_process';
-import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
-import { validateDesignTokens, validateBrandSpec } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec, ElevationSpec, PromptTrace } from '@agentforge/core';
+import { validateDesignTokens, validateBrandSpec, recordPromptTrace } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { infoMsg, warnMsg } from '../formatter.js';
@@ -23,7 +23,23 @@ export const SHARED_LAYOUT = {
   spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32, 48, 64] as readonly number[] },
   borders: { radius: { small: 8, medium: 12, large: 16, pill: 9999 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 } as const;
+
+/** Default elevation used when LLM omits elevation. */
+const DEFAULT_ELEVATION: ElevationSpec = {
+  levels: [
+    { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+    { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+    { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+    { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+  ],
+};
 
 /** Fixed typography scale — sizes/weights are consistent across options. */
 const FIXED_TYPOGRAPHY_SCALE = [
@@ -58,6 +74,13 @@ export interface DesignOption {
     readonly illustrationDescription: string;
     readonly motionFeel: string;
   };
+  readonly elevation?: {
+    readonly levels: readonly {
+      readonly level: number;
+      readonly shadow: string;
+      readonly description: string;
+    }[];
+  };
   readonly components?: Record<string, Record<string, Record<string, string | number>>>;
 }
 
@@ -91,15 +114,22 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching this exact s
         },
         "semantic": {
           "background-primary": "color-name-X",
+          "surface-primary": "color-name-or-hex",
+          "surface-elevated": "color-name-or-hex",
           "text-primary": "color-name-Y",
+          "text-secondary": "color-name-or-hex",
+          "text-disabled": "color-name-or-hex",
+          "text-on-cta": "color-name-or-hex",
           "cta-primary": "color-name-Z",
+          "cta-hover": "color-name-or-hex",
+          "border-default": "color-name-or-hex",
+          "border-focus": "color-name-or-hex",
+          "border-error": "color-name-or-hex",
           "error": "#hex-for-error",
-          "success": "color-name-or-hex (recommended)",
-          "warning": "color-name-or-hex (recommended)",
-          "info": "color-name-or-hex (recommended)",
-          "surface-secondary": "color-name-or-hex (recommended)",
-          "text-secondary": "color-name-or-hex (recommended)",
-          "border-default": "color-name-or-hex (recommended)"
+          "success": "color-name-or-hex",
+          "warning": "color-name-or-hex",
+          "info": "color-name-or-hex",
+          "overlay": "rgba(0,0,0,0.5)"
         }
       },
       "fonts": {
@@ -111,6 +141,14 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching this exact s
         "illustrationDirection": "style-keyword",
         "illustrationDescription": "Brief description of illustration approach",
         "motionFeel": "snappy|smooth|bouncy|subtle"
+      },
+      "elevation": {
+        "levels": [
+          { "level": 0, "shadow": "none", "description": "Flat, no elevation" },
+          { "level": 1, "shadow": "0 1px 3px rgba(0,0,0,0.08)", "description": "Cards on surface" },
+          { "level": 2, "shadow": "CSS box-shadow value", "description": "Dropdowns, popovers" },
+          { "level": 3, "shadow": "CSS box-shadow value", "description": "Modals, dialogs" }
+        ]
       },
       "components": {
         "button": {
@@ -150,13 +188,14 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching this exact s
 }
 
 Rules:
-- Exactly 5 primitive colors per option, using kebab-case names
+- 5-8 primitive colors per option, using kebab-case names
 - Semantic values reference primitive color names (except error which can be a direct hex)
-- The 4 required semantic keys (background-primary, text-primary, cta-primary, error) are mandatory
-- The 6 recommended semantic keys (success, warning, info, surface-secondary, text-secondary, border-default) should be included for completeness
+- All 17 semantic keys are required (background-primary, surface-primary, surface-elevated, text-primary, text-secondary, text-disabled, text-on-cta, cta-primary, cta-hover, border-default, border-focus, border-error, error, success, warning, info, overlay)
+- overlay must be an rgba value for modal backdrops
 - Use real Google Fonts that pair well
 - Ensure sufficient contrast between background-primary and text-primary (WCAG AA)
 - Each option should have a distinct personality
+- Elevation shadows should feel cohesive with the design direction
 - The components section must define token bindings for: button (primary, secondary, ghost), card (default, highlighted), input (default, focus, error), tab_bar (active, inactive), badge (success, warning, error, info), avatar, progress_bar. All color values must reference your primitive or semantic token names — never raw hex.`;
 }
 
@@ -187,7 +226,9 @@ export function parseLLMResponse(raw: string): DesignOption[] {
   return parsed.options.filter((opt) => {
     if (!opt.label || !opt.vibe) return false;
     if (!opt.colors?.primitive || !opt.colors?.semantic) return false;
-    if (Object.keys(opt.colors.primitive).length < 5) return false;
+    const primCount = Object.keys(opt.colors.primitive).length;
+    if (primCount < 5) return false;
+    if (primCount > 8) warnMsg(`Option "${opt.label}" has ${primCount} primitive colors (expected 5-8).\n`);
     if (!opt.colors.semantic['background-primary'] || !opt.colors.semantic['text-primary']) return false;
     if (!opt.colors.semantic['cta-primary'] || !opt.colors.semantic.error) return false;
     if (!opt.fonts?.display || !opt.fonts?.body) return false;
@@ -242,6 +283,58 @@ export function backfillComponents(options: DesignOption[]): DesignOption[] {
   });
 }
 
+// Order matters: entries are resolved top-to-bottom.
+// text-secondary must be filled before border-default (which derives from it).
+const SEMANTIC_COLOR_DEFAULTS: Record<string, (opt: DesignOption) => string> = {
+  'surface-primary': (opt) => opt.colors.semantic['background-primary'],
+  'surface-elevated': (opt) => opt.colors.semantic['background-primary'],
+  'text-secondary': (opt) => opt.colors.semantic['text-primary'],
+  'text-disabled': (opt) => opt.colors.semantic['text-primary'],
+  'text-on-cta': (opt) => opt.colors.semantic['background-primary'],
+  'cta-hover': (opt) => opt.colors.semantic['cta-primary'],
+  'border-default': (opt) => opt.colors.semantic['text-secondary'] ?? opt.colors.semantic['text-primary'],
+  'border-focus': (opt) => opt.colors.semantic['cta-primary'],
+  'border-error': (opt) => opt.colors.semantic['error'],
+  // Emergency fallbacks only — these hex values are not archetype-aware.
+  // The expanded prompt makes all 17 keys required, so these should
+  // rarely fire. They exist as a safety net for truly broken LLM output.
+  success: () => '#16A34A',
+  warning: () => '#CA8A04',
+  info: (opt) => opt.colors.semantic['cta-primary'],
+  overlay: () => 'rgba(0,0,0,0.5)',
+};
+
+/**
+ * Backfill missing semantic colors on parsed LLM options.
+ * Uses heuristic derivations so downstream consumers always have all 17 keys.
+ */
+export function backfillSemanticColors(options: DesignOption[]): DesignOption[] {
+  return options.map((opt) => {
+    const filled = { ...opt.colors.semantic };
+    for (const [key, derive] of Object.entries(SEMANTIC_COLOR_DEFAULTS)) {
+      if (!filled[key]) {
+        filled[key] = derive({ ...opt, colors: { ...opt.colors, semantic: filled } } as DesignOption);
+      }
+    }
+    return {
+      ...opt,
+      colors: { ...opt.colors, semantic: filled as DesignOption['colors']['semantic'] },
+    };
+  });
+}
+
+/**
+ * Backfill missing elevation on parsed LLM options.
+ * Injects DEFAULT_ELEVATION when the LLM omits it.
+ */
+export function backfillElevation(options: DesignOption[]): DesignOption[] {
+  return options.map((opt) => {
+    if (opt.elevation && opt.elevation.levels.length >= 4) return opt;
+    warnMsg('LLM omitted elevation — backfilling with defaults.\n');
+    return { ...opt, elevation: DEFAULT_ELEVATION };
+  });
+}
+
 /** Convert a DesignOption to DesignTokensSpec. */
 export function optionToTokens(option: DesignOption): DesignTokensSpec {
   return {
@@ -258,6 +351,9 @@ export function optionToTokens(option: DesignOption): DesignTokensSpec {
     spacing: SHARED_LAYOUT.spacing,
     borders: SHARED_LAYOUT.borders,
     touch_targets: SHARED_LAYOUT.touch_targets,
+    elevation: option.elevation ?? DEFAULT_ELEVATION,
+    layout: SHARED_LAYOUT.layout,
+    z_index: SHARED_LAYOUT.z_index,
     ...(option.components ? { components: option.components } : {}),
   };
 }
@@ -309,6 +405,7 @@ function buildFallbackOptions(): DesignOption[] {
         illustrationDescription: 'Clean illustrations with accent color highlights',
         motionFeel: 'snappy',
       },
+      elevation: tokens.elevation,
     };
   });
 }
@@ -395,7 +492,30 @@ export function generatePreviewHtml(
             <div class="semantic-chip" style="background:${cta};color:${isLight(cta) ? '#111' : '#fff'}">CTA</div>
             <div class="semantic-chip" style="background:${errorHex};color:#fff">Error</div>
           </div>
+          <div class="semantic-row" style="margin-top:8px">
+            ${opt.colors.semantic['surface-primary'] ? `<div class="semantic-chip" style="background:${resolveColor(opt.colors.semantic['surface-primary'], opt.colors.primitive)};color:${text};border:1px solid #ddd">Surface</div>` : ''}
+            ${opt.colors.semantic['surface-elevated'] ? `<div class="semantic-chip" style="background:${resolveColor(opt.colors.semantic['surface-elevated'], opt.colors.primitive)};color:${text};border:1px solid #ddd">Elevated</div>` : ''}
+            ${opt.colors.semantic['text-on-cta'] ? `<div class="semantic-chip" style="background:${cta};color:${resolveColor(opt.colors.semantic['text-on-cta'], opt.colors.primitive)}">Text on CTA</div>` : ''}
+            ${opt.colors.semantic['cta-hover'] ? `<div class="semantic-chip" style="background:${resolveColor(opt.colors.semantic['cta-hover'], opt.colors.primitive)};color:${isLight(resolveColor(opt.colors.semantic['cta-hover'], opt.colors.primitive)) ? '#111' : '#fff'}">CTA Hover</div>` : ''}
+            ${opt.colors.semantic['border-focus'] ? `<div class="semantic-chip" style="border:2px solid ${resolveColor(opt.colors.semantic['border-focus'], opt.colors.primitive)};color:${text}">Focus</div>` : ''}
+            ${opt.colors.semantic['overlay'] ? `<div class="semantic-chip" style="background:${opt.colors.semantic['overlay']};color:#fff">Overlay</div>` : ''}
+          </div>
         </div>
+
+        <!-- Section: Elevation -->
+        ${opt.elevation ? `<div class="section">
+          <h3 class="section-title">Elevation</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            ${opt.elevation.levels.map((l) => `
+              <div style="width:140px;height:100px;background:${bg};border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:${l.shadow};border:${l.shadow === 'none' ? '1px solid #e0e0e0' : 'none'}">
+                <div style="text-align:center">
+                  <div style="font-family:var(--font-body);font-size:12px;font-weight:600;color:${text}">Level ${l.level}</div>
+                  <div style="font-family:var(--font-body);font-size:10px;color:${text};opacity:0.6">${l.description}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
 
         <!-- Section 3: Typography Scale -->
         <div class="section">
@@ -668,6 +788,7 @@ export async function generateDesignOptions(
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream,
   config?: GenerateDesignOptionsConfig,
+  promptTraces?: PromptTrace[],
 ): Promise<GenerateDesignResult> {
   const out = output ?? process.stdout;
   const inp = input ?? process.stdin;
@@ -679,7 +800,7 @@ export async function generateDesignOptions(
   const apiKey = process.env['ANTHROPIC_API_KEY'];
   if (apiKey) {
     out.write(infoMsg('\nGenerating design options with AI...\n'));
-    const llmOptions = await tryLLMGeneration(apiKey, context, out);
+    const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
     if (llmOptions) {
       options = llmOptions;
       source = 'llm';
@@ -713,7 +834,7 @@ export async function generateDesignOptions(
 
     if (answer === 'r' && apiKey) {
       out.write(infoMsg('Regenerating...\n'));
-      const llmOptions = await tryLLMGeneration(apiKey, context, out);
+      const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
       if (llmOptions) {
         options = llmOptions;
         source = 'llm';
@@ -758,6 +879,7 @@ async function tryLLMGeneration(
   apiKey: string,
   context: { appName: string; description: string; targetAudience: string; prdContent?: string },
   output: NodeJS.WritableStream,
+  promptTraces?: PromptTrace[],
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
   try {
@@ -772,18 +894,23 @@ async function tryLLMGeneration(
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const result = await provider.complete(
-        {
-          system: systemPrompt,
-          messages: [
-            { role: 'user', content: userPrompt },
-            ...(attempt > 0
-              ? [{ role: 'user' as const, content: 'Your previous response was not valid JSON. Please respond with ONLY the JSON object, no markdown.' }]
-              : []),
-          ],
-        },
-        { model: 'claude-sonnet-4', maxTokens: 8192, temperature: 0.8 },
+      const messages: { role: 'user'; content: string }[] = [
+        { role: 'user', content: userPrompt },
+        ...(attempt > 0
+          ? [{ role: 'user' as const, content: 'Your previous response was not valid JSON. Please respond with ONLY the JSON object, no markdown.' }]
+          : []),
+      ];
+      const prompt = { system: systemPrompt, messages };
+      const opts = { model: 'claude-sonnet-4', maxTokens: 8192, temperature: 0.8 };
+
+      recordPromptTrace(
+        { promptTraces },
+        'design-system-generation',
+        prompt,
+        opts,
       );
+
+      const result = await provider.complete(prompt, opts);
 
       if (!result.ok) {
         output.write(warnMsg(`LLM request failed: ${JSON.stringify(result.error)}\n`));
@@ -791,7 +918,9 @@ async function tryLLMGeneration(
       }
 
       const rawOptions = parseLLMResponse(result.value.content);
-      const options = backfillComponents(rawOptions);
+      const withComponents = backfillComponents(rawOptions);
+      const withSemantics = backfillSemanticColors(withComponents);
+      const options = backfillElevation(withSemantics);
       if (options.length < 2) {
         if (attempt === 0) continue; // retry
         output.write(warnMsg('LLM returned insufficient valid options, using defaults.\n'));

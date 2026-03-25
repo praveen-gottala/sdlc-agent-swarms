@@ -22,8 +22,11 @@ import {
   runAgent,
   readSpecs,
   recordPromptTrace,
+  loadDesignTokens,
 } from '@agentforge/core';
+import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 import type { DesignTokens } from '@agentforge/agents-design';
+import type { DesignTokensSpec } from '@agentforge/core';
 
 // ============================================================================
 // Types
@@ -34,6 +37,9 @@ export interface UXDashboardResearchInput {
   readonly moduleId: string;
   readonly taskId: string;
   readonly prdRequirements: readonly string[];
+  /** Full design tokens spec with semantic colors, elevation, layout, z_index. Preferred over existingTokens. */
+  readonly designTokensSpec?: DesignTokensSpec;
+  /** @deprecated Use designTokensSpec for richer context. Kept for backward compat. */
   readonly existingTokens?: DesignTokens;
 }
 
@@ -59,7 +65,7 @@ export const UX_DASHBOARD_RESEARCH_CONTRACT: AgentContract = {
   category: 'design',
   provider: 'claude-opus-4',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 40000 },
-  tools: ['figma:get_metadata', 'figma:get_variable_defs'],
+  tools: [],
   permissions: ['read_spec', 'read_design', 'read_design_system'],
   denied: ['write_code', 'write_design', 'create_branch'],
   hitl_policy: 'notify_only',
@@ -125,7 +131,7 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
   learnings,
   context,
 ) => {
-  const { moduleId, prdRequirements, existingTokens } = input;
+  const { moduleId, prdRequirements, designTokensSpec, existingTokens } = input;
 
   // ── Input validation guards ──
   if (!moduleId) {
@@ -137,6 +143,17 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
   if (prdRequirements.every(r => r.length < 50)) {
     // eslint-disable-next-line no-console
     console.warn('[research] Warning: prdRequirements appear to contain only short labels, not full PRD content. Pass the full PRD text for better results.');
+  }
+
+  let effectiveTokensSpec = designTokensSpec;
+  if (!effectiveTokensSpec && !existingTokens) {
+    const disk = loadDesignTokens(context.projectRoot, context.fs);
+    if (!disk.ok) {
+      // eslint-disable-next-line no-console
+      console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+      return diskDesignTokensRequiredErr(context.projectRoot);
+    }
+    effectiveTokensSpec = disk.value;
   }
 
   // 1. Read existing specs for context
@@ -152,7 +169,9 @@ export const uxDashboardResearchWork: AgentWorkFn<UXDashboardResearchInput, UXDa
     `\nExisting specs:\n${specsContent}`,
   ];
 
-  if (existingTokens) {
+  if (effectiveTokensSpec) {
+    userMessageParts.push(`\nDesign Tokens (from project spec):\n${JSON.stringify(effectiveTokensSpec, null, 2)}`);
+  } else if (existingTokens) {
     userMessageParts.push(`\nExisting design tokens:\n${JSON.stringify(existingTokens, null, 2)}`);
   }
 

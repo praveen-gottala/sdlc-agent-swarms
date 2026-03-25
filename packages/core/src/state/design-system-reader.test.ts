@@ -86,6 +86,20 @@ const VALID_TOKENS: DesignTokensSpec = {
   spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32] },
   borders: { radius: { small: 8, medium: 12 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+      { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+      { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+      { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
 const VALID_BRAND: BrandSpec = {
@@ -216,6 +230,26 @@ describe('toDesignTokens', () => {
     expect(Object.keys(flat.spacing).length).toBeGreaterThan(0);
     expect(flat.spacing['8']).toBe('8px');
   });
+
+  it('flattens elevation levels', () => {
+    const flat = toDesignTokens(VALID_TOKENS);
+    expect(flat.elevation['0']).toBe('none');
+    expect(flat.elevation['1']).toBe('0 1px 3px rgba(0,0,0,0.08)');
+  });
+
+  it('flattens layout', () => {
+    const flat = toDesignTokens(VALID_TOKENS);
+    expect(flat.layout.columns).toBe(12);
+    expect(flat.layout.gutter).toBe('24px');
+    expect(flat.layout.content_max_width).toBe('1280px');
+    expect(flat.layout.breakpoints).toEqual({ mobile: 640, tablet: 768, desktop: 1024, wide: 1440 });
+  });
+
+  it('flattens z_index', () => {
+    const flat = toDesignTokens(VALID_TOKENS);
+    expect(flat.z_index.dropdown).toBe(1000);
+    expect(flat.z_index.modal).toBe(1200);
+  });
 });
 
 describe('validateDesignTokens', () => {
@@ -341,6 +375,51 @@ describe('validateDesignTokens', () => {
     const result = validateDesignTokens(VALID_TOKENS);
     expect(result.ok).toBe(true);
   });
+
+  it('catches non-sequential elevation levels', () => {
+    const bad: DesignTokensSpec = {
+      ...VALID_TOKENS,
+      elevation: {
+        levels: [
+          { level: 0, shadow: 'none', description: 'Flat' },
+          { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Skipped 1' },
+        ],
+      },
+    };
+    const result = validateDesignTokens(bad);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('level 2');
+      expect(result.error.message).toContain('expected 1');
+    }
+  });
+
+  it('catches negative z_index', () => {
+    const bad: DesignTokensSpec = {
+      ...VALID_TOKENS,
+      z_index: { ...VALID_TOKENS.z_index, dropdown: -1 },
+    };
+    const result = validateDesignTokens(bad);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('negative');
+    }
+  });
+
+  it('catches non-ascending layout breakpoints', () => {
+    const bad: DesignTokensSpec = {
+      ...VALID_TOKENS,
+      layout: {
+        ...VALID_TOKENS.layout,
+        breakpoints: { mobile: 768, tablet: 640, desktop: 1024, wide: 1440 },
+      },
+    };
+    const result = validateDesignTokens(bad);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('strictly ascending');
+    }
+  });
 });
 
 describe('validateBrandSpec', () => {
@@ -437,5 +516,153 @@ describe('validateComponentCatalog', () => {
     if (!result.ok) {
       expect(result.error.message).toContain('empty anatomy');
     }
+  });
+
+  it('passes with all new optional fields present', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        Button: {
+          description: 'Interactive button',
+          category: 'input',
+          min_height: 44,
+          anatomy: [{ name: 'label', contents: 'button text' }],
+          variants: {
+            secondary: { bg: 'surface-primary', text: 'text-primary' },
+            ghost: { bg: 'transparent', text: 'cta-primary' },
+          },
+          states: {
+            default: { bg: 'cta-primary', text: 'text-on-primary' },
+            hover: { bg: 'cta-primary', text: 'text-on-primary' },
+          },
+          token_bindings: {
+            background: 'cta-primary',
+            text: 'text-on-primary',
+            'border-radius': 'medium',
+            'padding-x': 16,
+            'padding-y': 8,
+            font: 'label',
+          },
+          spacing: { padding: '8 16', internal_gap: '8' },
+          library_mapping: {
+            shadcn: {
+              component_name: 'Button',
+              import_path: '@/components/ui/button',
+              variant_prop: 'variant',
+              size_prop: 'size',
+            },
+          },
+          accessibility: { focus_visible: true, aria_labels: ['aria-label when icon-only'] },
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(true);
+  });
+
+  it('catches invalid min_height (zero)', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadButton: {
+          ...VALID_CATALOG.components.Card,
+          min_height: 0,
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('invalid min_height');
+    }
+  });
+
+  it('catches negative min_height', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadButton: {
+          ...VALID_CATALOG.components.Card,
+          min_height: -10,
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('invalid min_height');
+    }
+  });
+
+  it('catches dot-notation in token_bindings', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadButton: {
+          ...VALID_CATALOG.components.Card,
+          token_bindings: {
+            background: 'colors.semantic.cta-primary',
+            text: 'text-on-primary',
+          },
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('dot-notation');
+      expect(result.error.message).toContain('colors.semantic.cta-primary');
+    }
+  });
+
+  it('catches empty variant_prop string', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadButton: {
+          ...VALID_CATALOG.components.Card,
+          library_mapping: {
+            shadcn: {
+              component_name: 'Button',
+              import_path: '@/components/ui/button',
+              variant_prop: '',
+            },
+          },
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('variant_prop must be a non-empty string');
+    }
+  });
+
+  it('catches empty size_prop string', () => {
+    const catalog: ComponentCatalogSpec = {
+      ...VALID_CATALOG,
+      components: {
+        BadButton: {
+          ...VALID_CATALOG.components.Card,
+          library_mapping: {
+            shadcn: {
+              component_name: 'Button',
+              import_path: '@/components/ui/button',
+              size_prop: '  ',
+            },
+          },
+        },
+      },
+    };
+    const result = validateComponentCatalog(catalog);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain('size_prop must be a non-empty string');
+    }
+  });
+
+  it('backward compat: existing catalog without new fields still passes', () => {
+    const result = validateComponentCatalog(VALID_CATALOG);
+    expect(result.ok).toBe(true);
   });
 });

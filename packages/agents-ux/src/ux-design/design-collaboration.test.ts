@@ -39,8 +39,8 @@ const SAMPLE_PLANNING_OUTPUT = {
     { name: 'Header', props: ['title'], children: [] },
   ],
   tokenBindings: {
-    'Header.fill': 'color.surface.header',
-    'MetricCard.fill': 'color.surface.card',
+    'Header.fill': 'surface-primary',
+    'MetricCard.fill': 'surface-elevated',
   } as Record<string, string>,
 };
 
@@ -121,7 +121,7 @@ describe('buildDesignSystemContext', () => {
 
     expect(ctx.componentTree).toBe(SAMPLE_PLANNING_OUTPUT.componentTree);
     expect(ctx.tokenBindings).toBe(SAMPLE_PLANNING_OUTPUT.tokenBindings);
-    expect(ctx.tokenBindings['Header.fill']).toBe('color.surface.header');
+    expect(ctx.tokenBindings['Header.fill']).toBe('surface-primary');
   });
 
   it('stores the full design system prompt text', () => {
@@ -340,6 +340,20 @@ const VALID_TOKENS: DesignTokensSpec = {
   spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32] },
   borders: { radius: { small: 8, medium: 12 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+      { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+      { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+      { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
 const VALID_BRAND: BrandSpec = {
@@ -362,8 +376,8 @@ const SPEC_PLANNING_OUTPUT = {
     { name: 'Header', props: ['title'], children: [] },
   ],
   tokenBindings: {
-    'Header.fill': 'color.surface.header',
-    'MetricCard.fill': 'color.surface.card',
+    'Header.fill': 'surface-primary',
+    'MetricCard.fill': 'surface-elevated',
   } as Record<string, string>,
 };
 
@@ -422,8 +436,8 @@ describe('buildDesignSystemContextFromSpec', () => {
 
     expect(ctx.componentTree).toBe(SPEC_PLANNING_OUTPUT.componentTree);
     expect(ctx.tokenBindings).toBe(SPEC_PLANNING_OUTPUT.tokenBindings);
-    expect(ctx.tokenBindings['Header.fill']).toBe('color.surface.header');
-    expect(ctx.tokenBindings['MetricCard.fill']).toBe('color.surface.card');
+    expect(ctx.tokenBindings['Header.fill']).toBe('surface-primary');
+    expect(ctx.tokenBindings['MetricCard.fill']).toBe('surface-elevated');
   });
 
   it('includes component tokens section in prompt when present', () => {
@@ -511,6 +525,57 @@ const SAMPLE_CATALOG: ComponentCatalogSpec = {
   },
 };
 
+const ENRICHED_CATALOG: ComponentCatalogSpec = {
+  version: '1.0',
+  created_by: 'test',
+  components: {
+    Card: {
+      ...SAMPLE_CATALOG.components.Card,
+      token_bindings: {
+        background: 'surface-primary',
+        text: 'text-primary',
+        'border-radius': 'medium',
+        'padding-x': 20,
+        'padding-y': 16,
+      },
+    },
+    Button: {
+      description: 'Interactive button',
+      category: 'input',
+      min_height: 44,
+      anatomy: [
+        { name: 'label', contents: 'button text (label)', typography_role: 'label' },
+      ],
+      variants: {
+        secondary: { bg: 'surface-primary', text: 'text-primary', border: 'border-default' },
+        ghost: { bg: 'transparent', text: 'cta-primary' },
+      },
+      states: {
+        default: { bg: 'cta-primary', text: 'text-on-primary' },
+        hover: { bg: 'cta-primary', text: 'text-on-primary' },
+      },
+      token_bindings: {
+        background: 'cta-primary',
+        text: 'text-on-primary',
+        'border-radius': 'medium',
+        'padding-x': 16,
+        'padding-y': 8,
+        font: 'label',
+      },
+      spacing: { padding: '8 16', internal_gap: '8' },
+      library_mapping: {
+        shadcn: {
+          component_name: 'Button',
+          import_path: '@/components/ui/button',
+          variant_prop: 'variant',
+          size_prop: 'size',
+        },
+      },
+      accessibility: { focus_visible: true, aria_labels: ['aria-label when icon-only'], keyboard_nav: 'Enter or Space to activate' },
+    },
+  },
+};
+
 describe('buildComponentCatalogPrompt', () => {
   it('returns empty string for undefined', () => {
     expect(buildComponentCatalogPrompt(undefined)).toBe('');
@@ -542,6 +607,37 @@ describe('buildComponentCatalogPrompt', () => {
     expect(cardIdx).toBeGreaterThan(layoutIdx);
     expect(buttonIdx).toBeGreaterThan(inputIdx);
   });
+
+  it('renders variants, token_bindings, and min_height', () => {
+    const result = buildComponentCatalogPrompt(ENRICHED_CATALOG);
+
+    // Variants
+    expect(result).toContain('**Variants:**');
+    expect(result).toContain('**secondary**');
+    expect(result).toContain('bg=surface-primary');
+    expect(result).toContain('**ghost**');
+    expect(result).toContain('bg=transparent');
+
+    // Token bindings
+    expect(result).toContain('**Token Bindings:**');
+    expect(result).toContain('background: cta-primary');
+    expect(result).toContain('text: text-on-primary');
+    expect(result).toContain('border-radius: medium');
+    expect(result).toContain('padding-x: 16');
+    expect(result).toContain('font: label');
+
+    // Min height
+    expect(result).toContain('**Min Height:** 44px');
+  });
+
+  it('backward compat: catalog without new fields still works', () => {
+    const result = buildComponentCatalogPrompt(SAMPLE_CATALOG);
+    expect(result).not.toContain('**Variants:**');
+    expect(result).not.toContain('**Token Bindings:**');
+    expect(result).not.toContain('**Min Height:**');
+    // Still renders states
+    expect(result).toContain('**States:**');
+  });
 });
 
 describe('buildComponentCatalogImplPrompt', () => {
@@ -566,5 +662,33 @@ describe('buildComponentCatalogImplPrompt', () => {
     const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
     expect(result).toContain('CardHeader');
     expect(result).toContain('CardContent');
+  });
+
+  it('renders variant_prop, size_prop, variants, and token_bindings', () => {
+    const result = buildComponentCatalogImplPrompt(ENRICHED_CATALOG, 'shadcn');
+
+    // variant_prop and size_prop
+    expect(result).toContain('variant_prop: `variant`');
+    expect(result).toContain('size_prop: `size`');
+
+    // Variants
+    expect(result).toContain('**Variants:**');
+    expect(result).toContain('**secondary**');
+    expect(result).toContain('**ghost**');
+
+    // Token bindings
+    expect(result).toContain('**Token Bindings:**');
+    expect(result).toContain('background: cta-primary');
+    expect(result).toContain('text: text-on-primary');
+  });
+
+  it('backward compat: catalog without new fields still works', () => {
+    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
+    expect(result).not.toContain('**Variants:**');
+    expect(result).not.toContain('**Token Bindings:**');
+    expect(result).not.toContain('variant_prop');
+    // Still renders structure and library
+    expect(result).toContain('**Structure:**');
+    expect(result).toContain('**Library:**');
   });
 });

@@ -31,7 +31,6 @@ import { join } from 'node:path';
 import type {
   AgentContext,
   MCPClient,
-  FileSystem,
   LLMProviderRef,
   DesignToolAdapter,
 } from '@agentforge/core';
@@ -47,6 +46,7 @@ import {
   createRealFs,
 } from '@agentforge/core';
 import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '@agentforge/core';
+import { diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 import { runFigmaPreflight, PLUGIN_MANIFEST_REL } from './figma-preflight.js';
 
 import { createClaudeProvider } from '@agentforge/providers';
@@ -107,19 +107,6 @@ const MODULE_REGISTRY: Readonly<Record<string, Omit<PipelineRunConfig, 'tool'>>>
 // Mock factories
 // ============================================================================
 
-/** Mock FileSystem — returns Err for reads, Ok for writes. */
-const createMockFs = (): FileSystem => ({
-  readFile: () => Err({ code: 'INVALID_STATE' as const, message: 'mock fs: no file', recoverable: false }),
-  writeFile: () => Ok(undefined),
-  writeFileAtomic: () => Ok(undefined),
-  exists: () => false,
-  mkdir: () => Ok(undefined),
-  rename: () => Ok(undefined),
-  remove: () => Ok(undefined),
-  listDir: () => Ok([]),
-  appendFile: () => Ok(undefined),
-});
-
 /** Mock MCPClient — returns Ok({}) for all tool calls (ADR-024 fallback). */
 const createMockMCPClient = (): MCPClient => ({
   callTool: async () => Ok({}),
@@ -169,7 +156,7 @@ const createPipelineContext = (taskId: string, mcpClient: MCPClient): AgentConte
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
-  fs: createMockFs(),
+  fs: createRealFs(),
   mcpClient,
   runGovernance: createMockGovernance(),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
@@ -223,6 +210,7 @@ const runResearch = async (
   config: PipelineRunConfig,
   apiKey: string,
   outputDir: string,
+  designTokensSpec?: DesignTokensSpec,
 ): Promise<StageResult<UXDashboardResearchOutput>> => {
   console.log('\n  [1/3] Research — analyzing PRD requirements...');
 
@@ -230,6 +218,7 @@ const runResearch = async (
     moduleId: config.moduleId,
     taskId: config.taskId,
     prdRequirements: [...config.prdRequirements],
+    ...(designTokensSpec ? { designTokensSpec } : {}),
   };
 
   const provider = createClaudeProvider('claude-opus-4', { apiKey });
@@ -490,14 +479,14 @@ const runPipeline = async (
   const outputDir = ensureOutputDir(config.moduleId);
   const projectRoot = process.cwd();
 
-  // ── Load project design tokens ──
+  // ── Load project design tokens (required — pipeline hard-stops if missing) ──
   const projectTokens = loadProjectTokens(projectRoot);
-  const designSystemPrompt = loadProjectDesignSystemPrompt(projectRoot);
-  if (designSystemPrompt) {
-    console.log('  Design tokens loaded from agentforge/spec/design-tokens.yaml');
-  } else {
-    console.log('  No project design tokens found — agents will use LLM judgment');
+  if (!projectTokens.tokens) {
+    console.error(diskDesignTokensRequiredMessage(projectRoot));
+    process.exit(1);
   }
+  const designSystemPrompt = loadProjectDesignSystemPrompt(projectRoot);
+  console.log('  Design tokens loaded from agentforge/spec/design-tokens.yaml');
   if (projectTokens.componentLibrary) {
     console.log(`  Component library: ${projectTokens.componentLibrary.library_name}`);
   }
@@ -511,7 +500,7 @@ const runPipeline = async (
     research = { output, durationMs: 0, artifactPath };
     console.log(`        (loaded) constraints=${output.designConstraints.length}`);
   } else {
-    research = await runResearch(config, apiKey, outputDir);
+    research = await runResearch(config, apiKey, outputDir, projectTokens.tokens);
   }
 
   // --- Planning ---

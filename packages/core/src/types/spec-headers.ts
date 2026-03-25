@@ -9,7 +9,7 @@
 /** Schema comment headers keyed by spec file basename (without .yaml). */
 export const SPEC_SCHEMA_HEADERS: Readonly<Record<string, string>> = {
   pages:
-    '# pages.yaml — created on-demand, not by init\n# schema: { version, pages: [{ id, route, title, layout, status, components[], data_sources[] }] }',
+    '# pages.yaml — created on-demand, not by init\n# schema: { version, pages: [{ id, name, description, route, status, components[], data_sources[], viewports?[] }] }',
   api:
     '# api.yaml — created on-demand, not by init\n# schema: { version, base_url, endpoints: [{ id, method, path, description, auth, status }] }',
   models:

@@ -126,6 +126,8 @@ consistency — this repo is used across multiple machines.
 - If you need to persist something, write ONLY to `docs/lessons-learned.md`.
 
 ## Repo-Local Memory
+- **At session start, ALWAYS read `docs/lessons-learned.md`** before writing any code.
+  Past bugs and anti-patterns are documented there. Ignoring them risks repeating them.
 - When you learn something worth preserving, write it only to `docs/lessons-learned.md`.
 - Do not store lessons in any external Claude memory location.
 - Keep entries short and actionable.

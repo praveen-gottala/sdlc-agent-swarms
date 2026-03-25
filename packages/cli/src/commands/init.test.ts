@@ -1,4 +1,4 @@
-import { buildManifest, scaffoldProject, initCommand } from './init.js';
+import { buildManifest, scaffoldProject, initCommand, generateTailwindConfig, generateGlobalCss, hexToHSLChannels, buildDesignTokensSpec } from './init.js';
 import type { InitAnswers } from './init.js';
 import type { FileSystem } from '../fs-utils.js';
 import { PassThrough } from 'node:stream';
@@ -362,7 +362,7 @@ describe('initCommand', () => {
     const fs = createMockFs();
     // More answers needed: wizard(4) + design-yes(1) + library(1) + theme-choice(1) + engine(1)
     // Use shorter delay to avoid timeout — the stream feeds answers as each prompt appears
-    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '1', '1', '1', 'n'], 200);
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '1', '1', '1', 'n'], 500);
     const output = new PassThrough();
     let outputStr = '';
     output.on('data', (d: Buffer) => { outputStr += d.toString(); });
@@ -380,6 +380,144 @@ describe('initCommand', () => {
     expect(fs.files.has('/project/agentforge/spec/brand.yaml')).toBe(true);
     expect(fs.files.has('/project/tailwind.config.ts')).toBe(true);
 
+    // Component catalog should be generated
+    expect(fs.files.has('/project/agentforge/spec/component-catalog.yaml')).toBe(true);
+    const catalogContent = fs.files.get('/project/agentforge/spec/component-catalog.yaml')!;
+    // Should contain shadcn (the selected library, choice "1")
+    expect(catalogContent).toContain('shadcn');
+    // Should NOT contain other libraries (filtered out)
+    expect(catalogContent).not.toContain('mui');
+    expect(catalogContent).not.toContain('chakra');
+
+    expect(outputStr).toContain('Component catalog generated');
     expect(outputStr).toContain('Design system configured');
-  }, 60000);
+  }, 120000);
+});
+
+describe('hexToHSLChannels', () => {
+  it('converts known hex values', () => {
+    expect(hexToHSLChannels('#0F6E56')).toBe('165 76% 25%');
+  });
+
+  it('converts white', () => {
+    expect(hexToHSLChannels('#FFFFFF')).toBe('0 0% 100%');
+  });
+
+  it('converts black', () => {
+    expect(hexToHSLChannels('#000000')).toBe('0 0% 0%');
+  });
+});
+
+describe('generateTailwindConfig (shadcn)', () => {
+  it('uses hsl(var(--primary)) structure', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).toContain("hsl(var(--primary))");
+    expect(config).toContain("hsl(var(--background))");
+    expect(config).toContain("hsl(var(--foreground))");
+  });
+
+  it('does not contain raw hex color values', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).not.toContain('#FFFFFF');
+    expect(config).not.toContain('#2563EB');
+  });
+
+  it('includes boxShadow entries from elevation', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).toContain('boxShadow');
+    expect(config).toContain('rgba(0,0,0,');
+  });
+
+  it('includes zIndex entries', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).toContain('zIndex');
+    expect(config).toContain("'dropdown': '1000'");
+  });
+
+  it('includes screen breakpoints', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).toContain('screens');
+    expect(config).toContain("'mobile': '640px'");
+  });
+
+  it('includes borderRadius with var(--radius)', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const config = generateTailwindConfig(tokens);
+    expect(config).toContain("var(--radius)");
+  });
+});
+
+describe('generateGlobalCss (shadcn)', () => {
+  it('emits HSL channel values for shadcn variables', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('--primary:');
+    expect(css).toContain('--background:');
+    expect(css).toContain('--foreground:');
+    // Should contain HSL format (number space number% number%)
+    expect(css).toMatch(/--primary:\s+\d+\s+\d+%\s+\d+%/);
+  });
+
+  it('contains shadcn variable names not AgentForge names', () => {
+    const tokens = buildDesignTokensSpec('warm');
+    const css = generateGlobalCss(tokens);
+    // Should have shadcn names
+    expect(css).toContain('--primary:');
+    expect(css).toContain('--card:');
+    expect(css).toContain('--destructive:');
+    // Should NOT have AgentForge names
+    expect(css).not.toContain('--cta-primary:');
+    expect(css).not.toContain('--background-primary:');
+  });
+
+  it('includes foreground pairs', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('--card-foreground:');
+    expect(css).toContain('--primary-foreground:');
+    expect(css).toContain('--destructive-foreground:');
+  });
+
+  it('includes elevation shadow CSS variables', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('--shadow-1:');
+    expect(css).toContain('--shadow-2:');
+    expect(css).toContain('--shadow-3:');
+  });
+
+  it('includes --radius', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('--radius:');
+    expect(css).toMatch(/--radius:\s+[\d.]+rem/);
+  });
+
+  it('wraps variables in @layer base :root', () => {
+    const tokens = buildDesignTokensSpec('professional');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('@layer base');
+    expect(css).toContain(':root');
+  });
+
+  it('has no duplicate CSS variable declarations', () => {
+    const tokens = buildDesignTokensSpec('warm');
+    const css = generateGlobalCss(tokens);
+    const varLines = css.split('\n').filter((l: string) => l.trim().startsWith('--'));
+    const varNames = varLines.map((l: string) => l.trim().split(':')[0]);
+    const unique = new Set(varNames);
+    expect(varNames.length).toBe(unique.size);
+  });
+
+  it('includes --muted variable', () => {
+    const tokens = buildDesignTokensSpec('warm');
+    const css = generateGlobalCss(tokens);
+    expect(css).toContain('--muted:');
+    expect(css).toContain('--muted-foreground:');
+  });
 });

@@ -25,7 +25,7 @@ const makePlanningOutput = (overrides?: Partial<UXDashboardPlanningOutput>): UXD
     ]},
     { name: 'SettingsPanel', props: [], children: [] },
   ],
-  tokenBindings: { 'AppLayout.bg': 'color.surface' },
+  tokenBindings: { 'AppLayout.bg': 'surface-primary' },
   responsiveRules: [{ breakpoint: 'desktop', behavior: '1440px' }],
   implementationStages: [{ stage: 'layout', tasks: ['grid'] }],
   ...overrides,

@@ -24,6 +24,10 @@ import {
   Ok,
   Err,
   createEventBus,
+  createRealFs,
+  loadDesignTokens,
+  loadBrandSpec,
+  loadComponentCatalog,
 } from '@agentforge/core';
 import type {
   MCPClient,
@@ -36,6 +40,8 @@ import {
   penpotBrowserDesignWork,
   uxDashboardImplementationWork,
   writeImplementationFiles,
+  buildDesignSystemContextFromSpec,
+  buildComponentCatalogPrompt,
 } from '@agentforge/agents-ux';
 import type {
   UXDashboardResearchInput,
@@ -55,6 +61,8 @@ interface DesignPenpotBrowserOptions {
   readonly stage?: 'research' | 'planning' | 'design';
   /** Module ID for the design. Default: derived from description. */
   readonly module?: string;
+  /** Target viewport width in pixels (default: 1440). */
+  readonly width?: number;
   /** Run browser headless (no visible window). Default: false */
   readonly headless?: boolean;
   /** Exit immediately after design without waiting for approval. */
@@ -80,23 +88,11 @@ function deriveModuleId(description: string): string {
     .replace(/-$/, '');
 }
 
-const createMockFs = () => ({
-  readFile: () => Err({ code: 'INVALID_STATE' as const, message: 'mock fs', recoverable: false }),
-  writeFile: () => Ok(undefined),
-  writeFileAtomic: () => Ok(undefined),
-  exists: () => false,
-  mkdir: () => Ok(undefined),
-  rename: () => Ok(undefined),
-  remove: () => Ok(undefined),
-  listDir: () => Ok([] as readonly string[]),
-  appendFile: () => Ok(undefined),
-});
-
 const createContext = (taskId: string, mcpClient: MCPClient) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
-  fs: createMockFs(),
+  fs: createRealFs(),
   mcpClient,
   runGovernance: async () => Ok({ status: 'proceed' as const }),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
@@ -245,6 +241,31 @@ export async function designPenpotBrowserCommand(
     output.write(successMsg(`  Planning complete (${(ms / 1000).toFixed(1)}s)\n`));
   }
 
+  // -- Load design system (tokens + brand) --
+  let projectDesignSystemPrompt: string | undefined;
+  let componentCatalogPromptStr: string | undefined;
+  let projectRoot: string;
+  try {
+    projectRoot = findProjectRoot();
+  } catch {
+    projectRoot = process.cwd();
+  }
+  const realFs = createRealFs();
+
+  const tokensResult = loadDesignTokens(projectRoot, realFs);
+  const brandResult = loadBrandSpec(projectRoot, realFs);
+  if (tokensResult.ok && brandResult.ok) {
+    const dsCtx = buildDesignSystemContextFromSpec(tokensResult.value, brandResult.value, planningOutput);
+    projectDesignSystemPrompt = dsCtx.designSystemPrompt;
+    output.write(infoMsg('  Design tokens + brand loaded\n'));
+  }
+
+  const catalogResult = loadComponentCatalog(projectRoot, realFs);
+  if (catalogResult.ok) {
+    componentCatalogPromptStr = buildComponentCatalogPrompt(catalogResult.value);
+    output.write(infoMsg('  Component catalog loaded\n'));
+  }
+
   // -- Stage 3: Design (Penpot + Browser) --
   output.write(infoMsg('\n  [3/3] Design -- creating Penpot components (browser mode)...\n'));
 
@@ -258,6 +279,10 @@ export async function designPenpotBrowserCommand(
     moduleId,
     taskId,
     planningOutput,
+    description,
+    ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
+    ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
+    ...(options.width ? { viewportWidth: options.width } : {}),
   };
 
   const t0 = Date.now();

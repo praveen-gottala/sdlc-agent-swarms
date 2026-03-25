@@ -200,6 +200,32 @@ describe('runAgent', () => {
     expect(work).toHaveBeenCalledTimes(3);
   });
 
+  // ADR-032: non-recoverable errors skip retries
+  it('does not retry when work returns recoverable: false even if on_error allows retry', async () => {
+    const ctx = makeContext();
+    const contract = makeContract({ on_error: 'retry(max=2) then notify_human' });
+
+    const work: AgentWorkFn<TestInput, TestOutput> = jest.fn().mockResolvedValue(
+      Err({
+        code: 'DEPENDENCY_NOT_FOUND' as const,
+        message: 'Required design tokens missing on disk',
+        recoverable: false,
+      }),
+    );
+
+    const result = await runAgent(contract, ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', work);
+
+    expect(work).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.status).toBe('error');
+      if (result.value.status === 'error') {
+        expect(result.value.error.code).toBe('DEPENDENCY_NOT_FOUND');
+        expect(result.value.error.recoverable).toBe(false);
+      }
+    }
+  });
+
   it('emits on_complete event and records audit on success', async () => {
     const ctx = makeContext();
     const contract = makeContract({ on_complete: 'SpecComplete' });

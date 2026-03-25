@@ -15,13 +15,16 @@ import type {
   AgentWorkFn,
   Result,
   EventBus,
+  DesignTokensSpec,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
   runAgent,
+  loadDesignTokens,
 } from '@agentforge/core';
 import type { ReviewIssue } from '../types.js';
+import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
 // ============================================================================
 // Types
@@ -56,7 +59,7 @@ export const UX_DASHBOARD_REVIEW_CONTRACT: AgentContract = {
   category: 'design',
   provider: 'claude-sonnet-4',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
-  tools: ['playwright:snapshot', 'playwright:screenshot', 'figma:get_variable_defs'],
+  tools: ['playwright:snapshot', 'playwright:screenshot'],
   permissions: ['read_spec', 'read_design', 'read_code', 'read_design_system'],
   denied: ['write_code', 'write_design', 'create_branch', 'merge_pr'],
   hitl_policy: 'notify_only',
@@ -164,35 +167,21 @@ const checkAccessibility = async (
 };
 
 /**
- * ADR-024: Attempts get_variable_defs first (Enterprise Figma). On failure,
- * falls back to get_code which includes inline style data with token references.
+ * Design-system compliance using loaded disk tokens (caller must validate file present).
  */
 const checkDesignSystemCompliance = async (
-  context: AgentContext,
   provider: LLMProvider,
+  designTokens: DesignTokensSpec,
   componentPaths: readonly string[],
   systemPrompt: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
-    // Primary: Figma Variables API (Enterprise only — ADR-024)
-    let designData: unknown;
-    let dataSource: string;
-
-    const varResult = await context.mcpClient.callTool('figma', 'get_variable_defs', { componentPaths });
-    if (varResult.ok) {
-      designData = varResult.value;
-      dataSource = 'Figma variable definitions';
-    } else {
-      // ADR-024 fallback: extract design tokens from get_code inline styles
-      const codeResult = await context.mcpClient.callTool('figma', 'get_code', { componentPaths });
-      if (!codeResult.ok) return [];
-      designData = codeResult.value;
-      dataSource = 'Figma code/inline styles (Variables API unavailable — ADR-024)';
-    }
+    const dataSource = 'Design tokens (from project spec — design-tokens.yaml)';
+    const designData = designTokens;
 
     const prompt = {
       system: systemPrompt,
-      messages: [{ role: 'user' as const, content: `Evaluate design system compliance for these components.\n\n${dataSource}:\n${JSON.stringify(designData)}\n\nReturn a JSON array of ReviewIssue objects with category "design_system".` }],
+      messages: [{ role: 'user' as const, content: `Evaluate design system compliance for these components.\n\nComponents: ${componentPaths.join(', ')}\n\n${dataSource}:\n${JSON.stringify(designData)}\n\nReturn a JSON array of ReviewIssue objects with category "design_system".` }],
     };
     const result = await provider.complete(prompt, { model: UX_DASHBOARD_REVIEW_CONTRACT.provider, maxTokens: 4000, temperature: 0 });
     if (!result.ok) return [];
@@ -242,13 +231,18 @@ export const uxDashboardReviewWork: AgentWorkFn<UXDashboardReviewInput, UXDashbo
 ) => {
   const { moduleId, componentPaths } = input;
 
-  // 1. Load system prompt
+  const diskTokens = loadDesignTokens(context.projectRoot, context.fs);
+  if (!diskTokens.ok) {
+    // eslint-disable-next-line no-console
+    console.error(diskDesignTokensRequiredMessage(context.projectRoot));
+    return diskDesignTokensRequiredErr(context.projectRoot);
+  }
+
   const systemPrompt = loadSystemPrompt();
 
-  // 3. Run all 3 evaluations in parallel
   const [accessibilityIssues, designSystemIssues, visualFidelityIssues] = await Promise.all([
     checkAccessibility(context, provider as unknown as LLMProvider, componentPaths, systemPrompt),
-    checkDesignSystemCompliance(context, provider as unknown as LLMProvider, componentPaths, systemPrompt),
+    checkDesignSystemCompliance(provider as unknown as LLMProvider, diskTokens.value, componentPaths, systemPrompt),
     checkVisualFidelity(context, provider as unknown as LLMProvider, componentPaths, systemPrompt),
   ]);
 

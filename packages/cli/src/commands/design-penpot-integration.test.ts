@@ -46,6 +46,20 @@ const VALID_TOKENS: DesignTokensSpec = {
   spacing: { unit: 8, scale: [4, 8, 12, 16, 24, 32] },
   borders: { radius: { small: 8, medium: 12 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+      { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+      { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+      { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
 const VALID_BRAND: BrandSpec = {

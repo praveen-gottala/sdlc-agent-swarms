@@ -45,6 +45,8 @@ export interface PenpotDesignInput {
   /** Component catalog prompt for shared anatomy definitions. */
   readonly componentCatalogPrompt?: string;
   readonly description?: string;
+  /** Target viewport width in pixels (default: 1440). */
+  readonly viewportWidth?: number;
 }
 
 /** Output produced by the Penpot design agent. */
@@ -288,7 +290,7 @@ export async function penpotDesignWork(
   mcpClient: MCPClient,
   traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
-  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description } = input;
+  const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth } = input;
   const llm = provider as unknown as LLMProvider;
 
   // ── Dynamic API discovery ──
@@ -300,16 +302,19 @@ export async function penpotDesignWork(
   // ── Phase A: Generate design script via LLM ──
 
   const rawPrompt = loadPenpotSystemPrompt();
-  const baseSystemPrompt = rawPrompt
+  const systemPrompt = rawPrompt
+    .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use the token names from the rules below as guidance)')
     .replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)')
     .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)');
-  const systemPrompt = designSystemPrompt
-    ? baseSystemPrompt + '\n\n# PROJECT DESIGN SYSTEM (use these colors, typography, and spacing — NOT the defaults above)\n\n' + designSystemPrompt
-    : baseSystemPrompt;
 
   const userMessageParts = [
     `Module ID: ${moduleId}`,
   ];
+
+  if (viewportWidth) {
+    userMessageParts.push(`\nViewport Width: ${viewportWidth}px`);
+    userMessageParts.push(`IMPORTANT: The root board MUST use resize(${viewportWidth}, estimatedHeight). All child layouts must fit within ${viewportWidth}px width.`);
+  }
 
   if (description) {
     userMessageParts.push(`\nApp Description: ${description}`);

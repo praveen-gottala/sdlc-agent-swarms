@@ -171,6 +171,11 @@ export function createPenpotAdapter(): DesignToolAdapter {
           pageName = text.trim() || null;
         }
 
+        // Detect error messages returned as text content
+        if (pageName && (pageName.includes('Tool execution failed') || pageName.includes('No Penpot plugin instances'))) {
+          pageName = null;
+        }
+
         if (pageName) {
           // eslint-disable-next-line no-console
           console.log(`  [preflight] Penpot plugin connected (page: "${pageName}")`);

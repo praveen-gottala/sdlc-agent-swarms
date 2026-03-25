@@ -2,6 +2,7 @@ import {
   UX_DASHBOARD_IMPLEMENTATION_CONTRACT,
   parseImplementationOutput,
   registerUXDashboardImplementation,
+  uxDashboardImplementationWork,
 } from './ux-dashboard-implementation.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { Ok } from '@agentforge/core';
@@ -86,7 +87,7 @@ describe('UX_DASHBOARD_IMPLEMENTATION_CONTRACT', () => {
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.role).toBe('ux_dashboard_implementation');
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.category).toBe('design');
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.provider).toBe('claude-sonnet-4');
-    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.tools).toEqual(['figma:get_code_connect_map', 'github.create_branch', 'github.push_files']);
+    expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.tools).toEqual(['github.create_branch', 'github.push_files']);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'read_design_system', 'write_code', 'create_branch']);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.denied).toEqual(['deploy_staging', 'deploy_production', 'merge_pr']);
     expect(UX_DASHBOARD_IMPLEMENTATION_CONTRACT.budget).toEqual({ max_tokens_per_task: 60000, max_cost_per_task_usd: 2.0 });
@@ -150,6 +151,112 @@ describe('registerUXDashboardImplementation', () => {
       'FigmaDesignReady',
       expect.any(Function),
     );
+  });
+});
+
+const DISK_TOKENS_YAML = `version: "1.0"
+created_by: test
+colors:
+  primitive:
+    cream: "#FFF8E7"
+    teal: "#0F6E56"
+  semantic:
+    background-primary: cream
+    cta-primary: teal
+typography:
+  font_families:
+    display: Inter
+    body: Inter
+  scale:
+    - role: heading-1
+      size: 32
+      weight: 700
+      family: display
+spacing:
+  unit: 8
+  scale: [4, 8, 16, 24, 32]
+borders:
+  radius:
+    small: 8
+    medium: 12
+touch_targets:
+  minimum_height: 44
+  minimum_width: 44`;
+
+describe('uxDashboardImplementationWork — disk design tokens required', () => {
+  it('returns Err when design-tokens.yaml is missing', async () => {
+    const provider = makeProvider();
+    const ctx = makeContext();
+    (ctx.fs.readFile as jest.Mock).mockReturnValue({ ok: false, error: { code: 'INVALID_STATE', message: 'not found', recoverable: false } });
+    (ctx.fs.exists as jest.Mock).mockReturnValue(false);
+    const errSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const input = {
+      specRef: 'spec-1',
+      moduleId: 'mod-001',
+      taskId: 'task-001',
+      componentSpec: {
+        specRef: 'spec-1',
+        moduleId: 'mod-001',
+        componentTree: [],
+        tokenBindings: {},
+        responsiveRules: [],
+        implementationStages: [],
+      },
+      stage: 'layout' as const,
+    };
+
+    const result = await uxDashboardImplementationWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('DEPENDENCY_NOT_FOUND');
+      expect(result.error.recoverable).toBe(false);
+    }
+    expect((provider.stream as jest.Mock)).not.toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it('runs stream when disk tokens present', async () => {
+    const provider = makeProvider();
+    const ctx = makeContext();
+    (ctx.fs.readFile as jest.Mock).mockImplementation((path: string) => {
+      if (path.includes('design-tokens.yaml')) {
+        return Ok(DISK_TOKENS_YAML);
+      }
+      return Ok('pages: []');
+    });
+    (ctx.fs.exists as jest.Mock).mockImplementation((path: string) => path.includes('design-tokens.yaml'));
+
+    const input = {
+      specRef: 'spec-1',
+      moduleId: 'mod-001',
+      taskId: 'task-001',
+      componentSpec: {
+        specRef: 'spec-1',
+        moduleId: 'mod-001',
+        componentTree: [],
+        tokenBindings: {},
+        responsiveRules: [],
+        implementationStages: [],
+      },
+      stage: 'layout' as const,
+    };
+
+    const result = await uxDashboardImplementationWork(
+      input,
+      provider as unknown as LLMProviderRef,
+      [],
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(provider.stream).toHaveBeenCalled();
   });
 });
 

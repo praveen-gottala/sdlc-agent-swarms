@@ -20,7 +20,8 @@ import type {
   DesignTokensSpec,
   BrandSpec,
 } from '@agentforge/core';
-import { Ok, Err, createEventBus, toDesignTokens } from '@agentforge/core';
+import { Ok, Err, createEventBus } from '@agentforge/core';
+import { stringify } from 'yaml';
 import {
   uxDashboardResearchWork,
   uxDashboardPlanningWork,
@@ -80,6 +81,20 @@ const BOOKSHELF_TOKENS: DesignTokensSpec = {
   spacing: { unit: 8, scale: [4, 8, 16, 24, 32] },
   borders: { radius: { small: 8, medium: 12 } },
   touch_targets: { minimum_height: 44, minimum_width: 44 },
+  elevation: {
+    levels: [
+      { level: 0, shadow: 'none', description: 'Flat, no elevation' },
+      { level: 1, shadow: '0 1px 3px rgba(0,0,0,0.08)', description: 'Cards resting on surface' },
+      { level: 2, shadow: '0 4px 12px rgba(0,0,0,0.12)', description: 'Dropdowns, popovers' },
+      { level: 3, shadow: '0 8px 24px rgba(0,0,0,0.16)', description: 'Modals, dialogs' },
+    ],
+  },
+  layout: {
+    grid: { columns: 12, gutter: 24, margin: 24 },
+    content_max_width: 1280,
+    breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
+  },
+  z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
 };
 
 const BOOKSHELF_BRAND: BrandSpec = {
@@ -107,7 +122,7 @@ const CANNED_PLANNING = JSON.stringify({
   componentTree: [
     { name: 'BookGrid', props: ['books'], children: [{ name: 'BookCard', props: ['title', 'author'] }] },
   ],
-  tokenBindings: { 'BookCard.fill': 'color.surface.card' },
+  tokenBindings: { 'BookCard.fill': 'surface-primary' },
   responsiveRules: [],
   implementationStages: [{ name: 'layout', components: ['BookGrid'] }],
 });
@@ -134,6 +149,19 @@ const createMockFs = (): FileSystem => ({
   listDir: () => Ok([]),
   appendFile: () => Ok(undefined),
 });
+
+/** Minimal FS so planning/research can load disk-backed design-tokens.yaml (required since disk-only tokens). */
+const createMockFsWithDesignTokens = (projectRoot: string): FileSystem => {
+  const specDir = `${projectRoot}/agentforge/spec`;
+  const tokensPath = `${specDir}/design-tokens.yaml`;
+  const base = createMockFs();
+  return {
+    ...base,
+    exists: (p: string) => p === specDir || p === tokensPath,
+    readFile: (p: string) =>
+      p === tokensPath ? Ok(stringify(BOOKSHELF_TOKENS)) : base.readFile(p),
+  };
+};
 
 const createMockMCPClient = (): MCPClient => ({
   callTool: jest.fn().mockResolvedValue(Ok({})),
@@ -165,7 +193,7 @@ describe('Pipeline wiring smoke test', () => {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
-      existingTokens: toDesignTokens(BOOKSHELF_TOKENS),
+      designTokensSpec: BOOKSHELF_TOKENS,
     };
 
     await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
@@ -185,18 +213,25 @@ describe('Pipeline wiring smoke test', () => {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
-      existingTokens: toDesignTokens(BOOKSHELF_TOKENS),
+      designTokensSpec: BOOKSHELF_TOKENS,
     };
 
     await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);
 
     expect(calls[0].userContent).toContain('forest-green');
     expect(calls[0].userContent).toContain('#228B22');
+    // Semantic token names must appear (previously lost by toDesignTokens flattening)
+    expect(calls[0].userContent).toContain('background-primary');
+    expect(calls[0].userContent).toContain('cta-primary');
   });
 
   it('planning stage receives research output in its prompt', async () => {
     const { provider, calls } = createSpyProvider(CANNED_PLANNING);
-    const context = createMockContext();
+    const base = createMockContext();
+    const context: AgentContext = {
+      ...base,
+      fs: createMockFsWithDesignTokens(base.projectRoot),
+    };
 
     const researchOutput = JSON.parse(CANNED_RESEARCH);
     const input: UXDashboardPlanningInput = {
@@ -238,7 +273,7 @@ describe('Pipeline wiring smoke test', () => {
     // Design system prompt should contain brand and token info (in the first call)
     expect(calls[0].system).toContain('warm and bookish');
     expect(calls[0].system).toContain('AA');
-    expect(calls[0].system).toContain('PROJECT DESIGN SYSTEM');
+    expect(calls[0].system).toContain('Project Design Tokens');
   });
 
   it('design stage without designSystemPrompt uses defaults and warns', async () => {
@@ -261,8 +296,8 @@ describe('Pipeline wiring smoke test', () => {
 
     // At least 1 call for the main screen; may have additional for completeness follow-up
     expect(calls.length).toBeGreaterThanOrEqual(1);
-    // Should NOT contain project-specific design system
-    expect(calls[0].system).not.toContain('PROJECT DESIGN SYSTEM');
+    // Should NOT contain project-specific design system content
+    expect(calls[0].system).not.toContain('# Design System');
     // Should have warned
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('no designSystemPrompt provided'),
@@ -298,6 +333,7 @@ describe('Pipeline wiring smoke test', () => {
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
       prdRequirements: ['home'],
+      designTokensSpec: BOOKSHELF_TOKENS,
     };
 
     await uxDashboardResearchWork(input, provider as unknown as LLMProviderRef, [], context);

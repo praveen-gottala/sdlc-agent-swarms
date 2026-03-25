@@ -26,7 +26,6 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
-  toDesignTokens,
 } from '@agentforge/core';
 import type {
   MCPClient,
@@ -74,6 +73,8 @@ interface DesignPenpotOptions {
   readonly stage?: 'research' | 'planning' | 'design' | 'replay' | 'connect';
   /** Module ID for the design. Default: derived from description. */
   readonly module?: string;
+  /** Target viewport width in pixels (default: 1440). */
+  readonly width?: number;
   /** Exit immediately after design without waiting for approval. */
   readonly noWait?: boolean;
   /** Skip feedback loop and generate code directly after design. */
@@ -97,25 +98,12 @@ function deriveModuleId(description: string): string {
     .replace(/-$/, '');
 }
 
-/** Create a mock filesystem for the agent context. */
-const createMockFs = () => ({
-  readFile: () => Err({ code: 'INVALID_STATE' as const, message: 'mock fs', recoverable: false }),
-  writeFile: () => Ok(undefined),
-  writeFileAtomic: () => Ok(undefined),
-  exists: () => false,
-  mkdir: () => Ok(undefined),
-  rename: () => Ok(undefined),
-  remove: () => Ok(undefined),
-  listDir: () => Ok([] as readonly string[]),
-  appendFile: () => Ok(undefined),
-});
-
 /** Create an agent context. */
 const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: PromptTrace[]) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
-  fs: createMockFs(),
+  fs: createRealFs(),
   mcpClient,
   runGovernance: async () => Ok({ status: 'proceed' as const }),
   resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
@@ -286,7 +274,7 @@ export async function designPenpotCommand(
       moduleId,
       taskId,
       prdRequirements,
-      ...(designTokens ? { existingTokens: toDesignTokens(designTokens) } : {}),
+      ...(designTokens ? { designTokensSpec: designTokens } : {}),
     };
 
     const t0 = Date.now();
@@ -462,6 +450,7 @@ try {
     description,
     ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
     ...(componentCatalogPrompt ? { componentCatalogPrompt } : {}),
+    ...(options.width ? { viewportWidth: options.width } : {}),
   };
 
   const t0 = Date.now();

@@ -1,0 +1,25 @@
+{
+  "name": "@agentforge/core",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "{projectRoot}/src/**/*.ts",
+        "!{projectRoot}/src/**/*.test.ts",
+        "{projectRoot}/src/catalogs/**/*.yaml",
+        "{projectRoot}/tsconfig.lib.json",
+        "{projectRoot}/tsconfig.json"
+      ],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "commands": [
+          "tsc --build tsconfig.lib.json",
+          "mkdir -p dist/catalogs && cp src/catalogs/*.yaml dist/catalogs/"
+        ],
+        "cwd": "packages/core",
+        "parallel": false
+      },
+      "dependsOn": ["build-deps"]
+    }
+  }
+}

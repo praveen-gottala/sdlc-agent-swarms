@@ -17,6 +17,10 @@ import {
   saveComponentLibrary,
   validateDesignTokens,
   validateBrandSpec,
+  loadComponentLibrary,
+  loadBaseCatalog,
+  generateProjectCatalog,
+  saveComponentCatalog,
 } from '@agentforge/core';
 import type { ComponentLibrarySpec } from '@agentforge/core';
 import type { FileSystem } from '../fs-utils.js';
@@ -199,7 +203,7 @@ export async function designSystemUpdateCommand(
   }
 
   // Step 1: Component library selection
-  await pickComponentLibrary(rootDir, input, output, fileSystem);
+  const selectedLibrary = await pickComponentLibrary(rootDir, input, output, fileSystem);
 
   // Step 2: Theme generation (LLM or fallback)
   output.write(infoMsg('\nNow let\'s pick your visual theme...\n'));
@@ -211,6 +215,13 @@ export async function designSystemUpdateCommand(
   );
 
   writeDesignSystemFiles(rootDir, designResult, fileSystem);
+
+  // Step 3: Regenerate component catalog for the selected library
+  const baseCatalog = loadBaseCatalog();
+  const projectCatalog = generateProjectCatalog(baseCatalog, selectedLibrary.id, designResult.tokens);
+  saveComponentCatalog(rootDir, projectCatalog, fileSystem);
+  output.write(successMsg('✓ Component catalog regenerated\n'));
+
   output.write(successMsg('\nDesign system updated.\n'));
 }
 
@@ -259,4 +270,39 @@ export async function designSystemValidateCommand(
   if (hasErrors) {
     process.exitCode = 1;
   }
+}
+
+/**
+ * Regenerate the project component catalog from the base catalog.
+ * Reads the current design tokens and component library, then filters
+ * the base catalog for the configured library.
+ */
+export async function designSystemRegenerateCatalogCommand(
+  rootDir: string,
+  fileSystem: FileSystem = realFs,
+  output: NodeJS.WritableStream = process.stdout,
+): Promise<void> {
+  // Load design tokens — required
+  const tokensResult = loadDesignTokens(rootDir, fileSystem);
+  if (!tokensResult.ok) {
+    output.write(errorMsg(`${tokensResult.error.message}\n`));
+    process.exitCode = 1;
+    return;
+  }
+
+  // Load component library — required
+  const libResult = loadComponentLibrary(rootDir, fileSystem);
+  if (!libResult.ok) {
+    output.write(errorMsg(`${libResult.error.message}\n`));
+    process.exitCode = 1;
+    return;
+  }
+
+  // Generate filtered catalog
+  const baseCatalog = loadBaseCatalog();
+  const projectCatalog = generateProjectCatalog(baseCatalog, libResult.value.library_id, tokensResult.value);
+  saveComponentCatalog(rootDir, projectCatalog, fileSystem);
+
+  const componentCount = Object.keys(projectCatalog.components).length;
+  output.write(successMsg(`✓ Component catalog regenerated (${componentCount} components for ${libResult.value.library_name})\n`));
 }
