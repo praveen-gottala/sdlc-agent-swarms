@@ -66,3 +66,7 @@ export { validateDesignSpec } from './validation/validate.js';
 // ─── Penpot Renderer ──────────────────────────────────────
 export { renderToScript } from './renderer/penpot/index.js';
 export type { RenderResult } from './renderer/penpot/index.js';
+
+// ─── React Renderer ──────────────────────────────────────
+export { renderToJSX } from './renderer/react/index.js';
+export type { JsxRenderResult } from './renderer/react/index.js';
