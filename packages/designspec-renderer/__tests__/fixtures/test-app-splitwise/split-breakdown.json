@@ -7,7 +7,7 @@
       "parent": null,
       "order": 0,
       "background": "background-primary",
-      "layout": { "dir": "column", "align": "start" }
+      "layout": { "dir": "column", "align": "center" }
     },
     "appHeader": {
       "type": "header",
@@ -55,8 +55,8 @@
       "type": "container",
       "parent": "root",
       "order": 1,
-      "background": "background-primary",
-      "layout": { "dir": "column", "gap": 0, "px": 24, "pb": 80 }
+      "width": 600,
+      "layout": { "dir": "column", "gap": 0, "pb": 80 }
     },
 
     "summaryHeader": {
@@ -497,6 +497,7 @@
       "type": "container",
       "parent": "root",
       "order": 2,
+      "width": 600,
       "background": "surface-elevated",
       "height": 80,
       "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 24, "gap": 12 }

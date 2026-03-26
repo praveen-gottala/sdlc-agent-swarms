@@ -71,7 +71,7 @@ export const renderSegmentedControl: ComponentRenderer = (node, parentVar, ctx) 
     b.line(
       `const ${tv} = makeText(${JSON.stringify(opt.label)}, ${textSize}, ${fw}, ${tokenRef(textCol)}, 1, ${pillWidth});`,
     );
-    b.line(`${tv}.name = '${node.id}_${opt.label}_text';`);
+    b.line(`${tv}.textAlign = 'center';`);
     emitAppendChild(b, pv, tv, 'fill');
     emitAppendChild(b, v, pv, 'fill');
   }

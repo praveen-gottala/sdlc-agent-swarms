@@ -49,7 +49,7 @@ export const renderDisplayReadonly: ComponentRenderer = (node, parentVar, ctx) =
   if (node.label) {
     const lv = makeVar('dlbl', ctx);
     b.line(
-      `const ${lv} = makeText(${JSON.stringify(node.label)}, ${labelSize}, ${labelWeight}, ${tokenRef('text-secondary')}, 0.7, ${width});`,
+      `const ${lv} = makeText(${JSON.stringify(node.label)}, ${labelSize}, ${labelWeight}, ${tokenRef('text-secondary')}, 1, ${width});`,
     );
     b.line(`${lv}.name = '${node.id}_label';`);
     emitAppendChild(b, v, lv, 'auto');

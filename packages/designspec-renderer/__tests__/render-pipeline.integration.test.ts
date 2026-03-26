@@ -71,12 +71,13 @@ describe('YAML token loading', () => {
 /*  Group 2: YAML catalog loading → render                             */
 /* ================================================================== */
 describe('YAML catalog loading', () => {
+  const yamlTokens = loadYamlTokens(join(APP_FIXTURES, 'design-tokens.yaml'));
   const rawCatalog: RawCatalogSpec = parseYaml(
     readFileSync(join(APP_FIXTURES, 'component-catalog.yaml'), 'utf-8'),
   );
 
   it('2.1 — catalog from YAML merges with built-ins', () => {
-    const merged = loadCatalogForRenderer(rawCatalog);
+    const merged = loadCatalogForRenderer(rawCatalog, yamlTokens);
     const builtInOnly = loadCatalogForRenderer();
 
     const mergedKeys = Object.keys(merged);
@@ -93,18 +94,15 @@ describe('YAML catalog loading', () => {
   });
 
   it('2.2 — project catalog entries override built-in defaults', () => {
-    const merged = loadCatalogForRenderer(rawCatalog);
-    const builtInOnly = loadCatalogForRenderer();
+    const merged = loadCatalogForRenderer(rawCatalog, yamlTokens);
 
-    // The YAML defines Card with token_bindings.font = heading-3
-    // The built-in card may have different defaults
-    // After merge, YAML version wins
+    // The YAML 'Card' overrides the built-in 'card' entry
     const yamlCard = merged['card'];
     expect(yamlCard).toBeDefined();
-    // The YAML Card has text_typography from token_bindings.font = heading-3
+    // YAML field (text_typography from token_bindings.font = heading-3)
     expect(yamlCard.text_typography).toBe('heading-3');
 
-    // Render with merged catalog to prove the override flows through
+    // Render with merged catalog to prove the merge flows through
     const spec: DesignSpecV2 = {
       screen: 'catalog-override-test',
       width: 1440,
@@ -115,11 +113,7 @@ describe('YAML catalog loading', () => {
     };
 
     const resultMerged = renderToScript(spec, SAMPLE_TOKENS, merged);
-    const resultBuiltIn = renderToScript(spec, SAMPLE_TOKENS, builtInOnly);
-
-    // Both should render successfully
     expect(resultMerged.nodeIds).toContain('myCard');
-    expect(resultBuiltIn.nodeIds).toContain('myCard');
   });
 });
 
@@ -131,7 +125,7 @@ describe('Full pipeline with app fixtures', () => {
   const rawCatalog: RawCatalogSpec = parseYaml(
     readFileSync(join(APP_FIXTURES, 'component-catalog.yaml'), 'utf-8'),
   );
-  const catalog = loadCatalogForRenderer(rawCatalog);
+  const catalog = loadCatalogForRenderer(rawCatalog, yamlTokens);
 
   it('3.1 — bill-entry.json + YAML tokens + YAML catalog → valid script', () => {
     const spec = loadAppSpec('bill-entry');

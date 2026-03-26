@@ -4,6 +4,7 @@
  * Also provides V2 built-in catalog entries.
  */
 import type { CatalogEntry, CatalogMap } from '../types/catalog.js';
+import type { RendererTokens } from '../types/tokens.js';
 import { V2_BUILTIN_CATALOG } from '../__fixtures__/catalog-entries.js';
 
 /**
@@ -19,6 +20,7 @@ export interface RawCatalogSpec {
 /** Raw catalog entry shape (mirrors ComponentCatalogEntry from core). */
 export interface RawCatalogEntry {
   readonly description: string;
+  readonly renderer_defaults?: Readonly<Record<string, unknown>>;
   readonly category: string;
   readonly min_height?: number;
   readonly anatomy: readonly {
@@ -71,7 +73,28 @@ function toKebabCase(str: string): string {
 /**
  * Transform a single raw catalog entry to a flat CatalogEntry.
  */
-function transformEntry(name: string, raw: RawCatalogEntry): CatalogEntry {
+function transformEntry(name: string, raw: RawCatalogEntry, tokens?: RendererTokens): CatalogEntry {
+
+  if (raw.renderer_defaults) {
+    const entry: Record<string, unknown> = { ...raw.renderer_defaults };
+
+    if (raw.library_mapping) {
+      const lib: Record<string, unknown> = {};
+      for (const [libId, mapping] of Object.entries(raw.library_mapping)) {
+        lib[libId] = {
+          component: mapping.component_name,
+          import: mapping.import_path,
+          ...(mapping.slot_mapping ? { slot_mapping: mapping.slot_mapping } : {}),
+          ...(mapping.variant_prop ? { variant_prop: mapping.variant_prop } : {}),
+          ...(mapping.size_prop ? { size_prop: mapping.size_prop } : {}),
+        };
+      }
+      entry.library = lib;
+    }
+
+    return entry as CatalogEntry;
+  }
+
   const entry: Record<string, unknown> = {
     type: toKebabCase(name),
   };
@@ -95,7 +118,10 @@ function transformEntry(name: string, raw: RawCatalogEntry): CatalogEntry {
   if (raw.token_bindings) {
     const tb = raw.token_bindings;
     if (tb['border-radius'] !== undefined) {
-      entry.radius = tb['border-radius'];
+      const raw = tb['border-radius'];
+      entry.radius = typeof raw === 'string' && tokens?.borders?.radius?.[raw] !== undefined
+        ? tokens.borders.radius[raw]
+        : raw;
     }
     if (tb['padding-x'] !== undefined) {
       entry.padding_x = tb['padding-x'];
@@ -147,9 +173,10 @@ function transformEntry(name: string, raw: RawCatalogEntry): CatalogEntry {
  * Merge order: V2 built-ins are DEFAULTS, project entries OVERRIDE them.
  *
  * @param rawCatalog - Optional raw catalog spec from project. If undefined, only built-ins are used.
+ * @param tokens - Optional renderer tokens for resolving token references (e.g., border-radius: 'medium').
  * @returns Flat CatalogMap ready for the renderer.
  */
-export function loadCatalogForRenderer(rawCatalog?: RawCatalogSpec): CatalogMap {
+export function loadCatalogForRenderer(rawCatalog?: RawCatalogSpec, tokens?: RendererTokens): CatalogMap {
   // Start with V2 built-in entries
   const result: Record<string, CatalogEntry> = { ...V2_BUILTIN_CATALOG };
 
@@ -157,7 +184,7 @@ export function loadCatalogForRenderer(rawCatalog?: RawCatalogSpec): CatalogMap 
   if (rawCatalog) {
     for (const [name, entry] of Object.entries(rawCatalog.components)) {
       const kebabName = toKebabCase(name);
-      result[kebabName] = transformEntry(name, entry);
+      result[kebabName] = transformEntry(name, entry, tokens);
     }
   }
 

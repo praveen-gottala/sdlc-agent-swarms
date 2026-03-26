@@ -1129,7 +1129,7 @@ components:
         - role=tablist
         - aria-selected on active tab
       keyboard_nav: Arrow keys between tabs, Enter to activate
-  Stepper:
+  StepIndicator:
     description: Multi-step progress indicator for wizards and workflows
     category: navigation
     min_height: 44

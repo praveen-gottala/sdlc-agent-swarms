@@ -16,7 +16,7 @@ export const renderDivider: ComponentRenderer = (node, parentVar, ctx) => {
   b.comment(`Divider: ${node.id}`);
   emitBoard(b, v, node.id, ctx.effectiveWidth, 1);
   b.line(
-    `${v}.fills = [{ fillColor: ${tokenRef(colorToken)}, fillOpacity: 0.5 }];`,
+    `${v}.fills = [{ fillColor: ${tokenRef(colorToken)}, fillOpacity: 0.8 }];`,
   );
 
   emitAppendChild(b, parentVar, v, 'fill', 'fix');

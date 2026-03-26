@@ -62,7 +62,7 @@ describe('loadCatalogForRenderer', () => {
     expect(catalog['navigation-bar'].type).toBe('navigation-bar');
   });
 
-  it('project entries override built-in entries', () => {
+  it('project entries override built-in defaults', () => {
     const raw: RawCatalogSpec = {
       version: '1.0',
       created_by: 'test',
@@ -82,13 +82,11 @@ describe('loadCatalogForRenderer', () => {
     };
 
     const catalog = loadCatalogForRenderer(raw);
-    // Project card should override the built-in card
     expect(catalog['card'].background).toBe('custom-bg');
     expect(catalog['card'].text_color).toBe('custom-text');
     expect(catalog['card'].border_color).toBe('custom-border');
     expect(catalog['card'].border_width).toBe(3);
     expect(catalog['card'].shadow).toBe('xl');
-    // Built-in card had shadow 'sm' and radius 20 — project override replaces entire entry
     expect(catalog['card'].radius).toBeUndefined();
   });
 
@@ -224,5 +222,87 @@ describe('loadCatalogForRenderer', () => {
 
     const catalog = loadCatalogForRenderer(raw);
     expect(catalog['touchable'].min_height).toBe(44);
+  });
+
+  it('resolves border-radius string token to numeric value', () => {
+    const raw: RawCatalogSpec = {
+      version: '1.0',
+      created_by: 'test',
+      components: {
+        MyWidget: {
+          description: 'test',
+          category: 'ui',
+          anatomy: [],
+          states: { default: { bg: 'white', text: 'black' } },
+          token_bindings: { 'border-radius': 'medium' },
+          spacing: { padding: '0', internal_gap: '0' },
+          library_mapping: {},
+          accessibility: { focus_visible: false, aria_labels: [] },
+        },
+      },
+    };
+
+    const tokens = {
+      colors: { primitive: {}, semantic: {} },
+      typography: { font_families: {}, scale: [] },
+      elevation: { levels: [] },
+      borders: { radius: { small: 4, medium: 12, large: 24 } },
+      spacing: { unit: 4, scale: [] },
+    } as const;
+
+    const catalog = loadCatalogForRenderer(raw, tokens);
+    expect(catalog['my-widget'].radius).toBe(12);
+  });
+
+  it('passes through numeric border-radius as-is', () => {
+    const raw: RawCatalogSpec = {
+      version: '1.0',
+      created_by: 'test',
+      components: {
+        MyWidget: {
+          description: 'test',
+          category: 'ui',
+          anatomy: [],
+          states: { default: { bg: 'white', text: 'black' } },
+          token_bindings: { 'border-radius': 8 },
+          spacing: { padding: '0', internal_gap: '0' },
+          library_mapping: {},
+          accessibility: { focus_visible: false, aria_labels: [] },
+        },
+      },
+    };
+
+    const catalog = loadCatalogForRenderer(raw);
+    expect(catalog['my-widget'].radius).toBe(8);
+  });
+
+  it('keeps unresolvable string border-radius as-is', () => {
+    const raw: RawCatalogSpec = {
+      version: '1.0',
+      created_by: 'test',
+      components: {
+        MyWidget: {
+          description: 'test',
+          category: 'ui',
+          anatomy: [],
+          states: { default: { bg: 'white', text: 'black' } },
+          token_bindings: { 'border-radius': 'unknown' },
+          spacing: { padding: '0', internal_gap: '0' },
+          library_mapping: {},
+          accessibility: { focus_visible: false, aria_labels: [] },
+        },
+      },
+    };
+
+    const tokens = {
+      colors: { primitive: {}, semantic: {} },
+      typography: { font_families: {}, scale: [] },
+      elevation: { levels: [] },
+      borders: { radius: { small: 4, medium: 12 } },
+      spacing: { unit: 4, scale: [] },
+    } as const;
+
+    const catalog = loadCatalogForRenderer(raw, tokens);
+    expect(catalog['my-widget'].radius).toBe('unknown');
   });
 });

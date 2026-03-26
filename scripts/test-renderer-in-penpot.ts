@@ -125,7 +125,7 @@ console.log(`Tokens: ${projectDir}/agentforge/spec/design-tokens.yaml`);
 let catalog: ReturnType<typeof loadCatalogForRenderer>;
 if (existsSync(catalogPath)) {
     const rawCatalog: RawCatalogSpec = parseYaml(readFileSync(catalogPath, 'utf-8'));
-    catalog = loadCatalogForRenderer(rawCatalog);
+    catalog = loadCatalogForRenderer(rawCatalog, tokens);
     const projectEntryCount = Object.keys(rawCatalog.components).length;
     const totalCount = Object.keys(catalog).length;
     console.log(`Catalog: ${projectDir}/agentforge/spec/component-catalog.yaml (${projectEntryCount} project entries + ${totalCount - projectEntryCount} built-in)`);
