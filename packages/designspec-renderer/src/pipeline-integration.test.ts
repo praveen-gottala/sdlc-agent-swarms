@@ -8,8 +8,6 @@
  * Every test imports ONLY from the public barrel (./index.ts).
  * Generic fixtures — no app-specific names.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   renderToScript,
   loadCatalogForRenderer,
@@ -18,6 +16,7 @@ import {
 import type { DesignSpecV2 } from './index.js';
 import { SAMPLE_TOKENS } from './__fixtures__/design-tokens.js';
 import { V2_BUILTIN_CATALOG } from './__fixtures__/catalog-entries.js';
+import { loadFixture } from './__fixtures__/load-fixture.js';
 import type { CatalogMap, RendererTokens } from './index.js';
 
 /* ================================================================== */
@@ -81,12 +80,8 @@ const ALL_CATALOG_SPEC: DesignSpecV2 = {
 /*  Real JSON fixtures                                                 */
 /* ================================================================== */
 
-const settingsForm: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../__tests__/fixtures/settings-form.json'), 'utf-8'),
-);
-const dashboardDetail: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../__tests__/fixtures/dashboard-detail.json'), 'utf-8'),
-);
+const { spec: settingsForm } = loadFixture('settings-form');
+const { spec: dashboardDetail } = loadFixture('dashboard-detail');
 
 /* ================================================================== */
 /*  Group 1: Stage-to-stage data flow                                  */

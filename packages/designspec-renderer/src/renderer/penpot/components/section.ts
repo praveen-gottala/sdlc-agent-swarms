@@ -18,7 +18,7 @@ export const renderSection: ComponentRenderer = (node, parentVar, ctx) => {
   const width =
     typeof node.width === 'number'
       ? node.width
-      : ctx.screenWidth;
+      : ctx.effectiveWidth;
   const height = node.height ?? DEFAULT_SECTION_HEIGHT;
 
   b.comment(`Section: ${node.id}`);
@@ -50,11 +50,12 @@ export const renderSection: ComponentRenderer = (node, parentVar, ctx) => {
       `const ${titleVar} = makeText(${JSON.stringify(node.title)}, ${fontSize}, ${fontWeight}, ${tokenRef(colorToken)}, 1, ${width});`,
     );
     b.line(`${titleVar}.name = '${node.id}-title';`);
+    // NOTE: Penpot text shapes don't support textAlign — use parent flex alignment.
     emitAppendChild(b, v, titleVar, 'fill');
   }
 
   const hSizing = node.width === 'fill' || node.width === undefined ? 'fill' : 'fix';
-  emitAppendChild(b, parentVar, v, hSizing);
+  emitAppendChild(b, parentVar, v, hSizing, 'auto');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

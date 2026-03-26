@@ -24,7 +24,7 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : 160;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? (cat?.height as number | undefined) ?? 56;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 12;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'surface-elevated';
@@ -53,7 +53,7 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   emitFlex(b, v, 'row', {
     align: 'center',
     justify: hasLabel ? 'space-between' : 'center',
-    px: 16,
+    px: 20,
   });
   emitRadius(b, v, radius);
 
@@ -71,14 +71,14 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
       `const ${lv} = makeText(${JSON.stringify(node.label)}, 14, 500, ${tokenRef('text-primary')}, 1, ${width});`,
     );
     b.line(`${lv}.name = '${node.id}_label';`);
-    emitAppendChild(b, v, lv, 'fill');
+    emitAppendChild(b, v, lv, 'auto');
   }
 
   // Controls container (minus + count + plus) — grouped in a nested board
   const ctrlV = makeVar('sctrl', ctx);
   const ctrlWidth = btnSize * 3 + 32; // 3 buttons + 2 gaps
   emitBoard(b, ctrlV, `${node.id}_controls`, ctrlWidth, btnSize);
-  emitFlex(b, ctrlV, 'row', { align: 'center', justify: 'center', gap: 16 });
+  emitFlex(b, ctrlV, 'row', { align: 'center', justify: 'center', gap: 16, px: 4 });
   b.line(`${ctrlV}.fills = [];`);
 
   // Minus button
@@ -125,7 +125,7 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   emitAppendChild(b, v, ctrlV, 'auto');
 
   // Append stepper to parent
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

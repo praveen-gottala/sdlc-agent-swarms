@@ -127,7 +127,7 @@ ${apiDocs || '(unavailable)'}
 
 CRITICAL RULES:
 - Use penpot.createBoard() for containers — NOT createFrame (does not exist)
-- Use penpot.createText("content") — text content MUST be in constructor
+- Use penpot.createText("content") — text content MUST be in constructor. NEVER pass empty string "" (returns undefined). Use a space " " for empty/placeholder text.
 - Use shape.resize(w, h) — width/height are READ-ONLY
 - Fills/strokes replace entire array: shape.fills = [{ fillColor: '#HEX', fillOpacity: 1 }]
 - NEVER use: createFrame, shape.width=, shape.height=, shape.text=

@@ -52,6 +52,7 @@ export function renderToScript(
     tokens,
     catalog,
     screenWidth: spec.width,
+    effectiveWidth: spec.width,
     nextVarId: () => varCounter++,
     trackNode: (varName: string, nodeId: string) => {
       nodeIdEntries.push({ varName, nodeId });
@@ -110,10 +111,20 @@ export function renderToScript(
       rootVar = varName;
     }
 
+    // Narrow effectiveWidth for children when this node has an explicit numeric width
+    const nodeSpec = spec.nodes[treeNode.id];
+    const prevEffectiveWidth = ctx.effectiveWidth;
+    if (typeof nodeSpec?.width === 'number') {
+      ctx.effectiveWidth = nodeSpec.width;
+    }
+
     // Recursively render children
     for (const child of treeNode.children) {
       walkNode(child, varName);
     }
+
+    // Restore effective width
+    ctx.effectiveWidth = prevEffectiveWidth;
   }
 
   walkNode(tree, null);

@@ -21,7 +21,7 @@ export const renderDisplayReadonly: ComponentRenderer = (node, parentVar, ctx) =
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? (cat?.height as number | undefined) ?? 48;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 8;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'surface-elevated';
@@ -30,7 +30,7 @@ export const renderDisplayReadonly: ComponentRenderer = (node, parentVar, ctx) =
   b.comment(`DisplayReadonly: ${node.id}`);
 
   emitBoard(b, v, node.id, width, height, bg);
-  emitFlex(b, v, 'column', { align: 'start', justify: 'center', px, gap: 2 });
+  emitFlex(b, v, 'row', { align: 'center', justify: 'space-between', px, gap: 8 });
   emitRadius(b, v, radius);
 
   // Label typography
@@ -52,7 +52,7 @@ export const renderDisplayReadonly: ComponentRenderer = (node, parentVar, ctx) =
       `const ${lv} = makeText(${JSON.stringify(node.label)}, ${labelSize}, ${labelWeight}, ${tokenRef('text-secondary')}, 0.7, ${width});`,
     );
     b.line(`${lv}.name = '${node.id}_label';`);
-    emitAppendChild(b, v, lv, 'fill');
+    emitAppendChild(b, v, lv, 'auto');
   }
 
   // Value
@@ -62,9 +62,9 @@ export const renderDisplayReadonly: ComponentRenderer = (node, parentVar, ctx) =
     `const ${vv} = makeText(${JSON.stringify(displayValue)}, ${valSize}, ${valWeight}, ${tokenRef(valColor)}, 1, ${width});`,
   );
   b.line(`${vv}.name = '${node.id}_value';`);
-  emitAppendChild(b, v, vv, 'fill');
+  emitAppendChild(b, v, vv, 'auto');
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

@@ -190,6 +190,28 @@ designspec-renderer depends on: nothing (zero external deps, mirrors core types 
 - Error handling: Result pattern (never throw), see docs/error-handling.md
 - File naming: kebab-case for files, PascalCase for types/interfaces
 
+### Test & Fixture Placement Convention
+All packages must follow this layout. No exceptions.
+
+| What | Where | Example |
+|------|-------|---------|
+| Unit tests | `src/`, next to source file | `src/foo.ts` → `src/foo.test.ts` |
+| Unit test fixtures | `src/__fixtures__/` | `src/__fixtures__/design-tokens.ts`, `src/__fixtures__/settings-form.json` |
+| Integration tests | `__tests__/` at package root | `packages/designspec-renderer/__tests__/render-pipeline.integration.test.ts` |
+| Integration fixtures | `__tests__/fixtures/` | `__tests__/fixtures/test-app-splitwise/design-tokens.yaml` |
+| Generated test output | `__tests__/output/` (gitignored) | `__tests__/output/bill-entry/design.js` |
+
+Rules:
+- **Never** put integration tests in `src/` (e.g., `src/__integration__/` is wrong).
+- **Never** put unit test fixtures in `__tests__/` — they belong in `src/__fixtures__/`.
+- Integration tests import from the public barrel (`../src/index.js`), not
+  internal modules. This verifies the package's public API surface.
+- `__tests__/output/` must be in `.gitignore` and in `jest.config.cjs`
+  `testPathIgnorePatterns` to prevent generated `.js` files from being
+  picked up as test suites.
+- App-specific fixtures (real project data like YAML configs) go in named
+  subfolders under `__tests__/fixtures/` (e.g., `test-app-splitwise/`).
+
 ## Documentation
 - When adding or modifying CLI commands, update the corresponding doc in `docs/cli/`.
   - Setup & config commands: `docs/cli/setup.md`

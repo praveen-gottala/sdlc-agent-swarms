@@ -7,7 +7,7 @@
  *
  * Playwright is imported dynamically so non-browser pipelines pay no import cost.
  *
- * Promoted from spike: packages/agents-ux/src/__integration__/playwright-mcp-spike.test.ts
+ * Promoted from spike: packages/agents-ux/__tests__/playwright-mcp-spike.test.ts
  */
 
 import type { Result } from '../types/index.js';

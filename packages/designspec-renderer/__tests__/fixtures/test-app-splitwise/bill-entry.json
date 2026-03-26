@@ -1,0 +1,263 @@
+{
+  "screen": "bill-entry",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "type": "page",
+      "parent": null,
+      "order": 0,
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "align": "center"
+      }
+    },
+    "header": {
+      "type": "header",
+      "parent": "root",
+      "order": 0,
+      "background": "surface-elevated",
+      "height": 64,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24
+      }
+    },
+    "logo": {
+      "type": "text",
+      "parent": "header",
+      "order": 0,
+      "content": "SplitEase",
+      "typography": "heading-3",
+      "color": "cta-primary",
+      "weight": 700
+    },
+    "navHint": {
+      "type": "text",
+      "parent": "header",
+      "order": 1,
+      "content": "Split bills fairly",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "content": {
+      "type": "container",
+      "parent": "root",
+      "order": 1,
+      "width": 600,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "py": 32
+      }
+    },
+    "tagline": {
+      "type": "container",
+      "parent": "content",
+      "order": 0,
+      "layout": {
+        "dir": "column",
+        "gap": 4,
+        "align": "center",
+        "pb": 16
+      }
+    },
+    "taglineHeading": {
+      "type": "text",
+      "parent": "tagline",
+      "order": 0,
+      "content": "Split it fair. Split it fast.",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "textAlign": "center"
+    },
+    "taglineBody": {
+      "type": "text",
+      "parent": "tagline",
+      "order": 1,
+      "content": "Enter your bill details below and we will calculate exactly who owes what.",
+      "typography": "body",
+      "color": "text-secondary",
+      "textAlign": "center"
+    },
+    "billSection": {
+      "type": "section",
+      "parent": "content",
+      "order": 1,
+      "title": "The Bill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "py": 24
+      }
+    },
+    "billCard": {
+      "type": "container",
+      "parent": "billSection",
+      "order": 0,
+      "width": "fill",
+      "background": "surface-elevated",
+      "shadow": "md",
+      "radius": 20,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "billTotal": {
+      "catalog": "input-currency",
+      "parent": "billCard",
+      "order": 0,
+      "label": "Bill Total",
+      "placeholder": "0.00",
+      "overrides": {
+        "typography": "heading-1",
+        "height": 72,
+        "border_color": "border-focus",
+        "border_width": 2
+      },
+      "helper": "Enter the subtotal before tax and tip"
+    },
+    "taxAmount": {
+      "catalog": "input-currency",
+      "parent": "billCard",
+      "order": 1,
+      "label": "Tax Amount",
+      "placeholder": "0.00"
+    },
+    "tipLabel": {
+      "type": "text",
+      "parent": "billCard",
+      "order": 2,
+      "content": "Tip %",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "tipControl": {
+      "catalog": "segmented-control",
+      "parent": "billCard",
+      "order": 3,
+      "options": [
+        { "label": "15%", "selected": false },
+        { "label": "18%", "selected": true },
+        { "label": "20%", "selected": false },
+        { "label": "25%", "selected": false },
+        { "label": "Custom", "selected": false }
+      ]
+    },
+    "customTipInput": {
+      "catalog": "input-text",
+      "parent": "billCard",
+      "order": 4,
+      "label": "Custom Tip %",
+      "placeholder": "Enter tip percentage"
+    },
+    "tipDisplay": {
+      "catalog": "display-readonly",
+      "parent": "billCard",
+      "order": 5,
+      "label": "Tip Amount",
+      "value": "$0.00"
+    },
+    "grandTotal": {
+      "catalog": "display-readonly",
+      "parent": "billCard",
+      "order": 6,
+      "label": "Grand Total",
+      "value": "$0.00",
+      "overrides": {
+        "typography": "heading-2",
+        "color": "success",
+        "background": "surface-elevated",
+        "border_color": "success",
+        "border_opacity": 0.3
+      }
+    },
+    "divider1": {
+      "type": "divider",
+      "parent": "content",
+      "order": 2
+    },
+    "peopleSection": {
+      "type": "section",
+      "parent": "content",
+      "order": 3,
+      "title": "The People",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "py": 24
+      }
+    },
+    "peopleCard": {
+      "type": "container",
+      "parent": "peopleSection",
+      "order": 0,
+      "width": "fill",
+      "background": "surface-elevated",
+      "shadow": "md",
+      "radius": 20,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "peopleStepper": {
+      "catalog": "stepper",
+      "parent": "peopleCard",
+      "order": 0,
+      "label": "Number of People",
+      "value": 2,
+      "overrides": {
+        "min": 2,
+        "max": 20,
+        "background": "surface-primary"
+      }
+    },
+    "splitToggle": {
+      "catalog": "segmented-control",
+      "parent": "peopleCard",
+      "order": 1,
+      "options": [
+        { "label": "Equal", "selected": true },
+        { "label": "Custom", "selected": false }
+      ]
+    },
+    "person1": {
+      "catalog": "input-text",
+      "parent": "peopleCard",
+      "order": 2,
+      "label": "Person 1",
+      "placeholder": "Enter name"
+    },
+    "person2": {
+      "catalog": "input-text",
+      "parent": "peopleCard",
+      "order": 3,
+      "label": "Person 2",
+      "placeholder": "Enter name"
+    },
+    "divider2": {
+      "type": "divider",
+      "parent": "content",
+      "order": 4
+    },
+    "ctaButton": {
+      "catalog": "button-primary",
+      "parent": "content",
+      "order": 5,
+      "label": "Calculate Split",
+      "overrides": {
+        "height": 56,
+        "radius": 28,
+        "shadow": "lg"
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@
  *
  * Skipped by default. Enable with:
  *   RUN_MCP_SPIKES=true npx jest --config packages/agents-ux/jest.config.cjs \
- *     --testPathPattern="__integration__/playwright" --verbose
+ *     --testPathPattern="__tests__/playwright" --verbose
  *
  * See docs/mcp-spike-setup.md for full setup instructions.
  */

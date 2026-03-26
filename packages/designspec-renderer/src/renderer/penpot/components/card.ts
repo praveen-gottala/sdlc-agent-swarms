@@ -25,7 +25,7 @@ export const renderCard: ComponentRenderer = (node, parentVar, ctx) => {
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? DEFAULT_CARD_HEIGHT;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 20;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'surface-primary';
@@ -45,7 +45,7 @@ export const renderCard: ComponentRenderer = (node, parentVar, ctx) => {
   }
 
   const hSizing = node.width === 'fill' || node.width === undefined ? 'fill' : 'fix';
-  emitAppendChild(b, parentVar, v, hSizing);
+  emitAppendChild(b, parentVar, v, hSizing, 'auto');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

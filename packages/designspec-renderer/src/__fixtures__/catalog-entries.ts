@@ -14,8 +14,9 @@ const INPUT_TEXT: CatalogEntry = {
   border_width: 1,
   text_typography: 'body',
   text_color: 'text-primary',
-  background: 'surface-primary',
+  background: 'surface-input',
   min_height: 44,
+  required_fields: ['label', 'placeholder'],
   library: {
     shadcn: { component: 'Input', import: '@/components/ui/input' },
   },
@@ -27,6 +28,7 @@ const INPUT_CURRENCY: CatalogEntry = {
   extends: 'input-text',
   variant: 'currency',
   prefix: '$',
+  required_fields: ['label', 'placeholder'],
 };
 
 /** Primary CTA button. */
@@ -41,6 +43,7 @@ const BUTTON_PRIMARY: CatalogEntry = {
   text_weight: 600,
   width: 'fill',
   shadow: 'none',
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Button', import: '@/components/ui/button', props: { variant: 'default' } },
   },
@@ -59,6 +62,7 @@ const BUTTON_SECONDARY: CatalogEntry = {
   border_color: 'border-default',
   border_width: 1,
   shadow: 'none',
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Button', import: '@/components/ui/button', props: { variant: 'outline' } },
   },
@@ -75,6 +79,7 @@ const BUTTON_GHOST: CatalogEntry = {
   text_typography: 'body',
   text_weight: 500,
   shadow: 'none',
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Button', import: '@/components/ui/button', props: { variant: 'ghost' } },
   },
@@ -97,6 +102,7 @@ const SEGMENTED_CONTROL: CatalogEntry = {
   unselected_text: 'text-primary',
   unselected_weight: 400,
   text_size: 14,
+  required_fields: ['options'],
   library: {
     shadcn: { component: 'Tabs', import: '@/components/ui/tabs' },
   },
@@ -118,6 +124,7 @@ const STEPPER: CatalogEntry = {
   plus_text_color: 'text-on-cta',
   count_typography: 'heading-2',
   count_color: 'text-primary',
+  required_fields: ['label', 'value'],
   library: {
     shadcn: { component: 'div', note: 'Custom composition' },
   },
@@ -132,6 +139,7 @@ const DISPLAY_READONLY: CatalogEntry = {
   height: 48,
   radius: 8,
   padding_x: 16,
+  required_fields: ['label', 'value'],
   library: {
     shadcn: { component: 'div', note: 'Display-only' },
   },
@@ -144,6 +152,7 @@ const CARD: CatalogEntry = {
   shadow: 'sm',
   radius: 20,
   padding: 24,
+  required_fields: [],
   library: {
     shadcn: { component: 'Card', import: '@/components/ui/card' },
   },
@@ -158,6 +167,7 @@ const BADGE: CatalogEntry = {
   padding_y: 2,
   text_size: 11,
   text_weight: 500,
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Badge', import: '@/components/ui/badge' },
   },
@@ -171,6 +181,7 @@ const STAT: CatalogEntry = {
   radius: 20,
   padding_x: 24,
   padding_y: 20,
+  required_fields: ['label', 'value'],
   library: {
     shadcn: { component: 'Card', import: '@/components/ui/card', note: 'Stat is a styled Card' },
   },
@@ -184,6 +195,7 @@ const AVATAR: CatalogEntry = {
   bg_opacity: 0.12,
   text_size: 14,
   text_weight: 700,
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Avatar', import: '@/components/ui/avatar' },
   },
@@ -199,6 +211,7 @@ const TOOLTIP: CatalogEntry = {
   icon_size: 16,
   text_size: 11,
   text_color: 'text-primary',
+  required_fields: ['content'],
   library: {
     shadcn: { component: 'Alert', import: '@/components/ui/alert' },
   },
@@ -213,6 +226,7 @@ const CHECKBOX: CatalogEntry = {
   box_checked_bg: 'cta-primary',
   check_color: 'text-on-cta',
   min_height: 44,
+  required_fields: ['label'],
   library: {
     shadcn: { component: 'Checkbox', import: '@/components/ui/checkbox' },
   },
@@ -225,6 +239,7 @@ const SELECT: CatalogEntry = {
   variant: 'select',
   chevron_color: 'text-secondary',
   chevron_size: 12,
+  required_fields: ['label', 'placeholder'],
   library: {
     shadcn: { component: 'Select', import: '@/components/ui/select' },
   },

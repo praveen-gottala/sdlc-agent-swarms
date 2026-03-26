@@ -21,7 +21,7 @@ export const renderSegmentedControl: ComponentRenderer = (node, parentVar, ctx) 
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? (cat?.height as number | undefined) ?? 48;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 24;
   const innerRadius = (cat?.inner_radius as number | undefined) ?? 20;
@@ -43,7 +43,7 @@ export const renderSegmentedControl: ComponentRenderer = (node, parentVar, ctx) 
 
   // Outer container
   emitBoard(b, v, node.id, width, height, containerBg);
-  emitFlex(b, v, 'row', { align: 'center', gap: 0, px: pad, py: pad });
+  emitFlex(b, v, 'row', { align: 'center', gap: 2, px: pad, py: pad });
   emitRadius(b, v, radius);
 
   if (containerBorderColor) {
@@ -76,7 +76,7 @@ export const renderSegmentedControl: ComponentRenderer = (node, parentVar, ctx) 
     emitAppendChild(b, v, pv, 'fill');
   }
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

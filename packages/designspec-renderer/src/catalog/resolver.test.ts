@@ -1,12 +1,10 @@
 import { resolveNode } from './resolver.js';
 import { V2_BUILTIN_CATALOG } from '../__fixtures__/catalog-entries.js';
-import type { DesignSpecV2, NodeSpec } from '../types/design-spec-v2.js';
+import { loadFixture } from '../__fixtures__/load-fixture.js';
+import type { NodeSpec } from '../types/design-spec-v2.js';
 import type { CatalogEntry, CatalogMap } from '../types/catalog.js';
-import * as fs from 'fs';
-import * as path from 'path';
 
-const fixturePath = path.resolve(__dirname, '../../__tests__/fixtures/settings-form.json');
-const settingsForm: DesignSpecV2 = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'));
+const { spec: settingsForm } = loadFixture('settings-form');
 
 describe('resolveNode', () => {
   describe('accelerator nodes', () => {
@@ -80,7 +78,7 @@ describe('resolveNode', () => {
       expect(resolved.height).toBe(48);
       expect(resolved.border_color).toBe('border-default');
       expect(resolved.typography).toBe('body');
-      expect(resolved.background).toBe('surface-primary');
+      expect(resolved.background).toBe('surface-input');
       expect(resolved.radius).toBe(12);
     });
   });
@@ -124,7 +122,7 @@ describe('resolveNode', () => {
 
       expect(resolved.resolved).toBe(true);
       expect(resolved.catalogEntry).toBeDefined();
-      expect(resolved.background).toBe('surface-primary');
+      expect(resolved.background).toBe('surface-input');
       expect(resolved.radius).toBe(12);
       expect((resolved.catalogEntry as Record<string, unknown>).extends).toBeUndefined();
     });

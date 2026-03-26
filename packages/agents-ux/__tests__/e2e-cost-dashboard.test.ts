@@ -8,7 +8,7 @@
  * Skipped by default. Enable with:
  *   RUN_E2E_PROOF=true ANTHROPIC_API_KEY=sk-ant-... npx jest \
  *     --config packages/agents-ux/jest.config.cjs \
- *     --testPathPattern="__integration__/e2e-cost-dashboard" \
+ *     --testPathPattern="__tests__/e2e-cost-dashboard" \
  *     --verbose --testTimeout=600000
  *
  * Estimated cost: ~$1-3 in API tokens per full run.
@@ -18,7 +18,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { resolve } from 'node:path';
 
 // Load .env from repo root before reading env vars
-dotenvConfig({ path: resolve(__dirname, '../../../../.env') });
+dotenvConfig({ path: resolve(__dirname, '../../../.env') });
 
 import type {
   AgentContext,
@@ -41,14 +41,14 @@ import type {
   UXReviewOutput,
   UXTestingInput,
   UXTestingOutput,
-} from '../index.js';
+} from '../src/index.js';
 import {
   uxResearchWork,
   uxPlanningWork,
   uxImplementationWork,
   uxReviewWork,
   uxTestingWork,
-} from '../index.js';
+} from '../src/index.js';
 
 // ============================================================================
 // Environment gate

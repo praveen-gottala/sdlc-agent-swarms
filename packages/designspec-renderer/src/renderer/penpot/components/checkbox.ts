@@ -22,7 +22,7 @@ export const renderCheckbox: ComponentRenderer = (node, parentVar, ctx) => {
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const minHeight = (cat?.min_height as number | undefined) ?? 44;
   const boxSize = (cat?.box_size as number | undefined) ?? 16;
   const boxRadius = (cat?.box_radius as number | undefined) ?? 4;
@@ -56,7 +56,7 @@ export const renderCheckbox: ComponentRenderer = (node, parentVar, ctx) => {
   b.line(`${tv}.name = '${node.id}_label';`);
   emitAppendChild(b, v, tv, 'fill');
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

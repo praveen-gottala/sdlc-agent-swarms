@@ -21,7 +21,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { resolve } from 'node:path';
 
 // Load .env from repo root before reading env vars
-dotenvConfig({ path: resolve(__dirname, '../../../../.env') });
+dotenvConfig({ path: resolve(__dirname, '../../../.env') });
 
 import type {
   AgentContext,
@@ -39,12 +39,12 @@ import type {
   UXResearchOutput,
   UXPlanningInput,
   UXPlanningOutput,
-} from '../index.js';
+} from '../src/index.js';
 import {
   uxResearchWork,
   uxPlanningWork,
   buildDesignSystemContextFromSpec,
-} from '../index.js';
+} from '../src/index.js';
 
 // ============================================================================
 // Environment gate

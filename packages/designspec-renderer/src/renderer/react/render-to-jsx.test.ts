@@ -3,20 +3,14 @@
  * Integration tests for the React/JSX renderer.
  * Mirrors the Penpot render-to-script.test.ts structure.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { renderToJSX } from './index.js';
 import { SAMPLE_TOKENS } from '../../__fixtures__/design-tokens.js';
 import { V2_BUILTIN_CATALOG } from '../../__fixtures__/catalog-entries.js';
+import { loadFixture } from '../../__fixtures__/load-fixture.js';
 import type { DesignSpecV2 } from '../../types/design-spec-v2.js';
 
-const settingsForm: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../../../__tests__/fixtures/settings-form.json'), 'utf-8'),
-);
-
-const dashboardDetail: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../../../__tests__/fixtures/dashboard-detail.json'), 'utf-8'),
-);
+const { spec: settingsForm } = loadFixture('settings-form');
+const { spec: dashboardDetail } = loadFixture('dashboard-detail');
 
 /* ------------------------------------------------------------------ */
 /*  Settings-form integration tests (21 nodes)                        */

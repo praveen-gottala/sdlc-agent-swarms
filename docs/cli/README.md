@@ -29,6 +29,7 @@ Create and iterate on designs through the UX agent pipeline.
 |---------|-------------|
 | `agentforge design <description>` | Request a code-first design |
 | `agentforge design:figma <description>` | Create a Figma design via Research/Planning/Design pipeline |
+| `agentforge design:penpot <description>` | Create a Penpot design via Research/Planning/Design pipeline |
 | `agentforge design:collaborate --module <id>` | Resume an existing design for human-agent collaboration |
 
 ### [Orchestration](./orchestration.md)

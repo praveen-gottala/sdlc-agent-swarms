@@ -2,6 +2,9 @@
  * Sample design tokens — test fixture.
  * Generic tokens for renderer tests; not tied to any specific app.
  * The renderer is project-agnostic; only this fixture provides concrete values.
+ *
+ * Source: split-easy/agentforge/spec/design-tokens.yaml
+ * Keep in sync — these must match the real project tokens.
  */
 import type { RendererTokens } from '../types/tokens.js';
 
@@ -14,6 +17,7 @@ export const SAMPLE_TOKENS: RendererTokens = {
       'warm-gray': '#444441',
       'soft-white': '#FAFAF8',
       'warm-gray-light': '#9C9C97',
+      'white': '#FFFFFF',
     },
     semantic: {
       'background-primary': 'warm-cream',
@@ -34,6 +38,7 @@ export const SAMPLE_TOKENS: RendererTokens = {
       'info': 'deep-teal',
       'overlay': 'rgba(0,0,0,0.5)',
       'surface-secondary': 'soft-white',
+      'surface-input': 'white',
     },
   },
   typography: {
@@ -102,5 +107,7 @@ export const SAMPLE_RESOLVED_COLORS: Record<string, string> = {
   'warning': '#E8593C',
   'info': '#0F6E56',
   'surface-secondary': '#FAFAF8',
+  'surface-input': '#FFFFFF',
   'overlay': 'rgba(0,0,0,0.5)',
+  'white': '#FFFFFF',
 };

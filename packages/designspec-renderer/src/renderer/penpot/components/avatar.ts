@@ -47,7 +47,7 @@ export const renderAvatar: ComponentRenderer = (node, parentVar, ctx) => {
   b.line(`${tv}.name = '${node.id}_initials';`);
   emitAppendChild(b, v, tv, 'auto');
 
-  emitAppendChild(b, parentVar, v, 'auto');
+  emitAppendChild(b, parentVar, v, 'auto', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

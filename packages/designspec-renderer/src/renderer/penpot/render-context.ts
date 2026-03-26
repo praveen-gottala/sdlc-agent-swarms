@@ -17,8 +17,15 @@ export interface RenderContext {
   readonly tokens: RendererTokens;
   /** Component catalog. */
   readonly catalog: CatalogMap;
-  /** Screen width from the spec. */
+  /** Screen width from the spec (always the root page width, e.g. 1440). */
   readonly screenWidth: number;
+  /**
+   * Effective width for the current subtree. Starts at screenWidth, narrows
+   * when entering a container with an explicit numeric width (e.g. 600px
+   * content column). All descendants should use this instead of screenWidth
+   * for board resize widths and text wrap widths.
+   */
+  effectiveWidth: number;
   /** Counter for generating unique variable names. */
   nextVarId(): number;
   /** Track a variable name -> nodeId for the return map. */

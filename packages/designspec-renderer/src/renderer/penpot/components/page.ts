@@ -7,7 +7,7 @@ import { makeVar, emitBoard, emitFlex } from './shared.js';
 import { emitPluginData } from '../plugin-data.js';
 
 /** Default page height; auto-expands via flex layout. */
-const DEFAULT_PAGE_HEIGHT = 1200;
+const DEFAULT_PAGE_HEIGHT = 2000;
 
 /** Render a page node as a root board with column flex layout. */
 export const renderPage: ComponentRenderer = (node, _parentVar, ctx) => {

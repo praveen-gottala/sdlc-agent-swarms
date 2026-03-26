@@ -27,12 +27,12 @@ import {
   uxPlanningWork,
   uxDesignWork,
   buildDesignSystemContextFromSpec,
-} from '../index.js';
+} from '../src/index.js';
 import type {
   UXResearchInput,
   UXPlanningInput,
   UXDesignInput,
-} from '../index.js';
+} from '../src/index.js';
 
 // ============================================================================
 // Spy provider — captures prompts, returns canned LLM output

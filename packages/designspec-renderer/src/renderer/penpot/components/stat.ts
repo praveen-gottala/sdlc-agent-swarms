@@ -23,7 +23,7 @@ export const renderStat: ComponentRenderer = (node, parentVar, ctx) => {
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 20;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'surface-primary';
   const px = node.padding_x ?? (cat?.padding_x as number | undefined) ?? 24;
@@ -84,7 +84,7 @@ export const renderStat: ComponentRenderer = (node, parentVar, ctx) => {
     emitAppendChild(b, v, tv, 'fill');
   }
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

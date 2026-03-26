@@ -216,6 +216,7 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 ### Shape creation
 - Use `penpot.createBoard()` for ALL shapes — containers, dividers, spacers, buttons, badges, everything. Boards support flex layout.
 - Use `penpot.createText(content)` for text only. Content goes in the constructor, NOT `shape.text = ...`.
+- **NEVER** pass empty string `""` to `penpot.createText()` — it returns `undefined`. Use `" "` (space) for empty/placeholder text fields.
 - **NEVER** use `createRectangle()`, `createEllipse()`, or other shape primitives — they don't support `layoutChild` properties.
 
 ### Flex layout
@@ -238,6 +239,32 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 - Helper text opacity: `0.7`
 - Text > 18 chars: `growType = 'auto-height'` with `resize(wrapWidth, fontSize * 2.2)`
 - Every shape gets `setPluginData` calls for extraction (ds_id, ds_type/ds_catalog, ds_token_*)
+
+---
+
+## Penpot Text Objects Do NOT Support textAlign
+
+**Context:** `packages/designspec-renderer/src/renderer/penpot/` — Penpot script generation
+**Rule:** Penpot Text shapes are sealed objects — only pre-defined properties (`fontSize`, `fontWeight`, `fontFamily`, `fills`, `strokes`, `growType`) can be set. Setting `text.textAlign` throws `"Cannot add property textAlign, object is not extensible"`.
+**Why:** Text alignment in Penpot is available via the TextRange API (`text.getRange().align = 'center'`) but NOT via direct property assignment on the Text shape. The LLM-generated scripts and the renderer both used `textAlign` incorrectly, causing runtime errors on replay.
+**How to apply:**
+- For the Penpot renderer, use the parent container's flex alignment (`justifyContent: 'center'`, `alignItems: 'center'`) to achieve visual centering. This works for single-line text and short labels.
+- For multi-line paragraph centering, a future improvement could use the TextRange API, but this is not needed for the current renderer.
+- Keep the `textAlign` field on `NodeSpec` — it's still useful for the React renderer (which uses Tailwind `text-center` class). Only the Penpot renderer should ignore it.
+- When generating LLM prompts for Penpot scripts, explicitly instruct the model NOT to use `textAlign` on text shapes.
+
+---
+
+## Component Default Widths Should Use effectiveWidth
+
+**Context:** `packages/designspec-renderer/src/renderer/penpot/components/` — all Penpot component renderers
+**Rule:** Components inside containers should use `ctx.effectiveWidth` (the parent's constrained width) as their default width, not a hardcoded pixel value. The only exception is components with explicitly fixed dimensions (avatar circles, stepper buttons, icon containers) where the width IS the design intent.
+**Why:** The stepper rendered at 160px (hardcoded default) inside a 600px content column. The working design.js renders it at CONTENT_W (600px) with `justify: space-between`, placing label left and controls right. With a narrow hardcoded width, elements stack or clip. `effectiveWidth` tracks the parent container's constrained width and narrows as the tree descends (e.g., 1440 → 600 when entering a content column).
+**How to apply:**
+- Default width pattern: `typeof node.width === 'number' ? node.width : ctx.effectiveWidth`
+- Only use a hardcoded pixel default when the component has an inherently fixed size (avatar: 36px, stepper button: 40px, icon: 16px)
+- `ctx.effectiveWidth` is set automatically by the tree walker when entering a container with an explicit numeric width
+- `ctx.screenWidth` is reserved for truly full-width elements (page root, header bar)
 
 ---
 

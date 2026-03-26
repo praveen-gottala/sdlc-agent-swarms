@@ -31,7 +31,7 @@ export interface SegmentedOption {
 /**
  * A single node in the design spec.
  *
- * STRICT MODE BUDGET: 18 of 24 optional fields used.
+ * STRICT MODE BUDGET: 21 of 24 optional fields used.
  * Do NOT add fields without checking Anthropic's 24-optional-field limit.
  * Move new properties to catalog defaults or overrides instead.
  */
@@ -80,6 +80,12 @@ export interface NodeSpec {
   readonly weight?: number;
   /** Background color token reference. */
   readonly background?: string;
+  /** Shadow elevation reference (e.g., 'sm', 'md', 'lg'). */
+  readonly shadow?: string;
+  /** Border radius in pixels. */
+  readonly radius?: number;
+  /** Text alignment ('left', 'center', 'right'). */
+  readonly textAlign?: 'left' | 'center' | 'right';
 
   // Catalog overrides
   /** Arbitrary overrides applied on top of catalog defaults. */

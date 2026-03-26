@@ -37,7 +37,7 @@ export function renderButton(
     typeof node.width === 'number'
       ? node.width
       : node.width === 'fill' || cat?.width === 'fill'
-        ? ctx.screenWidth
+        ? ctx.effectiveWidth
         : 200;
   const height = node.height ?? (cat?.height as number | undefined) ?? 48;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'transparent';
@@ -79,7 +79,7 @@ export function renderButton(
 
   // Append button to parent
   const hSizing = node.width === 'fill' || cat?.width === 'fill' ? 'fill' : 'auto';
-  emitAppendChild(b, parentVar, v, hSizing);
+  emitAppendChild(b, parentVar, v, hSizing, 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

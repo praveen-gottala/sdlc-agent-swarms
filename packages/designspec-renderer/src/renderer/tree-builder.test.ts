@@ -1,16 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { buildTree } from './tree-builder.js';
-import type { DesignSpecV2 } from '../types/design-spec-v2.js';
+import { loadFixture } from '../__fixtures__/load-fixture.js';
 import type { TreeNode } from '../types/catalog.js';
 
-const settingsForm: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../../__tests__/fixtures/settings-form.json'), 'utf-8')
-);
-
-const dashboardDetail: DesignSpecV2 = JSON.parse(
-  readFileSync(join(__dirname, '../../__tests__/fixtures/dashboard-detail.json'), 'utf-8')
-);
+const { spec: settingsForm } = loadFixture('settings-form');
+const { spec: dashboardDetail } = loadFixture('dashboard-detail');
 
 describe('buildTree — settings-form fixture', () => {
   const tree = buildTree(settingsForm.nodes);

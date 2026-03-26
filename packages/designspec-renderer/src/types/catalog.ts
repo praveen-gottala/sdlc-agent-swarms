@@ -46,6 +46,10 @@ export interface CatalogEntry {
   readonly width?: number | 'fill';
   /** Library-specific metadata. */
   readonly library?: Readonly<Record<string, unknown>>;
+  /** Fields the node MUST provide for correct rendering. Missing = warning. */
+  readonly required_fields?: readonly string[];
+  /** Fields the node SHOULD provide for best results. Missing = no warning. */
+  readonly recommended_fields?: readonly string[];
   /** Allow additional flat properties. */
   readonly [key: string]: unknown;
 }
@@ -121,6 +125,8 @@ export interface ResolvedNode {
   readonly padding_x?: number;
   /** Vertical padding in pixels. */
   readonly padding_y?: number;
+  /** Text alignment. */
+  readonly textAlign?: 'left' | 'center' | 'right';
 
   // Overrides passthrough
   /** Arbitrary overrides that were applied. */
@@ -172,6 +178,12 @@ export interface TreeNode {
   readonly weight?: number;
   /** Background color token reference. */
   readonly background?: string;
+  /** Shadow elevation reference. */
+  readonly shadow?: string;
+  /** Border radius in pixels. */
+  readonly radius?: number;
+  /** Text alignment. */
+  readonly textAlign?: 'left' | 'center' | 'right';
   /** Arbitrary overrides. */
   readonly overrides?: Readonly<Record<string, unknown>>;
   /** Data items for list/repeater components. */

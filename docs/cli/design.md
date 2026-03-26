@@ -285,6 +285,7 @@ agentforge design:penpot <description> [options]
 | `--no-wait` | Exit immediately after design without entering the feedback loop |
 | `--implement` | Skip feedback loop and generate React + Tailwind code directly after design |
 | `--mock` | Use mock MCP (skip design tool connection, useful for testing LLM stages) |
+| `--project-dir <dir>` | Project directory for artifact path resolution (default: current directory) |
 
 ### Stages
 
@@ -350,6 +351,9 @@ agentforge design:penpot "cost dashboard" --stage connect --module cost-dashboar
 
 # Skip feedback loop (CI/automation)
 agentforge design:penpot "cost dashboard" --no-wait
+
+# Run from repo root, resolving artifacts in a subdirectory project
+agentforge design:penpot "bill entry" --stage replay --project-dir split-easy
 ```
 
 ### Architecture

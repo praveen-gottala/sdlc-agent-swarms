@@ -22,7 +22,7 @@ export const renderTooltip: ComponentRenderer = (node, parentVar, ctx) => {
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? (cat?.height as number | undefined) ?? 40;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 8;
   const px = node.padding_x ?? (cat?.padding_x as number | undefined) ?? 16;
@@ -60,7 +60,7 @@ export const renderTooltip: ComponentRenderer = (node, parentVar, ctx) => {
   b.line(`${tv}.name = '${node.id}_text';`);
   emitAppendChild(b, v, tv, 'fill');
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

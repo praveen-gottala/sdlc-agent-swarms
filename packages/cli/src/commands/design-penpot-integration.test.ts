@@ -636,6 +636,127 @@ describe('design:penpot integration — --implement flag', () => {
 });
 
 // ============================================================================
+// --project-dir integration tests
+// ============================================================================
+
+describe('design:penpot integration — --project-dir option', () => {
+  let repoRoot: string;
+  let projectDir: string;
+  const originalEnv = { ...process.env };
+
+  beforeAll(() => {
+    // repoRoot simulates the repo where CLI is invoked from
+    repoRoot = mkdtempSync(join(tmpdir(), 'agentforge-penpot-projdir-repo-'));
+
+    // projectDir is a subdirectory simulating a separate project
+    projectDir = join(repoRoot, 'my-project');
+    mkdirSync(projectDir, { recursive: true });
+
+    // Set up the project dir with agentforge.yaml, PRD, tokens, brand
+    writeFileSync(join(projectDir, 'agentforge.yaml'), 'version: 1\n');
+    mkdirSync(join(projectDir, 'docs'), { recursive: true });
+    writeFileSync(join(projectDir, 'docs', 'prd.md'), '# ProjectDir App\n\nApp in a subdirectory.\n');
+    mkdirSync(join(projectDir, 'agentforge', 'spec'), { recursive: true });
+    writeFileSync(join(projectDir, 'agentforge', 'spec', 'design-tokens.yaml'), yamlStringify(VALID_TOKENS));
+    writeFileSync(join(projectDir, 'agentforge', 'spec', 'brand.yaml'), yamlStringify(VALID_BRAND));
+
+    // Pre-create cached artifacts so --stage replay works
+    const previewDir = join(projectDir, '.agentforge', 'previews', 'projdir-test');
+    mkdirSync(previewDir, { recursive: true });
+    writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({ briefId: 'b1', moduleId: 'projdir-test' }));
+    writeFileSync(join(previewDir, 'planning-spec.json'), JSON.stringify({
+      specRef: 'spec-1', moduleId: 'projdir-test', componentTree: [], tokenBindings: {},
+    }));
+    writeFileSync(join(previewDir, 'penpot-design.json'), JSON.stringify({
+      penpotProjectId: 'proj-pd', penpotPageId: 'page-1',
+      penpotNodeIds: { Card: 'n1' }, moduleId: 'projdir-test', breakpoints: [],
+      script: 'return { rootId: "root-1", nodeIds: { Card: "new-1" } };',
+    }));
+  });
+
+  afterAll(() => {
+    rmSync(repoRoot, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
+    // cwd is the repo root, NOT the project dir
+    jest.spyOn(process, 'cwd').mockReturnValue(repoRoot);
+    process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    process.env = { ...originalEnv };
+    process.exitCode = undefined;
+  });
+
+  it('resolves artifacts from --project-dir instead of cwd', async () => {
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        runPenpotPreflight: jest.fn().mockResolvedValue({
+          ok: false, error: { code: 'MCP_UNAVAILABLE', message: 'mock', recoverable: true },
+        }),
+        loadPenpotSession: jest.fn().mockReturnValue({
+          ok: false, error: { code: 'INVALID_STATE', message: 'no session', recoverable: false },
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    // Run with --project-dir pointing to the subdirectory
+    await designPenpotCommand('projdir test', out, {
+      stage: 'replay',
+      module: 'projdir-test',
+      mock: true,
+      projectDir: 'my-project',
+    });
+
+    // Should find the cached artifacts in my-project/.agentforge/previews/
+    expect(out.output).toContain('replaying cached script');
+    expect(out.output).toContain('REPLAY COMPLETE');
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('loads PRD and tokens from --project-dir', async () => {
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('home', out, {
+      noWait: true,
+      mock: true,
+      projectDir: 'my-project',
+    });
+
+    expect(out.output).toContain('PRD loaded from docs/prd.md');
+    expect(out.output).toContain('Design tokens loaded');
+    expect(out.output).toContain('Brand spec loaded');
+  });
+
+  it('fails gracefully when --project-dir has no agentforge.yaml', async () => {
+    // Create an empty subdirectory with no project files
+    const emptyDir = join(repoRoot, 'empty-project');
+    mkdirSync(emptyDir, { recursive: true });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('home', out, {
+      noWait: true,
+      mock: true,
+      projectDir: 'empty-project',
+    });
+
+    // Should warn about missing design system (no tokens/brand found)
+    expect(out.output).toContain('No design system found');
+  });
+});
+
+// ============================================================================
 // Viewport config integration tests
 // ============================================================================
 

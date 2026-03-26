@@ -17,7 +17,7 @@ export const renderSpacer: ComponentRenderer = (node, parentVar, ctx) => {
   const height = node.height ?? DEFAULT_SPACER_HEIGHT;
 
   b.comment(`Spacer: ${node.id}`);
-  emitBoard(b, v, node.id, ctx.screenWidth, height, 'transparent');
+  emitBoard(b, v, node.id, ctx.effectiveWidth, height, 'transparent');
 
   emitAppendChild(b, parentVar, v, 'fill', 'fix');
   emitPluginData(b, v, node);

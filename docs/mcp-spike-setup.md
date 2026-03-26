@@ -26,7 +26,7 @@ RUN_MCP_SPIKES=true \
   AGENTFORGE_MCP_FIGMA_TOKEN=figd_xxx \
   AGENTFORGE_MCP_FIGMA_FILE_ID=abc123 \
   npx jest --config packages/agents-ux/jest.config.cjs \
-    --testPathPattern="__integration__/figma" \
+    --testPathPattern="__tests__/figma" \
     --verbose
 ```
 
@@ -34,7 +34,7 @@ Without `RUN_MCP_SPIKES=true`, all spike tests skip automatically:
 
 ```bash
 npx jest --config packages/agents-ux/jest.config.cjs \
-  --testPathPattern="__integration__/figma" --verbose
+  --testPathPattern="__tests__/figma" --verbose
 # Output: all "Figma MCP Spike" tests show as skipped
 ```
 
@@ -140,7 +140,7 @@ RUN_MCP_SPIKES=true \
   AGENTFORGE_MCP_FIGMA_TOKEN=figd_xxx \
   AGENTFORGE_MCP_FIGMA_FILE_ID=abc123 \
   npx jest --config packages/agents-ux/jest.config.cjs \
-    --testPathPattern="__integration__/talk-to-figma" \
+    --testPathPattern="__tests__/talk-to-figma" \
     --verbose
 ```
 
@@ -188,7 +188,7 @@ No additional tokens needed — Playwright runs a local browser against a static
 # From repo root
 RUN_MCP_SPIKES=true \
   npx jest --config packages/agents-ux/jest.config.cjs \
-    --testPathPattern="__integration__/playwright" \
+    --testPathPattern="__tests__/playwright" \
     --verbose
 ```
 
@@ -196,7 +196,7 @@ Without `RUN_MCP_SPIKES=true`, all spike tests skip automatically:
 
 ```bash
 npx jest --config packages/agents-ux/jest.config.cjs \
-  --testPathPattern="__integration__/playwright" --verbose
+  --testPathPattern="__tests__/playwright" --verbose
 # Output: all "Playwright MCP Spike" tests show as skipped
 ```
 

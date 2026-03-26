@@ -23,7 +23,7 @@ export const renderText: ComponentRenderer = (node, parentVar, ctx) => {
 
   // Determine wrap width from node width or screen
   const wrapWidth =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
 
   b.comment(`Text: ${node.id}`);
   b.line(
@@ -31,7 +31,15 @@ export const renderText: ComponentRenderer = (node, parentVar, ctx) => {
   );
   b.line(`${v}.name = '${node.id}';`);
 
-  emitAppendChild(b, parentVar, v, 'fill');
+  // NOTE: Penpot text shapes are sealed objects — textAlign is NOT a valid
+  // property (throws "Cannot add property textAlign, object is not extensible").
+  // Text centering in Penpot is handled by the parent container's flex alignment.
+  // The textAlign field on NodeSpec is preserved for the React renderer (Tailwind).
+
+  // Text nodes use 'auto' horizontalSizing — they should never stretch beyond
+  // their natural content width. In row layouts, 'fill' would cause competing
+  // children to split space and clip text (e.g., logo "SplitEa" truncated).
+  emitAppendChild(b, parentVar, v, 'auto', 'auto');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

@@ -793,6 +793,7 @@ shared utilities.
 │    --no-wait     (exit after design, skip feedback)                  │
 │    --implement   (skip feedback, generate code directly)             │
 │    --mock        (use mock MCP client)                               │
+│    --project-dir (resolve paths against this dir, not cwd)           │
 │                                                                      │
 │  Execution Flow:                                                     │
 │                                                                      │

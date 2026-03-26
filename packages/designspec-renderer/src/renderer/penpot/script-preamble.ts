@@ -32,7 +32,9 @@ export function emitMakeTextHelper(builder: ScriptBuilder): void {
   builder.comment('Text creation helper \u2014 handles sizing, weight, color, and auto-height');
   builder.line('function makeText(content, fontSize, fontWeight, fillColor, opacity, wrapWidth) {');
   builder.indent();
-  builder.line('const t = penpot.createText(String(content));');
+  builder.comment('penpot.createText("") returns undefined — use a space for empty content');
+  builder.line("const textContent = String(content) || ' ';");
+  builder.line('const t = penpot.createText(textContent);');
   builder.line('t.fontSize = fontSize;');
   builder.line("t.fontWeight = String(fontWeight);");
   builder.line('t.fills = [{ fillColor: fillColor, fillOpacity: opacity !== undefined ? opacity : 1 }];');

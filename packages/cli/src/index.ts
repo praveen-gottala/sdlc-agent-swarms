@@ -171,7 +171,8 @@ export function createProgram(): Command {
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
     .option('--mock', 'Use mock MCP (no design tool connection)')
-    .action(async (description: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
+    .option('--project-dir <dir>', 'Project directory for artifact path resolution (default: cwd)')
+    .action(async (description: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string }) => {
       await designPenpotCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
         module: options.module,
@@ -179,6 +180,7 @@ export function createProgram(): Command {
         noWait: options.wait === false,
         implement: options.implement,
         mock: options.mock,
+        projectDir: options.projectDir,
       });
     });
 

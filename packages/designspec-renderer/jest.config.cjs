@@ -1,6 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  testPathIgnorePatterns: ["/dist/", "/node_modules/"],
+  testPathIgnorePatterns: ["/dist/", "/node_modules/", "/__tests__/output/"],
   displayName: 'designspec-renderer',
   transform: {
     '^.+\\.ts$': ['@swc/jest'],

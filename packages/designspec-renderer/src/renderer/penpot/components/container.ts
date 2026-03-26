@@ -3,8 +3,9 @@
  * Renderer for the `container` accelerator type — a transparent flex wrapper.
  */
 import type { ComponentRenderer } from './types.js';
-import { makeVar, emitBoard, emitFlex, emitAppendChild, emitRadius } from './shared.js';
+import { makeVar, emitBoard, emitFlex, emitAppendChild, emitRadius, emitShadow } from './shared.js';
 import { emitPluginData } from '../plugin-data.js';
+import { resolveShadow } from '../../shadows.js';
 
 /** Default container height before flex children expand it. */
 const DEFAULT_CONTAINER_HEIGHT = 100;
@@ -17,7 +18,7 @@ export const renderContainer: ComponentRenderer = (node, parentVar, ctx) => {
   const width =
     typeof node.width === 'number'
       ? node.width
-      : ctx.screenWidth;
+      : ctx.effectiveWidth;
   const height = node.height ?? DEFAULT_CONTAINER_HEIGHT;
 
   b.comment(`Container: ${node.id}`);
@@ -41,8 +42,13 @@ export const renderContainer: ComponentRenderer = (node, parentVar, ctx) => {
     emitRadius(b, v, node.radius);
   }
 
+  if (node.shadow && node.shadow !== 'none') {
+    const shadowCss = resolveShadow(node.shadow, ctx.tokens);
+    emitShadow(b, v, shadowCss);
+  }
+
   const hSizing = node.width === 'fill' || node.width === undefined ? 'fill' : 'fix';
-  emitAppendChild(b, parentVar, v, hSizing);
+  emitAppendChild(b, parentVar, v, hSizing, 'auto');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

@@ -62,7 +62,8 @@ describe('script-preamble', () => {
       emitMakeTextHelper(sb);
       const output = sb.build();
       expect(output).toContain('function makeText(content, fontSize, fontWeight, fillColor, opacity, wrapWidth)');
-      expect(output).toContain('penpot.createText(String(content))');
+      expect(output).toContain("String(content) || ' '");
+      expect(output).toContain('penpot.createText(textContent)');
       expect(output).toContain('t.fontSize = fontSize;');
       expect(output).toContain('return t;');
     });

@@ -37,7 +37,7 @@ export function renderInputField(
   const cat = node.catalogEntry;
 
   const width =
-    typeof node.width === 'number' ? node.width : ctx.screenWidth;
+    typeof node.width === 'number' ? node.width : ctx.effectiveWidth;
   const height = node.height ?? (cat?.height as number | undefined) ?? 48;
   const radius = node.radius ?? (cat?.radius as number | undefined) ?? 12;
   const bg = node.background ?? (cat?.background as string | undefined) ?? 'surface-primary';
@@ -126,8 +126,8 @@ export function renderInputField(
     emitAppendChild(b, v, hv, 'fill');
   }
 
-  // Append to parent
-  emitAppendChild(b, parentVar, v, 'fill');
+  // Append to parent — 'auto' so outer wrapper grows to fit label + box + helper
+  emitAppendChild(b, parentVar, v, 'fill', 'auto');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);
   b.blank();

@@ -23,7 +23,8 @@ export const renderText: ReactComponentRenderer = (node, _ctx, _renderChildren) 
   const tag = tagForRole(node.typography);
   const typo = typographyClasses(node.typography, _ctx.tokens, node.weight);
   const color = resolveColorToClass(node.color, 'text');
-  const classes = cn(typo, color);
+  const align = node.textAlign ? `text-${node.textAlign}` : undefined;
+  const classes = cn(typo, color, align);
   const content = node.content ?? node.label ?? '';
 
   if (classes) {

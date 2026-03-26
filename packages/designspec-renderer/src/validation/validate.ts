@@ -18,6 +18,7 @@ import type { ValidationResult, ValidationIssue } from '../types/validation.js';
  * 5. Each node has type XOR catalog (both = warning, neither = error)
  * 6. Interactive nodes meet 44px min touch target (warning)
  * 7. No sibling order gaps within parent groups (warning)
+ * 8. Catalog nodes have all required_fields present (warning)
  */
 export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap): ValidationResult {
   const issues: ValidationIssue[] = [];
@@ -142,6 +143,28 @@ export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap): Val
           message: `Children of "${parentId}" have order gaps — expected 0..${sorted.length - 1}, got ${sorted.map(s => s.order).join(',')}`,
         });
         break; // One warning per parent group is enough
+      }
+    }
+  }
+
+  // Rule 8: Catalog nodes have all required_fields
+  for (const [id, node] of Object.entries(nodes)) {
+    if (node.catalog && node.catalog in catalog) {
+      const entry = catalog[node.catalog];
+      const requiredFields = entry.required_fields;
+      if (requiredFields) {
+        for (const field of requiredFields) {
+          const hasField = (node as unknown as Record<string, unknown>)[field] !== undefined
+            || (node.overrides && field in node.overrides);
+          if (!hasField) {
+            issues.push({
+              severity: 'warning',
+              rule: 'required-fields',
+              message: `Node "${id}" (${node.catalog}) is missing required field "${field}"`,
+              nodeId: id,
+            });
+          }
+        }
       }
     }
   }

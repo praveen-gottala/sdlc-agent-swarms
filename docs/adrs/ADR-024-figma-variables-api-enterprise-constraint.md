@@ -15,7 +15,7 @@ Section 20.2 (F7) — Figma MCP Tools:
 > UX agents declare `figma:get_variable_defs` for reading design token definitions.
 
 ## Context
-The Figma MCP spike test (packages/agents-ux/src/__integration__/figma-mcp-spike.test.ts)
+The Figma MCP spike test (packages/agents-ux/__tests__/figma-mcp-spike.test.ts)
 revealed that the Figma Variables REST API (`/v1/files/:id/variables/local`) returns
 **HTTP 403 Forbidden** on Professional-tier Figma accounts. This endpoint is restricted
 to **Enterprise** plans only.

@@ -86,6 +86,8 @@ interface DesignPenpotOptions {
   readonly implement?: boolean;
   /** Use mock MCP client (no design tool connection required). */
   readonly mock?: boolean;
+  /** Project directory for artifact path resolution (default: cwd). */
+  readonly projectDir?: string;
 }
 
 // ============================================================================
@@ -104,9 +106,9 @@ function deriveModuleId(description: string): string {
 }
 
 /** Create an agent context. */
-const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: PromptTrace[]) => ({
+const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: PromptTrace[], baseDir?: string) => ({
   taskId,
-  projectRoot: process.cwd(),
+  projectRoot: baseDir ?? process.cwd(),
   eventBus: createEventBus(),
   fs: createRealFs(),
   mcpClient,
@@ -117,8 +119,8 @@ const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: Prom
 });
 
 /** Ensure output directory exists and return path. */
-const ensureOutputDir = (moduleId: string): string => {
-  const dir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
+const ensureOutputDir = (moduleId: string, baseDir: string): string => {
+  const dir = resolve(baseDir, PREVIEW_DIR_REL, moduleId);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
@@ -185,7 +187,8 @@ export async function designPenpotCommand(
   const moduleId = options.module ?? deriveModuleId(description);
   const taskId = `task_design_penpot_${Date.now()}`;
   const skipToStage = options.stage;
-  const outputDir = ensureOutputDir(moduleId);
+  const baseDir = options.projectDir ? resolve(process.cwd(), options.projectDir) : process.cwd();
+  const outputDir = ensureOutputDir(moduleId, baseDir);
   const promptTraces: PromptTrace[] = [];
 
   output.write(infoMsg('='.repeat(60) + '\n'));
@@ -195,7 +198,7 @@ export async function designPenpotCommand(
   output.write(infoMsg('='.repeat(60) + '\n'));
 
   // Load .env file so ANTHROPIC_API_KEY is available
-  const projectRoot = findProjectRoot();
+  const projectRoot = findProjectRoot(baseDir);
   loadDotEnv(projectRoot);
 
   // Load project manifest for design config
@@ -273,7 +276,7 @@ export async function designPenpotCommand(
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
-    const context = createContext(taskId, createMockMCPClient(), promptTraces);
+    const context = createContext(taskId, createMockMCPClient(), promptTraces, baseDir);
 
     const prdRequirements: string[] = [description];
     if (prdContent) {
@@ -320,7 +323,7 @@ export async function designPenpotCommand(
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
-    const context = createContext(taskId, createMockMCPClient(), promptTraces);
+    const context = createContext(taskId, createMockMCPClient(), promptTraces, baseDir);
 
     const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
@@ -382,8 +385,16 @@ export async function designPenpotCommand(
     output.write(infoMsg('\n  [3/3] Design -- replaying cached script into Penpot...\n'));
     const t0 = Date.now();
 
+    // Guard: penpot.createText("") returns undefined — patch it to use a space
+    const createTextGuard = `
+var _origCreateText = penpot.createText.bind(penpot);
+penpot.createText = function(content) {
+  return _origCreateText(String(content) || ' ');
+};
+`;
     const wrappedScript = `
 try {
+  ${createTextGuard}
   ${cached.script}
 } catch (e) {
   return { __error: true, message: e.message || String(e), stack: e.stack };
@@ -494,7 +505,7 @@ try {
   const createImplementFn = (): ImplementCallback => {
     return async (design) => {
       const implProvider = createClaudeProvider(resolveCLIModel(), { apiKey });
-      const implContext = createContext(`${taskId}_impl`, mcpClient);
+      const implContext = createContext(`${taskId}_impl`, mcpClient, undefined, baseDir);
 
       const implInput: UXImplementationInput = {
         specRef: planningOutput.specRef,
@@ -520,7 +531,7 @@ try {
         return implResult as import('@agentforge/core').Result<never>;
       }
 
-      const targetDir = process.cwd();
+      const targetDir = baseDir;
       const writtenPaths = writeImplementationFiles(implResult.value.files, targetDir);
 
       return Ok({ files: implResult.value.files, writtenPaths });
@@ -542,7 +553,7 @@ try {
       // ── Post-implementation verification ──
       output.write(infoMsg('\n  [verify] Starting post-implementation verification...\n'));
       await verifyImplementation({
-        projectRoot: process.cwd(),
+        projectRoot: baseDir,
         moduleId,
         output,
         provider: provider as unknown as {
