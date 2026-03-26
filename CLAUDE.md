@@ -244,6 +244,51 @@ When adding a new agent role, update ALL of these:
 6. `packages/governance/src/hitl-enforcer.ts` — if role has HITL gates
 7. Tests: agent unit test + integration test in `packages/integration-tests/`
 
+### Design Pipeline Change Checklist (MANDATORY)
+`docs/design-pipeline-dataflow.md` is the **source of truth** for the end-to-end
+design pipeline architecture. When modifying ANY of the following, you MUST update
+the corresponding section in that document:
+
+1. **Stage 0 (init)** — wizard questions, manifest shape, design options generation,
+   component library/catalog logic, output files
+   - Files: `packages/cli/src/commands/init.ts`, `generate-design-options.ts`,
+     `design-system.ts`, `packages/core/src/catalogs/`
+2. **Stage 1 (design:generate)** — app spec generation (pages/models/api), LLM
+   prompts, output types, file writing
+   - Files: `packages/cli/src/commands/design-generate.ts`
+3. **Stage 2 (Research Agent)** — input/output types, LLM config, event wiring
+   - Files: `packages/agents-ux/src/ux-research/`
+4. **Stage 3 (Planning Agent)** — component tree, token bindings, validation loop,
+   responsive rules
+   - Files: `packages/agents-ux/src/ux-planning/`
+5. **Stage 4 (Design Agent / Penpot)** — 3-phase pipeline (LLM → Execute →
+   Self-correct), MCP tool usage, script generation
+   - Files: `packages/agents-ux/src/ux-design/ux-penpot-design.ts`
+6. **Stage 5 (Design Evaluator)** — evaluation dimensions, scoring, vision LLM config
+   - Files: `packages/agents-ux/src/ux-design/design-evaluator.ts`
+7. **Stage 6 (Feedback Loop)** — interactive commands, collaboration session,
+   Penpot/Figma adapters
+   - Files: `packages/agents-ux/src/ux-design/design-feedback-loop.ts`,
+     `penpot-collaboration.ts`, `design-collaboration.ts`
+8. **Stage 7 (Implementation Agent)** — input/output types, streaming config,
+   generated file structure
+   - Files: `packages/agents-ux/src/ux-implementation/`
+9. **CLI Orchestration** — `design:penpot` options, execution flow, caching
+   - Files: `packages/cli/src/commands/design-penpot.ts`
+10. **Cross-cutting** — event flow, LLM model/token/temp changes, budget/governance
+    changes, new file artifacts
+
+What to update:
+- ASCII diagrams if the flow changes
+- Input/output type tables if fields are added/removed
+- LLM usage table if model, tokens, or temperature change
+- File artifacts map if new files are generated or paths change
+- Event flow if events are added, renamed, or reordered
+- Budget/governance table if HITL policy or budget limits change
+
+A pipeline change without a doc update is **incomplete work** — treat it the same
+as a missing test.
+
 ## IMPORTANT
 - ALWAYS run typecheck after making changes across packages
 - NEVER modify packages/stacks/react-node-prisma/prompts/ without asking

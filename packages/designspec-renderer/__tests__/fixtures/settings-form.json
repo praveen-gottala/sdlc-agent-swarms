@@ -1,0 +1,160 @@
+{
+  "screen": "settings-form",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "type": "page",
+      "parent": null,
+      "order": 0,
+      "background": "background-primary",
+      "layout": { "dir": "column", "align": "center" }
+    },
+    "header": {
+      "type": "header",
+      "parent": "root",
+      "order": 0,
+      "background": "surface-elevated",
+      "height": 64,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 420 }
+    },
+    "logo": {
+      "type": "text",
+      "parent": "header",
+      "order": 0,
+      "content": "AppName",
+      "typography": "heading-3",
+      "color": "cta-primary",
+      "weight": 700
+    },
+    "navHint": {
+      "type": "text",
+      "parent": "header",
+      "order": 1,
+      "content": "Settings",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "content": {
+      "type": "container",
+      "parent": "root",
+      "order": 1,
+      "width": 600,
+      "layout": { "dir": "column", "gap": 0, "py": 32 }
+    },
+    "titleBlock": {
+      "type": "container",
+      "parent": "content",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 4, "pb": 16 }
+    },
+    "pageTitle": {
+      "type": "text",
+      "parent": "titleBlock",
+      "order": 0,
+      "content": "Account Settings",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "pageSubtitle": {
+      "type": "text",
+      "parent": "titleBlock",
+      "order": 1,
+      "content": "Manage your profile and preferences below.",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "profileSection": {
+      "type": "section",
+      "parent": "content",
+      "order": 1,
+      "title": "Profile",
+      "layout": { "dir": "column", "gap": 16, "py": 24 }
+    },
+    "nameInput": {
+      "catalog": "input-text",
+      "parent": "profileSection",
+      "order": 0,
+      "label": "Display Name",
+      "placeholder": "Enter your name"
+    },
+    "emailInput": {
+      "catalog": "input-text",
+      "parent": "profileSection",
+      "order": 1,
+      "label": "Email Address",
+      "placeholder": "you@example.com",
+      "overrides": { "typography": "heading-1", "height": 72, "border_color": "border-focus", "border_width": 2 }
+    },
+    "currencyInput": {
+      "catalog": "input-currency",
+      "parent": "profileSection",
+      "order": 2,
+      "label": "Monthly Budget",
+      "placeholder": "0.00"
+    },
+    "themeToggle": {
+      "catalog": "segmented-control",
+      "parent": "profileSection",
+      "order": 3,
+      "options": [
+        { "label": "Light", "selected": true },
+        { "label": "Dark", "selected": false },
+        { "label": "System", "selected": false }
+      ]
+    },
+    "statusDisplay": {
+      "catalog": "display-readonly",
+      "parent": "profileSection",
+      "order": 4,
+      "label": "Account Status",
+      "value": "Active"
+    },
+    "divider1": {
+      "type": "divider",
+      "parent": "content",
+      "order": 2
+    },
+    "prefsSection": {
+      "type": "section",
+      "parent": "content",
+      "order": 3,
+      "title": "Preferences",
+      "layout": { "dir": "column", "gap": 16, "py": 24 }
+    },
+    "fontSizeStepper": {
+      "catalog": "stepper",
+      "parent": "prefsSection",
+      "order": 0,
+      "label": "Font Size",
+      "value": 14,
+      "overrides": { "min": 10, "max": 24 }
+    },
+    "langToggle": {
+      "catalog": "segmented-control",
+      "parent": "prefsSection",
+      "order": 1,
+      "options": [
+        { "label": "English", "selected": true },
+        { "label": "Spanish", "selected": false }
+      ]
+    },
+    "divider2": {
+      "type": "divider",
+      "parent": "content",
+      "order": 4
+    },
+    "spacer1": {
+      "type": "spacer",
+      "parent": "content",
+      "order": 5,
+      "height": 16
+    },
+    "saveButton": {
+      "catalog": "button-primary",
+      "parent": "content",
+      "order": 6,
+      "label": "Save Changes",
+      "overrides": { "height": 56, "radius": 28, "shadow": "lg" }
+    }
+  }
+}

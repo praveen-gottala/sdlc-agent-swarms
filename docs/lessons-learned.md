@@ -151,3 +151,34 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 2. **If an interface dependency isn't needed yet, make it optional** — don't fill it with a fake.
 3. **A stub that returns "not found" is worse than a crash** — crashes get fixed immediately, silent degradation gets shipped.
 4. **When creating contexts/configs, use real implementations** — `createRealFs()`, not `createMockFs()`.
+
+---
+
+## Test Fixtures Must Be Generic, Not App-Specific
+
+**Context:** `packages/designspec-renderer` — DesignSpec v2 test fixtures
+**Rule:** Test fixtures in platform packages must be generic and self-documenting. Never use app-specific data (app names, domain-specific content, branding) as test fixtures in a platform-level package.
+**Why:** AgentForge is a generic SDLC platform that generates arbitrary applications. Fixtures tied to a specific app (e.g., "SplitEase", "bill-entry") create false coupling, confuse future contributors about the package's scope, and will need replacement when that app is removed.
+**How to apply:**
+- Use generic screen names: "settings-form", "dashboard-detail" — not "bill-entry", "split-breakdown"
+- Use generic content: "AppName", "Account Settings" — not app-specific branding
+- Use generic token names: `SAMPLE_TOKENS` — not `SPLITEASE_TOKENS`
+- Token *values* can come from real projects for realism, but naming must be generic
+
+---
+
+## Override Key Naming: Check Both Aliases
+
+**Context:** `packages/designspec-renderer/src/catalog/resolver.ts` — `resolveNode()`
+**Rule:** When resolving overrides against catalog entries, check BOTH the node-level key name AND the catalog-level key name. Users write `overrides: { weight: 500 }` (node convention) but the catalog stores `text_weight: 600` (catalog convention).
+**Why:** The resolver initially only checked `overrides.text_weight`, silently ignoring `overrides.weight`. This meant catalog components with `overrides: { weight: 500 }` would render with the catalog default weight instead.
+**How to apply:** For any property where the node schema uses one name and the catalog uses another, the resolution chain must be: `overrides.nodeKey ?? overrides.catalogKey ?? node.nodeKey ?? entry.catalogKey`.
+
+---
+
+## Fixture Token Values Must Match Real Source of Truth
+
+**Context:** `packages/designspec-renderer/src/__fixtures__/design-tokens.ts`
+**Rule:** When a test fixture mirrors real project data (e.g., design tokens), it must be verified against the actual source file. Never hand-write token values from memory or plan documents.
+**Why:** The initial fixture had wrong primitive names (e.g., `sage-green` instead of `deep-teal`), wrong typography weights (`heading-2: 600` instead of `700`), wrong shadow values, and wrong border radius values. All tests passed with wrong data — proving the tests validated code paths, not correctness.
+**How to apply:** Always read the actual source file (e.g., `agentforge/spec/design-tokens.yaml`) and copy values directly. When the fixture is generic, document which real project it was derived from for future updates.

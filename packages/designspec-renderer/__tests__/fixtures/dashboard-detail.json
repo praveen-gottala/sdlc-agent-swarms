@@ -1,0 +1,522 @@
+{
+  "screen": "dashboard-detail",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "type": "page",
+      "parent": null,
+      "order": 0,
+      "background": "background-primary",
+      "layout": { "dir": "column", "align": "start" }
+    },
+    "appHeader": {
+      "type": "header",
+      "parent": "root",
+      "order": 0,
+      "background": "surface-elevated",
+      "height": 64,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 24 }
+    },
+    "appLogo": {
+      "type": "text",
+      "parent": "appHeader",
+      "order": 0,
+      "content": "Dashboard",
+      "typography": "heading-3",
+      "color": "cta-primary",
+      "weight": 700
+    },
+    "headerNav": {
+      "type": "container",
+      "parent": "appHeader",
+      "order": 1,
+      "layout": { "dir": "row", "align": "center", "gap": 16 }
+    },
+    "navOverview": {
+      "type": "text",
+      "parent": "headerNav",
+      "order": 0,
+      "content": "Overview",
+      "typography": "body",
+      "color": "cta-primary",
+      "weight": 500
+    },
+    "navReports": {
+      "type": "text",
+      "parent": "headerNav",
+      "order": 1,
+      "content": "Reports",
+      "typography": "body",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "mainContent": {
+      "type": "container",
+      "parent": "root",
+      "order": 1,
+      "background": "background-primary",
+      "layout": { "dir": "column", "gap": 0, "px": 24, "pb": 80 }
+    },
+    "summaryHeader": {
+      "type": "container",
+      "parent": "mainContent",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 8, "py": 24 }
+    },
+    "summaryTopRow": {
+      "type": "container",
+      "parent": "summaryHeader",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "gap": 12 }
+    },
+    "summaryLabel": {
+      "type": "text",
+      "parent": "summaryTopRow",
+      "order": 0,
+      "content": "Project Summary",
+      "typography": "body",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "statusBadge": {
+      "catalog": "badge",
+      "parent": "summaryTopRow",
+      "order": 1,
+      "label": "Active",
+      "overrides": { "background": "cta-primary", "text_color": "text-on-cta", "radius": 14 }
+    },
+    "memberCount": {
+      "type": "text",
+      "parent": "summaryTopRow",
+      "order": 2,
+      "content": "4 members",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "totalRow": {
+      "type": "container",
+      "parent": "summaryHeader",
+      "order": 1,
+      "layout": { "dir": "row", "align": "end", "gap": 12 }
+    },
+    "totalLabel": {
+      "type": "text",
+      "parent": "totalRow",
+      "order": 0,
+      "content": "Total Budget",
+      "typography": "body",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "totalValue": {
+      "type": "text",
+      "parent": "totalRow",
+      "order": 1,
+      "content": "$24,500",
+      "typography": "heading-1",
+      "color": "text-primary"
+    },
+    "perMemberNote": {
+      "type": "text",
+      "parent": "totalRow",
+      "order": 2,
+      "content": "$6,125 per member",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "itemList": {
+      "type": "container",
+      "parent": "mainContent",
+      "order": 1,
+      "layout": { "dir": "column", "gap": 16, "pt": 8, "pb": 32 }
+    },
+    "card0": {
+      "catalog": "card",
+      "parent": "itemList",
+      "order": 0,
+      "overrides": { "radius": 20 }
+    },
+    "card0Header": {
+      "type": "container",
+      "parent": "card0",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card0NameCol": {
+      "type": "container",
+      "parent": "card0Header",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 4 }
+    },
+    "card0Name": {
+      "type": "text",
+      "parent": "card0NameCol",
+      "order": 0,
+      "content": "Design Phase",
+      "typography": "heading-3",
+      "color": "text-primary"
+    },
+    "card0Hint": {
+      "type": "text",
+      "parent": "card0NameCol",
+      "order": 1,
+      "content": "Click to expand details",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card0AmountCol": {
+      "type": "container",
+      "parent": "card0Header",
+      "order": 1,
+      "layout": { "dir": "column", "align": "end", "gap": 2 }
+    },
+    "card0StatusLabel": {
+      "type": "text",
+      "parent": "card0AmountCol",
+      "order": 0,
+      "content": "progress",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card0Value": {
+      "type": "text",
+      "parent": "card0AmountCol",
+      "order": 1,
+      "content": "75%",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "card0Action": {
+      "catalog": "button-primary",
+      "parent": "card0Header",
+      "order": 2,
+      "label": "View Details",
+      "overrides": { "width": 120, "height": 44, "radius": 12 }
+    },
+    "card0Divider": {
+      "type": "divider",
+      "parent": "card0",
+      "order": 1
+    },
+    "card0Details": {
+      "type": "container",
+      "parent": "card0",
+      "order": 2,
+      "layout": { "dir": "column", "gap": 10, "pt": 14 }
+    },
+    "card0Row1": {
+      "type": "container",
+      "parent": "card0Details",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card0Row1Label": {
+      "type": "text",
+      "parent": "card0Row1",
+      "order": 0,
+      "content": "Tasks completed",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "card0Row1Value": {
+      "type": "text",
+      "parent": "card0Row1",
+      "order": 1,
+      "content": "12 / 16",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "card0Row2": {
+      "type": "container",
+      "parent": "card0Details",
+      "order": 1,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card0Row2Label": {
+      "type": "text",
+      "parent": "card0Row2",
+      "order": 0,
+      "content": "Budget used",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "card0Row2Value": {
+      "type": "text",
+      "parent": "card0Row2",
+      "order": 1,
+      "content": "$4,800",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "card0Row3": {
+      "type": "container",
+      "parent": "card0Details",
+      "order": 2,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card0Row3Label": {
+      "type": "text",
+      "parent": "card0Row3",
+      "order": 0,
+      "content": "Time remaining",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "card0Row3Value": {
+      "type": "text",
+      "parent": "card0Row3",
+      "order": 1,
+      "content": "5 days",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "card1": {
+      "catalog": "card",
+      "parent": "itemList",
+      "order": 1,
+      "overrides": { "radius": 20 }
+    },
+    "card1Header": {
+      "type": "container",
+      "parent": "card1",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card1NameCol": {
+      "type": "container",
+      "parent": "card1Header",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 4 }
+    },
+    "card1Name": {
+      "type": "text",
+      "parent": "card1NameCol",
+      "order": 0,
+      "content": "Development Phase",
+      "typography": "heading-3",
+      "color": "text-primary"
+    },
+    "card1Hint": {
+      "type": "text",
+      "parent": "card1NameCol",
+      "order": 1,
+      "content": "Click to expand details",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card1AmountCol": {
+      "type": "container",
+      "parent": "card1Header",
+      "order": 1,
+      "layout": { "dir": "column", "align": "end", "gap": 2 }
+    },
+    "card1StatusLabel": {
+      "type": "text",
+      "parent": "card1AmountCol",
+      "order": 0,
+      "content": "progress",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card1Value": {
+      "type": "text",
+      "parent": "card1AmountCol",
+      "order": 1,
+      "content": "40%",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "card1Action": {
+      "catalog": "button-primary",
+      "parent": "card1Header",
+      "order": 2,
+      "label": "View Details",
+      "overrides": { "width": 120, "height": 44, "radius": 12 }
+    },
+    "card2": {
+      "catalog": "card",
+      "parent": "itemList",
+      "order": 2,
+      "overrides": { "radius": 20 }
+    },
+    "card2Header": {
+      "type": "container",
+      "parent": "card2",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card2NameCol": {
+      "type": "container",
+      "parent": "card2Header",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 4 }
+    },
+    "card2Name": {
+      "type": "text",
+      "parent": "card2NameCol",
+      "order": 0,
+      "content": "Testing Phase",
+      "typography": "heading-3",
+      "color": "text-primary"
+    },
+    "card2Hint": {
+      "type": "text",
+      "parent": "card2NameCol",
+      "order": 1,
+      "content": "Click to expand details",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card2AmountCol": {
+      "type": "container",
+      "parent": "card2Header",
+      "order": 1,
+      "layout": { "dir": "column", "align": "end", "gap": 2 }
+    },
+    "card2StatusLabel": {
+      "type": "text",
+      "parent": "card2AmountCol",
+      "order": 0,
+      "content": "progress",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card2Value": {
+      "type": "text",
+      "parent": "card2AmountCol",
+      "order": 1,
+      "content": "10%",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "card2Action": {
+      "catalog": "button-primary",
+      "parent": "card2Header",
+      "order": 2,
+      "label": "View Details",
+      "overrides": { "width": 120, "height": 44, "radius": 12 }
+    },
+    "card3": {
+      "catalog": "card",
+      "parent": "itemList",
+      "order": 3,
+      "overrides": { "radius": 20 }
+    },
+    "card3Header": {
+      "type": "container",
+      "parent": "card3",
+      "order": 0,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+    },
+    "card3NameCol": {
+      "type": "container",
+      "parent": "card3Header",
+      "order": 0,
+      "layout": { "dir": "column", "gap": 4 }
+    },
+    "card3Name": {
+      "type": "text",
+      "parent": "card3NameCol",
+      "order": 0,
+      "content": "Deployment Phase",
+      "typography": "heading-3",
+      "color": "text-primary"
+    },
+    "card3Hint": {
+      "type": "text",
+      "parent": "card3NameCol",
+      "order": 1,
+      "content": "Click to expand details",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card3AmountCol": {
+      "type": "container",
+      "parent": "card3Header",
+      "order": 1,
+      "layout": { "dir": "column", "align": "end", "gap": 2 }
+    },
+    "card3StatusLabel": {
+      "type": "text",
+      "parent": "card3AmountCol",
+      "order": 0,
+      "content": "progress",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card3Value": {
+      "type": "text",
+      "parent": "card3AmountCol",
+      "order": 1,
+      "content": "0%",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "card3Action": {
+      "catalog": "button-primary",
+      "parent": "card3Header",
+      "order": 2,
+      "label": "View Details",
+      "overrides": { "width": 120, "height": 44, "radius": 12 }
+    },
+    "noticeBar": {
+      "type": "container",
+      "parent": "mainContent",
+      "order": 2,
+      "layout": { "dir": "row", "align": "center", "gap": 6, "pt": 4 }
+    },
+    "noticeDot": {
+      "type": "container",
+      "parent": "noticeBar",
+      "order": 0,
+      "width": 8,
+      "height": 8,
+      "background": "text-secondary"
+    },
+    "noticeText": {
+      "type": "text",
+      "parent": "noticeBar",
+      "order": 1,
+      "content": "Budget allocation has been adjusted to reflect the latest sprint planning decisions and resource availability.",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "actionBar": {
+      "type": "container",
+      "parent": "root",
+      "order": 2,
+      "background": "surface-elevated",
+      "height": 80,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 24, "gap": 12 }
+    },
+    "exportButton": {
+      "catalog": "button-primary",
+      "parent": "actionBar",
+      "order": 0,
+      "label": "Export Report",
+      "overrides": { "width": "fill", "radius": 12 }
+    },
+    "secondaryActions": {
+      "type": "container",
+      "parent": "actionBar",
+      "order": 1,
+      "layout": { "dir": "row", "align": "center", "gap": 12 }
+    },
+    "editButton": {
+      "catalog": "button-secondary",
+      "parent": "secondaryActions",
+      "order": 0,
+      "label": "Edit Project",
+      "overrides": { "width": 180 }
+    },
+    "newProjectLink": {
+      "catalog": "button-ghost",
+      "parent": "secondaryActions",
+      "order": 1,
+      "label": "New Project"
+    }
+  }
+}
