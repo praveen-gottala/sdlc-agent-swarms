@@ -173,6 +173,7 @@ providers depends on: core
 channels depends on: core
 cli depends on: core, governance, providers, channels
 agents-* depend on: core, governance, providers
+designspec-renderer depends on: nothing (zero external deps, mirrors core types locally)
 
 ## Commands
 - Build all: nx run-many -t build
@@ -288,6 +289,46 @@ What to update:
 
 A pipeline change without a doc update is **incomplete work** — treat it the same
 as a missing test.
+
+### DesignSpec Renderer Change Checklist (MANDATORY)
+When modifying `packages/designspec-renderer/`, especially Penpot component
+renderers in `src/renderer/penpot/components/`, follow these rules:
+
+**Before implementing a component renderer:**
+1. Read `docs/lessons-learned.md` section "Penpot Plugin API Rules"
+2. Find a real generated Penpot script in any project's
+   `.agentforge/previews/*/scripts/design.js` and locate the component
+   you're implementing. Note the exact API calls, parameter formats,
+   nesting structure, and numeric value ranges.
+3. If no generated script exists yet, use the Penpot MCP tools
+   (`penpot:high_level_overview`, `penpot:penpot_api_info`) to verify
+   API contracts.
+
+**Penpot plugin API hard rules (violations produce silent visual bugs):**
+- `penpot.createBoard()` for ALL shapes. NEVER `createRectangle()` or
+  `createEllipse()` — they don't support flex `layoutChild` properties.
+- `board.flex.dir = 'column'` — set via the board's `.flex` property.
+  NEVER via the returned flex object (silently fails).
+- `appendChild(child)` MUST come BEFORE any `child.layoutChild.*` assignments.
+- Shadow r/g/b: Penpot uses **0-1 floats**. CSS rgba uses 0-255 integers.
+  Always divide by 255.
+- Font weight: pass as **string** (`'700'`), not number.
+- Root page board: explicitly set `x = 0; y = 0;` after creation.
+- Divider fill opacity: `0.3` (not 1.0). Helper text opacity: `0.7`.
+- Text > 18 chars: apply `growType = 'auto-height'` with
+  `resize(wrapWidth, fontSize * 2.2)`.
+
+**After implementing, verify with these greps:**
+```bash
+# Must return 0 results:
+grep -r 'createRectangle\|createEllipse' packages/designspec-renderer/src/renderer/penpot/components/
+# Must return 0 results (shadow RGB should be 0-1 floats):
+grep -rn 'r: [0-9]\{2,\}' packages/designspec-renderer/src/renderer/penpot/components/shared.ts
+```
+
+**When delegating to subagents:** Include the Penpot API hard rules above
+in the agent prompt. Subagents do not read CLAUDE.md or lessons-learned.md
+automatically.
 
 ## IMPORTANT
 - ALWAYS run typecheck after making changes across packages

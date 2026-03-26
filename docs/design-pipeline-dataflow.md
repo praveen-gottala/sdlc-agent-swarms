@@ -539,6 +539,59 @@ The planning agent defines a 4-stage implementation plan:
 
 ---
 
+### Stage 4b: DesignSpec v2 Renderer (Alternative Path)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│               DESIGNSPEC V2 RENDERER (Deterministic)                 │
+│                                                                      │
+│  Package: packages/designspec-renderer/                              │
+│  Entry:   renderToScript(spec, tokens, catalog) → RenderResult       │
+│  ADRs:    034 (flat adjacency list), 035 (catalog-first),           │
+│           036 (text accelerator), 037 (standalone package)           │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │ Input: DesignSpecV2 JSON (flat adjacency list)                │  │
+│  │   + RendererTokens (colors, typography, elevation, borders)   │  │
+│  │   + CatalogMap (V2 built-in + project catalog entries)        │  │
+│  └──────────────────────────────┬─────────────────────────────────┘  │
+│                                 │                                    │
+│  ┌──────────────────────────────▼─────────────────────────────────┐  │
+│  │ 1. buildTokenMap()  — semantic → hex color map                │  │
+│  │ 2. buildTree()      — flat adjacency list → parent-child tree │  │
+│  │ 3. resolveNode()    — catalog defaults + extends + overrides  │  │
+│  │ 4. Walk tree depth-first, dispatch to component renderers     │  │
+│  │    - 7 accelerators: page, container, section, header,        │  │
+│  │      divider, spacer, text                                    │  │
+│  │    - 15 differentiators: input-text, input-currency,          │  │
+│  │      button-primary/secondary/ghost, segmented-control,       │  │
+│  │      stepper, display-readonly, badge, stat, card, avatar,    │  │
+│  │      tooltip, checkbox, select                                │  │
+│  │ 5. Emit preamble (try, token map, makeText helper)            │  │
+│  │ 6. Emit postamble (return nodeIds, catch)                     │  │
+│  └──────────────────────────────┬─────────────────────────────────┘  │
+│                                 │                                    │
+│  ┌──────────────────────────────▼─────────────────────────────────┐  │
+│  │ Output: RenderResult                                          │  │
+│  │   script:   string    — valid JS for penpot:execute_code      │  │
+│  │   warnings: string[]  — non-fatal issues (unknown catalog)    │  │
+│  │   nodeIds:  string[]  — all rendered node IDs                 │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  Structural guarantees (bugs fixed permanently):                     │
+│    • board.flex.dir (not bare flex.dir)                              │
+│    • layoutChild always after appendChild                            │
+│    • auto-height for text > 18 chars                                 │
+│    • All colors via T.tokenName (zero raw hex)                       │
+│    • Every shape tagged with setPluginData for extraction            │
+│                                                                      │
+│  Status: Phase 1+2 complete, not yet wired into Stage 4 pipeline.   │
+│  Integration point: packages/agents-ux/src/ux-design/ (Phase 4)     │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Stage 5: Visual Self-Correction (Design Evaluator)
 
 ```

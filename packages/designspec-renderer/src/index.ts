@@ -62,3 +62,7 @@ export { resolveShadow } from './renderer/shadows.js';
 
 // ─── Validation ───────────────────────────────────────────
 export { validateDesignSpec } from './validation/validate.js';
+
+// ─── Penpot Renderer ──────────────────────────────────────
+export { renderToScript } from './renderer/penpot/index.js';
+export type { RenderResult } from './renderer/penpot/index.js';

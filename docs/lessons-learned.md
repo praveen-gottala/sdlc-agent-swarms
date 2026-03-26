@@ -182,3 +182,80 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 **Rule:** When a test fixture mirrors real project data (e.g., design tokens), it must be verified against the actual source file. Never hand-write token values from memory or plan documents.
 **Why:** The initial fixture had wrong primitive names (e.g., `sage-green` instead of `deep-teal`), wrong typography weights (`heading-2: 600` instead of `700`), wrong shadow values, and wrong border radius values. All tests passed with wrong data — proving the tests validated code paths, not correctness.
 **How to apply:** Always read the actual source file (e.g., `agentforge/spec/design-tokens.yaml`) and copy values directly. When the fixture is generic, document which real project it was derived from for future updates.
+
+---
+
+## Verify Renderer Output Against Real Working Scripts
+
+**Context:** `packages/designspec-renderer/src/renderer/penpot/components/` — Penpot component renderers
+**Rule:** When building a renderer that replaces an existing working pipeline, cross-reference every component renderer against the actual generated scripts (e.g., `split-easy/.agentforge/previews/*/scripts/design.js`). Do not implement from type signatures and assumptions alone.
+
+### Bugs that cross-referencing would have caught:
+
+1. **Shadow RGB 0-255 vs 0-1** — The real design.js uses `color: { r: 0.06, g: 0.43, b: 0.34, opacity: 0.06 }` (0-1 floats). The renderer emitted `r: 15, g: 110, b: 86` (raw 0-255 integers). The Penpot API uses 0-1 float range for r/g/b. Fix: divide by 255.
+2. **Divider used createRectangle** — The real design.js uses `createBoard()` for everything including dividers. Rectangles may not participate in flex layouts the same way. Fix: use `emitBoard()`.
+3. **Page missing x/y** — The real design.js explicitly sets `root.x = 0; root.y = 0;`. Without this, the page may appear at an arbitrary canvas position. Fix: add positioning after board creation.
+4. **Stepper missing label** — The real design.js renders the label text left-aligned with controls right-aligned via `justify: space-between`. The renderer only emitted minus/count/plus with no label. Fix: add label + group controls in nested container.
+5. **Shadow regex untested** — The regex was written but never tested against the actual shadow strings from design-tokens.yaml. It happened to work, but the RGB conversion was wrong.
+
+**Root cause:** All 5 bugs share the same pattern — implementing from the plan's description and type definitions without opening the actual `design.js` file to see what working output looks like. The research agent returned this information, but the component renderer agents didn't use it as a verification checklist.
+
+**How to apply:**
+- Before implementing any component renderer, open the corresponding section in a real generated `design.js` and note the exact Penpot API calls, parameter formats, and value ranges.
+- After implementing, spot-check the emitted script against the real one for at least one instance of each component type.
+- For numeric values passed to Penpot APIs (colors, opacity, shadow params), verify the expected range (0-1 vs 0-255 vs pixels) from the API documentation or real scripts.
+- Write at least one test that checks a specific numeric value in the output (e.g., shadow r/g/b values) against the known correct value.
+
+---
+
+## Penpot Plugin API Rules (Quick Reference)
+
+**Context:** `packages/designspec-renderer/src/renderer/penpot/` — all Penpot script generation
+**Rule:** These are hard rules about the Penpot plugin API. Violating any of them produces silent visual bugs.
+
+### Shape creation
+- Use `penpot.createBoard()` for ALL shapes — containers, dividers, spacers, buttons, badges, everything. Boards support flex layout.
+- Use `penpot.createText(content)` for text only. Content goes in the constructor, NOT `shape.text = ...`.
+- **NEVER** use `createRectangle()`, `createEllipse()`, or other shape primitives — they don't support `layoutChild` properties.
+
+### Flex layout
+- Always set direction via `board.flex.dir = 'column'` (the board's `.flex` property), NEVER via the returned flex object (`const f = board.addFlexLayout(); f.dir = 'column'` — this silently fails).
+- `appendChild(child)` must come BEFORE any `child.layoutChild.*` assignments. The `layoutChild` property doesn't exist until the child is in a flex parent.
+
+### Numeric ranges
+- Shadow r/g/b: **0-1 floats** (divide CSS rgba 0-255 values by 255)
+- Shadow opacity (alpha): already 0-1, no conversion needed
+- Fill opacity: 0-1 float
+- Font weight: pass as **string** (`'700'`), not number
+
+### Positioning and sizing
+- Root page board: explicitly set `x = 0; y = 0;` after creation
+- `shape.resize(width, height)` — width/height are READ-ONLY properties, use resize()
+- When `width === 'fill'`, use `layoutChild.horizontalSizing = 'fill'` — the pixel width in `resize()` is just an initial hint that flex overrides
+
+### Visual defaults from real design.js
+- Divider fill opacity: `0.3` (not 1.0)
+- Helper text opacity: `0.7`
+- Text > 18 chars: `growType = 'auto-height'` with `resize(wrapWidth, fontSize * 2.2)`
+- Every shape gets `setPluginData` calls for extraction (ds_id, ds_type/ds_catalog, ds_token_*)
+
+---
+
+## Future: Pipeline Integration Test (Phase 4)
+
+**Context:** `packages/designspec-renderer` — validating renderer output matches real pipeline behavior
+**Rule:** Before swapping the LLM script output for `renderToScript()` in `ux-penpot-design.ts`, add ONE integration test that uses actual project files.
+
+**Test inputs (from any generated project):**
+- `{project}/agentforge/spec/design-tokens.yaml` (real tokens)
+- `{project}/agentforge/spec/component-catalog.yaml` (real catalog)
+- A real screen spec JSON fixture (e.g., a settings or dashboard screen)
+
+**What it validates:**
+- Renderer produces output matching current `design.js` behavior — same Penpot API calls, same visual shapes, same token references.
+- Separate from the generic unit tests (which use synthetic fixtures) — this crosses the package boundary.
+
+**Location:** `packages/agents-ux/src/ux-design/__tests__/renderer-integration.test.ts`
+(NOT in `packages/designspec-renderer` — this test belongs in the consumer package)
+
+**Gate rule:** Do not swap `renderToScript()` into `ux-penpot-design.ts` until this test passes.
