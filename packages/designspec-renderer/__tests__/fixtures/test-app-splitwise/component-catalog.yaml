@@ -52,6 +52,13 @@ components:
       aria_labels:
         - role=article when standalone
         - aria-labelledby=title-id
+    renderer_defaults:
+      type: card
+      background: surface-primary
+      shadow: sm
+      radius: 20
+      padding: 24
+      required_fields: []
   Section:
     description: Page section with heading and content area
     category: layout
@@ -303,6 +310,16 @@ components:
       focus_visible: false
       aria_labels:
         - role=status
+    renderer_defaults:
+      type: badge
+      height: 24
+      radius: 8
+      padding_x: 8
+      padding_y: 2
+      text_size: 11
+      text_weight: 500
+      required_fields:
+        - label
   Avatar:
     description: User or entity avatar with image or initials fallback
     category: data_display
@@ -335,6 +352,15 @@ components:
       aria_labels:
         - role=img
         - aria-label=User name
+    renderer_defaults:
+      type: avatar
+      size: 36
+      text_color: cta-primary
+      bg_opacity: 0.12
+      text_size: 14
+      text_weight: 700
+      required_fields:
+        - label
   Chip:
     description: Compact interactive label for filtering or selection
     category: data_display
@@ -453,6 +479,16 @@ components:
       aria_labels:
         - role=figure
         - aria-label=Metric description
+    renderer_defaults:
+      type: stat
+      background: surface-primary
+      shadow: sm
+      radius: 20
+      padding_x: 24
+      padding_y: 20
+      required_fields:
+        - label
+        - value
   Button:
     description: Interactive button with variants for primary, secondary, and ghost actions
     category: input
@@ -622,6 +658,23 @@ components:
         - role=listbox
         - aria-expanded=true when open
       keyboard_nav: Arrow keys to navigate, Enter to select, Escape to close
+    renderer_defaults:
+      type: input
+      variant: select
+      extends: input-text
+      height: 48
+      radius: 12
+      border_color: border-default
+      border_width: 1
+      text_typography: body
+      text_color: text-primary
+      background: surface-input
+      min_height: 44
+      chevron_color: text-secondary
+      chevron_size: 12
+      required_fields:
+        - label
+        - placeholder
   Checkbox:
     description: Toggle checkbox with label
     category: input
@@ -663,6 +716,16 @@ components:
         - role=checkbox
         - aria-checked
       keyboard_nav: Space to toggle
+    renderer_defaults:
+      type: checkbox
+      box_size: 16
+      box_radius: 4
+      box_border: border-default
+      box_checked_bg: cta-primary
+      check_color: text-on-cta
+      min_height: 44
+      required_fields:
+        - label
   Radio:
     description: Radio button for single selection within a group
     category: input
@@ -1381,3 +1444,404 @@ components:
         - role=search
         - aria-label=Filter controls
       keyboard_nav: Tab between filter controls
+
+  # ═══════════════════════════════════════════════════════════════
+  # Section 6 Differentiators — new entries not in original YAML
+  # These provide both design knowledge AND renderer_defaults.
+  # ═══════════════════════════════════════════════════════════════
+
+  InputText:
+    description: Standard text input with label and helper
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+      - name: input_field
+        contents: text input with placeholder
+      - name: helper_text
+        contents: description or error message (small)
+        typography_role: small
+        optional: true
+    states:
+      default:
+        bg: surface-input
+        text: text-primary
+        border: border-default
+    token_bindings:
+      background: surface-input
+      text: text-primary
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Input
+        import_path: "@/components/ui/input"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=textbox
+    renderer_defaults:
+      type: input
+      variant: text
+      height: 48
+      radius: 12
+      border_color: border-default
+      border_width: 1
+      text_typography: body
+      text_color: text-primary
+      background: surface-input
+      min_height: 44
+      required_fields:
+        - label
+        - placeholder
+
+  InputCurrency:
+    description: Currency input with $ prefix, extends input-text
+    category: input
+    min_height: 44
+    anatomy:
+      - name: prefix
+        contents: currency symbol ($)
+      - name: input_field
+        contents: numeric input with placeholder
+      - name: label
+        contents: field label (label)
+        typography_role: label
+    states:
+      default:
+        bg: surface-input
+        text: text-primary
+        border: border-default
+    token_bindings:
+      background: surface-input
+      text: text-primary
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Input
+        import_path: "@/components/ui/input"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=textbox
+    renderer_defaults:
+      type: input
+      variant: currency
+      extends: input-text
+      prefix: "$"
+      height: 48
+      radius: 12
+      border_color: border-default
+      border_width: 1
+      text_typography: body
+      text_color: text-primary
+      background: surface-input
+      min_height: 44
+      required_fields:
+        - label
+        - placeholder
+
+  ButtonPrimary:
+    description: Primary CTA button
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: button text (body)
+        typography_role: body
+    states:
+      default:
+        bg: cta-primary
+        text: text-on-cta
+    library_mapping:
+      shadcn:
+        component_name: Button
+        import_path: "@/components/ui/button"
+        variant_prop: variant
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=button
+      keyboard_nav: Enter or Space to activate
+    renderer_defaults:
+      type: button
+      variant: primary
+      height: 48
+      radius: 12
+      background: cta-primary
+      text_color: text-on-cta
+      text_typography: body
+      text_weight: 600
+      width: fill
+      shadow: none
+      required_fields:
+        - label
+
+  ButtonSecondary:
+    description: Secondary outlined button
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: button text (body)
+        typography_role: body
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+    library_mapping:
+      shadcn:
+        component_name: Button
+        import_path: "@/components/ui/button"
+        variant_prop: variant
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=button
+      keyboard_nav: Enter or Space to activate
+    renderer_defaults:
+      type: button
+      variant: secondary
+      height: 44
+      radius: 12
+      background: surface-primary
+      text_color: text-primary
+      text_typography: body
+      text_weight: 500
+      border_color: border-default
+      border_width: 1
+      shadow: none
+      required_fields:
+        - label
+
+  ButtonGhost:
+    description: Ghost text-only button
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: button text (body)
+        typography_role: body
+    states:
+      default:
+        bg: transparent
+        text: cta-primary
+    library_mapping:
+      shadcn:
+        component_name: Button
+        import_path: "@/components/ui/button"
+        variant_prop: variant
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=button
+      keyboard_nav: Enter or Space to activate
+    renderer_defaults:
+      type: button
+      variant: ghost
+      height: 44
+      radius: 0
+      background: transparent
+      text_color: cta-primary
+      text_typography: body
+      text_weight: 500
+      shadow: none
+      required_fields:
+        - label
+
+  SegmentedControl:
+    description: Pill-shaped option selector for toggling between choices
+    category: input
+    min_height: 44
+    anatomy:
+      - name: container
+        contents: pill-shaped container holding option buttons
+      - name: options
+        contents: clickable option segments with selected state
+    states:
+      default:
+        bg: surface-elevated
+        text: text-primary
+        border: border-default
+      selected:
+        bg: cta-primary
+        text: text-on-cta
+    token_bindings:
+      background: surface-elevated
+      text: text-primary
+      border-radius: pill
+    spacing:
+      padding: "4"
+      internal_gap: "0"
+    library_mapping:
+      shadcn:
+        component_name: Tabs
+        import_path: "@/components/ui/tabs"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=tablist
+        - aria-selected on active
+      keyboard_nav: Arrow keys between options
+    renderer_defaults:
+      type: segmented-control
+      height: 48
+      radius: 24
+      inner_radius: 20
+      padding: 4
+      container_background: surface-elevated
+      container_border_color: border-default
+      container_border_opacity: 0.5
+      selected_bg: cta-primary
+      selected_text: text-on-cta
+      selected_weight: 600
+      unselected_bg: transparent
+      unselected_text: text-primary
+      unselected_weight: 400
+      text_size: 14
+      required_fields:
+        - options
+
+  Stepper:
+    description: Increment/decrement counter with label and +/- buttons
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: counter label (body)
+        typography_role: body
+      - name: minus_button
+        contents: decrement button
+      - name: count
+        contents: current count value (heading-2)
+        typography_role: heading-2
+      - name: plus_button
+        contents: increment button
+    states:
+      default:
+        bg: surface-elevated
+        text: text-primary
+    token_bindings:
+      background: surface-elevated
+      text: text-primary
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=spinbutton
+        - aria-valuemin
+        - aria-valuemax
+        - aria-valuenow
+      keyboard_nav: Arrow up/down to change value
+    renderer_defaults:
+      type: stepper
+      height: 56
+      radius: 12
+      background: surface-elevated
+      shadow: sm
+      button_size: 40
+      minus_bg: surface-secondary
+      minus_border: border-default
+      minus_border_opacity: 0.5
+      minus_text_color: text-secondary
+      plus_bg: cta-primary
+      plus_text_color: text-on-cta
+      count_typography: heading-2
+      count_color: text-primary
+      required_fields:
+        - label
+        - value
+
+  DisplayReadonly:
+    description: Label + value display for read-only data
+    category: data_display
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+      - name: value
+        contents: display value (heading-3)
+        typography_role: heading-3
+    states:
+      default:
+        bg: surface-elevated
+        text: text-secondary
+    token_bindings:
+      background: surface-elevated
+      text: text-secondary
+      font: heading-3
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=status
+    renderer_defaults:
+      type: display
+      text_typography: heading-3
+      text_color: text-secondary
+      background: surface-elevated
+      height: 48
+      radius: 8
+      padding_x: 16
+      required_fields:
+        - label
+        - value
+
+  Tooltip:
+    description: Icon + message inline information display
+    category: feedback
+    anatomy:
+      - name: icon
+        contents: info icon (16px)
+      - name: message
+        contents: tooltip message text (small)
+        typography_role: small
+    states:
+      default:
+        bg: surface-elevated
+        text: text-primary
+    token_bindings:
+      background: surface-elevated
+      text: text-primary
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Alert
+        import_path: "@/components/ui/alert"
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=note
+    renderer_defaults:
+      type: tooltip
+      height: 40
+      radius: 8
+      shadow: sm
+      padding_x: 16
+      icon_size: 16
+      text_size: 11
+      text_color: text-primary
+      required_fields:
+        - content
