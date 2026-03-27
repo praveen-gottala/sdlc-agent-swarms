@@ -77,7 +77,7 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   // Controls container (minus + count + plus) — grouped in a nested board
   const ctrlV = makeVar('sctrl', ctx);
   const ctrlGap = 16;
-  const ctrlPad = 16;
+  const ctrlPad = 4;
   emitBoard(b, ctrlV, `${node.id}_controls`, 0, btnSize);
   emitFlex(b, ctrlV, 'row', { align: 'center', justify: 'center', gap: ctrlGap, px: ctrlPad });
   b.line(`${ctrlV}.flex.mainAxisSizing = 'auto';`);

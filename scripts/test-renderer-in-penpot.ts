@@ -22,9 +22,13 @@
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, isAbsolute, extname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { renderToScript, loadCatalogForRenderer } from '@agentforge/designspec-renderer';
-import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
-
+import {
+    renderToScript,
+    loadCatalogForRenderer,
+    type DesignSpecV2,
+    type RendererTokens,
+    type RawCatalogSpec,
+} from '../packages/designspec-renderer/src/index.js';
 /* ------------------------------------------------------------------ */
 /*  Parse args                                                         */
 /* ------------------------------------------------------------------ */
@@ -165,6 +169,7 @@ try {
 const effectiveReplayDir = replayDir ?? projectDir;
 const replayRoot = join(__dirname, '..', effectiveReplayDir);
 const previewDir = join(replayRoot, `.agentforge/previews/${fixtureName}`);
+console.log("previewDir", previewDir);
 const scriptsDir = join(previewDir, 'scripts');
 mkdirSync(scriptsDir, { recursive: true });
 
