@@ -71,9 +71,16 @@ export const PENPOT_SETUP_INSTRUCTIONS = `Penpot MCP not connected. To set up:
 // Mock MCP client
 // ============================================================================
 
-/** Create a mock MCP client that no-ops all calls. */
+/** Create a mock MCP client that simulates Penpot execute_code responses. */
 export const createMockMCPClient = (): MCPClient => ({
-  callTool: async () => Ok({}),
+  callTool: async (_server: string, tool: string) => {
+    if (tool === 'execute_code') {
+      return Ok({
+        content: [{ text: JSON.stringify({ result: { rootId: 'mock-root-id', nodeIds: {} } }) }],
+      });
+    }
+    return Ok({ content: [{ text: '{}' }] });
+  },
   listTools: async () => Ok([]),
   isAvailable: async () => true,
 });

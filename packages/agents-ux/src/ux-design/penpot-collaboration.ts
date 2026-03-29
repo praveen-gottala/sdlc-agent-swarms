@@ -239,7 +239,10 @@ ${fixCode}
 
 /**
  * Create a ReviewCallback for Penpot that captures a screenshot via
- * `export_shape` and evaluates it against the planning spec.
+ * `execute_code` + `shape.export()` and evaluates it against the planning spec.
+ *
+ * Uses `execute_code` instead of the broken `export_shape` MCP tool.
+ * See docs/lessons-learned.md "export_shape is broken" entry.
  */
 export function createPenpotReviewCallback(
   provider: LLMProvider,
@@ -258,11 +261,24 @@ export function createPenpotReviewCallback(
       });
     }
 
-    // Capture screenshot via export_shape
-    const exportResult = await mcpClient.callTool('penpot', 'export_shape', {
-      shapeId,
-      format: 'png',
-    });
+    // Capture screenshot via execute_code + shape.export()
+    const exportCode = `
+      const shape = penpot.currentPage?.getShapeById("${shapeId}");
+      if (!shape) return { error: "Shape not found: ${shapeId}" };
+      try {
+        const data = await shape.export({ type: "png", scale: 2 });
+        const bytes = new Uint8Array(data);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return { base64: btoa(binary) };
+      } catch (e) {
+        return { error: e.message || String(e) };
+      }
+    `;
+
+    const exportResult = await mcpClient.callTool('penpot', 'execute_code', { code: exportCode });
 
     if (!exportResult.ok) {
       return Err({
@@ -272,21 +288,41 @@ export function createPenpotReviewCallback(
       });
     }
 
-    const exportContent = exportResult.value as { content?: Array<{ type?: string; data?: string }> };
-    const imageBlock = Array.isArray(exportContent.content)
-      ? exportContent.content.find(c => c.type === 'image')
-      : undefined;
+    // Parse the execute_code response
+    const content = exportResult.value as { content?: Array<{ type?: string; text?: string; data?: string }> };
+    const text = Array.isArray(content.content)
+      ? content.content.map(c => c.text ?? '').join('')
+      : '';
 
-    if (!imageBlock?.data) {
+    let base64: string | undefined;
+    try {
+      const parsed = JSON.parse(text) as { result?: { base64?: string; error?: string } };
+      if (parsed.result?.error) {
+        return Err({
+          code: 'MCP_UNAVAILABLE' as const,
+          message: `Shape export error: ${parsed.result.error}`,
+          recoverable: true,
+        });
+      }
+      base64 = parsed.result?.base64;
+    } catch {
+      // Check for image block in response
+      const imageBlock = Array.isArray(content.content)
+        ? content.content.find(c => c.type === 'image')
+        : undefined;
+      base64 = imageBlock?.data;
+    }
+
+    if (!base64) {
       return Err({
         code: 'INVALID_STATE' as const,
-        message: 'No image data in export_shape response',
+        message: 'No image data in export response',
         recoverable: true,
       });
     }
 
     return evaluateDesign(
-      imageBlock.data,
+      base64,
       planningSpec,
       provider as Parameters<typeof evaluateDesign>[2],
     );

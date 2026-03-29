@@ -282,8 +282,7 @@ const runPlanning = async (
   const artifactPath = saveArtifact(outputDir, 'planning-spec.json', result.value);
   console.log(`        components=${result.value.componentTree.length}, ` +
     `tokens=${Object.keys(result.value.tokenBindings).length}, ` +
-    `responsive=${result.value.responsiveRules.length}, ` +
-    `stages=${result.value.implementationStages.map(s => s.stage).join(',')}`);
+    `responsive=${result.value.responsiveRules.length}`);
 
   return { output: result.value, durationMs, artifactPath };
 };
@@ -683,6 +682,7 @@ const main = async (): Promise<void> => {
         initialDesign: rawDesign,
         input: process.stdin,
         output: process.stdout,
+        designTool: 'Penpot',
       });
 
       if (loopResult.changeCount > 0) {

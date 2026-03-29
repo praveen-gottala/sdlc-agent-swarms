@@ -8,7 +8,8 @@
  * Flow: Screenshot -> Evaluate (vision LLM) -> Fix -> Repeat
  */
 
-import type { Result } from '@agentforge/core';
+import type { Result, PromptTrace } from '@agentforge/core';
+import { logDefaults } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import { evaluateDesign } from './design-evaluator.js';
 import type { DesignIssue, CorrectionHistory, FixAttemptRecord } from './design-evaluator.js';
@@ -54,6 +55,8 @@ export interface CorrectionLoopOptions {
   readonly designSpec: string;
   /** LLM provider for the evaluator (vision model). */
   readonly provider: LLMProvider;
+  /** Trace collector for recording LLM call inputs/outputs. */
+  readonly traceCollector?: { promptTraces?: PromptTrace[] };
 }
 
 /** Result of running the correction loop. */
@@ -91,6 +94,12 @@ export async function runCorrectionLoop(
   const qualityThreshold = options.qualityThreshold ?? 80;
   const renderDelayMs = options.renderDelayMs ?? 3000;
 
+  logDefaults('runCorrectionLoop', {
+    maxCorrections: [options.maxCorrections, '3'],
+    qualityThreshold: [options.qualityThreshold, '80'],
+    renderDelayMs: [options.renderDelayMs, '3000'],
+  });
+
   // eslint-disable-next-line no-console
   console.log('\n        [Phase C] Visual self-correction loop');
 
@@ -122,6 +131,9 @@ export async function runCorrectionLoop(
       options.designSpec,
       options.provider,
       correctionHistory.length > 0 ? correctionHistory : undefined,
+      undefined,
+      options.traceCollector,
+      `evaluation-${iterations}`,
     );
 
     if (!evalResult.ok) {

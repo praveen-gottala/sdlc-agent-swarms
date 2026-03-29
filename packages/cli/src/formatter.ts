@@ -85,3 +85,10 @@ export function warnMsg(message: string): string {
 export function infoMsg(message: string): string {
   return `\x1b[34mℹ\x1b[0m ${message}`;
 }
+
+/**
+ * Format a debug message (gray text, visible only when DEBUG env var is set).
+ */
+export function debugMsg(message: string): string {
+  return `\x1b[90m[DEBUG] ${message}\x1b[0m`;
+}

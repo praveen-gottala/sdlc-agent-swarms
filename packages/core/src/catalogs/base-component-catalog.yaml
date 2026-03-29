@@ -394,7 +394,7 @@ components:
         border: border-default
       selected:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
         border: cta-primary
       disabled:
         bg: surface-secondary
@@ -513,7 +513,7 @@ components:
     variants:
       primary:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
       secondary:
         bg: surface-primary
         text: text-primary
@@ -527,12 +527,12 @@ components:
     states:
       default:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
         border: cta-primary
         shadow: shadow-sm
       hover:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
         shadow: shadow-md
       disabled:
         bg: surface-secondary
@@ -540,7 +540,7 @@ components:
         opacity: 0.5
     token_bindings:
       background: cta-primary
-      text: text-on-primary
+      text: text-on-cta
       border-radius: medium
       padding-x: 16
       padding-y: 8
@@ -702,7 +702,7 @@ components:
         border: border-default
       checked:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
         border: cta-primary
       disabled:
         bg: surface-secondary
@@ -791,7 +791,7 @@ components:
         border: border-default
       checked:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
       disabled:
         bg: surface-secondary
         text: text-secondary
@@ -1034,7 +1034,7 @@ components:
       default:
         bg: surface-primary
         text: text-primary
-        shadow: shadow-xl
+        shadow: shadow-lg
     token_bindings:
       background: surface-primary
       text: text-primary
@@ -1230,10 +1230,10 @@ components:
         border: border-default
       active:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
       completed:
         bg: success
-        text: text-on-primary
+        text: text-on-cta
     token_bindings:
       background: surface-primary
       text: text-secondary
@@ -1306,7 +1306,7 @@ components:
         border: border-default
       active:
         bg: cta-primary
-        text: text-on-primary
+        text: text-on-cta
       disabled:
         bg: surface-primary
         text: text-secondary

@@ -208,9 +208,18 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 
 ---
 
+## Catalog YAML: renderer_defaults and token_bindings both apply
+
+**Context:** `packages/designspec-renderer/src/catalog/loader.ts` — `transformEntry()`
+**Rule:** If a component entry defines `renderer_defaults`, the loader must still merge `token_bindings` (font → `text_typography`, border-radius, padding-x/y) and `spacing.internal_gap` → `gap`, same as entries without `renderer_defaults`. Early-returning after copying only `renderer_defaults` drops typography and other bindings from project catalogs (e.g. Card with `font: heading-3` in YAML).
+**How to apply:** Share one `applyTokenBindings()` (and gap/min_height merge) used on both code paths.
+
+---
+
 ## Penpot Plugin API Rules (Quick Reference)
 
 **Context:** `packages/designspec-renderer/src/renderer/penpot/` — all Penpot script generation
+**Crosswalk:** After changing emitters, update [designspec-renderer-penpot-api-crosswalk.md](designspec-renderer-penpot-api-crosswalk.md) (API inventory vs [doc.plugins.penpot.app](https://doc.plugins.penpot.app/) and component audit table).
 **Rule:** These are hard rules about the Penpot plugin API. Violating any of them produces silent visual bugs.
 
 ### Shape creation
@@ -286,3 +295,112 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 (NOT in `packages/designspec-renderer` — this test belongs in the consumer package)
 
 **Gate rule:** Do not swap `renderToScript()` into `ux-penpot-design.ts` until this test passes.
+
+---
+
+## Never Assume Coverage — Always Verify Mechanically
+
+**Context:** Documentation audits, config completeness checks, test coverage reviews
+**Rule:** Never claim something exists or is covered without mechanically verifying it. When any task involves checking completeness (documentation, configs, tests, coverage, API surface, etc.), always verify by reading the actual files or running a concrete check (grep, test run, etc.) — never rely on summaries, memory, or assumptions.
+**Why:** During a CLI docs + VS Code debug config audit, 7 commands were assumed documented because they were "in the codebase." Mechanical verification (grepping docs for each command name) revealed none of the 7 had documentation.
+**How to apply:** For any completeness task — doc coverage, test coverage, config completeness, feature parity, migration checklists — enumerate the full expected set, then verify each item exists with a concrete check (file read, grep, test run). Treat unverified claims as false until proven.
+
+---
+
+## Phase C Corrections Invalidate Phase D Node IDs
+
+**Context:** `packages/agents-ux/src/ux-design/ux-penpot-design.ts` — V2 pipeline Phase C → Phase D handoff
+**Rule:** When Phase C (self-correction loop) deletes and recreates the root shape, the new node IDs MUST be propagated to Phase D (snapshot capture). Using stale IDs from Phase B causes every export to fail with `Cannot read properties of null (reading 'export')`.
+**Why:** `runV2CorrectionLoop()` calls `deleteRootShape()` + `executeRenderedScript()` on each correction iteration, producing entirely new shape IDs. But `penpotDesignWorkV2()` was passing the original `penpotNodeIds` from Phase B to `captureDesignSnapshot()`, ignoring the updated IDs.
+**Symptoms:**
+- `[export attempt 1/3] No image data` repeated 48+ times
+- `Cannot read properties of null (reading 'export')` — null returned for deleted shape IDs
+- Phase D takes 2+ minutes making 144 doomed MCP calls (48 components × 3 retries)
+**Fix:**
+1. `runV2CorrectionLoop()` now returns `updatedNodeIds` from the last correction iteration
+2. `penpotDesignWorkV2()` uses `activeNodeIds` (updated from correction loop) for Phase D
+3. `captureDesignSnapshot()` has fail-fast: stops after 5 consecutive export failures
+4. `describeExportBlocks()` guards against null `exportValue` (was crashing on `Object.keys(null)`)
+
+---
+
+## Missing Catalog Renderers Must Be Added, Not Just Logged
+
+**Context:** `packages/designspec-renderer/src/renderer/penpot/components/` — Penpot component registry
+**Rule:** When the pipeline logs `No renderer for catalog "X" — falling back to container`, that catalog type needs a dedicated renderer. Container fallback produces a blank box with no anatomy (no track, no thumb, no label layout).
+**Why:** The "switch" catalog type was defined in project YAML and in V2_BUILTIN_CATALOG but had no renderer. It rendered as a plain container — visually wrong for a toggle switch. The evaluator then flagged it as a "critical" issue, causing unnecessary correction iterations that couldn't fix the underlying missing renderer.
+**How to apply:**
+- After every pipeline run, check render warnings for `No renderer for catalog` messages
+- Add the renderer + catalog entry + register in `components/index.ts` before re-running
+- Use existing similar renderers as templates (e.g., checkbox for switch, badge for chip)
+
+---
+
+## Export Retry Must Fail Fast on Systemic Failures
+
+**Context:** `packages/agents-ux/src/ux-design/capture-design-snapshot.ts` — Phase D snapshot
+**Rule:** When exporting screenshots for N components, track consecutive failures. If 5+ exports fail in a row, stop immediately — the IDs are stale or the Penpot connection is broken.
+**Why:** Without fail-fast, 48 components × 3 retries × 3s delay = 7+ minutes of wasted time and 144 error log lines. The root cause (stale IDs, disconnected plugin) won't be fixed by retrying.
+**How to apply:** Use a `consecutiveFailures` counter. Reset on success, increment on failure, break the loop at threshold (5).
+
+---
+
+## Penpot MCP `export_shape` Is Broken — Use `execute_code` + `shape.export()`
+
+**Context:** Penpot MCP server's `export_shape` tool — 0/261 successes in Docker logs
+**Rule:** Never use the `export_shape` MCP tool. Always export shapes via `execute_code` with `shape.export()` directly.
+**Why:** The Penpot MCP plugin's `export_shape` handler uses an internal shape lookup (`PluginBridge.handlePluginTaskResponse`, line 14232 in built server) that returns `null`, even though `execute_code` with `penpot.currentPage.getShapeById()` finds the same shapes successfully. Every call fails with `Cannot read properties of null (reading 'export')`.
+**Evidence:** `docs/issues/penpot-mcp-issue.txt` — same shapeId succeeds with `execute_code` getShapeById, fails with `export_shape`. Pattern repeats for all 261 attempts, zero successes.
+**Workaround code:**
+```javascript
+const shape = penpot.currentPage?.getShapeById(shapeId);
+if (!shape) return { error: "Shape not found" };
+const data = await shape.export({ type: "png", scale: 2 });
+const bytes = new Uint8Array(data);
+let binary = '';
+for (let i = 0; i < bytes.byteLength; i++) {
+  binary += String.fromCharCode(bytes[i]);
+}
+return { base64: btoa(binary) };
+```
+**Files changed:**
+- `packages/agents-ux/src/ux-design/ux-penpot-design.ts` — `exportShapeViaExecuteCode()` + updated `exportShapeWithRetry()`
+- `packages/agents-ux/src/ux-design/penpot-collaboration.ts` — `createPenpotReviewCallback()` uses execute_code
+- `packages/core/src/mcp/penpot-adapter.ts` — `captureScreenshot()` uses execute_code
+- `packages/agents-ux/src/ux-design/penpot-browser-agent.ts` — removed `export_shape` from tools list
+- All agent contracts: removed `penpot:export_shape` from tools arrays
+
+---
+
+## DesignSpec v2: Separate WHAT from HOW
+
+**Context:** `packages/designspec-renderer/` — DesignSpec v2 renderer pipeline
+**Rule:** Separate the LLM's job (deciding WHAT to render as JSON) from the renderer's job (knowing HOW to call Penpot/React APIs). Never let the LLM generate API calls directly.
+**Why:** When the LLM generated Penpot JS scripts directly, every Penpot API quirk (createBoard not createRectangle, 0-1 float colors, appendChild before layoutChild) had to be taught in the prompt. The LLM still hallucinated incorrect API calls ~30% of the time. With DesignSpec v2, the LLM outputs compact JSON (flat adjacency list of nodes with types and overrides), and the renderer deterministically translates to correct API calls. This eliminated all Penpot API bugs and reduced token usage ~89%.
+**How to apply:** For any design tool integration, define an intermediate JSON schema that captures design intent without tool-specific API details. Build a deterministic renderer per target tool.
+
+---
+
+## Prompt Injection Order Matters: Tokens Before Examples
+
+**Context:** `packages/agents-ux/src/prompts/ux-penpot-design-system.md` — design system prompt
+**Rule:** Design tokens (colors, typography, spacing) must be injected BEFORE any examples in LLM prompts. Examples with hardcoded values placed before token injection will override the tokens.
+**Why:** The planning agent's prompt had examples with hardcoded hex colors (`#1A1A2E`) placed before the `{{DESIGN_TOKENS}}` placeholder. The LLM used the example colors instead of the project's actual tokens, producing designs that ignored the user's chosen palette.
+**How to apply:** In multi-section prompts, order sections as: (1) role/instructions, (2) design tokens/constraints, (3) examples (which reference token names, not hardcoded values), (4) task description.
+
+---
+
+## ADRs Must Describe Reality, Not Intent
+**Context:** ADR-022 "TypeScript-Only Orchestration Engine"
+**Rule:** An ADR with status "Accepted" must describe what IS implemented, not what SHOULD BE. If the implementation isn't complete, use status "Partially Implemented" or "Proposed."
+**Why:** ADR-022 was marked Accepted but the Python engine was never removed and no TypeScript orchestrator was built. For months, docs contradicted the codebase in both directions — CLAUDE.md said Python (partially true), ADR-022 said TypeScript-only (also partially true). Neither was accurate.
+**How to apply:** Before marking an ADR as Accepted, verify every claim against the actual codebase. If cleanup or migration work remains, list it explicitly in the ADR and keep status as "Partially Implemented" until done.
+
+---
+
+## Viewport Config: Project-Level with CLI Override
+
+**Context:** `packages/core/src/config/viewport-resolver.ts` — viewport configuration
+**Rule:** Viewport configuration should be project-level (in `agentforge.yaml`) with CLI flag override (`--viewport`). The planning agent should only generate responsive rules for configured viewports.
+**Why:** Without project-level viewport config, the planning agent generated responsive rules for mobile/tablet/desktop/wide regardless of the project's target. A desktop-only dashboard app got mobile breakpoint rules that confused the design agent and wasted tokens.
+**How to apply:** Use `resolveViewport(cliFlag?, projectConfig?)` which returns the effective viewport. Pass this to the planning agent so it generates rules only for relevant breakpoints.

@@ -21,6 +21,8 @@ import {
   Err,
   runAgent,
   readSpecs,
+  recordPromptTrace,
+  recordPromptTraceResponse,
 } from '@agentforge/core';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
@@ -241,6 +243,29 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
   tokenParts.push(`\nUse these exact values for colors, typography, and spacing. Map to Tailwind classes where possible.`);
   userMessageParts.push(tokenParts.join('\n'));
 
+  // Inject responsive design rules from planning output
+  if (componentSpec.responsiveRules && componentSpec.responsiveRules.length > 0) {
+    const responsiveParts: string[] = ['\n## Responsive Design Rules'];
+    responsiveParts.push('Generate responsive Tailwind classes for each breakpoint:');
+    for (const rule of componentSpec.responsiveRules) {
+      const widthNote = rule.width ? ` (${rule.width}px)` : '';
+      responsiveParts.push(`\n### ${rule.breakpoint}${widthNote}`);
+      responsiveParts.push(`Layout: ${rule.behavior}`);
+      if (rule.layout) {
+        responsiveParts.push(`Strategy: ${rule.layout}`);
+      }
+      if (rule.changes && rule.changes.length > 0) {
+        responsiveParts.push('Changes:');
+        for (const change of rule.changes) {
+          responsiveParts.push(`- ${change}`);
+        }
+      }
+    }
+    responsiveParts.push('\nUse Tailwind responsive prefixes: sm: (≥640px), md: (≥768px), lg: (≥1024px), xl: (≥1280px).');
+    responsiveParts.push('The desktop design is the reference. Apply mobile/tablet rules as overrides via responsive classes.');
+    userMessageParts.push(responsiveParts.join('\n'));
+  }
+
   const brandSpec = existingSpecs.ok ? existingSpecs.value.brand : undefined;
   if (brandSpec) {
     userMessageParts.push(
@@ -294,6 +319,12 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
     messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
   };
 
+  // Record implementation prompt trace
+  recordPromptTrace(context, 'implementation', prompt, {
+    model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
+    maxTokens: 16000,
+  });
+
   // 3. Call LLM via streaming
   const stream = provider.stream(prompt, {
     model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
@@ -305,6 +336,16 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
   if (!collectResult.ok) {
     return collectResult as Result<never>;
   }
+
+  // Record implementation response trace
+  recordPromptTraceResponse(context, 'implementation', {
+    content: collectResult.value.content,
+    cost: collectResult.value.cost ? {
+      inputCostUsd: collectResult.value.cost.inputCostUsd,
+      outputCostUsd: collectResult.value.cost.outputCostUsd,
+      totalCostUsd: collectResult.value.cost.totalCostUsd,
+    } : undefined,
+  });
 
   // 4. Parse output
   const parseResult = parseImplementationOutput(collectResult.value.content);

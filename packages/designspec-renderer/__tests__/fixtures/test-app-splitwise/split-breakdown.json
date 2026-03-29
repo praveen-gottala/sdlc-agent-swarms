@@ -7,7 +7,10 @@
       "parent": null,
       "order": 0,
       "background": "background-primary",
-      "layout": { "dir": "column", "align": "center" }
+      "layout": {
+        "dir": "column",
+        "align": "center"
+      }
     },
     "appHeader": {
       "type": "header",
@@ -15,7 +18,12 @@
       "order": 0,
       "background": "surface-elevated",
       "height": 64,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 24 }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24
+      }
     },
     "appLogo": {
       "type": "text",
@@ -30,7 +38,11 @@
       "type": "container",
       "parent": "appHeader",
       "order": 1,
-      "layout": { "dir": "row", "align": "center", "gap": 16 }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 16
+      }
     },
     "navNewSplit": {
       "type": "text",
@@ -50,26 +62,36 @@
       "color": "text-secondary",
       "weight": 500
     },
-
     "mainContent": {
       "type": "container",
       "parent": "root",
       "order": 1,
       "width": 600,
-      "layout": { "dir": "column", "gap": 0, "pb": 80 }
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "pb": 80
+      }
     },
-
     "summaryHeader": {
       "type": "container",
       "parent": "mainContent",
       "order": 0,
-      "layout": { "dir": "column", "gap": 8, "py": 24 }
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "py": 24
+      }
     },
     "summaryTopRow": {
       "type": "container",
       "parent": "summaryHeader",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "gap": 12 }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
     },
     "splitLabel": {
       "type": "text",
@@ -85,7 +107,11 @@
       "parent": "summaryTopRow",
       "order": 1,
       "label": "Equal Split",
-      "overrides": { "background": "cta-primary", "text_color": "text-on-cta", "radius": 14 }
+      "overrides": {
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "radius": 14
+      }
     },
     "peopleCount": {
       "type": "text",
@@ -99,7 +125,11 @@
       "type": "container",
       "parent": "summaryHeader",
       "order": 1,
-      "layout": { "dir": "row", "align": "end", "gap": 12 }
+      "layout": {
+        "dir": "row",
+        "align": "end",
+        "gap": 12
+      }
     },
     "grandTotalLabel": {
       "type": "text",
@@ -126,31 +156,43 @@
       "typography": "body",
       "color": "text-secondary"
     },
-
     "personList": {
       "type": "container",
       "parent": "mainContent",
       "order": 1,
-      "layout": { "dir": "column", "gap": 16, "pt": 8, "pb": 32 }
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "pt": 8,
+        "pb": 32
+      }
     },
-
     "card0": {
       "catalog": "card",
       "parent": "personList",
       "order": 0,
-      "overrides": { "radius": 20 }
+      "overrides": {
+        "radius": 20
+      }
     },
     "card0Header": {
       "type": "container",
       "parent": "card0",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card0NameCol": {
       "type": "container",
       "parent": "card0Header",
       "order": 0,
-      "layout": { "dir": "column", "gap": 4 }
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
     },
     "card0Name": {
       "type": "text",
@@ -172,7 +214,11 @@
       "type": "container",
       "parent": "card0Header",
       "order": 1,
-      "layout": { "dir": "column", "align": "end", "gap": 2 }
+      "layout": {
+        "dir": "column",
+        "align": "end",
+        "gap": 2
+      }
     },
     "card0OwesLabel": {
       "type": "text",
@@ -195,7 +241,11 @@
       "parent": "card0Header",
       "order": 2,
       "label": "Pay Venmo",
-      "overrides": { "width": 120, "height": 44, "radius": 12 }
+      "overrides": {
+        "width": 120,
+        "height": 44,
+        "radius": 12
+      }
     },
     "card0Divider": {
       "type": "divider",
@@ -206,13 +256,21 @@
       "type": "container",
       "parent": "card0",
       "order": 2,
-      "layout": { "dir": "column", "gap": 10, "pt": 14 }
+      "layout": {
+        "dir": "column",
+        "gap": 10,
+        "pt": 14
+      }
     },
     "card0Sub": {
       "type": "container",
       "parent": "card0Breakdown",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card0SubLabel": {
       "type": "text",
@@ -235,7 +293,11 @@
       "type": "container",
       "parent": "card0Breakdown",
       "order": 1,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card0TaxLabel": {
       "type": "text",
@@ -258,7 +320,11 @@
       "type": "container",
       "parent": "card0Breakdown",
       "order": 2,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card0TipLabel": {
       "type": "text",
@@ -277,24 +343,32 @@
       "color": "text-primary",
       "weight": 500
     },
-
     "card1": {
       "catalog": "card",
       "parent": "personList",
       "order": 1,
-      "overrides": { "radius": 20 }
+      "overrides": {
+        "radius": 20
+      }
     },
     "card1Header": {
       "type": "container",
       "parent": "card1",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card1NameCol": {
       "type": "container",
       "parent": "card1Header",
       "order": 0,
-      "layout": { "dir": "column", "gap": 4 }
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
     },
     "card1Name": {
       "type": "text",
@@ -316,7 +390,11 @@
       "type": "container",
       "parent": "card1Header",
       "order": 1,
-      "layout": { "dir": "column", "align": "end", "gap": 2 }
+      "layout": {
+        "dir": "column",
+        "align": "end",
+        "gap": 2
+      }
     },
     "card1OwesLabel": {
       "type": "text",
@@ -339,26 +417,38 @@
       "parent": "card1Header",
       "order": 2,
       "label": "Pay Venmo",
-      "overrides": { "width": 120, "height": 44, "radius": 12 }
+      "overrides": {
+        "width": 120,
+        "height": 44,
+        "radius": 12
+      }
     },
-
     "card2": {
       "catalog": "card",
       "parent": "personList",
       "order": 2,
-      "overrides": { "radius": 20 }
+      "overrides": {
+        "radius": 20
+      }
     },
     "card2Header": {
       "type": "container",
       "parent": "card2",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card2NameCol": {
       "type": "container",
       "parent": "card2Header",
       "order": 0,
-      "layout": { "dir": "column", "gap": 4 }
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
     },
     "card2Name": {
       "type": "text",
@@ -380,7 +470,11 @@
       "type": "container",
       "parent": "card2Header",
       "order": 1,
-      "layout": { "dir": "column", "align": "end", "gap": 2 }
+      "layout": {
+        "dir": "column",
+        "align": "end",
+        "gap": 2
+      }
     },
     "card2OwesLabel": {
       "type": "text",
@@ -403,26 +497,38 @@
       "parent": "card2Header",
       "order": 2,
       "label": "Pay Venmo",
-      "overrides": { "width": 120, "height": 44, "radius": 12 }
+      "overrides": {
+        "width": 120,
+        "height": 44,
+        "radius": 12
+      }
     },
-
     "card3": {
       "catalog": "card",
       "parent": "personList",
       "order": 3,
-      "overrides": { "radius": 20 }
+      "overrides": {
+        "radius": 20
+      }
     },
     "card3Header": {
       "type": "container",
       "parent": "card3",
       "order": 0,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between" }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
     },
     "card3NameCol": {
       "type": "container",
       "parent": "card3Header",
       "order": 0,
-      "layout": { "dir": "column", "gap": 4 }
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
     },
     "card3Name": {
       "type": "text",
@@ -444,7 +550,11 @@
       "type": "container",
       "parent": "card3Header",
       "order": 1,
-      "layout": { "dir": "column", "align": "end", "gap": 2 }
+      "layout": {
+        "dir": "column",
+        "align": "end",
+        "gap": 2
+      }
     },
     "card3OwesLabel": {
       "type": "text",
@@ -467,14 +577,22 @@
       "parent": "card3Header",
       "order": 2,
       "label": "Pay Venmo",
-      "overrides": { "width": 120, "height": 44, "radius": 12 }
+      "overrides": {
+        "width": 120,
+        "height": 44,
+        "radius": 12
+      }
     },
-
     "roundingNotice": {
       "type": "container",
       "parent": "mainContent",
       "order": 2,
-      "layout": { "dir": "row", "align": "center", "gap": 6, "pt": 4 }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "pt": 4
+      }
     },
     "roundingDot": {
       "type": "container",
@@ -492,7 +610,6 @@
       "typography": "small",
       "color": "text-secondary"
     },
-
     "stickyBar": {
       "type": "container",
       "parent": "root",
@@ -500,27 +617,43 @@
       "width": 600,
       "background": "surface-elevated",
       "height": 80,
-      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 24, "gap": 12 }
+      "shadow": "md",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "gap": 12
+      }
     },
     "shareButton": {
       "catalog": "button-primary",
       "parent": "stickyBar",
       "order": 0,
       "label": "Share Breakdown",
-      "overrides": { "width": "fill", "radius": 12 }
+      "overrides": {
+        "width": "fill",
+        "radius": 12
+      }
     },
     "rightActions": {
       "type": "container",
       "parent": "stickyBar",
       "order": 1,
-      "layout": { "dir": "row", "align": "center", "gap": 12 }
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
     },
     "editButton": {
       "catalog": "button-secondary",
       "parent": "rightActions",
       "order": 0,
       "label": "Edit Bill",
-      "overrides": { "width": 180 }
+      "overrides": {
+        "width": 180
+      }
     },
     "newSplitLink": {
       "catalog": "button-ghost",

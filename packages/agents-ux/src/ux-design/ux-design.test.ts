@@ -305,7 +305,6 @@ describe('buildPerScreenPrompt', () => {
     ],
     tokenBindings: {},
     responsiveRules: [],
-    implementationStages: [],
   });
 
   const screen: ScreenDefinition = {

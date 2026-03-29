@@ -45,6 +45,25 @@ export { loadBaseCatalog } from './catalogs/index.js';
 - The file must be included in the core package's build output (check `tsconfig.json` assets or package.json `files` to ensure YAML files are copied)
 - Verify: `loadBaseCatalog()` returns a valid `ComponentCatalogSpec` that passes `validateComponentCatalog()`
 
+### `renderer_defaults` (New)
+
+Catalog entries can include a `renderer_defaults` section containing flat key-value pairs for the designspec-renderer. These values tell the Penpot/React renderer HOW to draw the component (pixel values, sub-element colors, sizes).
+
+```yaml
+Card:
+  # ... existing anatomy, states, token_bindings ...
+  renderer_defaults:
+    type: card
+    background: surface-primary
+    shadow: sm
+    radius: 20
+    padding: 24
+```
+
+**Data flow**: When `renderer_defaults` is present, `loadCatalogForRenderer()` uses these values directly instead of reverse-engineering from `states`/`token_bindings`. This is the preferred path — all new components should include `renderer_defaults`.
+
+**Current state**: `V2_BUILTIN_CATALOG` in `catalog-entries.ts` is the current built-in source for unit tests. The planned migration path is to add `renderer_defaults` entries to all 15 components in `base-component-catalog.yaml`, making the TypeScript fixture test-only.
+
 ## Verification
 
 1. `nx run core:typecheck` — no type errors

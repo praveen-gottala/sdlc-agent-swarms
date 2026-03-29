@@ -10,14 +10,15 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { exec } from 'node:child_process';
-import type { DesignTokensSpec, BrandSpec, ElevationSpec, PromptTrace } from '@agentforge/core';
-import { validateDesignTokens, validateBrandSpec, recordPromptTrace } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec, ElevationSpec, PromptTrace, FileSystem } from '@agentforge/core';
+import { validateDesignTokens, validateBrandSpec, recordPromptTrace, loadPRD, debugLog, logDefaults } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { infoMsg, warnMsg, successMsg } from '../formatter.js';
 import { buildDesignTokensSpec } from './init.js';
 import type { DesignArchetype } from './init.js';
+// import { generateDesignOptionsMock } from './generate-design-options-mock.js';
 
 /** Shared layout tokens — enforced in code, never LLM-generated. */
 export const SHARED_LAYOUT = {
@@ -82,7 +83,6 @@ export interface DesignOption {
       readonly description: string;
     }[];
   };
-  readonly components?: Record<string, Record<string, Record<string, string | number>>>;
 }
 
 /** Result returned from generateDesignOptions. */
@@ -92,112 +92,167 @@ export interface GenerateDesignResult {
   readonly source: 'llm' | 'fallback' | 'catalog';
 }
 
+/**
+ * JSON Schema for structured output — guarantees the LLM returns exactly
+ * this shape via Anthropic's output_config.format.json_schema.
+ *
+ * Anthropic JSON schema constraints:
+ * - Every 'object' type MUST have additionalProperties: false
+ * - additionalProperties cannot be an object schema (only false)
+ * - minItems > 1 is not supported
+ *
+ * Because primitive colors are dynamic-keyed, we enumerate 8 slots
+ * (color_1..color_8) and map them back to kebab-case names in code.
+ * Components are similarly flattened. The LLM prompt instructs naming.
+ */
+const DESIGN_OPTIONS_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    options: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          label: { type: 'string' },
+          vibe: { type: 'string' },
+          colors: {
+            type: 'object',
+            properties: {
+              primitive: {
+                type: 'array',
+                description: '5-8 named colors, each with a kebab-case name and hex value',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string', description: 'kebab-case color name, e.g. "deep-teal"' },
+                    hex: { type: 'string', description: 'hex color value, e.g. "#0F6E56"' },
+                  },
+                  required: ['name', 'hex'],
+                  additionalProperties: false,
+                },
+              },
+              semantic: {
+                type: 'object',
+                properties: {
+                  'background-primary': { type: 'string' },
+                  'surface-primary': { type: 'string' },
+                  'surface-elevated': { type: 'string' },
+                  'text-primary': { type: 'string' },
+                  'text-secondary': { type: 'string' },
+                  'text-disabled': { type: 'string' },
+                  'text-on-cta': { type: 'string' },
+                  'cta-primary': { type: 'string' },
+                  'cta-hover': { type: 'string' },
+                  'border-default': { type: 'string' },
+                  'border-focus': { type: 'string' },
+                  'border-error': { type: 'string' },
+                  error: { type: 'string' },
+                  success: { type: 'string' },
+                  warning: { type: 'string' },
+                  info: { type: 'string' },
+                  overlay: { type: 'string' },
+                  'surface-secondary': { type: 'string' },
+                  'surface-input': { type: 'string' },
+                },
+                required: [
+                  'background-primary', 'surface-primary', 'surface-elevated',
+                  'surface-secondary', 'surface-input',
+                  'text-primary', 'text-secondary', 'text-disabled', 'text-on-cta',
+                  'cta-primary', 'cta-hover', 'border-default', 'border-focus',
+                  'border-error', 'error', 'success', 'warning', 'info', 'overlay',
+                ],
+                additionalProperties: false,
+              },
+            },
+            required: ['primitive', 'semantic'],
+            additionalProperties: false,
+          },
+          fonts: {
+            type: 'object',
+            properties: {
+              display: { type: 'string' },
+              body: { type: 'string' },
+            },
+            required: ['display', 'body'],
+            additionalProperties: false,
+          },
+          brand: {
+            type: 'object',
+            properties: {
+              tone: { type: 'string' },
+              illustrationDirection: { type: 'string' },
+              illustrationDescription: { type: 'string' },
+              motionFeel: { type: 'string', enum: ['snappy', 'smooth', 'bouncy', 'subtle'] },
+            },
+            required: ['tone', 'illustrationDirection', 'illustrationDescription', 'motionFeel'],
+            additionalProperties: false,
+          },
+          elevation: {
+            type: 'object',
+            properties: {
+              levels: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    level: { type: 'number' },
+                    shadow: { type: 'string' },
+                    description: { type: 'string' },
+                  },
+                  required: ['level', 'shadow', 'description'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['levels'],
+            additionalProperties: false,
+          },
+        },
+        required: ['label', 'vibe', 'colors', 'fonts', 'brand'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['options'],
+  additionalProperties: false,
+};
+
+/**
+ * Convert structured output (primitive as array) to the DesignOption format
+ * (primitive as Record<string, string>) used by the rest of the pipeline.
+ */
+function normalizeStructuredOptions(
+  raw: { options: Array<Record<string, unknown>> },
+): DesignOption[] {
+  return raw.options.map((opt) => {
+    const colors = opt.colors as { primitive: Array<{ name: string; hex: string }> | Record<string, string>; semantic: Record<string, string> };
+    // Convert primitive array → Record if the structured schema was used
+    const primitive: Record<string, string> = Array.isArray(colors.primitive)
+      ? Object.fromEntries(colors.primitive.map((c) => [c.name, c.hex]))
+      : colors.primitive;
+    return {
+      ...opt,
+      colors: { primitive, semantic: colors.semantic },
+    } as DesignOption;
+  });
+}
+
 /** Build the system prompt for the LLM. */
-function buildSystemPrompt(): string {
-  return `You are a design system expert. Generate 3 distinct design direction options for a web application.
+function buildSystemPrompt(output: NodeJS.WritableStream): string {
+  const systemPrompt = `You are a design system expert. Generate 3 distinct design direction options for a web application.
 
 Each option should feel meaningfully different — vary the mood, color temperature, and typography personality.
 
-Respond with ONLY valid JSON (no markdown, no code fences) matching this exact schema:
-
-{
-  "options": [
-    {
-      "label": "Theme Name",
-      "vibe": "One-line description of the visual feel",
-      "colors": {
-        "primitive": {
-          "color-name-1": "#hex1",
-          "color-name-2": "#hex2",
-          "color-name-3": "#hex3",
-          "color-name-4": "#hex4",
-          "color-name-5": "#hex5"
-        },
-        "semantic": {
-          "background-primary": "color-name-X",
-          "surface-primary": "color-name-or-hex",
-          "surface-elevated": "color-name-or-hex",
-          "text-primary": "color-name-Y",
-          "text-secondary": "color-name-or-hex",
-          "text-disabled": "color-name-or-hex",
-          "text-on-cta": "color-name-or-hex",
-          "cta-primary": "color-name-Z",
-          "cta-hover": "color-name-or-hex",
-          "border-default": "color-name-or-hex",
-          "border-focus": "color-name-or-hex",
-          "border-error": "color-name-or-hex",
-          "error": "#hex-for-error",
-          "success": "color-name-or-hex",
-          "warning": "color-name-or-hex",
-          "info": "color-name-or-hex",
-          "overlay": "rgba(0,0,0,0.5)"
-        }
-      },
-      "fonts": {
-        "display": "Google Font Family Name",
-        "body": "Google Font Family Name"
-      },
-      "brand": {
-        "tone": "tone-descriptor",
-        "illustrationDirection": "style-keyword",
-        "illustrationDescription": "Brief description of illustration approach",
-        "motionFeel": "snappy|smooth|bouncy|subtle"
-      },
-      "elevation": {
-        "levels": [
-          { "level": 0, "shadow": "none", "description": "Flat, no elevation" },
-          { "level": 1, "shadow": "0 1px 3px rgba(0,0,0,0.08)", "description": "Cards on surface" },
-          { "level": 2, "shadow": "CSS box-shadow value", "description": "Dropdowns, popovers" },
-          { "level": 3, "shadow": "CSS box-shadow value", "description": "Modals, dialogs" }
-        ]
-      },
-      "components": {
-        "button": {
-          "primary": { "bg": "semantic-or-primitive-name", "text": "semantic-or-primitive-name", "radius": "border-radius-key", "padding_x": 24, "padding_y": 12, "min_height": 44 },
-          "secondary": { "bg": "transparent", "text": "semantic-or-primitive-name", "border_color": "primitive-name", "border_width": 1, "radius": "border-radius-key" },
-          "ghost": { "bg": "transparent", "text": "semantic-or-primitive-name", "radius": "border-radius-key" }
-        },
-        "card": {
-          "default": { "bg": "semantic-or-primitive-name", "border_color": "primitive-name", "border_width": 1, "border_style": "solid", "radius": "border-radius-key", "padding": 24 },
-          "highlighted": { "bg": "primitive-name", "border_color": "semantic-or-primitive-name", "border_width": 2, "border_style": "solid", "radius": "border-radius-key", "padding": 24 }
-        },
-        "input": {
-          "default": { "bg": "semantic-or-primitive-name", "text": "semantic-or-primitive-name", "border_color": "primitive-name", "radius": "border-radius-key", "padding_x": 16, "padding_y": 12, "min_height": 44 },
-          "focus": { "border_color": "semantic-or-primitive-name", "border_width": 2 },
-          "error": { "border_color": "error", "border_width": 2 }
-        },
-        "tab_bar": {
-          "active": { "bg": "semantic-or-primitive-name", "text": "semantic-or-primitive-name", "radius": "pill" },
-          "inactive": { "bg": "transparent", "text": "semantic-or-primitive-name" }
-        },
-        "badge": {
-          "success": { "bg": "primitive-name", "text": "semantic-or-primitive-name", "radius": "pill" },
-          "warning": { "bg": "primitive-name", "text": "semantic-or-primitive-name", "radius": "pill" },
-          "error": { "bg": "error", "text": "semantic-or-primitive-name", "radius": "pill" },
-          "info": { "bg": "semantic-or-primitive-name", "text": "semantic-or-primitive-name", "radius": "pill" }
-        },
-        "avatar": {
-          "default": { "size": 40, "border_radius": "pill", "border_color": "primitive-name", "border_width": 2 }
-        },
-        "progress_bar": {
-          "track": { "bg": "primitive-name", "radius": "pill", "height": 8 },
-          "fill": { "bg": "semantic-or-primitive-name", "radius": "pill" }
-        }
-      }
-    }
-  ]
-}
-
 Rules:
-- 5-8 primitive colors per option, using kebab-case names
-- Semantic values reference primitive color names (except error which can be a direct hex)
-- All 17 semantic keys are required (background-primary, surface-primary, surface-elevated, text-primary, text-secondary, text-disabled, text-on-cta, cta-primary, cta-hover, border-default, border-focus, border-error, error, success, warning, info, overlay)
-- overlay must be an rgba value for modal backdrops
+- 5-8 primitive colors per option, using kebab-case names (e.g. "deep-teal", "warm-cream")
+- Semantic color values should reference primitive color names (except overlay which is an rgba value)
 - Use real Google Fonts that pair well
 - Ensure sufficient contrast between background-primary and text-primary (WCAG AA)
-- Each option should have a distinct personality
-- Elevation shadows should feel cohesive with the design direction
-- The components section must define token bindings for: button (primary, secondary, ghost), card (default, highlighted), input (default, focus, error), tab_bar (active, inactive), badge (success, warning, error, info), avatar, progress_bar. All color values must reference your primitive or semantic token names — never raw hex.`;
+- surface-secondary should be a subtle variant of surface-primary (e.g. slightly darker or lighter) for nested content areas
+- surface-input should be the background for input fields (often same as background-primary or slightly different)
+- Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)`
+  debugLog('buildSystemPrompt: Building system prompt');
+  return systemPrompt;
 }
 
 /** Build the user prompt with app context. */
@@ -206,7 +261,8 @@ function buildUserPrompt(context: {
   description: string;
   targetAudience: string;
   prdContent?: string;
-}): string {
+}, output: NodeJS.WritableStream): string {
+  debugLog(context.prdContent ? 'buildUserPrompt: prdContent included in the prompt' : 'buildUserPrompt: prdContent not included in the prompt');
   const appContext = context.prdContent
     ? `- App name: ${context.appName}\n\nPRD:\n${context.prdContent}`
     : `- App name: ${context.appName}\n- Description: ${context.description || 'A web application'}\n- Target audience: ${context.targetAudience || 'general'}`;
@@ -218,13 +274,26 @@ function buildUserPrompt(context: {
 export function parseLLMResponse(raw: string): DesignOption[] {
   // Strip markdown code fences if present
   const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
-  const parsed = JSON.parse(cleaned) as { options: DesignOption[] };
+  const parsed = JSON.parse(cleaned) as Record<string, unknown>;
 
-  if (!Array.isArray(parsed.options)) {
-    throw new Error('Response missing "options" array');
+  // Accept the canonical key "options" or common LLM variants
+  const candidates = parsed.options
+    ?? parsed.designSystems
+    ?? parsed.themes
+    ?? parsed.designOptions
+    ?? parsed.design_systems
+    ?? parsed.design_options;
+
+  // If the top-level value is itself an array, use it directly
+  const optionsArray = Array.isArray(candidates)
+    ? candidates
+    : Array.isArray(parsed) ? parsed as unknown as DesignOption[] : undefined;
+
+  if (!Array.isArray(optionsArray)) {
+    throw new Error('Response missing "options" array — got keys: ' + Object.keys(parsed).join(', '));
   }
 
-  return parsed.options.filter((opt) => {
+  return (optionsArray as DesignOption[]).filter((opt) => {
     if (!opt.label || !opt.vibe) return false;
     if (!opt.colors?.primitive || !opt.colors?.semantic) return false;
     const primCount = Object.keys(opt.colors.primitive).length;
@@ -238,57 +307,13 @@ export function parseLLMResponse(raw: string): DesignOption[] {
   });
 }
 
-/** Default component tokens used when LLM truncates the components section. */
-const DEFAULT_COMPONENTS: Record<string, Record<string, Record<string, string | number>>> = {
-  button: {
-    primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
-    secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'border-default', border_width: 1, radius: 'medium' },
-    ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
-  },
-  card: {
-    default: { bg: 'background-primary', border_color: 'border-default', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
-    highlighted: { bg: 'surface-secondary', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
-  },
-  input: {
-    default: { bg: 'background-primary', text: 'text-primary', border_color: 'border-default', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
-    focus: { border_color: 'cta-primary', border_width: 2 },
-    error: { border_color: 'error', border_width: 2 },
-  },
-  tab_bar: {
-    active: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
-    inactive: { bg: 'transparent', text: 'text-primary' },
-  },
-  badge: {
-    success: { bg: 'success', text: 'background-primary', radius: 'pill' },
-    warning: { bg: 'warning', text: 'text-primary', radius: 'pill' },
-    error: { bg: 'error', text: 'background-primary', radius: 'pill' },
-    info: { bg: 'info', text: 'background-primary', radius: 'pill' },
-  },
-  avatar: { default: { size: 40, border_radius: 'pill', border_color: 'border-default', border_width: 2 } },
-  progress_bar: {
-    track: { bg: 'surface-secondary', radius: 'pill', height: 8 },
-    fill: { bg: 'cta-primary', radius: 'pill' },
-  },
-};
-
-/**
- * Backfill missing components on parsed LLM options.
- * When the LLM truncates output (common at low token limits), inject default
- * component tokens so downstream consumers always have component bindings.
- */
-export function backfillComponents(options: DesignOption[]): DesignOption[] {
-  return options.map((opt) => {
-    if (opt.components && Object.keys(opt.components).length > 0) return opt;
-    warnMsg('LLM omitted components section — backfilling with defaults.\n');
-    return { ...opt, components: DEFAULT_COMPONENTS };
-  });
-}
-
 // Order matters: entries are resolved top-to-bottom.
 // text-secondary must be filled before border-default (which derives from it).
 const SEMANTIC_COLOR_DEFAULTS: Record<string, (opt: DesignOption) => string> = {
   'surface-primary': (opt) => opt.colors.semantic['background-primary'],
   'surface-elevated': (opt) => opt.colors.semantic['background-primary'],
+  'surface-secondary': (opt) => opt.colors.semantic['surface-primary'],
+  'surface-input': (opt) => opt.colors.semantic['background-primary'],
   'text-secondary': (opt) => opt.colors.semantic['text-primary'],
   'text-disabled': (opt) => opt.colors.semantic['text-primary'],
   'text-on-cta': (opt) => opt.colors.semantic['background-primary'],
@@ -309,13 +334,20 @@ const SEMANTIC_COLOR_DEFAULTS: Record<string, (opt: DesignOption) => string> = {
  * Backfill missing semantic colors on parsed LLM options.
  * Uses heuristic derivations so downstream consumers always have all 17 keys.
  */
-export function backfillSemanticColors(options: DesignOption[]): DesignOption[] {
+export function backfillSemanticColors(options: DesignOption[], output: NodeJS.WritableStream): DesignOption[] {
   return options.map((opt) => {
     const filled = { ...opt.colors.semantic };
+    let missingKeys = false;
+    let missingKeysList: string[] = [];
     for (const [key, derive] of Object.entries(SEMANTIC_COLOR_DEFAULTS)) {
       if (!filled[key]) {
+        missingKeys = true;
+        missingKeysList.push(key);
         filled[key] = derive({ ...opt, colors: { ...opt.colors, semantic: filled } } as DesignOption);
       }
+    }
+    if (missingKeys) {
+      debugLog('backfillSemanticColors: Missing keys: ' + missingKeysList.join(', '));
     }
     return {
       ...opt,
@@ -328,16 +360,25 @@ export function backfillSemanticColors(options: DesignOption[]): DesignOption[] 
  * Backfill missing elevation on parsed LLM options.
  * Injects DEFAULT_ELEVATION when the LLM omits it.
  */
-export function backfillElevation(options: DesignOption[]): DesignOption[] {
+export function backfillElevation(options: DesignOption[], output: NodeJS.WritableStream): DesignOption[] {
   return options.map((opt) => {
+    if (opt.elevation && opt.elevation.levels.length) {
+      // add level 0 if it does not exist: { level: 0, shadow: 'none', description: 'Flat, no elevation' }
+      if (!opt.elevation.levels.find((level) => level.level === 0)) {
+        const withLevel0 = [{ level: 0, shadow: 'none', description: 'Flat, no elevation' }, ...opt.elevation.levels];
+        opt = { ...opt, elevation: { ...opt.elevation, levels: withLevel0 } };
+      }
+    }
     if (opt.elevation && opt.elevation.levels.length >= 4) return opt;
-    warnMsg('LLM omitted elevation — backfilling with defaults.\n');
+    debugLog('backfillElevation: LLM omitted elevation — backfilling with defaults');
     return { ...opt, elevation: DEFAULT_ELEVATION };
   });
 }
 
 /** Convert a DesignOption to DesignTokensSpec. */
-export function optionToTokens(option: DesignOption): DesignTokensSpec {
+export function optionToTokens(option: DesignOption, output: NodeJS.WritableStream): DesignTokensSpec {
+  debugLog('optionToTokens: Converting DesignOption to DesignTokensSpec');
+  debugLog('optionToTokens: Hardcoding typography scale, spacing, borders, touch targets, elevation, layout, and z_index');
   return {
     version: '1.0',
     created_by: 'agentforge-init-llm',
@@ -355,12 +396,19 @@ export function optionToTokens(option: DesignOption): DesignTokensSpec {
     elevation: option.elevation ?? DEFAULT_ELEVATION,
     layout: SHARED_LAYOUT.layout,
     z_index: SHARED_LAYOUT.z_index,
-    ...(option.components ? { components: option.components } : {}),
   };
 }
 
 /** Convert a DesignOption to BrandSpec. */
-export function optionToBrand(option: DesignOption, audience: string): BrandSpec {
+export function optionToBrand(option: DesignOption, audience: string, output: NodeJS.WritableStream): BrandSpec {
+  debugLog('optionToBrand: Converting DesignOption to BrandSpec');
+  debugLog('optionToBrand: Hardcoding accessibility=AA, page_transitions=fade, duration_base_ms=200, easing=ease-out');
+  logDefaults('optionToBrand', {
+    illustrationDirection: [option.brand.illustrationDirection, 'minimal'],
+    illustrationDescription: [option.brand.illustrationDescription, 'Clean illustrations with accent color highlights'],
+    motionFeel: [option.brand.motionFeel, 'snappy'],
+    audience: [audience, 'general'],
+  });
   return {
     version: '1.0',
     created_by: 'agentforge-init-llm',
@@ -738,7 +786,7 @@ export function openInBrowser(url: string): Promise<boolean> {
   return new Promise((resolve) => {
     const cmd = process.platform === 'darwin' ? 'open'
       : process.platform === 'win32' ? 'start'
-      : 'xdg-open';
+        : 'xdg-open';
     exec(`${cmd} "${url}"`, (err) => {
       resolve(!err);
     });
@@ -781,13 +829,114 @@ export interface GenerateDesignOptionsConfig {
   readonly openBrowser?: (url: string) => Promise<boolean>;
   /** When true, skip LLM calls and use built-in archetypes directly. */
   readonly mock?: boolean;
+  /** Optional project root used to load docs/prd.md when context.prdContent is not set. */
+  readonly rootDir?: string;
+  /** Optional filesystem to use with rootDir for PRD loading. */
+  readonly fileSystem?: FileSystem;
+}
+
+type DesignOptionsContext = {
+  appName: string;
+  description: string;
+  targetAudience: string;
+  prdContent?: string;
+};
+
+/**
+ * Apply caller `prdContent` if present; otherwise read `docs/prd.md` from disk when
+ * `rootDir` + `fileSystem` are configured. Does not prompt — see
+ * `resolveEffectiveDesignOptionsContext()` for the full PRD resolution flow.
+ */
+export function resolveDesignOptionsContext(
+  context: DesignOptionsContext,
+  config?: GenerateDesignOptionsConfig,
+): DesignOptionsContext {
+  if (context.prdContent) {
+    return context;
+  }
+  if (!config?.rootDir || !config.fileSystem) {
+    return context;
+  }
+
+  const prdResult = loadPRD(config.rootDir, config.fileSystem);
+  if (!prdResult.ok) {
+    return context;
+  }
+
+  return { ...context, prdContent: prdResult.value };
+}
+
+/**
+ * Full PRD resolution for design options (logical order, not redundant):
+ * 1. If the caller already passed `prdContent`, use it.
+ * 2. Else try `docs/prd.md` on disk immediately — if it exists, load it and skip prompting.
+ *    (This is why a first call to `resolveDesignOptionsContext` here does *not* “miss” the PRD:
+ *    it is the step that picks up an existing file.)
+ * 3. If still missing and we have a project root, ensure `docs/` exists, optionally ask the user
+ *    to add the file, then load again.
+ */
+async function resolveEffectiveDesignOptionsContext(
+  context: DesignOptionsContext,
+  config: GenerateDesignOptionsConfig | undefined,
+  inp: NodeJS.ReadableStream,
+  out: NodeJS.WritableStream,
+): Promise<DesignOptionsContext> {
+  // Single automatic read: if docs/prd.md exists, we load it here and skip all prompting.
+  let effectiveContext = resolveDesignOptionsContext(context, config);
+  if (effectiveContext.prdContent) {
+    return effectiveContext;
+  }
+
+  // PRD is still missing after the automatic disk read. We only offer the interactive pause when
+  // we can read paths on disk (--mock skips this; omitting rootDir/fileSystem means no project
+  // context). If we return here, we are not "missing PRD again" — we simply cannot show the prompt.
+  const rootDir = config?.rootDir;
+  const fileSystem = config?.fileSystem;
+  const canOfferInteractivePrdPause =
+    !config?.mock && rootDir !== undefined && rootDir !== '' && fileSystem !== undefined;
+  if (!canOfferInteractivePrdPause) {
+    return effectiveContext;
+  }
+
+  // loadPRD already ran inside resolveDesignOptionsContext; we only reach here when the file
+  // was missing or unreadable. The prompts below are an optional second chance: user adds the
+  // file on disk locally (not an "upload"), then we call loadPRD again.
+  const docsDir = path.join(rootDir, 'docs');
+  fileSystem.mkdir(docsDir);
+  const projectFolderName = path.basename(path.resolve(rootDir));
+  const prdRelPath = path.join(projectFolderName, 'docs', 'prd.md');
+
+  const pauseToAddPrd = await promptOnce(
+    inp,
+    out,
+    `Do you have a PRD for "${effectiveContext.appName}"? (y/n): `,
+  );
+  if (pauseToAddPrd === 'y' || pauseToAddPrd === 'yes') {
+    await promptOnce(
+      inp,
+      out,
+      `Add your markdown PRD at ${prdRelPath}, then press Enter: `,
+    );
+    effectiveContext = resolveDesignOptionsContext(context, config);
+    if (effectiveContext.prdContent) {
+      out.write(successMsg(`✓ Loaded PRD from ${prdRelPath}\n`));
+    } else {
+      out.write(
+        warnMsg(`${prdRelPath} still not readable. Continuing with name and description only.\n`),
+      );
+    }
+  } else {
+    out.write(infoMsg('Continuing with app name and description only (no PRD file).\n'));
+  }
+
+  return effectiveContext;
 }
 
 /**
  * Generate 3 design system options (LLM or fallback), show preview, let user pick.
  */
 export async function generateDesignOptions(
-  context: { appName: string; description: string; targetAudience: string; prdContent?: string },
+  context: DesignOptionsContext,
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream,
   config?: GenerateDesignOptionsConfig,
@@ -798,6 +947,7 @@ export async function generateDesignOptions(
 
   let options: DesignOption[];
   let source: 'llm' | 'fallback' = 'fallback';
+  const effectiveContext = await resolveEffectiveDesignOptionsContext(context, config, inp, out);
 
   // Try LLM generation (unless --mock is set)
   const apiKey = process.env['ANTHROPIC_API_KEY'];
@@ -806,7 +956,7 @@ export async function generateDesignOptions(
     options = buildFallbackOptions();
   } else if (apiKey) {
     out.write(infoMsg('\nCalling Claude Sonnet to generate design themes...\n'));
-    const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
+    const llmOptions = await tryLLMGeneration(apiKey, effectiveContext, out, promptTraces);
     if (llmOptions) {
       options = llmOptions;
       source = 'llm';
@@ -821,7 +971,7 @@ export async function generateDesignOptions(
   }
 
   // Generate HTML preview and open in browser
-  const html = generatePreviewHtml(context.appName, options);
+  const html = generatePreviewHtml(effectiveContext.appName, options);
   const tmpFile = path.join(os.tmpdir(), `agentforge-design-preview-${Date.now()}.html`);
   fs.writeFileSync(tmpFile, html, 'utf-8');
 
@@ -843,11 +993,11 @@ export async function generateDesignOptions(
 
     if (answer === 'r' && apiKey && !config?.mock) {
       out.write(infoMsg('Regenerating via LLM...\n'));
-      const llmOptions = await tryLLMGeneration(apiKey, context, out, promptTraces);
+      const llmOptions = await tryLLMGeneration(apiKey, effectiveContext, out, promptTraces);
       if (llmOptions) {
         options = llmOptions;
         source = 'llm';
-        const newHtml = generatePreviewHtml(context.appName, options);
+        const newHtml = generatePreviewHtml(effectiveContext.appName, options);
         fs.writeFileSync(tmpFile, newHtml, 'utf-8');
         const opened = await browserFn(`file://${tmpFile}`);
         if (!opened) {
@@ -877,8 +1027,8 @@ export async function generateDesignOptions(
   }
 
   const selected = options[choice - 1];
-  const tokens = optionToTokens(selected);
-  const brand = optionToBrand(selected, context.targetAudience);
+  const tokens = optionToTokens(selected, out);
+  const brand = optionToBrand(selected, effectiveContext.targetAudience, out);
 
   return { tokens, brand, source };
 }
@@ -898,19 +1048,21 @@ async function tryLLMGeneration(
     return null;
   }
 
-  const systemPrompt = buildSystemPrompt();
-  const userPrompt = buildUserPrompt(context);
+  const systemPrompt = buildSystemPrompt(output);
+  const userPrompt = buildUserPrompt(context, output);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const messages: { role: 'user'; content: string }[] = [
         { role: 'user', content: userPrompt },
-        ...(attempt > 0
-          ? [{ role: 'user' as const, content: 'Your previous response was not valid JSON. Please respond with ONLY the JSON object, no markdown.' }]
-          : []),
       ];
       const prompt = { system: systemPrompt, messages };
-      const opts = { model: 'claude-sonnet-4-6', maxTokens: 8192, temperature: 0.8 };
+      const opts = {
+        model: 'claude-sonnet-4-6',
+        maxTokens: 8192,
+        temperature: 0.8,
+        responseSchema: { schema: DESIGN_OPTIONS_SCHEMA },
+      };
 
       recordPromptTrace(
         { promptTraces },
@@ -920,41 +1072,46 @@ async function tryLLMGeneration(
       );
 
       const result = await provider.complete(prompt, opts);
-
+      // const result = await generateDesignOptionsMock(prompt, opts);
       if (!result.ok) {
         output.write(warnMsg(`LLM request failed: ${JSON.stringify(result.error)}\n`));
         return null;
       }
 
-      const rawOptions = parseLLMResponse(result.value.content);
-      const withComponents = backfillComponents(rawOptions);
-      const withSemantics = backfillSemanticColors(withComponents);
-      const options = backfillElevation(withSemantics);
+      // With structured output the response is guaranteed valid JSON matching the schema.
+      // Use the pre-parsed structured field when available, fall back to parsing content.
+      const parsed = (result.value.structured ?? JSON.parse(result.value.content)) as { options: Array<Record<string, unknown>> };
+      const rawOptions = normalizeStructuredOptions(parsed);
+
+      const withSemantics = backfillSemanticColors(rawOptions, output);
+      const options = backfillElevation(withSemantics, output);
       if (options.length < 2) {
-        if (attempt === 0) continue; // retry
-        output.write(warnMsg('LLM returned insufficient valid options, using defaults.\n'));
+        output.write(warnMsg(`LLM returned ${options.length} valid option(s), need at least 2 ${attempt === 0 ? '— retrying...' : ', using defaults.'}\n`));
+        if (attempt === 0) continue;
         return null;
       }
 
       // Validate each option by converting to tokens/brand
       const validOptions = options.filter((opt) => {
-        const tokens = optionToTokens(opt);
-        const brand = optionToBrand(opt, context.targetAudience);
+        const tokens = optionToTokens(opt, output);
+        const brand = optionToBrand(opt, context.targetAudience, output);
         const tokensValid = validateDesignTokens(tokens);
         const brandValid = validateBrandSpec(brand);
+        if (!tokensValid.ok) output.write(warnMsg(`  Option "${opt.label}": token validation failed — ${JSON.stringify(tokensValid.error)}\n`));
+        if (!brandValid.ok) output.write(warnMsg(`  Option "${opt.label}": brand validation failed — ${JSON.stringify(brandValid.error)}\n`));
         return tokensValid.ok && brandValid.ok;
       });
 
       if (validOptions.length < 2) {
+        output.write(warnMsg(`Only ${validOptions.length}/${options.length} options passed validation${attempt === 0 ? ' — retrying...' : ', using defaults.'}\n`));
         if (attempt === 0) continue;
-        output.write(warnMsg('LLM options failed validation, using defaults.\n'));
         return null;
       }
 
       return validOptions.slice(0, 3);
     } catch (err) {
+      output.write(warnMsg(`LLM error (attempt ${attempt + 1}/2): ${err instanceof Error ? err.message : String(err)}\n`));
       if (attempt === 0) continue;
-      output.write(warnMsg(`LLM error: ${err instanceof Error ? err.message : String(err)}\n`));
       return null;
     }
   }

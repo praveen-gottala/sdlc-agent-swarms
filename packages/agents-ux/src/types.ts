@@ -13,6 +13,12 @@ export interface ComponentTreeNode {
 export interface ResponsiveRule {
   readonly breakpoint: string;
   readonly behavior: string;
+  /** Viewport width in pixels (e.g., 375, 768, 1440). */
+  readonly width?: number;
+  /** Layout strategy at this breakpoint (e.g., "single-column", "two-column"). */
+  readonly layout?: string;
+  /** Specific changes at this breakpoint (e.g., ["stack cards vertically", "hide sidebar"]). */
+  readonly changes?: readonly string[];
 }
 
 /** One stage in the 4-stage implementation pattern. */

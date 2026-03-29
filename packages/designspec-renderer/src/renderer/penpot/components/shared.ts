@@ -2,6 +2,7 @@
  * @module @agentforge/designspec-renderer/renderer/penpot/components/shared
  * Shared utilities for Penpot component renderers.
  */
+import type { LayoutSpec } from '../../../types/design-spec-v2.js';
 import type { ScriptBuilder } from '../script-builder.js';
 import type { RenderContext } from '../render-context.js';
 
@@ -101,6 +102,43 @@ export function emitAppendChild(
     builder.line(
       `${childVar}.layoutChild.verticalSizing = '${verticalSizing}';`,
     );
+  }
+}
+
+type LayoutMargins = Pick<
+  LayoutSpec,
+  'my' | 'mx' | 'mt' | 'mb' | 'ml' | 'mr'
+>;
+
+/**
+ * Emit layoutChild margin fields (after appendChild + sizing).
+ * Uses Penpot LayoutChildProperties — must run after layoutChild.* sizing is set.
+ */
+export function emitLayoutChildMargins(
+  builder: ScriptBuilder,
+  childVar: string,
+  layout: LayoutMargins | undefined,
+): void {
+  if (!layout) return;
+  if (layout.my !== undefined) {
+    builder.line(`${childVar}.layoutChild.verticalMargin = ${layout.my};`);
+  } else {
+    if (layout.mt !== undefined) {
+      builder.line(`${childVar}.layoutChild.topMargin = ${layout.mt};`);
+    }
+    if (layout.mb !== undefined) {
+      builder.line(`${childVar}.layoutChild.bottomMargin = ${layout.mb};`);
+    }
+  }
+  if (layout.mx !== undefined) {
+    builder.line(`${childVar}.layoutChild.horizontalMargin = ${layout.mx};`);
+  } else {
+    if (layout.ml !== undefined) {
+      builder.line(`${childVar}.layoutChild.leftMargin = ${layout.ml};`);
+    }
+    if (layout.mr !== undefined) {
+      builder.line(`${childVar}.layoutChild.rightMargin = ${layout.mr};`);
+    }
   }
 }
 

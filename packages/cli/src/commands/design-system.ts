@@ -113,18 +113,29 @@ export async function pickComponentLibrary(
 
   output.write(infoMsg('\nWhich component library will your app use?\n'));
   presets.forEach((p, i) => {
-    output.write(infoMsg(`  ${i + 1}. ${p.libraryName} — ${p.description}\n`));
+    const defaultTag = i === 0 ? ' (default)' : '';
+    output.write(infoMsg(`  ${i + 1}. ${p.libraryName} — ${p.description}${defaultTag}\n`));
   });
 
   let choice: number | undefined;
   const maxChoice = presets.length;
   while (choice === undefined) {
-    const answer = await promptOnce(input, output, `\nChoose 1-${maxChoice}: `);
-    const num = parseInt(answer, 10);
-    if (num >= 1 && num <= maxChoice) {
-      choice = num;
+    const answer = await promptOnce(
+      input,
+      output,
+      `\nChoose 1-${maxChoice} (Enter = 1): `,
+    );
+    if (answer === '') {
+      choice = 1;
     } else {
-      output.write(warnMsg(`Please enter a number from 1 to ${maxChoice}.\n`));
+      const num = parseInt(answer, 10);
+      if (num >= 1 && num <= maxChoice) {
+        choice = num;
+      } else {
+        output.write(
+          warnMsg(`Please enter 1–${maxChoice}, or press Enter for 1 (default).\n`),
+        );
+      }
     }
   }
 
@@ -213,7 +224,7 @@ export async function designSystemUpdateCommand(
     { appName, description, targetAudience: audience },
     input,
     output,
-    { openBrowser: config?.openBrowser, mock: config?.mock },
+    { openBrowser: config?.openBrowser, mock: config?.mock, rootDir, fileSystem },
   );
 
   writeDesignSystemFiles(rootDir, designResult, fileSystem);

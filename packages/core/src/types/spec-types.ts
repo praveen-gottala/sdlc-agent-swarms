@@ -140,3 +140,15 @@ export interface PagesSpec {
   readonly version: string;
   readonly pages: readonly PageEntry[];
 }
+
+// ---------------------------------------------------------------------------
+// Page Context (structured context passed to UX agents)
+// ---------------------------------------------------------------------------
+
+/** Structured page context passed to UX agents for spec-driven design. */
+export interface PageContext {
+  readonly targetPage: PageEntry;
+  readonly allPages: readonly PageEntry[];
+  readonly models?: readonly ModelEntry[];
+  readonly apiEndpoints?: readonly EndpointEntry[];
+}

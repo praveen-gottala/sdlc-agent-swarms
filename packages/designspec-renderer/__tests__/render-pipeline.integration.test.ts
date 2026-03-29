@@ -174,8 +174,8 @@ describe('Content verification — data flow', () => {
     const spec = loadAppSpec('bill-entry');
     const result = renderToScript(spec, yamlTokens, V2_BUILTIN_CATALOG);
 
-    // Extract the token map block: const T = { ... };
-    const tokenMapMatch = result.script.match(/const T = \{([^}]+)\}/);
+    // Extract the token map block: const T = new Proxy({ ... }, { ... });
+    const tokenMapMatch = result.script.match(/const T = new Proxy\(\{([^}]+)\}/);
     expect(tokenMapMatch).not.toBeNull();
     const tokenMap = tokenMapMatch![0];
 

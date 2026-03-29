@@ -7,7 +7,7 @@
 
 import * as path from 'node:path';
 import { Command } from 'commander';
-import { findProjectRoot, realFs } from './fs-utils.js';
+import { findProjectRoot, realFs, loadDotEnv } from './fs-utils.js';
 import { initCommand } from './commands/init.js';
 import { startCommand } from './commands/start.js';
 import { statusCommand } from './commands/status.js';
@@ -55,6 +55,7 @@ export function createProgram(): Command {
       const rootDir = directory
         ? path.resolve(process.cwd(), directory)
         : process.cwd();
+      loadDotEnv(rootDir);
       await initCommand(rootDir, realFs, undefined, undefined, opts.mock ? { mock: true } : undefined);
     });
 
@@ -164,16 +165,20 @@ export function createProgram(): Command {
   program
     .command('design:penpot')
     .description('Create a Penpot design via the UX agent pipeline (Research -> Planning -> Design)')
-    .argument('<description>', 'Natural language description of what to design')
+    .argument('<pageId>', 'Page ID from pages.yaml (e.g., "bill-entry") or page name')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, connect')
-    .option('--module <id>', 'Module ID (default: derived from description)')
+    .option('--module <id>', 'Module ID override (default: page ID from pages.yaml)')
     .option('--width <pixels>', 'Viewport width in pixels (default: 1440)')
     .option('--no-wait', 'Exit after design without waiting for approval')
     .option('--implement', 'Skip feedback loop and generate code directly after design')
     .option('--mock', 'Use mock MCP (no design tool connection)')
     .option('--project-dir <dir>', 'Project directory for artifact path resolution (default: cwd)')
-    .action(async (description: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string }) => {
-      await designPenpotCommand(description, process.stdout, {
+    .option('--designspec-v1', 'Use V1 LLM-based script generation (legacy; default is V2 deterministic renderer)')
+    .option('--fresh', 'Force re-run all stages, ignoring cached research/planning artifacts')
+    .option('--evaluate', 'Run non-interactive design evaluation (for CI/CD). Exit code 1 if score < threshold')
+    .option('--evaluate-threshold <score>', 'Minimum score (0-100) for --evaluate pass (default: 75)')
+    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string }) => {
+      await designPenpotCommand(pageId, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
         module: options.module,
         width: options.width ? parseInt(options.width, 10) : undefined,
@@ -181,6 +186,10 @@ export function createProgram(): Command {
         implement: options.implement,
         mock: options.mock,
         projectDir: options.projectDir,
+        designspecV1: options.designspecV1,
+        fresh: options.fresh,
+        evaluate: options.evaluate,
+        evaluateThreshold: options.evaluateThreshold ? parseInt(options.evaluateThreshold, 10) : undefined,
       });
     });
 
@@ -248,6 +257,7 @@ export function createProgram(): Command {
     .option('--mock', 'Skip LLM calls and use built-in design archetypes (for testing)')
     .action(async (opts: { mock?: boolean }) => {
       const rootDir = findProjectRoot();
+      loadDotEnv(rootDir);
       await designSystemUpdateCommand(rootDir, realFs, process.stdin, process.stdout, opts.mock ? { mock: true } : undefined);
     });
 
@@ -338,4 +348,4 @@ export type { DescribeConfig, DescribeAnswers } from './commands/describe.js';
 export type { GeneratedAppSpec, GeneratedPage, GeneratedModel, GeneratedEndpoint, DesignGenerateResult } from './commands/design-generate.js';
 export type { InitAnswers, InitConfig, DesignArchetype } from './commands/init.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
-export { formatTaskTable, formatTaskRow } from './formatter.js';
+export { formatTaskTable, formatTaskRow, debugMsg } from './formatter.js';

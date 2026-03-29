@@ -345,13 +345,6 @@ describeE2E('E2E Cost Dashboard Pipeline', () => {
     expect(countNodes(p.componentTree)).toBeGreaterThanOrEqual(3);
     expect(Object.keys(p.tokenBindings).length).toBeGreaterThanOrEqual(5);
     expect(p.responsiveRules.length).toBeGreaterThanOrEqual(2);
-    expect(p.implementationStages.length).toBe(4);
-
-    const stageValues = p.implementationStages.map((s) => s.stage);
-    expect(stageValues).toContain('layout');
-    expect(stageValues).toContain('theme');
-    expect(stageValues).toContain('animation');
-    expect(stageValues).toContain('implementation');
   }, 300_000);
 
   // --------------------------------------------------------------------------
@@ -443,7 +436,7 @@ describeE2E('E2E Cost Dashboard Pipeline', () => {
       r.planning ? 'PASS' : 'FAIL',
       ((r.timings.planning ?? 0) / 1000).toFixed(1),
       r.planning
-        ? `components=${r.planning.componentTree.length}, tokens=${Object.keys(r.planning.tokenBindings).length}, responsive=${r.planning.responsiveRules.length}, stages=[${r.planning.implementationStages.map((s) => s.stage).join(',')}]`
+        ? `components=${r.planning.componentTree.length}, tokens=${Object.keys(r.planning.tokenBindings).length}, responsive=${r.planning.responsiveRules.length}`
         : r.errors.find((e) => e.startsWith('Planning')) ?? 'unknown error',
     ]);
 

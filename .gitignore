@@ -78,5 +78,4 @@ venv/
 *.tsbuildinfo
 
 # Test Projects
-nova-hospital
-cafe-spot
+zen-mode

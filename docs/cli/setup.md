@@ -35,6 +35,37 @@ agentforge init my-project
 
 ---
 
+## `agentforge describe`
+
+Capture your app context by providing or generating a PRD (Product Requirements Document).
+
+**Purpose:** Collects project description, goals, and requirements. If no PRD exists,
+starts an interactive conversation to generate one. This is the second step after `init`
+in the project setup workflow.
+
+```bash
+agentforge describe
+```
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| — | — | No arguments |
+
+**Inputs (interactive):**
+- Text description of your app or path to an existing PRD file
+
+**Outputs:**
+- `docs/prd.md` — generated or imported PRD in the project directory
+
+**Prerequisites:** Run `agentforge init` first — requires `agentforge.yaml` to exist.
+
+**Example:**
+```bash
+cd my-app && agentforge describe
+```
+
+---
+
 ## `agentforge design-system`
 
 Manage the project design system (tokens, brand, validation).
@@ -82,6 +113,21 @@ Checks:
 - Motion duration is positive
 
 Returns exit code 0 if valid, 1 if errors found.
+
+### `agentforge design-system regenerate-catalog`
+
+Regenerate the project's component catalog from the base catalog template,
+applying design tokens and brand settings.
+
+**Purpose:** Useful after manually editing design tokens or brand spec —
+rebuilds `agentforge/spec/component-catalog.yaml` from the base catalog
+in `packages/core/src/catalogs/base-component-catalog.yaml`.
+
+```bash
+agentforge design-system regenerate-catalog
+```
+
+**Output:** Overwrites `agentforge/spec/component-catalog.yaml`.
 
 **Examples:**
 ```bash

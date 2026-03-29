@@ -969,19 +969,9 @@ export async function designGenerateCommand(
   // Next steps
   output.write('\n');
   output.write(successMsg('Next steps:\n'));
-  output.write(infoMsg('  1. Design screens in Figma:\n'));
-  for (const page of spec.pages.slice(0, 3)) {
-    output.write(infoMsg(`         agentforge design:figma "${page.name.toLowerCase()}"\n`));
-  }
-  if (spec.pages.length > 3) {
-    output.write(infoMsg(`         ... and ${spec.pages.length - 3} more pages\n`));
-  }
-  output.write(infoMsg('     Or design screens in Penpot:\n'));
-  for (const page of spec.pages.slice(0, 3)) {
-    output.write(infoMsg(`         agentforge design:penpot "${page.name.toLowerCase()}"\n`));
-  }
-  if (spec.pages.length > 3) {
-    output.write(infoMsg(`         ... and ${spec.pages.length - 3} more pages\n`));
+  output.write(infoMsg('  1. Design screens in Penpot:\n'));
+  for (const page of spec.pages) {
+    output.write(infoMsg(`         agentforge design:penpot ${page.id}\n`));
   }
   output.write(infoMsg('  2. Re-run to update:         agentforge design:generate\n'));
   output.write(infoMsg('  3. Start full design phase:   agentforge start design\n'));

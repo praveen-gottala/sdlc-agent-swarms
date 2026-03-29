@@ -201,7 +201,6 @@ describe('uxImplementationWork — disk design tokens required', () => {
         componentTree: [],
         tokenBindings: {},
         responsiveRules: [],
-        implementationStages: [],
       },
       stage: 'layout' as const,
     };
@@ -243,7 +242,6 @@ describe('uxImplementationWork — disk design tokens required', () => {
         componentTree: [],
         tokenBindings: {},
         responsiveRules: [],
-        implementationStages: [],
       },
       stage: 'layout' as const,
     };

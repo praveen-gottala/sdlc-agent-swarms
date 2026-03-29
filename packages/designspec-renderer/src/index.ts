@@ -62,6 +62,7 @@ export { resolveShadow } from './renderer/shadows.js';
 
 // ─── Validation ───────────────────────────────────────────
 export { validateDesignSpec } from './validation/validate.js';
+export { validateTokenReferences } from './validation/validate-token-refs.js';
 
 // ─── Penpot Renderer ──────────────────────────────────────
 export { renderToScript } from './renderer/penpot/index.js';
@@ -70,3 +71,6 @@ export type { RenderResult } from './renderer/penpot/index.js';
 // ─── React Renderer ──────────────────────────────────────
 export { renderToJSX } from './renderer/react/index.js';
 export type { JsxRenderResult } from './renderer/react/index.js';
+
+// ─── SDK Tools ───────────────────────────────────────────
+export { SUBMIT_DESIGN_TOOL } from './sdk/submit-design-tool.js';

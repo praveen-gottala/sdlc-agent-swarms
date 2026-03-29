@@ -278,6 +278,34 @@ describe('ClaudeProvider', () => {
       }
     });
 
+    it('forwards toolChoice to Anthropic API', async () => {
+      mockStreamResolving({
+        content: [{ type: 'tool_use', id: 'call_1', name: 'submit_design', input: { screen: 'test' } }],
+        usage: { input_tokens: 100, output_tokens: 50 },
+        stop_reason: 'tool_use',
+        model: 'claude-sonnet-4-6',
+      });
+
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
+      const prompt: Prompt = {
+        system: 'test',
+        messages: [{ role: 'user', content: 'test' }],
+        tools: [{ name: 'submit_design', description: 'Submit design', parameters: { type: 'object', properties: {} } }],
+      };
+
+      await provider.complete(prompt, {
+        ...testOptions,
+        toolChoice: { type: 'tool', name: 'submit_design' },
+      });
+
+      expect(mockStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool_choice: { type: 'tool', name: 'submit_design' },
+        }),
+        expect.any(Object),
+      );
+    });
+
     it('passes tools to Anthropic format', async () => {
       mockStreamResolving({
         content: [{ type: 'text', text: 'ok' }],

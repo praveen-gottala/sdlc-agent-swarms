@@ -29,6 +29,13 @@ import { renderAvatar } from './avatar.js';
 import { renderTooltip } from './tooltip.js';
 import { renderCheckbox } from './checkbox.js';
 import { renderSelect } from './select.js';
+import { renderChip } from './chip.js';
+import { renderAlert } from './alert.js';
+import { renderSkeleton } from './skeleton.js';
+import { renderLoadingSpinner } from './loading-spinner.js';
+import { renderLink } from './link.js';
+import { renderSwitch } from './switch.js';
+import { renderDataTable } from './data-table.js';
 
 /** Map of accelerator type name to its renderer function. */
 const ACCELERATOR_RENDERERS: Record<string, ComponentRenderer> = {
@@ -58,6 +65,13 @@ const CATALOG_RENDERERS: Record<string, ComponentRenderer> = {
   'tooltip': renderTooltip,
   'checkbox': renderCheckbox,
   'select': renderSelect,
+  'chip': renderChip,
+  'alert': renderAlert,
+  'skeleton': renderSkeleton,
+  'loading-spinner': renderLoadingSpinner,
+  'link': renderLink,
+  'switch': renderSwitch,
+  'data-table': renderDataTable,
 };
 
 /**
@@ -104,4 +118,11 @@ export {
   renderTooltip,
   renderCheckbox,
   renderSelect,
+  renderChip,
+  renderAlert,
+  renderSkeleton,
+  renderLoadingSpinner,
+  renderLink,
+  renderSwitch,
+  renderDataTable,
 };

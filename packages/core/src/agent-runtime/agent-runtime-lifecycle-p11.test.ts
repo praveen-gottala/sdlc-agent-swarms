@@ -158,11 +158,12 @@ describe('P11: Agent Runtime Lifecycle', () => {
         'write_code', 'x', 'desc', workFn,
       );
 
+      // runAgent enriches context with resolvedModel, so use objectContaining
       expect(workFn).toHaveBeenCalledWith(
         { specRef: 'specs/', taskDescription: 'gen code' },
         expect.objectContaining({ name: 'mock-claude' }),
         expect.any(Array), // learnings
-        ctx,
+        expect.objectContaining({ taskId: ctx.taskId, projectRoot: ctx.projectRoot }),
       );
     });
   });

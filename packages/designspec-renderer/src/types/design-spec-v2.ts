@@ -20,6 +20,14 @@ export interface LayoutSpec {
   readonly py?: number;
   readonly pt?: number;
   readonly pb?: number;
+  /** Vertical margin (top + bottom) in px — maps to flex child margin in Penpot / Tailwind on React. */
+  readonly my?: number;
+  /** Horizontal margin (left + right) in px. */
+  readonly mx?: number;
+  readonly mt?: number;
+  readonly mb?: number;
+  readonly ml?: number;
+  readonly mr?: number;
 }
 
 /** A single option in a segmented control. */

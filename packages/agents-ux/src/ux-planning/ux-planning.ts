@@ -17,6 +17,7 @@ import type {
   DesignTokensSpec,
   BrandSpec,
   DesignConfig,
+  PageContext,
 } from '@agentforge/core';
 import {
   Ok,
@@ -24,10 +25,14 @@ import {
   runAgent,
   readSpecs,
   recordPromptTrace,
+  recordPromptTraceResponse,
+  debugLog,
+  logDefaults,
 } from '@agentforge/core';
 import type { UXResearchOutput } from '../ux-research/ux-research.js';
-import type { ComponentTreeNode, ResponsiveRule, ImplementationStage, ScreenDefinition } from '../types.js';
+import type { ComponentTreeNode, ResponsiveRule, ScreenDefinition } from '../types.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
+import { formatPageContextPrompt } from '../page-context-prompt.js';
 
 // ============================================================================
 // Types
@@ -41,6 +46,8 @@ export interface UXPlanningInput {
   readonly designBrief: UXResearchOutput;
   /** Optional design config from project manifest for viewport constraints. */
   readonly designConfig?: DesignConfig;
+  /** Structured page context from pages.yaml for spec-driven design. */
+  readonly pageContext?: PageContext;
 }
 
 /** Output produced by the UX dashboard planning agent. */
@@ -50,7 +57,6 @@ export interface UXPlanningOutput {
   readonly componentTree: readonly ComponentTreeNode[];
   readonly tokenBindings: Readonly<Record<string, string>>;
   readonly responsiveRules: readonly ResponsiveRule[];
-  readonly implementationStages: readonly ImplementationStage[];
   /** Optional screen partitioning for per-screen design generation. */
   readonly screens?: readonly ScreenDefinition[];
 }
@@ -62,7 +68,7 @@ export interface UXPlanningOutput {
 /** The agent contract for the UX dashboard planning agent. */
 export const UX_PLANNING_CONTRACT: AgentContract = {
   role: 'ux_planning',
-  description: 'Translates design briefs into component specs with token bindings, responsive rules, and 4-stage implementation sequences',
+  description: 'Translates design briefs into component specs with token bindings and responsive rules',
   category: 'design',
   provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: false, max_context_tokens: 30000 },
@@ -133,20 +139,11 @@ const PLANNING_OUTPUT_SCHEMA = {
           properties: {
             breakpoint: { type: 'string' },
             behavior: { type: 'string' },
+            width: { type: 'number' },
+            layout: { type: 'string' },
+            changes: { type: 'array', items: { type: 'string' } },
           },
           required: ['breakpoint', 'behavior'],
-          additionalProperties: false,
-        },
-      },
-      implementationStages: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            stage: { type: 'string' },
-            tasks: { type: 'array', items: { type: 'string' } },
-          },
-          required: ['stage', 'tasks'],
           additionalProperties: false,
         },
       },
@@ -163,7 +160,7 @@ const PLANNING_OUTPUT_SCHEMA = {
         },
       },
     },
-    required: ['specRef', 'moduleId', 'componentTree', 'tokenBindings', 'responsiveRules', 'implementationStages'],
+    required: ['specRef', 'moduleId', 'componentTree', 'tokenBindings', 'responsiveRules'],
     additionalProperties: false,
   },
 };
@@ -192,15 +189,23 @@ const normalizeTokenBindings = (raw: unknown): Record<string, string> => {
  * Extract a UXPlanningOutput from a parsed JSON object.
  * Used by both the structured output path and the text-fallback parser.
  */
-const extractPlanningFields = (parsed: Record<string, unknown>): UXPlanningOutput => ({
-  specRef: (parsed.specRef as string) ?? '',
-  moduleId: (parsed.moduleId as string) ?? '',
-  componentTree: (parsed.componentTree as ComponentTreeNode[]) ?? [],
-  tokenBindings: normalizeTokenBindings(parsed.tokenBindings),
-  responsiveRules: (parsed.responsiveRules as ResponsiveRule[]) ?? [],
-  implementationStages: (parsed.implementationStages as ImplementationStage[]) ?? [],
-  screens: (parsed.screens as ScreenDefinition[] | undefined),
-});
+const extractPlanningFields = (parsed: Record<string, unknown>): UXPlanningOutput => {
+  logDefaults('extractPlanningFields', {
+    specRef: [parsed.specRef, "''"],
+    moduleId: [parsed.moduleId, "''"],
+    componentTree: [parsed.componentTree, '[]'],
+    responsiveRules: [parsed.responsiveRules, '[]'],
+  });
+
+  return {
+    specRef: (parsed.specRef as string) ?? '',
+    moduleId: (parsed.moduleId as string) ?? '',
+    componentTree: (parsed.componentTree as ComponentTreeNode[]) ?? [],
+    tokenBindings: normalizeTokenBindings(parsed.tokenBindings),
+    responsiveRules: (parsed.responsiveRules as ResponsiveRule[]) ?? [],
+    screens: (parsed.screens as ScreenDefinition[] | undefined),
+  };
+};
 
 // ============================================================================
 // Output parser (text fallback)
@@ -247,6 +252,8 @@ export const extractValidTokenNames = (spec: DesignTokensSpec, brand?: BrandSpec
   }
 
   // Spacing scale values as strings (e.g., "4", "8", "24", "32")
+  // Zero spacing is a valid design choice (e.g., no gap, no padding)
+  names.add('0');
   for (const value of spec.spacing.scale) {
     names.add(String(value));
   }
@@ -367,6 +374,7 @@ const DOT_NOTATION_HINTS: Record<string, string> = {
   'color.text.primary': 'text-primary',
   'color.text.secondary': 'text-secondary',
   'color.text.inverse': 'text-on-cta',
+  'text-on-primary': 'text-on-cta',
   'color.text.accent': 'cta-primary',
   'color.text.disabled': 'text-disabled',
   'color.border.default': 'border-default',
@@ -427,6 +435,48 @@ const DOT_NOTATION_HINTS: Record<string, string> = {
 };
 
 /**
+ * Regex patterns for non-token binding keys.
+ * Shared between filterNonTokenBindings() and applyDotNotationFallback() safety net.
+ * Defined at module level to prevent drift.
+ */
+
+// These key suffixes are NEVER design tokens regardless of value
+const ALWAYS_NON_TOKEN_KEYS = /\.(columns|rows|itemCount|maxItems|ariaLive|ariaLabel|role)$/;
+
+// These key suffixes are non-tokens ONLY when the value is not a recognized token name
+const DIMENSION_KEYS = /\.(width|height|maxWidth|minWidth|maxHeight|minHeight|cardWidth|imageHeight|thumbnailSize|columnWidth|buttonSize|searchMaxWidth)$/;
+
+/**
+ * Remove entries from tokenBindings that are fundamentally not design tokens.
+ * These are component-specific dimensions, counts, and accessibility attributes
+ * that the LLM incorrectly places in tokenBindings instead of defaultValues.
+ *
+ * Filter logic uses BOTH key suffix AND value to avoid false positives:
+ * - Keys like .ariaLive, .columns are ALWAYS non-tokens (regardless of value)
+ * - Keys like .width, .height are non-tokens ONLY when the value is not a valid token name
+ *   (e.g., "280" is not a token, but "touch-min-height" could be)
+ */
+export function filterNonTokenBindings(
+  bindings: Record<string, string>,
+  validNames: Set<string>,
+): { cleaned: Record<string, string>; removed: string[] } {
+  const cleaned: Record<string, string> = {};
+  const removed: string[] = [];
+
+  for (const [key, value] of Object.entries(bindings)) {
+    if (ALWAYS_NON_TOKEN_KEYS.test(key)) {
+      removed.push(key);
+    } else if (DIMENSION_KEYS.test(key) && !validNames.has(value)) {
+      removed.push(key);
+    } else {
+      cleaned[key] = value;
+    }
+  }
+
+  return { cleaned, removed };
+}
+
+/**
  * Validate tokenBindings values against known token names.
  * Returns a list of warning messages for any unrecognized values.
  */
@@ -485,6 +535,8 @@ const buildTokenCorrectionPrompt = (
   const validNamesList = Array.from(validNames).join(', ');
   return `Your previous output contained invalid token binding names. Here are the problems:
 
+IMPORTANT: If a property is a component-specific dimension (width, height, maxWidth, cardWidth, imageHeight, buttonSize, thumbnailSize, etc.), a count (columns, rows), or an accessibility attribute (ariaLive, ariaLabel), REMOVE it from tokenBindings entirely. These are NOT design tokens — they belong in the component's defaultValues, not in tokenBindings. Do not try to find a matching token name for these properties; just remove them.
+
 ${warnings.join('\n')}
 
 The ONLY valid token names are: ${validNamesList}
@@ -525,6 +577,15 @@ export const applyDotNotationFallback = (
       corrections.push(`  "${key}": "${value}" → "${hint}"`);
     } else {
       remaining.push(`  "${key}": "${value}" has no known mapping`);
+    }
+  }
+
+  // Final cleanup: strip any remaining non-token bindings that slipped through
+  for (const key of Object.keys(corrected)) {
+    if (ALWAYS_NON_TOKEN_KEYS.test(key)) {
+      delete corrected[key];
+    } else if (DIMENSION_KEYS.test(key) && !validNames.has(corrected[key])) {
+      delete corrected[key];
     }
   }
 
@@ -634,6 +695,11 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
     userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);
   }
 
+  // Inject structured page context if available
+  if (input.pageContext) {
+    userMessageParts.push(formatPageContextPrompt(input.pageContext));
+  }
+
   const prompt = {
     system: systemPrompt,
     messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
@@ -646,6 +712,10 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
   });
 
   // 3. Call LLM with structured output schema
+  if (!context.resolvedModel) {
+    debugLog(`[planning] resolvedModel not set, falling back to contract default: ${UX_PLANNING_CONTRACT.provider}`);
+  }
+
   const completionResult = await provider.complete(prompt, {
     model: context.resolvedModel ?? UX_PLANNING_CONTRACT.provider,
     maxTokens: 8000,
@@ -657,6 +727,17 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
   }
 
   const llmOutput = (completionResult.value as { content: string }).content;
+
+  // Record response trace
+  const planningCompletion = completionResult.value as { content: string; structured?: Record<string, unknown>; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+  recordPromptTraceResponse(context, 'planning', {
+    content: planningCompletion.content,
+    structured: planningCompletion.structured,
+    usage: planningCompletion.usage,
+    cost: planningCompletion.cost,
+    latencyMs: planningCompletion.latencyMs,
+    finishReason: planningCompletion.finishReason,
+  });
 
   // 4. Parse output — prefer structured output, fall back to text parsing
   const structured = (completionResult.value as { structured?: Record<string, unknown> }).structured;
@@ -671,7 +752,41 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
   let finalOutput = parseResult.value;
 
   if (validTokenNames && Object.keys(finalOutput.tokenBindings).length > 0) {
+    // Filter out non-token bindings before validation to avoid wasting correction retries
+    {
+      const { cleaned, removed } = filterNonTokenBindings(
+        finalOutput.tokenBindings as Record<string, string>,
+        validTokenNames,
+      );
+      if (removed.length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[planning] Removed ${removed.length} non-token bindings (component dimensions/counts/a11y attributes): ${removed.join(', ')}`,
+        );
+        finalOutput = { ...finalOutput, tokenBindings: cleaned };
+      }
+    }
+
     let warnings = validateTokenBindings(finalOutput.tokenBindings, validTokenNames);
+
+    // Apply deterministic DOT_NOTATION_HINTS corrections BEFORE LLM retries.
+    // This resolves ~40% of invalid bindings without an extra LLM call.
+    if (warnings.length > 0) {
+      const { corrected, corrections, remaining } = applyDotNotationFallback(
+        finalOutput.tokenBindings,
+        validTokenNames,
+      );
+      finalOutput = { ...finalOutput, tokenBindings: corrected };
+
+      if (corrections.length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn(`[planning] Applied deterministic token corrections (pre-LLM):\n${corrections.join('\n')}`);
+      }
+      // Re-validate after deterministic fix — only remaining issues need LLM
+      warnings = remaining.length > 0
+        ? validateTokenBindings(corrected, validTokenNames)
+        : [];
+    }
 
     for (let attempt = 0; attempt < MAX_TOKEN_BINDING_RETRIES && warnings.length > 0; attempt++) {
       // eslint-disable-next-line no-console
@@ -708,11 +823,30 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
       }
 
       const retryContent = (retryResult.value as { content: string }).content;
+
+      // Record correction response trace
+      const correctionCompletion = retryResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+      recordPromptTraceResponse(context, 'planning-token-correction', {
+        content: correctionCompletion.content,
+        usage: correctionCompletion.usage,
+        cost: correctionCompletion.cost,
+        latencyMs: correctionCompletion.latencyMs,
+        finishReason: correctionCompletion.finishReason,
+      });
+
       const correctedBindings = parseTokenBindingsCorrection(retryContent);
 
       if (correctedBindings) {
-        finalOutput = { ...finalOutput, tokenBindings: correctedBindings };
-        warnings = validateTokenBindings(correctedBindings, validTokenNames);
+        // Filter non-token bindings from corrected output too
+        const { cleaned: filteredCorrected, removed: retryRemoved } = filterNonTokenBindings(correctedBindings, validTokenNames);
+        if (retryRemoved.length > 0) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[planning] Removed ${retryRemoved.length} non-token bindings from correction: ${retryRemoved.join(', ')}`,
+          );
+        }
+        finalOutput = { ...finalOutput, tokenBindings: filteredCorrected };
+        warnings = validateTokenBindings(filteredCorrected, validTokenNames);
       } else {
         // eslint-disable-next-line no-console
         console.warn('[planning] Failed to parse correction response, falling back to DOT_NOTATION_HINTS');
@@ -720,7 +854,7 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
       }
     }
 
-    // Last resort: apply deterministic DOT_NOTATION_HINTS fallback
+    // Final pass: re-apply deterministic fallback after LLM corrections
     if (warnings.length > 0) {
       const { corrected, corrections, remaining } = applyDotNotationFallback(
         finalOutput.tokenBindings,
@@ -730,7 +864,7 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
 
       if (corrections.length > 0) {
         // eslint-disable-next-line no-console
-        console.warn(`[planning] Applied DOT_NOTATION_HINTS fallback:\n${corrections.join('\n')}`);
+        console.warn(`[planning] Applied deterministic token corrections (post-LLM):\n${corrections.join('\n')}`);
       }
       if (remaining.length > 0) {
         // eslint-disable-next-line no-console

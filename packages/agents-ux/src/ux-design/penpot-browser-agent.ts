@@ -27,6 +27,8 @@ import {
   Ok,
   Err,
   DEFAULT_SERVICE_URLS,
+  debugLog,
+  logDefaults,
 } from '@agentforge/core';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
@@ -89,7 +91,7 @@ export const PENPOT_BROWSER_DESIGN_CONTRACT: AgentContract = {
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
   tools: [
     'penpot:execute_code', 'penpot:high_level_overview',
-    'penpot:penpot_api_info', 'penpot:export_shape',
+    'penpot:penpot_api_info',
     'playwright:navigate', 'playwright:screenshot',
     'playwright:evaluate', 'playwright:click',
   ],
@@ -179,10 +181,21 @@ export async function penpotBrowserDesignWork(
   const llm = provider as unknown as LLMProvider;
   const effectiveModel = resolvedModel ?? PENPOT_BROWSER_DESIGN_CONTRACT.provider;
 
+  if (!resolvedModel) {
+    debugLog(`[penpot-browser] resolvedModel not set, falling back to contract default: ${PENPOT_BROWSER_DESIGN_CONTRACT.provider}`);
+  }
+
   const headless = options.headless ?? false;
   const penpotUrl = options.penpotUrl ?? DEFAULT_SERVICE_URLS.penpotUi;
   const email = options.email ?? process.env.PENPOT_EMAIL ?? '';
   const password = options.password ?? process.env.PENPOT_PASSWORD ?? '';
+
+  logDefaults('penpotBrowserDesignWork:options', {
+    headless: [options.headless, 'false'],
+    penpotUrl: [options.penpotUrl, `'${DEFAULT_SERVICE_URLS.penpotUi}'`],
+    email: [options.email || process.env.PENPOT_EMAIL, "''"],
+    password: [options.password || process.env.PENPOT_PASSWORD, "''"],
+  });
 
   // ── 1. Browser setup ──
   // eslint-disable-next-line no-console
@@ -244,6 +257,13 @@ export async function penpotBrowserDesignWork(
     console.log('\n        [Phase A] Generating design script...');
 
     const rawPrompt = loadPenpotSystemPrompt();
+
+    logDefaults('penpotBrowserDesignWork:promptSubstitution', {
+      designSystemPrompt: [designSystemPrompt, "'(No project design system provided...)'"],
+      apiDocs: [apiDocs, "'(API docs unavailable...)'"],
+      componentCatalogPrompt: [componentCatalogPrompt, "'(No component catalog available)'"],
+    });
+
     const systemPrompt = rawPrompt
       .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use the token names from the rules below as guidance)')
       .replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)')

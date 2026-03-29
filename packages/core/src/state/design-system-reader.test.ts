@@ -2,7 +2,6 @@ import {
   loadDesignTokens,
   loadBrandSpec,
   saveDesignTokens,
-  toDesignTokens,
   validateDesignTokens,
   validateBrandSpec,
   loadComponentCatalog,
@@ -220,38 +219,6 @@ describe('loadBrandSpec', () => {
   });
 });
 
-describe('toDesignTokens', () => {
-  it('maps spec to DesignTokens type', () => {
-    const flat = toDesignTokens(VALID_TOKENS);
-
-    expect(Object.keys(flat.colors).length).toBeGreaterThan(0);
-    expect(flat.colors.white).toBe('#FFFFFF');
-    expect(Object.keys(flat.typography).length).toBeGreaterThan(0);
-    expect(Object.keys(flat.spacing).length).toBeGreaterThan(0);
-    expect(flat.spacing['8']).toBe('8px');
-  });
-
-  it('flattens elevation levels', () => {
-    const flat = toDesignTokens(VALID_TOKENS);
-    expect(flat.elevation['0']).toBe('none');
-    expect(flat.elevation['1']).toBe('0 1px 3px rgba(0,0,0,0.08)');
-  });
-
-  it('flattens layout', () => {
-    const flat = toDesignTokens(VALID_TOKENS);
-    expect(flat.layout.columns).toBe(12);
-    expect(flat.layout.gutter).toBe('24px');
-    expect(flat.layout.content_max_width).toBe('1280px');
-    expect(flat.layout.breakpoints).toEqual({ mobile: 640, tablet: 768, desktop: 1024, wide: 1440 });
-  });
-
-  it('flattens z_index', () => {
-    const flat = toDesignTokens(VALID_TOKENS);
-    expect(flat.z_index.dropdown).toBe(1000);
-    expect(flat.z_index.modal).toBe(1200);
-  });
-});
-
 describe('validateDesignTokens', () => {
   it('passes for valid spec', () => {
     const result = validateDesignTokens(VALID_TOKENS);
@@ -301,79 +268,6 @@ describe('validateDesignTokens', () => {
     if (!result.ok) {
       expect(result.error.message).toContain('not sorted');
     }
-  });
-
-  it('validates component token color references', () => {
-    const withComponents: DesignTokensSpec = {
-      ...VALID_TOKENS,
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24 },
-          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'slate' },
-        },
-      },
-    };
-
-    const result = validateDesignTokens(withComponents);
-    expect(result.ok).toBe(true);
-  });
-
-  it('catches component token referencing nonexistent color', () => {
-    const withBadComponents: DesignTokensSpec = {
-      ...VALID_TOKENS,
-      components: {
-        button: {
-          primary: { bg: 'nonexistent-color', text: 'background-primary' },
-        },
-      },
-    };
-
-    const result = validateDesignTokens(withBadComponents);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain('nonexistent-color');
-      expect(result.error.message).toContain('button.primary.bg');
-    }
-  });
-
-  it('catches component token referencing nonexistent border radius', () => {
-    const withBadRadius: DesignTokensSpec = {
-      ...VALID_TOKENS,
-      components: {
-        card: {
-          default: { bg: 'background-primary', radius: 'extra-large' },
-        },
-      },
-    };
-
-    const result = validateDesignTokens(withBadRadius);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain('extra-large');
-      expect(result.error.message).toContain('card.default.radius');
-    }
-  });
-
-  it('allows transparent and special values in component tokens', () => {
-    const withSpecialValues: DesignTokensSpec = {
-      ...VALID_TOKENS,
-      components: {
-        button: {
-          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'small' },
-        },
-        card: {
-          default: { bg: 'background-primary', border_style: 'solid', radius: 'medium' },
-        },
-      },
-    };
-
-    const result = validateDesignTokens(withSpecialValues);
-    expect(result.ok).toBe(true);
-  });
-
-  it('passes validation when components is undefined (backward compat)', () => {
-    const result = validateDesignTokens(VALID_TOKENS);
-    expect(result.ok).toBe(true);
   });
 
   it('catches non-sequential elevation levels', () => {

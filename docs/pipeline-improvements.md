@@ -1,10 +1,12 @@
 # Pipeline Improvement Plans
 
+> **Last updated: 2026-03-28** — Plan 3 completed, Plan 5 implemented, Plans 1/2/4 in progress.
+
 5 architectural improvements to the UX design pipeline, ordered by impact. Each plan will be refined before implementation.
 
 ---
 
-## Plan 1: Bridge Design → Implementation Gap
+## Plan 1: Bridge Design → Implementation Gap — IN PROGRESS
 
 **Problem**: The Implementation stage receives only `planningOutput` (component tree + token names). The actual visual design created in Figma/Penpot — colors, spacing, layout, screenshots, node IDs — is completely ignored. The `design` parameter in the implement callback is accepted but never used.
 
@@ -46,7 +48,7 @@
 
 ---
 
-## Plan 2: Unify Pipeline Runner (Figma + Penpot)
+## Plan 2: Unify Pipeline Runner (Figma + Penpot) — IN PROGRESS
 
 **Problem**: `run-module-pipeline.ts` is hardcoded for Figma — imports Figma-specific functions, uses WebSocket channel discovery, saves to `figma-design.json`. Penpot has its own separate CLI paths but no unified pipeline runner. The `DesignToolAdapter` abstraction exists in `core/src/mcp/design-tool-adapter.ts` but isn't used.
 
@@ -102,7 +104,7 @@
 
 ---
 
-## Plan 3: Add `design:list` Command
+## Plan 3: Add `design:list` Command — COMPLETED
 
 **Problem**: No way to discover past designs. Users must remember module IDs or manually browse `.agentforge/previews/`. The `design:collaborate` command requires `--module <id>` but there's no way to find valid IDs.
 
@@ -152,7 +154,7 @@
 
 ---
 
-## Plan 4: Penpot Code Generation Parity
+## Plan 4: Penpot Code Generation Parity — IN PROGRESS
 
 **Problem**: Penpot CLI commands have no `--implement` flag and no feedback loop. Users can create designs in Penpot but can't generate code from them. Figma has both.
 

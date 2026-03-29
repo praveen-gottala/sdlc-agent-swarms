@@ -45,7 +45,7 @@ export const renderCheckbox: ComponentRenderer = (node, parentVar, ctx) => {
   emitBoard(b, bv, `${node.id}_box`, boxSize, boxSize, 'transparent');
   emitRadius(b, bv, boxRadius);
   emitStroke(b, bv, boxBorder, 1);
-  emitAppendChild(b, v, bv, 'auto');
+  emitAppendChild(b, v, bv, 'fix', 'fix');
 
   // Label text
   const label = node.label ?? '';

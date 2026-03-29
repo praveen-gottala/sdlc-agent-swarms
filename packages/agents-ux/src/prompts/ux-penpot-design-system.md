@@ -278,6 +278,7 @@ const T = {
   bgPrimary: '#___',      // ← use background-primary hex from PROJECT DESIGN SYSTEM
   surfacePrimary: '#___',  // ← use surface-primary hex
   surfaceSecondary: '#___',// ← use surface-secondary hex
+  surfaceInput: '#___',    // ← use surface-input hex (input field backgrounds)
   surfaceElevated: '#___', // ← use surface-elevated hex
   textPrimary: '#___',     // ← use text-primary hex
   textSecondary: '#___',   // ← use text-secondary hex
@@ -347,6 +348,7 @@ Use this example ONLY when the user message specifies a mobile viewport width (�
     - `horizontalSizing`: `"fill"` (stretch to parent width), `"auto"` (size to content), `"fix"` (use resize dimensions)
     - `verticalSizing`: `"fill"` (stretch to parent height), `"auto"` (size to content), `"fix"` (use resize dimensions)
     - `alignSelf`: `"start" | "center" | "end" | "stretch" | "auto"`
+    - **NEVER assign `layoutChild` directly** (`shape.layoutChild = {...}` is invalid in Penpot). Only assign sub-properties like `shape.layoutChild.horizontalSizing = 'fill'`.
 
 11. **Use `shape.growType`** on text nodes to control text sizing:
     - `"auto-width"` (DEFAULT) — text expands horizontally to fit content. Use for short text only (numbers, single words, button labels)

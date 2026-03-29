@@ -16,10 +16,15 @@ Project initialization, settings, and integration verification.
 | Command | Description |
 |---------|-------------|
 | `agentforge init [dir] [--mock]` | Scaffold a new project with interactive wizard |
-| `agentforge setup` | Bootstrap the Python orchestration engine |
+| `agentforge describe` | Capture app context / generate PRD |
+| `agentforge design-system update [--mock]` | Re-run the design system wizard |
+| `agentforge design-system show` | Display current design system |
+| `agentforge design-system validate` | Validate design tokens and brand spec |
+| `agentforge design-system regenerate-catalog` | Regenerate component catalog from base template |
 | `agentforge config [key] [value]` | View or update configuration |
 | `agentforge doctor` | Verify integrations are reachable |
 | `agentforge migrate [--dry]` | Apply schema migrations to YAML files |
+| `agentforge setup` | Bootstrap the Python orchestration engine |
 
 ### [Design](./design.md)
 
@@ -27,9 +32,15 @@ Create and iterate on designs through the UX agent pipeline.
 
 | Command | Description |
 |---------|-------------|
-| `agentforge design <description>` | Request a code-first design |
+| `agentforge design:generate` | Generate app spec (pages, models, API) from PRD |
+| `agentforge design:preview` | Open design system preview in browser |
+| `agentforge design <description>` | Request a code-first design (event-driven) |
+| `agentforge design:penpot <pageId>` | Create a Penpot design via Research/Planning/Design pipeline |
+| `agentforge design:penpot:all` | Batch-design all pages from `pages.yaml` |
+| `agentforge design:penpot:browser <description>` | Create Penpot design via Playwright browser automation |
 | `agentforge design:figma <description>` | Create a Figma design via Research/Planning/Design pipeline |
-| `agentforge design:penpot <description>` | Create a Penpot design via Research/Planning/Design pipeline |
+| `agentforge design:penpot:review --url <url>` | Review and improve an existing Penpot design |
+| `agentforge design:list` | List all designs with status and metadata |
 | `agentforge design:collaborate --module <id>` | Resume an existing design for human-agent collaboration |
 
 ### [Orchestration](./orchestration.md)

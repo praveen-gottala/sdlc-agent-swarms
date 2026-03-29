@@ -167,11 +167,12 @@ describe('runAgent', () => {
     await runAgent(makeContract(), ctx, { specRef: 'specs/' }, 'write_spec', 'x', 'desc', work);
 
     // learnings will be [] since the file doesn't exist, but they should be passed
+    // runAgent enriches context with resolvedModel, so use objectContaining
     expect(work).toHaveBeenCalledWith(
       { specRef: 'specs/' },
       expect.objectContaining({ name: expect.any(String) }),
       expect.any(Array),
-      ctx,
+      expect.objectContaining({ taskId: ctx.taskId, projectRoot: ctx.projectRoot }),
     );
   });
 

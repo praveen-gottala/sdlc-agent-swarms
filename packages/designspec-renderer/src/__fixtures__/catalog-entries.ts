@@ -245,6 +245,117 @@ const SELECT: CatalogEntry = {
   },
 };
 
+/** Chip / pill tag. */
+const CHIP: CatalogEntry = {
+  type: 'chip',
+  background: 'surface-secondary',
+  text_color: 'text-primary',
+  border_color: 'border-default',
+  radius: 16,
+  padding_x: 12,
+  padding_y: 4,
+  gap: 4,
+  text_typography: 'label',
+  min_height: 44,
+  required_fields: ['label'],
+  library: {
+    shadcn: { component: 'Badge', import: '@/components/ui/badge', props: { variant: 'outline' } },
+  },
+};
+
+/** Alert / notification banner. */
+const ALERT: CatalogEntry = {
+  type: 'alert',
+  background: 'cta-primary',
+  opacity: 0.1,
+  text_color: 'text-primary',
+  border_color: 'cta-primary',
+  radius: 12,
+  padding_x: 16,
+  padding_y: 12,
+  gap: 8,
+  text_typography: 'label',
+  min_height: 48,
+  required_fields: ['label'],
+  library: {
+    shadcn: { component: 'Alert', import: '@/components/ui/alert' },
+  },
+};
+
+/** Skeleton loading placeholder. */
+const SKELETON: CatalogEntry = {
+  type: 'skeleton',
+  background: 'surface-secondary',
+  opacity: 0.6,
+  height: 20,
+  radius: 4,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'Skeleton', import: '@/components/ui/skeleton' },
+  },
+};
+
+/** Loading spinner. */
+const LOADING_SPINNER: CatalogEntry = {
+  type: 'loading-spinner',
+  background: 'transparent',
+  spinner_color: 'cta-primary',
+  spinner_size: 24,
+  text_color: 'text-secondary',
+  gap: 8,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'div', note: 'Custom spinner composition' },
+  },
+};
+
+/** Hyperlink text. */
+const LINK: CatalogEntry = {
+  type: 'link',
+  background: 'transparent',
+  text_color: 'cta-primary',
+  text_typography: 'body',
+  gap: 4,
+  min_height: 44,
+  required_fields: ['label'],
+  library: {
+    shadcn: { component: 'a', note: 'Native anchor or Link component' },
+  },
+};
+
+/** Toggle switch. */
+const SWITCH: CatalogEntry = {
+  type: 'switch',
+  background: 'surface-secondary',
+  track_color: 'surface-secondary',
+  thumb_color: 'surface-primary',
+  track_width: 44,
+  track_height: 24,
+  thumb_size: 20,
+  track_radius: 12,
+  text_color: 'text-primary',
+  text_typography: 'body',
+  min_height: 44,
+  required_fields: ['label'],
+  library: {
+    shadcn: { component: 'Switch', import: '@/components/ui/switch' },
+  },
+};
+
+/** Data table. */
+const DATA_TABLE: CatalogEntry = {
+  type: 'data-table',
+  background: 'surface-primary',
+  text_color: 'text-primary',
+  border_color: 'border-default',
+  radius: 8,
+  padding: 0,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'Table', import: '@/components/ui/table' },
+  },
+};
+
 /** All V2 built-in catalog entries. */
 export const V2_BUILTIN_CATALOG: CatalogMap = {
   'input-text': INPUT_TEXT,
@@ -262,4 +373,11 @@ export const V2_BUILTIN_CATALOG: CatalogMap = {
   'tooltip': TOOLTIP,
   'checkbox': CHECKBOX,
   'select': SELECT,
+  'chip': CHIP,
+  'alert': ALERT,
+  'skeleton': SKELETON,
+  'loading-spinner': LOADING_SPINNER,
+  'link': LINK,
+  'switch': SWITCH,
+  'data-table': DATA_TABLE,
 };

@@ -8,12 +8,12 @@
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import type { ProjectManifest } from '../types.js';
-import { writeYaml, type FileSystem, realFs } from '../fs-utils.js';
+import { writeYaml, type FileSystem, realFs, loadDotEnv } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
 import { renderAllTemplates } from '../template-renderer.js';
 import { setupEngine, checkPrerequisites } from '../engine-setup.js';
 import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
-import { saveDesignTokens, saveBrandSpec, loadBaseCatalog, generateProjectCatalog, saveComponentCatalog } from '@agentforge/core';
+import { saveDesignTokens, saveBrandSpec, loadBaseCatalog, generateProjectCatalog, saveComponentCatalog, debugLog } from '@agentforge/core';
 import { pickComponentLibrary } from './design-system.js';
 import { generateDesignOptions, SHARED_LAYOUT } from './generate-design-options.js';
 import { promptOnce } from './generate-design-options.js';
@@ -46,7 +46,7 @@ export interface InitConfig {
 
 /** Build DesignTokensSpec from archetype choice. */
 export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensSpec {
-  const archetypes: Record<DesignArchetype, Pick<DesignTokensSpec, 'colors' | 'typography' | 'components' | 'elevation'>> = {
+  const archetypes: Record<DesignArchetype, Pick<DesignTokensSpec, 'colors' | 'typography' | 'elevation'>> = {
     warm: {
       colors: {
         primitive: {
@@ -96,37 +96,6 @@ export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensS
           { role: 'label', size: 12, weight: 500, family: 'body', line_height: 1.4 },
           { role: 'small', size: 11, weight: 400, family: 'body', line_height: 1.4 },
         ],
-      },
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
-          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'warm-gray', border_width: 1, radius: 'medium' },
-          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
-        },
-        card: {
-          default: { bg: 'background-primary', border_color: 'soft-white', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
-          highlighted: { bg: 'soft-white', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
-        },
-        input: {
-          default: { bg: 'background-primary', text: 'text-primary', border_color: 'warm-gray', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
-          focus: { border_color: 'cta-primary', border_width: 2 },
-          error: { border_color: 'error', border_width: 2 },
-        },
-        tab_bar: {
-          active: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
-          inactive: { bg: 'transparent', text: 'text-primary' },
-        },
-        badge: {
-          success: { bg: 'deep-teal', text: 'background-primary', radius: 'pill' },
-          warning: { bg: 'warm-cream', text: 'text-primary', radius: 'pill' },
-          error: { bg: 'error', text: 'background-primary', radius: 'pill' },
-          info: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
-        },
-        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'warm-gray', border_width: 2 } },
-        progress_bar: {
-          track: { bg: 'soft-white', radius: 'pill', height: 8 },
-          fill: { bg: 'cta-primary', radius: 'pill' },
-        },
       },
     },
     professional: {
@@ -179,37 +148,6 @@ export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensS
           { role: 'small', size: 11, weight: 400, family: 'body', line_height: 1.4 },
         ],
       },
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
-          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'slate', border_width: 1, radius: 'medium' },
-          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
-        },
-        card: {
-          default: { bg: 'background-primary', border_color: 'light-gray', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
-          highlighted: { bg: 'light-gray', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
-        },
-        input: {
-          default: { bg: 'background-primary', text: 'text-primary', border_color: 'light-gray', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
-          focus: { border_color: 'cta-primary', border_width: 2 },
-          error: { border_color: 'error', border_width: 2 },
-        },
-        tab_bar: {
-          active: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
-          inactive: { bg: 'transparent', text: 'text-primary' },
-        },
-        badge: {
-          success: { bg: 'light-gray', text: 'text-primary', radius: 'pill' },
-          warning: { bg: 'light-gray', text: 'dark-gray', radius: 'pill' },
-          error: { bg: 'error', text: 'background-primary', radius: 'pill' },
-          info: { bg: 'cta-primary', text: 'background-primary', radius: 'pill' },
-        },
-        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'light-gray', border_width: 2 } },
-        progress_bar: {
-          track: { bg: 'light-gray', radius: 'pill', height: 8 },
-          fill: { bg: 'cta-primary', radius: 'pill' },
-        },
-      },
     },
     bold: {
       colors: {
@@ -261,37 +199,6 @@ export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensS
           { role: 'small', size: 11, weight: 400, family: 'body', line_height: 1.4 },
         ],
       },
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24, padding_y: 12, min_height: 44 },
-          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'zinc', border_width: 1, radius: 'medium' },
-          ghost: { bg: 'transparent', text: 'cta-primary', radius: 'medium' },
-        },
-        card: {
-          default: { bg: 'background-primary', border_color: 'zinc', border_width: 1, border_style: 'solid', radius: 'large', padding: 24 },
-          highlighted: { bg: 'zinc', border_color: 'cta-primary', border_width: 2, border_style: 'solid', radius: 'large', padding: 24 },
-        },
-        input: {
-          default: { bg: 'background-primary', text: 'text-primary', border_color: 'zinc', radius: 'medium', padding_x: 16, padding_y: 12, min_height: 44 },
-          focus: { border_color: 'cta-primary', border_width: 2 },
-          error: { border_color: 'error', border_width: 2 },
-        },
-        tab_bar: {
-          active: { bg: 'cta-primary', text: 'text-primary', radius: 'pill' },
-          inactive: { bg: 'transparent', text: 'text-primary' },
-        },
-        badge: {
-          success: { bg: 'lime-accent', text: 'near-black', radius: 'pill' },
-          warning: { bg: 'zinc', text: 'text-primary', radius: 'pill' },
-          error: { bg: 'error', text: 'text-primary', radius: 'pill' },
-          info: { bg: 'cta-primary', text: 'text-primary', radius: 'pill' },
-        },
-        avatar: { default: { size: 40, border_radius: 'pill', border_color: 'zinc', border_width: 2 } },
-        progress_bar: {
-          track: { bg: 'zinc', radius: 'pill', height: 8 },
-          fill: { bg: 'cta-primary', radius: 'pill' },
-        },
-      },
     },
   };
 
@@ -307,7 +214,6 @@ export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensS
     elevation: preset.elevation,
     layout: SHARED_LAYOUT.layout,
     z_index: SHARED_LAYOUT.z_index,
-    ...(preset.components ? { components: preset.components } : {}),
   };
 }
 
@@ -320,6 +226,9 @@ const ARCHETYPE_TONES: Record<DesignArchetype, string> = {
 
 /** Build BrandSpec from archetype + audience. */
 export function buildBrandSpec(archetype: DesignArchetype, audience: string): BrandSpec {
+  if (!audience) {
+    debugLog('buildBrandSpec: audience not provided → default: "general"');
+  }
   return {
     version: '1.0',
     created_by: 'agentforge-init',
@@ -456,18 +365,18 @@ function resolveToHex(value: string, primitives: Record<string, string>): string
  */
 const SHADCN_VARIABLE_MAP: Record<string, string> = {
   'background-primary': 'background',
-  'surface-primary':    'card',
-  'surface-elevated':   'popover',
-  'text-primary':       'foreground',
-  'cta-primary':        'primary',
-  'cta-hover':          'accent',
-  'border-default':     'border',
-  'border-focus':       'ring',
-  'error':              'destructive',
-  'success':            'success',
-  'warning':            'warning',
-  'info':               'info',
-  'overlay':            'overlay',
+  'surface-primary': 'card',
+  'surface-elevated': 'popover',
+  'text-primary': 'foreground',
+  'cta-primary': 'primary',
+  'cta-hover': 'accent',
+  'border-default': 'border',
+  'border-focus': 'ring',
+  'error': 'destructive',
+  'success': 'success',
+  'warning': 'warning',
+  'info': 'info',
+  'overlay': 'overlay',
 };
 
 /**
@@ -475,12 +384,12 @@ const SHADCN_VARIABLE_MAP: Record<string, string> = {
  * Maps the base variable name to which AgentForge semantic color to use for the foreground.
  */
 const SHADCN_FOREGROUND_PAIRS: Record<string, string> = {
-  'card':        'text-primary',
-  'popover':     'text-primary',
-  'primary':     'text-on-cta',
-  'secondary':   'text-primary',
-  'muted':       'text-secondary',
-  'accent':      'text-primary',
+  'card': 'text-primary',
+  'popover': 'text-primary',
+  'primary': 'text-on-cta',
+  'secondary': 'text-primary',
+  'muted': 'text-secondary',
+  'accent': 'text-primary',
   'destructive': 'text-on-cta',
 };
 
@@ -574,16 +483,17 @@ function prompt(rl: readline.Interface, question: string, defaultValue?: string)
 export async function runWizard(
   input: NodeJS.ReadableStream = process.stdin,
   output: NodeJS.WritableStream = process.stdout,
+  defaultName?: string,
 ): Promise<InitAnswers> {
   const rl = readline.createInterface({ input, output });
 
   try {
     output.write('\nWelcome to AgentForge!\n\n');
 
-    const name = await prompt(rl, 'Project name');
+    const name = await prompt(rl, 'Project name', defaultName);
     const repo = await prompt(rl, 'GitHub org/repo');
     const slackChannel = await prompt(rl, 'Primary Slack channel', '#agentforge');
-    const telegramAnswer = await prompt(rl, 'Enable Telegram? (y/n)', 'y');
+    const telegramAnswer = await prompt(rl, 'Enable Telegram? (y/n)', 'n');
     const telegramEnabled = telegramAnswer.toLowerCase() !== 'n';
 
     return { name, description: '', repo, slackChannel, telegramEnabled, targetAudience: '' };
@@ -616,6 +526,14 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
       : []),
     { type: 'cli' as const, capabilities: 'basic' as const, priority: 3 },
   ];
+
+  debugLog('buildManifest: Hardcoding stack to react/node/postgresql/tailwind');
+  debugLog('buildManifest: Hardcoding budget to per_task=$2, per_phase=$25, monthly=$200, alert_threshold=0.8');
+  debugLog('buildManifest: Hardcoding HITL default=review_and_override, design=full_approval, production_deploy=full_approval, test_generation=notify_only');
+  debugLog('buildManifest: Hardcoding models default=claude-sonnet-4-6, architecture=claude-opus-4-6, code_review=claude-haiku-4-5');
+  debugLog('buildManifest: Hardcoding sandbox type=github_actions, timeout=15min, max_retries=3');
+  debugLog('buildManifest: Hardcoding design viewport=1440, layout_strategy=desktop-first, responsive_breakpoints=false');
+  debugLog('buildManifest: Hardcoding routing approval_requests=all, status_updates=primary, critical_alerts=all');
 
   return {
     version: '1.0',
@@ -694,6 +612,8 @@ export function buildManifest(answers: InitAnswers): ProjectManifest {
  * Rationale: see ADR-010
  */
 function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
+  debugLog('buildAgentsYaml: Hardcoding max_tokens_per_task=50000, execution mode=stream, progress_events=true');
+
   const defaultBudget = {
     max_tokens_per_task: 50000,
     max_cost_per_task_usd: manifest.budget.per_task_max_usd,
@@ -943,7 +863,14 @@ export async function initCommand(
     return;
   }
 
-  const answers = await runWizard(input, output);
+  // Derive a human-friendly default name from the directory name
+  // e.g. "foodie-app" → "Foodie App"
+  const dirName = path.basename(rootDir);
+  const defaultName = dirName
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const answers = await runWizard(input, output, defaultName);
   const manifest = buildManifest(answers);
 
   scaffoldProject(rootDir, manifest, fileSystem);
@@ -954,12 +881,28 @@ export async function initCommand(
   // Rationale: see ADR-005 — tokens require env vars, connection deferred to `start` command
   out.write('\n');
   out.write(successMsg('✓ Project scaffolded\n'));
-  out.write(successMsg('✓ Agent definitions created\n'));
+  out.write(successMsg('✓ Agent definitions created\n\n'));
   if (answers.slackChannel) {
     out.write(infoMsg(`  Slack channel configured: ${answers.slackChannel}\n`));
   }
   if (answers.telegramEnabled) {
     out.write(infoMsg('  Telegram channel configured\n'));
+  }
+
+  // Load .env from the directory where the CLI was invoked so that API keys
+  // (e.g. ANTHROPIC_API_KEY) are available for LLM-powered design theme
+  // generation later in init. Also copy it into the new project directory.
+  const callerDir = process.cwd();
+  loadDotEnv(callerDir);
+
+  const callerEnvPath = path.join(callerDir, '.env');
+  const targetEnvPath = path.join(rootDir, '.env');
+  if (fileSystem.exists(callerEnvPath) && !fileSystem.exists(targetEnvPath)) {
+    const envContent = fileSystem.readFile(callerEnvPath);
+    if (envContent.ok) {
+      fileSystem.writeFile(targetEnvPath, envContent.value);
+      out.write(infoMsg(`  .env copied from parent directory ${callerDir}\n`));
+    }
   }
 
   // Design system setup — two independent steps:
@@ -968,17 +911,21 @@ export async function initCommand(
   const inp = input ?? process.stdin;
   out.write(infoMsg('\n--- Design System ---\n'));
   out.write(infoMsg('Set up your design system now?\n'));
-  out.write(infoMsg('  1. Yes — pick component library + generate theme\n'));
-  out.write(infoMsg('  2. Skip for now\n'));
+  out.write(infoMsg('  1. Yes — pick component library + generate theme (default)\n'));
+  out.write(infoMsg('  2. Skip for now, I will use my own design system\n'));
 
   let designPathChoice: number | undefined;
   while (designPathChoice === undefined) {
-    const answer = await promptOnce(inp, out, '\nChoose 1 or 2: ');
-    const num = parseInt(answer, 10);
-    if (num === 1 || num === 2) {
-      designPathChoice = num;
+    const answer = await promptOnce(inp, out, '\nChoose 1 or 2 (Enter = 1): ');
+    if (answer === '') {
+      designPathChoice = 1;
     } else {
-      out.write(infoMsg('Please enter 1 or 2.\n'));
+      const num = parseInt(answer, 10);
+      if (num === 1 || num === 2) {
+        designPathChoice = num;
+      } else {
+        out.write(infoMsg('Please enter 1, 2, or press Enter for 1 (yes).\n'));
+      }
     }
   }
 
@@ -992,7 +939,7 @@ export async function initCommand(
       { appName: answers.name, description: answers.description, targetAudience: answers.targetAudience || 'general' },
       inp,
       out,
-      { openBrowser: _config?.openBrowser, mock: _config?.mock },
+      { openBrowser: _config?.openBrowser, mock: _config?.mock, rootDir, fileSystem },
     );
     saveDesignTokens(rootDir, designResult.tokens, fileSystem);
     saveBrandSpec(rootDir, designResult.brand, fileSystem);

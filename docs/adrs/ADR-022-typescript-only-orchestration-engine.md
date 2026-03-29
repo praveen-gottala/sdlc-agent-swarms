@@ -4,7 +4,17 @@
 2026-03-18
 
 ## Status
-Accepted
+Partially Implemented — The decision to go TypeScript-only is correct in practice
+(all active workflows are TS), but the Python engine code and its CLI wiring
+(engine-client.ts, engine-setup.ts, start/approve/abort commands) were never
+removed. The Python engine contains real orchestration patterns (LangGraph state
+machines, HITL interrupts, task dependency resolution) but zero real agent
+implementations — all agent nodes are stubs.
+
+Future: When building spec/code/cicd/observe phases, decide whether to:
+(a) Port LangGraph patterns to TypeScript orchestrator in @agentforge/core, or
+(b) Wire real agents into the existing Python engine.
+This decision should be made before starting Phase 2 SDLC pipeline work.
 
 ## PRD Reference
 Section 4.1 — Architecture Layers:

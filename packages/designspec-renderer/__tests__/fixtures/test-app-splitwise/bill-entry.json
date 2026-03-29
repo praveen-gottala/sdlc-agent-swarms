@@ -142,11 +142,26 @@
       "parent": "billCard",
       "order": 3,
       "options": [
-        { "label": "15%", "selected": false },
-        { "label": "18%", "selected": true },
-        { "label": "20%", "selected": false },
-        { "label": "25%", "selected": false },
-        { "label": "Custom", "selected": false }
+        {
+          "label": "15%",
+          "selected": false
+        },
+        {
+          "label": "18%",
+          "selected": true
+        },
+        {
+          "label": "20%",
+          "selected": false
+        },
+        {
+          "label": "25%",
+          "selected": false
+        },
+        {
+          "label": "Custom",
+          "selected": false
+        }
       ]
     },
     "customTipInput": {
@@ -225,8 +240,14 @@
       "parent": "peopleCard",
       "order": 1,
       "options": [
-        { "label": "Equal", "selected": true },
-        { "label": "Custom", "selected": false }
+        {
+          "label": "Equal",
+          "selected": true
+        },
+        {
+          "label": "Custom",
+          "selected": false
+        }
       ]
     },
     "person1": {
@@ -246,7 +267,11 @@
     "divider2": {
       "type": "divider",
       "parent": "content",
-      "order": 4
+      "order": 4,
+      "layout": {
+        "dir": "column",
+        "my": 24
+      }
     },
     "ctaButton": {
       "catalog": "button-primary",

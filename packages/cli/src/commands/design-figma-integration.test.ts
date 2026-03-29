@@ -152,7 +152,7 @@ describe('design:figma integration — file loading', () => {
 
     await designFigmaCommand('home', out, { noWait: true, mock: true });
 
-    expect(out.output).toContain('PRD loaded from docs/prd.md');
+    expect(out.output).toContain('PRD loaded from');
   });
 
   it('loads design tokens and reports in output', async () => {

@@ -64,6 +64,33 @@ export function flexClasses(
   return parts.join(' ');
 }
 
+/** Margin classes from LayoutSpec (flex child spacing). */
+export function marginClasses(layout: LayoutSpec | undefined): string {
+  if (!layout) return '';
+  const parts: string[] = [];
+  if (layout.my !== undefined && layout.my > 0) {
+    parts.push(`my-[${layout.my}px]`);
+  } else {
+    if (layout.mt !== undefined && layout.mt > 0) {
+      parts.push(`mt-[${layout.mt}px]`);
+    }
+    if (layout.mb !== undefined && layout.mb > 0) {
+      parts.push(`mb-[${layout.mb}px]`);
+    }
+  }
+  if (layout.mx !== undefined && layout.mx > 0) {
+    parts.push(`mx-[${layout.mx}px]`);
+  } else {
+    if (layout.ml !== undefined && layout.ml > 0) {
+      parts.push(`ml-[${layout.ml}px]`);
+    }
+    if (layout.mr !== undefined && layout.mr > 0) {
+      parts.push(`mr-[${layout.mr}px]`);
+    }
+  }
+  return parts.join(' ');
+}
+
 /**
  * Build typography Tailwind classes from a typography role.
  * Returns font-size, font-weight, and line-height classes.

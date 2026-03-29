@@ -83,8 +83,6 @@ export type {
   SpacingSpec,
   BorderSpec,
   TouchTargetSpec,
-  ComponentVariantTokens,
-  ComponentTokens,
   DesignTokensSpec,
   BrandIdentity,
   IllustrationStyle,

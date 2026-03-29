@@ -70,6 +70,37 @@ function toKebabCase(str: string): string {
     .toLowerCase();
 }
 
+/** Merge token_bindings into a flat catalog entry (radius, padding, text_typography). */
+function applyTokenBindings(
+  entry: Record<string, unknown>,
+  tb: RawCatalogEntry['token_bindings'],
+  tokens?: RendererTokens,
+): void {
+  if (!tb) return;
+  if (tb['border-radius'] !== undefined) {
+    const radiusVal = tb['border-radius'];
+    entry.radius =
+      typeof radiusVal === 'string' && tokens?.borders?.radius?.[radiusVal] !== undefined
+        ? tokens.borders.radius[radiusVal]
+        : radiusVal;
+  }
+  if (tb['padding-x'] !== undefined) {
+    entry.padding_x = tb['padding-x'];
+  }
+  if (tb['padding-y'] !== undefined) {
+    entry.padding_y = tb['padding-y'];
+  }
+  if (tb.font !== undefined) {
+    entry.text_typography = tb.font;
+  }
+  if (tb.text !== undefined) {
+    entry.text_color = tb.text;
+  }
+  if (tb.background !== undefined) {
+    entry.background = tb.background;
+  }
+}
+
 /**
  * Transform a single raw catalog entry to a flat CatalogEntry.
  */
@@ -92,6 +123,17 @@ function transformEntry(name: string, raw: RawCatalogEntry, tokens?: RendererTok
       entry.library = lib;
     }
 
+    applyTokenBindings(entry, raw.token_bindings, tokens);
+    if (raw.spacing?.internal_gap) {
+      const gap = parseInt(raw.spacing.internal_gap, 10);
+      if (!isNaN(gap)) {
+        entry.gap = gap;
+      }
+    }
+    if (raw.min_height !== undefined) {
+      entry.min_height = raw.min_height;
+    }
+
     return entry as CatalogEntry;
   }
 
@@ -112,27 +154,12 @@ function transformEntry(name: string, raw: RawCatalogEntry, tokens?: RendererTok
     if (raw.states.default.shadow) {
       entry.shadow = raw.states.default.shadow;
     }
+    if (raw.states.default.opacity !== undefined) {
+      entry.opacity = raw.states.default.opacity;
+    }
   }
 
-  // token_bindings
-  if (raw.token_bindings) {
-    const tb = raw.token_bindings;
-    if (tb['border-radius'] !== undefined) {
-      const raw = tb['border-radius'];
-      entry.radius = typeof raw === 'string' && tokens?.borders?.radius?.[raw] !== undefined
-        ? tokens.borders.radius[raw]
-        : raw;
-    }
-    if (tb['padding-x'] !== undefined) {
-      entry.padding_x = tb['padding-x'];
-    }
-    if (tb['padding-y'] !== undefined) {
-      entry.padding_y = tb['padding-y'];
-    }
-    if (tb.font !== undefined) {
-      entry.text_typography = tb.font;
-    }
-  }
+  applyTokenBindings(entry, raw.token_bindings, tokens);
 
   // spacing.internal_gap -> gap (store as number)
   if (raw.spacing?.internal_gap) {

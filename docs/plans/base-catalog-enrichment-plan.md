@@ -1,5 +1,18 @@
 # Base Catalog Enrichment Plan
 
+## Implementation Status (as of 2026-03-28)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| `RawCatalogEntry` has `renderer_defaults` field | DONE | `packages/designspec-renderer/src/catalog/loader.ts` line 23 |
+| `transformEntry()` checks renderer_defaults first | DONE | `packages/designspec-renderer/src/catalog/loader.ts` lines 109-137 |
+| Loader tests pass | DONE | `packages/designspec-renderer/src/catalog/loader.test.ts` |
+| Add `renderer_defaults` to `ComponentCatalogEntry` in core | REMAINING | `packages/core/src/types/design-system.ts` |
+| Add `renderer_defaults` to all 15 components in base YAML | REMAINING | `packages/core/src/catalogs/base-component-catalog.yaml` |
+| Explicit handling in `generateProjectCatalog()` | REMAINING | `packages/core/src/catalogs/generate-project-catalog.ts` |
+
+---
+
 ## Problem Statement
 
 The `designspec-v2-requirements.md` Section 6 specifies that the project catalog at

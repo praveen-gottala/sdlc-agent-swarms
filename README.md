@@ -94,7 +94,7 @@ Using Penpot:
 
 ```bash
 docker compose up -d penpot-mcp
-agentforge design:penpot "dashboard with analytics charts and user activity feed"
+agentforge design:penpot bill-entry
 ```
 
 Both run a three-stage pipeline: **Research** (analyzes PRD, produces design brief) -> **Planning** (component spec with tokens and responsive rules) -> **Design** (creates components in the design tool).
@@ -162,7 +162,8 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 |---|---|
 | `agentforge design <description>` | Code-first design (emits `PageRequested` event) |
 | `agentforge design:figma <desc>` | Full Figma pipeline: Research -> Planning -> Design |
-| `agentforge design:penpot <desc>` | Full Penpot pipeline: Research -> Planning -> Design |
+| `agentforge design:penpot <pageId>` | Full Penpot pipeline: Research -> Planning -> Design (V2 deterministic renderer by default) |
+| `agentforge design:penpot <pageId> --evaluate` | Run non-interactive design evaluation (CI/CD quality gate) |
 | `agentforge design:collaborate --module <id>` | Resume a design for human-agent collaboration |
 | `agentforge design:generate` | Generate pages, models, and API spec from PRD |
 | `agentforge design:preview` | Open design system preview in browser |

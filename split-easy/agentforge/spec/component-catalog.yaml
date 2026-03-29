@@ -55,7 +55,7 @@ components:
     renderer_defaults:
       type: card
       background: surface-primary
-      shadow: sm
+      shadow: md
       radius: 20
       padding: 24
       required_fields: []

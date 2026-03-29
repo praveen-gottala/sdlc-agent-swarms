@@ -10,11 +10,12 @@ const SHADOW_ALIASES: Readonly<Record<string, number>> = {
   'sm': 1,
   'md': 2,
   'lg': 3,
+  'xl': 3,
 };
 
 /**
  * Resolve a shadow reference to a CSS box-shadow string.
- * Accepts: 'none', 'sm', 'md', 'lg', or a numeric level (as string).
+ * Accepts: 'none', 'sm', 'md', 'lg', 'xl', or a numeric level (as string).
  * Returns the shadow CSS string, or 'none' if not found.
  */
 export function resolveShadow(ref: string, tokens: RendererTokens): string {

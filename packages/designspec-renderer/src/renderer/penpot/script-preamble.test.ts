@@ -15,8 +15,8 @@ describe('script-preamble', () => {
       const sb = new ScriptBuilder();
       emitTokenMap(sb, colorMap);
       const output = sb.build();
-      expect(output).toContain('const T = {');
-      expect(output).toContain('};');
+      expect(output).toContain('const T = new Proxy({');
+      expect(output).toContain('});');
     });
 
     it('should convert kebab-case token names to camelCase', () => {
@@ -89,7 +89,7 @@ describe('script-preamble', () => {
       const sb = new ScriptBuilder();
       emitPreamble(sb, colorMap);
       const output = sb.build();
-      expect(output).toContain('const T = {');
+      expect(output).toContain('const T = new Proxy({');
       expect(output).toContain('function makeText(');
     });
   });

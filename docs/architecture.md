@@ -15,6 +15,8 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 ├──────────────────────────────────────────────────────────────────────┤
 │  Orchestration Layer (Python / LangGraph)                            │
 │  services/engine                                                     │
+│  NOTE: services/engine/ exists but contains only stub agents.        │
+│  All active workflows use TypeScript packages directly. See ADR-022. │
 │                                                                      │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ │
 │  │  Design   │ │   Spec   │ │   Code   │ │   CICD   │ │  Observe  │ │

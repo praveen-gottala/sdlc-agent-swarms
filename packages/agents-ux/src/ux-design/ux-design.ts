@@ -990,7 +990,6 @@ export const registerUXDesign = (
         componentTree: event.componentTree.map((name) => ({ name, props: [], children: [] })),
         tokenBindings: event.tokenBindings,
         responsiveRules: [],
-        implementationStages: [],
       },
     };
     void executeUXDesign(contract, context, input);

@@ -18,6 +18,7 @@ import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
 import type { StackConfig } from '../types/project-manifest.js';
 import type { FileSystem } from '../fs/file-system.js';
+import { logDefaults } from '../debug-log.js';
 
 /** Result of resolving a stack directory. */
 export interface StackResolution {
@@ -53,6 +54,12 @@ export function deriveStackName(stackConfig: StackConfig): string {
   };
   const database = stackConfig.database ?? 'postgresql';
   const orm = ormMap[database] ?? database;
+
+  logDefaults('deriveStackName', {
+    frontend: [stackConfig.frontend, 'react'],
+    backend: [stackConfig.backend, 'node'],
+    database: [stackConfig.database, 'postgresql'],
+  });
 
   return `${frontend}-${backend}-${orm}`;
 }

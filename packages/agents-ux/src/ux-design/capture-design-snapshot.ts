@@ -120,7 +120,17 @@ export async function captureDesignSnapshot(
   }
 
   // Per-component: capture screenshot + extract properties
+  // Fail-fast: if too many consecutive exports fail, stop trying (stale IDs)
+  const MAX_CONSECUTIVE_FAILURES = 5;
+  let consecutiveFailures = 0;
+
   for (const [name, nodeId] of Object.entries(nodeIds)) {
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [snapshot] Stopping exports — ${MAX_CONSECUTIVE_FAILURES} consecutive failures (likely stale node IDs after corrections)`);
+      break;
+    }
+
     const snap: ComponentSnapshot = {
       nodeId,
       name,
@@ -140,10 +150,13 @@ export async function captureDesignSnapshot(
     let componentScreenshotPath: string | undefined;
     const compResult = await captureScreenshot(mcpClient, nodeId);
     if (compResult.ok) {
+      consecutiveFailures = 0;
       const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const pngPath = join(screenshotsDir, `${safeName}.png`);
       writeFileSync(pngPath, Buffer.from(compResult.value.base64, 'base64'));
       componentScreenshotPath = `screenshots/${tool}/${safeName}.png`;
+    } else {
+      consecutiveFailures++;
     }
 
     componentSnapshots.push({

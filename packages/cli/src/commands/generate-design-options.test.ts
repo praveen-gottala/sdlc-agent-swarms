@@ -3,13 +3,55 @@ import {
   optionToTokens,
   optionToBrand,
   generatePreviewHtml,
+  resolveDesignOptionsContext,
   SHARED_LAYOUT,
   backfillSemanticColors,
   backfillElevation,
 } from './generate-design-options.js';
 import type { DesignOption } from './generate-design-options.js';
+import type { FileSystem } from '@agentforge/core';
 import { validateDesignTokens, validateBrandSpec } from '@agentforge/core';
 import { buildDesignTokensSpec } from './init.js';
+import { Writable } from 'node:stream';
+
+/** Null output stream that discards all writes. */
+const nullOutput = new Writable({ write(_chunk, _enc, cb) { cb(); } });
+
+function createMockFs(files: Record<string, string>): FileSystem {
+  return {
+    readFile(filePath: string) {
+      const value = files[filePath];
+      if (value === undefined) {
+        return { ok: false, error: { code: 'INVALID_STATE' as const, message: `Missing file: ${filePath}`, recoverable: true } };
+      }
+      return { ok: true, value };
+    },
+    writeFile() {
+      return { ok: true, value: undefined };
+    },
+    writeFileAtomic() {
+      return { ok: true, value: undefined };
+    },
+    exists(filePath: string) {
+      return Object.prototype.hasOwnProperty.call(files, filePath);
+    },
+    mkdir() {
+      return { ok: true, value: undefined };
+    },
+    rename() {
+      return { ok: true, value: undefined };
+    },
+    remove() {
+      return { ok: true, value: undefined };
+    },
+    listDir() {
+      return { ok: true, value: [] as readonly string[] };
+    },
+    appendFile() {
+      return { ok: true, value: undefined };
+    },
+  };
+}
 
 const VALID_OPTION: DesignOption = {
   label: 'Ocean Calm',
@@ -59,6 +101,45 @@ const VALID_OPTION: DesignOption = {
   },
 };
 
+describe('resolveDesignOptionsContext', () => {
+  const baseContext = {
+    appName: 'Demo',
+    description: 'Description',
+    targetAudience: 'general',
+  };
+
+  it('keeps provided prdContent as-is', () => {
+    const result = resolveDesignOptionsContext(
+      { ...baseContext, prdContent: '# Provided PRD' },
+      {
+        rootDir: '/project',
+        fileSystem: createMockFs({ '/project/docs/prd.md': '# File PRD' }),
+      },
+    );
+
+    expect(result.prdContent).toBe('# Provided PRD');
+  });
+
+  it('loads PRD from docs/prd.md when not provided', () => {
+    const result = resolveDesignOptionsContext(baseContext, {
+      rootDir: '/project',
+      fileSystem: createMockFs({ '/project/docs/prd.md': '# Loaded PRD' }),
+    });
+
+    expect(result.prdContent).toBe('# Loaded PRD');
+  });
+
+  it('returns original context when docs/prd.md is missing', () => {
+    const result = resolveDesignOptionsContext(baseContext, {
+      rootDir: '/project',
+      fileSystem: createMockFs({}),
+    });
+
+    expect(result).toEqual(baseContext);
+    expect(result.prdContent).toBeUndefined();
+  });
+});
+
 describe('parseLLMResponse', () => {
   it('parses valid JSON with 3 options', () => {
     const json = JSON.stringify({ options: [VALID_OPTION, VALID_OPTION, VALID_OPTION] });
@@ -98,7 +179,7 @@ describe('parseLLMResponse', () => {
 
 describe('optionToTokens', () => {
   it('produces valid DesignTokensSpec', () => {
-    const tokens = optionToTokens(VALID_OPTION);
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
 
     expect(tokens.version).toBe('1.0');
     expect(tokens.created_by).toBe('agentforge-init-llm');
@@ -112,31 +193,31 @@ describe('optionToTokens', () => {
   });
 
   it('passes validation', () => {
-    const tokens = optionToTokens(VALID_OPTION);
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
     const result = validateDesignTokens(tokens);
     expect(result.ok).toBe(true);
   });
 
   it('includes elevation from option', () => {
-    const tokens = optionToTokens(VALID_OPTION);
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
     expect(tokens.elevation.levels).toHaveLength(4);
     expect(tokens.elevation.levels[0].shadow).toBe('none');
   });
 
   it('includes layout from SHARED_LAYOUT', () => {
-    const tokens = optionToTokens(VALID_OPTION);
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
     expect(tokens.layout).toEqual(SHARED_LAYOUT.layout);
   });
 
   it('includes z_index from SHARED_LAYOUT', () => {
-    const tokens = optionToTokens(VALID_OPTION);
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
     expect(tokens.z_index).toEqual(SHARED_LAYOUT.z_index);
   });
 });
 
 describe('optionToBrand', () => {
   it('produces valid BrandSpec', () => {
-    const brand = optionToBrand(VALID_OPTION, 'developers');
+    const brand = optionToBrand(VALID_OPTION, 'developers', nullOutput);
 
     expect(brand.version).toBe('1.0');
     expect(brand.identity.tone).toBe('calm-professional');
@@ -147,13 +228,13 @@ describe('optionToBrand', () => {
   });
 
   it('passes validation', () => {
-    const brand = optionToBrand(VALID_OPTION, 'developers');
+    const brand = optionToBrand(VALID_OPTION, 'developers', nullOutput);
     const result = validateBrandSpec(brand);
     expect(result.ok).toBe(true);
   });
 
   it('defaults audience to general when empty', () => {
-    const brand = optionToBrand(VALID_OPTION, '');
+    const brand = optionToBrand(VALID_OPTION, '', nullOutput);
     expect(brand.identity.audience).toBe('general');
   });
 });
@@ -268,7 +349,7 @@ describe('backfillSemanticColors', () => {
         } as DesignOption['colors']['semantic'],
       },
     };
-    const [result] = backfillSemanticColors([minimal]);
+    const [result] = backfillSemanticColors([minimal], nullOutput);
     expect(result.colors.semantic['surface-primary']).toBe('warm-sand');
     expect(result.colors.semantic['text-on-cta']).toBe('warm-sand');
     expect(result.colors.semantic['border-focus']).toBe('ocean-blue');
@@ -276,7 +357,7 @@ describe('backfillSemanticColors', () => {
   });
 
   it('preserves keys that already exist', () => {
-    const [result] = backfillSemanticColors([VALID_OPTION]);
+    const [result] = backfillSemanticColors([VALID_OPTION], nullOutput);
     expect(result.colors.semantic['background-primary']).toBe('warm-sand');
     expect(result.colors.semantic['text-primary']).toBe('deep-navy');
     expect(result.colors.semantic['cta-primary']).toBe('ocean-blue');
@@ -295,7 +376,7 @@ describe('backfillSemanticColors', () => {
         } as DesignOption['colors']['semantic'],
       },
     };
-    const [result] = backfillSemanticColors([minimal]);
+    const [result] = backfillSemanticColors([minimal], nullOutput);
     // text-secondary derives from text-primary
     expect(result.colors.semantic['text-secondary']).toBe('deep-navy');
     // border-default derives from text-secondary (which was just filled)
@@ -309,64 +390,23 @@ describe('backfillElevation', () => {
       ...VALID_OPTION,
       elevation: undefined,
     };
-    const [result] = backfillElevation([noElevation]);
+    const [result] = backfillElevation([noElevation], nullOutput);
     expect(result.elevation).toBeDefined();
     expect(result.elevation!.levels).toHaveLength(4);
     expect(result.elevation!.levels[0].shadow).toBe('none');
   });
 
   it('keeps existing elevation when present and sufficient', () => {
-    const [result] = backfillElevation([VALID_OPTION]);
+    const [result] = backfillElevation([VALID_OPTION], nullOutput);
     expect(result.elevation).toBe(VALID_OPTION.elevation);
   });
 });
 
-describe('optionToTokens with components', () => {
-  it('passes through components from DesignOption', () => {
-    const optionWithComponents: DesignOption = {
-      ...VALID_OPTION,
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium' },
-        },
-      },
-    };
-
-    const tokens = optionToTokens(optionWithComponents);
-    expect(tokens.components).toBeDefined();
-    expect(tokens.components?.button?.primary?.bg).toBe('cta-primary');
-  });
-
-  it('omits components when not in option', () => {
-    const tokens = optionToTokens(VALID_OPTION);
-    expect(tokens.components).toBeUndefined();
-  });
-});
-
-describe('init archetypes include component tokens', () => {
-  it.each(['warm', 'professional', 'bold'] as const)('%s archetype has component tokens', (archetype) => {
+describe('init archetypes produce valid tokens without components', () => {
+  it.each(['warm', 'professional', 'bold'] as const)('%s archetype has no components field', (archetype) => {
     const tokens = buildDesignTokensSpec(archetype);
 
-    expect(tokens.components).toBeDefined();
-    expect(tokens.components?.button?.primary).toBeDefined();
-    expect(tokens.components?.button?.secondary).toBeDefined();
-    expect(tokens.components?.button?.ghost).toBeDefined();
-    expect(tokens.components?.card?.default).toBeDefined();
-    expect(tokens.components?.card?.highlighted).toBeDefined();
-    expect(tokens.components?.input?.default).toBeDefined();
-    expect(tokens.components?.input?.focus).toBeDefined();
-    expect(tokens.components?.input?.error).toBeDefined();
-    expect(tokens.components?.tab_bar?.active).toBeDefined();
-    expect(tokens.components?.tab_bar?.inactive).toBeDefined();
-    expect(tokens.components?.badge?.success).toBeDefined();
-    expect(tokens.components?.badge?.warning).toBeDefined();
-    expect(tokens.components?.badge?.error).toBeDefined();
-    expect(tokens.components?.badge?.info).toBeDefined();
-    expect(tokens.components?.avatar?.default).toBeDefined();
-    expect(tokens.components?.progress_bar?.track).toBeDefined();
-    expect(tokens.components?.progress_bar?.fill).toBeDefined();
-
-    // Validate token references are consistent
+    expect((tokens as unknown as Record<string, unknown>).components).toBeUndefined();
     const result = validateDesignTokens(tokens);
     expect(result.ok).toBe(true);
   });

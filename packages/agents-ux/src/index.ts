@@ -33,6 +33,7 @@ export {
   registerUXPlanning,
   extractValidTokenNames,
   validateTokenBindings,
+  filterNonTokenBindings,
 } from './ux-planning/ux-planning.js';
 
 // UX Dashboard Implementation
@@ -87,7 +88,7 @@ export { extractScreenSubtree, inferSingleScreen, flattenTree, groupMissingByScr
 
 // Design Collaboration
 export type { DesignCollaborationSession, DesignSystemContext } from './ux-design/design-collaboration.js';
-export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt, buildComponentCatalogImplPrompt } from './ux-design/design-collaboration.js';
+export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt } from './ux-design/design-collaboration.js';
 
 // Figma Screenshot
 export type { ScreenshotResult } from './ux-design/figma-screenshot.js';
@@ -160,4 +161,7 @@ export { runPenpotBrowserReview } from './ux-design/penpot-browser-review.js';
 
 // Penpot API Discovery
 export { discoverPenpotAPI } from './ux-design/penpot-browser-agent.js';
+
+// Page Context
+export { formatPageContextPrompt, buildPageContext, resolvePageEntry } from './page-context-prompt.js';
 

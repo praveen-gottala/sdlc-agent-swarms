@@ -39,6 +39,9 @@ export type {
 } from './types/index.js';
 
 export { Ok, Err } from './types/index.js';
+
+// Debug logging
+export { debugLog, logDefaults } from './debug-log.js';
 export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
 // Constants
@@ -126,8 +129,9 @@ export type {
   AgentRunResult,
   ErrorStrategy,
   PromptTrace,
+  PromptTraceResponse,
 } from './agent-runtime/index.js';
-export { runAgent, parseErrorStrategy, formatLearningsForPrompt, recordPromptTrace } from './agent-runtime/index.js';
+export { runAgent, parseErrorStrategy, formatLearningsForPrompt, recordPromptTrace, recordPromptTraceResponse } from './agent-runtime/index.js';
 
 // Filesystem
 export type { FileSystem } from './fs/index.js';
@@ -154,7 +158,6 @@ export {
 export { loadPRD, prdExists } from './state/prd-reader.js';
 
 // State: design system reader
-export type { DesignTokensFlat } from './state/design-system-reader.js';
 export {
   loadDesignTokens,
   loadBrandSpec,
@@ -164,7 +167,6 @@ export {
   saveComponentLibrary,
   loadComponentCatalog,
   saveComponentCatalog,
-  toDesignTokens,
   validateDesignTokens,
   validateBrandSpec,
   validateComponentCatalog,
@@ -230,6 +232,7 @@ export type {
   ModelsSpec,
   PageEntry,
   PagesSpec,
+  PageContext,
 } from './types/spec-types.js';
 
 // State: spec reader

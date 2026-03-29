@@ -307,6 +307,7 @@ export async function designCollaborateCommand(
       input: process.stdin,
       output,
       reviewFn,
+      designTool: 'Figma',
     });
 
     if (loopResult.changeCount > 0) {

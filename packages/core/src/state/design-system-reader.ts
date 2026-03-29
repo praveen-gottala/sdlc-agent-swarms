@@ -12,6 +12,7 @@ import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec, ComponentCatalo
 import type { FileSystem } from '../fs/file-system.js';
 import { readYaml, writeYaml } from '../fs/yaml-utils.js';
 
+
 /** Path to design-tokens.yaml within a project. */
 const DESIGN_TOKENS_PATH = 'agentforge/spec/design-tokens.yaml';
 
@@ -280,70 +281,6 @@ export const validateComponentCatalog = (
 };
 
 /**
- * Design tokens in the format consumed by agents-design DesignSurface.
- * Maps the structured DesignTokensSpec to the flat DesignTokens interface.
- */
-export interface DesignTokensFlat {
-  readonly colors: Readonly<Record<string, string>>;
-  readonly typography: Readonly<Record<string, unknown>>;
-  readonly spacing: Readonly<Record<string, string>>;
-  readonly elevation: Readonly<Record<string, string>>;
-  readonly layout: Readonly<Record<string, unknown>>;
-  readonly z_index: Readonly<Record<string, number>>;
-}
-
-/**
- * Convert a DesignTokensSpec to the flat DesignTokens type used by agents-design.
- * Maps primitive colors to colors, typography scale to typography, spacing scale to spacing.
- *
- * @param spec - The structured DesignTokensSpec
- * @returns The flat DesignTokens for backward compatibility
- */
-export const toDesignTokens = (spec: DesignTokensSpec): DesignTokensFlat => {
-  // Map primitive colors
-  const colors: Record<string, string> = { ...spec.colors.primitive };
-
-  // Map typography scale entries
-  const typography: Record<string, unknown> = {};
-  for (const entry of spec.typography.scale) {
-    const fontFamily = spec.typography.font_families[entry.family] ?? entry.family;
-    typography[entry.role] = {
-      fontSize: entry.size,
-      fontWeight: entry.weight,
-      fontFamily,
-      ...(entry.line_height !== undefined ? { lineHeight: entry.line_height } : {}),
-      ...(entry.letter_spacing !== undefined ? { letterSpacing: entry.letter_spacing } : {}),
-    };
-  }
-
-  // Map spacing scale to named values
-  const spacing: Record<string, string> = {};
-  for (const value of spec.spacing.scale) {
-    spacing[`${value}`] = `${value}px`;
-  }
-
-  // Flatten elevation: { "0": "none", "1": "0 1px 3px ..." }
-  const elevation: Record<string, string> = {};
-  for (const l of spec.elevation.levels) {
-    elevation[`${l.level}`] = l.shadow;
-  }
-
-  // Flatten layout: grid, breakpoints, content_max_width
-  const layout: Record<string, unknown> = {
-    columns: spec.layout.grid.columns,
-    gutter: `${spec.layout.grid.gutter}px`,
-    margin: `${spec.layout.grid.margin}px`,
-    content_max_width: `${spec.layout.content_max_width}px`,
-    breakpoints: spec.layout.breakpoints,
-  };
-
-  // Flatten z_index: direct pass-through
-  const z_index: Record<string, number> = { ...spec.z_index };
-
-  return { colors, typography, spacing, elevation, layout, z_index };
-};
-
-/**
  * Validate a DesignTokensSpec for internal consistency.
  * Checks that semantic colors reference existing primitives, typography
  * scale entries reference existing font families, and spacing is sorted.
@@ -409,42 +346,6 @@ export const validateDesignTokens = (spec: DesignTokensSpec): Result<void> => {
     }
     if (spec.layout.grid.margin < 0) {
       errors.push(`Layout grid margin must be >= 0, got ${spec.layout.grid.margin}`);
-    }
-  }
-
-  // Validate component token references resolve to existing semantic/primitive/border names
-  if (spec.components) {
-    const validColorNames = new Set([
-      ...Object.keys(spec.colors.primitive),
-      ...Object.keys(spec.colors.semantic),
-    ]);
-    const validRadiusNames = new Set(Object.keys(spec.borders.radius));
-    const SPECIAL_VALUES = new Set(['transparent', 'solid', 'dashed', 'dotted', 'none']);
-
-    for (const [componentName, variants] of Object.entries(spec.components)) {
-      if (!variants || typeof variants !== 'object') continue;
-      for (const [variantName, tokens] of Object.entries(variants as Record<string, Record<string, unknown>>)) {
-        if (!tokens || typeof tokens !== 'object') continue;
-        for (const [prop, value] of Object.entries(tokens)) {
-          if (typeof value !== 'string') continue;
-          // Skip special values, raw hex values, and numeric-like strings
-          if (SPECIAL_VALUES.has(value)) continue;
-          if (value.startsWith('#')) continue;
-          // Check if it's a radius reference
-          if (prop === 'radius' || prop === 'border_radius') {
-            if (!validRadiusNames.has(value)) {
-              errors.push(`Component "${componentName}.${variantName}.${prop}" references nonexistent border radius "${value}"`);
-            }
-            continue;
-          }
-          // For color-like properties, check against color names
-          if (prop.includes('bg') || prop.includes('text') || prop.includes('color') || prop === 'fill') {
-            if (!validColorNames.has(value)) {
-              errors.push(`Component "${componentName}.${variantName}.${prop}" references nonexistent color token "${value}"`);
-            }
-          }
-        }
-      }
     }
   }
 

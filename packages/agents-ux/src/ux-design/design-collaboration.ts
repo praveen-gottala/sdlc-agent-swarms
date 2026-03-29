@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Result, DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
-import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL, debugLog } from '@agentforge/core';
 import type { UXDesignOutput } from './ux-design.js';
 import { parseDesignSteps } from './ux-design.js';
 import { resolveAndTransformParams } from './param-transforms.js';
@@ -185,6 +185,9 @@ const parseColorPalette = (markdown: string): DesignSystemContext['colorPalette'
     const shadeMatch = /^(slate|blue|green|amber|red)-(\d+)$/.exec(hint);
     const family = shadeMatch ? shadeMatch[1] : 'custom';
     const shade = shadeMatch ? shadeMatch[2] : '';
+    if (!shadeMatch) {
+      debugLog(`[design-collaboration] parseColorPalette: no shade match for hint "${hint}", defaulting family='custom', shade=''`);
+    }
 
     palette.push({
       name: usage.replace(/\s+/g, '-').toLowerCase(),
@@ -227,6 +230,9 @@ export const buildDesignSystemContext = (
 ): DesignSystemContext => {
   // When structured tokens are available, prefer them over regex-parsing markdown
   if (tokens) {
+    if (!brand) {
+      debugLog('[design-collaboration] brand spec not provided, using fallback defaults (professional/AA)');
+    }
     return buildDesignSystemContextFromSpec(
       tokens,
       brand ?? {
@@ -253,6 +259,31 @@ export const buildDesignSystemContext = (
 };
 
 /**
+ * Extract sizing constraints from componentTree defaultValues into prompt lines.
+ * Walks top-level nodes and their immediate children to surface concrete pixel values.
+ */
+const extractSizingConstraints = (
+  tree: readonly { name: string; children: readonly unknown[]; defaultValues?: Readonly<Record<string, number | string>> }[],
+): string[] => {
+  const lines: string[] = [];
+  const walk = (nodes: readonly { name: string; children: readonly unknown[]; defaultValues?: Readonly<Record<string, number | string>> }[]) => {
+    for (const node of nodes) {
+      if (node.defaultValues && Object.keys(node.defaultValues).length > 0) {
+        const vals = Object.entries(node.defaultValues)
+          .map(([k, v]) => `${k}=${typeof v === 'number' ? `${v}px` : v}`)
+          .join(', ');
+        lines.push(`- ${node.name}: ${vals}`);
+      }
+      if (node.children && Array.isArray(node.children)) {
+        walk(node.children as typeof nodes);
+      }
+    }
+  };
+  walk(tree);
+  return lines;
+};
+
+/**
  * Build a DesignSystemContext from structured DesignTokensSpec and BrandSpec
  * instead of parsing from markdown. This is the primary path when project-specific
  * design tokens are available.
@@ -261,7 +292,7 @@ export const buildDesignSystemContextFromSpec = (
   tokens: DesignTokensSpec,
   brand: BrandSpec,
   planningOutput: {
-    componentTree: readonly { name: string; props: readonly string[]; children: readonly unknown[] }[];
+    componentTree: readonly { name: string; props: readonly string[]; children: readonly unknown[]; defaultValues?: Readonly<Record<string, number | string>> }[];
     tokenBindings: Record<string, string>;
   },
 ): DesignSystemContext => {
@@ -322,28 +353,10 @@ export const buildDesignSystemContextFromSpec = (
     `Unit: ${tokens.spacing.unit}px | Scale: ${tokens.spacing.scale.join(', ')}`,
   ];
 
-  // Serialize component tokens if present
-  if (tokens.components) {
-    promptLines.push('');
-    promptLines.push('## Component Tokens');
-    promptLines.push('When creating any UI element, check these component token bindings first.');
-    promptLines.push('Use the exact token references specified — do not choose colors independently.');
-    promptLines.push('If a component variant is not defined below, use the closest matching variant.');
-    promptLines.push('');
-
-    for (const [componentName, variants] of Object.entries(tokens.components)) {
-      if (!variants || typeof variants !== 'object') continue;
-      const title = componentName.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-      promptLines.push(`### ${title}`);
-      for (const [variantName, props] of Object.entries(variants as Record<string, Record<string, unknown>>)) {
-        if (!props || typeof props !== 'object') continue;
-        const propStr = Object.entries(props)
-          .map(([k, v]) => `${k}={${String(v)}}`)
-          .join(', ');
-        promptLines.push(`- ${variantName}: ${propStr}`);
-      }
-      promptLines.push('');
-    }
+  // Extract sizing constraints from componentTree defaultValues
+  const sizingLines = extractSizingConstraints(planningOutput.componentTree);
+  if (sizingLines.length > 0) {
+    promptLines.push('', '## Sizing Constraints', '(From planning agent — use these exact values for component dimensions)', ...sizingLines);
   }
 
   return {
@@ -431,16 +444,18 @@ export const buildComponentCatalogPrompt = (
     }
 
     // Spacing
-    lines.push(`**Spacing:** padding=${entry.spacing.padding}, gap=${entry.spacing.internal_gap}`);
-    lines.push('');
+    if (entry.spacing) {
+      lines.push(`**Spacing:** padding=${entry.spacing?.padding ?? 'n/a'}, gap=${entry.spacing?.internal_gap ?? 'n/a'}`);
+      lines.push('');
+    }
 
     // Accessibility
     lines.push('**Accessibility:**');
-    if (entry.accessibility.focus_visible) lines.push('- Focus ring: visible');
-    for (const label of entry.accessibility.aria_labels) {
+    if (entry.accessibility?.focus_visible) lines.push('- Focus ring: visible');
+    for (const label of entry.accessibility?.aria_labels ?? []) {
       lines.push(`- ${label}`);
     }
-    if (entry.accessibility.keyboard_nav) {
+    if (entry.accessibility?.keyboard_nav) {
       lines.push(`- Keyboard: ${entry.accessibility.keyboard_nav}`);
     }
     lines.push('');
@@ -468,85 +483,6 @@ export const buildComponentCatalogPrompt = (
   return sections.join('\n');
 };
 
-/**
- * Build an implementation-agent-focused prompt section from the component catalog.
- * Emphasizes library_mapping (filtered to active library when known) and anatomy for JSX structure.
- * Omits visual state details (covered by design-tokens.yaml).
- * Returns empty string when catalog is undefined (graceful fallback).
- */
-export const buildComponentCatalogImplPrompt = (
-  catalog: ComponentCatalogSpec | undefined,
-  libraryId?: string,
-): string => {
-  if (!catalog) return '';
-
-  const lines: string[] = ['# Component Anatomy Reference\n'];
-  lines.push('Use these definitions to structure JSX components and determine correct import paths.\n');
-
-  for (const [name, entry] of Object.entries(catalog.components)) {
-    lines.push(`### ${name}`);
-    lines.push(`${entry.description} (${entry.category})`);
-    lines.push('');
-
-    // Anatomy → JSX structure
-    lines.push('**Structure:**');
-    for (const slot of entry.anatomy) {
-      const opt = slot.optional ? ' *(optional)*' : '';
-      lines.push(`- ${slot.name}${opt}: ${slot.contents}`);
-    }
-    lines.push('');
-
-    // Library mapping (filtered if libraryId provided)
-    const mappings = libraryId
-      ? Object.entries(entry.library_mapping).filter(([id]) => id === libraryId)
-      : Object.entries(entry.library_mapping);
-
-    if (mappings.length > 0) {
-      lines.push('**Library:**');
-      for (const [libId, mapping] of mappings) {
-        lines.push(`- ${libId}: \`${mapping.component_name}\` from \`${mapping.import_path}\``);
-        if (mapping.variant_prop) lines.push(`  - variant_prop: \`${mapping.variant_prop}\``);
-        if (mapping.size_prop) lines.push(`  - size_prop: \`${mapping.size_prop}\``);
-        if (mapping.slot_mapping) {
-          for (const [slot, component] of Object.entries(mapping.slot_mapping)) {
-            lines.push(`  - ${slot} → \`${component}\``);
-          }
-        }
-      }
-      lines.push('');
-    }
-
-    // Variants
-    if (entry.variants && Object.keys(entry.variants).length > 0) {
-      lines.push('**Variants:**');
-      for (const [variant, tokens] of Object.entries(entry.variants)) {
-        const parts: string[] = [];
-        if (tokens.bg) parts.push(`bg=${tokens.bg}`);
-        if (tokens.text) parts.push(`text=${tokens.text}`);
-        if (tokens.border) parts.push(`border=${tokens.border}`);
-        if (tokens.shadow) parts.push(`shadow=${tokens.shadow}`);
-        if (tokens.opacity !== undefined) parts.push(`opacity=${tokens.opacity}`);
-        lines.push(`- **${variant}**: ${parts.join(', ')}`);
-      }
-      lines.push('');
-    }
-
-    // Token Bindings
-    if (entry.token_bindings) {
-      lines.push('**Token Bindings:**');
-      for (const [prop, value] of Object.entries(entry.token_bindings)) {
-        lines.push(`- ${prop}: ${value}`);
-      }
-      lines.push('');
-    }
-
-    // Spacing
-    lines.push(`**Spacing:** padding=${entry.spacing.padding}, gap=${entry.spacing.internal_gap}`);
-    lines.push('');
-  }
-
-  return lines.join('\n');
-};
 
 // ============================================================================
 // Design system prompt builder
@@ -676,6 +612,9 @@ const buildStructuredStateDescription = (
       const fill = fills[0];
       const color = fill.color as { r?: number; g?: number; b?: number } | undefined;
       if (color && typeof color.r === 'number') {
+        if (color.g === undefined || color.b === undefined) {
+          debugLog(`[design-collaboration] buildStructuredStateDescription: color channel missing for node ${nodeId}, defaulting g/b to 0`);
+        }
         const familyName = matchColorToFamily(
           { r: color.r, g: color.g ?? 0, b: color.b ?? 0 },
           shadeScales,

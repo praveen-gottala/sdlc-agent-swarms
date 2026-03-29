@@ -162,7 +162,7 @@ Within a single process, layers communicate via TypeScript interfaces. The gover
 >
 > startPhase(phase, config) -\> void
 >
-> getStatus() -\> ProjectState // includes active_agent_count
+> getStatus() -\> ProjectState // Note: active_agent_count exists in Python engine only (services/engine/), not in active TypeScript workflow
 >
 > pausePhase(phase) -\> void
 >
@@ -197,6 +197,8 @@ Within a single process, layers communicate via TypeScript interfaces. The gover
 > *Updated per ADR-003: publish/emit alias on event bus. Updated per ADR-012: Bounded event history buffer with replay support.*
 
 Every executeAgent call passes through checkPermission, checkBudget, and enforceHITL before the agent's LLM call fires. If any check fails, the action is blocked before spending tokens.
+
+> **Authoritative contracts:** See TypeScript interfaces in packages/core/src/types/ for complete field definitions.
 
 **5. Data Model**
 
@@ -326,9 +328,7 @@ Each component spec file defines the components for a single page, including pro
 
 The task tracker, managed by the orchestrator. This is the source of truth for what agents are doing, what is pending, and what is blocked. This same state powers the Slack/Telegram live task board and the web dashboard.
 
-**All 14 required fields per task:** id, title, phase, agent, status, depends_on, spec_ref, branch, pr_number, cost_usd, tokens_used, attempts, max_attempts, hitl_status.
-
-> *Verified: All 14 PRD Section 5.3 fields present on every task object as confirmed in P32 testing (Wave 7).*
+> **Authoritative field list:** See TaskEntry interface in packages/core/src/types/. Current implementation has 16 fields (evolved beyond original 14).
 
 **5.4 Agent Learnings (Per-Role Memory)**
 
@@ -471,9 +471,9 @@ AgentForge defines five agent categories plus a future research category. Every 
 
   CI/CD                Build agent, Security scanner, Deploy agent, Rollback agent              Pre-deploy gate    Sonnet/Haiku (speed)
 
-  Observability        Metrics monitor, Drift detector, Cost tracker, Incident responder        Alert + suggest    Haiku (cost)
+  Observability        Metrics monitor, Drift detector, Cost tracker, Incident responder        Alert + suggest    Haiku (cost) — *not yet created*
 
-  Research (Phase 3)   UX researcher, Performance analyst, SEO auditor, Accessibility auditor   Suggest only       Sonnet (balanced)
+  Research (Phase 3)   UX researcher, Performance analyst, SEO auditor, Accessibility auditor   Suggest only       Sonnet (balanced) — *not yet created*
   ------------------------------------------------------------------------------------------------------------------------------------------
 
 **10.1 Agent Contract Definition**
@@ -489,6 +489,8 @@ Every agent is defined by a 7-section YAML contract specifying what the agent ca
 > *Updated per ADR-010: 7-section agent contract structure formally defined.*
 
 Runtime status is computed from task states: idle, executing, blocked, waiting_ci, or error. The GET /api/agents endpoint returns all agent contracts with computed runtime status.
+
+> **Agent contract schema:** See agentforge/agents.yaml for all registered agent contracts.
 
 **11. SDLC Phase Details**
 
@@ -916,6 +918,8 @@ The developer opens the AgentForge web dashboard and sees the Pipeline View with
 
 > *Updated per ADR-022: Orchestration engine implemented in TypeScript, not Python/LangGraph.*
 
+> **Current versions:** See package.json files in each package.
+
 **22.2 External Integrations**
 
   -------------------------------------------------------------------------------------------------
@@ -1132,45 +1136,29 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 **27. Event Bus Catalog**
 
-The event bus is the central coordination mechanism for all agent communication. All 34 event types are publishable and subscribable with type-safe narrowing. Every event has required fields: event_id (unique UUID), type, timestamp, and source.
+The event bus is the central coordination mechanism for all agent communication. All 42 event types are publishable and subscribable with type-safe narrowing. Every event has required fields: event_id (unique UUID), type, timestamp, and source.
 
-**27.1 V3-Required Event Types**
+> *Note: SDLCPhase is represented as string literals in TypeScript. Formal enum deferred.*
 
-The following 13 events are required by the V3 Dashboard and have been verified as emittable through full pipeline simulation.
+**27.1 Event Categories**
 
-  ---------------------------------------------------------------------------------------------
-  **Event Type**      **V3 Dashboard Dependency**                            **Status**
-  ------------------- ------------------------------------------------------ ------------------
-  TaskStatusChanged   Pipeline View --- task status updates, Kanban board    VERIFIED
+Events are organized into the following categories:
 
-  AgentStarted        Agent Panel --- agent activity indicators              VERIFIED
+- **Agent Lifecycle:** AgentStarted, AgentCompleted, AgentFailed, AgentAborted
+- **Task Management:** TaskStatusChanged, TaskCreated, TaskBlocked
+- **Design Phase:** DesignComplete, DesignReviewRequested, DesignApproved
+- **Code Phase:** PRCreated, PRMerged, CodeReviewRequested
+- **CI/CD Phase:** CIResult, DeployStarted, DeployCompleted, RollbackTriggered
+- **Governance:** HITLApproved, HITLTimeout, BudgetAlert, TrustEscalated
+- **UX Dashboard Squad:** SpecDriftDetected, and additional dashboard-specific events
 
-  AgentCompleted      Agent Panel --- completion status                      VERIFIED
+The 13 V3-required events (TaskStatusChanged, AgentStarted, AgentCompleted, AgentFailed, CIResult, PRCreated, PRMerged, HITLApproved, HITLTimeout, BudgetAlert, TrustEscalated, SpecDriftDetected, AgentAborted) have been verified as emittable through full pipeline simulation.
 
-  AgentFailed         Agent Panel --- error display, retry buttons           VERIFIED
-
-  CIResult            CI/CD Panel --- build status, logs link                VERIFIED
-
-  PRCreated           PR Panel --- PR list, review queue                     VERIFIED
-
-  PRMerged            PR Panel --- merge status, branch cleanup              VERIFIED
-
-  HITLApproved        Approval Queue --- approval decisions, audit trail     VERIFIED
-
-  HITLTimeout         Approval Queue --- timeout alerts, escalation status   VERIFIED
-
-  BudgetAlert         Cost Dashboard --- spending alerts, budget bars        VERIFIED
-
-  TrustEscalated      Trust Panel --- trust level changes per agent          VERIFIED
-
-  SpecDriftDetected   Spec Panel --- drift indicators, sync status           VERIFIED
-
-  AgentAborted        Agent Panel --- abort status, reason display           VERIFIED
-  ---------------------------------------------------------------------------------------------
+> **Complete event catalog:** See DomainEvent union type in packages/core/src/events/domain-events.ts. Current count: 42 events.
 
 **27.2 Event Bus Capabilities**
 
--   All 34 event types publishable and subscribable with type-safe narrowing
+-   All 42 event types publishable and subscribable with type-safe narrowing
 
 -   Every event has: event_id (unique UUID), type, timestamp, source
 
@@ -1186,11 +1174,11 @@ The following 13 events are required by the V3 Dashboard and have been verified 
 
 > *Updated per ADR-002: Flat discriminated unions for domain events. Updated per ADR-009: In-memory event bus for v1. Updated per ADR-012: Bounded event history buffer.*
 
-**28. Dashboard API Contract**
+**28. Dashboard API Contract (Planned)**
 
-The following REST API endpoints serve as the contract between the AgentForge backend and the V3 Dashboard frontend. All 10 core endpoints have verified data sources with no blocking gaps.
+The following REST API endpoints serve as the planned contract between the AgentForge backend and the V3 Dashboard frontend.
 
-**28.1 Core Endpoints (10/10 Ready)**
+**28.1 Core Endpoints (Planned)**
 
   ---------------------------------------------------------------------------------------------------------------------------------------------------
   **Endpoint**                         **Data Source**                **Key Details**
@@ -1215,6 +1203,10 @@ The following REST API endpoints serve as the contract between the AgentForge ba
 
   POST /api/approvals/:gateId/decide   governance middleware          Full pipeline: permission → budget → HITL. Audit log updated.
   ---------------------------------------------------------------------------------------------------------------------------------------------------
+
+> *Note: All 10 core endpoints above exist only as Python stubs in services/engine/ (FastAPI). They are NOT part of the active TypeScript workflow. See ADR-022.*
+
+> **Authoritative API types:** See packages/core/src/types/.
 
 **28.2 Additional Endpoints**
 
@@ -1280,6 +1272,8 @@ All architectural decisions are tracked as ADRs. Accepted ADRs are reflected in 
   ADR-021   Single on_complete emission rule                     Rejected (bug fixed)
 
   ADR-022   TypeScript-only orchestration engine                 Accepted
+
+  ADR-038   PRD as product intent, TS as impl contract         Accepted
   -------------------------------------------------------------------------------------
 
 **29.1 Open Deferred Items (Phase 2)**
@@ -1297,6 +1291,8 @@ All architectural decisions are tracked as ADRs. Accepted ADRs are reflected in 
 -   ADR-022 (partial): Checkpoint/replay --- deferred to Phase 2 Redis migration
 
 **30. V2 Readiness Certification**
+
+> Note: This certification reflects the state at March 18, 2026. See ADR-038 for subsequent clarifications about API endpoint implementation status.
 
 **Certification Date:** March 18, 2026
 

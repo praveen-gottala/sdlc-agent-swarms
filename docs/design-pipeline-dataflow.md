@@ -123,7 +123,8 @@ applies `min_height` from touch targets, and validates token bindings.
 ┌───────────────────────────────────────────────────────────────────┐
 │                   DESIGN OPTIONS PIPELINE                         │
 │                                                                   │
-│  Input:  App name, description, target audience, PRD (optional)   │
+│  Input:  App name, description, target audience, PRD (optional;    │
+│          provided directly or loaded from docs/prd.md)             │
 │  Model:  claude-sonnet-4-6 (temp=0.8, maxTokens=8192)            │
 │                                                                   │
 │  ┌─────────┐    ┌──────────┐    ┌──────────┐    ┌────────────┐   │
@@ -315,7 +316,7 @@ interface GeneratedEndpoint {
 │  │  taskId               │    │  Tokens:   8000                  │    │
 │  │  prdRequirements[]    │───▶│  Temp:     0                     │    │
 │  │  designTokensSpec?    │    │  Prompt:   ux-research-system.md │    │
-│  │                       │    │                                  │    │
+│  │  pageContext?         │    │                                  │    │
 │  └──────────────────────┘    └──────────────┬───────────────────┘    │
 │                                              │                       │
 │  ┌───────────────────────────────────────────▼──────────────────┐    │
@@ -381,7 +382,7 @@ eventBus.subscribe('DesignBriefCompleted', (event) => {
 │  │  designBrief          │───▶│  Temp:     0                     │    │
 │  │  (UXResearchOutput)   │    │  Schema:   PLANNING_OUTPUT_SCHEMA│    │
 │  │  designConfig?        │    │  + design tokens, brand, catalog │    │
-│  │                       │    │                                  │    │
+│  │  pageContext?         │    │                                  │    │
 │  └──────────────────────┘    └──────────────┬───────────────────┘    │
 │                                              │                       │
 │  ┌───────────────────────────────────────────▼──────────────────┐    │
@@ -390,8 +391,7 @@ eventBus.subscribe('DesignBriefCompleted', (event) => {
 │  │  specRef: string                                             │    │
 │  │  componentTree: ComponentTreeNode[]  ── hierarchical layout  │    │
 │  │  tokenBindings: Record<string, string> ── property→token     │    │
-│  │  responsiveRules: ResponsiveRule[]                            │    │
-│  │  implementationStages: ImplementationStage[]  ── 4 stages    │    │
+│  │  responsiveRules: ResponsiveRule[]  ── breakpoint+width+layout │    │
 │  │  screens?: ScreenDefinition[]                                │    │
 │  └──────────────────────────────────────────────────────────────┘    │
 │                                                                      │
@@ -476,8 +476,11 @@ The planning agent defines a 4-stage implementation plan:
 │  │       {{DESIGN_SYSTEM}}      ← design tokens + brand          │   │
 │  │       {{PENPOT_API_DOCS}}    ← dynamic API discovery          │   │
 │  │       {{COMPONENT_CATALOG}}  ← component anatomy              │   │
+│  │       + pageContext?         ← from pages.yaml (nav, models)  │   │
 │  │                                                               │   │
 │  │  3. parsePenpotDesignScript() → { script, breakpoints }       │   │
+│  │     Guard: rejects scripts with direct `layoutChild = ...`    │   │
+│  │            (Penpot `layoutChild` is getter-only)              │   │
 │  └─────────────────────────────────────┬─────────────────────────┘   │
 │                                        │                             │
 │  ┌─────────────────────────────────────▼─────────────────────────┐   │
@@ -535,7 +538,7 @@ The planning agent defines a 4-stage implementation plan:
 | `penpot:high_level_overview` | A | Discover API surface |
 | `penpot:penpot_api_info` | A | Get type details (Board, FlexLayout, Fill, Stroke) |
 | `penpot:execute_code` | B, C | Run design scripts + fix scripts |
-| `penpot:export_shape` | C | Capture PNG screenshots for evaluation |
+| `penpot:export_shape` | C | ~~Broken~~ — use `execute_code` + `shape.export()` instead |
 
 ---
 
@@ -585,8 +588,9 @@ The planning agent defines a 4-stage implementation plan:
 │    • All colors via T.tokenName (zero raw hex)                       │
 │    • Every shape tagged with setPluginData for extraction            │
 │                                                                      │
-│  Status: Phase 1+2 complete, not yet wired into Stage 4 pipeline.   │
-│  Integration point: packages/agents-ux/src/ux-design/ (Phase 4)     │
+│  Status: Phase 1+2+3 complete. renderToScript() replaces LLM-       │
+│          generated JS scripts for deterministic Penpot output.       │
+│  Integration: wired into ux-penpot-design.ts (V2 pipeline path)     │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -607,7 +611,7 @@ The planning agent defines a 4-stage implementation plan:
 │  │  screenshotBase64     │    │  Model:    claude-opus-4-6       │    │
 │  │  (PNG)                │───▶│  Tokens:   4096                  │    │
 │  │  designSpec (text)    │    │  Temp:     0                     │    │
-│  │  correctionHistory?   │    │  Schema:   EVALUATION_OUTPUT     │    │
+│  │  correctionHistory?   │    │  Schema:   EVALUATION_OUTPUT_SCHEMA│   │
 │  │  designTokens?        │    │  Input:    image + text          │    │
 │  └──────────────────────┘    └──────────────┬───────────────────┘    │
 │                                              │                       │
@@ -792,14 +796,17 @@ shared utilities.
 │    --width <px>  (default: 1440)                                     │
 │    --no-wait     (exit after design, skip feedback)                  │
 │    --implement   (skip feedback, generate code directly)             │
-│    --mock        (use mock MCP client)                               │
+│    --mock        (mock MCP + mock LLM: zero-cost instant replay)      │
 │    --project-dir (resolve paths against this dir, not cwd)           │
+│    --fresh       (force re-run all stages, ignore cache)             │
 │                                                                      │
 │  Execution Flow:                                                     │
 │                                                                      │
 │  1. Setup                                                            │
-│     ├─ Derive moduleId from description                              │
-│     ├─ Load .env (ANTHROPIC_API_KEY)                                 │
+│     ├─ Load .env (ANTHROPIC_API_KEY — skipped when --mock)           │
+│     ├─ Load pages.yaml → resolve pageId → build PageContext          │
+│     │  (filters models/api to page data_sources, sibling nav)        │
+│     ├─ Use page.id as moduleId (ignore --module when resolved)       │
 │     ├─ Load project manifest                                         │
 │     ├─ Load PRD (docs/prd.md)                                        │
 │     └─ Load design system (tokens, brand, catalog)                   │
@@ -808,11 +815,13 @@ shared utilities.
 │     └─ ensureDesignToolConnection('penpot')                          │
 │        └─ Connect to Penpot MCP server, validate tools               │
 │                                                                      │
-│  3. Research (or load cached)                                        │
+│  3. Research (auto-reuse cache if exists, or run fresh)               │
 │     └─ uxResearchWork() → save research-brief.json                   │
+│     └─ --fresh bypasses cache and re-runs from scratch               │
 │                                                                      │
-│  4. Planning (or load cached)                                        │
+│  4. Planning (auto-reuse cache if exists, or run fresh)              │
 │     └─ uxPlanningWork() → save planning-spec.json                    │
+│     └─ --fresh bypasses cache and re-runs from scratch               │
 │                                                                      │
 │  5. Design (or replay/connect)                                       │
 │     └─ penpotDesignWork() → save penpot-design.json + scripts/       │
@@ -867,7 +876,7 @@ uxPlanningWork()
   ▼
 ComponentSpecReady
   │  { specRef, moduleId, componentTree, tokenBindings,
-  │    responsiveRules, implementationStages, screens? }
+  │    responsiveRules, screens? }
   │
   ▼
 penpotDesignWork()  ──── [Phase A → B → C self-correction loop]
@@ -951,6 +960,7 @@ ImplementationDraftReady
 | 3 | Planning | claude-sonnet-4-6 | 8000 | 0 | structured |
 | 3 | Token Correction | claude-sonnet-4-6 | 2000 | 0 | complete |
 | 4A | Design Script | claude-sonnet-4-6 | 32000 | 0 | complete |
+| 4B | DesignSpec v2 Gen | claude-sonnet-4-6 | 16000 | 0 | tool_use (submit_design) |
 | 4C | Fix Generation | claude-sonnet-4-6 | 8000 | 0 | structured |
 | 5 | Evaluation | claude-opus-4-6 | 4096 | 0 | structured + vision |
 | 7 | Implementation | claude-sonnet-4-6 | 16000 | 0 | streaming |

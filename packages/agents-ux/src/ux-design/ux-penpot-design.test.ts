@@ -43,7 +43,7 @@ describe('PENPOT_DESIGN_CONTRACT', () => {
     expect(PENPOT_DESIGN_CONTRACT.category).toBe('design');
     expect(PENPOT_DESIGN_CONTRACT.provider).toBe(DEFAULT_MODEL);
     expect(PENPOT_DESIGN_CONTRACT.tools).toContain('penpot:execute_code');
-    expect(PENPOT_DESIGN_CONTRACT.tools).toContain('penpot:export_shape');
+    expect(PENPOT_DESIGN_CONTRACT.tools).not.toContain('penpot:export_shape');
     expect(PENPOT_DESIGN_CONTRACT.permissions).toEqual(['read_spec', 'read_design', 'write_design', 'read_design_system']);
     expect(PENPOT_DESIGN_CONTRACT.denied).toEqual(['write_code', 'create_branch', 'merge_pr']);
     expect(PENPOT_DESIGN_CONTRACT.hitl_policy).toBe('full_approval');
@@ -161,6 +161,38 @@ describe('parsePenpotDesignScript', () => {
     if (result.ok) {
       expect(result.value.breakpoints).toEqual([]);
     }
+  });
+
+  it('returns Err when script assigns layoutChild directly', () => {
+    const invalid = JSON.stringify({
+      script: [
+        'const parent = penpot.createBoard();',
+        'const child = penpot.createBoard();',
+        'parent.appendChild(child);',
+        "child.layoutChild = { horizontalSizing: 'fill' };",
+      ].join('\n'),
+      breakpoints: ['1440'],
+    });
+    const result = parsePenpotDesignScript(invalid);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('LLM_MALFORMED_OUTPUT');
+      expect(result.error.message).toContain('do not assign to layoutChild directly');
+    }
+  });
+
+  it('allows layoutChild field assignments', () => {
+    const valid = JSON.stringify({
+      script: [
+        'const parent = penpot.createBoard();',
+        'const child = penpot.createBoard();',
+        'parent.appendChild(child);',
+        "child.layoutChild.horizontalSizing = 'fill';",
+      ].join('\n'),
+      breakpoints: ['1440'],
+    });
+    const result = parsePenpotDesignScript(valid);
+    expect(result.ok).toBe(true);
   });
 });
 

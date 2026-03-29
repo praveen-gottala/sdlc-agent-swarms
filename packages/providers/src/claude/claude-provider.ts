@@ -6,7 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, debugLog, logDefaults } from '@agentforge/core';
 import type { Result, CostRecord, CostEstimate } from '@agentforge/core';
 import type {
   LLMProvider,
@@ -119,9 +119,13 @@ function mapFinishReason(
 function mapApiError(error: unknown): ProviderError {
   if (error instanceof Anthropic.APIError) {
     if (error.status === 429) {
-      const retryAfter = typeof error.headers?.['retry-after'] === 'string'
-        ? parseInt(error.headers['retry-after'], 10) * 1000
+      const rawRetryAfter = error.headers?.['retry-after'];
+      const retryAfter = typeof rawRetryAfter === 'string'
+        ? parseInt(rawRetryAfter, 10) * 1000
         : 60_000;
+      if (typeof rawRetryAfter !== 'string') {
+        debugLog('claude.mapApiError: retry-after header missing → default: "60000ms"');
+      }
       return { code: 'RATE_LIMITED', retryAfterMs: retryAfter };
     }
     if (error.status === 401 || error.status === 403) {
@@ -156,6 +160,9 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       try {
         // Use streaming internally to avoid SDK timeout on long-running completions.
         // The SDK throws if a non-streaming request takes >10 minutes.
+        logDefaults('claude.complete', {
+          maxTokens: [options.maxTokens, '4096'],
+        });
         const baseParams: Anthropic.MessageCreateParams = {
           model: resolveModelId(options.model),
           max_tokens: options.maxTokens ?? 4096,
@@ -164,6 +171,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
           ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
           ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
+          ...(options.toolChoice ? { tool_choice: options.toolChoice as Anthropic.MessageCreateParams['tool_choice'] } : {}),
         };
 
         let useStructuredOutput = !!options.responseSchema;
@@ -260,6 +268,9 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
       options: CompletionOptions,
     ): AsyncIterable<StreamChunk> {
       try {
+        logDefaults('claude.stream', {
+          maxTokens: [options.maxTokens, '4096'],
+        });
         const stream = client.messages.stream(
           {
             model: resolveModelId(options.model),
@@ -269,6 +280,7 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
             ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
             ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
+            ...(options.toolChoice ? { tool_choice: options.toolChoice as Anthropic.MessageCreateParams['tool_choice'] } : {}),
           },
           {
             signal: options.signal ?? undefined,
@@ -377,6 +389,9 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         : 0;
 
       const estimatedInputTokens = systemTokens + messageTokens + toolTokens;
+      logDefaults('claude.estimateCost', {
+        maxTokens: [options.maxTokens, '4096'],
+      });
       const estimatedOutputTokens = options.maxTokens ?? 4096;
 
       const costData = calculateCost(options.model, estimatedInputTokens, estimatedOutputTokens);

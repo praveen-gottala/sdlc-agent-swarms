@@ -1,22 +1,30 @@
+> **Status: PARTIALLY RESOLVED** — Issues 1-4 resolved by DesignSpec v2 renderer
+> (LLM no longer generates Penpot scripts directly). Issues 5-6 resolved by
+> structured output and correction loop improvements. The original Figma-specific
+> issues are historical; the Penpot pipeline now uses `renderToScript()`.
+>
+> File path references updated: prompt is now at
+> `packages/agents-ux/src/prompts/ux-penpot-design-system.md`
+
 # Plan: Design Prompt Quality Improvements
 
 Status: TODO — created 2026-03-23 from observed issues in tictactoe-app home screen design.
 
 ## Observed Issues
 
-### 1. Unequal card widths
+### 1. Unequal card widths — RESOLVED
 **Problem**: Game mode cards ("VS Computer", "VS Friend", "Quick Match") have different widths instead of filling the row equally.
 **Root cause**: The design system prompt doesn't enforce equal-width children in horizontal auto-layout. The LLM creates cards with `layoutSizingHorizontal: "HUG"` instead of `"FILL"`.
 **Fix**: Add explicit instruction in `ux-design-system.md`: "When creating cards in a horizontal row, set `layoutSizingHorizontal: FILL` on each card so they share available width equally."
 
-### 2. Text clipping / overflow
+### 2. Text clipping / overflow — RESOLVED
 **Problem**: Card descriptions are cut off mid-word ("Get matched with a random player instantly. Jump right into th...").
 **Root cause**: Text nodes have fixed-size parents with no overflow handling. The LLM creates frames with fixed heights but long text.
 **Fix**:
 - Instruct the LLM to use `layoutSizingVertical: "HUG"` on card frames so they expand to fit content.
 - Or instruct it to set `textAutoResize: "HEIGHT"` on text nodes so text wraps within the frame width.
 
-### 3. Missing components from component tree
+### 3. Missing components from component tree — RESOLVED
 **Problem**: ref-validation warns that `GameSessionCard`, `FriendInviteModal`, `FriendsList`, `FriendCard` were in the planning tree but not generated.
 **Root cause**: The LLM has a token limit and sometimes omits lower-priority components. With 56 steps already, it may have hit its output ceiling.
 **Fix options**:
@@ -24,12 +32,12 @@ Status: TODO — created 2026-03-23 from observed issues in tictactoe-app home s
 - Split the component tree into batches — design top-level components first, then children in a second pass
 - Add a post-generation check: if component tree items are missing, run a targeted follow-up prompt for just those components
 
-### 4. Avatar step failure (step 5)
+### 4. Avatar step failure (step 5) — RESOLVED
 **Problem**: "Parent node does not support children: 55:180" — tried to add text inside an ellipse.
 **Root cause**: The LLM generated a `create_text` step with the ellipse (PlayerAvatar) as parent. Ellipses don't support children in Figma.
 **Fix**: Add to the design system prompt: "NEVER add children to ELLIPSE, RECTANGLE, LINE, VECTOR, POLYGON, or STAR nodes — only FRAME and COMPONENT nodes can contain children."
 
-### 5. Phase C fixer passes null params
+### 5. Phase C fixer passes null params — RESOLVED
 **Problem**: `resize_node` kept failing with "width: Expected number, received null" across all 3 correction attempts.
 **Root cause**: The fixer LLM generates parameters without proper values. No input validation catches this before the MCP call.
 **Fix**:
@@ -37,7 +45,7 @@ Status: TODO — created 2026-03-23 from observed issues in tictactoe-app home s
 - Add to the fixer prompt: "All numeric parameters (width, height, x, y, fontSize) MUST be positive numbers. Never pass null."
 - When `get_node_info` returns the current dimensions, the fixer should use those as defaults if it can't compute new ones
 
-### 6. Correction loop score regression (75 → 72)
+### 6. Correction loop score regression (75 → 72) — RESOLVED
 **Problem**: Score went DOWN after corrections, from 75 to 72.
 **Root cause**: Failed fixes (resize returning errors) leave the design unchanged, but the evaluator may penalize differently on subsequent screenshots if minor rendering differences occur. Also, successful `scan_text_nodes` calls don't actually change anything — they're read-only.
 **Fix**:

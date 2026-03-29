@@ -188,7 +188,7 @@ describe('createMockMCPClient', () => {
     const client = createMockMCPClient();
 
     const callResult = await client.callTool('server', 'tool', {});
-    expect(callResult).toEqual({ ok: true, value: {} });
+    expect(callResult).toEqual({ ok: true, value: { content: [{ text: '{}' }] } });
 
     const listResult = await client.listTools('server');
     expect(listResult).toEqual({ ok: true, value: [] });

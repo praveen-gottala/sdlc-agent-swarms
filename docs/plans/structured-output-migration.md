@@ -1,5 +1,20 @@
 # Migration Plan: Upgrade All Agents to Anthropic SDK Structured Output
 
+## Implementation Status (as of 2026-03-28)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| `responseSchema` field on `CompletionOptions` | DONE | `packages/providers/src/types.ts` lines 76-78 |
+| `output_config` in Claude provider | DONE | `packages/providers/src/claude/claude-provider.ts` lines 184-188 |
+| UX Planning agent — `PLANNING_OUTPUT_SCHEMA` + dual-path parsing | DONE | `packages/agents-ux/src/ux-planning/ux-planning.ts` |
+| Design Evaluator — `EVALUATION_OUTPUT_SCHEMA` | DONE | `packages/agents-ux/src/ux-design/design-evaluator.ts` |
+| UX Research agent (still text parsing) | REMAINING | |
+| UX Implementation agent (streaming text mode) | REMAINING | |
+| Code agents (frontend coder, backend coder, test writer) | REMAINING | |
+| CLI commands with inline JSON parsing | REMAINING | |
+
+---
+
 ## Context
 
 All agents in the monorepo manually parse JSON from LLM text output using regex extraction (`/```json\s*\n?([\s\S]*?)```/`) followed by `JSON.parse()`. This is fragile — the LLM can produce malformed JSON, extra text, or incorrect field values. The Anthropic SDK (v0.80.0, already installed) supports native structured output via `output_config` with `json_schema`, which **guarantees** the response matches the schema. A spike has already been completed for the UX Planning agent — this plan extends it to all remaining agents.

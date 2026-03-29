@@ -98,7 +98,8 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   );
   b.line(`${mtv}.name = '${node.id}_minus_text';`);
   emitAppendChild(b, mv, mtv, 'auto');
-  emitAppendChild(b, ctrlV, mv, 'auto');
+  // fix/fix so flex cannot crush square buttons to a narrow strip when the row is tight
+  emitAppendChild(b, ctrlV, mv, 'fix', 'fix');
 
   // Count display
   const cv = makeVar('scnt', ctx);
@@ -121,7 +122,7 @@ export const renderStepper: ComponentRenderer = (node, parentVar, ctx) => {
   );
   b.line(`${ptv}.name = '${node.id}_plus_text';`);
   emitAppendChild(b, pv, ptv, 'auto');
-  emitAppendChild(b, ctrlV, pv, 'auto');
+  emitAppendChild(b, ctrlV, pv, 'fix', 'fix');
 
   // Append controls group to stepper
   emitAppendChild(b, v, ctrlV, 'auto');

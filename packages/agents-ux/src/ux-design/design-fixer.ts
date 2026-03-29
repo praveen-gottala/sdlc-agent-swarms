@@ -5,8 +5,8 @@
  * by the design evaluator. Part of the visual self-correction loop.
  */
 
-import type { Result, MCPClient } from '@agentforge/core';
-import { Ok, DEFAULT_MODEL } from '@agentforge/core';
+import type { Result, MCPClient, PromptTrace } from '@agentforge/core';
+import { Ok, DEFAULT_MODEL, recordPromptTrace, recordPromptTraceResponse } from '@agentforge/core';
 import type { LLMProvider, ContentBlock, ToolDefinition } from '@agentforge/providers';
 import type { DesignIssue, FixAttemptRecord } from './design-evaluator.js';
 import type { FigmaCreationStep } from '../types.js';
@@ -62,6 +62,10 @@ export interface FixerOptions {
   readonly planningOutput?: Record<string, unknown>;
   /** Design system prompt for consistent styling. */
   readonly designSystemPrompt?: string;
+  /** Trace collector for recording LLM call inputs/outputs. */
+  readonly traceCollector?: { promptTraces?: PromptTrace[] };
+  /** Iteration number for trace stage naming. */
+  readonly iterationNumber?: number;
 }
 
 /** Tools that the TalkToFigma bridge supports (upstream + AgentForge patch). */
@@ -447,29 +451,51 @@ ${designContext}${previousContext}
 Generate the minimal fix steps using the apply_fixes tool. Check node types before choosing tools.${options?.screenshotBase64 ? ' Use the screenshot above to understand the current visual state.' : ''}`,
       });
 
-      const fixResult = await provider.complete(
-        {
-          system: FIX_GENERATION_SYSTEM_PROMPT,
-          messages: [
-            {
-              role: 'user',
-              content: messageContent,
-            },
-          ],
-          tools: [FIX_STEPS_TOOL],
-        },
-        {
-          model: DEFAULT_MODEL,
-          maxTokens: 2048,
-          temperature: 0,
-        },
-      );
+      const fixPromptObj = {
+        system: FIX_GENERATION_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user' as const,
+            content: messageContent,
+          },
+        ],
+        tools: [FIX_STEPS_TOOL],
+      };
+
+      // Record fix prompt trace
+      const iterNum = options?.iterationNumber ?? 0;
+      const fixStageName = `fix-${iterNum}-${issue.component}`;
+      if (options?.traceCollector) {
+        const textContent = messageContent.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('\n');
+        recordPromptTrace(options.traceCollector, fixStageName,
+          { system: FIX_GENERATION_SYSTEM_PROMPT, messages: [{ role: 'user', content: textContent }] },
+          { model: DEFAULT_MODEL, maxTokens: 2048 });
+      }
+
+      const fixResult = await provider.complete(fixPromptObj, {
+        model: DEFAULT_MODEL,
+        maxTokens: 2048,
+        temperature: 0,
+      });
 
       if (!fixResult.ok) {
         // eslint-disable-next-line no-console
         console.warn(`        [fix] Failed to generate fix for ${issue.component}: LLM error`);
         failed++;
         continue;
+      }
+
+      // Record fix response trace
+      if (options?.traceCollector) {
+        recordPromptTraceResponse(options.traceCollector, fixStageName, {
+          content: fixResult.value.content,
+          toolCalls: fixResult.value.toolCalls?.map(tc => ({ name: tc.name, args: tc.args })),
+          usage: fixResult.value.usage ? { inputTokens: fixResult.value.usage.inputTokens, outputTokens: fixResult.value.usage.outputTokens, cacheReadTokens: fixResult.value.usage.cacheReadTokens, cacheWriteTokens: fixResult.value.usage.cacheWriteTokens } : undefined,
+          cost: fixResult.value.cost ? { inputCostUsd: fixResult.value.cost.inputCostUsd, outputCostUsd: fixResult.value.cost.outputCostUsd, totalCostUsd: fixResult.value.cost.totalCostUsd } : undefined,
+          latencyMs: fixResult.value.latencyMs,
+          finishReason: fixResult.value.finishReason,
+          hasVisionInput: !!options?.screenshotBase64,
+        });
       }
 
       // Extract fix steps — prefer structured tool_use, fall back to text parsing

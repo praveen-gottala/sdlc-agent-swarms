@@ -11,7 +11,6 @@ import {
   applyDesignFeedback,
   createDesignCollaborationSession,
   buildComponentCatalogPrompt,
-  buildComponentCatalogImplPrompt,
 } from './design-collaboration.js';
 import type { DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
 import type { UXDesignOutput } from './ux-design.js';
@@ -440,35 +439,6 @@ describe('buildDesignSystemContextFromSpec', () => {
     expect(ctx.tokenBindings['MetricCard.fill']).toBe('surface-elevated');
   });
 
-  it('includes component tokens section in prompt when present', () => {
-    const tokensWithComponents: DesignTokensSpec = {
-      ...VALID_TOKENS,
-      components: {
-        button: {
-          primary: { bg: 'cta-primary', text: 'background-primary', radius: 'medium', padding_x: 24 },
-          secondary: { bg: 'transparent', text: 'cta-primary', border_color: 'slate' },
-          ghost: { bg: 'transparent', text: 'cta-primary' },
-        },
-        card: {
-          default: { bg: 'background-primary', border_color: 'slate', radius: 'medium', padding: 24 },
-        },
-      },
-    };
-
-    const ctx = buildDesignSystemContextFromSpec(tokensWithComponents, VALID_BRAND, SPEC_PLANNING_OUTPUT);
-
-    expect(ctx.designSystemPrompt).toContain('## Component Tokens');
-    expect(ctx.designSystemPrompt).toContain('### Button');
-    expect(ctx.designSystemPrompt).toContain('bg={cta-primary}');
-    expect(ctx.designSystemPrompt).toContain('### Card');
-    expect(ctx.designSystemPrompt).toContain('do not choose colors independently');
-  });
-
-  it('omits component tokens section when components is undefined', () => {
-    const ctx = buildDesignSystemContextFromSpec(VALID_TOKENS, VALID_BRAND, SPEC_PLANNING_OUTPUT);
-
-    expect(ctx.designSystemPrompt).not.toContain('## Component Tokens');
-  });
 });
 
 // ============================================================================
@@ -640,55 +610,3 @@ describe('buildComponentCatalogPrompt', () => {
   });
 });
 
-describe('buildComponentCatalogImplPrompt', () => {
-  it('returns empty string for undefined', () => {
-    expect(buildComponentCatalogImplPrompt(undefined)).toBe('');
-  });
-
-  it('filters to active library', () => {
-    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
-    expect(result).toContain('shadcn');
-    expect(result).toContain('@/components/ui/card');
-    expect(result).not.toContain('@mui/material/Card');
-  });
-
-  it('includes all libraries when no libraryId specified', () => {
-    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG);
-    expect(result).toContain('shadcn');
-    expect(result).toContain('mui');
-  });
-
-  it('includes slot mappings', () => {
-    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
-    expect(result).toContain('CardHeader');
-    expect(result).toContain('CardContent');
-  });
-
-  it('renders variant_prop, size_prop, variants, and token_bindings', () => {
-    const result = buildComponentCatalogImplPrompt(ENRICHED_CATALOG, 'shadcn');
-
-    // variant_prop and size_prop
-    expect(result).toContain('variant_prop: `variant`');
-    expect(result).toContain('size_prop: `size`');
-
-    // Variants
-    expect(result).toContain('**Variants:**');
-    expect(result).toContain('**secondary**');
-    expect(result).toContain('**ghost**');
-
-    // Token bindings
-    expect(result).toContain('**Token Bindings:**');
-    expect(result).toContain('background: cta-primary');
-    expect(result).toContain('text: text-on-primary');
-  });
-
-  it('backward compat: catalog without new fields still works', () => {
-    const result = buildComponentCatalogImplPrompt(SAMPLE_CATALOG, 'shadcn');
-    expect(result).not.toContain('**Variants:**');
-    expect(result).not.toContain('**Token Bindings:**');
-    expect(result).not.toContain('variant_prop');
-    // Still renders structure and library
-    expect(result).toContain('**Structure:**');
-    expect(result).toContain('**Library:**');
-  });
-});

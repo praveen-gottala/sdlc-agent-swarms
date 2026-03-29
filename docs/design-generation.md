@@ -784,6 +784,44 @@ return { colors, typography, spacing, elevation, layout, z_index };
 
 ---
 
+## DesignSpec v2 Renderer Pipeline (Current Architecture)
+
+The design pipeline now uses a **deterministic renderer** that separates WHAT (LLM → JSON) from HOW (renderer → Penpot/React API calls). This replaced the previous approach where the LLM generated Penpot scripts directly.
+
+### Architecture: LLM → JSON → Renderer
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌────────────────────┐
+│  LLM Call    │────▶│  DesignSpec v2   │────▶│  renderToScript()  │──▶ Penpot JS
+│  (Sonnet 4.6)│     │  JSON (flat      │     │  renderToJSX()     │──▶ React/JSX
+│              │     │  adjacency list) │     │                    │
+└─────────────┘     └──────────────────┘     └────────────────────┘
+```
+
+- **LLM outputs structured JSON** via Anthropic SDK `output_config` with `responseSchema` — guaranteed schema compliance
+- **DesignSpec v2 schema**: flat adjacency list of `NodeSpec` objects with `id`, `parentId`, `type`, optional `catalog`, `overrides`, `children`
+- **Renderer is deterministic**: same JSON input always produces same output. No LLM hallucination of API calls.
+
+### Component Renderers
+
+| Target | Count | Entry Point |
+|--------|-------|-------------|
+| Penpot | 28 component renderers | `renderToScript(spec, tokens, catalog)` |
+| React | 22 component renderers | `renderToJSX(spec, tokens, catalog)` |
+
+Components are split into **accelerators** (structural: page, container, section, header, divider, spacer, text) and **differentiators** (catalog-driven: button variants, input variants, card, badge, stat, avatar, checkbox, select, segmented-control, stepper, etc.).
+
+### Key Benefits
+
+- **Eliminated all Penpot API bugs** — renderer enforces correct API usage (createBoard for all shapes, appendChild before layoutChild, 0-1 float ranges for colors)
+- **Reduced token usage ~89%** — LLM outputs compact JSON instead of verbose JS scripts
+- **Structured output** via `responseSchema` guarantees valid JSON (no regex parsing needed)
+- **Dual-target** — same DesignSpec JSON renders to both Penpot and React
+
+### Package
+
+`packages/designspec-renderer/` — standalone package with zero external dependencies. Mirrors core types locally to avoid coupling.
+
 ## Verification
 
 1. `nx run-many -t typecheck` — all packages pass

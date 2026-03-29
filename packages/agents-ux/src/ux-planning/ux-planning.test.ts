@@ -6,6 +6,7 @@ import {
   validateTokenBindings,
   parseTokenBindingsCorrection,
   applyDotNotationFallback,
+  filterNonTokenBindings,
   uxPlanningWork,
 } from './ux-planning.js';
 import type { AgentContext, LLMProviderRef, DesignTokensSpec } from '@agentforge/core';
@@ -34,12 +35,6 @@ const PLANNING_OUTPUT_OBJ = {
   responsiveRules: [
     { breakpoint: 'desktop', behavior: '3-column grid with 24px gap' },
     { breakpoint: 'tablet', behavior: '2-column grid with 16px gap' },
-  ],
-  implementationStages: [
-    { stage: 'layout', tasks: ['Create grid container'] },
-    { stage: 'theme', tasks: ['Bind color tokens'] },
-    { stage: 'animation', tasks: ['Add enter transitions'] },
-    { stage: 'implementation', tasks: ['Connect data hooks'] },
   ],
 };
 
@@ -128,7 +123,6 @@ describe('parsePlanningOutput', () => {
       expect(result.value.componentTree[0].name).toBe('DashboardLayout');
       expect(result.value.tokenBindings['DashboardLayout.gap']).toBe('24');
       expect(result.value.responsiveRules).toHaveLength(2);
-      expect(result.value.implementationStages).toHaveLength(4);
     }
   });
 
@@ -703,12 +697,6 @@ describe('uxPlanningWork — token binding retry loop', () => {
       'Card.text': 'color.text.primary',
     },
     responsiveRules: [{ breakpoint: 'desktop', behavior: '3-col grid' }],
-    implementationStages: [
-      { stage: 'layout', tasks: ['grid'] },
-      { stage: 'theme', tasks: ['tokens'] },
-      { stage: 'animation', tasks: ['fade'] },
-      { stage: 'implementation', tasks: ['hooks'] },
-    ],
   });
 
   const CORRECTED_BINDINGS = JSON.stringify({
@@ -730,13 +718,11 @@ describe('uxPlanningWork — token binding retry loop', () => {
     return ctx;
   };
 
-  it('retries when tokenBindings contain invalid names and uses corrected output', async () => {
+  it('resolves dot-notation token names deterministically without LLM retry', async () => {
     const badParsed = JSON.parse(BAD_PLANNING_OUTPUT) as Record<string, unknown>;
-    const correctedParsed = JSON.parse(CORRECTED_BINDINGS) as Record<string, unknown>;
     const provider = makeProvider(BAD_PLANNING_OUTPUT);
     (provider.complete as jest.Mock)
-      .mockResolvedValueOnce(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }))
-      .mockResolvedValueOnce(Ok({ content: CORRECTED_BINDINGS, structured: correctedParsed }));
+      .mockResolvedValueOnce(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }));
 
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -748,8 +734,9 @@ describe('uxPlanningWork — token binding retry loop', () => {
       expect(result.value.tokenBindings['Card.background']).toBe('surface-primary');
       expect(result.value.tokenBindings['Card.text']).toBe('text-primary');
     }
-    // Initial call + 1 retry
-    expect(provider.complete).toHaveBeenCalledTimes(2);
+    // Only the initial call — DOT_NOTATION_HINTS resolved everything
+    expect(provider.complete).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('deterministic token corrections'));
 
     warnSpy.mockRestore();
   });
@@ -765,11 +752,22 @@ describe('uxPlanningWork — token binding retry loop', () => {
     expect(provider.complete).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to DOT_NOTATION_HINTS when retries are exhausted', async () => {
-    const badParsed = JSON.parse(BAD_PLANNING_OUTPUT) as Record<string, unknown>;
-    const provider = makeProvider(BAD_PLANNING_OUTPUT);
-    // All calls return bad tokens
-    (provider.complete as jest.Mock).mockResolvedValue(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }));
+  it('retries via LLM when deterministic fix cannot resolve unknown names', async () => {
+    // These names are NOT in DOT_NOTATION_HINTS, so deterministic fix won't resolve them
+    const unknownOutput = JSON.stringify({
+      specRef: 'spec-mod-001-1234',
+      moduleId: 'mod-001',
+      componentTree: [{ name: 'Card', props: ['title'], children: [] }],
+      tokenBindings: {
+        'Card.background': 'brand-accent-glow',
+        'Card.text': 'custom-text-emphasis',
+      },
+      responsiveRules: [{ breakpoint: 'desktop', behavior: '3-col grid' }],
+    });
+    const unknownParsed = JSON.parse(unknownOutput) as Record<string, unknown>;
+    const provider = makeProvider(unknownOutput);
+    // All calls return the same unknown tokens — exhausts retries
+    (provider.complete as jest.Mock).mockResolvedValue(Ok({ content: unknownOutput, structured: unknownParsed }));
 
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -777,24 +775,29 @@ describe('uxPlanningWork — token binding retry loop', () => {
     const result = await uxPlanningWork(PLANNING_INPUT, provider as unknown as LLMProviderRef, [], ctx);
 
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      // DOT_NOTATION_HINTS should have corrected these
-      expect(result.value.tokenBindings['Card.background']).toBe('surface-primary');
-      expect(result.value.tokenBindings['Card.text']).toBe('text-primary');
-    }
-    // Initial call + 2 retries (max)
+    // Initial call + 2 retries (max) since deterministic fix couldn't resolve these
     expect(provider.complete).toHaveBeenCalledTimes(3);
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('DOT_NOTATION_HINTS fallback'));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Unresolvable token bindings'));
 
     warnSpy.mockRestore();
   });
 
-  it('sends original output and warnings in retry prompt', async () => {
-    const badParsed = JSON.parse(BAD_PLANNING_OUTPUT) as Record<string, unknown>;
+  it('sends original output and warnings in retry prompt for non-hinted names', async () => {
+    // Use names NOT in DOT_NOTATION_HINTS to trigger LLM retry
+    const unknownOutput = JSON.stringify({
+      specRef: 'spec-mod-001-1234',
+      moduleId: 'mod-001',
+      componentTree: [{ name: 'Card', props: ['title'], children: [] }],
+      tokenBindings: {
+        'Card.background': 'brand-accent-glow',
+      },
+      responsiveRules: [{ breakpoint: 'desktop', behavior: '3-col grid' }],
+    });
+    const unknownParsed = JSON.parse(unknownOutput) as Record<string, unknown>;
     const correctedParsed = JSON.parse(CORRECTED_BINDINGS) as Record<string, unknown>;
-    const provider = makeProvider(BAD_PLANNING_OUTPUT);
+    const provider = makeProvider(unknownOutput);
     (provider.complete as jest.Mock)
-      .mockResolvedValueOnce(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }))
+      .mockResolvedValueOnce(Ok({ content: unknownOutput, structured: unknownParsed }))
       .mockResolvedValueOnce(Ok({ content: CORRECTED_BINDINGS, structured: correctedParsed }));
 
     const ctx = setupContext();
@@ -806,20 +809,18 @@ describe('uxPlanningWork — token binding retry loop', () => {
     const retryCallArgs = (provider.complete as jest.Mock).mock.calls[1][0];
     expect(retryCallArgs.messages).toHaveLength(3); // original user + assistant + correction
     expect(retryCallArgs.messages[1].role).toBe('assistant');
-    expect(retryCallArgs.messages[1].content).toBe(BAD_PLANNING_OUTPUT);
+    expect(retryCallArgs.messages[1].content).toBe(unknownOutput);
     expect(retryCallArgs.messages[2].role).toBe('user');
     expect(retryCallArgs.messages[2].content).toContain('invalid token binding names');
 
     warnSpy.mockRestore();
   });
 
-  it('corrected tokenBindings flow through to final Ok result', async () => {
+  it('deterministic correction flows through to final Ok result preserving other fields', async () => {
     const badParsed = JSON.parse(BAD_PLANNING_OUTPUT) as Record<string, unknown>;
-    const correctedParsed = JSON.parse(CORRECTED_BINDINGS) as Record<string, unknown>;
     const provider = makeProvider(BAD_PLANNING_OUTPUT);
     (provider.complete as jest.Mock)
-      .mockResolvedValueOnce(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }))
-      .mockResolvedValueOnce(Ok({ content: CORRECTED_BINDINGS, structured: correctedParsed }));
+      .mockResolvedValueOnce(Ok({ content: BAD_PLANNING_OUTPUT, structured: badParsed }));
 
     const ctx = setupContext();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -828,7 +829,7 @@ describe('uxPlanningWork — token binding retry loop', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // Verify actual corrected VALUES, not just structure
+      // Verify deterministic corrections resolved dot-notation names
       const bindings = result.value.tokenBindings;
       for (const value of Object.values(bindings)) {
         expect(value).not.toContain('color.');
@@ -839,6 +840,8 @@ describe('uxPlanningWork — token binding retry loop', () => {
       expect(result.value.componentTree[0].name).toBe('Card');
       expect(result.value.specRef).toBe('spec-mod-001-1234');
     }
+    // Only 1 LLM call — deterministic fix handled it
+    expect(provider.complete).toHaveBeenCalledTimes(1);
 
     warnSpy.mockRestore();
   });
@@ -897,5 +900,83 @@ describe('uxPlanningWork — structured output', () => {
       expect(result.value.specRef).toBe('spec-mod-001-1234');
       expect(result.value.tokenBindings['MetricsCard.background']).toBe('surface-primary');
     }
+  });
+});
+
+// ============================================================================
+// filterNonTokenBindings
+// ============================================================================
+
+describe('filterNonTokenBindings', () => {
+  const validNames = new Set([
+    'surface-primary', 'text-primary', 'heading-1', 'body',
+    'border-default', 'medium', 'elevation-1', 'touch-min-height',
+    '4', '8', '12', '16', '24', '32', '48', '64', '0',
+  ]);
+
+  it('removes always-non-token keys regardless of value', () => {
+    const bindings = {
+      'Grid.columns': '3',
+      'Banner.ariaLive': 'polite',
+      'Section.background': 'surface-primary',
+    };
+    const { cleaned, removed } = filterNonTokenBindings(bindings, validNames);
+    expect(cleaned).toEqual({ 'Section.background': 'surface-primary' });
+    expect(removed).toContain('Grid.columns');
+    expect(removed).toContain('Banner.ariaLive');
+  });
+
+  it('removes dimension keys when value is not a valid token', () => {
+    const bindings = {
+      'Sidebar.width': '280',
+      'Card.imageHeight': '200',
+      'Header.height': '56',
+      'Section.background': 'surface-primary',
+    };
+    const { cleaned, removed } = filterNonTokenBindings(bindings, validNames);
+    expect(cleaned).toEqual({ 'Section.background': 'surface-primary' });
+    expect(removed).toHaveLength(3);
+  });
+
+  it('keeps dimension keys when value IS a valid token name', () => {
+    const bindings = {
+      'Button.height': 'touch-min-height',
+      'Section.background': 'surface-primary',
+    };
+    const { cleaned, removed } = filterNonTokenBindings(bindings, validNames);
+    expect(cleaned).toEqual({
+      'Button.height': 'touch-min-height',
+      'Section.background': 'surface-primary',
+    });
+    expect(removed).toHaveLength(0);
+  });
+
+  it('keeps spacing scale values in tokenBindings', () => {
+    const bindings = {
+      'Section.gap': '24',
+      'Layout.padding': '32',
+    };
+    // Note: gap and padding don't match dimension key patterns,
+    // so they pass through. Their values (24, 32) are valid spacing tokens.
+    const { cleaned, removed } = filterNonTokenBindings(bindings, validNames);
+    expect(cleaned).toEqual(bindings);
+    expect(removed).toHaveLength(0);
+  });
+
+  it('handles empty bindings', () => {
+    const { cleaned, removed } = filterNonTokenBindings({}, validNames);
+    expect(cleaned).toEqual({});
+    expect(removed).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// extractValidTokenNames includes "0"
+// ============================================================================
+
+describe('extractValidTokenNames — zero spacing', () => {
+  it('includes "0" as valid spacing', () => {
+    const names = extractValidTokenNames(SAMPLE_TOKENS);
+    expect(names.has('0')).toBe(true);
   });
 });

@@ -5,9 +5,81 @@
     "figma@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(rm -rf *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Destructive rm -rf command' && exit 2"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git push * --force*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Force push not allowed. Use --force-with-lease if needed.' && exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT_PATH\" | grep -qE '\\.ts$|\\.tsx$|\\.js$|\\.jsx$'; then npx prettier --write \"$TOOL_INPUT_PATH\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
-      "Bash(sed *)"
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npx nx *)",
+      "Bash(npx jest *)",
+      "Bash(npx prettier *)",
+      "Bash(python -m pytest *)",
+      "Bash(python -c *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(git log *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(pandoc *)",
+      "Read(*)",
+      "Write(packages/**)",
+      "Write(docs/**)",
+      "Write(tests/**)",
+      "Edit(packages/**)",
+      "Edit(docs/**)",
+      "Edit(tests/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push * --force *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Write(.env*)",
+      "Write(*.pem)",
+      "Write(*.key)"
     ]
   }
 }

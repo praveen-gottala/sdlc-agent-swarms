@@ -11,7 +11,8 @@ import type { ScriptBuilder } from './script-builder.js';
  */
 export function emitTokenMap(builder: ScriptBuilder, colorMap: TokenColorMap): void {
   builder.comment('Design token color map (semantic name \u2192 hex)');
-  builder.line('const T = {');
+  builder.comment('Missing tokens resolve to magenta (#FF00FF) for visual debugging');
+  builder.line('const T = new Proxy({');
   builder.indent();
 
   for (const [name, hex] of Object.entries(colorMap)) {
@@ -20,7 +21,11 @@ export function emitTokenMap(builder: ScriptBuilder, colorMap: TokenColorMap): v
   }
 
   builder.dedent();
-  builder.line('};');
+  builder.line('}, {');
+  builder.indent();
+  builder.line("get(t, p) { if (p in t) return t[p]; return '#FF00FF'; }");
+  builder.dedent();
+  builder.line('});');
   builder.blank();
 }
 

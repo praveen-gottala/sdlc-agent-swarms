@@ -78,7 +78,7 @@ export function renderButton(
   emitAppendChild(b, v, tv, 'auto');
 
   // Append button to parent
-  const hSizing = node.width === 'fill' || cat?.width === 'fill' ? 'fill' : typeof node.width === 'number' ? 'fix' : 'auto';
+  const hSizing = node.width === 'fill' ? 'fill' : typeof node.width === 'number' ? 'fix' : 'auto';
   emitAppendChild(b, parentVar, v, hSizing, 'fix');
   emitPluginData(b, v, node);
   ctx.trackNode(v, node.id);

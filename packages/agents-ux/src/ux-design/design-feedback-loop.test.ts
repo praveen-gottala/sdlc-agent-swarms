@@ -42,6 +42,7 @@ const makeOptions = (
   initialDesign: design ?? makeDesign(),
   input,
   output: new PassThrough(),
+  designTool: 'Figma',
 });
 
 // ============================================================================
@@ -203,6 +204,7 @@ describe('runDesignFeedbackLoop', () => {
         input,
         output: outputStream,
         reviewFn,
+        designTool: 'Figma',
       };
 
       const promise = runDesignFeedbackLoop(opts);
@@ -232,6 +234,7 @@ describe('runDesignFeedbackLoop', () => {
         input,
         output: new PassThrough(),
         reviewFn,
+        designTool: 'Figma',
       };
 
       const promise = runDesignFeedbackLoop(opts);

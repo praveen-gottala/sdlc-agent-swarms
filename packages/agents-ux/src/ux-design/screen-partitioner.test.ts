@@ -27,7 +27,6 @@ const makePlanningOutput = (overrides?: Partial<UXPlanningOutput>): UXPlanningOu
   ],
   tokenBindings: { 'AppLayout.bg': 'surface-primary' },
   responsiveRules: [{ breakpoint: 'desktop', behavior: '1440px' }],
-  implementationStages: [{ stage: 'layout', tasks: ['grid'] }],
   ...overrides,
 });
 

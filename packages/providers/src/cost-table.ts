@@ -5,6 +5,8 @@
  * Configurable — update when provider pricing changes.
  */
 
+import { debugLog } from '@agentforge/core';
+
 export interface ModelCost {
   /** Cost per 1M input tokens in USD. */
   readonly input: number;
@@ -31,7 +33,11 @@ export function getModelCost(model: string): ModelCost {
   if (model.startsWith('ollama/')) {
     return { input: 0, output: 0 };
   }
-  return costTable[model] ?? { input: 0, output: 0 };
+  const entry = costTable[model];
+  if (!entry) {
+    debugLog(`getModelCost: unknown model "${model}" → default: "zero cost (input=0, output=0)"`);
+  }
+  return entry ?? { input: 0, output: 0 };
 }
 
 /** Override or add cost entries. */

@@ -185,11 +185,11 @@ describe('createPenpotCollaborationSession', () => {
 });
 
 describe('createPenpotReviewCallback', () => {
-  it('captures screenshot via export_shape and evaluates', async () => {
+  it('captures screenshot via execute_code + shape.export() and evaluates', async () => {
     const screenshotBase64 = 'iVBORw0KGgoAAAANSUhEUg=='; // minimal PNG header
     const mcpClient = {
       callTool: jest.fn().mockResolvedValue(
-        Ok({ content: [{ type: 'image', data: screenshotBase64, mimeType: 'image/png' }] }),
+        Ok({ content: [{ type: 'text', text: JSON.stringify({ result: { base64: screenshotBase64 } }) }] }),
       ),
       listTools: jest.fn().mockResolvedValue(Ok([])),
       isAvailable: jest.fn().mockResolvedValue(true),
@@ -218,11 +218,11 @@ describe('createPenpotReviewCallback', () => {
     const design = mapPenpotToDesignOutput(MOCK_PENPOT_DESIGN);
     await reviewFn(design);
 
-    // Verify export_shape was called with the root shape ID
+    // Verify execute_code was called (not export_shape)
     expect(mcpClient.callTool).toHaveBeenCalledWith(
       'penpot',
-      'export_shape',
-      { shapeId: 'node-1', format: 'png' },
+      'execute_code',
+      expect.objectContaining({ code: expect.stringContaining('getShapeById') }),
     );
   });
 

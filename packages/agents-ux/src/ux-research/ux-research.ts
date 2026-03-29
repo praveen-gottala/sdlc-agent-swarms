@@ -22,10 +22,11 @@ import {
   runAgent,
   readSpecs,
   recordPromptTrace,
+  recordPromptTraceResponse,
 } from '@agentforge/core';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
-import type { DesignTokens } from '@agentforge/agents-design';
-import type { DesignTokensSpec } from '@agentforge/core';
+import { formatPageContextPrompt } from '../page-context-prompt.js';
+import type { DesignTokensSpec, PageContext } from '@agentforge/core';
 
 // ============================================================================
 // Types
@@ -36,10 +37,10 @@ export interface UXResearchInput {
   readonly moduleId: string;
   readonly taskId: string;
   readonly prdRequirements: readonly string[];
-  /** Full design tokens spec with semantic colors, elevation, layout, z_index. Preferred over existingTokens. */
+  /** Full design tokens spec with semantic colors, elevation, layout, z_index. */
   readonly designTokensSpec?: DesignTokensSpec;
-  /** @deprecated Use designTokensSpec for richer context. Kept for backward compat. */
-  readonly existingTokens?: DesignTokens;
+  /** Structured page context from pages.yaml for spec-driven design. */
+  readonly pageContext?: PageContext;
 }
 
 /** Output produced by the UX dashboard research agent. */
@@ -130,7 +131,7 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
   learnings,
   context,
 ) => {
-  const { moduleId, prdRequirements, designTokensSpec, existingTokens } = input;
+  const { moduleId, prdRequirements, designTokensSpec } = input;
 
   // ── Input validation guards ──
   if (!moduleId) {
@@ -151,7 +152,7 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
 
   // Extract design tokens from readSpecs result instead of re-reading from disk
   let effectiveTokensSpec = designTokensSpec;
-  if (!effectiveTokensSpec && !existingTokens) {
+  if (!effectiveTokensSpec) {
     const tokensFromSpecs = existingSpecs.ok ? existingSpecs.value.designTokens : undefined;
     if (!tokensFromSpecs) {
       // eslint-disable-next-line no-console
@@ -171,12 +172,15 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
 
   if (effectiveTokensSpec) {
     userMessageParts.push(`\nDesign Tokens (from project spec):\n${JSON.stringify(effectiveTokensSpec, null, 2)}`);
-  } else if (existingTokens) {
-    userMessageParts.push(`\nExisting design tokens:\n${JSON.stringify(existingTokens, null, 2)}`);
   }
 
   if (learnings.length > 0) {
     userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);
+  }
+
+  // Inject structured page context if available
+  if (input.pageContext) {
+    userMessageParts.push(formatPageContextPrompt(input.pageContext));
   }
 
   const prompt = {
@@ -201,6 +205,16 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
   }
 
   const llmOutput = (completionResult.value as { content: string }).content;
+
+  // Record response trace
+  const completionValue = completionResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+  recordPromptTraceResponse(context, 'research', {
+    content: completionValue.content,
+    usage: completionValue.usage,
+    cost: completionValue.cost,
+    latencyMs: completionValue.latencyMs,
+    finishReason: completionValue.finishReason,
+  });
 
   // 4. Parse output
   const parseResult = parseResearchOutput(llmOutput);

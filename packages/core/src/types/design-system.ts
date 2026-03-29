@@ -92,51 +92,6 @@ export interface ZIndexSpec {
   readonly tooltip: number;
 }
 
-/** A single component variant's token bindings. Color values reference semantic or primitive token names. */
-export interface ComponentVariantTokens {
-  readonly [key: string]: string | number | undefined;
-}
-
-/**
- * Component-level token bindings (variant → token references).
- * @deprecated Use ComponentCatalogSpec for structured component definitions.
- * This interface only captures variant token bindings, not anatomy or states.
- * Retained for backward compatibility with existing design-tokens.yaml files.
- */
-export interface ComponentTokens {
-  readonly button?: {
-    readonly primary?: ComponentVariantTokens;
-    readonly secondary?: ComponentVariantTokens;
-    readonly ghost?: ComponentVariantTokens;
-  };
-  readonly card?: {
-    readonly default?: ComponentVariantTokens;
-    readonly highlighted?: ComponentVariantTokens;
-  };
-  readonly input?: {
-    readonly default?: ComponentVariantTokens;
-    readonly focus?: ComponentVariantTokens;
-    readonly error?: ComponentVariantTokens;
-  };
-  readonly tab_bar?: {
-    readonly active?: ComponentVariantTokens;
-    readonly inactive?: ComponentVariantTokens;
-  };
-  readonly badge?: {
-    readonly success?: ComponentVariantTokens;
-    readonly warning?: ComponentVariantTokens;
-    readonly error?: ComponentVariantTokens;
-    readonly info?: ComponentVariantTokens;
-  };
-  readonly avatar?: {
-    readonly default?: ComponentVariantTokens;
-  };
-  readonly progress_bar?: {
-    readonly track?: ComponentVariantTokens;
-    readonly fill?: ComponentVariantTokens;
-  };
-}
-
 /**
  * Complete design tokens spec file.
  * Stored at: agentforge/spec/design-tokens.yaml
@@ -152,7 +107,6 @@ export interface DesignTokensSpec {
   readonly elevation: ElevationSpec;
   readonly layout: LayoutSpec;
   readonly z_index: ZIndexSpec;
-  readonly components?: ComponentTokens;
 }
 
 /** Brand identity direction. */

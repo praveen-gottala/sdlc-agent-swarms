@@ -76,6 +76,11 @@ export interface CompletionOptions {
   readonly responseSchema?: {
     readonly schema: Record<string, unknown>;
   };
+  /**
+   * Force a specific tool choice. When type is 'tool', the LLM is forced
+   * to call the named tool (guaranteed structured JSON output).
+   */
+  readonly toolChoice?: { readonly type: 'auto' | 'any' | 'tool'; readonly name?: string };
 }
 
 /** Token usage from a completion. */

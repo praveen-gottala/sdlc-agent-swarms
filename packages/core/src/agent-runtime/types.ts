@@ -70,6 +70,27 @@ export interface PromptTrace {
   readonly userMessage: string;
   readonly model: string;
   readonly maxTokens: number;
+  // ── Response fields (populated after LLM call completes) ──
+  readonly responseContent?: string;
+  readonly responseStructured?: Record<string, unknown>;
+  readonly responseToolCalls?: readonly { readonly name: string; readonly args: Record<string, unknown> }[];
+  readonly usage?: { readonly inputTokens: number; readonly outputTokens: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number };
+  readonly cost?: { readonly inputCostUsd: number; readonly outputCostUsd: number; readonly totalCostUsd: number };
+  readonly latencyMs?: number;
+  readonly finishReason?: string;
+  readonly hasVisionInput?: boolean;
+}
+
+/** Data for recording a prompt trace response. */
+export interface PromptTraceResponse {
+  readonly content?: string;
+  readonly structured?: Record<string, unknown>;
+  readonly toolCalls?: readonly { readonly name: string; readonly args: Record<string, unknown> }[];
+  readonly usage?: { readonly inputTokens: number; readonly outputTokens: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number };
+  readonly cost?: { readonly inputCostUsd: number; readonly outputCostUsd: number; readonly totalCostUsd: number };
+  readonly latencyMs?: number;
+  readonly finishReason?: string;
+  readonly hasVisionInput?: boolean;
 }
 
 /** Record a prompt trace if the context has a trace collector. */
@@ -88,6 +109,35 @@ export function recordPromptTrace(
     model: opts.model,
     maxTokens: opts.maxTokens,
   });
+}
+
+/**
+ * Record LLM response data on the last trace matching the given stage.
+ * Finds the most recent trace with the matching stage name and replaces it
+ * with a merged copy that includes the response fields.
+ */
+export function recordPromptTraceResponse(
+  context: { promptTraces?: PromptTrace[] },
+  stage: string,
+  response: PromptTraceResponse,
+): void {
+  if (!context.promptTraces) return;
+  for (let i = context.promptTraces.length - 1; i >= 0; i--) {
+    if (context.promptTraces[i].stage === stage) {
+      context.promptTraces[i] = {
+        ...context.promptTraces[i],
+        responseContent: response.content,
+        responseStructured: response.structured,
+        responseToolCalls: response.toolCalls,
+        usage: response.usage,
+        cost: response.cost,
+        latencyMs: response.latencyMs,
+        finishReason: response.finishReason,
+        hasVisionInput: response.hasVisionInput,
+      };
+      return;
+    }
+  }
 }
 
 /** Everything an agent needs to execute, passed as a single object. */

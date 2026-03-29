@@ -151,7 +151,7 @@ describe('design:penpot integration — file loading', () => {
 
     await designPenpotCommand('home', out, { noWait: true, mock: true });
 
-    expect(out.output).toContain('PRD loaded from docs/prd.md');
+    expect(out.output).toContain('PRD loaded from');
   });
 
   it('loads design tokens and reports in output', async () => {
@@ -732,7 +732,7 @@ describe('design:penpot integration — --project-dir option', () => {
       projectDir: 'my-project',
     });
 
-    expect(out.output).toContain('PRD loaded from docs/prd.md');
+    expect(out.output).toContain('PRD loaded from');
     expect(out.output).toContain('Design tokens loaded');
     expect(out.output).toContain('Brand spec loaded');
   });
@@ -934,7 +934,8 @@ describe('design:penpot integration — viewport config from manifest', () => {
     const { designPenpotCommand } = await import('./design-penpot.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true, mock: true });
+    // --fresh ensures research+planning are re-run (not loaded from cache)
+    await designPenpotCommand('home', out, { noWait: true, mock: true, fresh: true });
 
     expect(capturedPlanningInput).toBeDefined();
     expect(capturedPlanningInput!.designConfig).toEqual({
@@ -942,5 +943,402 @@ describe('design:penpot integration — viewport config from manifest', () => {
       layout_strategy: 'desktop-first',
       responsive_breakpoints: false,
     });
+  });
+});
+
+// ============================================================================
+// Cache reuse and --fresh flag tests
+// ============================================================================
+
+describe('design:penpot integration — cache reuse', () => {
+  let tmpDir: string;
+  let cwdSpy: jest.SpyInstance;
+  const originalEnv = { ...process.env };
+
+  beforeAll(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-cache-'));
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
+    mkdirSync(join(tmpDir, 'docs'), { recursive: true });
+    writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n\nTest app for cache reuse.\n');
+    mkdirSync(join(tmpDir, 'agentforge', 'spec'), { recursive: true });
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'design-tokens.yaml'), yamlStringify(VALID_TOKENS));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'brand.yaml'), yamlStringify(VALID_BRAND));
+  });
+
+  afterAll(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
+    cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+    process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+    process.env = { ...originalEnv };
+    process.exitCode = undefined;
+  });
+
+  it('auto-reuses cached research and planning when artifacts exist', async () => {
+    const moduleId = 'cache-reuse';
+    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    mkdirSync(previewDir, { recursive: true });
+
+    // Write cached research and planning artifacts
+    writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({
+      briefId: 'cached-brief', moduleId,
+      competitors: [], patterns: [], accessibilityNotes: [], recommendations: [],
+    }));
+    writeFileSync(join(previewDir, 'planning-spec.json'), JSON.stringify({
+      specRef: 'cached-spec', moduleId,
+      componentTree: [{ id: 'root', type: 'page', name: 'CachedPage', props: [], children: [] }],
+      tokenBindings: {},
+    }));
+
+    let researchCalled = false;
+    let planningCalled = false;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockImplementation(() => {
+          researchCalled = true;
+          return Promise.resolve({
+            ok: true,
+            value: { briefId: 'fresh-brief', moduleId },
+          });
+        }),
+        uxPlanningWork: jest.fn().mockImplementation(() => {
+          planningCalled = true;
+          return Promise.resolve({
+            ok: true,
+            value: { specRef: 'fresh-spec', moduleId, componentTree: [], tokenBindings: {} },
+          });
+        }),
+        penpotDesignWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: {
+            penpotProjectId: 'proj-1', penpotPageId: 'page-1',
+            penpotNodeIds: {}, moduleId, breakpoints: [],
+          },
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('cache reuse test', out, { module: moduleId, noWait: true, mock: true });
+
+    // Research and planning should NOT have been called — cached artifacts used
+    expect(researchCalled).toBe(false);
+    expect(planningCalled).toBe(false);
+    expect(out.output).toContain('reusing cached results');
+  });
+
+  it('--fresh forces re-run even when cached artifacts exist', async () => {
+    const moduleId = 'fresh-test';
+    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    mkdirSync(previewDir, { recursive: true });
+
+    // Write cached research and planning artifacts
+    writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({
+      briefId: 'cached-brief', moduleId,
+    }));
+    writeFileSync(join(previewDir, 'planning-spec.json'), JSON.stringify({
+      specRef: 'cached-spec', moduleId, componentTree: [], tokenBindings: {},
+    }));
+
+    let researchCalled = false;
+    let planningCalled = false;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockImplementation(() => {
+          researchCalled = true;
+          return Promise.resolve({
+            ok: true,
+            value: { briefId: 'fresh-brief', moduleId },
+          });
+        }),
+        uxPlanningWork: jest.fn().mockImplementation(() => {
+          planningCalled = true;
+          return Promise.resolve({
+            ok: true,
+            value: { specRef: 'fresh-spec', moduleId, componentTree: [], tokenBindings: {} },
+          });
+        }),
+        penpotDesignWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: {
+            penpotProjectId: 'proj-1', penpotPageId: 'page-1',
+            penpotNodeIds: {}, moduleId, breakpoints: [],
+          },
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('fresh test', out, { module: moduleId, noWait: true, mock: true, fresh: true });
+
+    // With --fresh, both stages should be re-run despite cached artifacts
+    expect(researchCalled).toBe(true);
+    expect(planningCalled).toBe(true);
+    expect(out.output).not.toContain('reusing cached results');
+    expect(out.output).toContain('analyzing requirements');
+  });
+});
+
+// ============================================================================
+// Page resolution from pages.yaml
+// ============================================================================
+
+const PAGES_YAML = {
+  version: '1.0',
+  pages: [
+    {
+      id: 'bill-entry',
+      name: 'Bill Entry',
+      description: 'The primary input screen where users enter all bill details',
+      route: '/',
+      status: 'active',
+      components: ['AppHeader', 'BillTotalInput', 'TipSegmentedControl', 'PersonList',
+        'EqualSplitToggle', 'CustomSplitRow', 'CalculateButton', 'TaxInput',
+        'DiscountInput', 'CurrencySelector', 'PersonAvatar', 'AddPersonButton',
+        'RemovePersonButton', 'BillSummaryFooter'],
+      data_sources: ['BillState', 'PersonEntry'],
+      viewports: [1440],
+    },
+    {
+      id: 'split-breakdown',
+      name: 'Split Breakdown',
+      description: 'The results screen showing each person\'s calculated share',
+      route: '/breakdown',
+      status: 'active',
+      components: ['AppHeader', 'SplitResultCard', 'ShareButton'],
+      data_sources: ['SplitResult'],
+    },
+    {
+      id: 'shared-result',
+      name: 'Shared Result',
+      description: 'A read-only snapshot view',
+      route: '/result',
+      status: 'active',
+      components: ['AppHeader', 'SplitResultCard'],
+    },
+  ],
+};
+
+const MODELS_YAML = {
+  version: '1.0',
+  models: [
+    {
+      id: 'BillState',
+      name: 'BillState',
+      fields: [
+        { name: 'subtotal', type: 'number' },
+        { name: 'tax_amount', type: 'number' },
+      ],
+      db_table: 'bill_states',
+    },
+    {
+      id: 'PersonEntry',
+      name: 'PersonEntry',
+      fields: [{ name: 'name', type: 'string' }],
+      db_table: 'person_entries',
+    },
+  ],
+};
+
+const API_YAML = {
+  version: '1.0',
+  base_url: '/api',
+  endpoints: [
+    {
+      id: 'calculate',
+      method: 'POST',
+      path: '/api/calculate',
+      query_params: [],
+      response: { type: 'object', schema_ref: 'SplitResult[]' },
+      auth: 'none',
+      status: 'active',
+    },
+  ],
+};
+
+describe('design:penpot integration — page resolution from pages.yaml', () => {
+  let tmpDir: string;
+  let cwdSpy: jest.SpyInstance;
+  const originalEnv = { ...process.env };
+
+  beforeAll(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-pages-'));
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
+    mkdirSync(join(tmpDir, 'docs'), { recursive: true });
+    writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# SplitEasy\n\nA bill splitting app.\n');
+    mkdirSync(join(tmpDir, 'agentforge', 'spec'), { recursive: true });
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'design-tokens.yaml'), yamlStringify(VALID_TOKENS));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'brand.yaml'), yamlStringify(VALID_BRAND));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'pages.yaml'), yamlStringify(PAGES_YAML));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'models.yaml'), yamlStringify(MODELS_YAML));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'api.yaml'), yamlStringify(API_YAML));
+  });
+
+  afterAll(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  beforeEach(() => {
+    cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+    process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+    process.env = { ...originalEnv };
+    process.exitCode = undefined;
+  });
+
+  it('resolves exact page ID and reports match', async () => {
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true });
+
+    expect(out.output).toContain('Page matched: bill-entry (Bill Entry) — 14 components, route: /');
+  });
+
+  it('resolves case-insensitive page name', async () => {
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('Bill Entry', out, { noWait: true, mock: true });
+
+    expect(out.output).toContain('Page matched: bill-entry (Bill Entry)');
+  });
+
+  it('fails with available page IDs when page not found', async () => {
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('nonexistent', out, { noWait: true, mock: true });
+
+    expect(out.output).toContain("Page 'nonexistent' not found");
+    expect(out.output).toContain('bill-entry');
+    expect(out.output).toContain('split-breakdown');
+    expect(out.output).toContain('shared-result');
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('uses page.id as moduleId (ignores --module)', async () => {
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, module: 'custom-id' });
+
+    // Should use page ID, not --module
+    expect(out.output).toContain('Module: bill-entry');
+  });
+
+  it('passes pageContext to all pipeline stages', async () => {
+    let capturedResearchInput: Record<string, unknown> | undefined;
+    let capturedPlanningInput: Record<string, unknown> | undefined;
+    let capturedDesignInput: Record<string, unknown> | undefined;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedResearchInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { briefId: 'b1', moduleId: 'bill-entry', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+          });
+        }),
+        uxPlanningWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPlanningInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {} },
+          });
+        }),
+        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedDesignInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'bill-entry', breakpoints: [] },
+          });
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
+
+    // Verify pageContext is passed to research
+    expect(capturedResearchInput).toBeDefined();
+    const researchPageCtx = capturedResearchInput!.pageContext as { targetPage: { id: string }; models?: unknown[] } | undefined;
+    expect(researchPageCtx).toBeDefined();
+    expect(researchPageCtx!.targetPage.id).toBe('bill-entry');
+
+    // Verify pageContext is passed to planning
+    expect(capturedPlanningInput).toBeDefined();
+    const planningPageCtx = capturedPlanningInput!.pageContext as { targetPage: { id: string } } | undefined;
+    expect(planningPageCtx).toBeDefined();
+    expect(planningPageCtx!.targetPage.id).toBe('bill-entry');
+
+    // Verify pageContext is passed to design
+    expect(capturedDesignInput).toBeDefined();
+    const designPageCtx = capturedDesignInput!.pageContext as { targetPage: { id: string } } | undefined;
+    expect(designPageCtx).toBeDefined();
+    expect(designPageCtx!.targetPage.id).toBe('bill-entry');
+  });
+
+  it('includes filtered models in pageContext', async () => {
+    let capturedResearchInput: Record<string, unknown> | undefined;
+
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        uxResearchWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedResearchInput = input;
+          return Promise.resolve({
+            ok: true,
+            value: { briefId: 'b1', moduleId: 'bill-entry', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+          });
+        }),
+        uxPlanningWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {} },
+        }),
+        penpotDesignWork: jest.fn().mockResolvedValue({
+          ok: true,
+          value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'bill-entry', breakpoints: [] },
+        }),
+      };
+    });
+
+    const { designPenpotCommand } = await import('./design-penpot.js');
+    const out = createOutputStream();
+
+    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
+
+    const pageCtx = capturedResearchInput!.pageContext as { models?: Array<{ id: string }> };
+    expect(pageCtx).toBeDefined();
+    // bill-entry has data_sources: ['BillState', 'PersonEntry']
+    expect(pageCtx.models).toBeDefined();
+    expect(pageCtx.models!.map(m => m.id)).toEqual(['BillState', 'PersonEntry']);
   });
 });

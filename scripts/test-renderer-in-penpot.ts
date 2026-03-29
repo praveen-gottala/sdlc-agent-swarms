@@ -126,8 +126,9 @@ const tokens: RendererTokens = {
 };
 console.log(`Tokens: ${projectDir}/agentforge/spec/design-tokens.yaml`);
 
+const ignoreCatalog = getFlag('--ignore-catalog') ?? false;
 let catalog: ReturnType<typeof loadCatalogForRenderer>;
-if (existsSync(catalogPath)) {
+if (existsSync(catalogPath) && ignoreCatalog) {
     const rawCatalog: RawCatalogSpec = parseYaml(readFileSync(catalogPath, 'utf-8'));
     catalog = loadCatalogForRenderer(rawCatalog, tokens);
     const projectEntryCount = Object.keys(rawCatalog.components).length;

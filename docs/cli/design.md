@@ -6,6 +6,13 @@ Commands for creating and iterating on designs through the UX agent pipeline.
 
 Request a new page design from the design agent pipeline (code-first workflow).
 
+**Purpose:** Entry point for the event-driven design workflow. Publishes a
+`PageRequested` event that triggers the full UX agent pipeline: Research →
+Planning → Design → Evaluation. Unlike `design:penpot` (which runs the
+pipeline synchronously), this command is fire-and-forget — it emits the event
+and returns immediately. Downstream agents pick up the event and process it
+asynchronously.
+
 ```bash
 agentforge design <description>
 ```
@@ -14,11 +21,68 @@ agentforge design <description>
 |----------|----------|-------------|
 | `description` | Yes | Natural language description of the page to design |
 
-Publishes a `PageRequested` event for design agents to process. This is the code-first design workflow — for Figma-native design, use `design:figma`.
+**Event emitted:** `PageRequested` with `{ description, timestamp }`
+
+**When to use:**
+- Use `design` for event-driven workflows where agents run asynchronously
+- Use `design:penpot` or `design:figma` for synchronous, interactive design sessions with live tool integration
 
 **Example:**
 ```bash
 agentforge design "user profile settings page with avatar upload"
+```
+
+---
+
+## `agentforge design:generate`
+
+Generate a complete app specification (pages, data models, API endpoints) from your
+project description using AI. This is the bridge between `describe` (PRD) and the
+design pipeline — it turns your requirements into structured page definitions.
+
+**Purpose:** Reads the PRD (`docs/prd.md`) and project config, then uses an LLM to
+generate `pages.yaml`, `models.yaml`, and `api.yaml` under `agentforge/spec/`.
+These files drive all downstream design commands (`design:penpot`, `design:figma`).
+
+```bash
+agentforge design:generate
+```
+
+**Prerequisites:**
+- `agentforge.yaml` must exist (run `agentforge init` first)
+- `docs/prd.md` should exist (run `agentforge describe` first)
+
+**Outputs:**
+- `agentforge/spec/pages.yaml` — page definitions with components, data sources, routes
+- `agentforge/spec/models.yaml` — data model definitions
+- `agentforge/spec/api.yaml` — API endpoint definitions
+
+**Example:**
+```bash
+agentforge design:generate
+```
+
+---
+
+## `agentforge design:preview`
+
+Open the design system and app spec preview in your default browser. Generates a
+static HTML file showing your design tokens, component catalog, and page specs.
+
+**Purpose:** Quick visual check of the design system (colors, typography, spacing)
+and generated app spec without opening design tools.
+
+```bash
+agentforge design:preview
+```
+
+**Prerequisites:** Project initialized with design tokens and brand spec.
+
+**Output:** Opens an HTML preview in the default browser.
+
+**Example:**
+```bash
+agentforge design:preview
 ```
 
 ---
@@ -270,28 +334,47 @@ docker compose up -d figma-bridge
 
 Create a Penpot design via the UX agent pipeline (Research, Planning, Design) with Penpot integration through the Penpot MCP HTTP/SSE server.
 
+The command resolves `<pageId>` against `pages.yaml` to load structured page context (components, data sources, routes, sibling pages) instead of relying on free-form descriptions.
+
 ```bash
-agentforge design:penpot <description> [options]
+agentforge design:penpot <pageId> [options]
 ```
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `description` | Yes | Natural language description of what to design |
+| `pageId` | Yes | Page ID from `pages.yaml` (e.g., `"bill-entry"`), case-insensitive page name (e.g., `"Bill Entry"`), or free-form description (legacy fallback when `pages.yaml` is absent) |
+
+**Page resolution order:**
+1. Exact match on `pages[].id`
+2. Case-insensitive match on `pages[].name`
+3. If `pages.yaml` exists but no match → **error** listing available page IDs
+4. If `pages.yaml` does not exist → falls back to using input as free-form description (legacy behavior)
+
+When a page is resolved:
+- `page.id` is used as the module ID (output goes to `.agentforge/previews/{page.id}/`)
+- `page.description` is used as the primary description for LLM prompts
+- `page.components` is passed as the required component list
+- `page.data_sources` filters models and API endpoints for context
+- All sibling pages (with routes and shared components) are included for cross-page navigation awareness
 
 | Option | Description |
 |--------|-------------|
 | `--stage <stage>` | Skip to a stage: `research`, `planning`, `design`, `replay`, `connect` |
-| `--module <id>` | Module ID (default: derived from description) |
+| `--module <id>` | Module ID override (default: page ID from `pages.yaml`) |
 | `--no-wait` | Exit immediately after design without entering the feedback loop |
 | `--implement` | Skip feedback loop and generate React + Tailwind code directly after design |
-| `--mock` | Use mock MCP (skip design tool connection, useful for testing LLM stages) |
+| `--mock` | Use mock MCP and mock LLM provider — skips design tool connection AND all LLM API calls, using saved/canned responses for instant zero-cost replay. No `ANTHROPIC_API_KEY` required. |
 | `--project-dir <dir>` | Project directory for artifact path resolution (default: current directory) |
+| `--designspec-v1` | Use legacy V1 LLM-based script generation (default is V2 deterministic renderer) |
+| `--fresh` | Force re-run all stages, ignoring cached research/planning artifacts |
+| `--evaluate` | Run non-interactive design evaluation after design (for CI/CD). Exit code 1 if score < threshold |
+| `--evaluate-threshold <score>` | Minimum score (0-100) for `--evaluate` to pass (default: 75) |
 
 ### Stages
 
 | Stage | Description |
 |-------|-------------|
-| `research` | Run from research stage (default) |
+| `research` | Run from research stage (default — auto-reuses cache if available) |
 | `planning` | Skip research, load from cache |
 | `design` | Skip research + planning, load from cache |
 | `replay` | Re-execute the cached design script without LLM calls |
@@ -334,31 +417,141 @@ All artifacts are saved to `.agentforge/previews/<module-id>/`:
 ### Examples
 
 ```bash
-# Full pipeline
-agentforge design:penpot "cost monitoring dashboard"
+# Design a page by ID (reads pages.yaml for full context)
+agentforge design:penpot bill-entry
+
+# Design by page name (case-insensitive)
+agentforge design:penpot "Bill Entry"
 
 # Resume from design stage
-agentforge design:penpot "cost dashboard" --stage design --module cost-dashboard
+agentforge design:penpot bill-entry --stage design
 
 # Skip feedback loop, generate code directly
-agentforge design:penpot "cost dashboard" --implement
+agentforge design:penpot bill-entry --implement
 
 # Re-execute cached design script (no LLM calls)
-agentforge design:penpot "cost dashboard" --stage replay --module cost-dashboard
+agentforge design:penpot bill-entry --stage replay
 
 # Test connection only
-agentforge design:penpot "cost dashboard" --stage connect --module cost-dashboard
+agentforge design:penpot bill-entry --stage connect
 
 # Skip feedback loop (CI/automation)
-agentforge design:penpot "cost dashboard" --no-wait
+agentforge design:penpot bill-entry --no-wait
+
+# CI/CD quality gate — fail if design scores below 80
+agentforge design:penpot bill-entry --evaluate --evaluate-threshold 80
+
+# Force re-run research + planning (ignore cached artifacts)
+agentforge design:penpot bill-entry --fresh
+
+# Use legacy V1 LLM-based script generation
+agentforge design:penpot bill-entry --designspec-v1
 
 # Run from repo root, resolving artifacts in a subdirectory project
-agentforge design:penpot "bill entry" --stage replay --project-dir split-easy
+agentforge design:penpot bill-entry --stage replay --project-dir split-easy
 ```
 
 ### Architecture
 
 See [ADR-030](../adrs/ADR-030-penpot-design-tool-support.md) for details on the Penpot adapter pattern, transport differences from Figma, and dynamic tool discovery.
+
+---
+
+## `agentforge design:penpot:all`
+
+Batch-design all screens from `pages.yaml` in Penpot. Reads the project spec
+automatically and runs the full pipeline (Research → Planning → Design) for each page.
+
+**Purpose:** Automates designing every page in one command instead of running
+`design:penpot` individually for each page ID.
+
+```bash
+agentforge design:penpot:all [options]
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--pages <ids>` | string | all | Comma-separated page IDs to design (e.g. `"home,book-detail"`) |
+| `--width <pixels>` | number | 1440 | Viewport width — overrides per-page viewports |
+| `--design-only` | boolean | false | Skip research+planning, use cached artifacts |
+
+**Inputs:** Reads `agentforge/spec/pages.yaml` for page definitions.
+
+**Outputs:** Same as `design:penpot` per page — Penpot script + artifacts in `.agentforge/previews/<pageId>/`.
+
+**Example:**
+```bash
+agentforge design:penpot:all --pages "home,settings" --width 1280
+```
+
+---
+
+## `agentforge design:penpot:browser`
+
+Create a Penpot design using Playwright browser automation. The browser agent
+takes screenshots and reads Penpot state directly for a more interactive
+design experience compared to the MCP-based `design:penpot`.
+
+**Purpose:** Alternative to `design:penpot` that uses headful browser automation
+for real-time visual feedback during design generation.
+
+```bash
+agentforge design:penpot:browser <description> [options]
+```
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `<description>` | Yes | Natural language description of what to design |
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--stage <stage>` | string | — | Skip to: `research`, `planning`, `design` |
+| `--module <id>` | string | derived | Module ID |
+| `--width <pixels>` | number | 1440 | Viewport width |
+| `--headless` | boolean | false | Run browser headless |
+| `--no-wait` | boolean | false | Exit after design without approval wait |
+| `--implement` | boolean | false | Skip feedback, generate code after design |
+| `--mock` | boolean | false | Use mock MCP |
+
+**Prerequisites:** Penpot running locally, Playwright installed.
+
+**Outputs:** Penpot design + artifacts in `.agentforge/previews/<moduleId>/`.
+
+**Example:**
+```bash
+# Full pipeline with browser
+agentforge design:penpot:browser "cost dashboard with charts"
+
+# Headless mode (CI)
+agentforge design:penpot:browser "cost dashboard" --headless
+```
+
+---
+
+## `agentforge design:penpot:review`
+
+Review and interactively improve an existing Penpot design using a browser agent.
+The agent takes screenshots, evaluates the design against spec, and suggests improvements.
+
+**Purpose:** Post-design QA — run after `design:penpot` to refine and improve
+the generated design with AI-assisted evaluation.
+
+```bash
+agentforge design:penpot:review [options]
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--url <url>` | string | **required** | Penpot workspace URL (user must be logged in) |
+| `--page <id>` | string | — | Page ID from `pages.yaml` to focus evaluation |
+| `--headless` | boolean | false | Run browser headless |
+
+**Prerequisites:** Active Penpot session in browser, design already generated.
+
+**Example:**
+```bash
+agentforge design:penpot:review --url "http://localhost:9001/view/..."
+```
 
 ---
 

@@ -311,45 +311,69 @@ export function createPenpotAdapter(): DesignToolAdapter {
     },
 
     async captureScreenshot(mcpClient: MCPClient, nodeId: string): Promise<Result<ScreenshotResult>> {
-      // Try Penpot's export tool (discovered dynamically)
-      // Common Penpot MCP tool names: export-frame, export-component, get-thumbnail, export_node
-      const exportTools = ['export-frame', 'export-component', 'get-thumbnail', 'export_node'];
+      // Use execute_code + shape.export() to bypass the broken export_shape tool.
+      // See docs/lessons-learned.md "export_shape is broken" entry.
+      const code = `
+        const shape = penpot.currentPage?.getShapeById("${nodeId}");
+        if (!shape) return { error: "Shape not found: ${nodeId}" };
+        try {
+          const data = await shape.export({ type: "png", scale: 2 });
+          const bytes = new Uint8Array(data);
+          let binary = '';
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          return { base64: btoa(binary) };
+        } catch (e) {
+          return { error: e.message || String(e) };
+        }
+      `;
 
-      for (const toolName of exportTools) {
-        const result = await mcpClient.callTool('penpot', toolName, {
-          nodeId,
-          format: 'png',
-          scale: 2,
+      const result = await mcpClient.callTool('penpot', 'execute_code', { code });
+
+      if (!result.ok) {
+        return Err({
+          code: 'MCP_UNAVAILABLE' as const,
+          message: `Penpot screenshot failed: ${result.error.message}`,
+          recoverable: true,
         });
+      }
 
-        if (result.ok) {
-          const data = result.value as Record<string, unknown>;
-          const imageData = (data.imageData ?? data.data ?? data.base64 ?? '') as string;
-          const imageUrl = (data.imageUrl ?? data.url ?? '') as string;
+      const content = result.value as { content?: Array<{ type?: string; text?: string; data?: string }> };
+      const text = Array.isArray(content.content)
+        ? content.content.map(c => c.text ?? '').join('')
+        : '';
 
-          if (imageData) {
-            const base64 = imageData.includes(',') ? imageData.split(',')[1] : imageData;
-            return Ok({ imageUrl: imageUrl || 'penpot://export', base64 });
-          }
+      try {
+        const parsed = JSON.parse(text) as { result?: { base64?: string; error?: string } };
+        if (parsed.result?.error) {
+          return Err({
+            code: 'MCP_UNAVAILABLE' as const,
+            message: `Shape export error: ${parsed.result.error}`,
+            recoverable: true,
+          });
+        }
+        if (parsed.result?.base64) {
+          return Ok({ imageUrl: 'penpot://export', base64: parsed.result.base64 });
+        }
+      } catch {
+        // Check if text itself is base64
+        if (text.startsWith('iVBOR') || text.startsWith('/9j/')) {
+          return Ok({ imageUrl: 'penpot://export', base64: text });
+        }
+      }
 
-          if (imageUrl) {
-            try {
-              const response = await fetch(imageUrl);
-              if (response.ok) {
-                const arrayBuffer = await response.arrayBuffer();
-                const base64 = Buffer.from(arrayBuffer).toString('base64');
-                return Ok({ imageUrl, base64 });
-              }
-            } catch {
-              // Try next tool
-            }
-          }
+      // Fallback: check for image block in response
+      if (Array.isArray(content.content)) {
+        const imageBlock = content.content.find(c => c.type === 'image');
+        if (imageBlock?.data) {
+          return Ok({ imageUrl: 'penpot://export', base64: imageBlock.data });
         }
       }
 
       return Err({
         code: 'MCP_UNAVAILABLE' as const,
-        message: 'No Penpot export tool succeeded for screenshot capture',
+        message: 'No image data in Penpot export response',
         recoverable: true,
       });
     },

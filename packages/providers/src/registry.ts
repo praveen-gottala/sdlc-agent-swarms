@@ -5,7 +5,7 @@
  * to configured LLMProvider instances.
  */
 
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, debugLog } from '@agentforge/core';
 import type { Result } from '@agentforge/core';
 import type {
   LLMProvider,
@@ -44,6 +44,7 @@ export function parseProviderString(providerString: string): { provider: string;
   }
 
   // Fallback: use the full string as both provider and model
+  debugLog(`parseProviderString: no known prefix for "${providerString}" → using full string as both provider and model`);
   return { provider: providerString, model: providerString };
 }
 
@@ -67,8 +68,11 @@ export class ProviderRegistry {
       return Err({ code: 'MODEL_NOT_FOUND' as const, model: providerString });
     }
 
-    const config = this.configs.get(provider) ?? {};
-    return Ok(factory(model, config));
+    const config = this.configs.get(provider);
+    if (!config) {
+      debugLog(`ProviderRegistry.get: no config for provider "${provider}" → default: "empty config {}"`);
+    }
+    return Ok(factory(model, config ?? {}));
   }
 
   /** List all registered providers with availability info. */

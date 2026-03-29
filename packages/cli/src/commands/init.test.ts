@@ -360,9 +360,9 @@ describe('initCommand', () => {
 
   it('design system path writes component-library.yaml + theme files', async () => {
     const fs = createMockFs();
-    // More answers needed: wizard(4) + design-yes(1) + library(1) + theme-choice(1) + engine(1)
+    // Prompts: wizard(4: name, repo, slack, telegram) + design-path(1) + library(1) + prd(1) + theme(1) + engine(1) = 9
     // Use shorter delay to avoid timeout — the stream feeds answers as each prompt appears
-    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '1', '1', '1', 'n'], 500);
+    const input = createWizardInput(['MyApp', 'org/repo', '#dev', 'y', '1', '1', 'n', '1', 'n'], 500);
     const output = new PassThrough();
     let outputStr = '';
     output.on('data', (d: Buffer) => { outputStr += d.toString(); });

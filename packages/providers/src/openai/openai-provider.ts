@@ -6,7 +6,7 @@
  */
 
 import OpenAI from 'openai';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, debugLog, logDefaults } from '@agentforge/core';
 import type { Result, CostRecord, CostEstimate } from '@agentforge/core';
 import type {
   LLMProvider,
@@ -104,9 +104,13 @@ function mapFinishReason(
 function mapApiError(error: unknown): ProviderError {
   if (error instanceof OpenAI.APIError) {
     if (error.status === 429) {
-      const retryAfter = typeof error.headers?.['retry-after'] === 'string'
-        ? parseInt(error.headers['retry-after'], 10) * 1000
+      const rawRetryAfter = error.headers?.['retry-after'];
+      const retryAfter = typeof rawRetryAfter === 'string'
+        ? parseInt(rawRetryAfter, 10) * 1000
         : 60_000;
+      if (typeof rawRetryAfter !== 'string') {
+        debugLog('openai.mapApiError: retry-after header missing → default: "60000ms"');
+      }
       return { code: 'RATE_LIMITED', retryAfterMs: retryAfter };
     }
     if (error.status === 401 || error.status === 403) {
@@ -139,6 +143,9 @@ export function createOpenAIProvider(model: string, config: ProviderConfig): LLM
       const startMs = Date.now();
 
       try {
+        logDefaults('openai.complete', {
+          maxTokens: [options.maxTokens, '4096'],
+        });
         const response = await client.chat.completions.create(
           {
             model: options.model,
@@ -169,6 +176,10 @@ export function createOpenAIProvider(model: string, config: ProviderConfig): LLM
           args: JSON.parse(tc.function.arguments) as Record<string, unknown>,
         }));
 
+        logDefaults('openai.complete.usage', {
+          promptTokens: [response.usage?.prompt_tokens, '0'],
+          completionTokens: [response.usage?.completion_tokens, '0'],
+        });
         const usage: TokenUsage = {
           inputTokens: response.usage?.prompt_tokens ?? 0,
           outputTokens: response.usage?.completion_tokens ?? 0,
@@ -200,6 +211,9 @@ export function createOpenAIProvider(model: string, config: ProviderConfig): LLM
       options: CompletionOptions,
     ): AsyncIterable<StreamChunk> {
       try {
+        logDefaults('openai.stream', {
+          maxTokens: [options.maxTokens, '4096'],
+        });
         const stream = await client.chat.completions.create(
           {
             model: options.model,
@@ -274,6 +288,9 @@ export function createOpenAIProvider(model: string, config: ProviderConfig): LLM
         }
 
         // Emit final done chunk
+        if (!finalUsage) {
+          debugLog('openai.stream: usage data missing from stream → default: "inputTokens=0, outputTokens=0"');
+        }
         const usage = finalUsage ?? { inputTokens: 0, outputTokens: 0 };
         const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);
         yield {
@@ -326,6 +343,9 @@ export function createOpenAIProvider(model: string, config: ProviderConfig): LLM
         : 0;
 
       const estimatedInputTokens = systemTokens + messageTokens + toolTokens;
+      logDefaults('openai.estimateCost', {
+        maxTokens: [options.maxTokens, '4096'],
+      });
       const estimatedOutputTokens = options.maxTokens ?? 4096;
 
       const costData = calculateCost(options.model, estimatedInputTokens, estimatedOutputTokens);

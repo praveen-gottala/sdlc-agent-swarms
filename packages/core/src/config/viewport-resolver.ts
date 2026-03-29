@@ -11,6 +11,7 @@
  */
 
 import type { DesignConfig } from '../types/index.js';
+import { debugLog, logDefaults } from '../debug-log.js';
 
 /** Standard breakpoints for desktop-first responsive design. */
 export const STANDARD_BREAKPOINTS_DESKTOP_FIRST: readonly number[] = [1440, 768, 375];
@@ -74,9 +75,13 @@ export function resolveViewports(input: ResolveViewportsInput): readonly number[
     }
 
     // 5. responsive_breakpoints: false/missing → primary_viewport only
+    logDefaults('resolveViewports', {
+      primary_viewport: [primary_viewport, String(DEFAULT_VIEWPORT)],
+    });
     return [primary_viewport ?? DEFAULT_VIEWPORT];
   }
 
   // 6. Nothing set → default
+  debugLog('resolveViewports: no config provided → default viewport [1440]');
   return [DEFAULT_VIEWPORT];
 }

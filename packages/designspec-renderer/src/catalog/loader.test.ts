@@ -3,7 +3,7 @@ import { loadCatalogForRenderer, RawCatalogSpec } from './loader.js';
 describe('loadCatalogForRenderer', () => {
   it('returns V2 built-ins when called with no args', () => {
     const catalog = loadCatalogForRenderer();
-    expect(Object.keys(catalog)).toHaveLength(15);
+    expect(Object.keys(catalog)).toHaveLength(22);
   });
 
   it('contains expected built-in entry keys', () => {
@@ -23,6 +23,7 @@ describe('loadCatalogForRenderer', () => {
     expect(catalog['input-currency']).toBeDefined();
     expect(catalog['button-secondary']).toBeDefined();
     expect(catalog['button-ghost']).toBeDefined();
+    expect(catalog['switch']).toBeDefined();
   });
 
   it('converts PascalCase component names to kebab-case keys', () => {
@@ -139,6 +140,50 @@ describe('loadCatalogForRenderer', () => {
     expect(entry.radius).toBe(8);
     expect(entry.padding_x).toBe(12);
     expect(entry.padding_y).toBe(6);
+  });
+
+  it('merges token_bindings when renderer_defaults is present (project YAML Card pattern)', () => {
+    const raw: RawCatalogSpec = {
+      version: '1.0',
+      created_by: 'test',
+      components: {
+        Card: {
+          description: 'Card with renderer_defaults + token_bindings',
+          category: 'layout',
+          anatomy: [],
+          states: {
+            default: { bg: 'surface-primary', text: 'text-primary', shadow: 'shadow-sm' },
+          },
+          token_bindings: {
+            font: 'heading-3',
+            'border-radius': 12,
+            'padding-x': 20,
+            'padding-y': 16,
+          },
+          spacing: { padding: '16 20', internal_gap: '12' },
+          library_mapping: {},
+          accessibility: { focus_visible: false, aria_labels: [] },
+          renderer_defaults: {
+            type: 'card',
+            background: 'surface-primary',
+            shadow: 'sm',
+            radius: 20,
+            padding: 24,
+            required_fields: [],
+          },
+        },
+      },
+    };
+
+    const catalog = loadCatalogForRenderer(raw);
+    const entry = catalog['card'];
+    expect(entry.text_typography).toBe('heading-3');
+    expect(entry.padding_x).toBe(20);
+    expect(entry.padding_y).toBe(16);
+    expect(entry.gap).toBe(12);
+    expect(entry.radius).toBe(12);
+    expect(entry.background).toBe('surface-primary');
+    expect(entry.shadow).toBe('sm');
   });
 
   it('transforms library_mapping to library', () => {

@@ -5,8 +5,8 @@
  * Part of the visual self-correction loop.
  */
 
-import type { Result, DesignTokensSpec } from '@agentforge/core';
-import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
+import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL, recordPromptTrace, recordPromptTraceResponse } from '@agentforge/core';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 
 /** JSON Schema for structured evaluation output. */
@@ -137,6 +137,8 @@ export async function evaluateDesign(
   provider: LLMProvider,
   correctionHistory?: readonly CorrectionHistory[],
   designTokens?: DesignTokensSpec,
+  traceCollector?: { promptTraces?: PromptTrace[] },
+  traceStage?: string,
 ): Promise<Result<DesignEvaluation>> {
   const imageBlock: ContentBlock = {
     type: 'image',
@@ -184,6 +186,14 @@ export async function evaluateDesign(
     text: `Design specification:\n${designSpec}\n\nEvaluate the screenshot above against this specification.${historyContext}${tokenComplianceContext}`,
   };
 
+  // Record evaluation prompt trace
+  const evalStageName = traceStage ?? 'evaluation';
+  if (traceCollector) {
+    recordPromptTrace(traceCollector, evalStageName,
+      { system: EVALUATION_SYSTEM_PROMPT, messages: [{ role: 'user', content: textBlock.text }] },
+      { model: DEFAULT_MODEL, maxTokens: 4096 });
+  }
+
   const result = await provider.complete(
     {
       system: EVALUATION_SYSTEM_PROMPT,
@@ -204,6 +214,19 @@ export async function evaluateDesign(
       code: 'LLM_MALFORMED_OUTPUT' as const,
       message: `Evaluation LLM call failed: ${JSON.stringify(result.error)}`,
       recoverable: true,
+    });
+  }
+
+  // Record evaluation response trace
+  if (traceCollector) {
+    recordPromptTraceResponse(traceCollector, evalStageName, {
+      content: result.value.content,
+      structured: result.value.structured,
+      usage: result.value.usage ? { inputTokens: result.value.usage.inputTokens, outputTokens: result.value.usage.outputTokens, cacheReadTokens: result.value.usage.cacheReadTokens, cacheWriteTokens: result.value.usage.cacheWriteTokens } : undefined,
+      cost: result.value.cost ? { inputCostUsd: result.value.cost.inputCostUsd, outputCostUsd: result.value.cost.outputCostUsd, totalCostUsd: result.value.cost.totalCostUsd } : undefined,
+      latencyMs: result.value.latencyMs,
+      finishReason: result.value.finishReason,
+      hasVisionInput: true,
     });
   }
 

@@ -1,7 +1,7 @@
 /**
  * @module @agentforge/agents-ux/design-feedback-loop
  *
- * Interactive readline loop that keeps the Figma session alive after design
+ * Interactive readline loop that keeps the design session alive after design
  * completes, allowing the user to review, provide feedback for iterative
  * changes, and explicitly approve before the connection closes.
  */
@@ -38,6 +38,8 @@ export interface FeedbackLoopOptions {
   readonly reviewFn?: ReviewCallback;
   /** If provided, enables the `implement` command to generate code from the design. */
   readonly implementFn?: ImplementCallback;
+  /** Name of the design tool (e.g. 'Penpot' or 'Figma'). */
+  readonly designTool: string;
 }
 
 /** Result of the feedback loop. */
@@ -133,7 +135,7 @@ export function createReviewCallback(
 export async function runDesignFeedbackLoop(
   options: FeedbackLoopOptions,
 ): Promise<FeedbackLoopResult> {
-  const { session, initialDesign, input, output, reviewFn, implementFn } = options;
+  const { session, initialDesign, input, output, reviewFn, implementFn, designTool } = options;
 
   // Non-TTY (piped input / CI): auto-approve immediately
   if (!('isTTY' in input && (input as NodeJS.ReadStream).isTTY)) {
@@ -145,7 +147,7 @@ export async function runDesignFeedbackLoop(
   let implementedFiles: string[] | undefined;
 
   output.write('\n');
-  output.write('  Design complete. Review in Figma, then:\n');
+  output.write(`  Design complete. Review in ${designTool}, then:\n`);
   output.write('    approve/y  — accept    quit/q — reject    help/h — commands\n');
   output.write('    Or type feedback to modify the design.\n\n');
 

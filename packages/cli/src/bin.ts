@@ -12,7 +12,9 @@ process.emitWarning = ((warning: string | Error, ...args: unknown[]) => {
   return (originalEmitWarning as (...a: unknown[]) => void).call(process, warning, ...args);
 }) as typeof process.emitWarning;
 
-import { createProgram } from './index.js';
+// Dynamic import so the suppression above runs before any module loading
+// (static imports are hoisted and execute before top-level code)
+const { createProgram } = await import('./index.js');
 
 const program = createProgram();
 program.parseAsync(process.argv);

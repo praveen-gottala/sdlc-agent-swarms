@@ -48,9 +48,16 @@ export function loadDotEnv(projectRoot: string): void {
   try {
     content = nodeFs.readFileSync(envPath, 'utf-8');
   } catch {
+    console.log(`No .env file found at ${envPath}`);
     return; // no .env file — nothing to load
   }
-
+  console.log(`Loading .env file from ${envPath}`);
+  // check for anthropic api key
+  const anthropicApiKey = content.split('\n').find(line => line.trim().startsWith('ANTHROPIC_API_KEY='));
+  if (anthropicApiKey) {
+    console.log(`Anthropic API key found in .env file`);
+    process.env.ANTHROPIC_API_KEY = anthropicApiKey.split('=')[1].trim();
+  }
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
@@ -63,7 +70,7 @@ export function loadDotEnv(projectRoot: string): void {
 
     // Strip surrounding quotes
     if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
+      (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
 

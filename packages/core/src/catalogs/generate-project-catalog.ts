@@ -74,6 +74,9 @@ export function generateProjectCatalog(
   };
 }
 
+/** CSS keywords that pass through without validation. */
+const CSS_PASSTHROUGH = new Set(['transparent', 'none', 'inherit', 'initial']);
+
 /**
  * Warn (not fail) on token bindings that reference tokens not found
  * in the design tokens' semantic colors or border radii.
@@ -88,10 +91,10 @@ function validateTokenBindings(
   const semanticColors = new Set(Object.keys(tokens.colors.semantic));
   const borderRadii = new Set(Object.keys(tokens.borders.radius));
 
-  if (bindings.background && !semanticColors.has(bindings.background)) {
+  if (bindings.background && !CSS_PASSTHROUGH.has(bindings.background) && !semanticColors.has(bindings.background)) {
     console.warn(`[catalog] Component "${componentName}": token_bindings.background "${bindings.background}" not found in semantic colors`);
   }
-  if (bindings.text && !semanticColors.has(bindings.text)) {
+  if (bindings.text && !CSS_PASSTHROUGH.has(bindings.text) && !semanticColors.has(bindings.text)) {
     console.warn(`[catalog] Component "${componentName}": token_bindings.text "${bindings.text}" not found in semantic colors`);
   }
   if (bindings['border-radius'] && !borderRadii.has(bindings['border-radius'])) {

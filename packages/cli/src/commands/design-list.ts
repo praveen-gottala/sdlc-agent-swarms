@@ -9,7 +9,7 @@
 
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { PREVIEW_DIR_REL } from '@agentforge/core';
+import { PREVIEW_DIR_REL, logDefaults } from '@agentforge/core';
 import { infoMsg, warnMsg } from '../formatter.js';
 
 // ============================================================================
@@ -201,6 +201,9 @@ export async function designListCommand(
   options: { projectRoot?: string } = {},
 ): Promise<void> {
   const projectRoot = options.projectRoot ?? process.cwd();
+  logDefaults('designListCommand', {
+    projectRoot: [options.projectRoot, 'process.cwd()'],
+  });
   const previewsDir = resolve(projectRoot, PREVIEW_DIR_REL);
 
   if (!existsSync(previewsDir)) {

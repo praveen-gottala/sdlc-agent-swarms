@@ -1,0 +1,766 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: init",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "init",
+                "${input:appDir}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: init (--mock)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "init",
+                "${input:appDir}",
+                "--mock"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: describe",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "describe"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design-system update",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design-system",
+                "update"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design-system update (--mock)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design-system",
+                "update",
+                "--mock"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design-system show",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design-system",
+                "show"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design-system validate",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design-system",
+                "validate"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design-system regenerate-catalog",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design-system",
+                "regenerate-catalog"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:generate",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:generate"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:preview",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:preview"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design",
+                "${input:description}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot",
+                "${input:pageId}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot (--mock)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot",
+                "${input:pageId}",
+                "--mock"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot (--fresh)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot",
+                "${input:pageId}",
+                "--fresh"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot (--evaluate)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot",
+                "${input:pageId}",
+                "--evaluate"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot:all",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot:all"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot:browser",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot:browser",
+                "${input:description}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot:browser (--headless)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot:browser",
+                "${input:description}",
+                "--headless"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:penpot:review",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:penpot:review",
+                "--url",
+                "${input:penpotUrl}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: design:list",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "design:list"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: start",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "start",
+                "${input:phase}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: status",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "status"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: status (--watch)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "status",
+                "--watch"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: approve",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "approve",
+                "${input:taskId}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: approve (--changes)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "approve",
+                "${input:taskId}",
+                "--changes",
+                "${input:feedback}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: abort",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "abort",
+                "${input:taskId}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: abort (--all)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "abort",
+                "--all"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: config",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "config",
+                "${input:configKey}",
+                "${input:configValue}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: migrate",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "migrate"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: migrate (--dry)",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "migrate",
+                "--dry"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: doctor",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "doctor"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: setup",
+            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "args": [
+                "setup"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "appDir",
+            "type": "promptString",
+            "description": "Target directory for agentforge init (created under cwd)",
+            "default": "my-debug-app"
+        },
+        {
+            "id": "phase",
+            "type": "pickString",
+            "description": "SDLC phase to start",
+            "options": [
+                "design",
+                "spec",
+                "code",
+                "cicd",
+                "observe"
+            ]
+        },
+        {
+            "id": "taskId",
+            "type": "promptString",
+            "description": "Task ID"
+        },
+        {
+            "id": "feedback",
+            "type": "promptString",
+            "description": "Feedback / change description"
+        },
+        {
+            "id": "configKey",
+            "type": "promptString",
+            "description": "Config key (dot-notation, e.g. budget.per_task_max_usd)"
+        },
+        {
+            "id": "configValue",
+            "type": "promptString",
+            "description": "Config value to set"
+        },
+        {
+            "id": "description",
+            "type": "promptString",
+            "description": "Natural language description of what to design"
+        },
+        {
+            "id": "pageId",
+            "type": "promptString",
+            "description": "Page ID from pages.yaml (e.g. bill-entry)",
+            "default": "bill-entry"
+        },
+        {
+            "id": "penpotUrl",
+            "type": "promptString",
+            "description": "Penpot workspace URL"
+        }
+    ]
+}

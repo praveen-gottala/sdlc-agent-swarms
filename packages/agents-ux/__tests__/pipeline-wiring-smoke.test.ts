@@ -124,7 +124,6 @@ const CANNED_PLANNING = JSON.stringify({
   ],
   tokenBindings: { 'BookCard.fill': 'surface-primary' },
   responsiveRules: [],
-  implementationStages: [{ name: 'layout', components: ['BookGrid'] }],
 });
 
 const CANNED_DESIGN = JSON.stringify({
@@ -358,7 +357,6 @@ describe('Pipeline wiring smoke test', () => {
         componentTree: [],
         tokenBindings: {},
         responsiveRules: [],
-        implementationStages: [],
       },
       description: 'test',
     };

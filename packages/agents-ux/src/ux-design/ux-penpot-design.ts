@@ -19,18 +19,25 @@ import type {
   Result,
   MCPClient,
   PromptTrace,
+  PageContext,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
   recordPromptTrace,
+  recordPromptTraceResponse,
   PREVIEW_DIR_REL,
+  debugLog,
+  logDefaults,
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { DesignSnapshotData } from '../types.js';
 import { captureDesignSnapshot } from './capture-design-snapshot.js';
+import type { DesignSpecV2, RendererTokens, CatalogMap } from '@agentforge/designspec-renderer';
+import { formatPageContextPrompt } from '../page-context-prompt.js';
+import { validateDesignSpec, renderToScript, SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
 
 // ============================================================================
 // Types
@@ -50,6 +57,14 @@ export interface PenpotDesignInput {
   readonly viewportWidth?: number;
   /** Override model resolved from provider registry. Falls back to contract default. */
   readonly resolvedModel?: string;
+  /** Use DesignSpec v2 renderer path (structured JSON → deterministic Penpot script). */
+  readonly useDesignSpecV2?: boolean;
+  /** Design tokens for the v2 renderer. Required when useDesignSpecV2 is true. */
+  readonly rendererTokens?: RendererTokens;
+  /** Catalog map for the v2 renderer. Required when useDesignSpecV2 is true. */
+  readonly catalogMap?: CatalogMap;
+  /** Structured page context from pages.yaml for spec-driven design. */
+  readonly pageContext?: PageContext;
 }
 
 /** Output produced by the Penpot design agent. */
@@ -63,6 +78,8 @@ export interface PenpotDesignOutput extends DesignSnapshotData {
   readonly script?: string;
   /** Fix scripts applied during Phase C self-correction. */
   readonly fixScripts?: readonly string[];
+  /** The DesignSpec v2 JSON (when useDesignSpecV2 is true). */
+  readonly designSpec?: DesignSpecV2;
 }
 
 // ============================================================================
@@ -75,7 +92,7 @@ export const PENPOT_DESIGN_CONTRACT: AgentContract = {
   category: 'design',
   provider: 'claude-sonnet-4-6',
   execution: { mode: 'complete', progress_events: true, max_context_tokens: 40000 },
-  tools: ['penpot:execute_code', 'penpot:high_level_overview', 'penpot:penpot_api_info', 'penpot:export_shape'],
+  tools: ['penpot:execute_code', 'penpot:high_level_overview', 'penpot:penpot_api_info'],
   permissions: ['read_spec', 'read_design', 'write_design', 'read_design_system'],
   denied: ['write_code', 'create_branch', 'merge_pr'],
   hitl_policy: 'full_approval',
@@ -90,6 +107,7 @@ export const PENPOT_DESIGN_CONTRACT: AgentContract = {
 // ============================================================================
 
 let systemPromptCache: string | undefined;
+let systemPromptV2Cache: string | undefined;
 
 const loadPenpotSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
@@ -98,17 +116,146 @@ const loadPenpotSystemPrompt = (): string => {
   return systemPromptCache;
 };
 
+const loadPenpotV2SystemPrompt = (): string => {
+  if (systemPromptV2Cache) return systemPromptV2Cache;
+  const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-penpot-designspec-v2.md');
+  systemPromptV2Cache = readFileSync(promptPath, 'utf-8');
+  return systemPromptV2Cache;
+};
+
+/**
+ * Export a shape as base64 PNG via `execute_code` + `shape.export()`.
+ *
+ * Bypasses the broken `export_shape` MCP tool (which fails with
+ * `Cannot read properties of null (reading 'export')` due to a bug
+ * in the Penpot MCP plugin's internal shape lookup).
+ *
+ * `execute_code` has access to the live shape tree via
+ * `penpot.currentPage.getShapeById()`, so we call `shape.export()`
+ * directly from within the code execution context.
+ */
+async function exportShapeViaExecuteCode(
+  mcpClient: MCPClient,
+  shapeId: string,
+  options: { format?: string; scale?: number } = {},
+): Promise<Result<string>> {
+  const { format = 'png', scale = 2 } = options;
+
+  const code = `
+    const shape = penpot.currentPage?.getShapeById("${shapeId}");
+    if (!shape) return { error: "Shape not found: ${shapeId}" };
+    try {
+      const data = await shape.export({ type: "${format}", scale: ${scale} });
+      const bytes = new Uint8Array(data);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return { base64: btoa(binary) };
+    } catch (e) {
+      return { error: e.message || String(e) };
+    }
+  `;
+
+  const result = await mcpClient.callTool('penpot', 'execute_code', { code });
+  if (!result.ok) {
+    return result as Result<never>;
+  }
+
+  // Parse the response to extract base64
+  const value = result.value as { content?: Array<{ type?: string; text?: string; data?: string }> };
+  if (!Array.isArray(value.content)) {
+    return Err({ code: 'INVALID_STATE' as const, message: 'No content in execute_code export response', recoverable: true });
+  }
+
+  const text = value.content.map(c => c.text ?? '').join('');
+
+  try {
+    const parsed = JSON.parse(text) as { result?: { base64?: string; error?: string } };
+    if (parsed.result?.error) {
+      return Err({ code: 'MCP_UNAVAILABLE' as const, message: `Shape export error: ${parsed.result.error}`, recoverable: true });
+    }
+    if (parsed.result?.base64) {
+      return Ok(parsed.result.base64);
+    }
+  } catch {
+    // Check if the text itself contains base64 image data (fallback)
+    if (text.startsWith('iVBOR') || text.startsWith('/9j/')) {
+      return Ok(text);
+    }
+  }
+
+  // Fallback: check for image block in response (in case execute_code returns image type)
+  const imageBlock = value.content.find(c => c.type === 'image');
+  if (imageBlock?.data) {
+    return Ok(imageBlock.data);
+  }
+
+  return Err({ code: 'INVALID_STATE' as const, message: `No base64 data in export response: ${text.slice(0, 200)}`, recoverable: true });
+}
+
+/**
+ * Export a shape with retry logic via `execute_code` + `shape.export()`.
+ * Retries up to `maxAttempts` times with a delay between attempts.
+ */
+async function exportShapeWithRetry(
+  mcpClient: MCPClient,
+  shapeId: string,
+  options: { format?: string; scale?: number; maxAttempts?: number; delayMs?: number } = {},
+): Promise<Result<string>> {
+  const { format = 'png', scale = 2, maxAttempts = 3, delayMs = 3000 } = options;
+
+  logDefaults('exportShapeWithRetry', {
+    format: [options.format, "'png'"],
+    scale: [options.scale, '2'],
+    maxAttempts: [options.maxAttempts, '3'],
+    delayMs: [options.delayMs, '3000'],
+  });
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const exportResult = await exportShapeViaExecuteCode(mcpClient, shapeId, { format, scale });
+
+    if (exportResult.ok) {
+      return exportResult;
+    }
+
+    // eslint-disable-next-line no-console
+    console.warn(`        [export attempt ${attempt + 1}/${maxAttempts}] ${exportResult.error.message}`);
+
+    // "Shape not found" is definitive — retrying won't help
+    if (exportResult.error.message.includes('Shape not found')) {
+      break;
+    }
+
+    if (attempt < maxAttempts - 1) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  return Err({ code: 'MCP_UNAVAILABLE' as const, message: 'Shape export failed after retries', recoverable: true });
+}
+
 // ============================================================================
 // LLM interface
 // ============================================================================
 
 interface LLMProvider {
-  complete: (prompt: { system: string; messages: { role: 'user'; content: string }[] }, opts: {
+  complete: (prompt: {
+    system: string;
+    messages: { role: 'user'; content: string }[];
+    tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>;
+  }, opts: {
     model: string;
     maxTokens: number;
     temperature: number;
+    toolChoice?: { type: 'auto' | 'any' | 'tool'; name?: string };
     responseSchema?: { schema: Record<string, unknown> };
-  }) => Promise<Result<{ content: string; structured?: Record<string, unknown> }>>;
+  }) => Promise<Result<{
+    content: string;
+    structured?: Record<string, unknown>;
+    toolCalls?: Array<{ id: string; name: string; args: Record<string, unknown> }>;
+    finishReason?: string;
+  }>>;
 }
 
 // ============================================================================
@@ -173,6 +320,10 @@ export function parsePenpotDesignScript(output: string): Result<{ script: string
 
   try {
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+    logDefaults('parsePenpotDesignScript', {
+      script: [parsed.script, "''"],
+      breakpoints: [parsed.breakpoints, '[]'],
+    });
     const script = String(parsed.script ?? '');
     const breakpoints = (parsed.breakpoints as string[]) ?? [];
 
@@ -180,6 +331,15 @@ export function parsePenpotDesignScript(output: string): Result<{ script: string
       return Err({
         code: 'LLM_MALFORMED_OUTPUT',
         message: 'Empty script in Penpot design output',
+        recoverable: true,
+      });
+    }
+
+    // Penpot exposes layoutChild as getter-only; assigning layoutChild itself throws at runtime.
+    if (/\blayoutChild\s*=(?!=)/.test(script)) {
+      return Err({
+        code: 'LLM_MALFORMED_OUTPUT',
+        message: 'Invalid Penpot script: do not assign to layoutChild directly (use layoutChild.horizontalSizing / verticalSizing / margins after appendChild).',
         recoverable: true,
       });
     }
@@ -325,6 +485,15 @@ export async function penpotDesignWork(
   const llm = provider as unknown as LLMProvider;
   const effectiveModel = resolvedModel ?? PENPOT_DESIGN_CONTRACT.provider;
 
+  if (!resolvedModel) {
+    debugLog(`[penpot-design] resolvedModel not set, falling back to contract default: ${PENPOT_DESIGN_CONTRACT.provider}`);
+  }
+
+  // ── V2 DesignSpec path ──
+  if (input.useDesignSpecV2) {
+    return penpotDesignWorkV2(input, llm, mcpClient, provider as unknown as EvalLLMProvider, traceCollector);
+  }
+
   // ── Dynamic API discovery ──
 
   const apiDocs = await discoverPenpotAPI(mcpClient);
@@ -334,6 +503,13 @@ export async function penpotDesignWork(
   // ── Phase A: Generate design script via LLM ──
 
   const rawPrompt = loadPenpotSystemPrompt();
+
+  logDefaults('penpotDesignWork:promptSubstitution', {
+    designSystemPrompt: [designSystemPrompt, "'(No project design system provided...)'"],
+    apiDocs: [apiDocs, "'(API docs unavailable...)'"],
+    componentCatalogPrompt: [componentCatalogPrompt, "'(No component catalog available)'"],
+  });
+
   const systemPrompt = rawPrompt
     .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use the token names from the rules below as guidance)')
     .replace('{{PENPOT_API_DOCS}}', apiDocs || '(API docs unavailable — use the rules above)')
@@ -354,6 +530,11 @@ export async function penpotDesignWork(
   }
 
   userMessageParts.push(`\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`);
+
+  // Inject structured page context if available
+  if (input.pageContext) {
+    userMessageParts.push(formatPageContextPrompt(input.pageContext));
+  }
 
   const userMessage = userMessageParts.join('\n');
 
@@ -393,6 +574,19 @@ export async function penpotDesignWork(
   }
 
   const completion = completionResult.value as { content: string; finishReason?: string };
+
+  // Record V1 design response trace
+  if (traceCollector) {
+    const v1Completion = completionResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+    recordPromptTraceResponse(traceCollector, 'design-penpot', {
+      content: v1Completion.content,
+      usage: v1Completion.usage,
+      cost: v1Completion.cost,
+      latencyMs: v1Completion.latencyMs,
+      finishReason: v1Completion.finishReason,
+    });
+  }
+
   if (completion.finishReason === 'max_tokens') {
     // eslint-disable-next-line no-console
     console.error('        [penpot] LLM output truncated (hit maxTokens limit)');
@@ -521,32 +715,16 @@ try {
     let previousScore = -1;
 
     for (let correction = 0; correction < MAX_CORRECTIONS; correction++) {
-      // 1. Capture screenshot via export_shape
-      const exportResult = await mcpClient.callTool('penpot', 'export_shape', {
-        shapeId: rootShapeId,
-        format: 'png',
-      });
+      // 1. Capture screenshot via export_shape (with retry)
+      const screenshotResult = await exportShapeWithRetry(mcpClient, rootShapeId);
 
-      if (!exportResult.ok) {
+      if (!screenshotResult.ok) {
         // eslint-disable-next-line no-console
-        console.warn(`        [correction ${correction + 1}] Screenshot failed: ${exportResult.error.message}`);
+        console.warn(`        [correction ${correction + 1}] Screenshot failed: ${screenshotResult.error.message}`);
         break;
       }
 
-      const exportContent = exportResult.value as { content?: Array<{ type?: string; data?: string; mimeType?: string }> };
-      const imageBlock = Array.isArray(exportContent.content)
-        ? exportContent.content.find(c => c.type === 'image')
-        : undefined;
-
-      if (!imageBlock?.data) {
-        // eslint-disable-next-line no-console
-        const blockTypes = Array.isArray(exportContent.content) ? exportContent.content.map(c => `${c.type}(${c.data ? 'has-data' : 'no-data'})`).join(', ') : 'not-array';
-        // eslint-disable-next-line no-console
-        console.warn(`        [correction ${correction + 1}] No image data in export response. Blocks: ${blockTypes}. Raw keys: ${Object.keys(exportResult.value as Record<string, unknown>).join(',')}`);
-        break;
-      }
-
-      const screenshotBase64 = imageBlock.data;
+      const screenshotBase64 = screenshotResult.value;
 
       // 2. Evaluate design quality
       const evalProvider = provider as unknown as EvalLLMProvider;
@@ -554,6 +732,10 @@ try {
         screenshotBase64,
         JSON.stringify(planningOutput, null, 2),
         evalProvider,
+        undefined,
+        undefined,
+        traceCollector,
+        `evaluation-v1-${correction + 1}`,
       );
 
       if (!evalResult.ok) {
@@ -639,6 +821,21 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
         // eslint-disable-next-line no-console
         console.warn(`        [correction ${correction + 1}] Fix generation failed`);
         break;
+      }
+
+      // Record V1 correction response trace
+      if (traceCollector) {
+        const fixStageName = `fix-v1-${correction + 1}`;
+        recordPromptTrace(traceCollector, fixStageName, fixPrompt, { model: effectiveModel, maxTokens: 8000 });
+        const fixVal = fixResult.value as { content: string; structured?: Record<string, unknown>; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+        recordPromptTraceResponse(traceCollector, fixStageName, {
+          content: fixVal.content,
+          structured: fixVal.structured,
+          usage: fixVal.usage,
+          cost: fixVal.cost,
+          latencyMs: fixVal.latencyMs,
+          finishReason: fixVal.finishReason,
+        });
       }
 
       // Parse fix steps — prefer structured output, fall back to text parsing
@@ -729,21 +926,9 @@ ${fix.code}
     nodeIds: penpotNodeIds,
     mcpClient,
     captureScreenshot: async (client, nodeId) => {
-      // Penpot uses export_shape tool for screenshots
-      const result = await client.callTool('penpot', 'export_shape', {
-        shapeId: nodeId,
-        format: 'png',
-        scale: 2,
-      });
+      const result = await exportShapeWithRetry(client, nodeId, { scale: 2 });
       if (!result.ok) return result;
-      const data = result.value as { content?: Array<{ type?: string; data?: string }> };
-      const imageBlock = Array.isArray(data.content)
-        ? data.content.find(c => c.type === 'image')
-        : undefined;
-      if (!imageBlock?.data) {
-        return { ok: false as const, error: { code: 'MCP_UNAVAILABLE' as const, message: 'No image data in export_shape response', recoverable: true } };
-      }
-      return { ok: true as const, value: { imageUrl: 'penpot://export', base64: imageBlock.data } };
+      return { ok: true as const, value: { imageUrl: 'penpot://export', base64: result.value } };
     },
     extractProperties: async (client, nodeId) => {
       // Penpot uses execute_code to inspect shape properties
@@ -794,6 +979,575 @@ ${fix.code}
     moduleId,
     breakpoints,
     script,
+    ...(fixScripts.length > 0 ? { fixScripts } : {}),
+    ...snapshotData,
+  });
+}
+
+// ============================================================================
+// V2 DesignSpec pipeline
+// ============================================================================
+
+/**
+ * Execute a Penpot script via MCP and parse the result.
+ * Returns rootId and nodeIds on success.
+ */
+async function executeRenderedScript(
+  script: string,
+  mcpClient: MCPClient,
+): Promise<Result<{ rootId: string; nodeIds: Record<string, string> }>> {
+  const wrappedScript = `
+try {
+  ${script}
+} catch (e) {
+  return { __error: true, message: e.message || String(e), stack: e.stack };
+}
+`;
+
+  const toolResult = await mcpClient.callTool('penpot', 'execute_code', { code: wrappedScript });
+
+  if (!toolResult.ok) {
+    return Err({
+      code: 'MCP_UNAVAILABLE',
+      message: `Penpot script execution failed: ${toolResult.error.message}`,
+      recoverable: true,
+    });
+  }
+
+  const result = toolResult.value as Record<string, unknown>;
+  const content = result.content as Array<{ text?: string }> | undefined;
+  if (!Array.isArray(content)) {
+    return Err({ code: 'LLM_MALFORMED_OUTPUT', message: 'No content in execute_code response', recoverable: true });
+  }
+
+  const text = content.map(c => c.text ?? '').join('');
+
+  if (text.includes('No Penpot plugin instances')) {
+    return Err({ code: 'MCP_UNAVAILABLE', message: 'Penpot plugin disconnected', recoverable: true });
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
+    const resultVal = parsed.result;
+
+    if (resultVal?.__error) {
+      return Err({
+        code: 'LLM_MALFORMED_OUTPUT',
+        message: `Penpot script execution error: ${String(resultVal.message ?? 'unknown')}`,
+        recoverable: true,
+      });
+    }
+
+    const rootId = String(resultVal?.rootId ?? '');
+    const nodeIds = (resultVal?.nodeIds as Record<string, string>) ?? {};
+
+    return Ok({ rootId, nodeIds });
+  } catch {
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: `Penpot script returned non-JSON: ${text.slice(0, 300)}`,
+      recoverable: true,
+    });
+  }
+}
+
+/**
+ * Delete an existing root shape from the Penpot canvas.
+ * Used in the v2 correction loop before re-rendering.
+ */
+async function deleteRootShape(mcpClient: MCPClient, rootShapeId: string): Promise<void> {
+  const cleanupScript = `
+const page = penpot.currentPage;
+const root = page.getShapeById('${rootShapeId}');
+if (root) { root.remove(); }
+return { deleted: !!root };
+`;
+  await mcpClient.callTool('penpot', 'execute_code', { code: cleanupScript });
+}
+
+/**
+ * Extract a DesignSpecV2 from the LLM's tool call response.
+ */
+function extractDesignSpecFromToolCall(
+  completionValue: { content: string; toolCalls?: Array<{ id: string; name: string; args: Record<string, unknown> }> },
+): Result<DesignSpecV2> {
+  const toolCall = completionValue.toolCalls?.find(tc => tc.name === 'submit_design');
+  if (!toolCall) {
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: 'LLM did not call submit_design tool. Ensure tool_choice is set correctly.',
+      recoverable: true,
+    });
+  }
+
+  const args = toolCall.args;
+  if (!args.screen || !args.width || !args.nodes) {
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: `submit_design call missing required fields. Got: ${Object.keys(args).join(', ')}`,
+      recoverable: true,
+    });
+  }
+
+  return Ok({
+    screen: String(args.screen),
+    width: Number(args.width),
+    nodes: args.nodes as Record<string, import('@agentforge/designspec-renderer').NodeSpec>,
+  });
+}
+
+/**
+ * V2 correction loop: screenshot → evaluate → re-generate spec → delete → re-render.
+ */
+async function runV2CorrectionLoop(
+  currentSpec: DesignSpecV2,
+  rootShapeId: string,
+  llm: LLMProvider,
+  mcpClient: MCPClient,
+  evalProvider: EvalLLMProvider,
+  tokens: RendererTokens,
+  catalogMap: CatalogMap,
+  planningOutput: UXPlanningOutput,
+  effectiveModel: string,
+  systemPrompt: string,
+  traceCollector?: { promptTraces?: PromptTrace[] },
+): Promise<{ finalSpec: DesignSpecV2; fixScripts: string[]; updatedNodeIds?: Record<string, string> }> {
+  const MAX_CORRECTIONS = 3;
+  const QUALITY_THRESHOLD = 80;
+  const fixScripts: string[] = [];
+  let spec = currentSpec;
+  let currentRootId = rootShapeId;
+  let previousScore = -1;
+  let latestNodeIds: Record<string, string> | undefined;
+
+  // eslint-disable-next-line no-console
+  console.log('\n        [Phase C v2] Visual self-correction loop');
+
+  // Pause for Penpot to finish rendering before screenshot
+  await new Promise((resolve) => setTimeout(resolve, 4000));
+
+  for (let correction = 0; correction < MAX_CORRECTIONS; correction++) {
+    // 1. Capture screenshot (with retry)
+    const screenshotResult = await exportShapeWithRetry(mcpClient, currentRootId);
+
+    if (!screenshotResult.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] Screenshot failed: ${screenshotResult.error.message}`);
+      break;
+    }
+
+    // 2. Evaluate
+    const evalResult = await evaluateDesign(
+      screenshotResult.value,
+      JSON.stringify(planningOutput, null, 2),
+      evalProvider,
+      undefined,
+      undefined,
+      traceCollector,
+      `evaluation-v2-${correction + 1}`,
+    );
+
+    if (!evalResult.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] Evaluation failed: ${evalResult.error.message}`);
+      break;
+    }
+
+    const evaluation = evalResult.value;
+    // eslint-disable-next-line no-console
+    console.log(`        [v2 correction ${correction + 1}] Score: ${evaluation.score}/100 (${evaluation.overallQuality}), issues: ${evaluation.issues.length}`);
+
+    if (evaluation.score >= QUALITY_THRESHOLD) {
+      // eslint-disable-next-line no-console
+      console.log(`        [v2 correction] Quality threshold met (${evaluation.score} >= ${QUALITY_THRESHOLD})`);
+      break;
+    }
+
+    if (previousScore >= 0 && evaluation.score <= previousScore) {
+      // eslint-disable-next-line no-console
+      console.log(`        [v2 correction] Score not improving (${evaluation.score} <= ${previousScore}), stopping`);
+      break;
+    }
+    previousScore = evaluation.score;
+
+    const actionableIssues = evaluation.issues.filter(
+      (issue) => issue.severity === 'critical' || issue.severity === 'major',
+    );
+    if (actionableIssues.length === 0) {
+      // eslint-disable-next-line no-console
+      console.log(`        [v2 correction ${correction + 1}] No critical/major issues to fix`);
+      break;
+    }
+
+    // 3. Generate corrected spec via LLM
+    const issuesSummary = actionableIssues
+      .map(i => `- [${i.severity}] ${i.component}: ${i.description} (fix: ${i.fix})`)
+      .join('\n');
+
+    const correctionPrompt = {
+      system: systemPrompt,
+      messages: [{
+        role: 'user' as const,
+        content: `The current design has these issues:\n${issuesSummary}\n\nCurrent DesignSpec:\n${JSON.stringify(spec, null, 2)}\n\nOutput a CORRECTED design spec that fixes ONLY the reported issues. Keep all other nodes identical. Call the submit_design tool with the corrected spec.`,
+      }],
+      tools: [SUBMIT_DESIGN_TOOL as { name: string; description: string; parameters: Record<string, unknown> }],
+    };
+
+    const correctionResult = await llm.complete(correctionPrompt, {
+      model: effectiveModel,
+      maxTokens: 8000,
+      temperature: 0,
+      toolChoice: { type: 'tool', name: 'submit_design' },
+    });
+
+    if (!correctionResult.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] LLM correction failed`);
+      break;
+    }
+
+    // Record correction response trace
+    if (traceCollector) {
+      const stageName = `correction-v2-${correction + 1}`;
+      recordPromptTrace(traceCollector, stageName, correctionPrompt, { model: effectiveModel, maxTokens: 8000 });
+      const corrVal = correctionResult.value as { content: string; toolCalls?: { name: string; args: Record<string, unknown> }[]; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+      recordPromptTraceResponse(traceCollector, stageName, {
+        content: corrVal.content,
+        toolCalls: corrVal.toolCalls?.map(tc => ({ name: tc.name, args: tc.args })),
+        usage: corrVal.usage,
+        cost: corrVal.cost,
+        latencyMs: corrVal.latencyMs,
+        finishReason: corrVal.finishReason,
+      });
+    }
+
+    const extractResult = extractDesignSpecFromToolCall(correctionResult.value);
+    if (!extractResult.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] ${extractResult.error.message}`);
+      break;
+    }
+
+    const correctedSpec = extractResult.value;
+
+    // 4. Validate + render
+    const validation = validateDesignSpec(correctedSpec, catalogMap);
+    if (!validation.valid) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] Validation errors: ${validation.errors.map(e => e.message).join('; ')}`);
+      break;
+    }
+
+    const renderResult = renderToScript(correctedSpec, tokens, catalogMap);
+
+    // 5. Delete old, execute new
+    await deleteRootShape(mcpClient, currentRootId);
+
+    const execResult = await executeRenderedScript(renderResult.script, mcpClient);
+    if (!execResult.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [v2 correction ${correction + 1}] Re-execution failed: ${execResult.error.message}`);
+      break;
+    }
+
+    spec = correctedSpec;
+    currentRootId = execResult.value.rootId;
+    latestNodeIds = execResult.value.nodeIds;
+    fixScripts.push(renderResult.script);
+    // eslint-disable-next-line no-console
+    console.log(`        [v2 correction ${correction + 1}] Re-rendered with ${Object.keys(execResult.value.nodeIds).length} shapes`);
+
+    // Wait for Penpot to render
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return { finalSpec: spec, fixScripts, updatedNodeIds: latestNodeIds };
+}
+
+/**
+ * V2 DesignSpec pipeline: LLM produces JSON spec → renderer generates Penpot script.
+ *
+ * This path replaces the v1 LLM-generates-JS-directly approach.
+ * The LLM outputs ~177 lines of JSON (via submit_design tool call) instead of
+ * ~660 lines of Penpot JavaScript. A deterministic renderer converts the spec
+ * to correct Penpot API calls, eliminating API bugs.
+ */
+async function penpotDesignWorkV2(
+  input: PenpotDesignInput,
+  llm: LLMProvider,
+  mcpClient: MCPClient,
+  evalProvider: EvalLLMProvider,
+  traceCollector?: { promptTraces?: PromptTrace[] },
+): Promise<Result<PenpotDesignOutput>> {
+  const {
+    moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt,
+    description, viewportWidth, resolvedModel, rendererTokens, catalogMap,
+  } = input;
+
+  const effectiveModel = resolvedModel ?? PENPOT_DESIGN_CONTRACT.provider;
+
+  if (!rendererTokens || !catalogMap) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: 'useDesignSpecV2 requires rendererTokens and catalogMap',
+      recoverable: false,
+    });
+  }
+
+  // ── Phase A: Generate DesignSpec via LLM tool call ──
+
+  // eslint-disable-next-line no-console
+  console.log('        [penpot v2] Generating DesignSpec via submit_design tool...');
+
+  const rawPrompt = loadPenpotV2SystemPrompt();
+
+  logDefaults('penpotDesignWorkV2:promptSubstitution', {
+    designSystemPrompt: [designSystemPrompt, "'(No project design system provided...)'"],
+    componentCatalogPrompt: [componentCatalogPrompt, "'(No component catalog available)'"],
+  });
+
+  const systemPrompt = rawPrompt
+    .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use generic token names)')
+    .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)');
+
+  const userMessageParts = [
+    `Module ID: ${moduleId}`,
+  ];
+
+  if (viewportWidth) {
+    userMessageParts.push(`\nViewport Width: ${viewportWidth}px`);
+    userMessageParts.push(`IMPORTANT: The root page node MUST have width: ${viewportWidth}.`);
+  }
+
+  if (description) {
+    userMessageParts.push(`\nApp Description: ${description}`);
+    userMessageParts.push(`\nIMPORTANT: Design this screen for the app described above. Populate all text with realistic, domain-appropriate content.`);
+  }
+
+  userMessageParts.push(`\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`);
+
+  // Inject structured page context if available
+  if (input.pageContext) {
+    userMessageParts.push(formatPageContextPrompt(input.pageContext));
+  }
+
+  const userMessage = userMessageParts.join('\n');
+
+  if (traceCollector) {
+    recordPromptTrace(traceCollector, 'design-penpot-v2',
+      { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
+      { model: effectiveModel, maxTokens: 16000 });
+  }
+
+  const completionResult = await llm.complete(
+    {
+      system: systemPrompt,
+      messages: [{ role: 'user' as const, content: userMessage }],
+      tools: [SUBMIT_DESIGN_TOOL as { name: string; description: string; parameters: Record<string, unknown> }],
+    },
+    {
+      model: effectiveModel,
+      maxTokens: 16000,
+      temperature: 0,
+      toolChoice: { type: 'tool', name: 'submit_design' },
+    },
+  );
+
+  if (!completionResult.ok) {
+    const err = completionResult.error as unknown as Record<string, unknown>;
+    const detail = typeof err.message === 'string' ? err.message
+      : typeof err.raw === 'string' ? err.raw
+      : undefined;
+    return Err({
+      code: 'LLM_API_ERROR',
+      message: detail
+        ? `LLM completion failed (${String(err.code ?? 'unknown')}): ${detail}`
+        : `LLM completion failed (${String(err.code ?? 'unknown')})`,
+      recoverable: true,
+    });
+  }
+
+  const completion = completionResult.value;
+
+  // Record V2 design response trace
+  if (traceCollector) {
+    const v2Completion = completionResult.value as { content: string; structured?: Record<string, unknown>; toolCalls?: { name: string; args: Record<string, unknown> }[]; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
+    recordPromptTraceResponse(traceCollector, 'design-penpot-v2', {
+      content: v2Completion.content,
+      structured: v2Completion.structured,
+      toolCalls: v2Completion.toolCalls?.map((tc: { name: string; args: Record<string, unknown> }) => ({ name: tc.name, args: tc.args })),
+      usage: v2Completion.usage ? { inputTokens: v2Completion.usage.inputTokens, outputTokens: v2Completion.usage.outputTokens, cacheReadTokens: v2Completion.usage.cacheReadTokens, cacheWriteTokens: v2Completion.usage.cacheWriteTokens } : undefined,
+      cost: v2Completion.cost ? { inputCostUsd: v2Completion.cost.inputCostUsd, outputCostUsd: v2Completion.cost.outputCostUsd, totalCostUsd: v2Completion.cost.totalCostUsd } : undefined,
+      latencyMs: v2Completion.latencyMs,
+      finishReason: v2Completion.finishReason,
+    });
+  }
+
+  if (completion.finishReason === 'max_tokens') {
+    // eslint-disable-next-line no-console
+    console.error('        [penpot v2] LLM output truncated (hit maxTokens limit)');
+    return Err({
+      code: 'LLM_TRUNCATED',
+      message: 'DesignSpec output was truncated — LLM hit maxTokens limit.',
+      recoverable: true,
+    });
+  }
+
+  // ── Extract DesignSpec from tool call ──
+
+  const extractResult = extractDesignSpecFromToolCall(completion);
+  if (!extractResult.ok) {
+    return extractResult as Result<never>;
+  }
+
+  const designSpec = extractResult.value;
+  const nodeCount = Object.keys(designSpec.nodes).length;
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] DesignSpec received: ${nodeCount} nodes for screen "${designSpec.screen}"`);
+
+  // ── Validate ──
+
+  const validation = validateDesignSpec(designSpec, catalogMap);
+  if (validation.warnings.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(`        [penpot v2] Validation warnings: ${validation.warnings.map(w => w.message).join('; ')}`);
+  }
+  if (!validation.valid) {
+    // eslint-disable-next-line no-console
+    console.error(`        [penpot v2] Validation errors: ${validation.errors.map(e => e.message).join('; ')}`);
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: `DesignSpec validation failed: ${validation.errors.map(e => e.message).join('; ')}`,
+      recoverable: true,
+    });
+  }
+
+  // ── Phase B: Render to Penpot script + execute ──
+
+  const renderResult = renderToScript(designSpec, rendererTokens, catalogMap);
+  if (renderResult.warnings.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(`        [penpot v2] Render warnings: ${renderResult.warnings.join('; ')}`);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Rendered script: ${renderResult.script.length} chars, ${renderResult.nodeIds.length} shapes`);
+  // eslint-disable-next-line no-console
+  console.log('        [penpot v2] Executing script...');
+
+  const scriptT0 = Date.now();
+  const execResult = await executeRenderedScript(renderResult.script, mcpClient);
+  const scriptMs = Date.now() - scriptT0;
+
+  if (!execResult.ok) {
+    return execResult as Result<never>;
+  }
+
+  const { rootId: rootShapeId, nodeIds: penpotNodeIds } = execResult.value;
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Script complete: ${Object.keys(penpotNodeIds).length} components (${scriptMs}ms)`);
+
+  // ── Phase C: V2 correction loop ──
+
+  let finalSpec = designSpec;
+  const fixScripts: string[] = [];
+  // Track the latest node IDs — Phase C may delete+recreate all shapes
+  let activeNodeIds = penpotNodeIds;
+
+  if (rootShapeId) {
+    const correctionResult = await runV2CorrectionLoop(
+      designSpec,
+      rootShapeId,
+      llm,
+      mcpClient,
+      evalProvider,
+      rendererTokens,
+      catalogMap,
+      planningOutput,
+      effectiveModel,
+      systemPrompt,
+      traceCollector,
+    );
+    finalSpec = correctionResult.finalSpec;
+    fixScripts.push(...correctionResult.fixScripts);
+    // Use updated node IDs from the last correction iteration (if any)
+    if (correctionResult.updatedNodeIds) {
+      activeNodeIds = correctionResult.updatedNodeIds;
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('\n        [Phase C v2] Skipped — no root shape found for screenshot');
+  }
+
+  // ── Phase D: Capture design snapshot ──
+
+  const snapshotData = await captureDesignSnapshot({
+    tool: 'penpot',
+    moduleId,
+    projectRoot: process.cwd(),
+    nodeIds: activeNodeIds,
+    mcpClient,
+    captureScreenshot: async (client, nodeId) => {
+      const result = await exportShapeWithRetry(client, nodeId, { scale: 2 });
+      if (!result.ok) return result;
+      return { ok: true as const, value: { imageUrl: 'penpot://export', base64: result.value } };
+    },
+    extractProperties: async (client, nodeId) => {
+      const result = await client.callTool('penpot', 'execute_code', {
+        code: `const shape = penpot.currentPage?.getShapeById("${nodeId}"); return shape ? { name: shape.name, type: shape.type, x: shape.x, y: shape.y, width: shape.width, height: shape.height, fills: shape.fills, strokes: shape.strokes, opacity: shape.opacity } : null;`,
+      });
+      if (!result.ok) return result;
+      const content = result.value as { content?: Array<{ text?: string }> };
+      const text = Array.isArray(content.content) ? content.content.map(c => c.text ?? '').join('') : '';
+      try {
+        const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
+        if (parsed.result) {
+          return { ok: true as const, value: parsed.result };
+        }
+        return { ok: false as const, error: { code: 'INVALID_STATE' as const, message: 'Shape not found', recoverable: true } };
+      } catch {
+        return { ok: false as const, error: { code: 'INVALID_STATE' as const, message: 'Failed to parse shape properties', recoverable: true } };
+      }
+    },
+  });
+
+  // ── Save scripts + spec as artifacts ──
+
+  const scriptDir = join(process.cwd(), PREVIEW_DIR_REL, moduleId, 'scripts');
+  if (!existsSync(scriptDir)) {
+    mkdirSync(scriptDir, { recursive: true });
+  }
+
+  // Save the DesignSpec JSON
+  const specPath = join(scriptDir, 'designspec-v2.json');
+  writeFileSync(specPath, JSON.stringify(finalSpec, null, 2));
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] DesignSpec saved: ${specPath}`);
+
+  // Save the rendered script
+  const mainScriptPath = join(scriptDir, 'design.js');
+  writeFileSync(mainScriptPath, `// Penpot design script (v2 renderer) for module: ${moduleId}\n// Generated at: ${new Date().toISOString()}\n\n${renderResult.script}\n`);
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Script saved: ${mainScriptPath}`);
+
+  if (fixScripts.length > 0) {
+    const fixesContent = fixScripts
+      .map((code, i) => `// --- V2 Correction ${i + 1} ---\n${code}`)
+      .join('\n\n');
+    const fixScriptPath = join(scriptDir, 'fixes.js');
+    writeFileSync(fixScriptPath, `// Penpot v2 correction scripts for module: ${moduleId}\n// ${fixScripts.length} correction(s)\n\n${fixesContent}\n`);
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot v2] Correction scripts saved: ${fixScriptPath}`);
+  }
+
+  return Ok({
+    penpotProjectId: `penpot-${moduleId}`,
+    penpotPageId: `page-${moduleId}`,
+    penpotNodeIds: activeNodeIds,
+    moduleId,
+    breakpoints: [String(designSpec.width)],
+    script: renderResult.script,
+    designSpec: finalSpec,
     ...(fixScripts.length > 0 ? { fixScripts } : {}),
     ...snapshotData,
   });

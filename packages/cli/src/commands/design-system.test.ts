@@ -147,6 +147,21 @@ describe('design-system validate', () => {
 });
 
 describe('pickComponentLibrary', () => {
+  it('defaults to shadcn when Enter (empty line)', async () => {
+    const fs = createMockFs();
+    const input = Readable.from(['\n']);
+    const output = new PassThrough();
+
+    const selected = await pickComponentLibrary('/project', input, output, fs);
+
+    expect(selected.id).toBe('shadcn');
+    const libResult = loadComponentLibrary('/project', fs);
+    expect(libResult.ok).toBe(true);
+    if (libResult.ok) {
+      expect(libResult.value.library_id).toBe('shadcn');
+    }
+  });
+
   it('writes component-library.yaml for shadcn (choice 1)', async () => {
     const fs = createMockFs();
     const input = Readable.from(['1\n']);

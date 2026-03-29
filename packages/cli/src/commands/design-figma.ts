@@ -15,7 +15,7 @@
  * which encapsulates the env-var → session → Docker preflight strategies.
  */
 
-import { resolve, join } from 'node:path';
+import { resolve, join, relative } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
@@ -208,13 +208,14 @@ export async function designFigmaCommand(
 
   // ── Load PRD for app context ──
   const projectRoot = findProjectRoot();
+  const relPath = (absPath: string) => relative(process.cwd(), absPath);
   const prdPath = join(projectRoot, 'docs', 'prd.md');
   let prdContent: string | undefined;
   if (existsSync(prdPath)) {
     prdContent = readFileSync(prdPath, 'utf-8');
-    output.write(infoMsg('  PRD loaded from docs/prd.md\n'));
+    output.write(infoMsg(`  PRD loaded from ${relPath(prdPath)}\n`));
   } else {
-    output.write(warnMsg('  No PRD found at docs/prd.md — design will use description only.\n'));
+    output.write(warnMsg(`  No PRD found at ${relPath(prdPath)} — design will use description only.\n`));
     output.write(warnMsg('  Run `agentforge describe` first for better results.\n'));
   }
 
@@ -226,13 +227,13 @@ export async function designFigmaCommand(
   const tokensResult = loadDesignTokens(projectRoot, realFs);
   if (tokensResult.ok) {
     designTokens = tokensResult.value;
-    output.write(infoMsg('  Design tokens loaded from agentforge/spec/design-tokens.yaml\n'));
+    output.write(infoMsg(`  Design tokens loaded from ${relPath(join(projectRoot, 'agentforge/spec/design-tokens.yaml'))}\n`));
   }
 
   const brandResult = loadBrandSpec(projectRoot, realFs);
   if (brandResult.ok) {
     brandSpec = brandResult.value;
-    output.write(infoMsg('  Brand spec loaded from agentforge/spec/brand.yaml\n'));
+    output.write(infoMsg(`  Brand spec loaded from ${relPath(join(projectRoot, 'agentforge/spec/brand.yaml'))}\n`));
   }
 
   const catalogResult = loadComponentCatalog(projectRoot, realFs);
@@ -554,6 +555,7 @@ export async function designFigmaCommand(
       output,
       reviewFn,
       implementFn,
+      designTool: 'Figma',
     });
 
     designOutput = loopResult.finalDesign;

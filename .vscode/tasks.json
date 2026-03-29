@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "nx: build @agentforge/cli",
+      "type": "shell",
+      "command": "npx nx build @agentforge/cli",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}
