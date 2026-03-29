@@ -71,6 +71,32 @@ export function emitPreamble(builder: ScriptBuilder, colorMap: TokenColorMap): v
  */
 export function emitPostamble(builder: ScriptBuilder, rootVar: string, nodeIdEntries: ReadonlyArray<{ varName: string; nodeId: string }>): void {
   builder.blank();
+
+  // Auto-resize the root frame to fit its content.
+  // The root board has no parent, so layoutChild.verticalSizing cannot be used.
+  // Instead, walk direct children to find the max bottom edge and resize.
+  builder.comment('Auto-resize root frame to fit content (no parent = no layoutChild.verticalSizing)');
+  builder.line(`{`);
+  builder.indent();
+  builder.line(`const children = ${rootVar}.children || [];`);
+  builder.line(`let maxBottom = 0;`);
+  builder.line(`for (const child of children) {`);
+  builder.indent();
+  builder.line(`const bottom = (child.y || 0) + (child.height || 0);`);
+  builder.line(`if (bottom > maxBottom) maxBottom = bottom;`);
+  builder.dedent();
+  builder.line(`}`);
+  builder.line(`const padding = ${rootVar}.flex ? (${rootVar}.flex.bottomPadding || 0) : 0;`);
+  builder.line(`const fittedHeight = maxBottom + padding + 48;`);
+  builder.line(`if (fittedHeight > 100 && fittedHeight !== ${rootVar}.height) {`);
+  builder.indent();
+  builder.line(`${rootVar}.resize(${rootVar}.width, fittedHeight);`);
+  builder.dedent();
+  builder.line(`}`);
+  builder.dedent();
+  builder.line(`}`);
+  builder.blank();
+
   builder.comment('Return node IDs for downstream reference');
   builder.line(`return {`);
   builder.indent();
@@ -86,6 +112,107 @@ export function emitPostamble(builder: ScriptBuilder, rootVar: string, nodeIdEnt
   builder.line('};');
 
   // Close try block and add catch
+  builder.blank();
+  builder.dedent();
+  builder.line('} catch (e) {');
+  builder.indent();
+  builder.line('return { __error: true, message: e.message || String(e), stack: e.stack };');
+  builder.dedent();
+  builder.line('}');
+}
+
+/**
+ * Emit postamble for chunk 0: stores rootId, returns it for subsequent chunks.
+ */
+export function emitChunkSetupPostamble(builder: ScriptBuilder, rootVar: string, nodeIdEntries: ReadonlyArray<{ varName: string; nodeId: string }>): void {
+  builder.blank();
+  builder.comment('Chunk 0: return rootId for subsequent chunks to recover');
+  builder.line(`return {`);
+  builder.indent();
+  builder.line(`rootId: ${rootVar}.id,`);
+  builder.line('nodeIds: {');
+  builder.indent();
+  for (const { varName, nodeId } of nodeIdEntries) {
+    builder.line(`'${nodeId}': ${varName}.id,`);
+  }
+  builder.dedent();
+  builder.line('}');
+  builder.dedent();
+  builder.line('};');
+
+  builder.blank();
+  builder.dedent();
+  builder.line('} catch (e) {');
+  builder.indent();
+  builder.line('return { __error: true, message: e.message || String(e), stack: e.stack };');
+  builder.dedent();
+  builder.line('}');
+}
+
+/**
+ * Emit preamble for continuation chunks: recovers root board by ID.
+ */
+export function emitChunkRecoveryPreamble(builder: ScriptBuilder, colorMap: TokenColorMap): void {
+  builder.line('try {');
+  builder.indent();
+  builder.blank();
+  emitTokenMap(builder, colorMap);
+  emitMakeTextHelper(builder);
+  builder.comment('Recover root board from previous chunk');
+  builder.line('const __rootId = arguments[0];');
+  builder.line('const __root = penpot.currentPage.getShapeById(__rootId);');
+  builder.line('if (!__root) return { __error: true, message: "Root shape not found: " + __rootId };');
+  builder.blank();
+}
+
+/**
+ * Emit postamble for continuation chunks: returns nodeIds, auto-resize on last chunk.
+ */
+export function emitChunkContinuationPostamble(
+  builder: ScriptBuilder,
+  nodeIdEntries: ReadonlyArray<{ varName: string; nodeId: string }>,
+  isLast: boolean,
+): void {
+  builder.blank();
+
+  if (isLast) {
+    // Auto-resize root frame on the last chunk
+    builder.comment('Auto-resize root frame to fit content (last chunk)');
+    builder.line(`{`);
+    builder.indent();
+    builder.line(`const children = __root.children || [];`);
+    builder.line(`let maxBottom = 0;`);
+    builder.line(`for (const child of children) {`);
+    builder.indent();
+    builder.line(`const bottom = (child.y || 0) + (child.height || 0);`);
+    builder.line(`if (bottom > maxBottom) maxBottom = bottom;`);
+    builder.dedent();
+    builder.line(`}`);
+    builder.line(`const padding = __root.flex ? (__root.flex.bottomPadding || 0) : 0;`);
+    builder.line(`const fittedHeight = maxBottom + padding + 48;`);
+    builder.line(`if (fittedHeight > 100 && fittedHeight !== __root.height) {`);
+    builder.indent();
+    builder.line(`__root.resize(__root.width, fittedHeight);`);
+    builder.dedent();
+    builder.line(`}`);
+    builder.dedent();
+    builder.line(`}`);
+    builder.blank();
+  }
+
+  builder.comment('Return node IDs for this chunk');
+  builder.line(`return {`);
+  builder.indent();
+  builder.line('nodeIds: {');
+  builder.indent();
+  for (const { varName, nodeId } of nodeIdEntries) {
+    builder.line(`'${nodeId}': ${varName}.id,`);
+  }
+  builder.dedent();
+  builder.line('}');
+  builder.dedent();
+  builder.line('};');
+
   builder.blank();
   builder.dedent();
   builder.line('} catch (e) {');

@@ -60,6 +60,16 @@ const VALID_TOKENS: DesignTokensSpec = {
     breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
   },
   z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
+  opacity: { scale: { subtle: 0.1, muted: 0.3, disabled: 0.38, overlay: 0.5 } },
+  motion: {
+    durations: { fast: 100, normal: 200, slow: 400, page: 600 },
+    easings: { default: 'ease-out', emphasized: 'cubic-bezier(0.2,0,0,1)' },
+  },
+  state: {
+    hover_opacity: 0.08,
+    disabled_opacity: 0.38,
+    focus_ring: { color: 'cta-primary', width: 2, offset: 2 },
+  },
 };
 
 const VALID_BRAND: BrandSpec = {

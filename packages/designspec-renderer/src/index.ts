@@ -39,6 +39,14 @@ export type {
   SpacingSpec,
   PrimitiveColors,
   SemanticColors,
+  TouchTargetSpec,
+  LayoutTokenSpec,
+  ZIndexSpec,
+  OpacitySpec,
+  MotionSpec,
+  StateTokensSpec,
+  BorderWidthSpec,
+  TextExtrasSpec,
 } from './types/tokens.js';
 
 export type {
@@ -65,8 +73,8 @@ export { validateDesignSpec } from './validation/validate.js';
 export { validateTokenReferences } from './validation/validate-token-refs.js';
 
 // ─── Penpot Renderer ──────────────────────────────────────
-export { renderToScript } from './renderer/penpot/index.js';
-export type { RenderResult } from './renderer/penpot/index.js';
+export { renderToScript, renderToScriptChunks } from './renderer/penpot/index.js';
+export type { RenderResult, ChunkedRenderResult } from './renderer/penpot/index.js';
 
 // ─── React Renderer ──────────────────────────────────────
 export { renderToJSX } from './renderer/react/index.js';
@@ -74,3 +82,8 @@ export type { JsxRenderResult } from './renderer/react/index.js';
 
 // ─── SDK Tools ───────────────────────────────────────────
 export { SUBMIT_DESIGN_TOOL } from './sdk/submit-design-tool.js';
+
+// ─── Renderer Introspection ─────────────────────────────
+export { getRenderableCatalogIds, registerCatalogRenderer } from './renderer/penpot/components/index.js';
+export { generateRenderer, generateCatalogEntry } from './renderer/penpot/components/catalog-dynamic.js';
+export type { DynamicCatalogSource, AnatomySlot } from './renderer/penpot/components/catalog-dynamic.js';

@@ -17,6 +17,16 @@ export interface RawCatalogSpec {
   readonly components: Readonly<Record<string, RawCatalogEntry>>;
 }
 
+/** Variant state shape (bg/text overrides from component-catalog.yaml). */
+interface RawVariantState {
+  readonly bg: string;
+  readonly text: string;
+  readonly border?: string;
+  readonly border_width?: number;
+  readonly shadow?: string;
+  readonly opacity?: number;
+}
+
 /** Raw catalog entry shape (mirrors ComponentCatalogEntry from core). */
 export interface RawCatalogEntry {
   readonly description: string;
@@ -29,6 +39,7 @@ export interface RawCatalogEntry {
     typography_role?: string;
     optional?: boolean;
   }[];
+  readonly variants?: Readonly<Record<string, RawVariantState>>;
   readonly states: Readonly<
     Record<
       string,
@@ -211,7 +222,27 @@ export function loadCatalogForRenderer(rawCatalog?: RawCatalogSpec, tokens?: Ren
   if (rawCatalog) {
     for (const [name, entry] of Object.entries(rawCatalog.components)) {
       const kebabName = toKebabCase(name);
-      result[kebabName] = transformEntry(name, entry, tokens);
+      const baseEntry = transformEntry(name, entry, tokens);
+      result[kebabName] = baseEntry;
+
+      // Auto-expand variants: Button.variants.destructive → button-destructive
+      if (entry.variants) {
+        for (const [variantName, variantState] of Object.entries(entry.variants)) {
+          const variantKey = `${kebabName}-${variantName}`;
+          if (!(variantKey in result)) {
+            result[variantKey] = {
+              ...baseEntry,
+              variant: variantName,
+              background: variantState.bg,
+              text_color: variantState.text,
+              ...(variantState.border ? { border_color: variantState.border } : {}),
+              ...(variantState.border_width ? { border_width: variantState.border_width } : {}),
+              ...(variantState.shadow ? { shadow: variantState.shadow } : {}),
+              ...(variantState.opacity !== undefined ? { opacity: variantState.opacity } : {}),
+            };
+          }
+        }
+      }
     }
   }
 

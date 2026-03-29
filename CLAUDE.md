@@ -101,7 +101,7 @@ providers depends on: core
 channels depends on: core
 cli depends on: core, governance, providers, channels
 agents-* depend on: core, governance, providers
-designspec-renderer depends on: nothing (zero external deps, mirrors core types locally)
+designspec-renderer depends on: core (type-only devDependency, zero runtime deps)
 
 ## Commands
 - Build all: nx run-many -t build

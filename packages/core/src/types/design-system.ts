@@ -92,6 +92,37 @@ export interface ZIndexSpec {
   readonly tooltip: number;
 }
 
+/** Opacity scale — enables glassmorphism, state layers, overlays. */
+export interface OpacitySpec {
+  readonly scale: Readonly<Record<string, number>>;
+}
+
+/** Motion tokens — enables distinctive animation character. */
+export interface MotionSpec {
+  readonly durations: Readonly<Record<string, number>>;
+  readonly easings: Readonly<Record<string, string>>;
+}
+
+/** Border width + style tokens — beyond just radius. */
+export interface BorderWidthSpec {
+  readonly widths: Readonly<Record<string, number>>;
+  readonly styles: Readonly<Record<string, string>>;
+}
+
+/** Text extras — enables premium typography. */
+export interface TextExtrasSpec {
+  readonly transforms: Readonly<Record<string, string>>;
+  readonly letter_spacing: Readonly<Record<string, string>>;
+}
+
+/** State tokens — enables distinctive hover/focus/active interactions. */
+export interface StateTokensSpec {
+  readonly hover_opacity?: number;
+  readonly focus_ring: { readonly color: string; readonly width: number; readonly offset: number };
+  readonly disabled_opacity: number;
+  readonly active_scale?: number;
+}
+
 /**
  * Complete design tokens spec file.
  * Stored at: agentforge/spec/design-tokens.yaml
@@ -107,6 +138,11 @@ export interface DesignTokensSpec {
   readonly elevation: ElevationSpec;
   readonly layout: LayoutSpec;
   readonly z_index: ZIndexSpec;
+  readonly opacity: OpacitySpec;
+  readonly motion: MotionSpec;
+  readonly state: StateTokensSpec;
+  readonly border_styles?: BorderWidthSpec;
+  readonly text_extras?: TextExtrasSpec;
 }
 
 /** Brand identity direction. */

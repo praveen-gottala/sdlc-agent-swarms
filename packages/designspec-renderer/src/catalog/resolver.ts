@@ -88,20 +88,36 @@ export function resolveNode(nodeId: string, node: NodeSpec, catalog: CatalogMap)
     };
   }
 
-  const rawEntry = catalog[catalogId];
+  let rawEntry = catalog[catalogId];
+  // Track which catalog ID we actually found data for (may differ from the original)
+  let dataSourceId = catalogId;
   if (!rawEntry) {
-    // Unknown catalog entry — return unresolved with warning
-    return {
-      id: nodeId,
-      parent: node.parent,
-      order: node.order,
-      resolved: false,
-      catalogId,
-    };
+    // Fuzzy match: progressively strip last segment to find a base entry.
+    // "data-table-compact-striped" → "data-table-compact" → "data-table" → "data"
+    let candidate = catalogId;
+    while (!rawEntry) {
+      const lastDash = candidate.lastIndexOf('-');
+      if (lastDash <= 0) break;
+      candidate = candidate.substring(0, lastDash);
+      if (catalog[candidate]) {
+        rawEntry = catalog[candidate];
+        dataSourceId = candidate;
+      }
+    }
+    if (!rawEntry) {
+      // No base match at any level — return unresolved
+      return {
+        id: nodeId,
+        parent: node.parent,
+        order: node.order,
+        resolved: false,
+        catalogId,
+      };
+    }
   }
 
-  // Resolve extends chain
-  const entry = resolveExtends(catalogId, catalog);
+  // Resolve extends chain using the entry we actually found
+  const entry = resolveExtends(dataSourceId, catalog);
 
   // Merge: catalog defaults <- node overrides
   const overrides = node.overrides ?? {};
@@ -111,6 +127,7 @@ export function resolveNode(nodeId: string, node: NodeSpec, catalog: CatalogMap)
     parent: node.parent,
     order: node.order,
     resolved: true,
+    // Keep original catalogId for renderer lookup (e.g., "button-destructive")
     catalogId,
     catalogEntry: entry,
     label: node.label,

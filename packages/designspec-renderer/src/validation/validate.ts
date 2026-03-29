@@ -5,6 +5,7 @@
 import type { DesignSpecV2 } from '../types/design-spec-v2.js';
 import type { CatalogMap } from '../types/catalog.js';
 import type { ValidationResult, ValidationIssue } from '../types/validation.js';
+import type { RendererTokens } from '../types/tokens.js';
 
 /**
  * Validate a DesignSpecV2 for structural correctness.
@@ -20,7 +21,7 @@ import type { ValidationResult, ValidationIssue } from '../types/validation.js';
  * 7. No sibling order gaps within parent groups (warning)
  * 8. Catalog nodes have all required_fields present (warning)
  */
-export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap): ValidationResult {
+export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap, tokens?: RendererTokens): ValidationResult {
   const issues: ValidationIssue[] = [];
   const nodes = spec.nodes;
 
@@ -75,14 +76,36 @@ export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap): Val
   }
 
   // Rule 4: All catalog references are valid entries
+  // Falls back to base component match: "button-destructive" → "button" exists → warning, not error
+  // Recursively strips segments: "data-table-compact-striped" → "data-table-compact" → "data-table"
   for (const [id, node] of Object.entries(nodes)) {
     if (node.catalog && !(node.catalog in catalog)) {
-      issues.push({
-        severity: 'error',
-        rule: 'valid-catalog',
-        message: `Node "${id}" references unknown catalog entry "${node.catalog}"`,
-        nodeId: id,
-      });
+      let baseId: string | null = null;
+      let candidate = node.catalog;
+      while (true) {
+        const lastDash = candidate.lastIndexOf('-');
+        if (lastDash <= 0) break;
+        candidate = candidate.substring(0, lastDash);
+        if (candidate in catalog) {
+          baseId = candidate;
+          break;
+        }
+      }
+      if (baseId) {
+        issues.push({
+          severity: 'warning',
+          rule: 'valid-catalog',
+          message: `Node "${id}" references "${node.catalog}" which is not in catalog — will fall back to base entry "${baseId}"`,
+          nodeId: id,
+        });
+      } else {
+        issues.push({
+          severity: 'error',
+          rule: 'valid-catalog',
+          message: `Node "${id}" references unknown catalog entry "${node.catalog}"`,
+          nodeId: id,
+        });
+      }
     }
   }
 
@@ -105,18 +128,19 @@ export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap): Val
     }
   }
 
-  // Rule 6: Interactive nodes meet 44px min touch target
+  // Rule 6: Interactive nodes meet min touch target (token-driven, default 44px)
+  const minTouchTarget = tokens?.touch_targets?.minimum_height ?? 44;
   const INTERACTIVE_TYPES = new Set(['button', 'input', 'stepper', 'segmented-control', 'checkbox', 'select']);
   for (const [id, node] of Object.entries(nodes)) {
     if (node.catalog) {
       const entry = catalog[node.catalog];
       if (entry && INTERACTIVE_TYPES.has(entry.type)) {
         const height = (node.overrides?.['height'] as number | undefined) ?? node.height ?? entry.height ?? entry.min_height;
-        if (height !== undefined && height < 44) {
+        if (height !== undefined && height < minTouchTarget) {
           issues.push({
             severity: 'warning',
             rule: 'touch-target',
-            message: `Node "${id}" (${node.catalog}) has height ${height}px — below 44px touch target minimum`,
+            message: `Node "${id}" (${node.catalog}) has height ${height}px — below ${minTouchTarget}px touch target minimum`,
             nodeId: id,
           });
         }

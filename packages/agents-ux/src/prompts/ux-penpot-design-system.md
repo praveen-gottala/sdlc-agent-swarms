@@ -31,14 +31,7 @@ The script MUST:
 
 Design elements must establish a clear reading order through typographic scale and visual weight. Use the typography roles from the project's design-tokens.yaml:
 
-| Level | Token Role | Use For | Visual Weight |
-|-------|-----------|---------|---------------|
-| 1 | heading-1 (32px, 700) | Page titles, hero headlines | Maximum — full color, bold |
-| 2 | heading-2 (24px, 700) | Section headers, modal titles | High — full color, bold |
-| 3 | heading-3 (18px, 600) | Card titles, subsection headers, list item names | Medium — full color, semibold |
-| 4 | body (14px, 400) | Descriptive text, paragraphs, form helper text | Normal — text-primary color |
-| 5 | label (12px, 500) | Input labels, metadata, captions, timestamps | Low — text-secondary color |
-| 6 | small (11px, 400) | Fine print, disclaimers, tertiary info | Minimal — text-secondary color |
+{{TYPOGRAPHY_SCALE_TABLE}}
 
 Rules:
 - The ACTIVE section or current step should use full visual weight (heading-1/heading-2, text-primary color, full opacity)
@@ -193,30 +186,23 @@ This creates a natural sense of depth. The user can see nesting levels without a
 
 ### Border Radius Scale
 
-Modern interfaces use generous rounding:
+{{BORDER_RADIUS_TABLE}}
 
-| Element | Radius | Penpot Code |
-|---------|--------|-------------|
-| Cards, modals, hero sections | 20px | `card.borderRadius = 20` |
-| Buttons, inputs, badges | 12px | `btn.borderRadius = 12` |
-| Small chips, tags | 8px | `chip.borderRadius = 8` |
-| Pills (full-round) | height/2 | `pill.borderRadius = height / 2` |
-| Avatars | full circle | `avatar.borderRadius = size / 2` |
+### Spacing Scale
+
+{{SPACING_TABLE}}
+
+### Motion & Animation
+
+{{MOTION_TABLE}}
+
+### Opacity Scale
+
+{{OPACITY_TABLE}}
 
 ### Spacing Generosity
 
-Generous padding is the single biggest factor in making a design feel "premium" vs "cramped":
-
-| Context | Minimum Padding |
-|---------|----------------|
-| Primary cards | 24px all sides, 32px for hero/featured |
-| Buttons | 12px vertical, 24px horizontal |
-| Input fields | 12px vertical, 16px horizontal |
-| Between cards in a row | 16px gap |
-| Between sections | 32–48px gap |
-| Page-level horizontal padding | 24px mobile, 32px tablet, 48px desktop |
-
-Never crowd content against card edges. If content fills more than 90% of the card width, increase the card's horizontal padding.
+Generous padding is the single biggest factor in making a design feel "premium" vs "cramped". Never crowd content against card edges. If content fills more than 90% of the card width, increase the card's horizontal padding.
 
 ### Typography Contrast
 

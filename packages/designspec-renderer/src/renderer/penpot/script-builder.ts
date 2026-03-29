@@ -57,6 +57,13 @@ export class ScriptBuilder {
     return this.lines.length;
   }
 
+  /** Estimate total character count without joining. */
+  charCount(): number {
+    let total = 0;
+    for (const line of this.lines) total += line.length + 1;
+    return total;
+  }
+
   /** Build the final script string. */
   build(): string {
     return this.lines.join('\n');

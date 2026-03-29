@@ -132,6 +132,10 @@ AgentForge is structured as a layered architecture with clear separation of conc
 
 -   Cost-aware execution: Every agent call tracks token usage, API cost, and wall-clock time. Budget limits are enforced at three levels: per-agent, per-phase, and per-project. Runaway loops are automatically terminated via circuit breakers. The CostRecord type carries inputTokens, outputTokens, and wallClockMs fields (optional for backward compatibility).
 
+-   Browser-as-truth for design: Design specifications use CSS flexbox semantics. Verification renders specs in a real browser engine (Playwright) rather than relying on design tool interpretation or vision model evaluation. The browser is the standard — not an approximation of it.
+
+-   Catalog-constrained generation: LLMs generate UI by referencing components from a declared catalog injected into the prompt, not by inventing arbitrary markup. This guardrailing pattern (shared by Vercel's json-render, Google's A2UI, and OpenAI's Open-JSON-UI) ensures generated interfaces are predictable, safe, and consistent with the project's design system.
+
 > *Updated per ADR-008: Token and timing fields on CostRecord are optional for backward compatibility; providers should populate them.*
 
 **4.3 Process Architecture**
@@ -342,6 +346,26 @@ User preferences for the V3 dashboard layout, theme, and display settings. Store
 
 Step-by-step execution traces for agent debugging and transparency. Stored in .agentforge/traces/\<task_id\>.json. Accessible via GET /api/agents/:id/traces. Each trace includes a timeline of LLM calls, tool invocations, decisions, and diff-between-attempts views. This is a V3-new data structure enabling the Agent Reasoning Trace panel in the dashboard.
 
+**5.7 DesignSpec (Per-Screen Design Specification)**
+
+The visual specification for each screen, bridging the design and code generation phases. Stored in agentforge/designs/\<screen\>.json. Contains a flat node map representing a flexbox layout tree, where each node specifies type, layout properties (dir, gap, align, justify, padding), dimensions, design token references, and parent/child relationships.
+
+This approach aligns with the industry-wide convergence on JSON intermediate representations for AI-generated UI. Vercel's json-render, Google's A2UI, and OpenAI's Open-JSON-UI all independently arrived at the same pattern: LLM generates constrained JSON → framework renders it to platform-specific components. AgentForge's DesignSpec operates one layer deeper — where these frameworks compose pre-built components, DesignSpec defines the layout primitives themselves, enabling fully custom designs rather than assemblies of existing UI kits.
+
+The DesignSpec supports three extension sections beyond layout:
+
+-   interactions: Click/hover triggers mapped to actions (show, hide, navigate, toggle) for prototype rendering.
+
+-   dataBindings: Field-to-data-source mappings for auto-population in prototypes and code generation.
+
+-   mockData: Sample data used by the prototype renderer to demonstrate realistic data flow.
+
+Component references in the DesignSpec(e.g., `catalog: "button-primary"`) are constrained by injecting the available catalog entries into the prompt alongside responseSchema for structural validation. Hallucinated references that slip through are silently corrected via fuzzy-match to the nearest valid component — zero retries, zero wasted LLM calls. This follows the same guardrailing pattern used by json-render and A2UI.
+
+This is the contract between the design agent and the code generation agent — the code generator reads this JSON directly to produce React components. The browser renderer reads it to produce pixel-perfect verification screenshots. The DesignSpec can also be exported to json-render format for teams that want to use Vercel's rendering ecosystem.
+
+> **Authoritative schema:** See DesignSpecV2 interface in packages/agents-ux/src/types/ or packages/designspec-renderer/src/types/.
+
 **6. Schema Versioning**
 
 Every YAML file includes a version field. The agentforge migrate command reads file versions, applies pending transforms, and updates files. Even if v1.0 to v1.1 has zero migrations, the infrastructure exists from day one. Migration functions transform one schema version to the next. New fields get sensible defaults. Removed fields are archived. The migration runner is idempotent.
@@ -426,7 +450,7 @@ Trigger: Developer runs agentforge init. The CLI wizard has a quick-start mode w
 
 -   Project scaffold: The orchestrator creates the project structure with Nx mono-repo, CI/CD config, design system seed, environment configs, and agentforge.yaml manifest.
 
--   Design workspace provisioning: The design orchestrator creates a Figma file via MCP with seed pages. Falls back to code-first design mode using Storybook if Figma is not configured.
+-   Design workspace provisioning: The design orchestrator initializes the agentforge/designs/ directory for DesignSpec JSON outputs. If a Penpot is configured, it also creates a workspace there for optional human collaboration. Falls back to browser-rendered prototypes if no design tool is configured.
 
 -   Agent registration: Each SDLC phase gets its agents registered in agentforge/agents.yaml with all 7 sections defined in Section 10.1.
 
@@ -463,7 +487,7 @@ AgentForge defines five agent categories plus a future research category. Every 
   ------------------------------------------------------------------------------------------------------------------------------------------
   **Category**         **Agents**                                                               **Default HITL**   **LLM Fit**
   -------------------- ------------------------------------------------------------------------ ------------------ -------------------------
-  Design               UX researcher, Wireframe generator, Visual designer, Design reviewer     Approval gate      Claude/GPT-4 (vision)
+  Design               UX researcher, Layout planner, Design generator, Design evaluator   Approval gate      Claude/GPT-4 (vision)
 
   Spec & Planning      Spec writer, Task decomposer, Architect, Estimator                       Review gate        Claude Opus (reasoning)
 
@@ -496,35 +520,57 @@ Runtime status is computed from task states: idle, executing, blocked, waiting_c
 
 **11.1 Phase 1: Design Agents**
 
-The design phase operates as a collaborative loop between human designers and AI agents. Figma changes are the source of truth for the design phase.
+The design phase operates as a multi-agent pipeline that produces a DesignSpec JSON — a flexbox-based layout tree that serves as the single source of truth for both visual rendering and code generation.
 
-**11.1.1 Design Loop Workflow**
+**11.1.1 Design Pipeline**
 
--   User requests a page via natural language or edits directly in Figma.
+-   User requests a page via natural language (CLI or messaging channel).
 
--   UX research agent analyzes the request against the spec, identifies data models, suggests layout patterns.
+-   Research Agent: Analyzes the request against the spec, identifies data models, interaction patterns, and component library matches.
 
--   Wireframe agent generates a low-fidelity wireframe in Figma with auto-layout.
+-   Planning Agent: Produces a component tree with layout rules (flexbox), design token bindings, responsive breakpoints, and component-to-library mappings.
 
--   Human reviews in Figma, makes adjustments. Edits are detected by the framework.
+-   Design Agent: Generates DesignSpec JSON — a flat node tree where each node specifies type, layout (dir, gap, align, justify, padding), typography, colors (via design tokens), and parent/child relationships. Catalog components (button-primary, badge-warning) are referenced by name and constrained by injecting valid catalog entries into the prompt — hallucinated references are silently fuzzy-matched to the nearest valid component, never rejected. The spec streams progressively, enabling real-time preview as nodes are generated.
 
--   Visual design agent applies design system tokens to the approved wireframe.
+-   Browser Renderer: Converts DesignSpec JSON to HTML/CSS, renders via Playwright (headless Chromium), produces pixel-perfect screenshot. No correction loop — the browser renders flexbox with 100% fidelity.
 
--   Design review agent validates accessibility, responsiveness, and design system compliance.
+-   User approves screenshot via configured HITL channel (Slack/Telegram/CLI/Dashboard).
 
--   User approves via Slack/Telegram/CLI/Dashboard. Design phase emits DesignPhaseComplete.
+-   On approval: DesignPhaseComplete event emitted, DesignSpec JSON committed to agentforge/designs/\<screen\>.json.
 
-**11.1.2 Figma Integration**
+**11.1.2 Design Verification Architecture**
 
-AgentForge leverages the Figma MCP server for full bidirectional design-to-code workflow. Read path: get_code extracts design context. Write path: generate_figma_design creates editable Figma layers.
+Layout verification uses browser rendering, not vision models. The DesignSpec JSON IS flexbox — a browser renders it with 100% fidelity because the browser IS the flexbox standard.
 
-> *Updated per ADR-016: Phase 1 Code Connect is output-only metadata. Automated bidirectional resolution is Phase 2.*
+Three verification layers:
 
-**11.1.3 Design-Tool Abstraction**
+-   Layer 1 (Layout): Browser renders HTML/CSS from JSON, Playwright extracts computed positions for every node. Deterministic, zero LLM cost. Catches: overlapping siblings, collapsed nodes, gap mismatches.
 
-AgentForge defines a DesignSurface interface: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(), lockForAgent(). Code-first design mode (Storybook) renders DesignSpec HTML as Storybook stories.
+-   Layer 2 (Interaction): Prototype renderer wires click handlers from the DesignSpec interactions section. Playwright clicks through flows, captures screenshots at each state. Users approve interaction flows, not just static layouts.
 
-> *Updated per ADR-015: Storybook adapter is Phase 2. Phase 1 implements retry + halt + notify human on Figma failure.*
+-   Layer 3 (Visual quality): Optional vision model evaluation for aesthetic scoring (color harmony, visual balance, content appropriateness). Advisory only — not in the critical path.
+
+> **Implementation details:** See docs/design-verification-architecture.md for the browser rendering pipeline, DesignSpec-to-HTML conversion, and prototype renderer specifications.
+
+**11.1.3 Design-to-Code Contract**
+
+The DesignSpec JSON is the contract between design and code generation. The code generation agent reads the approved JSON directly to produce React components — it never reads from a design tool. This eliminates translation gaps between design approval and code output.
+
+-   Layout nodes (container, section, header) → React \<div\> with Tailwind flex classes
+-   Text nodes → React \<span\> with typography classes from design tokens
+-   Catalog components (button-primary, badge-warning) → imported from the project's component library
+-   Interactions → React event handlers (onClick, onHover)
+-   Data bindings → React hooks and props
+
+**Interoperability:** DesignSpec can be exported to json-render format (Vercel's Generative UI framework) for teams that want to use json-render's multi-framework renderers (React, Vue, Svelte, React Native) or progressive streaming infrastructure. The export maps DesignSpec layout nodes to json-render element types and catalog references to json-render component entries. This is a one-way export — AgentForge's design pipeline generates DesignSpec natively; json-render is a downstream consumer option.
+
+**11.1.4 Design Tool Integration (Optional)**
+
+Penpot serve as optional collaboration surfaces where human designers can visually tweak approved designs. Changes sync back to DesignSpec JSON via a bidirectional adapter. Design tools are NOT in the verification path — the browser renderer is the source of truth for layout fidelity.
+
+AgentForge defines a DesignToolAdapter interface: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(). Penpot is the primary adapter (CSS-native, free webhooks, W3C DTCG token support, MCP Server Support). Figma support removed.
+
+> *Updated per ADR-015: Storybook adapter is Phase 2.*
 
 **11.2 Phase 2: Specification and Planning Agents**
 
@@ -568,7 +614,7 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
 
 -   Orchestrator distributes decomposed tasks to coding agents based on task type.
 
--   Each agent receives: relevant spec section, design context via Figma MCP, existing code context, architectural constraints, and agent learnings.
+-   Each agent receives: relevant spec section, DesignSpec JSON for the target screen (from agentforge/designs/), existing code context, architectural constraints, and agent learnings.
 
 -   Agent generates code in a feature branch following project coding standards.
 
@@ -851,7 +897,7 @@ Code generated by AgentForge agents is not covered by the AgentForge Apache 2.0 
   --------------------------------------------------------------------------------------------------------------------------------------
   **ID**   **Failure Mode**                         **Recovery**
   -------- ---------------------------------------- ------------------------------------------------------------------------------------
-  F7       Figma MCP server unavailable             Retry 3x. Fall back to code-first design (Storybook Phase 2). Notify human.
+  F7       Penpot MCP server unavailable             Retry 3x. Fall back to browser-rendered prototype from DesignSpec JSON. Notify human.
 
   F8       Architecturally wrong but passing code   PR reviewer catches violations. If missed, human review catches it.
 
@@ -888,7 +934,7 @@ The developer installs the CLI (npm install -g agentforge), runs agentforge init
 
 **21.2 Design Phase**
 
-The developer describes the desired page in natural language. Within minutes, a Slack notification arrives: wireframe is ready in Figma. The developer opens Figma, makes adjustments. AgentForge detects the edits, applies design system tokens, and sends another notification. The developer approves via a Slack button on their phone.
+The developer describes the desired page in natural language. Within minutes, a Slack notification arrives: design is ready in Penpot. The developer opens Penpot, makes adjustments. AgentForge detects the edits, applies design system tokens, and sends another notification. The developer approves via a Slack button on their phone.
 
 **21.3 Code Generation Phase**
 
@@ -914,6 +960,8 @@ The developer opens the AgentForge web dashboard and sees the Pipeline View with
   State store            YAML files in git (v1), PostgreSQL (v2)   Version-controlled spec and task state
 
   Agent learnings        YAML files per role                       Persistent per-agent memory
+
+  Design renderer        Playwright (headless Chromium)            Browser-accurate layout verification from DesignSpec
   ----------------------------------------------------------------------------------------------------------------
 
 > *Updated per ADR-022: Orchestration engine implemented in TypeScript, not Python/LangGraph.*
@@ -929,7 +977,10 @@ The developer opens the AgentForge web dashboard and sees the Pipeline View with
 
   LLM providers       REST API (Claude, OpenAI, Gemini, Ollama)   Required (at least one)
 
-  Figma               MCP (remote or desktop server)              Optional (fallback: code-first)
+  Playwright          Headless Chromium                            Required (design verification)
+
+  Penpot              Plugin API + MCP + REST                            Optional (primary design tool)
+
 
   Slack               Socket Mode / Events API + Block Kit        Recommended (primary HITL)
 
@@ -952,7 +1003,7 @@ AgentForge is released under the Apache 2.0 license. Governance follows the BDFL
 
 -   \@agentforge/cli: Command-line interface for project initialization and management
 
--   \@agentforge/agents-design: Design phase agents (Figma adapter, Storybook adapter)
+-   \@agentforge/agents-design: Design phase agents (Penpot adapter, browser adapter)
 
 -   \@agentforge/agents-spec: Specification and planning agents
 
@@ -986,7 +1037,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 -   CLI: agentforge init, start, status, approve, abort, migrate, config, design
 
--   Figma MCP adapter (read + write)
+-   Penpot adapter (read + write via Plugin API)
 
 -   Single supported stack: React + Node.js + Prisma + PostgreSQL
 
@@ -1032,7 +1083,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 -   Agent contract configuration modal with all 7 sections
 
--   Design phase visualization with Figma thumbnails and iteration history
+-   Design phase visualization with Penpot thumbnails and iteration history
 
 -   Emergency controls: Pause All / Abort All in Pipeline View and Kanban board header
 
@@ -1072,7 +1123,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 -   Multi-project support (organization-level orchestration)
 
--   Framer and code-first design surface adapters
+-   Additional design surface adapters (Framer, code-first via Storybook)
 
 -   Local model support (Ollama, vLLM)
 
@@ -1099,7 +1150,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
   -------------------------------- ----------------------------- -----------------------------------------
   Generated code test pass rate    \>85% on first generation     CI pipeline results
 
-  Design-to-code fidelity          \>80% visual match            Automated pixel comparison
+  Design-to-code fidelity          \>95% layout match            Browser-rendered DesignSpec vs running React app (computed layout comparison)
 
   Time from idea to deployed MVP   \<1 day for simple apps       Workflow timestamps
 
@@ -1259,8 +1310,6 @@ All architectural decisions are tracked as ADRs. Accepted ADRs are reflected in 
 
   ADR-015   Storybook adapter                                    Deferred (Phase 2)
 
-  ADR-016   Automated Code Connect resolver                      Deferred (Phase 2)
-
   ADR-017   Spec sync structural comparison                      Accepted
 
   ADR-018   MCP middleware observability at outermost position   Accepted
@@ -1350,11 +1399,23 @@ P31 Event Catalog: 13/13 V3-required events defined and emittable. P32 API Dry R
 
 **31.4 Design Integration**
 
--   Figma MCP Server Guide --- Official Figma MCP documentation
+-   Penpot Plugin API --- Official plugin development documentation (doc.plugins.penpot.app)
 
--   Framelink MCP --- Community Figma MCP alternative
+-   Penpot MCP Server --- Official MCP server for AI-powered design workflows (github.com/penpot/penpot-mcp)
 
-**31.5 Research References**
+**31.5 Generative UI Frameworks**
+
+AgentForge's DesignSpec JSON follows the same architectural pattern independently adopted by the following frameworks. DesignSpec operates at the layout-primitive level (flexbox dir/gap/padding), while these frameworks operate at the component-composition level. Both are valid — AgentForge designs from first principles; these frameworks assemble from existing catalogs.
+
+-   json-render (github.com/vercel-labs/json-render) --- Vercel's Generative UI framework. Apache 2.0, 13K+ stars. Zod-defined component catalogs, LLM generates constrained JSON, renderers for React/Vue/Svelte/React Native. DesignSpec can export to json-render format.
+
+-   A2UI (Google) --- Declarative JSON format for cross-platform agent UI. JSONL-based, framework-agnostic, flat component list with ID references. Security-first: declarative data, not executable code.
+
+-   Open-JSON-UI (OpenAI) --- Open standardization of OpenAI's internal declarative Generative UI schema.
+
+-   CopilotKit AG-UI --- Agent-to-UI protocol supporting A2UI, Open-JSON-UI, and MCP Apps for generative UI rendering.
+
+**31.6 Research References**
 
 -   EPAM Agentic Development Lifecycle (ADLC)
 

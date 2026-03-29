@@ -1,0 +1,243 @@
+# api.yaml — created on-demand, not by init
+# schema: { version, base_url, endpoints: [{ id, method, path, description, auth, status }] }
+version: "1.0"
+base_url: /api
+endpoints:
+  - id: get-expenses
+    method: GET
+    path: /api/expenses
+    description: Fetch paginated list of expenses for a given month and year, with optional category filter. Returns
+      expenses sorted by date descending.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+      - name: category_id
+        type: string
+      - name: page
+        type: number
+      - name: limit
+        type: number
+    response:
+      type: array
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: get-expense-by-id
+    method: GET
+    path: /api/expenses/:id
+    description: Fetch a single expense by ID for the detail popover and edit pre-fill flow.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: create-expense
+    method: POST
+    path: /api/expenses
+    description: Create a new expense record. Updates daily and category aggregates. Increments quick-add suggestion
+      frequency if merchant matches an existing suggestion.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: update-expense
+    method: PUT
+    path: /api/expenses/:id
+    description: Update an existing expense record. Recalculates affected daily and category aggregates.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: delete-expense
+    method: DELETE
+    path: /api/expenses/:id
+    description: Delete an expense record. Recalculates affected daily and category aggregates for the month.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: get-categories
+    method: GET
+    path: /api/categories
+    description: Fetch all categories including defaults and user-created ones, sorted by sort_order.
+    query_params: []
+    response:
+      type: array
+      schema_ref: Category
+    auth: required
+    status: planned
+  - id: create-category
+    method: POST
+    path: /api/categories
+    description: Create a new custom category with a name and color selection.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Category
+    auth: required
+    status: planned
+  - id: delete-category
+    method: DELETE
+    path: /api/categories/:id
+    description: Delete a custom category. Default categories cannot be deleted. Expenses in this category are reassigned to
+      uncategorized.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Category
+    auth: required
+    status: planned
+  - id: get-budget
+    method: GET
+    path: /api/budgets
+    description: Fetch the budget for a given month and year. Returns the default monthly budget from user settings if no
+      specific budget is set.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+    response:
+      type: object
+      schema_ref: Budget
+    auth: required
+    status: planned
+  - id: upsert-budget
+    method: PUT
+    path: /api/budgets
+    description: Create or update the monthly budget for a given month and year.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Budget
+    auth: required
+    status: planned
+  - id: get-payment-methods
+    method: GET
+    path: /api/payment-methods
+    description: Fetch all available payment methods for the payment method chip selector on the Add Expense screen.
+    query_params: []
+    response:
+      type: array
+      schema_ref: PaymentMethod
+    auth: required
+    status: planned
+  - id: get-quick-add-suggestions
+    method: GET
+    path: /api/suggestions
+    description: Fetch top 4 quick-add suggestions based on frequency and recency for the Add Expense screen.
+    query_params:
+      - name: limit
+        type: number
+    response:
+      type: array
+      schema_ref: QuickAddSuggestion
+    auth: required
+    status: planned
+  - id: get-daily-aggregates
+    method: GET
+    path: /api/aggregates/daily
+    description: Fetch daily spending aggregates for a given month and year for the daily spending chart on the Insights screen.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+    response:
+      type: array
+      schema_ref: DailyAggregate
+    auth: required
+    status: planned
+  - id: get-category-aggregates
+    method: GET
+    path: /api/aggregates/categories
+    description: Fetch category-level spending aggregates for a given month and year for the donut chart, category
+      breakdown, and top categories cards.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+    response:
+      type: array
+      schema_ref: CategoryAggregate
+    auth: required
+    status: planned
+  - id: get-monthly-summary
+    method: GET
+    path: /api/aggregates/monthly-summary
+    description: Fetch a monthly summary including total spent, daily average, transaction count, and comparison deltas vs
+      the previous month. Used by the period summary header and comparison card on the Insights screen.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+    response:
+      type: object
+      schema_ref: MonthlyComparison
+    auth: required
+    status: planned
+  - id: get-top-expenses
+    method: GET
+    path: /api/expenses/top
+    description: Fetch the top N highest-value expenses for a given month and year for the Biggest Expenses card on the
+      Insights screen.
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+      - name: limit
+        type: number
+    response:
+      type: array
+      schema_ref: Expense
+    auth: required
+    status: planned
+  - id: get-user-settings
+    method: GET
+    path: /api/settings
+    description: Fetch current user settings including currency and default monthly budget for the settings dialog and
+      global display.
+    query_params: []
+    response:
+      type: object
+      schema_ref: UserSettings
+    auth: required
+    status: planned
+  - id: update-user-settings
+    method: PUT
+    path: /api/settings
+    description: Update user settings such as currency preference and default monthly budget. Triggers a currency-updated
+      toast on the client.
+    query_params: []
+    response:
+      type: object
+      schema_ref: UserSettings
+    auth: required
+    status: planned
+  - id: export-expenses-csv
+    method: GET
+    path: /api/expenses/export
+    description: "Export all expenses for a given month and year as a CSV file download. Returns a CSV file with headers:
+      date, merchant, category, amount, currency, payment_method, note."
+    query_params:
+      - name: month
+        type: number
+      - name: year
+        type: number
+    response:
+      type: object
+      schema_ref: Expense
+    auth: required
+    status: planned

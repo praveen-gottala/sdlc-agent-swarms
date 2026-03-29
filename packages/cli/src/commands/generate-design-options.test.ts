@@ -5,6 +5,12 @@ import {
   generatePreviewHtml,
   resolveDesignOptionsContext,
   SHARED_LAYOUT,
+  DEFAULT_LAYOUT_TOKENS,
+  DEFAULT_OPACITY,
+  DEFAULT_MOTION,
+  DEFAULT_STATE,
+  DEFAULT_TYPOGRAPHY_SCALE,
+  DEFAULT_PREVIEW,
   backfillSemanticColors,
   backfillElevation,
 } from './generate-design-options.js';
@@ -269,24 +275,102 @@ describe('generatePreviewHtml', () => {
     expect(html).toContain('ocean-blue');
   });
 
-  it('includes typography ladder', () => {
+  it('includes typography ladder from default scale', () => {
     const html = generatePreviewHtml('TestApp', options);
     expect(html).toContain('Heading 1');
-    expect(html).toContain('32px / 700');
+    expect(html).toContain(`${DEFAULT_TYPOGRAPHY_SCALE[0].size}px / ${DEFAULT_TYPOGRAPHY_SCALE[0].weight}`);
   });
 
-  it('includes component kitchen sink', () => {
+  it('renders custom typography_scale when provided', () => {
+    const customScale = [
+      { role: 'heading-1', size: 48, weight: 800, family: 'display' as const, line_height: 1.1 },
+      { role: 'body', size: 18, weight: 400, family: 'body' as const, line_height: 1.6 },
+    ];
+    const customOptions: DesignOption[] = [{ ...VALID_OPTION, typography_scale: customScale }];
+    const html = generatePreviewHtml('TestApp', customOptions);
+    expect(html).toContain('48px / 800');
+    expect(html).toContain('18px / 400');
+    expect(html).not.toContain('32px / 700');
+  });
+
+  it('includes component kitchen sink with semantic tokens', () => {
     const html = generatePreviewHtml('TestApp', options);
     expect(html).toContain('Primary');
     expect(html).toContain('Secondary');
     expect(html).toContain('Disabled');
+    expect(html).toContain('Focus');
+    // Uses semantic CSS vars instead of hardcoded hex
+    expect(html).toContain('var(--border-default)');
+    expect(html).toContain('var(--surface-elevated)');
+    expect(html).toContain('var(--opacity-disabled)');
   });
 
-  it('includes dashboard demo', () => {
+  it('includes dashboard demo with default preview data', () => {
     const html = generatePreviewHtml('TestApp', options);
-    expect(html).toContain('Total Users');
-    expect(html).toContain('12,847');
-    expect(html).toContain('Sarah Johnson');
+    // Verify default preview content is rendered
+    expect(html).toContain(DEFAULT_PREVIEW.metrics[0].label);
+    expect(html).toContain(DEFAULT_PREVIEW.metrics[0].value);
+    expect(html).toContain(DEFAULT_PREVIEW.table_rows![0].name);
+  });
+
+  it('uses custom preview data when provided', () => {
+    const customPreview = {
+      metrics: [
+        { label: 'Popular Recipes', value: '1,234', trend: '+5%' },
+        { label: 'Meals Planned', value: '567' },
+        { label: 'Ingredients Saved', value: '89', trend: '-3%' },
+      ],
+      table_rows: [
+        { name: 'Pasta Carbonara', status: 'Active', amount: '4.8★', date: 'Mar 20' },
+      ],
+      nav_items: ['Recipes', 'Favorites', 'Shopping List'],
+    };
+    const customOptions: DesignOption[] = [{ ...VALID_OPTION, preview: customPreview }];
+    const html = generatePreviewHtml('TestApp', customOptions);
+    expect(html).toContain('Popular Recipes');
+    expect(html).toContain('1,234');
+    expect(html).toContain('Pasta Carbonara');
+    expect(html).toContain('Recipes');
+    expect(html).not.toContain('Total Users');
+  });
+
+  it('includes border radius showcase', () => {
+    const html = generatePreviewHtml('TestApp', options);
+    expect(html).toContain('Border Radius');
+    expect(html).toContain(`sm: ${DEFAULT_LAYOUT_TOKENS.borders.radius.small}px`);
+    expect(html).toContain(`lg: ${DEFAULT_LAYOUT_TOKENS.borders.radius.large}px`);
+    expect(html).toContain('pill');
+  });
+
+  it('includes motion timing section', () => {
+    const html = generatePreviewHtml('TestApp', options);
+    expect(html).toContain('Motion');
+    expect(html).toContain(`fast (${DEFAULT_MOTION.durations.fast}ms)`);
+    expect(html).toContain(`normal (${DEFAULT_MOTION.durations.normal}ms)`);
+    expect(html).toContain(`slow (${DEFAULT_MOTION.durations.slow}ms)`);
+    expect(html).toContain(DEFAULT_MOTION.easings.default);
+  });
+
+  it('includes opacity scale section', () => {
+    const html = generatePreviewHtml('TestApp', options);
+    expect(html).toContain('Opacity Scale');
+    expect(html).toContain('subtle');
+    expect(html).toContain('muted');
+    expect(html).toContain('disabled');
+    expect(html).toContain('overlay');
+  });
+
+  it('uses semantic CSS variables for dashboard colors', () => {
+    const html = generatePreviewHtml('TestApp', options);
+    // No hardcoded hex for borders/surfaces in dashboard
+    expect(html).toContain('var(--surface-elevated)');
+    expect(html).toContain('var(--border-default)');
+    expect(html).toContain('var(--text-secondary)');
+    expect(html).toContain('var(--success)');
+    // CSS variables block includes new tokens
+    expect(html).toContain('--border-sm:');
+    expect(html).toContain('--duration-fast:');
+    expect(html).toContain('--opacity-disabled:');
   });
 
   it('includes compare strip', () => {
@@ -407,6 +491,66 @@ describe('init archetypes produce valid tokens without components', () => {
     const tokens = buildDesignTokensSpec(archetype);
 
     expect((tokens as unknown as Record<string, unknown>).components).toBeUndefined();
+    const result = validateDesignTokens(tokens);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(['warm', 'professional', 'bold'] as const)('%s archetype includes new token categories', (archetype) => {
+    const tokens = buildDesignTokensSpec(archetype);
+
+    expect(tokens.opacity).toEqual(DEFAULT_OPACITY);
+    expect(tokens.motion).toEqual(DEFAULT_MOTION);
+    expect(tokens.state).toEqual(DEFAULT_STATE);
+  });
+});
+
+describe('DEFAULT_LAYOUT_TOKENS alias', () => {
+  it('SHARED_LAYOUT is an alias for DEFAULT_LAYOUT_TOKENS', () => {
+    expect(SHARED_LAYOUT).toBe(DEFAULT_LAYOUT_TOKENS);
+  });
+});
+
+describe('optionToTokens with overrides', () => {
+  it('uses custom typography_scale when provided', () => {
+    const customScale = [
+      { role: 'heading-1', size: 48, weight: 800, family: 'display', line_height: 1.1 },
+      { role: 'body', size: 18, weight: 400, family: 'body', line_height: 1.6 },
+    ];
+    const option: DesignOption = { ...VALID_OPTION, typography_scale: customScale };
+    const tokens = optionToTokens(option, nullOutput);
+    expect(tokens.typography.scale).toEqual(customScale);
+  });
+
+  it('uses custom borders when provided', () => {
+    const customBorders = { radius: { small: 0, medium: 4, large: 8, pill: 9999 } };
+    const option: DesignOption = { ...VALID_OPTION, borders: customBorders };
+    const tokens = optionToTokens(option, nullOutput);
+    expect(tokens.borders).toEqual(customBorders);
+  });
+
+  it('uses custom motion when provided', () => {
+    const customMotion = {
+      durations: { fast: 80, normal: 150, slow: 300 },
+      easings: { default: 'ease-in-out', emphasized: 'cubic-bezier(0.34,1.56,0.64,1)' },
+    };
+    const option: DesignOption = { ...VALID_OPTION, motion: customMotion };
+    const tokens = optionToTokens(option, nullOutput);
+    expect(tokens.motion).toEqual(customMotion);
+  });
+
+  it('falls back to defaults when override fields omitted', () => {
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
+    expect(tokens.opacity).toEqual(DEFAULT_OPACITY);
+    expect(tokens.motion).toEqual(DEFAULT_MOTION);
+    expect(tokens.state).toEqual(DEFAULT_STATE);
+    expect(tokens.typography.scale).toEqual([...DEFAULT_TYPOGRAPHY_SCALE]);
+  });
+
+  it('includes new token categories and still passes validation', () => {
+    const tokens = optionToTokens(VALID_OPTION, nullOutput);
+    expect(tokens.opacity).toBeDefined();
+    expect(tokens.motion).toBeDefined();
+    expect(tokens.state).toBeDefined();
     const result = validateDesignTokens(tokens);
     expect(result.ok).toBe(true);
   });

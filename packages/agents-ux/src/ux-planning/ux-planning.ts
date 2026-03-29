@@ -305,6 +305,49 @@ export const extractValidTokenNames = (spec: DesignTokensSpec, brand?: BrandSpec
     names.add('easing-default');
   }
 
+  // Opacity tokens (e.g., "opacity-subtle", "opacity-muted", "opacity-disabled")
+  if (spec.opacity?.scale) {
+    for (const name of Object.keys(spec.opacity.scale)) {
+      names.add(`opacity-${name}`);
+    }
+  }
+
+  // Motion tokens (e.g., "duration-fast", "duration-normal", "easing-emphasized")
+  if (spec.motion) {
+    for (const name of Object.keys(spec.motion.durations)) {
+      names.add(`duration-${name}`);
+    }
+    for (const name of Object.keys(spec.motion.easings)) {
+      names.add(`easing-${name}`);
+    }
+  }
+
+  // State tokens (e.g., "hover-opacity", "disabled-opacity", "focus-ring-color")
+  if (spec.state) {
+    names.add('hover-opacity');
+    names.add('disabled-opacity');
+    names.add('focus-ring-color');
+    names.add('focus-ring-width');
+    if (spec.state.active_scale != null) names.add('active-scale');
+  }
+
+  // Border style tokens (e.g., "border-thin", "border-medium")
+  if (spec.border_styles) {
+    for (const name of Object.keys(spec.border_styles.widths)) {
+      names.add(`border-${name}`);
+    }
+  }
+
+  // Text extras (e.g., "tracking-tight", "text-uppercase")
+  if (spec.text_extras) {
+    for (const name of Object.keys(spec.text_extras.letter_spacing)) {
+      names.add(`tracking-${name}`);
+    }
+    for (const name of Object.keys(spec.text_extras.transforms)) {
+      names.add(`text-${name}`);
+    }
+  }
+
   return names;
 };
 
@@ -354,6 +397,41 @@ const buildTokenAllowlist = (spec: DesignTokensSpec, brand?: BrandSpec): string 
 
   if (brand?.motion_principles) {
     sections.push(`- Animation: duration-base, easing-default (not raw values like "200")`);
+  }
+
+  // Opacity tokens
+  if (spec.opacity?.scale) {
+    const opacityNames = Object.keys(spec.opacity.scale).map(n => `opacity-${n}`).join(', ');
+    sections.push(`- Opacity: ${opacityNames}`);
+  }
+
+  // Motion tokens
+  if (spec.motion) {
+    const durationNames = Object.keys(spec.motion.durations).map(n => `duration-${n}`).join(', ');
+    const easingNames = Object.keys(spec.motion.easings).map(n => `easing-${n}`).join(', ');
+    sections.push(`- Motion durations: ${durationNames}`);
+    sections.push(`- Motion easings: ${easingNames}`);
+  }
+
+  // State tokens
+  if (spec.state) {
+    const stateNames = ['hover-opacity', 'disabled-opacity', 'focus-ring-color', 'focus-ring-width'];
+    if (spec.state.active_scale != null) stateNames.push('active-scale');
+    sections.push(`- State: ${stateNames.join(', ')}`);
+  }
+
+  // Border style tokens
+  if (spec.border_styles) {
+    const widthNames = Object.keys(spec.border_styles.widths).map(n => `border-${n}`).join(', ');
+    sections.push(`- Border widths: ${widthNames}`);
+  }
+
+  // Text extras
+  if (spec.text_extras) {
+    const trackingNames = Object.keys(spec.text_extras.letter_spacing).map(n => `tracking-${n}`).join(', ');
+    const transformNames = Object.keys(spec.text_extras.transforms).map(n => `text-${n}`).join(', ');
+    sections.push(`- Letter spacing: ${trackingNames}`);
+    sections.push(`- Text transforms: ${transformNames}`);
   }
 
   return `\n\nVALID TOKEN NAMES (use ONLY these in tokenBindings — any other name will fail downstream):
@@ -432,6 +510,34 @@ const DOT_NOTATION_HINTS: Record<string, string> = {
   'motion.easing': 'easing-default',
   'animation.duration': 'duration-base',
   'animation.easing': 'easing-default',
+  'motion.fast': 'duration-fast',
+  'motion.normal': 'duration-normal',
+  'motion.slow': 'duration-slow',
+  'motion.emphasized': 'easing-emphasized',
+  // Opacity
+  'opacity.subtle': 'opacity-subtle',
+  'opacity.muted': 'opacity-muted',
+  'opacity.disabled': 'opacity-disabled',
+  'opacity.overlay': 'opacity-overlay',
+  // State
+  'state.hover': 'hover-opacity',
+  'state.disabled': 'disabled-opacity',
+  'state.focusRing': 'focus-ring-color',
+  'state.hoverOpacity': 'hover-opacity',
+  'state.disabledOpacity': 'disabled-opacity',
+  'state.activeScale': 'active-scale',
+  // Border widths
+  'border.thin': 'border-thin',
+  'border.medium': 'border-medium',
+  'border.thick': 'border-thick',
+  'borderWidth.thin': 'border-thin',
+  'borderWidth.medium': 'border-medium',
+  // Text extras
+  'text.transform.uppercase': 'text-uppercase',
+  'text.transform.capitalize': 'text-capitalize',
+  'letterSpacing.tight': 'tracking-tight',
+  'letterSpacing.normal': 'tracking-normal',
+  'letterSpacing.wide': 'tracking-wide',
 };
 
 /**

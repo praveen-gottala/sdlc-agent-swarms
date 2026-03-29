@@ -1,0 +1,111 @@
+pages:
+  - id: dashboard
+    name: Dashboard
+    description: The home screen showing monthly budget status, category breakdown donut chart, and a scrollable recent
+      expenses list. Users can filter expenses by category, click rows to open detail popovers with edit/delete actions,
+      navigate months via the top bar selector, and access the add expense flow from the empty state CTA. Real-time
+      budget health indicators (on track, heads up, over budget) update reactively.
+    route: /
+    status: approved
+    components:
+      - TopBar
+      - MonthSelector
+      - SettingsDialog
+      - BudgetSummaryCard
+      - ProgressBar
+      - CategoryDonutChart
+      - CategoryLegend
+      - RecentExpensesList
+      - ExpenseRow
+      - CategoryFilterDropdown
+      - ExpenseDetailPopover
+      - BudgetStatusBadge
+      - EmptyState
+      - NavigationTabs
+    data_sources:
+      - Expense
+      - Category
+      - Budget
+      - PaymentMethod
+    viewports:
+      - 1440
+  - id: add-expense
+    name: Add Expense
+    description: A focused single-column form for logging new expenses or editing existing ones. Features a hero amount
+      input with large numeric display, a category chip grid with new category creation, a mini calendar date picker,
+      payment method chip selector, optional note input, and a full-width save CTA. Quick Add suggestion chips auto-fill
+      the form from frequent past expenses. Pre-fills all fields when navigated from an Edit action on the dashboard.
+    route: /add
+    status: approved
+    components:
+      - TopBar
+      - NavigationTabs
+      - AmountHeroInput
+      - CategoryChipGrid
+      - NewCategoryInlineForm
+      - ColorPickerRow
+      - DatePickerInput
+      - MiniCalendarDropdown
+      - PaymentMethodChipRow
+      - NoteInput
+      - CharacterCounter
+      - SaveExpenseButton
+      - QuickAddSuggestions
+      - QuickAddChip
+      - MonthSelector
+      - SettingsDialog
+    data_sources:
+      - Expense
+      - Category
+      - PaymentMethod
+      - QuickAddSuggestion
+    viewports:
+      - 1440
+  - id: spending-insights
+    name: Spending Insights
+    description: An analytical view presenting spending patterns for the selected month. Contains a three-stat period
+      summary header with trend indicators, a toggleable bar/line daily spending chart with average line, a top
+      categories breakdown with stacked bar and per-row progress indicators, a biggest expenses ranked list, and a
+      month-over-month comparison card with visual bars and a summary badge. An Export CSV button is right-aligned below
+      all cards.
+    route: /insights
+    status: approved
+    components:
+      - TopBar
+      - NavigationTabs
+      - MonthSelector
+      - SettingsDialog
+      - PeriodSummaryHeader
+      - StatCell
+      - TrendIndicator
+      - DailySpendingChart
+      - ChartTypeToggle
+      - ChartTooltip
+      - AverageDashedLine
+      - TopCategoriesCard
+      - StackedCategoryBar
+      - CategoryDetailRow
+      - BiggestExpensesCard
+      - RankedExpenseRow
+      - MonthComparisonCard
+      - ComparisonBars
+      - SpendingDiffBadge
+      - ExportCSVButton
+      - NoDataEmptyState
+    data_sources:
+      - Expense
+      - Category
+      - Budget
+      - DailyAggregate
+      - CategoryAggregate
+      - MonthlyComparison
+    viewports:
+      - 1440
+  - id: page_dashboard_owk437
+    description: dashboard
+    status: requested
+    created_at: 2026-03-29T09:20:32.069Z
+  - id: page_dashboard_dfrajf
+    description: dashboard
+    status: requested
+    created_at: 2026-03-29T09:40:47.394Z

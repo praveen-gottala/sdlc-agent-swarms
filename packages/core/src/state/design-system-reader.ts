@@ -8,7 +8,7 @@
 import * as path from 'node:path';
 import { Ok, Err } from '../types/result.js';
 import type { Result } from '../types/result.js';
-import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec, ComponentCatalogSpec } from '../types/design-system.js';
+import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec, ComponentCatalogSpec, OpacitySpec, MotionSpec, StateTokensSpec } from '../types/design-system.js';
 import type { FileSystem } from '../fs/file-system.js';
 import { readYaml, writeYaml } from '../fs/yaml-utils.js';
 
@@ -21,6 +21,39 @@ const BRAND_PATH = 'agentforge/spec/brand.yaml';
 
 /** Path to component-library.yaml within a project. */
 const COMPONENT_LIBRARY_PATH = 'agentforge/spec/component-library.yaml';
+
+/** Default opacity tokens for backfilling old YAML files. */
+const BACKFILL_OPACITY: OpacitySpec = {
+  scale: { subtle: 0.1, muted: 0.3, disabled: 0.38, overlay: 0.5 },
+};
+
+/** Default motion tokens for backfilling old YAML files. */
+const BACKFILL_MOTION: MotionSpec = {
+  durations: { fast: 100, normal: 200, slow: 400, page: 600 },
+  easings: { default: 'ease-out', emphasized: 'cubic-bezier(0.2,0,0,1)' },
+};
+
+/** Default state tokens for backfilling old YAML files. */
+const BACKFILL_STATE: StateTokensSpec = {
+  hover_opacity: 0.08,
+  disabled_opacity: 0.38,
+  focus_ring: { color: 'cta-primary', width: 2, offset: 2 },
+};
+
+/**
+ * Backfill required token categories that may be missing from old YAML files.
+ * Similar to backfillElevation in generate-design-options.ts.
+ */
+const backfillRequiredTokens = (spec: DesignTokensSpec): DesignTokensSpec => {
+  const partial = spec as unknown as Record<string, unknown>;
+  if (partial.opacity && partial.motion && partial.state) return spec;
+  return {
+    ...spec,
+    opacity: (partial.opacity as OpacitySpec | undefined) ?? BACKFILL_OPACITY,
+    motion: (partial.motion as MotionSpec | undefined) ?? BACKFILL_MOTION,
+    state: (partial.state as StateTokensSpec | undefined) ?? BACKFILL_STATE,
+  };
+};
 
 /** Error message when design tokens are not configured. */
 const MISSING_DESIGN_TOKENS_MSG =
@@ -50,7 +83,9 @@ export const loadDesignTokens = (
       recoverable: true,
     });
   }
-  return readYaml<DesignTokensSpec>(filePath, fs);
+  const result = readYaml<DesignTokensSpec>(filePath, fs);
+  if (!result.ok) return result;
+  return Ok(backfillRequiredTokens(result.value));
 };
 
 /**

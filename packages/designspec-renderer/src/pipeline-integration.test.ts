@@ -342,7 +342,7 @@ describe('Full pipeline walkthrough', () => {
     expect(result.nodeIds).toContain('child');
   });
 
-  it('4.3 — validate catches invalid catalog; render falls back to container', () => {
+  it('4.3 — validate catches invalid catalog; render uses generic renderer', () => {
     const spec: DesignSpecV2 = {
       screen: 'invalid-catalog',
       width: 1440,
@@ -352,16 +352,14 @@ describe('Full pipeline walkthrough', () => {
       },
     };
 
-    // Validation catches the error
+    // Validation catches the error (no base match for "nonexistent-widget")
     const validation = validateDesignSpec(spec, V2_BUILTIN_CATALOG);
     expect(validation.valid).toBe(false);
     expect(validation.errors.some(e => e.rule === 'valid-catalog')).toBe(true);
 
-    // Renderer gracefully degrades — renders with warning, falls back to container
+    // Renderer gracefully degrades — uses generic catalog renderer
     const result = renderToScript(spec, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
     expect(result.script.length).toBeGreaterThan(0);
-    expect(result.warnings.length).toBeGreaterThanOrEqual(1);
-    expect(result.warnings.join(' ')).toContain('nonexistent-widget');
     expect(result.nodeIds).toContain('bad');
   });
 

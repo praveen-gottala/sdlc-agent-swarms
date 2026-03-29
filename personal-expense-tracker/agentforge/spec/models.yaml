@@ -1,0 +1,162 @@
+# models.yaml — created on-demand, not by init
+# schema: { version, models: [{ id, name, fields: [{ name, type }], db_table }] }
+version: "1.0"
+models:
+  - id: expense
+    name: Expense
+    fields:
+      - name: id
+        type: string
+      - name: amount
+        type: number
+      - name: merchant
+        type: string
+      - name: category_id
+        type: string
+      - name: date
+        type: date
+      - name: payment_method_id
+        type: string
+      - name: note
+        type: string
+      - name: currency
+        type: string
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: expenses
+  - id: category
+    name: Category
+    fields:
+      - name: id
+        type: string
+      - name: name
+        type: string
+      - name: color_token
+        type: string
+      - name: color_hex
+        type: string
+      - name: icon
+        type: string
+      - name: is_default
+        type: boolean
+      - name: sort_order
+        type: number
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: categories
+  - id: budget
+    name: Budget
+    fields:
+      - name: id
+        type: string
+      - name: month
+        type: number
+      - name: year
+        type: number
+      - name: amount
+        type: number
+      - name: currency
+        type: string
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: budgets
+  - id: payment-method
+    name: PaymentMethod
+    fields:
+      - name: id
+        type: string
+      - name: name
+        type: string
+      - name: type
+        type: string
+      - name: icon
+        type: string
+      - name: last_four
+        type: string
+      - name: is_default
+        type: boolean
+      - name: created_at
+        type: datetime
+    db_table: payment_methods
+  - id: quick-add-suggestion
+    name: QuickAddSuggestion
+    fields:
+      - name: id
+        type: string
+      - name: merchant
+        type: string
+      - name: amount
+        type: number
+      - name: category_id
+        type: string
+      - name: payment_method_id
+        type: string
+      - name: emoji
+        type: string
+      - name: frequency
+        type: number
+      - name: last_used_at
+        type: datetime
+      - name: created_at
+        type: datetime
+    db_table: quick_add_suggestions
+  - id: daily-aggregate
+    name: DailyAggregate
+    fields:
+      - name: id
+        type: string
+      - name: date
+        type: date
+      - name: total_amount
+        type: number
+      - name: transaction_count
+        type: number
+      - name: month
+        type: number
+      - name: year
+        type: number
+      - name: created_at
+        type: datetime
+    db_table: daily_aggregates
+  - id: category-aggregate
+    name: CategoryAggregate
+    fields:
+      - name: id
+        type: string
+      - name: category_id
+        type: string
+      - name: month
+        type: number
+      - name: year
+        type: number
+      - name: total_amount
+        type: number
+      - name: transaction_count
+        type: number
+      - name: percentage
+        type: number
+      - name: created_at
+        type: datetime
+    db_table: category_aggregates
+  - id: user-settings
+    name: UserSettings
+    fields:
+      - name: id
+        type: string
+      - name: currency
+        type: string
+      - name: default_monthly_budget
+        type: number
+      - name: locale
+        type: string
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+    db_table: user_settings

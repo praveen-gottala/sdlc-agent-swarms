@@ -99,6 +99,16 @@ const VALID_TOKENS: DesignTokensSpec = {
     breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
   },
   z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
+  opacity: { scale: { subtle: 0.1, muted: 0.3, disabled: 0.38, overlay: 0.5 } },
+  motion: {
+    durations: { fast: 100, normal: 200, slow: 400, page: 600 },
+    easings: { default: 'ease-out', emphasized: 'cubic-bezier(0.2,0,0,1)' },
+  },
+  state: {
+    hover_opacity: 0.08,
+    disabled_opacity: 0.38,
+    focus_ring: { color: 'cta-primary', width: 2, offset: 2 },
+  },
 };
 
 const VALID_BRAND: BrandSpec = {
@@ -169,6 +179,26 @@ describe('loadDesignTokens', () => {
       expect(result.error.message).toContain('Design tokens not found');
       expect(result.error.message).toContain('agentforge init');
       expect(result.error.recoverable).toBe(true);
+    }
+  });
+
+  it('backfills opacity, motion, and state for old YAML files', () => {
+    const fs = createMockFs();
+    const yaml = require('yaml');
+    // Write a token file WITHOUT the new required fields (simulates old project)
+    const { opacity: _o, motion: _m, state: _s, ...oldTokens } = VALID_TOKENS;
+    fs.files.set('/project/agentforge/spec/design-tokens.yaml', yaml.stringify(oldTokens));
+
+    const result = loadDesignTokens('/project', fs);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.opacity).toBeDefined();
+      expect(result.value.opacity.scale.disabled).toBe(0.38);
+      expect(result.value.motion).toBeDefined();
+      expect(result.value.motion.durations.fast).toBe(100);
+      expect(result.value.state).toBeDefined();
+      expect(result.value.state.disabled_opacity).toBe(0.38);
     }
   });
 });

@@ -1,0 +1,177 @@
+version: "1.0"
+agents:
+  - role: ux_researcher
+    phase: design
+    provider: claude-sonnet-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - figma_mcp.get_code
+      - spec.read_project
+      - spec.read_pages
+    permissions:
+      - read_spec
+      - read_design_system
+      - read_design
+    denied:
+      - write_code
+      - deploy
+      - merge_pr
+    hitl_policy: notify_only
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: UXResearchComplete
+    on_error: notify_human
+  - role: wireframer
+    phase: design
+    provider: claude-sonnet-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - figma_mcp.get_code
+      - figma_mcp.generate_figma_design
+    permissions:
+      - read_spec
+      - write_design
+      - read_design_system
+    denied:
+      - write_code
+      - deploy
+      - merge_pr
+    hitl_policy: full_approval
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: WireframeComplete
+    on_error: notify_human
+  - role: spec_writer
+    phase: spec
+    provider: claude-opus-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - spec.read_project
+      - spec.write_spec
+      - spec.read_pages
+    permissions:
+      - read_spec
+      - write_spec
+      - read_design
+    denied:
+      - write_code
+      - deploy
+      - merge_pr
+      - write_design
+    hitl_policy: review_and_override
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: SpecComplete
+    on_error: notify_human
+  - role: task_decomposer
+    phase: spec
+    provider: claude-sonnet-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - spec.read_spec
+      - tasks.create_task
+      - tasks.read_tasks
+    permissions:
+      - read_spec
+      - write_tasks
+    denied:
+      - write_code
+      - deploy
+      - merge_pr
+      - write_design
+    hitl_policy: notify_only
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: TasksCreated
+    on_error: notify_human
+  - role: code_generator
+    phase: code
+    provider: claude-sonnet-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - code.write_file
+      - code.read_file
+      - spec.read_spec
+      - git.create_branch
+      - git.commit
+    permissions:
+      - read_spec
+      - write_code
+      - create_branch
+      - create_pr
+    denied:
+      - deploy
+      - merge_pr
+      - write_design
+      - write_spec
+    hitl_policy: review_and_override
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: CodeGenComplete
+    on_error: notify_human
+  - role: test_writer
+    phase: code
+    provider: claude-sonnet-4-6
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - code.write_file
+      - code.read_file
+      - spec.read_spec
+      - test.run_tests
+    permissions:
+      - read_spec
+      - read_code
+      - write_tests
+    denied:
+      - deploy
+      - merge_pr
+      - write_design
+      - write_spec
+    hitl_policy: notify_only
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: TestsComplete
+    on_error: notify_human
+  - role: code_reviewer
+    phase: code
+    provider: claude-haiku-4-5
+    execution:
+      mode: stream
+      progress_events: true
+    tools:
+      - code.read_file
+      - git.read_diff
+      - spec.read_spec
+    permissions:
+      - read_code
+      - read_spec
+      - write_review
+    denied:
+      - write_code
+      - deploy
+      - merge_pr
+      - write_design
+    hitl_policy: review_and_override
+    budget:
+      max_tokens_per_task: 50000
+      max_cost_per_task_usd: 2
+    on_complete: ReviewComplete
+    on_error: notify_human

@@ -15,7 +15,7 @@ import { setupEngine, checkPrerequisites } from '../engine-setup.js';
 import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import { saveDesignTokens, saveBrandSpec, loadBaseCatalog, generateProjectCatalog, saveComponentCatalog, debugLog } from '@agentforge/core';
 import { pickComponentLibrary } from './design-system.js';
-import { generateDesignOptions, SHARED_LAYOUT } from './generate-design-options.js';
+import { generateDesignOptions, DEFAULT_LAYOUT_TOKENS, DEFAULT_OPACITY, DEFAULT_MOTION, DEFAULT_STATE } from './generate-design-options.js';
 import { promptOnce } from './generate-design-options.js';
 
 /** Design archetype choice for project visual identity. */
@@ -208,13 +208,16 @@ export function buildDesignTokensSpec(archetype: DesignArchetype): DesignTokensS
     created_by: 'agentforge-init',
     colors: preset.colors,
     typography: preset.typography,
-    spacing: SHARED_LAYOUT.spacing,
-    borders: SHARED_LAYOUT.borders,
-    touch_targets: SHARED_LAYOUT.touch_targets,
+    spacing: DEFAULT_LAYOUT_TOKENS.spacing,
+    borders: DEFAULT_LAYOUT_TOKENS.borders,
+    touch_targets: DEFAULT_LAYOUT_TOKENS.touch_targets,
     elevation: preset.elevation,
-    layout: SHARED_LAYOUT.layout,
-    z_index: SHARED_LAYOUT.z_index,
-  };
+    layout: DEFAULT_LAYOUT_TOKENS.layout,
+    z_index: DEFAULT_LAYOUT_TOKENS.z_index,
+    opacity: DEFAULT_OPACITY,
+    motion: DEFAULT_MOTION,
+    state: DEFAULT_STATE,
+  } satisfies DesignTokensSpec;
 }
 
 /** Map archetype to brand tone. */

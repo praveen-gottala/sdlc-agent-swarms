@@ -1,0 +1,16 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Refined and analytical — like a premium fintech dashboard. Serious but not cold, with warm amber accents adding
+    energy.
+  audience: general
+illustration_style:
+  direction: Dark background illustrations with glowing amber and teal accents. Geometric, minimal, slightly futuristic.
+  description: Outlined charts and financial icons with subtle amber glow effects on dark navy. Thin strokes, no solid fills.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: smooth
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA

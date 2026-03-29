@@ -206,6 +206,16 @@ const SAMPLE_TOKENS: DesignTokensSpec = {
     breakpoints: { mobile: 640, tablet: 768, desktop: 1024, wide: 1440 },
   },
   z_index: { dropdown: 1000, sticky: 1100, modal: 1200, toast: 1300, tooltip: 1400 },
+  opacity: { scale: { subtle: 0.1, muted: 0.3, disabled: 0.38, overlay: 0.5 } },
+  motion: {
+    durations: { fast: 100, normal: 200, slow: 400, page: 600 },
+    easings: { default: 'ease-out', emphasized: 'cubic-bezier(0.2,0,0,1)' },
+  },
+  state: {
+    hover_opacity: 0.08,
+    disabled_opacity: 0.38,
+    focus_ring: { color: 'cta-primary', width: 2, offset: 2 },
+  },
 };
 
 describe('extractValidTokenNames', () => {
@@ -303,10 +313,13 @@ describe('extractValidTokenNames', () => {
     expect(names.has('easing-default')).toBe(true);
   });
 
-  it('does NOT include motion tokens when brand is not provided', () => {
+  it('does NOT include brand-only motion tokens when brand is not provided', () => {
     const names = extractValidTokenNames(SAMPLE_TOKENS);
+    // duration-base is a brand-only token (from brand.motion_principles.duration_base_ms)
     expect(names.has('duration-base')).toBe(false);
-    expect(names.has('easing-default')).toBe(false);
+    // easing-default comes from BOTH brand.motion_principles AND spec.motion.easings.default,
+    // so it IS present even without brand when spec.motion exists.
+    // Check a brand-only token instead: duration-base is the reliable one.
   });
 });
 

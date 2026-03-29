@@ -5,33 +5,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: init",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "init",
-                "${input:appDir}"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: init (--mock)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "init",
                 "${input:appDir}",
-                "--mock"
+                "${input:mockFlag}"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -50,11 +28,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: describe",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "describe"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -71,35 +49,13 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design-system update",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "design-system",
-                "update"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: design-system update (--mock)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design-system",
                 "update",
-                "--mock"
+                "${input:mockFlag}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -116,12 +72,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design-system show",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design-system",
                 "show"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -138,12 +94,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design-system validate",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design-system",
                 "validate"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -160,12 +116,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design-system regenerate-catalog",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design-system",
                 "regenerate-catalog"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -182,11 +138,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:generate",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:generate"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -203,11 +159,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:preview",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:preview"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -224,12 +180,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design",
                 "${input:description}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -246,81 +202,15 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:penpot",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "design:penpot",
-                "${input:pageId}"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: design:penpot (--mock)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:penpot",
                 "${input:pageId}",
-                "--mock"
+                "${input:mockFlag}",
+                "${input:freshFlag}",
+                "${input:evaluateFlag}"
             ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: design:penpot (--fresh)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "design:penpot",
-                "${input:pageId}",
-                "--fresh"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: design:penpot (--evaluate)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "design:penpot",
-                "${input:pageId}",
-                "--evaluate"
-            ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -337,11 +227,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:penpot:all",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:penpot:all"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -358,35 +248,13 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:penpot:browser",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "design:penpot:browser",
-                "${input:description}"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: design:penpot:browser (--headless)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:penpot:browser",
                 "${input:description}",
-                "--headless"
+                "${input:headlessFlag}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -403,13 +271,13 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:penpot:review",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:penpot:review",
                 "--url",
                 "${input:penpotUrl}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -426,11 +294,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: design:list",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "design:list"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -447,12 +315,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: start",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "start",
                 "${input:phase}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -469,33 +337,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: status",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "status"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: status (--watch)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "status",
-                "--watch"
+                "${input:watchFlag}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -512,36 +359,14 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: approve",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "approve",
-                "${input:taskId}"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: approve (--changes)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "approve",
                 "${input:taskId}",
-                "--changes",
+                "${input:changesFlag}",
                 "${input:feedback}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -558,34 +383,13 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: abort",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "abort",
-                "${input:taskId}"
+                "${input:taskId}",
+                "${input:allFlag}"
             ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: abort (--all)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "abort",
-                "--all"
-            ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -602,13 +406,13 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: config",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "config",
                 "${input:configKey}",
                 "${input:configValue}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -625,33 +429,12 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: migrate",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
-            "args": [
-                "migrate"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "nx: build @agentforge/cli",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/packages/*/dist/**/*.js"
-            ],
-            "env": {
-                "DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug: migrate (--dry)",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "migrate",
-                "--dry"
+                "${input:dryFlag}"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -668,11 +451,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: doctor",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "doctor"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -689,11 +472,11 @@
             "type": "node",
             "request": "launch",
             "name": "Debug: setup",
-            "program": "${workspaceFolder}/packages/cli/dist/bin.js",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
             "args": [
                 "setup"
             ],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/${input:projectDir}",
             "console": "integratedTerminal",
             "preLaunchTask": "nx: build @agentforge/cli",
             "skipFiles": [
@@ -708,6 +491,12 @@
         }
     ],
     "inputs": [
+        {
+            "id": "projectDir",
+            "type": "promptString",
+            "description": "Sub-project directory to run against (e.g. zen-mode)",
+            "default": "zen-mode"
+        },
         {
             "id": "appDir",
             "type": "promptString",
@@ -761,6 +550,78 @@
             "id": "penpotUrl",
             "type": "promptString",
             "description": "Penpot workspace URL"
+        },
+        {
+            "id": "mockFlag",
+            "type": "pickString",
+            "description": "Use mock LLM responses instead of real API calls?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--mock)", "value": "--mock" }
+            ]
+        },
+        {
+            "id": "freshFlag",
+            "type": "pickString",
+            "description": "Regenerate from scratch, ignoring cached results?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--fresh)", "value": "--fresh" }
+            ]
+        },
+        {
+            "id": "evaluateFlag",
+            "type": "pickString",
+            "description": "Run design evaluation after rendering?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--evaluate)", "value": "--evaluate" }
+            ]
+        },
+        {
+            "id": "headlessFlag",
+            "type": "pickString",
+            "description": "Run browser in headless mode?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--headless)", "value": "--headless" }
+            ]
+        },
+        {
+            "id": "watchFlag",
+            "type": "pickString",
+            "description": "Watch for status changes continuously?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--watch)", "value": "--watch" }
+            ]
+        },
+        {
+            "id": "dryFlag",
+            "type": "pickString",
+            "description": "Dry run — show what would change without applying?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--dry)", "value": "--dry" }
+            ]
+        },
+        {
+            "id": "allFlag",
+            "type": "pickString",
+            "description": "Apply to all tasks?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--all)", "value": "--all" }
+            ]
+        },
+        {
+            "id": "changesFlag",
+            "type": "pickString",
+            "description": "Include change feedback?",
+            "options": [
+                { "label": "No", "value": "" },
+                { "label": "Yes (--changes)", "value": "--changes" }
+            ]
         }
     ]
 }

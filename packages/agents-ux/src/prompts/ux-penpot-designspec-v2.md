@@ -33,9 +33,14 @@ Every node needs `parent` (string ID or null for root) and `order` (0-based sibl
 - `text` — standalone text element
 
 **Component nodes** use `catalog`:
-- Reference a catalog entry by ID (e.g. `"button-primary"`, `"input-text"`). Use IDs from the Component Catalog section above — built-in text fields use `"input-text"`.
+- Reference ONLY the renderable catalog IDs listed below. These have dedicated renderers.
 - Provide content via `label`, `content`, `value`, `placeholder`, `helper`
 - Override catalog defaults via `overrides: { key: value }`
+
+**Renderable catalog IDs** (ONLY use these as `catalog` values):
+{{RENDERABLE_CATALOG_IDS}}
+
+Any component NOT in this list (e.g. Tabs, SearchInput, ProgressBar, Pagination, Modal, Form) must be **decomposed into structural nodes** (`container`, `text`, `divider`) that visually approximate it. For example, tabs → a row container with text children and an active indicator divider.
 
 A node has `type` OR `catalog`, never both.
 
@@ -130,7 +135,7 @@ Typography uses role references: `"heading-1"`, `"heading-2"`, `"heading-3"`, `"
 1. Exactly ONE root node with `parent: null` and `type: "page"`
 2. All other nodes reference an existing parent ID
 3. Sibling orders are contiguous: 0, 1, 2, ... (no gaps)
-4. Use catalog components from the Component Catalog whenever a matching component exists
+4. Use `catalog` ONLY for IDs listed in the "Renderable catalog IDs" section. All other components must be built from structural nodes (container, text, divider, etc.)
 5. Populate ALL text with realistic, domain-appropriate content — never use "Lorem ipsum" or placeholder text
 6. Every container that holds children MUST have a `layout` with at least `dir`
 7. Use `width: "fill"` for elements that should stretch to their parent's width

@@ -18,8 +18,9 @@ export function formatPageContextPrompt(ctx: PageContext): string {
 
   // Target page
   const tp = ctx.targetPage;
-  const componentsList = tp.components.length > 0
-    ? tp.components.join(', ')
+  const tpComponents = tp.components ?? [];
+  const componentsList = tpComponents.length > 0
+    ? tpComponents.join(', ')
     : '(none specified)';
   const dataSources = tp.data_sources && tp.data_sources.length > 0
     ? tp.data_sources.join(', ')
@@ -34,14 +35,15 @@ export function formatPageContextPrompt(ctx: PageContext): string {
   // All app screens (sibling context for navigation)
   if (ctx.allPages.length > 0) {
     const pageLines = ctx.allPages.map((p, i) => {
-      const compCount = p.components.length;
+      const pageComps = p.components ?? [];
+      const compCount = pageComps.length;
       return `${i + 1}. ${p.id} (${p.route}) — ${p.name}: ${p.description} [${compCount} components]`;
     });
 
     // Identify shared components (appear on 2+ pages)
     const componentCounts = new Map<string, number>();
     for (const page of ctx.allPages) {
-      for (const comp of page.components) {
+      for (const comp of (page.components ?? [])) {
         componentCounts.set(comp, (componentCounts.get(comp) ?? 0) + 1);
       }
     }

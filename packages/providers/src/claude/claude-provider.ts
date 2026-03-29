@@ -174,32 +174,21 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           ...(options.toolChoice ? { tool_choice: options.toolChoice as Anthropic.MessageCreateParams['tool_choice'] } : {}),
         };
 
-        let useStructuredOutput = !!options.responseSchema;
+        const useStructuredOutput = !!options.responseSchema;
         let response: Anthropic.Message;
 
         if (useStructuredOutput) {
-          try {
-            const structuredParams = {
-              ...baseParams,
-              output_config: {
-                format: {
-                  type: 'json_schema' as const,
-                  schema: options.responseSchema!.schema,
-                },
+          const structuredParams = {
+            ...baseParams,
+            output_config: {
+              format: {
+                type: 'json_schema' as const,
+                schema: options.responseSchema!.schema,
               },
-            };
-            const stream = client.messages.stream(structuredParams, { signal: options.signal ?? undefined });
-            response = await stream.finalMessage();
-          } catch (error) {
-            // Fall back to text mode if model doesn't support output_config
-            if (error instanceof Anthropic.APIError && error.message.includes('does not support output format')) {
-              useStructuredOutput = false;
-              const stream = client.messages.stream(baseParams, { signal: options.signal ?? undefined });
-              response = await stream.finalMessage();
-            } else {
-              throw error;
-            }
-          }
+            },
+          };
+          const stream = client.messages.stream(structuredParams, { signal: options.signal ?? undefined });
+          response = await stream.finalMessage();
         } else {
           const stream = client.messages.stream(baseParams, { signal: options.signal ?? undefined });
           response = await stream.finalMessage();

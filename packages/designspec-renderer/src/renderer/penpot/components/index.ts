@@ -36,6 +36,7 @@ import { renderLoadingSpinner } from './loading-spinner.js';
 import { renderLink } from './link.js';
 import { renderSwitch } from './switch.js';
 import { renderDataTable } from './data-table.js';
+import { renderCatalogGeneric } from './catalog-generic.js';
 
 /** Map of accelerator type name to its renderer function. */
 const ACCELERATOR_RENDERERS: Record<string, ComponentRenderer> = {
@@ -90,8 +91,49 @@ export function getAcceleratorRenderer(
  */
 export function getCatalogRenderer(
   catalogId: string,
-): ComponentRenderer | undefined {
-  return CATALOG_RENDERERS[catalogId];
+): ComponentRenderer {
+  const direct = CATALOG_RENDERERS[catalogId];
+  if (direct) return direct;
+
+  // Fuzzy match: progressively strip the last segment to find a renderer.
+  // "button-destructive" → try "button" (exact) → try any "button-*" renderer
+  // "data-table-compact-striped" → "data-table-compact" → "data-table" → "data"
+  let candidate = catalogId;
+  while (true) {
+    const lastDash = candidate.lastIndexOf('-');
+    if (lastDash <= 0) break;
+    candidate = candidate.substring(0, lastDash);
+
+    // Try exact match on the shortened name (e.g., "card", "badge", "data-table")
+    if (CATALOG_RENDERERS[candidate]) return CATALOG_RENDERERS[candidate];
+
+    // Try any renderer that shares this base (e.g., "button" → "button-primary")
+    for (const key of Object.keys(CATALOG_RENDERERS)) {
+      if (key.startsWith(`${candidate}-`)) return CATALOG_RENDERERS[key];
+    }
+  }
+
+  // Generic catalog renderer — reads catalog entry properties to produce
+  // a styled board instead of falling back to an empty container
+  return renderCatalogGeneric;
+}
+
+/**
+ * Get the list of catalog IDs that have dedicated renderers.
+ * Components NOT in this list should be decomposed into accelerator primitives
+ * (container, text, divider) rather than referenced via `catalog`.
+ */
+export function getRenderableCatalogIds(): readonly string[] {
+  return Object.keys(CATALOG_RENDERERS);
+}
+
+/**
+ * Register a dynamically generated renderer at runtime.
+ * Used when the pipeline detects a missing catalog entry and generates
+ * a renderer on-the-fly from the component anatomy.
+ */
+export function registerCatalogRenderer(catalogId: string, renderer: ComponentRenderer): void {
+  CATALOG_RENDERERS[catalogId] = renderer;
 }
 
 export type { ComponentRenderer } from './types.js';
@@ -125,4 +167,5 @@ export {
   renderLink,
   renderSwitch,
   renderDataTable,
+  renderCatalogGeneric,
 };

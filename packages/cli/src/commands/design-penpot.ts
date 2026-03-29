@@ -115,24 +115,13 @@ interface DesignPenpotOptions {
 // ============================================================================
 
 /**
- * Convert core DesignTokensSpec to the renderer's RendererTokens subset.
- * Explicitly maps only the 5 required fields — avoids carrying extra
- * fields (version, created_by, touch_targets, layout, z_index, components).
+ * Convert core DesignTokensSpec to the renderer's RendererTokens.
+ * Maps all design token fields so the renderer can use them data-driven
+ * instead of hardcoding values.
  */
 function toRendererTokens(spec: DesignTokensSpec): RendererTokens {
-  return {
-    colors: {
-      primitive: spec.colors.primitive,
-      semantic: spec.colors.semantic,
-    },
-    typography: {
-      font_families: spec.typography.font_families,
-      scale: spec.typography.scale,
-    },
-    elevation: { levels: spec.elevation.levels },
-    borders: { radius: spec.borders.radius },
-    spacing: { unit: spec.spacing.unit, scale: spec.spacing.scale },
-  };
+  const { version, created_by, ...tokens } = spec;
+  return tokens;
 }
 
 /** Derive a kebab-case module ID from a description. */
@@ -681,7 +670,13 @@ try {
     ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
     ...(componentCatalogPrompt ? { componentCatalogPrompt } : {}),
     viewportWidth: effectiveViewportWidth,
-    ...(useV2 ? { useDesignSpecV2: true, rendererTokens, catalogMap: catalogMapV2 } : {}),
+    ...(useV2 ? {
+      useDesignSpecV2: true,
+      rendererTokens,
+      catalogMap: catalogMapV2,
+      // Pass raw catalog (with anatomy) for dynamic renderer generation
+      ...(componentCatalog ? { componentCatalogRaw: componentCatalog.components as Readonly<Record<string, import('@agentforge/designspec-renderer').DynamicCatalogSource>> } : {}),
+    } : {}),
     ...(pageContext ? { pageContext } : {}),
   };
 

@@ -20,6 +20,7 @@ import type {
   MCPClient,
   PromptTrace,
   PageContext,
+  DesignTokensSpec,
 } from '@agentforge/core';
 import {
   Ok,
@@ -37,7 +38,18 @@ import type { DesignSnapshotData } from '../types.js';
 import { captureDesignSnapshot } from './capture-design-snapshot.js';
 import type { DesignSpecV2, RendererTokens, CatalogMap } from '@agentforge/designspec-renderer';
 import { formatPageContextPrompt } from '../page-context-prompt.js';
-import { validateDesignSpec, renderToScript, SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
+import {
+  validateDesignSpec,
+  renderToScript,
+  renderToScriptChunks,
+  SUBMIT_DESIGN_TOOL,
+  registerCatalogRenderer,
+  generateRenderer,
+  generateCatalogEntry,
+} from '@agentforge/designspec-renderer';
+import type { ChunkedRenderResult } from '@agentforge/designspec-renderer';
+import type { DynamicCatalogSource } from '@agentforge/designspec-renderer';
+import { buildPromptFromTokens } from '../prompts/prompt-template-builder.js';
 
 // ============================================================================
 // Types
@@ -63,8 +75,12 @@ export interface PenpotDesignInput {
   readonly rendererTokens?: RendererTokens;
   /** Catalog map for the v2 renderer. Required when useDesignSpecV2 is true. */
   readonly catalogMap?: CatalogMap;
+  /** Raw component catalog spec (with anatomy) for dynamic renderer generation. */
+  readonly componentCatalogRaw?: Readonly<Record<string, DynamicCatalogSource>>;
   /** Structured page context from pages.yaml for spec-driven design. */
   readonly pageContext?: PageContext;
+  /** Design tokens for prompt template rendering. When provided, token values replace template placeholders. */
+  readonly designTokens?: DesignTokensSpec;
 }
 
 /** Output produced by the Penpot design agent. */
@@ -305,7 +321,7 @@ export function parsePenpotDesignScript(output: string): Result<{ script: string
   const openFence = /```json\s*\n?([\s\S]+)/.exec(output);
   let jsonStr = closedFence ? closedFence[1].trim()
     : openFence ? openFence[1].trim()
-    : output.trim();
+      : output.trim();
   jsonStr = jsonStr.replace(/```\s*$/, '').trim();
 
   // Truncation heuristic: valid JSON for our schema must end with }
@@ -502,7 +518,12 @@ export async function penpotDesignWork(
 
   // ── Phase A: Generate design script via LLM ──
 
-  const rawPrompt = loadPenpotSystemPrompt();
+  let rawPrompt = loadPenpotSystemPrompt();
+
+  // Render token-based template placeholders if design tokens are available
+  if (input.designTokens) {
+    rawPrompt = buildPromptFromTokens(rawPrompt, input.designTokens);
+  }
 
   logDefaults('penpotDesignWork:promptSubstitution', {
     designSystemPrompt: [designSystemPrompt, "'(No project design system provided...)'"],
@@ -1052,6 +1073,91 @@ try {
 }
 
 /**
+ * Execute a chunked render result: chunk 0 creates the root board,
+ * subsequent chunks recover the root by ID and append subtrees.
+ */
+async function executeChunkedScript(
+  chunkedResult: ChunkedRenderResult,
+  mcpClient: MCPClient,
+): Promise<Result<{ rootId: string; nodeIds: Record<string, string> }>> {
+  const allNodeIds: Record<string, string> = {};
+  let rootId = '';
+
+  for (let i = 0; i < chunkedResult.chunks.length; i++) {
+    const chunk = chunkedResult.chunks[i];
+    const isFirst = i === 0;
+
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot v2] Executing chunk ${i + 1}/${chunkedResult.chunks.length}...`);
+
+    // Continuation chunks need rootId passed as argument
+    const code = isFirst
+      ? `try {\n${chunk}\n} catch (e) { return { __error: true, message: e.message || String(e), stack: e.stack }; }`
+      : `const __run = (function() {\n${chunk}\n});\nreturn __run("${rootId}");`;
+
+    // For chunk 0, just execute directly; for continuation, wrap to pass rootId
+    const scriptToRun = isFirst ? chunk : code;
+
+    const toolResult = await mcpClient.callTool('penpot', 'execute_code', { code: scriptToRun });
+
+    if (!toolResult.ok) {
+      return Err({
+        code: 'MCP_UNAVAILABLE',
+        message: `Penpot chunk ${i + 1}/${chunkedResult.chunks.length} execution failed: ${toolResult.error.message}`,
+        recoverable: true,
+      });
+    }
+
+    const result = toolResult.value as Record<string, unknown>;
+    const content = result.content as Array<{ text?: string }> | undefined;
+    if (!Array.isArray(content)) {
+      return Err({ code: 'LLM_MALFORMED_OUTPUT', message: `No content in chunk ${i + 1} response`, recoverable: true });
+    }
+
+    const text = content.map(c => c.text ?? '').join('');
+
+    if (text.includes('No Penpot plugin instances')) {
+      return Err({ code: 'MCP_UNAVAILABLE', message: 'Penpot plugin disconnected', recoverable: true });
+    }
+
+    try {
+      const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
+      const resultVal = parsed.result;
+
+      if (resultVal?.__error) {
+        return Err({
+          code: 'LLM_MALFORMED_OUTPUT',
+          message: `Penpot chunk ${i + 1} error: ${String(resultVal.message ?? 'unknown')}`,
+          recoverable: true,
+        });
+      }
+
+      // Chunk 0 returns rootId
+      if (isFirst && resultVal?.rootId) {
+        rootId = String(resultVal.rootId);
+      }
+
+      // All chunks return nodeIds
+      const chunkNodeIds = (resultVal?.nodeIds as Record<string, string>) ?? {};
+      Object.assign(allNodeIds, chunkNodeIds);
+    } catch {
+      return Err({
+        code: 'LLM_MALFORMED_OUTPUT',
+        message: `Penpot chunk ${i + 1} returned non-JSON: ${text.slice(0, 300)}`,
+        recoverable: true,
+      });
+    }
+
+    // Brief pause between chunks to let Penpot process
+    if (i < chunkedResult.chunks.length - 1) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+
+  return Ok({ rootId, nodeIds: allNodeIds });
+}
+
+/**
  * Delete an existing root shape from the Penpot canvas.
  * Used in the v2 correction loop before re-rendering.
  */
@@ -1094,6 +1200,145 @@ function extractDesignSpecFromToolCall(
     width: Number(args.width),
     nodes: args.nodes as Record<string, import('@agentforge/designspec-renderer').NodeSpec>,
   });
+}
+
+// ============================================================================
+// Structural reconciliation — diff DesignSpec vs actual Penpot shapes
+// ============================================================================
+
+/** A structural issue found by comparing DesignSpec against actual Penpot shapes. */
+interface StructuralIssue {
+  readonly type: 'missing-node' | 'clipped-node' | 'collapsed-node' | 'node-count-mismatch';
+  readonly nodeId?: string;
+  readonly description: string;
+}
+
+/**
+ * Read the actual Penpot node tree via `execute_code` and compare against the DesignSpec.
+ * Returns structural issues that vision-based evaluation might miss.
+ */
+async function reconcileStructure(
+  mcpClient: MCPClient,
+  rootShapeId: string,
+  spec: DesignSpecV2,
+): Promise<StructuralIssue[]> {
+  // Collect all shape names recursively (unlimited depth, names only to keep payload small)
+  const code = `
+const root = penpot.currentPage?.getShapeById("${rootShapeId}");
+if (!root) return { error: "Root not found" };
+const allNames = [];
+const topShapes = [];
+function walk(shape) {
+  allNames.push(shape.name);
+  if (shape.children) shape.children.forEach(walk);
+}
+const children = root.children || [];
+children.forEach(c => {
+  topShapes.push({ name: c.name, x: c.x, y: c.y, w: c.width, h: c.height });
+  walk(c);
+});
+return {
+  root: { name: root.name, w: root.width, h: root.height },
+  shapes: topShapes,
+  allNames: allNames,
+  totalChildren: children.length
+};
+`;
+
+  const result = await mcpClient.callTool('penpot', 'execute_code', { code });
+  if (!result.ok) return [];
+
+  const content = result.value as { content?: Array<{ text?: string }> };
+  const text = Array.isArray(content.content) ? content.content.map(c => c.text ?? '').join('') : '';
+
+  let parsed: {
+    result?: {
+      error?: string;
+      root?: { name: string; w: number; h: number };
+      shapes?: Array<{ name: string; x: number; y: number; w: number; h: number }>;
+      allNames?: string[];
+      totalChildren?: number;
+    };
+  };
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  if (!parsed.result || parsed.result.error) return [];
+
+  const { root, shapes = [], allNames = [] } = parsed.result;
+  if (!root) return [];
+
+  const issues: StructuralIssue[] = [];
+
+  // All shape names collected recursively from the Penpot tree (unlimited depth)
+  const penpotNames = new Set(allNames);
+
+  // Compare expected spec nodes against actual Penpot shapes
+  const specNodeIds = Object.keys(spec.nodes);
+  const expectedCount = specNodeIds.length;
+  const actualCount = penpotNames.size + 1; // +1 for root
+
+  if (actualCount < expectedCount) {
+    issues.push({
+      type: 'node-count-mismatch',
+      description: `Expected ${expectedCount} nodes from DesignSpec but only ${actualCount} shapes found in Penpot. ${expectedCount - actualCount} nodes may be missing.`,
+    });
+  }
+
+  // Check for missing nodes (in spec but not in Penpot)
+  for (const nodeId of specNodeIds) {
+    // Root node matches differently (it's the root board itself)
+    if (spec.nodes[nodeId].parent === null) continue;
+    if (!penpotNames.has(nodeId)) {
+      issues.push({
+        type: 'missing-node',
+        nodeId,
+        description: `Node "${nodeId}" exists in DesignSpec but was not found in Penpot shapes.`,
+      });
+    }
+  }
+
+  // Check for clipped nodes (child extends beyond root frame height)
+  const rootHeight = root.h;
+  for (const shape of shapes) {
+    const bottom = (shape.y || 0) + (shape.h || 0);
+    if (bottom > rootHeight && shape.h > 0) {
+      issues.push({
+        type: 'clipped-node',
+        nodeId: shape.name,
+        description: `Node "${shape.name}" extends to y=${bottom}px but root frame height is only ${rootHeight}px. Content is clipped.`,
+      });
+    }
+  }
+
+  // Check for collapsed nodes (zero height/width)
+  for (const shape of shapes) {
+    if (shape.h === 0 || shape.w === 0) {
+      issues.push({
+        type: 'collapsed-node',
+        nodeId: shape.name,
+        description: `Node "${shape.name}" has zero ${shape.h === 0 ? 'height' : 'width'} (${shape.w}x${shape.h}). It may not be rendering.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Format structural issues for inclusion in the correction prompt.
+ */
+function formatStructuralIssues(issues: StructuralIssue[]): string {
+  if (issues.length === 0) return '';
+  // Cap at 10 issues to prevent overwhelming the correction prompt
+  const MAX_ISSUES = 10;
+  const capped = issues.slice(0, MAX_ISSUES);
+  const lines = capped.map(i => `- [${i.type}] ${i.description}`);
+  const overflow = issues.length > MAX_ISSUES ? `\n- ... and ${issues.length - MAX_ISSUES} more structural issues (omitted)` : '';
+  return `\n\nSTRUCTURAL ISSUES (programmatic diff, not from screenshot):\nThese issues were detected by comparing the DesignSpec JSON against the actual Penpot node tree.\nThey are MORE RELIABLE than vision-based issues.\n${lines.join('\n')}${overflow}`;
 }
 
 /**
@@ -1170,10 +1415,17 @@ async function runV2CorrectionLoop(
     }
     previousScore = evaluation.score;
 
+    // 2b. Structural reconciliation — diff DesignSpec vs actual Penpot shapes
+    const structuralIssues = await reconcileStructure(mcpClient, currentRootId, spec);
+    if (structuralIssues.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`        [v2 correction ${correction + 1}] Structural issues: ${structuralIssues.length} (${structuralIssues.map(i => i.type).join(', ')})`);
+    }
+
     const actionableIssues = evaluation.issues.filter(
       (issue) => issue.severity === 'critical' || issue.severity === 'major',
     );
-    if (actionableIssues.length === 0) {
+    if (actionableIssues.length === 0 && structuralIssues.length === 0) {
       // eslint-disable-next-line no-console
       console.log(`        [v2 correction ${correction + 1}] No critical/major issues to fix`);
       break;
@@ -1184,11 +1436,13 @@ async function runV2CorrectionLoop(
       .map(i => `- [${i.severity}] ${i.component}: ${i.description} (fix: ${i.fix})`)
       .join('\n');
 
+    const structuralContext = formatStructuralIssues(structuralIssues);
+
     const correctionPrompt = {
       system: systemPrompt,
       messages: [{
         role: 'user' as const,
-        content: `The current design has these issues:\n${issuesSummary}\n\nCurrent DesignSpec:\n${JSON.stringify(spec, null, 2)}\n\nOutput a CORRECTED design spec that fixes ONLY the reported issues. Keep all other nodes identical. Call the submit_design tool with the corrected spec.`,
+        content: `The current design has these issues:\n${issuesSummary}${structuralContext}\n\nCurrent DesignSpec:\n${JSON.stringify(spec, null, 2)}\n\nOutput a CORRECTED design spec that fixes ONLY the reported issues. Keep all other nodes identical. Call the submit_design tool with the corrected spec.`,
       }],
       tools: [SUBMIT_DESIGN_TOOL as { name: string; description: string; parameters: Record<string, unknown> }],
     };
@@ -1294,21 +1548,40 @@ async function penpotDesignWorkV2(
     });
   }
 
-  // ── Phase A: Generate DesignSpec via LLM tool call ──
+  // ── Phase A: Generate DesignSpec via LLM tool call (or load from cache) ──
 
+  // Check for cached DesignSpec from a previous run (avoids LLM call on retry after 413, etc.)
+  const cachedSpecDir = join(process.cwd(), PREVIEW_DIR_REL, moduleId, 'scripts');
+  const cachedSpecPath = join(cachedSpecDir, 'designspec-v2.json');
+  let designSpec: DesignSpecV2 | undefined;
+
+  if (existsSync(cachedSpecPath)) {
+    try {
+      const raw = readFileSync(cachedSpecPath, 'utf-8');
+      designSpec = JSON.parse(raw) as DesignSpecV2;
+      // eslint-disable-next-line no-console
+      console.log(`        [penpot v2] Loaded cached DesignSpec (${Object.keys(designSpec.nodes).length} nodes) — skipping LLM call`);
+      // eslint-disable-next-line no-console
+      console.log(`        [penpot v2] Delete ${cachedSpecPath} to force regeneration`);
+    } catch {
+      designSpec = undefined; // Corrupted cache — regenerate
+    }
+  }
+
+  // Build system prompt (needed for both LLM generation and correction loop)
+  let rawPromptV2 = loadPenpotV2SystemPrompt();
+  if (input.designTokens) {
+    rawPromptV2 = buildPromptFromTokens(rawPromptV2, input.designTokens);
+  }
+  const renderableIds = catalogMap ? Object.keys(catalogMap).sort().map(id => `\`${id}\``).join(', ') : '(none)';
+  const systemPrompt = rawPromptV2
+    .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use generic token names)')
+    .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)')
+    .replace('{{RENDERABLE_CATALOG_IDS}}', renderableIds);
+
+  if (!designSpec) {
   // eslint-disable-next-line no-console
   console.log('        [penpot v2] Generating DesignSpec via submit_design tool...');
-
-  const rawPrompt = loadPenpotV2SystemPrompt();
-
-  logDefaults('penpotDesignWorkV2:promptSubstitution', {
-    designSystemPrompt: [designSystemPrompt, "'(No project design system provided...)'"],
-    componentCatalogPrompt: [componentCatalogPrompt, "'(No component catalog available)'"],
-  });
-
-  const systemPrompt = rawPrompt
-    .replace('{{DESIGN_SYSTEM}}', designSystemPrompt || '(No project design system provided — use generic token names)')
-    .replace('{{COMPONENT_CATALOG}}', componentCatalogPrompt || '(No component catalog available)');
 
   const userMessageParts = [
     `Module ID: ${moduleId}`,
@@ -1338,7 +1611,7 @@ async function penpotDesignWorkV2(
       { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
       { model: effectiveModel, maxTokens: 16000 });
   }
-
+  // Here the design tokens are lost - due to inconsistencies in how we are defining schema less in "design:generate" command until here when we load the design
   const completionResult = await llm.complete(
     {
       system: systemPrompt,
@@ -1347,7 +1620,7 @@ async function penpotDesignWorkV2(
     },
     {
       model: effectiveModel,
-      maxTokens: 16000,
+      maxTokens: 32000,
       temperature: 0,
       toolChoice: { type: 'tool', name: 'submit_design' },
     },
@@ -1357,7 +1630,7 @@ async function penpotDesignWorkV2(
     const err = completionResult.error as unknown as Record<string, unknown>;
     const detail = typeof err.message === 'string' ? err.message
       : typeof err.raw === 'string' ? err.raw
-      : undefined;
+        : undefined;
     return Err({
       code: 'LLM_API_ERROR',
       message: detail
@@ -1400,14 +1673,70 @@ async function penpotDesignWorkV2(
     return extractResult as Result<never>;
   }
 
-  const designSpec = extractResult.value;
+  designSpec = extractResult.value;
   const nodeCount = Object.keys(designSpec.nodes).length;
   // eslint-disable-next-line no-console
   console.log(`        [penpot v2] DesignSpec received: ${nodeCount} nodes for screen "${designSpec.screen}"`);
 
-  // ── Validate ──
+  // Save DesignSpec immediately so it can be reused if execution fails (e.g., HTTP 413)
+  if (!existsSync(cachedSpecDir)) {
+    mkdirSync(cachedSpecDir, { recursive: true });
+  }
+  writeFileSync(cachedSpecPath, JSON.stringify(designSpec, null, 2));
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] DesignSpec cached: ${cachedSpecPath}`);
 
-  const validation = validateDesignSpec(designSpec, catalogMap);
+  } // end if (!designSpec) — LLM generation block
+
+  // ── Validate (with dynamic catalog generation for missing entries) ──
+
+  let validation = validateDesignSpec(designSpec, catalogMap);
+
+  // Detect missing catalog entries and dynamically generate renderers
+  if (!validation.valid && input.componentCatalogRaw) {
+    const catalogErrors = validation.errors.filter(e => e.rule === 'valid-catalog' && e.nodeId);
+    const missingIds = new Set<string>();
+    for (const err of catalogErrors) {
+      const nodeId = err.nodeId!;
+      const catalogId = designSpec.nodes[nodeId]?.catalog;
+      if (catalogId && !(catalogId in catalogMap)) {
+        missingIds.add(catalogId);
+      }
+    }
+
+    if (missingIds.size > 0) {
+      const mutableCatalog = catalogMap as Record<string, unknown>;
+      const generated: string[] = [];
+
+      for (const missingId of missingIds) {
+        // Convert kebab-case back to PascalCase to look up in raw catalog
+        const pascalName = missingId
+          .split('-')
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join('');
+
+        const rawEntry = input.componentCatalogRaw[pascalName];
+        if (!rawEntry) continue;
+
+        // Generate catalog entry + renderer from anatomy
+        const catalogEntry = generateCatalogEntry(rawEntry);
+        mutableCatalog[missingId] = catalogEntry;
+
+        const renderer = generateRenderer(missingId, rawEntry);
+        registerCatalogRenderer(missingId, renderer);
+
+        generated.push(missingId);
+      }
+
+      if (generated.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`        [penpot v2] Dynamically generated ${generated.length} renderer(s): ${generated.join(', ')}`);
+        // Re-validate with the expanded catalog
+        validation = validateDesignSpec(designSpec, catalogMap);
+      }
+    }
+  }
+
   if (validation.warnings.length > 0) {
     // eslint-disable-next-line no-console
     console.warn(`        [penpot v2] Validation warnings: ${validation.warnings.map(w => w.message).join('; ')}`);
@@ -1422,21 +1751,36 @@ async function penpotDesignWorkV2(
     });
   }
 
-  // ── Phase B: Render to Penpot script + execute ──
+  // ── Phase B: Render to Penpot script + execute (with automatic chunking) ──
 
-  const renderResult = renderToScript(designSpec, rendererTokens, catalogMap);
-  if (renderResult.warnings.length > 0) {
+  const chunkedResult = renderToScriptChunks(designSpec, rendererTokens, catalogMap);
+  if (chunkedResult.warnings.length > 0) {
     // eslint-disable-next-line no-console
-    console.warn(`        [penpot v2] Render warnings: ${renderResult.warnings.join('; ')}`);
+    console.warn(`        [penpot v2] Render warnings: ${chunkedResult.warnings.join('; ')}`);
   }
 
   // eslint-disable-next-line no-console
-  console.log(`        [penpot v2] Rendered script: ${renderResult.script.length} chars, ${renderResult.nodeIds.length} shapes`);
-  // eslint-disable-next-line no-console
-  console.log('        [penpot v2] Executing script...');
+  console.log(`        [penpot v2] Rendered: ${chunkedResult.totalChars} chars, ${chunkedResult.nodeIds.length} shapes, ${chunkedResult.chunks.length} chunk(s)`);
+  // Log individual chunk sizes for debugging
+  for (let ci = 0; ci < chunkedResult.chunks.length; ci++) {
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot v2]   chunk ${ci + 1}: ${chunkedResult.chunks[ci].length} chars`);
+  }
 
   const scriptT0 = Date.now();
-  const execResult = await executeRenderedScript(renderResult.script, mcpClient);
+  let execResult: Result<{ rootId: string; nodeIds: Record<string, string> }>;
+
+  if (chunkedResult.chunks.length === 1) {
+    // Single chunk — use the existing path
+    // eslint-disable-next-line no-console
+    console.log('        [penpot v2] Executing script...');
+    execResult = await executeRenderedScript(chunkedResult.chunks[0], mcpClient);
+  } else {
+    // Multiple chunks — execute sequentially
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot v2] Executing ${chunkedResult.chunks.length} chunks...`);
+    execResult = await executeChunkedScript(chunkedResult, mcpClient);
+  }
   const scriptMs = Date.now() - scriptT0;
 
   if (!execResult.ok) {
@@ -1526,7 +1870,8 @@ async function penpotDesignWorkV2(
 
   // Save the rendered script
   const mainScriptPath = join(scriptDir, 'design.js');
-  writeFileSync(mainScriptPath, `// Penpot design script (v2 renderer) for module: ${moduleId}\n// Generated at: ${new Date().toISOString()}\n\n${renderResult.script}\n`);
+  const allScripts = chunkedResult.chunks.join('\n\n// --- Next Chunk ---\n\n');
+  writeFileSync(mainScriptPath, `// Penpot design script (v2 renderer) for module: ${moduleId}\n// Generated at: ${new Date().toISOString()}\n// Chunks: ${chunkedResult.chunks.length}\n\n${allScripts}\n`);
   // eslint-disable-next-line no-console
   console.log(`        [penpot v2] Script saved: ${mainScriptPath}`);
 
@@ -1546,7 +1891,7 @@ async function penpotDesignWorkV2(
     penpotNodeIds: activeNodeIds,
     moduleId,
     breakpoints: [String(designSpec.width)],
-    script: renderResult.script,
+    script: chunkedResult.chunks.join('\n'),
     designSpec: finalSpec,
     ...(fixScripts.length > 0 ? { fixScripts } : {}),
     ...snapshotData,

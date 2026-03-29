@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans&family=DM+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --card: 217 33% 17%;
+    --popover: 217 27% 22%;
+    --foreground: 213 27% 84%;
+    --primary: 38 92% 50%;
+    --accent: 32 95% 44%;
+    --border: 215 25% 27%;
+    --ring: 38 92% 50%;
+    --destructive: 0 91% 71%;
+    --success: 173 80% 40%;
+    --warning: 38 92% 50%;
+    --info: 198 93% 60%;
+    --overlay: rgba(0,0,0,0.65);
+    --card-foreground: 213 27% 84%;
+    --popover-foreground: 213 27% 84%;
+    --primary-foreground: 222 47% 11%;
+    --secondary-foreground: 213 27% 84%;
+    --muted-foreground: 215 16% 47%;
+    --accent-foreground: 213 27% 84%;
+    --destructive-foreground: 222 47% 11%;
+    --input: 215 25% 27%;
+    --secondary: 222 47% 11%;
+    --muted: 222 47% 11%;
+    --radius: 0.625rem;
+    --shadow-1: 0 1px 4px rgba(0,0,0,0.3);
+    --shadow-2: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-3: 0 12px 32px rgba(0,0,0,0.5);
+  }
+}

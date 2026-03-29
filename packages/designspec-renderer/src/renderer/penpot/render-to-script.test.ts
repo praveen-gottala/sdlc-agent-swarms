@@ -464,13 +464,7 @@ describe('renderToScript — error handling', () => {
     // Should not throw — rendering completes
     expect(result.script.length).toBeGreaterThan(0);
 
-    // Should produce a warning mentioning the unknown catalog
-    expect(result.warnings.length).toBeGreaterThanOrEqual(1);
-    const warningText = result.warnings.join(' ');
-    expect(warningText).toContain('fancy-widget-9000');
-    expect(warningText).toMatch(/falling back to container/i);
-
-    // The node should still be rendered (as a container fallback)
+    // The node should still be rendered (via generic catalog renderer)
     expect(result.nodeIds).toContain('unknownWidget');
   });
 });

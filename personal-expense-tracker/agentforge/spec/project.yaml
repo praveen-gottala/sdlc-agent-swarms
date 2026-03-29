@@ -1,0 +1,5 @@
+version: "1.0"
+app:
+  name: Personal Expense Tracker
+  description: ""
+adrs: []
