@@ -13,6 +13,7 @@ import { renderSpacer } from './spacer.js';
 import { renderButtonPrimary } from './button-primary.js';
 import { renderButtonSecondary } from './button-secondary.js';
 import { renderButtonGhost } from './button-ghost.js';
+import { renderButtonDestructive } from './button-destructive.js';
 import { renderInputText } from './input-text.js';
 import { renderInputCurrency } from './input-currency.js';
 import { renderSelect } from './select.js';
@@ -25,6 +26,10 @@ import { renderBadge } from './badge.js';
 import { renderStat } from './stat.js';
 import { renderAvatar } from './avatar.js';
 import { renderTooltip } from './tooltip.js';
+import { renderChip } from './chip.js';
+import { renderProgressBar } from './progress-bar.js';
+import { renderSearchInput } from './search-input.js';
+import { renderPagination } from './pagination.js';
 
 /** Accelerator type → renderer. */
 const ACCELERATOR_RENDERERS: Readonly<Record<string, ReactComponentRenderer>> = {
@@ -42,6 +47,7 @@ const CATALOG_RENDERERS: Readonly<Record<string, ReactComponentRenderer>> = {
   'button-primary': renderButtonPrimary,
   'button-secondary': renderButtonSecondary,
   'button-ghost': renderButtonGhost,
+  'button-destructive': renderButtonDestructive,
   'input-text': renderInputText,
   'input-currency': renderInputCurrency,
   'select': renderSelect,
@@ -51,9 +57,17 @@ const CATALOG_RENDERERS: Readonly<Record<string, ReactComponentRenderer>> = {
   'checkbox': renderCheckbox,
   'card': renderCard,
   'badge': renderBadge,
+  'badge-warning': renderBadge,
+  'badge-success': renderBadge,
+  'badge-error': renderBadge,
+  'badge-info': renderBadge,
   'stat': renderStat,
   'avatar': renderAvatar,
   'tooltip': renderTooltip,
+  'chip': renderChip,
+  'progress-bar-active': renderProgressBar,
+  'search-input': renderSearchInput,
+  'pagination': renderPagination,
 };
 
 /** Get a renderer for an accelerator type. */

@@ -83,6 +83,11 @@ export type { JsxRenderResult } from './renderer/react/index.js';
 // ─── SDK Tools ───────────────────────────────────────────
 export { SUBMIT_DESIGN_TOOL } from './sdk/submit-design-tool.js';
 
+// ─── Browser Renderer ───────────────────────────────────
+export { screenshotDesignSpec } from './renderer/browser/screenshot.js';
+export type { ScreenshotOptions, ScreenshotResult } from './renderer/browser/screenshot.js';
+export { generateCssVariables } from './renderer/browser/generate-css-variables.js';
+
 // ─── Renderer Introspection ─────────────────────────────
 export { getRenderableCatalogIds, registerCatalogRenderer } from './renderer/penpot/components/index.js';
 export { generateRenderer, generateCatalogEntry } from './renderer/penpot/components/catalog-dynamic.js';

@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["src/renderer/browser/app/**"],
   "references": []
 }
