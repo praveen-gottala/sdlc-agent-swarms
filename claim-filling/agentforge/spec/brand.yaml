@@ -1,0 +1,18 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Warm, reassuring, and clear. Speaks in plain language. Acknowledges that claims are stressful life events.
+    Confirmations feel supportive, not bureaucratic.
+  audience: general
+illustration_style:
+  direction: Rounded, friendly spot illustrations. Warm teal and amber accents on off-white backgrounds. Characters when
+    needed are diverse and approachable. Organic shapes over rigid grids.
+  description: Medium-weight icons with slightly rounded corners. Empty states feature hand-drawn-style spot illustrations
+    (teal lines, amber accent dots). Shield and home motifs with a human touch.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: smooth
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA

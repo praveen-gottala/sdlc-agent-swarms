@@ -5,6 +5,6 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*.ts", "src/**/*.json"],
-  "exclude": ["src/renderer/browser/app/**"],
+  "exclude": ["src/renderer/browser/app/**", "src/renderer/browser/smoke-test-manual.ts"],
   "references": []
 }

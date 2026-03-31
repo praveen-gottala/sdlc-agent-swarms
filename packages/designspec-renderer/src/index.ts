@@ -88,6 +88,16 @@ export { screenshotDesignSpec } from './renderer/browser/screenshot.js';
 export type { ScreenshotOptions, ScreenshotResult } from './renderer/browser/screenshot.js';
 export { generateCssVariables } from './renderer/browser/generate-css-variables.js';
 
+// ─── Browser Correction Pipeline ────────────────────────
+export { extractDOMLayout } from './renderer/browser/dom-extraction.js';
+export type { DOMLayoutData, DOMNodeLayout } from './renderer/browser/dom-extraction.js';
+export { checkMechanicalIssues, applyMechanicalFixes, OVERLAP_THRESHOLD_PX, OVERFLOW_THRESHOLD_PX, COLLAPSE_HEIGHT_PX, BADGE_WIDTH_RATIO, TEXT_CLIP_TOLERANCE_PX } from './renderer/browser/mechanical-fixes.js';
+export type { MechanicalIssue, MechanicalCheckResult } from './renderer/browser/mechanical-fixes.js';
+export { openBrowserSession } from './renderer/browser/screenshot-session.js';
+export type { BrowserSession } from './renderer/browser/screenshot-session.js';
+export { runInteractivePreview, openInteractivePreview } from './renderer/browser/interactive-preview.js';
+export type { UserFeedbackTag, InteractivePreviewResult, InteractivePreviewSession } from './renderer/browser/interactive-preview.js';
+
 // ─── Renderer Introspection ─────────────────────────────
 export { getRenderableCatalogIds, registerCatalogRenderer } from './renderer/penpot/components/index.js';
 export { generateRenderer, generateCatalogEntry } from './renderer/penpot/components/catalog-dynamic.js';

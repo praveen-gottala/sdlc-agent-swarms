@@ -546,6 +546,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: true,
+        targetAudience: 'developers',
       };
 
       const manifest = buildManifest(answers);
@@ -600,6 +601,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: true,
+        targetAudience: 'developers',
       };
 
       const manifest = buildManifest(answers);
@@ -643,6 +645,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: false,
+        targetAudience: 'developers',
       };
       scaffoldProject(PROJECT_ROOT, buildManifest(answers), fs);
     });
@@ -834,6 +837,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: false,
+        targetAudience: 'developers',
       };
       scaffoldProject(PROJECT_ROOT, buildManifest(answers), fs);
     });
@@ -1016,6 +1020,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: false,
+        targetAudience: 'developers',
       };
       scaffoldProject(PROJECT_ROOT, buildManifest(answers), fs);
 
@@ -1263,6 +1268,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: false,
+        targetAudience: 'developers',
       };
       scaffoldProject(PROJECT_ROOT, buildManifest(answers), fs);
     });
@@ -1379,6 +1385,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: false,
+        targetAudience: 'developers',
       };
       scaffoldProject(PROJECT_ROOT, buildManifest(answers), fs);
     });
@@ -1697,6 +1704,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         repo: 'test/smoke',
         slackChannel: '#agentforge',
         telegramEnabled: true,
+        targetAudience: 'developers',
       };
       const manifest = buildManifest(answers);
       scaffoldProject(PROJECT_ROOT, manifest, fs);

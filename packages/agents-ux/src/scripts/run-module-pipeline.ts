@@ -377,9 +377,9 @@ const runDesign = async (
 
     unified = {
       moduleId: config.moduleId,
-      nodeIds: result.value.penpotNodeIds,
-      fileId: result.value.penpotProjectId,
-      pageId: result.value.penpotPageId,
+      nodeIds: result.value.penpotNodeIds ?? {},
+      fileId: result.value.penpotProjectId ?? '',
+      pageId: result.value.penpotPageId ?? '',
       breakpoints: result.value.breakpoints,
       raw: result.value,
     };

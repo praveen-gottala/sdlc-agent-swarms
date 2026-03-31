@@ -1,0 +1,22 @@
+{
+  "name": "@agentforge/mechanical-validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "start:dry": "tsx src/index.ts --dry-run",
+    "start:category": "tsx src/index.ts --category"
+  },
+  "dependencies": {
+    "@agentforge/designspec-renderer": "file:../../packages/designspec-renderer",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "playwright": "^1.49.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}

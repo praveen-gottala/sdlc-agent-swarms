@@ -89,8 +89,14 @@ function getSizeStyles(
   height: number | undefined,
 ): React.CSSProperties {
   const s: React.CSSProperties = {};
-  if (width === 'fill') s.width = '100%';
-  else if (typeof width === 'number') s.width = width;
+  if (width === 'fill') {
+    s.flex = 1;
+    s.minWidth = 0;
+  } else if (typeof width === 'number') {
+    s.width = width;
+    s.flex = 'none';
+    s.flexShrink = 0;
+  }
   if (typeof height === 'number') s.height = height;
   return s;
 }
@@ -123,6 +129,46 @@ function getShadowStyle(
   return { boxShadow: resolved };
 }
 
+/** Extract position and zIndex from node overrides or top-level fields set by correction pipeline. */
+function getPositionStyles(node: ResolvedNode): React.CSSProperties {
+  const s: React.CSSProperties = {};
+  const overrides = node.overrides;
+  if (!overrides) return s;
+
+  const pos = overrides.position as string | undefined;
+  if (pos === 'fixed' || pos === 'absolute' || pos === 'relative') {
+    s.position = pos;
+  }
+  const z = overrides.zIndex as number | undefined;
+  if (typeof z === 'number') s.zIndex = z;
+
+  // Centering: when position is fixed/absolute and layout has center alignment, apply CSS centering
+  if (pos === 'fixed' || pos === 'absolute') {
+    const layout = node.layout;
+    const isCentered =
+      (layout?.align === 'center' && layout?.justify === 'center') ||
+      (overrides.positionX === 'center' && overrides.positionY === 'center');
+
+    if (isCentered) {
+      s.top = '50%';
+      s.left = '50%';
+      s.transform = 'translate(-50%, -50%)';
+      if (typeof z !== 'number') s.zIndex = 1000;
+      return s;
+    }
+  }
+
+  const top = overrides.top as number | string | undefined;
+  if (top !== undefined) s.top = top;
+  const left = overrides.left as number | string | undefined;
+  if (left !== undefined) s.left = left;
+  const right = overrides.right as number | string | undefined;
+  if (right !== undefined) s.right = right;
+  const bottom = overrides.bottom as number | string | undefined;
+  if (bottom !== undefined) s.bottom = bottom;
+  return s;
+}
+
 // ─── Node Rendering ─────────────────────────────────────
 
 function renderNode(
@@ -147,8 +193,9 @@ function renderNode(
   }
 
   // Unresolved — render children in a wrapper
+  const fallbackStyle = getPositionStyles(node);
   return (
-    <div key={node.id} data-node={node.id}>
+    <div key={node.id} data-node={node.id} style={Object.keys(fallbackStyle).length ? fallbackStyle : undefined}>
       {children}
     </div>
   );
@@ -183,11 +230,16 @@ function renderAccelerator(
       const style: React.CSSProperties = {
         ...getFlexStyles(node.layout),
         ...getSizeStyles(node.width, node.height),
+        ...getShadowStyle(node.shadow, tokens),
+        ...getPositionStyles(node),
         backgroundColor: bg,
       };
-      if (typeof node.width === 'number') {
-        style.marginLeft = 'auto';
-        style.marginRight = 'auto';
+      if (node.radius) {
+        style.borderRadius = node.radius;
+        // Clip content when explicit dimensions are set so border-radius is visible
+        if (typeof node.width === 'number' && typeof node.height === 'number') {
+          style.overflow = 'hidden';
+        }
       }
       return (
         <div key={node.id} data-node={node.id} style={style}>
@@ -201,6 +253,7 @@ function renderAccelerator(
         ...getFlexStyles(node.layout),
         ...getSizeStyles(node.width, node.height),
         ...getShadowStyle(node.shadow, tokens),
+        ...getPositionStyles(node),
         backgroundColor: bg,
         borderRadius: node.radius,
       };
@@ -334,25 +387,29 @@ function renderCatalog(
       return renderCheckboxNode(node, tokens, tokenMap);
     case 'stat':
       return renderStat(node, tokens, tokenMap);
-    case 'chip':
-      return <Badge key={node.id} data-node={node.id} variant="outline">{node.label ?? ''}</Badge>;
+    case 'chip': {
+      const chipStyle: React.CSSProperties = getSizeStyles(node.width, node.height);
+      return <Badge key={node.id} data-node={node.id} data-catalog="chip" variant="outline" style={Object.keys(chipStyle).length ? chipStyle : undefined}>{node.label ?? ''}</Badge>;
+    }
     case 'progress-bar-active':
       return renderProgressBar(node);
     case 'pagination':
       return renderPagination(node);
     case 'tooltip':
       return (
-        <div key={node.id} data-node={node.id}>
+        <div key={node.id} data-node={node.id} data-catalog={catalogId}>
           {children}
         </div>
       );
-    default:
+    default: {
       // Unknown catalog — render children in a div
+      const defStyle = getPositionStyles(node);
       return (
-        <div key={node.id} data-node={node.id}>
+        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(defStyle).length ? defStyle : undefined}>
           {children}
         </div>
       );
+    }
   }
 }
 
@@ -375,7 +432,7 @@ function renderButtonVariant(
     borderRadius: node.radius,
   };
   return (
-    <Button key={node.id} data-node={node.id} variant={variant} style={style}>
+    <Button key={node.id} data-node={node.id} data-catalog={catalogId} variant={variant} style={style}>
       {node.label ?? 'Button'}
     </Button>
   );
@@ -388,15 +445,38 @@ function renderBadgeVariant(
 ): React.ReactNode {
   const bg = resolveTokenColor(node.background, tokenMap);
   const textColor = resolveTokenColor(node.color, tokenMap);
-  const style: React.CSSProperties = {};
-  if (bg) style.backgroundColor = bg;
+  // Catalog badge variants define opacity for the background only (e.g., warning @ 0.15),
+  // while the text stays at full opacity. Use a semi-transparent background with solid text.
+  const opacity = node.catalogEntry?.opacity as number | undefined;
+  const style: React.CSSProperties = { position: 'relative' };
   if (textColor) style.color = textColor;
   if (node.radius) style.borderRadius = node.radius;
+  if (node.width) style.width = node.width === 'fill' ? '100%' : node.width;
+  // Apply background: if opacity is set, mix it into the background color via rgba
+  if (bg && opacity !== undefined && opacity < 1) {
+    style.backgroundColor = hexToRgba(bg, opacity);
+  } else if (bg) {
+    style.backgroundColor = bg;
+  }
   return (
-    <Badge key={node.id} data-node={node.id} style={style}>
+    <Badge key={node.id} data-node={node.id} data-catalog={catalogId} style={style}>
       {node.label ?? ''}
     </Badge>
   );
+}
+
+/** Convert a hex color (or pass-through rgba) to rgba with given alpha. */
+function hexToRgba(color: string, alpha: number): string {
+  if (color.startsWith('rgba')) return color;
+  if (color.startsWith('rgb(')) {
+    return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+  }
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return color;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function renderAvatar(node: ResolvedNode): React.ReactNode {
@@ -408,7 +488,7 @@ function renderAvatar(node: ResolvedNode): React.ReactNode {
     .toUpperCase()
     .slice(0, 2);
   return (
-    <Avatar key={node.id} data-node={node.id}>
+    <Avatar key={node.id} data-node={node.id} data-catalog="avatar">
       <AvatarFallback>{initials || '?'}</AvatarFallback>
     </Avatar>
   );
@@ -422,13 +502,15 @@ function renderCard(
 ): React.ReactNode {
   const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
   const style: React.CSSProperties = {
+    ...getSizeStyles(node.width, node.height),
     ...getShadowStyle(node.shadow, tokens),
+    ...getPositionStyles(node),
     backgroundColor: bg,
     borderRadius: node.radius ?? 20,
     padding: node.padding ?? node.catalogEntry?.padding ?? 24,
   };
   return (
-    <Card key={node.id} data-node={node.id} style={style}>
+    <Card key={node.id} data-node={node.id} data-catalog="card" style={style}>
       {children}
     </Card>
   );
@@ -442,7 +524,7 @@ function renderInputText(
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="input-text" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -462,7 +544,7 @@ function renderInputCurrency(
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="input-currency" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -488,12 +570,15 @@ function renderInputCurrency(
 }
 
 function renderSearchInput(node: ResolvedNode): React.ReactNode {
+  const style: React.CSSProperties = getSizeStyles(node.width, node.height);
   return (
     <Input
       key={node.id}
       data-node={node.id}
+      data-catalog="search-input"
       type="search"
       placeholder={node.placeholder ?? 'Search...'}
+      style={Object.keys(style).length ? style : undefined}
     />
   );
 }
@@ -509,7 +594,7 @@ function renderSelect(
   const bg = resolveTokenColor('background-primary', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
   return (
-    <div key={node.id} data-node={node.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="select" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -549,6 +634,7 @@ function renderSegmentedControl(
     <div
       key={node.id}
       data-node={node.id}
+      data-catalog="segmented-control"
       style={{
         display: 'flex',
         borderRadius: 8,
@@ -585,6 +671,7 @@ function renderStepper(
     <div
       key={node.id}
       data-node={node.id}
+      data-catalog="stepper"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -612,7 +699,7 @@ function renderDisplayReadonly(
   const fg = resolveTokenColor('text-primary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="display-readonly" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {node.label && (
         <span style={{ ...labelStyle, color: labelColor }}>{node.label}</span>
       )}
@@ -631,6 +718,7 @@ function renderCheckboxNode(
     <div
       key={node.id}
       data-node={node.id}
+      data-catalog="checkbox"
       style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
     >
       <Checkbox id={node.id} />
@@ -652,7 +740,7 @@ function renderStat(
   const fg = resolveTokenColor('text-primary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="stat" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
       <span style={{ ...labelStyle, color: labelColor }}>{node.label ?? ''}</span>
       <span style={{ fontSize: 24, fontWeight: 700, color: fg }}>
         {node.value ?? node.content ?? ''}
@@ -665,13 +753,13 @@ function renderProgressBar(node: ResolvedNode): React.ReactNode {
   const value = typeof node.value === 'number' ? node.value : 0;
   const style: React.CSSProperties = getSizeStyles(node.width, undefined);
   return (
-    <Progress key={node.id} data-node={node.id} value={value} style={style} />
+    <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={style} />
   );
 }
 
 function renderPagination(node: ResolvedNode): React.ReactNode {
   return (
-    <Pagination key={node.id} data-node={node.id}>
+    <Pagination key={node.id} data-node={node.id} data-catalog="pagination">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious href="#" />

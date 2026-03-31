@@ -177,7 +177,12 @@ export function createProgram(): Command {
     .option('--fresh', 'Force re-run all stages, ignoring cached research/planning artifacts')
     .option('--evaluate', 'Run non-interactive design evaluation (for CI/CD). Exit code 1 if score < threshold')
     .option('--evaluate-threshold <score>', 'Minimum score (0-100) for --evaluate pass (default: 75)')
-    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string }) => {
+    .option('--export-penpot', 'Export to Penpot after browser correction (default: prompt user)')
+    .option('--no-export-penpot', 'Skip Penpot export entirely')
+    .option('--legacy-correction', 'Use legacy Penpot-based correction instead of browser correction')
+    .option('--interactive', 'Force interactive browser correction')
+    .option('--no-interactive', 'Force non-interactive browser correction')
+    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; legacyCorrection?: boolean; interactive?: boolean }) => {
       await designPenpotCommand(pageId, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
         module: options.module,
@@ -190,6 +195,9 @@ export function createProgram(): Command {
         fresh: options.fresh,
         evaluate: options.evaluate,
         evaluateThreshold: options.evaluateThreshold ? parseInt(options.evaluateThreshold, 10) : undefined,
+        exportPenpot: options.exportPenpot,
+        legacyCorrection: options.legacyCorrection,
+        interactive: options.interactive,
       });
     });
 

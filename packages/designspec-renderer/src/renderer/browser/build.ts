@@ -7,7 +7,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const APP_DIR = path.resolve(currentDir, 'app');
+// When imported from dist/, the app directory is under src/ not dist/.
+// Detect by checking if the expected app/package.json exists.
+const candidateAppDir = path.resolve(currentDir, 'app');
+const srcAppDir = path.resolve(currentDir, '..', '..', '..', 'src', 'renderer', 'browser', 'app');
+const APP_DIR = existsSync(path.join(candidateAppDir, 'package.json'))
+  ? candidateAppDir
+  : existsSync(path.join(srcAppDir, 'package.json'))
+    ? srcAppDir
+    : candidateAppDir; // fallback
 const DIST_DIR = path.resolve(APP_DIR, 'dist');
 
 let builtOnce = false;

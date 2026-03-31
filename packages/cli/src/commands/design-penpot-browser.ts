@@ -320,7 +320,7 @@ export async function designPenpotBrowserCommand(
   output.write(infoMsg('  PIPELINE COMPLETE (Browser Mode)\n'));
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  Module: ${moduleId}\n`));
-  output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
+  output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds ?? {}).length}\n`));
   output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
   output.write(infoMsg('='.repeat(60) + '\n'));
 
@@ -336,8 +336,8 @@ export async function designPenpotBrowserCommand(
       taskId: `${taskId}_impl`,
       componentSpec: planningOutput,
       stage: 'layout',
-      designNodeIds: designOutput.penpotNodeIds as Record<string, string>,
-      designFileId: designOutput.penpotProjectId,
+      designNodeIds: (designOutput.penpotNodeIds ?? {}) as Record<string, string>,
+      designFileId: designOutput.penpotProjectId ?? '',
     };
 
     const implResult = await uxImplementationWork(

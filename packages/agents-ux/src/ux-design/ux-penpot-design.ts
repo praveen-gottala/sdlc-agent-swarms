@@ -22,6 +22,8 @@ import type {
   PageContext,
   DesignTokensSpec,
 } from '@agentforge/core';
+import type { BrowserCorrectionResult, BrowserCorrectionOptions } from './browser-correction-pipeline.js';
+import { runBrowserCorrectionPipeline } from './browser-correction-pipeline.js';
 import {
   Ok,
   Err,
@@ -81,13 +83,17 @@ export interface PenpotDesignInput {
   readonly pageContext?: PageContext;
   /** Design tokens for prompt template rendering. When provided, token values replace template placeholders. */
   readonly designTokens?: DesignTokensSpec;
+  /** Options for the browser-based correction pipeline. */
+  readonly browserCorrectionOptions?: BrowserCorrectionOptions;
+  /** Use legacy Penpot-based correction instead of browser correction. */
+  readonly legacyPenpotCorrection?: boolean;
 }
 
 /** Output produced by the Penpot design agent. */
 export interface PenpotDesignOutput extends DesignSnapshotData {
-  readonly penpotProjectId: string;
-  readonly penpotPageId: string;
-  readonly penpotNodeIds: Readonly<Record<string, string>>;
+  readonly penpotProjectId?: string;
+  readonly penpotPageId?: string;
+  readonly penpotNodeIds?: Readonly<Record<string, string>>;
   readonly moduleId: string;
   readonly breakpoints: readonly string[];
   /** The raw JS design script (for replay support). */
@@ -96,6 +102,8 @@ export interface PenpotDesignOutput extends DesignSnapshotData {
   readonly fixScripts?: readonly string[];
   /** The DesignSpec v2 JSON (when useDesignSpecV2 is true). */
   readonly designSpec?: DesignSpecV2;
+  /** Result from the browser-based correction pipeline. */
+  readonly browserCorrectionResult?: BrowserCorrectionResult;
 }
 
 // ============================================================================
@@ -491,6 +499,46 @@ export function parsePenpotFixSteps(raw: string): FixParseResult {
  * Phase B: Execute the script via a single Penpot MCP execute_code call
  * Phase C: Visual self-correction loop (screenshot → evaluate → fix)
  */
+
+/**
+ * Export a DesignSpec to Penpot via renderToScriptChunks + execute_code.
+ * This is the optional Penpot export step — called after user approves the browser-corrected design.
+ */
+export async function exportDesignSpecToPenpot(
+  spec: DesignSpecV2,
+  rendererTokens: RendererTokens,
+  catalogMap: CatalogMap,
+  mcpClient: MCPClient,
+): Promise<Result<{ rootId: string; nodeIds: Record<string, string> }>> {
+  const chunkedResult = renderToScriptChunks(spec, rendererTokens, catalogMap);
+  if (chunkedResult.warnings.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(`        [penpot export] Render warnings: ${chunkedResult.warnings.join('; ')}`);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot export] Rendered: ${chunkedResult.totalChars} chars, ${chunkedResult.nodeIds.length} shapes, ${chunkedResult.chunks.length} chunk(s)`);
+
+  let execResult: Result<{ rootId: string; nodeIds: Record<string, string> }>;
+
+  if (chunkedResult.chunks.length === 1) {
+    // eslint-disable-next-line no-console
+    console.log('        [penpot export] Executing script...');
+    execResult = await executeRenderedScript(chunkedResult.chunks[0], mcpClient);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot export] Executing ${chunkedResult.chunks.length} chunks...`);
+    execResult = await executeChunkedScript(chunkedResult, mcpClient);
+  }
+
+  if (execResult.ok) {
+    // eslint-disable-next-line no-console
+    console.log(`        [penpot export] Complete: ${Object.keys(execResult.value.nodeIds).length} shapes created`);
+  }
+
+  return execResult;
+}
+
 export async function penpotDesignWork(
   input: PenpotDesignInput,
   provider: unknown,
@@ -1751,8 +1799,83 @@ async function penpotDesignWorkV2(
     });
   }
 
-  // ── Phase B: Render to Penpot script + execute (with automatic chunking) ──
+  // ── Phase B: Correction pipeline (browser-first or legacy Penpot) ──
 
+  if (input.legacyPenpotCorrection) {
+    // ── Legacy path: Penpot-based correction ──
+    return penpotDesignWorkV2Legacy(
+      designSpec, rendererTokens, catalogMap, moduleId, planningOutput,
+      effectiveModel, systemPrompt, llm, mcpClient, evalProvider, traceCollector,
+    );
+  }
+
+  // ── Default: Browser-based correction pipeline ──
+  // eslint-disable-next-line no-console
+  console.log('        [penpot v2] Running browser-based correction pipeline...');
+
+  const browserCorrectionResult = await runBrowserCorrectionPipeline(
+    designSpec,
+    rendererTokens,
+    catalogMap,
+    evalProvider,
+    {
+      maxCorrections: input.browserCorrectionOptions?.maxCorrections ?? 3,
+      qualityThreshold: input.browserCorrectionOptions?.qualityThreshold ?? 80,
+      interactive: input.browserCorrectionOptions?.interactive,
+      mechanicalFixes: input.browserCorrectionOptions?.mechanicalFixes,
+      width: input.browserCorrectionOptions?.width ?? viewportWidth,
+      outputDir: input.browserCorrectionOptions?.outputDir,
+    },
+  );
+
+  const finalSpec = browserCorrectionResult.spec;
+
+  // ── Save corrected spec + screenshot as artifacts ──
+
+  const scriptDir = join(process.cwd(), PREVIEW_DIR_REL, moduleId, 'scripts');
+  if (!existsSync(scriptDir)) {
+    mkdirSync(scriptDir, { recursive: true });
+  }
+
+  const specPath = join(scriptDir, 'designspec-v2.json');
+  writeFileSync(specPath, JSON.stringify(finalSpec, null, 2));
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Corrected DesignSpec saved: ${specPath}`);
+
+  const screenshotPath = join(scriptDir, 'browser-screenshot.png');
+  writeFileSync(screenshotPath, browserCorrectionResult.screenshot);
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Browser screenshot saved: ${screenshotPath}`);
+
+  // eslint-disable-next-line no-console
+  console.log(`        [penpot v2] Browser correction: score=${browserCorrectionResult.finalScore}, iterations=${browserCorrectionResult.iterations}, threshold=${browserCorrectionResult.thresholdMet ? 'met' : 'not met'}`);
+
+  return Ok({
+    moduleId,
+    breakpoints: [String(designSpec.width)],
+    designSpec: finalSpec,
+    browserCorrectionResult,
+    screenshotPath,
+  });
+}
+
+/**
+ * Legacy V2 pipeline: renders to Penpot script + executes + runs Penpot-based correction loop.
+ * Used when `--legacy-correction` flag is set.
+ */
+async function penpotDesignWorkV2Legacy(
+  designSpec: DesignSpecV2,
+  rendererTokens: RendererTokens,
+  catalogMap: CatalogMap,
+  moduleId: string,
+  planningOutput: UXPlanningOutput,
+  effectiveModel: string,
+  systemPrompt: string,
+  llm: LLMProvider,
+  mcpClient: MCPClient,
+  evalProvider: EvalLLMProvider,
+  traceCollector?: { promptTraces?: PromptTrace[] },
+): Promise<Result<PenpotDesignOutput>> {
   const chunkedResult = renderToScriptChunks(designSpec, rendererTokens, catalogMap);
   if (chunkedResult.warnings.length > 0) {
     // eslint-disable-next-line no-console
@@ -1761,7 +1884,6 @@ async function penpotDesignWorkV2(
 
   // eslint-disable-next-line no-console
   console.log(`        [penpot v2] Rendered: ${chunkedResult.totalChars} chars, ${chunkedResult.nodeIds.length} shapes, ${chunkedResult.chunks.length} chunk(s)`);
-  // Log individual chunk sizes for debugging
   for (let ci = 0; ci < chunkedResult.chunks.length; ci++) {
     // eslint-disable-next-line no-console
     console.log(`        [penpot v2]   chunk ${ci + 1}: ${chunkedResult.chunks[ci].length} chars`);
@@ -1771,12 +1893,10 @@ async function penpotDesignWorkV2(
   let execResult: Result<{ rootId: string; nodeIds: Record<string, string> }>;
 
   if (chunkedResult.chunks.length === 1) {
-    // Single chunk — use the existing path
     // eslint-disable-next-line no-console
     console.log('        [penpot v2] Executing script...');
     execResult = await executeRenderedScript(chunkedResult.chunks[0], mcpClient);
   } else {
-    // Multiple chunks — execute sequentially
     // eslint-disable-next-line no-console
     console.log(`        [penpot v2] Executing ${chunkedResult.chunks.length} chunks...`);
     execResult = await executeChunkedScript(chunkedResult, mcpClient);
@@ -1791,30 +1911,18 @@ async function penpotDesignWorkV2(
   // eslint-disable-next-line no-console
   console.log(`        [penpot v2] Script complete: ${Object.keys(penpotNodeIds).length} components (${scriptMs}ms)`);
 
-  // ── Phase C: V2 correction loop ──
-
   let finalSpec = designSpec;
   const fixScripts: string[] = [];
-  // Track the latest node IDs — Phase C may delete+recreate all shapes
   let activeNodeIds = penpotNodeIds;
 
   if (rootShapeId) {
     const correctionResult = await runV2CorrectionLoop(
-      designSpec,
-      rootShapeId,
-      llm,
-      mcpClient,
-      evalProvider,
-      rendererTokens,
-      catalogMap,
-      planningOutput,
-      effectiveModel,
-      systemPrompt,
-      traceCollector,
+      designSpec, rootShapeId, llm, mcpClient, evalProvider,
+      rendererTokens, catalogMap, planningOutput, effectiveModel,
+      systemPrompt, traceCollector,
     );
     finalSpec = correctionResult.finalSpec;
     fixScripts.push(...correctionResult.fixScripts);
-    // Use updated node IDs from the last correction iteration (if any)
     if (correctionResult.updatedNodeIds) {
       activeNodeIds = correctionResult.updatedNodeIds;
     }
@@ -1822,8 +1930,6 @@ async function penpotDesignWorkV2(
     // eslint-disable-next-line no-console
     console.log('\n        [Phase C v2] Skipped — no root shape found for screenshot');
   }
-
-  // ── Phase D: Capture design snapshot ──
 
   const snapshotData = await captureDesignSnapshot({
     tool: 'penpot',
@@ -1855,20 +1961,16 @@ async function penpotDesignWorkV2(
     },
   });
 
-  // ── Save scripts + spec as artifacts ──
-
   const scriptDir = join(process.cwd(), PREVIEW_DIR_REL, moduleId, 'scripts');
   if (!existsSync(scriptDir)) {
     mkdirSync(scriptDir, { recursive: true });
   }
 
-  // Save the DesignSpec JSON
   const specPath = join(scriptDir, 'designspec-v2.json');
   writeFileSync(specPath, JSON.stringify(finalSpec, null, 2));
   // eslint-disable-next-line no-console
   console.log(`        [penpot v2] DesignSpec saved: ${specPath}`);
 
-  // Save the rendered script
   const mainScriptPath = join(scriptDir, 'design.js');
   const allScripts = chunkedResult.chunks.join('\n\n// --- Next Chunk ---\n\n');
   writeFileSync(mainScriptPath, `// Penpot design script (v2 renderer) for module: ${moduleId}\n// Generated at: ${new Date().toISOString()}\n// Chunks: ${chunkedResult.chunks.length}\n\n${allScripts}\n`);

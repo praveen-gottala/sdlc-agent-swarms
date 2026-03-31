@@ -1,0 +1,253 @@
+# api.yaml — created on-demand, not by init
+# schema: { version, base_url, endpoints: [{ id, method, path, description, auth, status }] }
+version: "1.0"
+base_url: /api
+endpoints:
+  - id: list-claims
+    method: GET
+    path: /api/claims
+    description: Returns a paginated, filtered, and sorted list of claims. Supports full-text search across claim number,
+      policyholder name, and description. Filters by status, priority, incident type, date range, and assigned adjuster.
+      Results are role-scoped (agents see only their filed claims by default).
+    query_params:
+      - name: search
+        type: string
+      - name: status
+        type: string
+      - name: priority
+        type: string
+      - name: incident_type
+        type: string
+      - name: adjuster_id
+        type: string
+      - name: filed_from
+        type: string
+      - name: filed_to
+        type: string
+      - name: page
+        type: number
+      - name: per_page
+        type: number
+      - name: sort_by
+        type: string
+      - name: sort_dir
+        type: string
+    response:
+      type: object
+      schema_ref: Claim
+    auth: required
+    status: planned
+  - id: create-claim
+    method: POST
+    path: /api/claims
+    description: Creates a new claim. Auto-generates claim_number in CLM-YYYYMMDD-XXXX format and sets filed_date. Status
+      defaults to draft unless submitted directly. Only accessible by agents.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Claim
+    auth: required
+    status: planned
+  - id: get-claim
+    method: GET
+    path: /api/claims/:id
+    description: Returns full claim detail including nested policyholder data, documents array, notes/timeline array, and
+      assigned adjuster info.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Claim
+    auth: required
+    status: planned
+  - id: update-claim
+    method: PATCH
+    path: /api/claims/:id
+    description: Updates editable fields on a claim. Agents can update incident details and description when claim is in
+      draft or info_requested status. Adjusters can update estimated_damage and approved_amount.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Claim
+    auth: required
+    status: planned
+  - id: transition-claim-status
+    method: POST
+    path: /api/claims/:id/status
+    description: Transitions a claim to a new status following the defined state machine. Validates the transition is
+      permitted for the current status and user role. Accepts new_status, reason, and approved_amount (for approval
+      transitions). Automatically creates a status_change note in the timeline.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Claim
+    auth: required
+    status: planned
+  - id: add-note
+    method: POST
+    path: /api/claims/:id/notes
+    description: Adds a new note to the claim timeline. Accepts content and note type (internal, document_request,
+      decision). Sets author_id from the authenticated user.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Note
+    auth: required
+    status: planned
+  - id: upload-document
+    method: POST
+    path: /api/claims/:id/documents
+    description: Uploads a document file and attaches it to the claim. Accepts multipart/form-data with file, category, and
+      optional description. Enforces 10MB per file and 10-file-per-claim limits. Returns the created Document record
+      with file_url.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Document
+    auth: required
+    status: planned
+  - id: delete-document
+    method: DELETE
+    path: /api/claims/:id/documents/:docId
+    description: Removes a document from a claim. Only the uploader or a manager can delete a document. Deletes the file
+      from storage and the database record.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Document
+    auth: required
+    status: planned
+  - id: get-timeline
+    method: GET
+    path: /api/claims/:id/timeline
+    description: Returns the full chronological activity timeline for a claim, combining notes and status change events.
+      Each entry includes author info, content, type, and timestamp.
+    query_params:
+      - name: limit
+        type: number
+      - name: before
+        type: string
+    response:
+      type: array
+      schema_ref: Note
+    auth: required
+    status: planned
+  - id: search-policyholders
+    method: GET
+    path: /api/policyholders/search
+    description: Searches policyholders by policy number (exact match) or full name (partial match). Returns matching
+      policyholders for the agent's auto-fill workflow in the new claim form.
+    query_params:
+      - name: q
+        type: string
+      - name: policy_number
+        type: string
+    response:
+      type: array
+      schema_ref: Policyholder
+    auth: required
+    status: planned
+  - id: get-policyholder
+    method: GET
+    path: /api/policyholders/:id
+    description: Returns full policyholder detail including address, policy info, and claims history count. Used to populate
+      read-only fields in the new claim form after auto-fill selection.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Policyholder
+    auth: required
+    status: planned
+  - id: get-dashboard-stats
+    method: GET
+    path: /api/dashboard/stats
+    description: "Returns aggregate KPI metrics for the dashboard: total open claims, claims filed today, average processing
+      time in days, and SLA compliance rate as a decimal. Accessible to managers; other roles receive a 403."
+    query_params: []
+    response:
+      type: object
+      schema_ref: DashboardStats
+    auth: required
+    status: planned
+  - id: get-dashboard-pipeline
+    method: GET
+    path: /api/dashboard/pipeline
+    description: Returns claim counts grouped by status for the pipeline bar chart, and claim counts grouped by priority for
+      the donut chart.
+    query_params: []
+    response:
+      type: array
+      schema_ref: PipelineStatusCount
+    auth: required
+    status: planned
+  - id: get-dashboard-workload
+    method: GET
+    path: /api/dashboard/workload
+    description: "Returns adjuster workload summary: each adjuster's name, avatar, active claims count, average processing
+      time in days, and age of their oldest active claim in days."
+    query_params: []
+    response:
+      type: array
+      schema_ref: User
+    auth: required
+    status: planned
+  - id: get-dashboard-activity
+    method: GET
+    path: /api/dashboard/activity
+    description: Returns the last 10 status change events across all claims for the recent activity feed. Each entry
+      includes the author avatar, action description, timestamp, and a link to the relevant claim.
+    query_params:
+      - name: limit
+        type: number
+    response:
+      type: array
+      schema_ref: Note
+    auth: required
+    status: planned
+  - id: list-notifications
+    method: GET
+    path: /api/notifications
+    description: Returns the authenticated user's notifications, optionally filtered by read status or action_required flag.
+      Sorted by created_at descending.
+    query_params:
+      - name: filter
+        type: string
+      - name: page
+        type: number
+      - name: per_page
+        type: number
+    response:
+      type: array
+      schema_ref: Notification
+    auth: required
+    status: planned
+  - id: mark-notification-read
+    method: PATCH
+    path: /api/notifications/:id/read
+    description: Marks a single notification as read. Returns the updated notification object.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Notification
+    auth: required
+    status: planned
+  - id: mark-all-notifications-read
+    method: POST
+    path: /api/notifications/read-all
+    description: Marks all unread notifications for the authenticated user as read. Returns a count of notifications updated.
+    query_params: []
+    response:
+      type: object
+      schema_ref: Notification
+    auth: required
+    status: planned
+  - id: get-current-user
+    method: GET
+    path: /api/users/me
+    description: Returns the authenticated user's profile including name, email, role, avatar URL, and active claims count.
+      Used to determine role-based UI rendering across all pages.
+    query_params: []
+    response:
+      type: object
+      schema_ref: User
+    auth: required
+    status: planned

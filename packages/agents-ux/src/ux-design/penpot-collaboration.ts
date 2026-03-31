@@ -38,9 +38,9 @@ interface LLMProvider {
  */
 export function mapPenpotToDesignOutput(penpot: PenpotDesignOutput): UXDesignOutput {
   return {
-    figmaFileId: penpot.penpotProjectId,
-    figmaPageId: penpot.penpotPageId,
-    figmaNodeIds: penpot.penpotNodeIds as Record<string, string>,
+    figmaFileId: penpot.penpotProjectId ?? '',
+    figmaPageId: penpot.penpotPageId ?? '',
+    figmaNodeIds: (penpot.penpotNodeIds ?? {}) as Record<string, string>,
     moduleId: penpot.moduleId,
     breakpoints: penpot.breakpoints,
     screenshotPath: penpot.screenshotPath,

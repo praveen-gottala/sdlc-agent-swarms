@@ -5,10 +5,12 @@ import { generateCssVariables } from './generate-css-variables';
 import { DesignSpecRenderer } from './DesignSpecRenderer';
 
 async function main() {
+  // Cache-bust spec.json to ensure fresh data after correction pipeline refreshes
+  const cacheBust = `?t=${Date.now()}`;
   const [tokens, spec, catalog] = await Promise.all([
-    fetch('./data/tokens.json').then(r => r.json()),
-    fetch('./data/spec.json').then(r => r.json()),
-    fetch('./data/catalog.json').then(r => r.json()),
+    fetch(`./data/tokens.json${cacheBust}`).then(r => r.json()),
+    fetch(`./data/spec.json${cacheBust}`).then(r => r.json()),
+    fetch(`./data/catalog.json${cacheBust}`).then(r => r.json()),
   ]);
 
   // Inject CSS vars BEFORE React renders

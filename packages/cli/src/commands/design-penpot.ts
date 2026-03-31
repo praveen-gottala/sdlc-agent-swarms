@@ -51,6 +51,7 @@ import {
   uxResearchWork,
   uxPlanningWork,
   penpotDesignWork,
+  exportDesignSpecToPenpot,
   buildDesignSystemContextFromSpec,
   buildComponentCatalogPrompt,
   uxImplementationWork,
@@ -64,6 +65,7 @@ import {
   buildPageContext,
   evaluateDesign,
 } from '@agentforge/agents-ux';
+import type { BrowserCorrectionOptions } from '@agentforge/agents-ux';
 import type {
   UXResearchInput,
   UXResearchOutput,
@@ -108,6 +110,12 @@ interface DesignPenpotOptions {
   readonly evaluate?: boolean;
   /** Minimum score (0-100) for --evaluate to pass. Default: 75. */
   readonly evaluateThreshold?: number;
+  /** Export to Penpot after browser correction. undefined = prompt user, true = always, false = never. */
+  readonly exportPenpot?: boolean;
+  /** Use legacy Penpot-based correction instead of browser correction. */
+  readonly legacyCorrection?: boolean;
+  /** Force interactive (true) or non-interactive (false) browser correction. */
+  readonly interactive?: boolean;
 }
 
 // ============================================================================
@@ -262,6 +270,44 @@ function savePipelineTrace(
   writeFileSync(filePath, JSON.stringify(summary, null, 2), 'utf-8');
 }
 
+/**
+ * Resolve whether to export to Penpot.
+ * - true/false from CLI flag → use directly
+ * - undefined → prompt user if TTY, default no otherwise
+ */
+async function resolvePenpotExport(
+  flag: boolean | undefined,
+  output: NodeJS.WritableStream,
+): Promise<boolean> {
+  if (flag !== undefined) return flag;
+
+  const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
+  if (!isTTY) return false;
+
+  output.write(infoMsg('\n  Export to Penpot? (y/n): '));
+
+  return new Promise<boolean>((resolve) => {
+    const stdin = process.stdin;
+    const wasRaw = stdin.isRaw ?? false;
+    if (typeof stdin.setRawMode === 'function') {
+      stdin.setRawMode(true);
+    }
+    stdin.resume();
+
+    const onData = (data: Buffer) => {
+      const char = data.toString().trim().toLowerCase();
+      stdin.removeListener('data', onData);
+      if (typeof stdin.setRawMode === 'function') {
+        stdin.setRawMode(wasRaw);
+      }
+      stdin.pause();
+      output.write(char === 'y' ? 'yes\n' : 'no\n');
+      resolve(char === 'y');
+    };
+    stdin.on('data', onData);
+  });
+}
+
 /** Load a JSON artifact. */
 const loadArtifact = <T>(dir: string, filename: string): T | null => {
   const filePath = join(dir, filename);
@@ -400,12 +446,24 @@ export async function designPenpotCommand(
     return createClaudeProvider(resolveCLIModel(), { apiKey: apiKey! });
   };
 
-  // -- Penpot connection (early check — before any LLM work) --
-  const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
-  if (!connectionResult) {
-    return;
+  // -- Penpot connection --
+  // Defer connection unless legacy correction or explicit Penpot export is requested
+  const needsPenpotEarly = !!(options.legacyCorrection || options.designspecV1);
+  let mcpClient: MCPClient;
+  let disconnectFn: (() => void) | undefined;
+
+  if (needsPenpotEarly) {
+    const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
+    if (!connectionResult) {
+      return;
+    }
+    mcpClient = connectionResult.mcpClient;
+    disconnectFn = connectionResult.disconnectFn;
+  } else {
+    // Use a mock client for the pipeline — Penpot is optional
+    mcpClient = createMockMCPClient();
+    output.write(infoMsg('  Penpot connection deferred (browser correction is primary)\n'));
   }
-  const { mcpClient, disconnectFn } = connectionResult;
 
   try {
 
@@ -532,14 +590,23 @@ export async function designPenpotCommand(
     output.write(infoMsg('  CONNECTION TEST COMPLETE\n'));
     output.write(infoMsg('='.repeat(60) + '\n'));
     output.write(infoMsg(`  Module: ${moduleId}\n`));
-    output.write(infoMsg(`  Components: ${Object.keys(cached.penpotNodeIds).length}\n`));
-    output.write(infoMsg(`  Project: ${cached.penpotProjectId}\n`));
+    output.write(infoMsg(`  Components: ${Object.keys(cached.penpotNodeIds ?? {}).length}\n`));
+    output.write(infoMsg(`  Project: ${cached.penpotProjectId ?? 'N/A'}\n`));
     output.write(infoMsg('='.repeat(60) + '\n'));
     return;
   }
 
-  // -- Stage: replay (re-execute cached script) --
+  // -- Stage: replay (re-execute cached script — requires Penpot) --
   if (skipToStage === 'replay') {
+    if (!needsPenpotEarly) {
+      // Need Penpot for replay
+      const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
+      if (!connectionResult) {
+        return;
+      }
+      mcpClient = connectionResult.mcpClient;
+      disconnectFn = connectionResult.disconnectFn;
+    }
     const cached = loadArtifact<PenpotDesignOutput>(outputDir, 'penpot-design.json');
     if (!cached?.script) {
       output.write(errorMsg(`No cached design script found in ${outputDir}/penpot-design.json\n`));
@@ -601,7 +668,7 @@ try {
     // Save updated artifact
     const updatedOutput: PenpotDesignOutput = {
       ...cached,
-      penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : cached.penpotNodeIds,
+      penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : (cached.penpotNodeIds ?? {}),
     };
     const artifactPath = saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
 
@@ -611,7 +678,7 @@ try {
     output.write(infoMsg('  REPLAY COMPLETE\n'));
     output.write(infoMsg('='.repeat(60) + '\n'));
     output.write(infoMsg(`  Module: ${moduleId}\n`));
-    output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds).length}\n`));
+    output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds ?? {}).length}\n`));
     output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
     output.write(infoMsg('='.repeat(60) + '\n'));
     return;
@@ -661,6 +728,13 @@ try {
     pageViewports: resolvedPage?.viewports as number[] | undefined,
   })[0];
 
+  // Build browser correction options
+  const browserCorrectionOpts: BrowserCorrectionOptions = {
+    width: effectiveViewportWidth,
+    ...(options.interactive !== undefined ? { interactive: options.interactive } : {}),
+    outputDir: join(ensureOutputDir(moduleId, baseDir), 'corrections'),
+  };
+
   const penpotInput: PenpotDesignInput = {
     specRef: planningOutput.specRef,
     moduleId,
@@ -678,6 +752,8 @@ try {
       ...(componentCatalog ? { componentCatalogRaw: componentCatalog.components as Readonly<Record<string, import('@agentforge/designspec-renderer').DynamicCatalogSource>> } : {}),
     } : {}),
     ...(pageContext ? { pageContext } : {}),
+    browserCorrectionOptions: browserCorrectionOpts,
+    ...(options.legacyCorrection ? { legacyPenpotCorrection: true } : {}),
   };
 
   const t0 = Date.now();
@@ -703,7 +779,16 @@ try {
   output.write(infoMsg('  PIPELINE COMPLETE\n'));
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  Module: ${moduleId}\n`));
-  output.write(infoMsg(`  Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
+
+  // Show browser correction summary if available
+  if (designOutput.browserCorrectionResult) {
+    const bcr = designOutput.browserCorrectionResult;
+    output.write(infoMsg(`  Browser Correction: score=${bcr.finalScore}/100, iterations=${bcr.iterations}, threshold=${bcr.thresholdMet ? 'met' : 'not met'}\n`));
+  }
+
+  if (designOutput.penpotNodeIds) {
+    output.write(infoMsg(`  Penpot Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
+  }
   output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
 
   // Show cost summary if any traces have cost data
@@ -713,67 +798,119 @@ try {
   }
   output.write(infoMsg('='.repeat(60) + '\n'));
 
+  // ── "Export to Penpot?" prompt ──
+  const shouldExportPenpot = await resolvePenpotExport(options.exportPenpot, output);
+
+  if (shouldExportPenpot && designOutput.designSpec && useV2 && rendererTokens && catalogMapV2) {
+    output.write(infoMsg('\n  Exporting design to Penpot...\n'));
+
+    // Connect to Penpot lazily if not already connected
+    if (!needsPenpotEarly) {
+      const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
+      if (!connectionResult) {
+        output.write(errorMsg('  Penpot export failed: could not connect to Penpot.\n'));
+      } else {
+        mcpClient = connectionResult.mcpClient;
+        disconnectFn = connectionResult.disconnectFn;
+      }
+    }
+
+    if (mcpClient && !options.mock) {
+      const exportT0 = Date.now();
+      const exportResult = await exportDesignSpecToPenpot(
+        designOutput.designSpec,
+        rendererTokens,
+        catalogMapV2,
+        mcpClient,
+      );
+      const exportMs = Date.now() - exportT0;
+
+      if (exportResult.ok) {
+        output.write(successMsg(`  Penpot export complete: ${Object.keys(exportResult.value.nodeIds).length} shapes (${(exportMs / 1000).toFixed(1)}s)\n`));
+        // Update artifact with Penpot IDs
+        const updatedOutput: PenpotDesignOutput = {
+          ...designOutput,
+          penpotProjectId: `penpot-${moduleId}`,
+          penpotPageId: `page-${moduleId}`,
+          penpotNodeIds: exportResult.value.nodeIds,
+        };
+        saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
+      } else {
+        output.write(errorMsg(`  Penpot export failed: ${exportResult.error.message}\n`));
+      }
+    }
+  } else if (shouldExportPenpot && !designOutput.designSpec) {
+    output.write(warnMsg('  Cannot export to Penpot: no DesignSpec available (V1 pipeline).\n'));
+  }
+
   // ── --evaluate flag: non-interactive CI/CD evaluation ──
   if (options.evaluate) {
     const threshold = options.evaluateThreshold ?? 75;
     output.write(infoMsg('\n  [evaluate] Running design evaluation...\n'));
 
-    // Capture screenshot of root shape
-    const rootShapeId = Object.values(designOutput.penpotNodeIds)[0] ?? '';
-    const exportCode = `
-      const shape = penpot.currentPage?.getShapeById('${rootShapeId}');
-      if (!shape) return { error: 'Root shape not found' };
-      const data = await shape.export({ type: 'png', scale: 2 });
-      const bytes = new Uint8Array(data);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      return { base64: btoa(binary) };
-    `;
-    const exportResult = await mcpClient.callTool('penpot', 'execute_code', { code: exportCode });
+    // Use browser correction screenshot if available, otherwise fall back to Penpot export
+    let base64: string | undefined;
 
-    if (exportResult.ok) {
-      const rawValue = exportResult.value as { content?: Array<{ text?: string }> } | string;
-      const exportText = typeof rawValue === 'string'
-        ? rawValue
-        : Array.isArray((rawValue as { content?: Array<{ text?: string }> }).content)
-          ? (rawValue as { content: Array<{ text?: string }> }).content.map(c => c.text ?? '').join('')
-          : '';
-      let parsed: Record<string, unknown> | undefined;
-      try {
-        const outer = JSON.parse(exportText) as { result?: Record<string, unknown> };
-        parsed = outer.result ?? (outer as unknown as Record<string, unknown>);
-      } catch {
-        // try raw
-        try { parsed = JSON.parse(exportText) as Record<string, unknown>; } catch { /* ignore */ }
+    if (designOutput.browserCorrectionResult) {
+      base64 = designOutput.browserCorrectionResult.screenshot.toString('base64');
+    } else if (designOutput.penpotNodeIds && mcpClient) {
+      const rootShapeId = Object.values(designOutput.penpotNodeIds)[0] ?? '';
+      const exportCode = `
+        const shape = penpot.currentPage?.getShapeById('${rootShapeId}');
+        if (!shape) return { error: 'Root shape not found' };
+        const data = await shape.export({ type: 'png', scale: 2 });
+        const bytes = new Uint8Array(data);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return { base64: btoa(binary) };
+      `;
+      const exportResult = await mcpClient.callTool('penpot', 'execute_code', { code: exportCode });
+
+      if (exportResult.ok) {
+        const rawValue = exportResult.value as { content?: Array<{ text?: string }> } | string;
+        const exportText = typeof rawValue === 'string'
+          ? rawValue
+          : Array.isArray((rawValue as { content?: Array<{ text?: string }> }).content)
+            ? (rawValue as { content: Array<{ text?: string }> }).content.map(c => c.text ?? '').join('')
+            : '';
+        let parsed: Record<string, unknown> | undefined;
+        try {
+          const outer = JSON.parse(exportText) as { result?: Record<string, unknown> };
+          parsed = outer.result ?? (outer as unknown as Record<string, unknown>);
+        } catch {
+          try { parsed = JSON.parse(exportText) as Record<string, unknown>; } catch { /* ignore */ }
+        }
+        base64 = parsed?.base64 as string | undefined;
+      } else {
+        output.write(errorMsg(`  Evaluation failed: screenshot export error: ${exportResult.error.message}\n`));
+        process.exitCode = 1;
+        return;
       }
-      const base64 = parsed?.base64 as string | undefined;
-      if (base64) {
-        const planningSpec = JSON.stringify(planningOutput, null, 2);
-        const evalResult = await evaluateDesign(base64, planningSpec, provider as LLMProvider);
-        if (evalResult.ok) {
-          const { score, overallQuality, issues } = evalResult.value;
-          output.write(infoMsg(`  Score: ${score}/100 (${overallQuality})\n`));
-          if (issues.length > 0) {
-            for (const issue of issues) {
-              output.write(warnMsg(`  [${issue.severity}] ${issue.component}: ${issue.description}\n`));
-            }
+    }
+
+    if (base64) {
+      const planningSpec = JSON.stringify(planningOutput, null, 2);
+      const evalResult = await evaluateDesign(base64, planningSpec, provider as LLMProvider);
+      if (evalResult.ok) {
+        const { score, overallQuality, issues } = evalResult.value;
+        output.write(infoMsg(`  Score: ${score}/100 (${overallQuality})\n`));
+        if (issues.length > 0) {
+          for (const issue of issues) {
+            output.write(warnMsg(`  [${issue.severity}] ${issue.component}: ${issue.description}\n`));
           }
-          if (score < threshold) {
-            output.write(errorMsg(`  FAIL: Score ${score} is below threshold ${threshold}\n`));
-            process.exitCode = 1;
-          } else {
-            output.write(successMsg(`  PASS: Score ${score} meets threshold ${threshold}\n`));
-          }
-        } else {
-          output.write(errorMsg(`  Evaluation failed: ${evalResult.error.message}\n`));
+        }
+        if (score < threshold) {
+          output.write(errorMsg(`  FAIL: Score ${score} is below threshold ${threshold}\n`));
           process.exitCode = 1;
+        } else {
+          output.write(successMsg(`  PASS: Score ${score} meets threshold ${threshold}\n`));
         }
       } else {
-        output.write(errorMsg('  Evaluation failed: could not capture screenshot (no base64 data)\n'));
+        output.write(errorMsg(`  Evaluation failed: ${evalResult.error.message}\n`));
         process.exitCode = 1;
       }
     } else {
-      output.write(errorMsg(`  Evaluation failed: screenshot export error: ${exportResult.error.message}\n`));
+      output.write(errorMsg('  Evaluation failed: could not capture screenshot (no base64 data)\n'));
       process.exitCode = 1;
     }
     return; // Skip feedback loop and implement — evaluate is terminal
@@ -846,9 +983,10 @@ try {
     }
   }
 
-  // ── Interactive feedback loop ──
+  // ── Interactive feedback loop (only when Penpot is connected) ──
   const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
-  if (!options.noWait && !options.implement && isTTY) {
+  const hasPenpotConnection = needsPenpotEarly && mcpClient && !options.mock;
+  if (!options.noWait && !options.implement && isTTY && hasPenpotConnection && designOutput.penpotNodeIds) {
     // Discover Penpot API docs for the collaboration session
     const apiDocs = await discoverPenpotAPI(mcpClient);
 

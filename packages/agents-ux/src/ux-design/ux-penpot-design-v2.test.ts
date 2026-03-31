@@ -5,11 +5,13 @@
  * Uses mock LLM and mock MCP — no API key or Penpot connection needed.
  */
 
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, PREVIEW_DIR_REL } from '@agentforge/core';
 import type { DesignSpecV2, CatalogMap, RendererTokens } from '@agentforge/designspec-renderer';
 import { penpotDesignWork } from './ux-penpot-design.js';
 import type { PenpotDesignInput } from './ux-penpot-design.js';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
+import { existsSync, rmSync } from 'fs';
+import { join } from 'path';
 
 // ── Fixtures ──
 
@@ -141,6 +143,8 @@ function createV2Input(overrides?: Partial<PenpotDesignInput>): PenpotDesignInpu
     useDesignSpecV2: true,
     rendererTokens: SAMPLE_TOKENS,
     catalogMap: SAMPLE_CATALOG,
+    // Use legacy Penpot correction in tests (no browser available)
+    legacyPenpotCorrection: true,
     ...overrides,
   };
 }
@@ -152,6 +156,12 @@ describe('penpotDesignWork v2 path', () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Remove cached DesignSpec that would bypass the LLM mock
+    const cachedSpecPath = join(process.cwd(), PREVIEW_DIR_REL, 'test-settings', 'scripts', 'designspec-v2.json');
+    if (existsSync(cachedSpecPath)) {
+      rmSync(cachedSpecPath);
+    }
   });
 
   afterEach(() => {
@@ -182,7 +192,7 @@ describe('penpotDesignWork v2 path', () => {
     expect(prompt.tools).toBeDefined();
     expect(prompt.tools[0].name).toBe('submit_design');
     expect(opts.toolChoice).toEqual({ type: 'tool', name: 'submit_design' });
-    expect(opts.maxTokens).toBe(16000);
+    expect(opts.maxTokens).toBe(32000);
 
     // Verify MCP execute_code was called
     const execCalls = mockMCP.callTool.mock.calls.filter(

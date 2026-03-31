@@ -127,7 +127,7 @@ export { capturePenpotScreenshot } from './ux-design/penpot-screenshot.js';
 
 // Penpot Design
 export type { PenpotDesignInput, PenpotDesignOutput } from './ux-design/ux-penpot-design.js';
-export { PENPOT_DESIGN_CONTRACT, parsePenpotDesignScript, penpotDesignWork } from './ux-design/ux-penpot-design.js';
+export { PENPOT_DESIGN_CONTRACT, parsePenpotDesignScript, penpotDesignWork, exportDesignSpecToPenpot } from './ux-design/ux-penpot-design.js';
 
 // Penpot Collaboration
 export { createPenpotCollaborationSession, createPenpotReviewCallback, mapPenpotToDesignOutput } from './ux-design/penpot-collaboration.js';
@@ -161,6 +161,13 @@ export { runPenpotBrowserReview } from './ux-design/penpot-browser-review.js';
 
 // Penpot API Discovery
 export { discoverPenpotAPI } from './ux-design/penpot-browser-agent.js';
+
+// Browser Correction Adapter
+export { createBrowserCorrectionAdapter } from './ux-design/browser-correction-adapter.js';
+
+// Browser Correction Pipeline
+export { runBrowserCorrectionPipeline } from './ux-design/browser-correction-pipeline.js';
+export type { BrowserCorrectionResult, BrowserCorrectionOptions } from './ux-design/browser-correction-pipeline.js';
 
 // Page Context
 export { formatPageContextPrompt, buildPageContext, resolvePageEntry } from './page-context-prompt.js';
