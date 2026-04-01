@@ -1,0 +1,99 @@
+version: "1.0"
+endpoints:
+  - id: ep-store-getall
+    method: STORE
+    path: BookmarkStore.getAll()
+    description: Returns all bookmarks from localStorage as Bookmark[]. Sorted by
+      createdAt descending. On first call if store is empty, seeds with 5
+      pre-defined entries from PRD Section 11 (LangGraph Docs, Penpot, Tailwind
+      CSS Docs, shadcn/ui, Nx Monorepo Guide).
+    input: null
+    output: Bookmark[]
+  - id: ep-store-getbyid
+    method: STORE
+    path: "BookmarkStore.getById(id: string)"
+    description: Returns a single Bookmark by UUID id, or null if not found. Used by
+      edit form and detail page.
+    input: string (UUID)
+    output: Bookmark | null
+  - id: ep-store-create
+    method: STORE
+    path: "BookmarkStore.create(input: CreateBookmarkInput)"
+    description: Creates a new bookmark. Generates UUID v4 id and ISO 8601
+      timestamps for createdAt and updatedAt. Persists to localStorage. Returns
+      the created Bookmark.
+    input: CreateBookmarkInput
+    output: Bookmark
+  - id: ep-store-update
+    method: STORE
+    path: "BookmarkStore.update(id: string, input: UpdateBookmarkInput)"
+    description: Updates an existing bookmark by id with provided fields. Refreshes
+      updatedAt to current ISO 8601 timestamp. Persists to localStorage. Returns
+      updated Bookmark. Throws if id not found.
+    input: "{ id: string, input: UpdateBookmarkInput }"
+    output: Bookmark
+  - id: ep-store-delete
+    method: STORE
+    path: "BookmarkStore.delete(id: string)"
+    description: Removes bookmark with given id from localStorage store. No-op if id
+      does not exist. Returns void.
+    input: string (UUID)
+    output: void
+  - id: ep-store-getalltags
+    method: STORE
+    path: BookmarkStore.getAllTags()
+    description: Derives a deduplicated, alphabetically sorted array of all tag
+      strings across all stored bookmarks. Used to populate TagFilterChips on
+      the home page.
+    input: null
+    output: string[]
+  - id: ep-api-bookmarks-list
+    method: GET
+    path: /api/bookmarks
+    description: "REST endpoint returning all bookmarks as JSON array, sorted by
+      createdAt descending. Supports optional query params: ?search (substring
+      match on title/url) and ?tags (comma-separated, AND filter). Returns 200
+      with Bookmark[] payload. Intended for future server-side persistence
+      extension; currently the frontend operates via localStorage store."
+    input: "query: { search?: string, tags?: string }"
+    output: "{ data: Bookmark[], total: number }"
+  - id: ep-api-bookmarks-create
+    method: POST
+    path: /api/bookmarks
+    description: REST endpoint to create a new bookmark. Accepts CreateBookmarkInput
+      as JSON body. Validates all fields server-side (mirrors V-01 through
+      V-08). Returns 201 with created Bookmark on success. Returns 400 with
+      ValidationError[] on invalid input.
+    input: CreateBookmarkInput
+    output: "Bookmark | { errors: ValidationError[] }"
+  - id: ep-api-bookmarks-getbyid
+    method: GET
+    path: /api/bookmarks/:id
+    description: REST endpoint to fetch a single bookmark by UUID id. Returns 200
+      with Bookmark on success. Returns 404 with error message if not found.
+    input: "params: { id: string }"
+    output: "Bookmark | { error: string }"
+  - id: ep-api-bookmarks-update
+    method: PUT
+    path: /api/bookmarks/:id
+    description: REST endpoint to update an existing bookmark. Accepts
+      UpdateBookmarkInput as JSON body. Validates provided fields server-side.
+      Returns 200 with updated Bookmark. Returns 400 with ValidationError[] on
+      invalid input. Returns 404 if id not found.
+    input: "{ params: { id: string }, body: UpdateBookmarkInput }"
+    output: "Bookmark | { errors: ValidationError[] } | { error: string }"
+  - id: ep-api-bookmarks-delete
+    method: DELETE
+    path: /api/bookmarks/:id
+    description: REST endpoint to delete a bookmark by UUID id. Returns 204 No
+      Content on success. Returns 404 if id not found.
+    input: "params: { id: string }"
+    output: "void | { error: string }"
+  - id: ep-api-tags-list
+    method: GET
+    path: /api/tags
+    description: REST endpoint returning all unique tags across all bookmarks,
+      sorted alphabetically. Used to populate TagFilterChips. Returns 200 with
+      string[] payload.
+    input: null
+    output: "{ data: string[] }"

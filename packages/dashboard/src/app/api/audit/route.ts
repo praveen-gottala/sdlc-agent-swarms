@@ -31,8 +31,9 @@ export async function GET(request: Request) {
   let entries = lines.map((line, idx) => {
     try {
       const event = JSON.parse(line) as EventEntry;
-      const ts = event.timestamp
-        ? new Date(event.timestamp * 1000).toISOString()
+      const rawTs = event.timestamp ?? 0;
+      const ts = rawTs
+        ? new Date(rawTs < 1e12 ? rawTs * 1000 : rawTs).toISOString()
         : new Date().toISOString();
       return {
         id: `audit-${String(idx + 1).padStart(3, '0')}`,

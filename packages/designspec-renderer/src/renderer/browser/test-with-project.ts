@@ -62,9 +62,13 @@ function resolvePaths(project: string, screen: string) {
     process.exit(1);
   }
 
+  // const specPath = path.join(
+  //   projectRoot,
+  //   `.agentforge/previews/${screen}/scripts/designspec-v2.json`,
+  // );
   const specPath = path.join(
     projectRoot,
-    `.agentforge/previews/${screen}/scripts/designspec-v2.json`,
+    `agentforge/designs/${screen}.json`,
   );
   const tokensPath = path.join(projectRoot, 'agentforge/spec/design-tokens.yaml');
   const catalogPath = path.join(projectRoot, 'agentforge/spec/component-catalog.yaml');
@@ -105,8 +109,8 @@ function loadProjectData(specPath: string, tokensPath: string, catalogPath: stri
 
   console.log(
     `  Loaded: ${Object.keys(spec.nodes).length} nodes, ` +
-      `${Object.keys(tokens).length} token groups, ` +
-      `${Object.keys(catalog).length} catalog entries`,
+    `${Object.keys(tokens).length} token groups, ` +
+    `${Object.keys(catalog).length} catalog entries`,
   );
 
   return { spec, tokens: tokens as RendererTokens, catalog };

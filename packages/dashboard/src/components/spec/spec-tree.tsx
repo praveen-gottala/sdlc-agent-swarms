@@ -13,9 +13,11 @@ interface SpecTreeProps {
   selectedFile: string;
   /** Callback when a file is selected */
   onSelectFile: (filename: string) => void;
+  /** Optional dynamic tree data. Falls back to static default if not provided. */
+  tree?: SpecTreeNode[];
 }
 
-const specTree: SpecTreeNode[] = [
+const defaultSpecTree: SpecTreeNode[] = [
   { name: 'project.yaml', type: 'file' },
   { name: 'pages.yaml', type: 'file' },
   {
@@ -91,14 +93,15 @@ function TreeItem({
 }
 
 /** Left-panel tree navigation for spec files. */
-export function SpecTree({ selectedFile, onSelectFile }: SpecTreeProps) {
+export function SpecTree({ selectedFile, onSelectFile, tree }: SpecTreeProps) {
+  const nodes = tree && tree.length > 0 ? tree : defaultSpecTree;
   return (
     <div className="flex h-full w-[250px] flex-shrink-0 flex-col border-r border-white/10 bg-[#13141f]">
       <div className="border-b border-white/10 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-200">Spec Files</h2>
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
-        {specTree.map((node) => (
+        {nodes.map((node) => (
           <TreeItem
             key={node.name}
             node={node}

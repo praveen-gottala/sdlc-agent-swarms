@@ -1,14 +1,13 @@
-# pages.yaml — created on-demand, not by init
-# schema: { version, pages: [{ id, name, description, route, status, components[], data_sources[], viewports?[] }] }
-version: "1.0"
 pages:
   - id: dashboard
     name: Dashboard
-    description: Manager-primary overview of the claims pipeline. Displays four KPI stat cards (open claims, filed today,
-      avg processing days, SLA compliance), a horizontal stacked bar chart for claims by status, a donut chart for
-      priority distribution, a recent activity feed of the last 10 status changes, and an adjuster workload table.
-      Clicking any stat card navigates to a pre-filtered claims list. Clicking a claim in the activity feed navigates to
-      that claim's detail page.
+    description: Manager-primary overview of the claims pipeline. Displays four KPI
+      stat cards (open claims, filed today, avg processing days, SLA
+      compliance), a horizontal stacked bar chart for claims by status, a donut
+      chart for priority distribution, a recent activity feed of the last 10
+      status changes, and an adjuster workload table. Clicking any stat card
+      navigates to a pre-filtered claims list. Clicking a claim in the activity
+      feed navigates to that claim's detail page.
     route: /dashboard
     status: approved
     components:
@@ -26,15 +25,16 @@ pages:
       - Note
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile
   - id: claims-list
     name: Claims List
-    description: "Searchable, filterable, sortable table of all claims accessible to the current user's role. Left sidebar
-      contains multi-select filter checkboxes for status, priority, and incident type, a date range picker, and an
-      adjuster dropdown. Main area has a search bar, a New Claim primary button, a sortable table with columns for Claim
-      #, Policyholder, Incident Type, Status, Priority, Filed Date, Assigned To, and Estimated Damage, bulk-action bar
-      that appears on row selection, and pagination controls (20 per page)."
+    description: "Searchable, filterable, sortable table of all claims accessible to
+      the current user's role. Left sidebar contains multi-select filter
+      checkboxes for status, priority, and incident type, a date range picker,
+      and an adjuster dropdown. Main area has a search bar, a New Claim primary
+      button, a sortable table with columns for Claim #, Policyholder, Incident
+      Type, Status, Priority, Filed Date, Assigned To, and Estimated Damage,
+      bulk-action bar that appears on row selection, and pagination controls (20
+      per page)."
     route: /claims
     status: approved
     components:
@@ -56,15 +56,19 @@ pages:
       - User
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile
+    designStatus: draft
+    correctionIteration: 0
+    designScore: null
   - id: new-claim
     name: New Claim Form
-    description: Three-step multi-step form for filing a new claim, centered at max-width 720px. Step 1 collects
-      policyholder info with policy-number search and auto-fill. Step 2 collects incident details including date, type,
-      priority, address, and a 50-char-minimum description. Step 3 handles document uploads (drag-and-drop, max 10 files
-      at 10MB each) and shows a read-only review summary before final submission. Progress indicator at top. Save as
-      Draft available on all steps. Submit triggers a confirmation dialog.
+    description: Three-step multi-step form for filing a new claim, centered at
+      max-width 720px. Step 1 collects policyholder info with policy-number
+      search and auto-fill. Step 2 collects incident details including date,
+      type, priority, address, and a 50-char-minimum description. Step 3 handles
+      document uploads (drag-and-drop, max 10 files at 10MB each) and shows a
+      read-only review summary before final submission. Progress indicator at
+      top. Save as Draft available on all steps. Submit triggers a confirmation
+      dialog.
     route: /claims/new
     status: approved
     components:
@@ -90,17 +94,19 @@ pages:
       - Document
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile
   - id: claim-detail
     name: Claim Detail
-    description: "Full detail view for a single claim in a two-column layout (65% main, 35% sidebar). Main column contains:
-      claim header with number, status badge, priority badge, filed date, and incident type icon; policyholder card;
-      incident section with address and description; documents grid with upload capability; and a chronological activity
-      timeline with a new-note input at the bottom. Sidebar contains: status panel with adjuster assignment, financial
-      panel for estimated and approved amounts, role-dependent action buttons (Agent: Edit/Add Doc/Add Note; Adjuster:
-      Approve/Deny/Request Info/Escalate/Set Estimate; Manager: Reassign/Override/Add Note), and a quick-info panel
-      showing SLA status. Action buttons open confirmation modals with required inputs."
+    description: "Full detail view for a single claim in a two-column layout (65%
+      main, 35% sidebar). Main column contains: claim header with number, status
+      badge, priority badge, filed date, and incident type icon; policyholder
+      card; incident section with address and description; documents grid with
+      upload capability; and a chronological activity timeline with a new-note
+      input at the bottom. Sidebar contains: status panel with adjuster
+      assignment, financial panel for estimated and approved amounts,
+      role-dependent action buttons (Agent: Edit/Add Doc/Add Note; Adjuster:
+      Approve/Deny/Request Info/Escalate/Set Estimate; Manager:
+      Reassign/Override/Add Note), and a quick-info panel showing SLA status.
+      Action buttons open confirmation modals with required inputs."
     route: /claims/:id
     status: approved
     components:
@@ -134,14 +140,15 @@ pages:
       - User
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile
   - id: notifications-panel
     name: Notifications Panel
-    description: Slide-over panel triggered by the bell icon in the top navigation. Displays a tabbed list (All, Unread,
-      Action Required) of user notifications. Each notification item shows a type icon, title, description snippet,
-      relative timestamp, and an unread indicator dot. Includes a Mark All Read button and an empty state illustration.
-      Clicking a notification navigates to the relevant claim detail page and marks the notification as read.
+    description: Slide-over panel triggered by the bell icon in the top navigation.
+      Displays a tabbed list (All, Unread, Action Required) of user
+      notifications. Each notification item shows a type icon, title,
+      description snippet, relative timestamp, and an unread indicator dot.
+      Includes a Mark All Read button and an empty state illustration. Clicking
+      a notification navigates to the relevant claim detail page and marks the
+      notification as read.
     route: /notifications
     status: approved
     components:
@@ -159,15 +166,15 @@ pages:
       - User
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile
   - id: claim-edit
     name: Edit Claim
-    description: Pre-populated edit form for claims in draft or info_requested status, accessible to agents. Reuses the same
-      three-step form structure as New Claim but with all existing data pre-filled. Allows agents to update incident
-      details, swap or add documents, and re-submit the claim after providing requested information. Shows an
-      informational alert at the top when opened from an info_requested state, summarizing what the adjuster has
-      requested.
+    description: Pre-populated edit form for claims in draft or info_requested
+      status, accessible to agents. Reuses the same three-step form structure as
+      New Claim but with all existing data pre-filled. Allows agents to update
+      incident details, swap or add documents, and re-submit the claim after
+      providing requested information. Shows an informational alert at the top
+      when opened from an info_requested state, summarizing what the adjuster
+      has requested.
     route: /claims/:id/edit
     status: approved
     components:
@@ -193,5 +200,3 @@ pages:
       - Note
     viewports:
       - 1440
-      # - 768  # uncomment for tablet
-      # - 390  # uncomment for mobile

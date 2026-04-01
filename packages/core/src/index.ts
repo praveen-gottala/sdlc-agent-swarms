@@ -105,6 +105,7 @@ export type {
   UXTestSuiteCompleted,
   UXModuleDeployed,
   FigmaDesignReady,
+  PipelineRunProgress,
 } from './events/index.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './events/index.js';

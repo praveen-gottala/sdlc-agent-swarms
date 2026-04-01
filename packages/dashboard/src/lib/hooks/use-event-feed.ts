@@ -58,6 +58,18 @@ export function mapAuditEntryToFeedEvent(entry: AuditEntry): FeedEvent {
     metadata = parsed;
     if (typeof parsed['description'] === 'string') {
       message = parsed['description'];
+    } else if (typeof parsed['detail'] === 'string') {
+      message = parsed['detail'];
+    } else if (entry.action === 'PipelineRunProgress') {
+      // Build human-readable message from stage/status/agentRole fields
+      const stage = parsed['stage'] as string | undefined;
+      const status = parsed['status'] as string | undefined;
+      const agentRole = parsed['agentRole'] as string | undefined;
+      const parts: string[] = [];
+      if (stage) parts.push(stage);
+      if (status) parts.push(status);
+      if (agentRole) parts.push(`(${agentRole})`);
+      if (parts.length > 0) message = parts.join(' ');
     }
   } catch {
     // details is not valid JSON — use action as message

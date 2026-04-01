@@ -1,0 +1,652 @@
+{
+  "screen": "add-edit-bookmark",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "start",
+        "pt": 48,
+        "pb": 64,
+        "px": 16
+      }
+    },
+    "centered-wrapper": {
+      "parent": "page-root",
+      "order": 0,
+      "type": "container",
+      "width": 480,
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 0
+      }
+    },
+    "page-header": {
+      "parent": "centered-wrapper",
+      "order": 0,
+      "type": "section",
+      "layout": {
+        "dir": "column",
+        "align": "start",
+        "justify": "start",
+        "gap": 8,
+        "pb": 32
+      }
+    },
+    "back-link": {
+      "parent": "page-header",
+      "order": 0,
+      "catalog": "link",
+      "label": "← Bookmarks",
+      "color": "cta-primary",
+      "typography": "body"
+    },
+    "page-title": {
+      "parent": "page-header",
+      "order": 1,
+      "type": "text",
+      "content": "Add Bookmark",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "dirty-warning-bar": {
+      "parent": "centered-wrapper",
+      "order": 1,
+      "type": "container",
+      "background": "warning",
+      "radius": 8,
+      "shadow": "sm",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 12,
+        "px": 16,
+        "py": 12
+      },
+      "width": "fill"
+    },
+    "warning-icon": {
+      "parent": "dirty-warning-bar",
+      "order": 0,
+      "type": "text",
+      "content": "⚠",
+      "color": "text-primary",
+      "typography": "body"
+    },
+    "warning-message": {
+      "parent": "dirty-warning-bar",
+      "order": 1,
+      "type": "text",
+      "content": "You have unsaved changes.",
+      "color": "text-primary",
+      "typography": "body",
+      "width": "fill"
+    },
+    "discard-button": {
+      "parent": "dirty-warning-bar",
+      "order": 2,
+      "catalog": "button-danger",
+      "label": "Discard",
+      "overrides": {
+        "min_height": 36,
+        "font_size": 12
+      }
+    },
+    "keep-editing-button": {
+      "parent": "dirty-warning-bar",
+      "order": 3,
+      "catalog": "button-ghost",
+      "label": "Keep editing",
+      "overrides": {
+        "min_height": 36,
+        "font_size": 12
+      }
+    },
+    "warning-bar-spacer": {
+      "parent": "centered-wrapper",
+      "order": 2,
+      "type": "spacer",
+      "height": 16
+    },
+    "bookmark-form": {
+      "parent": "centered-wrapper",
+      "order": 3,
+      "type": "section",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 24,
+        "px": 32,
+        "py": 32
+      },
+      "width": "fill"
+    },
+    "field-group-title": {
+      "parent": "bookmark-form",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-title": {
+      "parent": "field-group-title",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-title-text": {
+      "parent": "label-title",
+      "order": 0,
+      "type": "text",
+      "content": "Title",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-title-required": {
+      "parent": "label-title",
+      "order": 1,
+      "type": "text",
+      "content": "*",
+      "typography": "label",
+      "color": "error",
+      "weight": 500
+    },
+    "input-title": {
+      "parent": "field-group-title",
+      "order": 1,
+      "catalog": "input-text",
+      "placeholder": "e.g. Tailwind CSS Docs",
+      "value": "",
+      "width": "fill",
+      "overrides": {
+        "border_radius": 12,
+        "border_color": "border-default",
+        "min_height": 44,
+        "aria_required": true
+      }
+    },
+    "error-title": {
+      "parent": "field-group-title",
+      "order": 2,
+      "type": "text",
+      "content": "Title must be 2–120 characters.",
+      "typography": "small",
+      "color": "error"
+    },
+    "field-group-url": {
+      "parent": "bookmark-form",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-url": {
+      "parent": "field-group-url",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-url-text": {
+      "parent": "label-url",
+      "order": 0,
+      "type": "text",
+      "content": "URL",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-url-required": {
+      "parent": "label-url",
+      "order": 1,
+      "type": "text",
+      "content": "*",
+      "typography": "label",
+      "color": "error",
+      "weight": 500
+    },
+    "input-url": {
+      "parent": "field-group-url",
+      "order": 1,
+      "catalog": "input-text",
+      "placeholder": "https://example.com",
+      "value": "",
+      "width": "fill",
+      "overrides": {
+        "border_radius": 12,
+        "border_color": "border-error",
+        "min_height": 44,
+        "aria_invalid": true
+      }
+    },
+    "error-url": {
+      "parent": "field-group-url",
+      "order": 2,
+      "type": "text",
+      "content": "Enter a valid URL starting with http:// or https://.",
+      "typography": "small",
+      "color": "error"
+    },
+    "field-group-tags": {
+      "parent": "bookmark-form",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-tags": {
+      "parent": "field-group-tags",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 6
+      }
+    },
+    "label-tags-text": {
+      "parent": "label-tags",
+      "order": 0,
+      "type": "text",
+      "content": "Tags",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "optional-badge-tags": {
+      "parent": "label-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 8,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "px": 6,
+        "py": 2
+      }
+    },
+    "optional-badge-tags-text": {
+      "parent": "optional-badge-tags",
+      "order": 0,
+      "type": "text",
+      "content": "Optional",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "tags-chip-list": {
+      "parent": "field-group-tags",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 8
+      }
+    },
+    "tag-chip-1": {
+      "parent": "tags-chip-list",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 8,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 4,
+        "px": 8,
+        "py": 4
+      }
+    },
+    "tag-chip-1-label": {
+      "parent": "tag-chip-1",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "tag-chip-1-dismiss": {
+      "parent": "tag-chip-1",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "×",
+      "overrides": {
+        "min_height": 44,
+        "min_width": 44,
+        "aria_label": "Remove tag: design",
+        "font_size": 14
+      }
+    },
+    "tag-chip-2": {
+      "parent": "tags-chip-list",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 8,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 4,
+        "px": 8,
+        "py": 4
+      }
+    },
+    "tag-chip-2-label": {
+      "parent": "tag-chip-2",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "tag-chip-2-dismiss": {
+      "parent": "tag-chip-2",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "×",
+      "overrides": {
+        "min_height": 44,
+        "min_width": 44,
+        "aria_label": "Remove tag: frontend",
+        "font_size": 14
+      }
+    },
+    "input-tags": {
+      "parent": "field-group-tags",
+      "order": 2,
+      "catalog": "input-text",
+      "placeholder": "design, frontend, tools",
+      "value": "",
+      "width": "fill",
+      "helper": "Up to 5 tags · letters, numbers, hyphens only",
+      "overrides": {
+        "border_radius": 12,
+        "border_color": "border-default",
+        "min_height": 44
+      }
+    },
+    "field-group-notes": {
+      "parent": "bookmark-form",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "justify": "start",
+        "gap": 4
+      }
+    },
+    "label-notes": {
+      "parent": "field-group-notes",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 6
+      }
+    },
+    "label-notes-text": {
+      "parent": "label-notes",
+      "order": 0,
+      "type": "text",
+      "content": "Notes",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "optional-badge-notes": {
+      "parent": "label-notes",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 8,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "px": 6,
+        "py": 2
+      }
+    },
+    "optional-badge-notes-text": {
+      "parent": "optional-badge-notes",
+      "order": 0,
+      "type": "text",
+      "content": "Optional",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "textarea-notes": {
+      "parent": "field-group-notes",
+      "order": 1,
+      "catalog": "input-textarea",
+      "placeholder": "Add a note about this link…",
+      "value": "",
+      "width": "fill",
+      "overrides": {
+        "border_radius": 12,
+        "border_color": "border-default",
+        "rows": 4,
+        "resize": "vertical"
+      }
+    },
+    "notes-counter-row": {
+      "parent": "field-group-notes",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "end"
+      }
+    },
+    "notes-character-counter": {
+      "parent": "notes-counter-row",
+      "order": 0,
+      "type": "text",
+      "content": "0 / 280",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "form-divider": {
+      "parent": "bookmark-form",
+      "order": 4,
+      "type": "divider"
+    },
+    "form-actions": {
+      "parent": "bookmark-form",
+      "order": 5,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "gap": 12
+      },
+      "width": "fill"
+    },
+    "cancel-button": {
+      "parent": "form-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "Cancel",
+      "overrides": {
+        "min_height": 44,
+        "border_radius": 12,
+        "color": "cta-primary"
+      }
+    },
+    "submit-button": {
+      "parent": "form-actions",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Save Bookmark",
+      "overrides": {
+        "min_height": 44,
+        "border_radius": 12,
+        "background": "cta-primary",
+        "color": "text-on-cta"
+      }
+    },
+    "not-found-state": {
+      "parent": "centered-wrapper",
+      "order": 4,
+      "type": "container",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 12,
+        "px": 32,
+        "py": 48
+      },
+      "width": "fill"
+    },
+    "not-found-icon": {
+      "parent": "not-found-state",
+      "order": 0,
+      "type": "text",
+      "content": "⊘",
+      "typography": "heading-1",
+      "color": "text-secondary",
+      "textAlign": "center"
+    },
+    "not-found-heading": {
+      "parent": "not-found-state",
+      "order": 1,
+      "type": "text",
+      "content": "Bookmark Not Found",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700,
+      "textAlign": "center"
+    },
+    "not-found-subtext": {
+      "parent": "not-found-state",
+      "order": 2,
+      "type": "text",
+      "content": "This bookmark may have been deleted.",
+      "typography": "body",
+      "color": "text-secondary",
+      "textAlign": "center"
+    },
+    "not-found-cta": {
+      "parent": "not-found-state",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "Go back to bookmarks",
+      "overrides": {
+        "min_height": 44,
+        "border_radius": 12,
+        "background": "cta-primary",
+        "color": "text-on-cta"
+      }
+    },
+    "toast-container": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "width": "fill"
+    },
+    "toast-success": {
+      "parent": "toast-container",
+      "order": 0,
+      "type": "container",
+      "background": "surface-primary",
+      "radius": 8,
+      "shadow": "md",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "start",
+        "gap": 12,
+        "px": 16,
+        "py": 12
+      }
+    },
+    "toast-icon": {
+      "parent": "toast-success",
+      "order": 0,
+      "type": "text",
+      "content": "✓",
+      "color": "cta-primary",
+      "typography": "body",
+      "weight": 700
+    },
+    "toast-message": {
+      "parent": "toast-success",
+      "order": 1,
+      "type": "text",
+      "content": "Bookmark saved",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "toast-close": {
+      "parent": "toast-success",
+      "order": 2,
+      "catalog": "button-ghost",
+      "label": "×",
+      "overrides": {
+        "min_height": 44,
+        "min_width": 44,
+        "aria_label": "Close notification",
+        "font_size": 16
+      }
+    }
+  }
+}

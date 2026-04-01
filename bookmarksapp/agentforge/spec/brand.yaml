@@ -1,0 +1,19 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Precise, utilitarian, and quietly confident. No flourishes — every element
+    earns its place.
+  audience: general
+illustration_style:
+  direction: Line-based technical illustrations with fine strokes and a
+    monochromatic palette, occasionally accented with a single indigo highlight.
+  description: Flat line art depicting abstract link chains, filing systems, or
+    grid structures. Minimal detail, high negative space, rendered in ink-100
+    and indigo-500 on white backgrounds.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: snappy
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA

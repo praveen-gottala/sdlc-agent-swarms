@@ -15,6 +15,8 @@ export interface TraceTimelineStep {
   detail: string;
   /** Optional token count for LLM steps. */
   tokenCount?: number;
+  /** Step category: stage transition, LLM call, or debug log. */
+  stepType?: 'stage' | 'llm-call' | 'log';
 }
 
 /** Props for the trace timeline component. */
@@ -31,17 +33,21 @@ export function TraceTimeline({ steps }: TraceTimelineProps) {
         Execution Timeline
       </h3>
       <div className="flex flex-col">
-        {steps.map((step, idx) => (
-          <TraceStep
-            key={`${step.label}-${idx}`}
-            label={step.label}
-            status={step.status}
-            timestamp={step.timestamp}
-            detail={step.detail}
-            tokenCount={step.tokenCount}
-            isLast={idx === steps.length - 1}
-          />
-        ))}
+        {steps.map((step, idx) => {
+          const isLog = step.stepType === 'log';
+          return (
+            <div key={`${step.label}-${idx}`} className={isLog ? 'pl-4 opacity-70' : ''}>
+              <TraceStep
+                label={isLog ? `> ${step.label}` : step.label}
+                status={step.status}
+                timestamp={step.timestamp}
+                detail={step.detail}
+                tokenCount={step.tokenCount}
+                isLast={idx === steps.length - 1}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

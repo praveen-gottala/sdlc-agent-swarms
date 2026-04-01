@@ -1,0 +1,904 @@
+{
+  "screen": "claims-list",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "nav-bar": {
+      "parent": "page-root",
+      "order": 0,
+      "catalog": "NavigationBar",
+      "label": "ClaimFlow",
+      "overrides": {
+        "brand_name": "ClaimFlow",
+        "nav_links": [
+          "Dashboard",
+          "Claims",
+          "Notifications"
+        ],
+        "active_link": "Claims"
+      }
+    },
+    "body-wrapper": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 0,
+        "align": "start"
+      },
+      "width": "fill",
+      "background": "background-primary"
+    },
+    "filter-sidebar": {
+      "parent": "body-wrapper",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "width": 280,
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 20,
+        "py": 24
+      },
+      "shadow": "sm"
+    },
+    "sidebar-title": {
+      "parent": "filter-sidebar",
+      "order": 0,
+      "type": "text",
+      "content": "Filters",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "sidebar-divider-0": {
+      "parent": "filter-sidebar",
+      "order": 1,
+      "type": "divider"
+    },
+    "status-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "status-filter-label": {
+      "parent": "status-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "Status",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 600
+    },
+    "status-check-new": {
+      "parent": "status-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "New",
+      "overrides": {
+        "checked": true
+      }
+    },
+    "status-check-under-review": {
+      "parent": "status-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "Under Review",
+      "overrides": {
+        "checked": true
+      }
+    },
+    "status-check-pending-info": {
+      "parent": "status-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Pending Info",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "status-check-approved": {
+      "parent": "status-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Approved",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "status-check-denied": {
+      "parent": "status-filter-group",
+      "order": 5,
+      "catalog": "Checkbox",
+      "label": "Denied",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "status-check-closed": {
+      "parent": "status-filter-group",
+      "order": 6,
+      "catalog": "Checkbox",
+      "label": "Closed",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "sidebar-divider-1": {
+      "parent": "filter-sidebar",
+      "order": 3,
+      "type": "divider"
+    },
+    "priority-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "priority-filter-label": {
+      "parent": "priority-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "Priority",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 600
+    },
+    "priority-check-critical": {
+      "parent": "priority-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "Critical",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "priority-check-high": {
+      "parent": "priority-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "High",
+      "overrides": {
+        "checked": true
+      }
+    },
+    "priority-check-medium": {
+      "parent": "priority-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Medium",
+      "overrides": {
+        "checked": true
+      }
+    },
+    "priority-check-low": {
+      "parent": "priority-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Low",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "sidebar-divider-2": {
+      "parent": "filter-sidebar",
+      "order": 5,
+      "type": "divider"
+    },
+    "incident-type-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 6,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "incident-type-filter-label": {
+      "parent": "incident-type-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "Incident Type",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 600
+    },
+    "incident-check-auto": {
+      "parent": "incident-type-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "Auto Accident",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "incident-check-property": {
+      "parent": "incident-type-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "Property Damage",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "incident-check-medical": {
+      "parent": "incident-type-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Medical",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "incident-check-theft": {
+      "parent": "incident-type-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Theft",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "incident-check-natural": {
+      "parent": "incident-type-filter-group",
+      "order": 5,
+      "catalog": "Checkbox",
+      "label": "Natural Disaster",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "incident-check-liability": {
+      "parent": "incident-type-filter-group",
+      "order": 6,
+      "catalog": "Checkbox",
+      "label": "Liability",
+      "overrides": {
+        "checked": false
+      }
+    },
+    "sidebar-divider-3": {
+      "parent": "filter-sidebar",
+      "order": 7,
+      "type": "divider"
+    },
+    "date-range-group": {
+      "parent": "filter-sidebar",
+      "order": 8,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "date-range-label": {
+      "parent": "date-range-group",
+      "order": 0,
+      "type": "text",
+      "content": "Filed Date Range",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 600
+    },
+    "date-range-from": {
+      "parent": "date-range-group",
+      "order": 1,
+      "catalog": "DatePicker",
+      "label": "From",
+      "placeholder": "MM/DD/YYYY",
+      "width": "fill"
+    },
+    "date-range-to": {
+      "parent": "date-range-group",
+      "order": 2,
+      "catalog": "DatePicker",
+      "label": "To",
+      "placeholder": "MM/DD/YYYY",
+      "width": "fill"
+    },
+    "sidebar-divider-4": {
+      "parent": "filter-sidebar",
+      "order": 9,
+      "type": "divider"
+    },
+    "adjuster-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 10,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "adjuster-filter-label": {
+      "parent": "adjuster-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "Assigned Adjuster",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 600
+    },
+    "adjuster-select": {
+      "parent": "adjuster-filter-group",
+      "order": 1,
+      "catalog": "Select",
+      "label": "All Adjusters",
+      "placeholder": "Select adjuster…",
+      "width": "fill",
+      "overrides": {
+        "options": [
+          "All Adjusters",
+          "Maria Gonzalez",
+          "James Okafor",
+          "Priya Nair",
+          "David Chen",
+          "Amara Osei"
+        ]
+      }
+    },
+    "sidebar-clear-btn": {
+      "parent": "filter-sidebar",
+      "order": 11,
+      "catalog": "Button",
+      "label": "Clear All Filters",
+      "overrides": {
+        "variant": "ghost"
+      },
+      "width": "fill"
+    },
+    "main-area": {
+      "parent": "body-wrapper",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 20,
+        "px": 32,
+        "py": 28
+      },
+      "width": "fill",
+      "background": "background-primary"
+    },
+    "page-header-row": {
+      "parent": "main-area",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center",
+        "gap": 16
+      },
+      "width": "fill"
+    },
+    "page-title-block": {
+      "parent": "page-header-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
+    },
+    "page-title": {
+      "parent": "page-title-block",
+      "order": 0,
+      "type": "text",
+      "content": "Claims",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "page-subtitle": {
+      "parent": "page-title-block",
+      "order": 1,
+      "type": "text",
+      "content": "Manage, review, and track all insurance claims.",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "new-claim-btn": {
+      "parent": "page-header-row",
+      "order": 1,
+      "catalog": "Button",
+      "label": "+ New Claim",
+      "overrides": {
+        "variant": "primary",
+        "href": "/claims/new"
+      }
+    },
+    "toolbar-row": {
+      "parent": "main-area",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "gap": 12
+      },
+      "width": "fill"
+    },
+    "search-input": {
+      "parent": "toolbar-row",
+      "order": 0,
+      "catalog": "SearchInput",
+      "placeholder": "Search by claim #, policyholder, or policy number…",
+      "width": 480
+    },
+    "results-count": {
+      "parent": "toolbar-row",
+      "order": 1,
+      "type": "text",
+      "content": "Showing 1–20 of 143 claims",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "bulk-actions-bar": {
+      "parent": "main-area",
+      "order": 2,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 8,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "px": 16,
+        "py": 10
+      },
+      "width": "fill",
+      "overrides": {
+        "border_color": "cta-primary",
+        "border_width": 1
+      }
+    },
+    "bulk-selection-label": {
+      "parent": "bulk-actions-bar",
+      "order": 0,
+      "type": "text",
+      "content": "3 claims selected",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "bulk-spacer": {
+      "parent": "bulk-actions-bar",
+      "order": 1,
+      "type": "spacer",
+      "width": "fill"
+    },
+    "bulk-btn-assign": {
+      "parent": "bulk-actions-bar",
+      "order": 2,
+      "catalog": "Button",
+      "label": "Reassign Adjuster",
+      "overrides": {
+        "variant": "secondary"
+      }
+    },
+    "bulk-btn-approve": {
+      "parent": "bulk-actions-bar",
+      "order": 3,
+      "catalog": "Button",
+      "label": "Approve",
+      "overrides": {
+        "variant": "primary"
+      }
+    },
+    "bulk-btn-close": {
+      "parent": "bulk-actions-bar",
+      "order": 4,
+      "catalog": "Button",
+      "label": "Close Claims",
+      "overrides": {
+        "variant": "secondary"
+      }
+    },
+    "bulk-btn-export": {
+      "parent": "bulk-actions-bar",
+      "order": 5,
+      "catalog": "Button",
+      "label": "Export CSV",
+      "overrides": {
+        "variant": "ghost"
+      }
+    },
+    "bulk-btn-deselect": {
+      "parent": "bulk-actions-bar",
+      "order": 6,
+      "catalog": "Button",
+      "label": "Deselect All",
+      "overrides": {
+        "variant": "ghost"
+      }
+    },
+    "claims-table": {
+      "parent": "main-area",
+      "order": 3,
+      "catalog": "DataTable",
+      "width": "fill",
+      "overrides": {
+        "columns": [
+          {
+            "id": "select",
+            "label": "",
+            "width": 40,
+            "type": "checkbox"
+          },
+          {
+            "id": "claim_number",
+            "label": "Claim #",
+            "sortable": true
+          },
+          {
+            "id": "policyholder",
+            "label": "Policyholder",
+            "sortable": true
+          },
+          {
+            "id": "incident_type",
+            "label": "Incident Type",
+            "sortable": true
+          },
+          {
+            "id": "status",
+            "label": "Status",
+            "sortable": true
+          },
+          {
+            "id": "priority",
+            "label": "Priority",
+            "sortable": true
+          },
+          {
+            "id": "filed_date",
+            "label": "Filed Date",
+            "sortable": true
+          },
+          {
+            "id": "assigned_to",
+            "label": "Assigned To",
+            "sortable": true
+          },
+          {
+            "id": "estimated_damage",
+            "label": "Est. Damage",
+            "sortable": true
+          },
+          {
+            "id": "actions",
+            "label": "",
+            "width": 60
+          }
+        ],
+        "rows": [
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00891",
+            "policyholder": "Sandra Okafor",
+            "incident_type": "Auto Accident",
+            "status": "Under Review",
+            "status_variant": "info",
+            "priority": "High",
+            "priority_variant": "warning",
+            "filed_date": "Jun 12, 2024",
+            "assigned_to": "Maria Gonzalez",
+            "estimated_damage": "$14,200"
+          },
+          {
+            "select": true,
+            "claim_number": "CLM-2024-00889",
+            "policyholder": "Raj Patel",
+            "incident_type": "Property Damage",
+            "status": "New",
+            "status_variant": "info",
+            "priority": "Critical",
+            "priority_variant": "error",
+            "filed_date": "Jun 11, 2024",
+            "assigned_to": "Unassigned",
+            "estimated_damage": "$52,000"
+          },
+          {
+            "select": true,
+            "claim_number": "CLM-2024-00885",
+            "policyholder": "Camille Dupont",
+            "incident_type": "Theft",
+            "status": "Pending Info",
+            "status_variant": "warning",
+            "priority": "Medium",
+            "priority_variant": "info",
+            "filed_date": "Jun 10, 2024",
+            "assigned_to": "James Okafor",
+            "estimated_damage": "$8,750"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00880",
+            "policyholder": "Tom Brecker",
+            "incident_type": "Medical",
+            "status": "Approved",
+            "status_variant": "success",
+            "priority": "High",
+            "priority_variant": "warning",
+            "filed_date": "Jun 9, 2024",
+            "assigned_to": "Priya Nair",
+            "estimated_damage": "$31,500"
+          },
+          {
+            "select": true,
+            "claim_number": "CLM-2024-00877",
+            "policyholder": "Lisa Nguyen",
+            "incident_type": "Natural Disaster",
+            "status": "Under Review",
+            "status_variant": "info",
+            "priority": "Critical",
+            "priority_variant": "error",
+            "filed_date": "Jun 8, 2024",
+            "assigned_to": "David Chen",
+            "estimated_damage": "$128,000"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00874",
+            "policyholder": "Marcus Ellison",
+            "incident_type": "Auto Accident",
+            "status": "New",
+            "status_variant": "info",
+            "priority": "Low",
+            "priority_variant": "success",
+            "filed_date": "Jun 8, 2024",
+            "assigned_to": "Unassigned",
+            "estimated_damage": "$4,300"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00871",
+            "policyholder": "Fatima Al-Rashid",
+            "incident_type": "Liability",
+            "status": "Denied",
+            "status_variant": "error",
+            "priority": "Medium",
+            "priority_variant": "info",
+            "filed_date": "Jun 7, 2024",
+            "assigned_to": "Amara Osei",
+            "estimated_damage": "$9,900"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00869",
+            "policyholder": "Brian Kowalski",
+            "incident_type": "Property Damage",
+            "status": "Closed",
+            "status_variant": "default",
+            "priority": "Low",
+            "priority_variant": "success",
+            "filed_date": "Jun 6, 2024",
+            "assigned_to": "Maria Gonzalez",
+            "estimated_damage": "$6,100"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00865",
+            "policyholder": "Nia Thompson",
+            "incident_type": "Medical",
+            "status": "Under Review",
+            "status_variant": "info",
+            "priority": "High",
+            "priority_variant": "warning",
+            "filed_date": "Jun 5, 2024",
+            "assigned_to": "James Okafor",
+            "estimated_damage": "$22,400"
+          },
+          {
+            "select": false,
+            "claim_number": "CLM-2024-00860",
+            "policyholder": "Ethan Cruz",
+            "incident_type": "Theft",
+            "status": "Pending Info",
+            "status_variant": "warning",
+            "priority": "Medium",
+            "priority_variant": "info",
+            "filed_date": "Jun 4, 2024",
+            "assigned_to": "Priya Nair",
+            "estimated_damage": "$3,600"
+          }
+        ],
+        "sort_column": "filed_date",
+        "sort_direction": "desc",
+        "row_click_href": "/claims/:id"
+      }
+    },
+    "table-status-badge-sample": {
+      "parent": "main-area",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "none"
+      }
+    },
+    "badge-new": {
+      "parent": "table-status-badge-sample",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "New",
+      "overrides": {
+        "variant": "info"
+      }
+    },
+    "badge-under-review": {
+      "parent": "table-status-badge-sample",
+      "order": 1,
+      "catalog": "Badge",
+      "label": "Under Review",
+      "overrides": {
+        "variant": "info"
+      }
+    },
+    "badge-pending-info": {
+      "parent": "table-status-badge-sample",
+      "order": 2,
+      "catalog": "Badge",
+      "label": "Pending Info",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "badge-approved": {
+      "parent": "table-status-badge-sample",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "Approved",
+      "overrides": {
+        "variant": "success"
+      }
+    },
+    "badge-denied": {
+      "parent": "table-status-badge-sample",
+      "order": 4,
+      "catalog": "Badge",
+      "label": "Denied",
+      "overrides": {
+        "variant": "error"
+      }
+    },
+    "badge-critical": {
+      "parent": "table-status-badge-sample",
+      "order": 5,
+      "catalog": "Badge",
+      "label": "Critical",
+      "overrides": {
+        "variant": "error"
+      }
+    },
+    "badge-high": {
+      "parent": "table-status-badge-sample",
+      "order": 6,
+      "catalog": "Badge",
+      "label": "High",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "badge-medium": {
+      "parent": "table-status-badge-sample",
+      "order": 7,
+      "catalog": "Badge",
+      "label": "Medium",
+      "overrides": {
+        "variant": "info"
+      }
+    },
+    "badge-low": {
+      "parent": "table-status-badge-sample",
+      "order": 8,
+      "catalog": "Badge",
+      "label": "Low",
+      "overrides": {
+        "variant": "success"
+      }
+    },
+    "pagination-row": {
+      "parent": "main-area",
+      "order": 5,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "gap": 12
+      },
+      "width": "fill"
+    },
+    "pagination-info": {
+      "parent": "pagination-row",
+      "order": 0,
+      "type": "text",
+      "content": "Page 1 of 8  ·  143 total claims",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "pagination-controls": {
+      "parent": "pagination-row",
+      "order": 1,
+      "catalog": "Pagination",
+      "overrides": {
+        "current_page": 1,
+        "total_pages": 8,
+        "per_page": 20,
+        "total_items": 143
+      }
+    },
+    "pagination-per-page": {
+      "parent": "pagination-row",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "per-page-label": {
+      "parent": "pagination-per-page",
+      "order": 0,
+      "type": "text",
+      "content": "Rows per page:",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "per-page-select": {
+      "parent": "pagination-per-page",
+      "order": 1,
+      "catalog": "Select",
+      "value": "20",
+      "width": 80,
+      "overrides": {
+        "options": [
+          "10",
+          "20",
+          "50",
+          "100"
+        ]
+      }
+    },
+    "page-footer": {
+      "parent": "page-root",
+      "order": 2,
+      "catalog": "Footer",
+      "overrides": {
+        "copyright": "© 2024 ClaimFlow Insurance Platform. All rights reserved.",
+        "links": [
+          "Privacy Policy",
+          "Terms of Service",
+          "Support"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 21% 6%;
+    --card: 240 28% 14%;
+    --popover: 240 29% 18%;
+    --foreground: 247 100% 97%;
+    --primary: 54 100% 50%;
+    --accent: 182 100% 50%;
+    --border: 246 26% 23%;
+    --ring: 182 100% 50%;
+    --destructive: 291 96% 62%;
+    --success: 182 100% 50%;
+    --warning: 54 100% 50%;
+    --info: 262 83% 58%;
+    --overlay: rgba(13, 13, 20, 0.88);
+    --card-foreground: 247 100% 97%;
+    --popover-foreground: 247 100% 97%;
+    --primary-foreground: 240 21% 6%;
+    --secondary-foreground: 247 100% 97%;
+    --muted-foreground: 253 27% 70%;
+    --accent-foreground: 247 100% 97%;
+    --destructive-foreground: 240 21% 6%;
+    --input: 246 26% 23%;
+    --secondary: 240 27% 10%;
+    --muted: 240 27% 10%;
+    --radius: 0.75rem;
+    --shadow-1: 0 0 0 1px #2E2B4A, 0 2px 8px rgba(0,245,255,0.08);
+    --shadow-2: 0 0 0 1px #3A3660, 0 8px 24px rgba(124,58,237,0.25), 0 2px 8px rgba(0,0,0,0.6);
+    --shadow-3: 0 0 0 1px #4A4468, 0 16px 48px rgba(0,245,255,0.15), 0 0 80px rgba(124,58,237,0.2), 0 8px 16px rgba(0,0,0,0.8);
+  }
+}

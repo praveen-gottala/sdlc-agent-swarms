@@ -552,7 +552,7 @@ export function optionToBrand(option: DesignOption, audience: string, output: No
 }
 
 /** Build the 3 fallback options from existing archetypes. */
-function buildFallbackOptions(): DesignOption[] {
+export function buildFallbackOptions(): DesignOption[] {
   const archetypes: { key: DesignArchetype; label: string; vibe: string }[] = [
     { key: 'warm', label: 'Warm & Inviting', vibe: 'Cream, teal, rounded, friendly — approachable and playful' },
     { key: 'professional', label: 'Clean & Professional', vibe: 'White, slate, blue accent — structured and trustworthy' },

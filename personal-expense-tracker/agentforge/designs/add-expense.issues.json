@@ -1,0 +1,254 @@
+[
+  {
+    "nodeId": "topbar-back-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"topbar-back-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "topbar-settings-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"topbar-settings-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "nav-tabs",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"nav-tabs\" references unknown catalog entry \"Tabs\""
+  },
+  {
+    "nodeId": "quick-chip-coffee",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"quick-chip-coffee\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "quick-chip-lunch",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"quick-chip-lunch\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "quick-chip-transit",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"quick-chip-transit\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "quick-chip-gym",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"quick-chip-gym\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "quick-chip-netflix",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"quick-chip-netflix\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "amount-hero-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"amount-hero-input\" references unknown catalog entry \"Input\""
+  },
+  {
+    "nodeId": "amount-merchant-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"amount-merchant-input\" references unknown catalog entry \"Input\""
+  },
+  {
+    "nodeId": "chip-food",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-food\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-transport",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-transport\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-health",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-health\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-entertainment",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-entertainment\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-shopping",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-shopping\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-utilities",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-utilities\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-travel",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-travel\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-other",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-other\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "chip-add-new",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"chip-add-new\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "new-cat-name-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"new-cat-name-input\" references unknown catalog entry \"Input\""
+  },
+  {
+    "nodeId": "new-cat-icon-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"new-cat-icon-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "new-cat-cancel-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"new-cat-cancel-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "new-cat-save-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"new-cat-save-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "month-prev-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"month-prev-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "month-next-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"month-next-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "date-picker-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"date-picker-input\" references unknown catalog entry \"DatePicker\""
+  },
+  {
+    "nodeId": "pay-chip-visa",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pay-chip-visa\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "pay-chip-mastercard",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pay-chip-mastercard\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "pay-chip-cash",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pay-chip-cash\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "pay-chip-apple",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pay-chip-apple\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "pay-chip-paypal",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pay-chip-paypal\" references unknown catalog entry \"Chip\""
+  },
+  {
+    "nodeId": "note-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"note-input\" references unknown catalog entry \"TextArea\""
+  },
+  {
+    "nodeId": "edit-prefill-alert",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"edit-prefill-alert\" references unknown catalog entry \"Alert\""
+  },
+  {
+    "nodeId": "save-expense-button",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"save-expense-button\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "settings-dialog",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-dialog\" references unknown catalog entry \"Modal\""
+  },
+  {
+    "nodeId": "settings-currency-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-currency-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "settings-budget-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-budget-input\" references unknown catalog entry \"Input\""
+  },
+  {
+    "nodeId": "settings-locale-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-locale-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "settings-default-payment-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-default-payment-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "settings-default-switch",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-default-switch\" references unknown catalog entry \"Switch\""
+  },
+  {
+    "nodeId": "settings-cancel-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-cancel-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "settings-save-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"settings-save-btn\" references unknown catalog entry \"Button\""
+  }
+]

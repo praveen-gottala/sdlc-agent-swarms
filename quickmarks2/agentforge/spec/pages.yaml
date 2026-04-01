@@ -1,0 +1,301 @@
+pages:
+  - id: page-home
+    name: Bookmark List
+    route: /
+    description: Main screen displaying all saved bookmarks in a responsive card
+      grid with real-time search and tag filtering capabilities.
+    status: draft
+    designStatus: generating
+    components:
+      - id: comp-search-bar
+        name: SearchBar
+        type: input
+        description: Text input with magnifying glass icon (Lucide/Phosphor fill style).
+          Filters bookmark cards in real time by title and url using
+          case-insensitive substring match. Styled with Inter 15px,
+          border-radius 8px, surface-input background (#FFF9E6), border-focus on
+          active state.
+        props:
+          placeholder: Search bookmarks…
+          ariaLabel: Search bookmarks by title or URL
+      - id: comp-tag-filter-chips
+        name: TagFilterChips
+        type: filter
+        description: "Horizontal scrollable row of tag chips derived from getAllTags()
+          on BookmarkStore. 'All' chip clears all active filters. Multiple chips
+          can be active simultaneously (AND logic). Active chips use filled
+          primary (#6C5CE7) style; inactive use outlined style. 150ms ease
+          transition on toggle. Scale-up (1.05) micro-interaction on click
+          (100ms spring). Border-radius 20px. Font: Inter 500 12px."
+        props:
+          multiSelect: true
+          defaultChip: All
+          filterLogic: AND
+      - id: comp-bookmark-card
+        name: BookmarkCard
+        type: card
+        description: "Card displaying bookmark data. Background: #FFEAA7
+          (--color-surface). Border-radius: 12px. Shadow at rest: 0 2px 8px
+          rgba(108,92,231,0.10); hover lifts to 0 6px 20px (200ms ease). Fields:
+          title (truncated at 60 chars with ellipsis, Fredoka 600 20px), url
+          (muted secondary text #636E72, Inter 400 15px, truncated), tags (chips
+          max 3 visible + '+N' overflow, Inter 500 12px, border-radius 20px),
+          createdAt (relative time e.g. '2h ago', muted). Actions: Edit icon
+          (pencil, Lucide fill) navigates to /edit/:id; Delete icon (trash,
+          Lucide fill, #FF6B6B) triggers inline card-flip confirmation. On hover
+          (desktop): edit/delete icons appear; always visible on mobile.
+          Keyboard navigable via Tab/Enter."
+        props:
+          titleMaxChars: 60
+          maxVisibleTags: 3
+          deleteConfirmAutoRevert: 5000
+          deleteTransitionMs: 200
+      - id: comp-empty-state
+        name: EmptyState
+        type: display
+        description: "Shown when BookmarkStore.getAll() returns empty array. Contains:
+          organic line-art illustration placeholder area with slow opacity pulse
+          animation (2s infinite alternate, 0.6→1.0), heading 'No bookmarks yet'
+          (Fredoka 600 24px), subtext 'Save your first link' (Inter 400 15px,
+          muted), CTA button navigating to /add. Button styled with primary
+          color #6C5CE7, border-radius 20px, Fredoka 500 15px."
+        props:
+          heading: No bookmarks yet
+          subtext: Save your first link
+          ctaLabel: Save your first link
+          ctaRoute: /add
+      - id: comp-no-results-state
+        name: NoResultsState
+        type: display
+        description: Shown when filters and/or search produce zero matches but bookmarks
+          exist. Displays 'No bookmarks match your filters' text and a 'Clear
+          filters' text button that resets all active tag chips and search
+          input.
+        props:
+          heading: No bookmarks match your filters
+          clearLabel: Clear filters
+      - id: comp-fab
+        name: FloatingActionButton
+        type: button
+        description: "Fixed bottom-right FAB with '+' icon (Lucide fill). Background:
+          #6C5CE7. Border-radius: 20px (pill). On hover: 360° rotation animation
+          (400ms ease-in-out). Navigates to /add. Min touch target 44x44px.
+          aria-label='Add new bookmark'."
+        props:
+          icon: plus
+          route: /add
+          ariaLabel: Add new bookmark
+          hoverRotationDeg: 360
+          hoverAnimationMs: 400
+      - id: comp-toast
+        name: Toast
+        type: notification
+        description: "Top-center toast notification. Slides down from top with bounce
+          (cubic-bezier(0.34,1.56,0.64,1)). Background: #00CEC9. role='status',
+          aria-live='polite'. Auto-dismisses after 3 seconds. Includes close '×'
+          button. z-index: 1300."
+        props:
+          autoDismissMs: 3000
+          position: top-center
+          role: status
+          ariaLive: polite
+    dataSources:
+      - id: ds-bookmark-store-getall
+        name: BookmarkStore.getAll
+        type: local-store
+        description: Reads all bookmarks from localStorage-backed BookmarkStore. Returns
+          Bookmark[] sorted by createdAt descending.
+      - id: ds-bookmark-store-getalltags
+        name: BookmarkStore.getAllTags
+        type: local-store
+        description: Returns deduplicated, alphabetically sorted array of all tags
+          across all bookmarks for TagFilterChips.
+    correctionIteration: 0
+  - id: page-add-edit
+    name: Add / Edit Bookmark
+    route: /add | /edit/:id
+    description: Centered single-column form (max-width 480px) for creating or
+      editing a bookmark. Supports per-field blur validation and full submit
+      validation. Dirty form detection triggers inline warning bar on cancel.
+    status: draft
+    designStatus: draft
+    components:
+      - id: comp-bookmark-form
+        name: BookmarkForm
+        type: form
+        description: "Single-column form with 4 fields. Edit mode pre-fills from
+          BookmarkStore.getById(id). If id not found in edit mode, renders error
+          state with 'Bookmark not found' + 'Go back' link. Submit label: 'Save
+          Bookmark' (add) or 'Update Bookmark' (edit). Validation fires on blur
+          per-field and on submit for all. Untouched fields show no errors on
+          initial render. On valid submit: upserts to BookmarkStore, navigates
+          to / with success toast. Font: Inter 400 15px for inputs.
+          Border-radius: 8px for inputs. Labels associated via htmlFor. Error
+          messages linked via aria-describedby."
+        fields:
+          - name: title
+            type: text
+            label: Title
+            required: true
+            placeholder: Give your bookmark a name
+            validation:
+              - ruleId: V-01
+                condition: Empty or < 2 chars after trim
+                message: Title must be 2–120 characters.
+              - ruleId: V-02
+                condition: "> 120 chars"
+                message: Title must be 2–120 characters.
+          - name: url
+            type: text
+            label: URL
+            required: true
+            placeholder: https://example.com
+            validation:
+              - ruleId: V-03
+                condition: Empty
+                message: URL is required.
+              - ruleId: V-04
+                condition: Does not start with http:// or https://
+                message: Enter a valid URL starting with http:// or https://.
+          - name: tags
+            type: tag-input
+            label: Tags
+            required: false
+            placeholder: ai, design, frontend
+            description: Comma-separated. Lowercase alphanumeric + hyphens only. Max 5 tags,
+              each max 20 chars.
+            validation:
+              - ruleId: V-05
+                condition: A single tag has invalid characters
+                message: Tags can only contain letters, numbers, and hyphens.
+              - ruleId: V-06
+                condition: A single tag > 20 chars
+                message: Each tag must be 20 characters or less.
+              - ruleId: V-07
+                condition: More than 5 tags
+                message: Maximum 5 tags allowed.
+          - name: notes
+            type: textarea
+            label: Notes
+            required: false
+            placeholder: Any notes about this link…
+            maxLength: 280
+            description: Live character counter displayed below field (e.g., '142 / 280').
+            validation:
+              - ruleId: V-08
+                condition: "> 280 chars"
+                message: Notes must be 280 characters or less.
+        props:
+          maxWidth: 480px
+          dirtyCheck: true
+          validateOnBlur: true
+          validateOnSubmit: true
+      - id: comp-dirty-warning-bar
+        name: DirtyFormWarningBar
+        type: alert
+        description: "Inline amber/yellow warning bar shown below form header when form
+          is dirty and user clicks Cancel. Not a browser dialog. Contains
+          message 'You have unsaved changes' with two actions: 'Discard'
+          (navigates to /) and 'Keep editing' (dismisses bar). Background:
+          #FFEAA7 or marigold-400. No browser confirm() usage."
+        props:
+          message: You have unsaved changes
+          discardLabel: Discard
+          keepEditingLabel: Keep editing
+      - id: comp-not-found-error
+        name: BookmarkNotFoundError
+        type: display
+        description: Rendered in edit mode when BookmarkStore.getById(id) returns null.
+          Shows 'Bookmark not found' heading and 'Go back' link navigating to /.
+        props:
+          heading: Bookmark not found
+          backLabel: Go back
+          backRoute: /
+      - id: comp-cancel-button
+        name: CancelButton
+        type: button
+        description: "Returns to / with no changes. If form is dirty triggers
+          DirtyFormWarningBar instead of navigating immediately. Styled as
+          secondary/outlined button. Border-radius: 20px. Font: Fredoka 500
+          15px."
+        props:
+          label: Cancel
+          route: /
+    dataSources:
+      - id: ds-bookmark-store-getbyid
+        name: BookmarkStore.getById
+        type: local-store
+        description: Used in edit mode to pre-fill form fields. Returns Bookmark | null.
+      - id: ds-bookmark-store-create
+        name: BookmarkStore.create
+        type: local-store
+        description: Creates new bookmark with UUID v4 id, ISO 8601 createdAt and
+          updatedAt timestamps on valid form submit in add mode.
+      - id: ds-bookmark-store-update
+        name: BookmarkStore.update
+        type: local-store
+        description: Updates existing bookmark, refreshes updatedAt timestamp on valid
+          form submit in edit mode.
+  - id: page-detail
+    name: Bookmark Detail
+    route: /bookmark/:id
+    description: Optional stretch screen. Full-width read-only view of a single
+      bookmark with Open Link, Edit, and Delete actions.
+    status: draft
+    designStatus: draft
+    components:
+      - id: comp-detail-view
+        name: BookmarkDetailView
+        type: display
+        description: "Read-only display of all bookmark fields: title (Fredoka 600
+          24px), url (muted, Inter 400 15px), tags (chips, Inter 500 12px,
+          border-radius 20px), notes (Inter 400 15px), createdAt and updatedAt
+          (relative time, muted). Background card surface: #FFEAA7,
+          border-radius 12px, shadow: 0 2px 8px rgba(108,92,231,0.10)."
+        props: {}
+      - id: comp-open-link-button
+        name: OpenLinkButton
+        type: button
+        description: "Primary button that opens bookmark URL in a new tab
+          (target='_blank', rel='noopener noreferrer'). Label: 'Open Link'.
+          Background: #6C5CE7. Border-radius: 20px. Font: Fredoka 500 15px."
+        props:
+          label: Open Link
+          target: _blank
+      - id: comp-detail-edit-button
+        name: DetailEditButton
+        type: button
+        description: "Secondary button navigating to /edit/:id. Label: 'Edit'. Outlined
+          style. Border-radius: 20px. Font: Fredoka 500 15px."
+        props:
+          label: Edit
+      - id: comp-detail-delete
+        name: DetailDeleteInlineConfirm
+        type: interactive
+        description: "Delete button triggering same inline confirmation pattern as
+          BookmarkCard — replaces action area with 'Delete this bookmark?' +
+          Confirm / Cancel. 200ms crossfade transition. Auto-reverts after 5
+          seconds. On confirm: deletes from BookmarkStore, navigates to / with
+          toast 'Bookmark deleted'. Color: #FF6B6B."
+        props:
+          confirmPrompt: Delete this bookmark?
+          autoRevertMs: 5000
+          transitionMs: 200
+      - id: comp-detail-not-found
+        name: DetailNotFoundError
+        type: display
+        description: Rendered when BookmarkStore.getById(id) returns null. Shows
+          'Bookmark not found' heading and 'Go back' link to /.
+        props:
+          heading: Bookmark not found
+          backLabel: Go back
+          backRoute: /
+    dataSources:
+      - id: ds-detail-getbyid
+        name: BookmarkStore.getById
+        type: local-store
+        description: Fetches single bookmark by id for read-only display.
+      - id: ds-detail-delete
+        name: BookmarkStore.delete
+        type: local-store
+        description: Deletes bookmark by id on inline confirmation confirm action.

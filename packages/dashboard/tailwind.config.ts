@@ -42,9 +42,16 @@ const config: Config = {
           '0%, 100%': { boxShadow: '0 0 8px rgba(251,146,60,0.15)' },
           '50%': { boxShadow: '0 0 20px rgba(251,146,60,0.3)' },
         },
+        'fade-toast': {
+          '0%': { opacity: '0', transform: 'translate(-50%, 8px)' },
+          '10%': { opacity: '1', transform: 'translate(-50%, 0)' },
+          '85%': { opacity: '1', transform: 'translate(-50%, 0)' },
+          '100%': { opacity: '0', transform: 'translate(-50%, 8px)' },
+        },
       },
       animation: {
         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+        'fade-toast': 'fade-toast 3s ease-in-out forwards',
       },
     },
   },

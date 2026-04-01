@@ -1,0 +1,31 @@
+tasks:
+  - id: task-design-page-home-1775020915778
+    title: "Design page: Bookmark List"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/page-home.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null
+  - id: task-design-page-add-edit-1775023393087
+    title: "Design page: Add / Edit Bookmark"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/page-add-edit.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null

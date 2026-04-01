@@ -1,26 +1,11 @@
 tasks:
-  - id: task_design_w8pitd
-    title: "Design page: dashboard"
+  - id: task-design-dashboard-test
+    title: "Design page: Dashboard"
     phase: design
-    agent: ux_researcher
-    status: pending
+    agent: ux_research
+    status: completed
     depends_on: []
-    spec_ref: agentforge/spec/pages.yaml#page_dashboard_owk437
-    branch: null
-    pr_number: null
-    cost_usd: 0
-    tokens_used: 0
-    attempts: 0
-    max_attempts: 3
-    hitl_status: none
-    hitl_channel: null
-  - id: task_design_ugk2n1
-    title: "Design page: dashboard"
-    phase: design
-    agent: ux_researcher
-    status: pending
-    depends_on: []
-    spec_ref: agentforge/spec/pages.yaml#page_dashboard_dfrajf
+    spec_ref: agentforge/designs/dashboard.json
     branch: null
     pr_number: null
     cost_usd: 0

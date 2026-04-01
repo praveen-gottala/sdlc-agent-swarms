@@ -41,6 +41,16 @@ interface Props {
 // ─── Component ──────────────────────────────────────────
 
 export function DesignSpecRenderer({ spec, tokens, catalog }: Props) {
+  if (!spec?.nodes || typeof spec.nodes !== 'object' || Object.keys(spec.nodes).length === 0) {
+    return (
+      <div style={{ padding: 32, color: '#ef4444', fontFamily: 'monospace' }}>
+        <h2>Design Spec Error</h2>
+        <p>No nodes found in the design specification. The spec may have been truncated due to LLM token limits.</p>
+        <p>Try regenerating the design or reducing page complexity.</p>
+      </div>
+    );
+  }
+
   const tree = buildTree(spec.nodes);
   const tokenMap = buildTokenMap(tokens);
 
@@ -63,6 +73,23 @@ function resolveTokenColor(
   return tokenMap[token];
 }
 
+/** Extract margin/padding spacing from layout — applicable to ANY node type. */
+function getSpacingStyles(layout: LayoutSpec | undefined): React.CSSProperties {
+  if (!layout) return {};
+  const s: React.CSSProperties = {};
+  if (layout.px) { s.paddingLeft = layout.px; s.paddingRight = layout.px; }
+  if (layout.py) { s.paddingTop = layout.py; s.paddingBottom = layout.py; }
+  if (layout.pt) s.paddingTop = layout.pt;
+  if (layout.pb) s.paddingBottom = layout.pb;
+  if (layout.mx) { s.marginLeft = layout.mx; s.marginRight = layout.mx; }
+  if (layout.my) { s.marginTop = layout.my; s.marginBottom = layout.my; }
+  if (layout.mt) s.marginTop = layout.mt;
+  if (layout.mb) s.marginBottom = layout.mb;
+  if (layout.ml) s.marginLeft = layout.ml;
+  if (layout.mr) s.marginRight = layout.mr;
+  return s;
+}
+
 function getFlexStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   if (!layout) return {};
   const s: React.CSSProperties = {
@@ -77,11 +104,25 @@ function getFlexStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   if (layout.justify === 'center') s.justifyContent = 'center';
   else if (layout.justify === 'space-between') s.justifyContent = 'space-between';
   else if (layout.justify === 'end') s.justifyContent = 'flex-end';
-  if (layout.px) { s.paddingLeft = layout.px; s.paddingRight = layout.px; }
-  if (layout.py) { s.paddingTop = layout.py; s.paddingBottom = layout.py; }
-  if (layout.pt) s.paddingTop = layout.pt;
-  if (layout.pb) s.paddingBottom = layout.pb;
+  Object.assign(s, getSpacingStyles(layout));
   return s;
+}
+
+/**
+ * Common styles applied to ALL nodes (including catalog components).
+ * Ensures inspector-edited properties like margin, padding, size, radius,
+ * and shadow are always reflected in the rendered output.
+ */
+function getCommonNodeStyles(
+  node: ResolvedNode,
+  tokens: RendererTokens,
+): React.CSSProperties {
+  return {
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getShadowStyle(node.shadow, tokens),
+    ...getPositionStyles(node),
+  };
 }
 
 function getSizeStyles(
@@ -354,58 +395,59 @@ function renderCatalog(
 ): React.ReactNode {
   const catalogId = node.catalogId ?? '';
 
+  // Compute common styles (spacing, size, shadow, position) that apply to ALL
+  // catalog nodes. Individual renderers may override specific properties.
+  const common = getCommonNodeStyles(node, tokens);
+
   // Button variants
   if (catalogId.startsWith('button-')) {
-    return renderButtonVariant(node, catalogId, tokenMap);
+    return renderButtonVariant(node, catalogId, tokenMap, common);
   }
 
   // Badge variants
   if (catalogId.startsWith('badge')) {
-    return renderBadgeVariant(node, catalogId, tokenMap);
+    return renderBadgeVariant(node, catalogId, tokenMap, common);
   }
 
   switch (catalogId) {
     case 'avatar':
-      return renderAvatar(node);
+      return renderAvatar(node, common);
     case 'card':
       return renderCard(node, children, tokens, tokenMap);
     case 'input-text':
-      return renderInputText(node, tokens, tokenMap);
+      return renderInputText(node, tokens, tokenMap, common);
     case 'input-currency':
-      return renderInputCurrency(node, tokens, tokenMap);
+      return renderInputCurrency(node, tokens, tokenMap, common);
     case 'search-input':
-      return renderSearchInput(node);
+      return renderSearchInput(node, common);
     case 'select':
-      return renderSelect(node, tokens, tokenMap);
+      return renderSelect(node, tokens, tokenMap, common);
     case 'segmented-control':
-      return renderSegmentedControl(node, tokenMap);
+      return renderSegmentedControl(node, tokenMap, common);
     case 'stepper':
-      return renderStepper(node, tokenMap);
+      return renderStepper(node, tokenMap, common);
     case 'display-readonly':
-      return renderDisplayReadonly(node, tokens, tokenMap);
+      return renderDisplayReadonly(node, tokens, tokenMap, common);
     case 'checkbox':
-      return renderCheckboxNode(node, tokens, tokenMap);
+      return renderCheckboxNode(node, tokens, tokenMap, common);
     case 'stat':
-      return renderStat(node, tokens, tokenMap);
+      return renderStat(node, tokens, tokenMap, common);
     case 'chip': {
-      const chipStyle: React.CSSProperties = getSizeStyles(node.width, node.height);
-      return <Badge key={node.id} data-node={node.id} data-catalog="chip" variant="outline" style={Object.keys(chipStyle).length ? chipStyle : undefined}>{node.label ?? ''}</Badge>;
+      return <Badge key={node.id} data-node={node.id} data-catalog="chip" variant="outline" style={Object.keys(common).length ? common : undefined}>{node.label ?? ''}</Badge>;
     }
     case 'progress-bar-active':
-      return renderProgressBar(node);
+      return renderProgressBar(node, common);
     case 'pagination':
-      return renderPagination(node);
+      return renderPagination(node, common);
     case 'tooltip':
       return (
-        <div key={node.id} data-node={node.id} data-catalog={catalogId}>
+        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(common).length ? common : undefined}>
           {children}
         </div>
       );
     default: {
-      // Unknown catalog — render children in a div
-      const defStyle = getPositionStyles(node);
       return (
-        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(defStyle).length ? defStyle : undefined}>
+        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(common).length ? common : undefined}>
           {children}
         </div>
       );
@@ -419,6 +461,7 @@ function renderButtonVariant(
   node: ResolvedNode,
   catalogId: string,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const variantMap: Record<string, string> = {
     'button-primary': 'default',
@@ -428,7 +471,7 @@ function renderButtonVariant(
   };
   const variant = variantMap[catalogId] ?? 'default';
   const style: React.CSSProperties = {
-    ...getSizeStyles(node.width, node.height ?? 48),
+    ...common,
     borderRadius: node.radius,
   };
   return (
@@ -442,16 +485,16 @@ function renderBadgeVariant(
   node: ResolvedNode,
   catalogId: string,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const bg = resolveTokenColor(node.background, tokenMap);
   const textColor = resolveTokenColor(node.color, tokenMap);
   // Catalog badge variants define opacity for the background only (e.g., warning @ 0.15),
   // while the text stays at full opacity. Use a semi-transparent background with solid text.
   const opacity = node.catalogEntry?.opacity as number | undefined;
-  const style: React.CSSProperties = { position: 'relative' };
+  const style: React.CSSProperties = { ...common, position: 'relative' };
   if (textColor) style.color = textColor;
   if (node.radius) style.borderRadius = node.radius;
-  if (node.width) style.width = node.width === 'fill' ? '100%' : node.width;
   // Apply background: if opacity is set, mix it into the background color via rgba
   if (bg && opacity !== undefined && opacity < 1) {
     style.backgroundColor = hexToRgba(bg, opacity);
@@ -479,7 +522,7 @@ function hexToRgba(color: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function renderAvatar(node: ResolvedNode): React.ReactNode {
+function renderAvatar(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
   const label = node.label ?? '';
   const initials = label
     .split(' ')
@@ -488,7 +531,7 @@ function renderAvatar(node: ResolvedNode): React.ReactNode {
     .toUpperCase()
     .slice(0, 2);
   return (
-    <Avatar key={node.id} data-node={node.id} data-catalog="avatar">
+    <Avatar key={node.id} data-node={node.id} data-catalog="avatar" style={Object.keys(common).length ? common : undefined}>
       <AvatarFallback>{initials || '?'}</AvatarFallback>
     </Avatar>
   );
@@ -502,6 +545,7 @@ function renderCard(
 ): React.ReactNode {
   const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
   const style: React.CSSProperties = {
+    ...getSpacingStyles(node.layout),
     ...getSizeStyles(node.width, node.height),
     ...getShadowStyle(node.shadow, tokens),
     ...getPositionStyles(node),
@@ -520,11 +564,12 @@ function renderInputText(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} data-catalog="input-text" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
+    <div key={node.id} data-node={node.id} data-catalog="input-text" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -540,11 +585,12 @@ function renderInputCurrency(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} data-catalog="input-currency" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
+    <div key={node.id} data-node={node.id} data-catalog="input-currency" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -569,8 +615,7 @@ function renderInputCurrency(
   );
 }
 
-function renderSearchInput(node: ResolvedNode): React.ReactNode {
-  const style: React.CSSProperties = getSizeStyles(node.width, node.height);
+function renderSearchInput(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
   return (
     <Input
       key={node.id}
@@ -578,7 +623,7 @@ function renderSearchInput(node: ResolvedNode): React.ReactNode {
       data-catalog="search-input"
       type="search"
       placeholder={node.placeholder ?? 'Search...'}
-      style={Object.keys(style).length ? style : undefined}
+      style={Object.keys(common).length ? common : undefined}
     />
   );
 }
@@ -587,6 +632,7 @@ function renderSelect(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
@@ -594,7 +640,7 @@ function renderSelect(
   const bg = resolveTokenColor('background-primary', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
   return (
-    <div key={node.id} data-node={node.id} data-catalog="select" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
+    <div key={node.id} data-node={node.id} data-catalog="select" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
@@ -625,6 +671,7 @@ function renderSelect(
 function renderSegmentedControl(
   node: ResolvedNode,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const activeBg = resolveTokenColor('surface-elevated', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
@@ -636,6 +683,7 @@ function renderSegmentedControl(
       data-node={node.id}
       data-catalog="segmented-control"
       style={{
+        ...common,
         display: 'flex',
         borderRadius: 8,
         border: `1px solid ${borderColor ?? '#333'}`,
@@ -664,6 +712,7 @@ function renderSegmentedControl(
 function renderStepper(
   node: ResolvedNode,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const borderColor = resolveTokenColor('border-default', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
@@ -673,6 +722,7 @@ function renderStepper(
       data-node={node.id}
       data-catalog="stepper"
       style={{
+        ...common,
         display: 'flex',
         alignItems: 'center',
         gap: 12,
@@ -694,12 +744,13 @@ function renderDisplayReadonly(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} data-catalog="display-readonly" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div key={node.id} data-node={node.id} data-catalog="display-readonly" style={{ ...common, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {node.label && (
         <span style={{ ...labelStyle, color: labelColor }}>{node.label}</span>
       )}
@@ -712,6 +763,7 @@ function renderCheckboxNode(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const fg = resolveTokenColor('text-primary', tokenMap);
   return (
@@ -719,7 +771,7 @@ function renderCheckboxNode(
       key={node.id}
       data-node={node.id}
       data-catalog="checkbox"
-      style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
+      style={{ ...common, display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
     >
       <Checkbox id={node.id} />
       {node.label && (
@@ -735,12 +787,13 @@ function renderStat(
   node: ResolvedNode,
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
+  common: React.CSSProperties,
 ): React.ReactNode {
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const fg = resolveTokenColor('text-primary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   return (
-    <div key={node.id} data-node={node.id} data-catalog="stat" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...getSizeStyles(node.width, node.height) }}>
+    <div key={node.id} data-node={node.id} data-catalog="stat" style={{ ...common, display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={{ ...labelStyle, color: labelColor }}>{node.label ?? ''}</span>
       <span style={{ fontSize: 24, fontWeight: 700, color: fg }}>
         {node.value ?? node.content ?? ''}
@@ -749,17 +802,16 @@ function renderStat(
   );
 }
 
-function renderProgressBar(node: ResolvedNode): React.ReactNode {
+function renderProgressBar(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
   const value = typeof node.value === 'number' ? node.value : 0;
-  const style: React.CSSProperties = getSizeStyles(node.width, undefined);
   return (
-    <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={style} />
+    <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={Object.keys(common).length ? common : undefined} />
   );
 }
 
-function renderPagination(node: ResolvedNode): React.ReactNode {
+function renderPagination(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
   return (
-    <Pagination key={node.id} data-node={node.id} data-catalog="pagination">
+    <Pagination key={node.id} data-node={node.id} data-catalog="pagination" style={Object.keys(common).length ? common : undefined}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious href="#" />

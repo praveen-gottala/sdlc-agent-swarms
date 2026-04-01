@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk&family=JetBrains+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 4%;
+    --card: 240 6% 10%;
+    --popover: 240 4% 16%;
+    --foreground: 240 6% 90%;
+    --primary: 262 83% 58%;
+    --accent: 263 70% 50%;
+    --border: 240 5% 34%;
+    --ring: 255 92% 76%;
+    --destructive: 350 89% 60%;
+    --success: 142 71% 45%;
+    --warning: 43 96% 56%;
+    --info: 188 86% 53%;
+    --overlay: rgba(9, 9, 11, 0.70);
+    --card-foreground: 240 6% 90%;
+    --popover-foreground: 240 6% 90%;
+    --primary-foreground: 0 0% 100%;
+    --secondary-foreground: 240 6% 90%;
+    --muted-foreground: 240 5% 65%;
+    --accent-foreground: 240 6% 90%;
+    --destructive-foreground: 0 0% 100%;
+    --input: 240 5% 34%;
+    --secondary: 240 4% 16%;
+    --muted: 240 4% 16%;
+    --radius: 0.75rem;
+    --shadow-1: 0 1px 4px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(124, 58, 237, 0.08);
+    --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(124, 58, 237, 0.15);
+    --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(167, 139, 250, 0.20), 0 0 32px rgba(124, 58, 237, 0.12);
+  }
+}

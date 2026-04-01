@@ -1,0 +1,374 @@
+pages:
+  - id: page-home
+    name: Bookmark List
+    route: /
+    description: Main screen displaying all bookmarks in a filterable card grid.
+      Supports real-time search and multi-tag filtering with AND logic. Shows
+      empty state or no-results state based on data and filter conditions.
+    status: draft
+    designStatus: rendered
+    components:
+      - id: comp-search-bar
+        name: SearchBar
+        type: input
+        description: Text input with magnifying glass icon. Filters bookmark cards in
+          real time by title and url using case-insensitive substring matching.
+          Debounced at 150ms.
+        props:
+          placeholder: Search bookmarks…
+          icon: magnifying-glass
+          ariaLabel: Search bookmarks by title or URL
+      - id: comp-tag-filter-chips
+        name: TagFilterChips
+        type: filter-chip-group
+        description: Horizontally scrollable row of tag chips derived from all existing
+          bookmarks. Includes a special 'All' chip that clears all active tag
+          filters. Multiple chips can be toggled simultaneously (AND logic).
+          Active chips use filled indigo style; inactive use outlined style with
+          150ms ease transition.
+        props:
+          includeAllChip: true
+          multiSelect: true
+          filterLogic: AND
+          transitionDuration: 150
+          activeStyle: filled
+          inactiveStyle: outlined
+      - id: comp-bookmark-card
+        name: BookmarkCard
+        type: card
+        description: Card displaying bookmark data. Title is single-line truncated with
+          ellipsis at 60 chars. URL is single-line truncated in muted secondary
+          text. Tags rendered as small chips with max 3 visible and '+N'
+          overflow indicator. createdAt shown as relative time (e.g. '2h ago').
+          Hover reveals edit (pencil) and delete (trash) action icons with
+          subtle shadow elevation increase. On mobile, icons are always visible.
+          Delete triggers inline card flip to confirmation prompt (200ms
+          crossfade) with Confirm/Cancel. Auto-reverts after 5 seconds if no
+          action taken. Edit navigates to /edit/:id.
+        props:
+          titleMaxChars: 60
+          maxVisibleTags: 3
+          hoverElevation: 2
+          deleteConfirmAutoRevert: 5000
+          deleteTransitionDuration: 200
+          actions:
+            - edit
+            - delete
+      - id: comp-empty-state
+        name: EmptyState
+        type: empty-state
+        description: Shown when BookmarkStore is empty (no bookmarks exist at all).
+          Displays a line-art illustration placeholder, 'No bookmarks yet'
+          heading, 'Save your first link' subtext, and a CTA button navigating
+          to /add.
+        props:
+          illustration: link-chain-line-art
+          heading: No bookmarks yet
+          subtext: Save your first link
+          ctaLabel: Save your first link
+          ctaRoute: /add
+      - id: comp-no-results-state
+        name: NoResultsState
+        type: empty-state
+        description: Shown when active filters (search or tag) yield zero matching
+          bookmarks. Displays 'No bookmarks match your filters' message and a
+          'Clear filters' text button that resets all active filters.
+        props:
+          message: No bookmarks match your filters
+          clearFiltersLabel: Clear filters
+      - id: comp-fab
+        name: FAB
+        type: floating-action-button
+        description: Fixed bottom-right floating action button with '+' icon. Navigates
+          to /add. Always visible on scroll. Minimum 44x44px touch target.
+        props:
+          icon: plus
+          ariaLabel: Add new bookmark
+          position: bottom-right
+          navigateTo: /add
+          zIndex: 1100
+      - id: comp-toast
+        name: Toast
+        type: notification
+        description: Transient success/error toast appearing top-center. Auto-dismisses
+          after 3 seconds. Includes close '×' button. role='status' and
+          aria-live='polite' for accessibility. z-index 1300.
+        props:
+          position: top-center
+          autoDismissMs: 3000
+          role: status
+          ariaLive: polite
+          showCloseButton: true
+          zIndex: 1300
+    dataSources:
+      - id: ds-bookmark-store-all
+        name: BookmarkStore.getAll
+        description: "Fetches all bookmarks from the local BookmarkStore. Client-side
+          filtering is applied in order: tag filter first, then search filter."
+        endpoint: GET /api/bookmarks
+        filterOrder:
+          - tags
+          - search
+      - id: ds-bookmark-store-tags
+        name: BookmarkStore.getAllTags
+        description: Fetches deduplicated, alphabetically sorted list of all tags across
+          all bookmarks for rendering TagFilterChips.
+        endpoint: GET /api/bookmarks/tags
+    correctionIteration: 0
+    designScore: null
+  - id: page-add-edit
+    name: Add / Edit Bookmark
+    route: /add | /edit/:id
+    description: Centered single-column form (max-width 480px) for creating or
+      editing a bookmark. Pre-fills fields in edit mode. Validates per-field on
+      blur and all fields on submit. Untouched fields do not display errors on
+      initial render. Shows dirty-form warning inline bar when navigating away
+      with unsaved changes.
+    status: draft
+    designStatus: rendered
+    components:
+      - id: comp-form-header
+        name: FormHeader
+        type: heading
+        description: Page heading displaying 'Add Bookmark' in new mode or 'Edit
+          Bookmark' in edit mode. Rendered as heading-2 typography (24px, 700
+          weight).
+        props:
+          addLabel: Add Bookmark
+          editLabel: Edit Bookmark
+      - id: comp-dirty-warning-bar
+        name: DirtyFormWarningBar
+        type: inline-alert
+        description: Amber/yellow inline warning bar appearing below the form header
+          when the form is dirty and the user attempts to cancel. Contains 'You
+          have unsaved changes' message with 'Discard' and 'Keep editing' action
+          buttons. Never uses browser confirm() dialogs.
+        props:
+          message: You have unsaved changes
+          discardLabel: Discard
+          keepEditingLabel: Keep editing
+          color: amber-400
+          position: below-header
+          triggerOnCancel: true
+      - id: comp-title-field
+        name: TitleField
+        type: text-input
+        description: "Required text input for bookmark title. Label: 'Title'. Min 2
+          chars, max 120 chars after whitespace trim. Validates on blur and on
+          submit. Inline error linked via aria-describedby. Error: 'Title must
+          be 2–120 characters.'"
+        props:
+          label: Title
+          required: true
+          minLength: 2
+          maxLength: 120
+          trimWhitespace: true
+          validateOnBlur: true
+          validateOnSubmit: true
+          errorMessages:
+            V-01: Title must be 2–120 characters.
+            V-02: Title must be 2–120 characters.
+      - id: comp-url-field
+        name: UrlField
+        type: text-input
+        description: "Required text input for bookmark URL. Label: 'URL'. Must start
+          with http:// or https://. Validates on blur and on submit. Inline
+          error linked via aria-describedby."
+        props:
+          label: URL
+          required: true
+          pattern: ^https?://
+          inputMode: url
+          validateOnBlur: true
+          validateOnSubmit: true
+          errorMessages:
+            V-03: URL is required.
+            V-04: Enter a valid URL starting with http:// or https://.
+      - id: comp-tags-field
+        name: TagsField
+        type: tag-input
+        description: Optional tag input accepting comma-separated entries. Each tag must
+          be lowercase alphanumeric + hyphens only, max 20 chars. Maximum 5 tags
+          total. Tags are rendered as removable chips inside the input.
+          Validates on blur and on submit. Inline errors linked via
+          aria-describedby.
+        props:
+          label: Tags
+          required: false
+          maxTags: 5
+          maxTagLength: 20
+          allowedPattern: ^[a-z0-9-]+$
+          separator: ","
+          validateOnBlur: true
+          validateOnSubmit: true
+          errorMessages:
+            V-05: Tags can only contain letters, numbers, and hyphens.
+            V-06: Each tag must be 20 characters or less.
+            V-07: Maximum 5 tags allowed.
+      - id: comp-notes-field
+        name: NotesField
+        type: textarea
+        description: "Optional textarea for notes. Label: 'Notes'. Max 280 chars. Live
+          character counter displayed below field in format '142 / 280'.
+          Validates on blur and on submit."
+        props:
+          label: Notes
+          required: false
+          maxLength: 280
+          showCharCounter: true
+          charCounterFormat: "{current} / {max}"
+          rows: 4
+          validateOnBlur: true
+          validateOnSubmit: true
+          errorMessages:
+            V-08: Notes must be 280 characters or less.
+      - id: comp-submit-button
+        name: SubmitButton
+        type: button
+        description: Primary CTA button. Label is 'Save Bookmark' in add mode and
+          'Update Bookmark' in edit mode. Triggers full-form validation on
+          click. Disabled state shown during submission.
+        props:
+          addLabel: Save Bookmark
+          editLabel: Update Bookmark
+          variant: primary
+          type: submit
+          disabledDuringSubmit: true
+      - id: comp-cancel-button
+        name: CancelButton
+        type: button
+        description: Secondary button labeled 'Cancel'. If form is dirty, triggers
+          DirtyFormWarningBar display instead of immediate navigation. If form
+          is pristine, navigates directly to /.
+        props:
+          label: Cancel
+          variant: secondary
+          navigateTo: /
+          checkDirty: true
+      - id: comp-not-found-state
+        name: BookmarkNotFoundState
+        type: error-state
+        description: Shown in edit mode when the bookmark id from the route does not
+          exist in BookmarkStore. Displays 'Bookmark not found' message and a
+          'Go back' link navigating to /.
+        props:
+          message: Bookmark not found
+          backLabel: Go back
+          backRoute: /
+    dataSources:
+      - id: ds-bookmark-get-by-id
+        name: BookmarkStore.getById
+        description: Fetches a single bookmark by id for pre-filling the edit form. Only
+          active in edit mode (/edit/:id).
+        endpoint: GET /api/bookmarks/:id
+      - id: ds-bookmark-create
+        name: BookmarkStore.create
+        description: Creates a new bookmark on valid form submission in add mode.
+          Generates UUID v4 id and ISO 8601 timestamps.
+        endpoint: POST /api/bookmarks
+      - id: ds-bookmark-update
+        name: BookmarkStore.update
+        description: Updates an existing bookmark on valid form submission in edit mode.
+          Updates updatedAt timestamp.
+        endpoint: PUT /api/bookmarks/:id
+    correctionIteration: 0
+    designScore: null
+  - id: page-detail
+    name: Bookmark Detail
+    route: /bookmark/:id
+    description: Optional stretch screen. Full-width read-only view of a single
+      bookmark. Displays all fields. Primary action 'Open Link' opens url in a
+      new tab. Edit button navigates to /edit/:id. Delete button uses same
+      inline confirmation pattern as BookmarkCard (no modal).
+    status: draft
+    designStatus: draft
+    components:
+      - id: comp-detail-title
+        name: DetailTitle
+        type: heading
+        description: Displays bookmark title as heading-1 (32px, 700 weight).
+        props:
+          typographyRole: heading-1
+      - id: comp-detail-url
+        name: DetailUrl
+        type: text
+        description: Displays the full URL in muted secondary text color (ink-600).
+          Rendered as a non-interactive text element (the Open Link button is
+          the CTA).
+        props:
+          color: text-secondary
+      - id: comp-detail-tags
+        name: DetailTags
+        type: chip-group
+        description: Renders all tags as read-only outlined chips. No overflow limit on
+          detail view.
+        props:
+          style: outlined
+          interactive: false
+      - id: comp-detail-notes
+        name: DetailNotes
+        type: text
+        description: Displays notes content in body typography. Hidden if notes is empty.
+        props:
+          typographyRole: body
+          hideIfEmpty: true
+      - id: comp-detail-created-at
+        name: DetailCreatedAt
+        type: text
+        description: Displays createdAt in relative time format (e.g. '2h ago') and
+          updatedAt if different from createdAt.
+        props:
+          typographyRole: small
+          color: text-secondary
+          format: relative
+      - id: comp-open-link-button
+        name: OpenLinkButton
+        type: button
+        description: Primary button 'Open Link'. Opens the bookmark url in a new browser
+          tab with rel='noopener noreferrer'.
+        props:
+          label: Open Link
+          variant: primary
+          target: _blank
+          rel: noopener noreferrer
+      - id: comp-detail-edit-button
+        name: DetailEditButton
+        type: button
+        description: Secondary button with pencil icon navigating to /edit/:id.
+        props:
+          label: Edit
+          icon: pencil
+          variant: secondary
+      - id: comp-detail-delete
+        name: DetailDeleteControl
+        type: inline-delete-confirm
+        description: Trash icon button that triggers an inline confirmation prompt
+          (200ms crossfade, same pattern as BookmarkCard). 'Delete this
+          bookmark?' with Confirm and Cancel. Auto-reverts after 5 seconds. On
+          confirm, deletes bookmark and navigates to /.
+        props:
+          icon: trash
+          confirmMessage: Delete this bookmark?
+          confirmLabel: Confirm
+          cancelLabel: Cancel
+          autoRevertMs: 5000
+          transitionDuration: 200
+          onConfirmNavigateTo: /
+      - id: comp-detail-not-found
+        name: DetailNotFoundState
+        type: error-state
+        description: Shown when the bookmark id from the route does not exist. Displays
+          'Bookmark not found' and 'Go back' link.
+        props:
+          message: Bookmark not found
+          backLabel: Go back
+          backRoute: /
+    dataSources:
+      - id: ds-detail-get-by-id
+        name: BookmarkStore.getById
+        description: Fetches a single bookmark by id for the detail view.
+        endpoint: GET /api/bookmarks/:id
+      - id: ds-detail-delete
+        name: BookmarkStore.delete
+        description: Deletes the bookmark after inline confirmation.
+        endpoint: DELETE /api/bookmarks/:id

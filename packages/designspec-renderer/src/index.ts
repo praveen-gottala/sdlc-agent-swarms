@@ -98,6 +98,9 @@ export type { BrowserSession } from './renderer/browser/screenshot-session.js';
 export { runInteractivePreview, openInteractivePreview } from './renderer/browser/interactive-preview.js';
 export type { UserFeedbackTag, InteractivePreviewResult, InteractivePreviewSession } from './renderer/browser/interactive-preview.js';
 
+// ─── Iframe Communication Protocol ─────────────────────
+export type { ParentMessage, ChildMessage } from './renderer/browser/iframe-protocol.js';
+
 // ─── Renderer Introspection ─────────────────────────────
 export { getRenderableCatalogIds, registerCatalogRenderer } from './renderer/penpot/components/index.js';
 export { generateRenderer, generateCatalogEntry } from './renderer/penpot/components/catalog-dynamic.js';

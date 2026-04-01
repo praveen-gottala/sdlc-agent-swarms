@@ -12,6 +12,18 @@ Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 <!-- Update at session end -->
 Last session: (date, what was done, what's next)
 
+## Browser-First Debugging (HIGHEST PRIORITY)
+
+When the user reports a UI issue, is stuck, or something "isn't working":
+1. **Use browser tools first.** Launch the dev server (`npx next dev --port 3000`),
+   navigate to the relevant page using Chrome DevTools MCP (`navigate_page`,
+   `take_screenshot`, `take_snapshot`, `click`), and visually verify the state.
+2. Do NOT guess or theorize — open the page, take a screenshot, inspect the DOM.
+3. Use `take_snapshot` to get the a11y tree for clickable elements, then `click`
+   to interact and reproduce the issue.
+4. After making code changes, reload the page and screenshot again to confirm the fix.
+5. This applies to all dashboard/UI work in `packages/dashboard/`.
+
 ## Development Rules (PRD Compliance)
 
 These rules are non-negotiable. They apply to every implementation task, bug fix,
@@ -22,6 +34,11 @@ and test written in this project.
   "related to" the change. No such thing as a "pre-existing" failure.
 - Run `nx run-many -t typecheck` and `nx run-many -t test` after every change.
   Do not declare done until both pass with zero failures.
+- When changes touch dashboard UI, API routes, or E2E-covered functionality
+  (pages under `packages/dashboard/`, `e2e/`), also run Playwright E2E tests:
+  `npx playwright test` (from monorepo root). All E2E tests must pass before
+  declaring done. The dashboard auto-starts the design renderer — Playwright
+  config only starts the Next.js server.
 
 ### PRD is Source of Truth
 - PRD (docs/PRD-v2.md) defines WHAT and WHY. TypeScript interfaces in

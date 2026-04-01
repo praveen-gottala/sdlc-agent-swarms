@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 export interface CreateAgentModalProps {
   open: boolean;
   onClose: () => void;
+  onCreate?: (agent: { name: string; role: string; model: string }) => void;
 }
 
 const ALL_PERMISSIONS = [
@@ -73,8 +74,12 @@ function Section({ title, index, expanded, onToggle, children }: SectionProps) {
 /**
  * Seven-section modal for creating a new agent.
  */
-export function CreateAgentModal({ open, onClose }: CreateAgentModalProps) {
+export function CreateAgentModal({ open, onClose, onCreate }: CreateAgentModalProps) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 1: true });
+  const [agentName, setAgentName] = useState('');
+  const [agentRole, setAgentRole] = useState('');
+  const [agentModel, setAgentModel] = useState('claude-sonnet-4');
+  const [submitting, setSubmitting] = useState(false);
   const [selectedHitl, setSelectedHitl] = useState<string>('review_and_override');
   const [allowedPerms, setAllowedPerms] = useState<Permission[]>([
     'read_spec',
@@ -117,7 +122,7 @@ export function CreateAgentModal({ open, onClose }: CreateAgentModalProps) {
         {/* 1. Identity & Role */}
         <Section title="Identity & Role" index={1} expanded={!!expanded[1]} onToggle={() => toggle(1)}>
           <div className="grid gap-4">
-            <Input label="Name" placeholder="e.g. Code Reviewer" />
+            <Input label="Name" placeholder="e.g. Code Reviewer" value={agentName} onChange={(e) => setAgentName(e.target.value)} />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-text-secondary">Description</label>
               <textarea
@@ -129,6 +134,8 @@ export function CreateAgentModal({ open, onClose }: CreateAgentModalProps) {
             <Select
               label="Category"
               placeholder="Select category"
+              value={agentRole}
+              onChange={(e) => setAgentRole(e.target.value)}
               options={[
                 { label: 'Code Generation', value: 'code-gen' },
                 { label: 'Spec Writing', value: 'spec-writer' },
@@ -147,6 +154,8 @@ export function CreateAgentModal({ open, onClose }: CreateAgentModalProps) {
           <div className="grid gap-4">
             <Select
               label="Provider"
+              value={agentModel}
+              onChange={(e) => setAgentModel(e.target.value)}
               options={[
                 { label: 'Claude Sonnet 4', value: 'claude-sonnet-4' },
                 { label: 'Claude Haiku 4.5', value: 'claude-haiku-4-5' },
@@ -364,7 +373,37 @@ export function CreateAgentModal({ open, onClose }: CreateAgentModalProps) {
         <Button variant="ghost" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="primary">Create Agent</Button>
+        <Button
+          variant="primary"
+          disabled={submitting || !agentName || !agentRole}
+          onClick={async () => {
+            setSubmitting(true);
+            try {
+              const res = await fetch('/api/agents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: agentName,
+                  role: agentRole,
+                  model: agentModel,
+                }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                onCreate?.({ name: agentName, role: agentRole, model: agentModel, ...data.agent });
+                setAgentName('');
+                setAgentRole('');
+                setAgentModel('claude-sonnet-4');
+                onClose();
+              }
+            } catch {
+              // Silently fail
+            }
+            setSubmitting(false);
+          }}
+        >
+          {submitting ? 'Creating...' : 'Create Agent'}
+        </Button>
       </div>
     </Modal>
   );

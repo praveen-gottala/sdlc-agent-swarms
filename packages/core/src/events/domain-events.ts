@@ -381,6 +381,21 @@ export interface UXModuleDeployed extends BaseDomainEventFields {
   readonly figmaContextRef: string;
 }
 
+/** Fired when a pipeline run progresses through stages. */
+export interface PipelineRunProgress extends BaseDomainEventFields {
+  readonly type: 'PipelineRunProgress';
+  readonly runId: string;
+  readonly pipeline: 'init' | 'design-generate' | 'design-penpot';
+  readonly stage: string;
+  readonly stageIndex: number;
+  readonly totalStages: number;
+  readonly status: 'started' | 'completed' | 'failed' | 'log';
+  readonly taskId?: string;
+  readonly agentRole?: string;
+  readonly detail?: string;
+  readonly cost?: { totalCostUsd: number; tokensUsed: number };
+}
+
 /** Fired when the Design Agent creates a Figma design from a component spec. */
 export interface FigmaDesignReady extends BaseDomainEventFields {
   readonly type: 'FigmaDesignReady';
@@ -439,7 +454,8 @@ export type DomainEvent =
   | UXReviewCompleted
   | UXTestSuiteCompleted
   | UXModuleDeployed
-  | FigmaDesignReady;
+  | FigmaDesignReady
+  | PipelineRunProgress;
 
 /** Union of all possible `type` values on a `DomainEvent`. */
 export type DomainEventType = DomainEvent['type'];

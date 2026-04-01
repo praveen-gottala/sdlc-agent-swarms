@@ -1,0 +1,20 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Energetic, irreverent, and competitive — like an arcade leaderboard where
+    every game feels high-stakes and every win deserves bragging rights
+  audience: general
+illustration_style:
+  direction: Pixel art with a modern twist
+  description: Bold pixel-art icons for X and O markers with glowing outlines,
+    retro scanline textures on surfaces, chunky 8-bit confetti particles on win,
+    and a grid drawn with neon-tube stroke effects. Winning lines pulse with
+    electric cyan glow. AI 'thinking' shown as a retro loading bar with blinking
+    cursor.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: snappy
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA
