@@ -5,7 +5,7 @@ pages:
     description: Main screen displaying all saved bookmarks in a responsive card
       grid with real-time search and tag filtering capabilities.
     status: draft
-    designStatus: generating
+    designStatus: rendered
     components:
       - id: comp-search-bar
         name: SearchBar
@@ -111,6 +111,7 @@ pages:
         description: Returns deduplicated, alphabetically sorted array of all tags
           across all bookmarks for TagFilterChips.
     correctionIteration: 0
+    designScore: null
   - id: page-add-edit
     name: Add / Edit Bookmark
     route: /add | /edit/:id

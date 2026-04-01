@@ -80,7 +80,8 @@ function DesignStudioContent() {
   // Renderer tokens + catalog for the iframe renderer
   const [rendererData, setRendererData] = useState<{ tokens: any; catalog: any } | null>(null);
 
-  // Pipeline run state
+  // Pipeline run state — keyed by pageId so switching pages preserves each run
+  const pipelineRunMapRef = useRef<Record<string, string>>({});
   const [pipelineRunId, setPipelineRunId] = useState<string | null>(null);
   const [showPipelineChoice, setShowPipelineChoice] = useState(false);
 
@@ -226,11 +227,17 @@ function DesignStudioContent() {
               : p,
           ),
         );
+
+        // Recover lost pipelineRunId from server when a run is active
+        if (updated.activeRunId && pageId === selectedId && !pipelineRunId) {
+          setPipelineRunId(updated.activeRunId);
+          pipelineRunMapRef.current[pageId] = updated.activeRunId;
+        }
       } catch {
         // ignore
       }
     },
-    [],
+    [selectedId, pipelineRunId],
   );
 
   // Safety net: if a page shows "generating" but we have no pipelineRunId,
@@ -272,13 +279,18 @@ function DesignStudioContent() {
   const handleSelect = useCallback(
     (id: string) => {
       log('INFO', 'registry', `Page selected: ${id}`);
+      // Save current page's runId, restore the target page's runId
+      if (selectedId && pipelineRunId) {
+        pipelineRunMapRef.current[selectedId] = pipelineRunId;
+      }
       setSelectedId(id);
+      setPipelineRunId(pipelineRunMapRef.current[id] ?? null);
       refreshPage(id);
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', id);
       router.replace(`/design?${params.toString()}`);
     },
-    [searchParams, router, log, refreshPage],
+    [searchParams, router, log, refreshPage, selectedId, pipelineRunId],
   );
 
   const handleCreateNew = useCallback(async () => {
@@ -513,6 +525,7 @@ function DesignStudioContent() {
         if (r.ok) {
           const data = await r.json();
           setPipelineRunId(data.runId);
+          pipelineRunMapRef.current[selectedId] = data.runId;
         } else {
           const data = await r.json().catch(() => ({ error: 'Pipeline failed' }));
           showToast(data.error ?? 'Full pipeline failed');
@@ -527,6 +540,7 @@ function DesignStudioContent() {
 
   const handlePipelineComplete = useCallback(() => {
     if (selectedId) {
+      delete pipelineRunMapRef.current[selectedId];
       refreshPage(selectedId);
       setPipelineRunId(null);
     }

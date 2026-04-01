@@ -451,14 +451,15 @@ export function DesignCanvas({
           </EmptyState>
         )}
 
-        {/* Generating: show progress animation */}
+        {/* Generating without pipeline view: treat like draft so user isn't stuck */}
         {page && status === 'generating' && (
-          <EmptyState title="Generating design" description="The design agent is working on this page.">
-            <div className="flex items-center gap-1.5 mt-2">
-              <span className="w-2 h-2 rounded-full bg-accent-blue animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full bg-accent-blue animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full bg-accent-blue animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
+          <EmptyState title="No design yet" description="Generate a design spec for this page.">
+            <Button
+              variant="primary"
+              onClick={() => onGenerateDesign?.()}
+            >
+              Generate design
+            </Button>
           </EmptyState>
         )}
 

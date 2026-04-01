@@ -19,11 +19,19 @@ export interface RunProgress {
   label: string;
 }
 
+export interface StageTiming {
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+}
+
 export interface RunStatus {
   runId: string;
   type: 'init' | 'design-generate' | 'design-penpot';
   status: 'pending' | 'running' | 'complete' | 'failed';
   stage: string | null;
+  /** Human-readable description of what the current stage is doing */
+  stageDescription: string | null;
   progress: RunProgress | null;
   agentRole: string | null;
   startedAt: string;
@@ -31,6 +39,8 @@ export interface RunStatus {
   error: string | null;
   params: Record<string, unknown>;
   cost: RunCost | null;
+  /** Per-stage start/complete timestamps keyed by stage name */
+  stageTimings: Record<string, StageTiming> | null;
 }
 
 function runsDir(): string {
@@ -88,6 +98,7 @@ export function startRun(
     type,
     status: 'pending',
     stage: null,
+    stageDescription: null,
     progress: null,
     agentRole: null,
     startedAt: new Date().toISOString(),
@@ -95,23 +106,40 @@ export function startRun(
     error: null,
     params,
     cost: null,
+    stageTimings: null,
   };
 
   writeRun(run);
   return { ok: true, run };
 }
 
-/** Update a run's status and stage info. */
+/** Update a run's status and stage info. Auto-manages stageTimings. */
 export function updateRunStatus(
   runId: string,
-  updates: Partial<Pick<RunStatus, 'status' | 'stage' | 'progress' | 'agentRole' | 'cost'>>,
+  updates: Partial<Pick<RunStatus, 'status' | 'stage' | 'progress' | 'agentRole' | 'cost' | 'stageDescription'>>,
 ): RunStatus | null {
   const run = readRun(runId);
   if (!run) return null;
 
+  const timings = { ...(run.stageTimings ?? {}) };
+
+  // If the stage changed, mark the old stage as completed and start the new one
+  if (updates.stage && updates.stage !== run.stage) {
+    const now = new Date().toISOString();
+    if (run.stage && timings[run.stage] && !timings[run.stage].completedAt) {
+      timings[run.stage] = {
+        ...timings[run.stage],
+        completedAt: now,
+        durationMs: new Date(now).getTime() - new Date(timings[run.stage].startedAt).getTime(),
+      };
+    }
+    timings[updates.stage] = { startedAt: now };
+  }
+
   const updated: RunStatus = {
     ...run,
     ...updates,
+    stageTimings: Object.keys(timings).length > 0 ? timings : null,
   };
   writeRun(updated);
   return updated;
@@ -122,11 +150,22 @@ export function completeRun(runId: string, cost?: RunCost): RunStatus | null {
   const run = readRun(runId);
   if (!run) return null;
 
+  const now = new Date().toISOString();
+  const timings = { ...(run.stageTimings ?? {}) };
+  if (run.stage && timings[run.stage] && !timings[run.stage].completedAt) {
+    timings[run.stage] = {
+      ...timings[run.stage],
+      completedAt: now,
+      durationMs: new Date(now).getTime() - new Date(timings[run.stage].startedAt).getTime(),
+    };
+  }
+
   const updated: RunStatus = {
     ...run,
     status: 'complete',
-    completedAt: new Date().toISOString(),
+    completedAt: now,
     cost: cost ?? run.cost,
+    stageTimings: Object.keys(timings).length > 0 ? timings : null,
   };
   writeRun(updated);
   return updated;

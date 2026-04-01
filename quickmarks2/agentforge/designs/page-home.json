@@ -1,0 +1,1609 @@
+{
+  "screen": "bookmark-list",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "filter-zone": {
+      "parent": "page-root",
+      "order": 0,
+      "type": "section",
+      "background": "background-primary",
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "gap": 12,
+        "px": 24,
+        "py": 16
+      },
+      "width": "fill"
+    },
+    "search-bar": {
+      "parent": "filter-zone",
+      "order": 0,
+      "catalog": "input-text",
+      "label": "Search bookmarks",
+      "placeholder": "Search by title or URL…",
+      "width": "fill",
+      "height": 48,
+      "radius": 8,
+      "overrides": {
+        "leading_icon": "search",
+        "trailing_icon": "x-circle",
+        "aria_label": "Search bookmarks",
+        "border_color": "border-default"
+      }
+    },
+    "tag-filter-chip-row": {
+      "parent": "filter-zone",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      },
+      "width": "fill",
+      "height": 44,
+      "overrides": {
+        "overflow_x": "auto",
+        "flex_wrap": "nowrap",
+        "scrollbar": "none"
+      }
+    },
+    "chip-all": {
+      "parent": "tag-filter-chip-row",
+      "order": 0,
+      "catalog": "chip",
+      "label": "All",
+      "overrides": {
+        "selected": true,
+        "aria_label": "Show all bookmarks, clear filters",
+        "aria_pressed": true,
+        "radius": 9999,
+        "background": "cta-primary",
+        "color": "text-on-cta"
+      }
+    },
+    "chip-frontend": {
+      "parent": "tag-filter-chip-row",
+      "order": 1,
+      "catalog": "chip",
+      "label": "frontend",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-react": {
+      "parent": "tag-filter-chip-row",
+      "order": 2,
+      "catalog": "chip",
+      "label": "react",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-ai": {
+      "parent": "tag-filter-chip-row",
+      "order": 3,
+      "catalog": "chip",
+      "label": "ai",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-design": {
+      "parent": "tag-filter-chip-row",
+      "order": 4,
+      "catalog": "chip",
+      "label": "design",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-tooling": {
+      "parent": "tag-filter-chip-row",
+      "order": 5,
+      "catalog": "chip",
+      "label": "tooling",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-css": {
+      "parent": "tag-filter-chip-row",
+      "order": 6,
+      "catalog": "chip",
+      "label": "css",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-typescript": {
+      "parent": "tag-filter-chip-row",
+      "order": 7,
+      "catalog": "chip",
+      "label": "typescript",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-ux": {
+      "parent": "tag-filter-chip-row",
+      "order": 8,
+      "catalog": "chip",
+      "label": "ux",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-performance": {
+      "parent": "tag-filter-chip-row",
+      "order": 9,
+      "catalog": "chip",
+      "label": "performance",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "chip-accessibility": {
+      "parent": "tag-filter-chip-row",
+      "order": 10,
+      "catalog": "chip",
+      "label": "accessibility",
+      "overrides": {
+        "selected": false,
+        "radius": 9999,
+        "border_color": "cta-primary",
+        "color": "cta-primary"
+      }
+    },
+    "scroll-fade-overlay": {
+      "parent": "tag-filter-chip-row",
+      "order": 11,
+      "type": "container",
+      "width": 48,
+      "height": 44,
+      "overrides": {
+        "position": "absolute",
+        "right": 0,
+        "background_gradient": "linear-gradient(to right, transparent, var(--color-background-primary))",
+        "pointer_events": "none"
+      }
+    },
+    "content-zone": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "section",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 24,
+        "py": 24
+      },
+      "width": "fill",
+      "overrides": {
+        "max_width": 1280,
+        "margin_inline": "auto"
+      }
+    },
+    "results-count-bar": {
+      "parent": "content-zone",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "results-count-text": {
+      "parent": "results-count-bar",
+      "order": 0,
+      "type": "text",
+      "content": "Showing 9 bookmarks",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "results-sort-label": {
+      "parent": "results-count-bar",
+      "order": 1,
+      "type": "text",
+      "content": "Newest first",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "bookmark-grid": {
+      "parent": "content-zone",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 24,
+        "align": "start"
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "grid",
+        "grid_template_columns": "repeat(3, 1fr)"
+      }
+    },
+    "card-1": {
+      "parent": "bookmark-grid",
+      "order": 0,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-1-title": {
+      "parent": "card-1",
+      "order": 0,
+      "type": "text",
+      "content": "A Complete Guide to CSS Grid Layout",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-1-url": {
+      "parent": "card-1",
+      "order": 1,
+      "type": "text",
+      "content": "css-tricks.com/snippets/css/complete-guide-grid",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-1-tags": {
+      "parent": "card-1",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-1-tag-css": {
+      "parent": "card-1-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "css",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-1-tag-frontend": {
+      "parent": "card-1-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "frontend",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-1-tag-design": {
+      "parent": "card-1-tags",
+      "order": 2,
+      "catalog": "chip",
+      "label": "design",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-1-footer": {
+      "parent": "card-1",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-1-timestamp": {
+      "parent": "card-1-footer",
+      "order": 0,
+      "type": "text",
+      "content": "2h ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-1-actions": {
+      "parent": "card-1-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-1-edit": {
+      "parent": "card-1-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-1-delete": {
+      "parent": "card-1-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-2": {
+      "parent": "bookmark-grid",
+      "order": 1,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-2-title": {
+      "parent": "card-2",
+      "order": 0,
+      "type": "text",
+      "content": "React 19 — What's New and Breaking Changes",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-2-url": {
+      "parent": "card-2",
+      "order": 1,
+      "type": "text",
+      "content": "react.dev/blog/2024/04/25/react-19",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-2-tags": {
+      "parent": "card-2",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-2-tag-react": {
+      "parent": "card-2-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "react",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-2-tag-frontend": {
+      "parent": "card-2-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "frontend",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-2-tag-typescript": {
+      "parent": "card-2-tags",
+      "order": 2,
+      "catalog": "chip",
+      "label": "typescript",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-2-footer": {
+      "parent": "card-2",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-2-timestamp": {
+      "parent": "card-2-footer",
+      "order": 0,
+      "type": "text",
+      "content": "Yesterday",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-2-actions": {
+      "parent": "card-2-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-2-edit": {
+      "parent": "card-2-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-2-delete": {
+      "parent": "card-2-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-3": {
+      "parent": "bookmark-grid",
+      "order": 2,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "md",
+      "width": "fill",
+      "overrides": {
+        "border_color": "cta-primary",
+        "border_width": 2,
+        "padding": 24,
+        "is_hovered": true
+      }
+    },
+    "card-3-title": {
+      "parent": "card-3",
+      "order": 0,
+      "type": "text",
+      "content": "Delete this bookmark?",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "textAlign": "center",
+      "overrides": {
+        "margin_bottom": 8
+      }
+    },
+    "card-3-countdown": {
+      "parent": "card-3",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "width": "fill",
+      "height": 4,
+      "radius": 8,
+      "overrides": {
+        "margin_bottom": 16
+      }
+    },
+    "card-3-countdown-bar": {
+      "parent": "card-3-countdown",
+      "order": 0,
+      "type": "container",
+      "background": "warning",
+      "width": 180,
+      "height": 4,
+      "radius": 8
+    },
+    "card-3-confirm-actions": {
+      "parent": "card-3",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 12,
+        "justify": "center",
+        "align": "center"
+      }
+    },
+    "card-3-confirm-btn": {
+      "parent": "card-3-confirm-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Yes, delete it",
+      "overrides": {
+        "background": "error",
+        "color": "text-on-cta",
+        "radius": 9999
+      }
+    },
+    "card-3-cancel-btn": {
+      "parent": "card-3-confirm-actions",
+      "order": 1,
+      "catalog": "button-secondary",
+      "label": "Keep it",
+      "overrides": {
+        "radius": 9999,
+        "color": "text-primary"
+      }
+    },
+    "card-4": {
+      "parent": "bookmark-grid",
+      "order": 3,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-4-title": {
+      "parent": "card-4",
+      "order": 0,
+      "type": "text",
+      "content": "Building Accessible Components with ARIA",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-4-url": {
+      "parent": "card-4",
+      "order": 1,
+      "type": "text",
+      "content": "smashingmagazine.com/2024/accessible-aria-components",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-4-tags": {
+      "parent": "card-4",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-4-tag-a11y": {
+      "parent": "card-4-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "accessibility",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-4-tag-ux": {
+      "parent": "card-4-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "ux",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-4-tag-overflow": {
+      "parent": "card-4-tags",
+      "order": 2,
+      "catalog": "chip",
+      "label": "+2",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-4-footer": {
+      "parent": "card-4",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-4-timestamp": {
+      "parent": "card-4-footer",
+      "order": 0,
+      "type": "text",
+      "content": "3 days ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-4-actions": {
+      "parent": "card-4-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-4-edit": {
+      "parent": "card-4-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-4-delete": {
+      "parent": "card-4-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-5": {
+      "parent": "bookmark-grid",
+      "order": 4,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-5-title": {
+      "parent": "card-5",
+      "order": 0,
+      "type": "text",
+      "content": "OpenAI GPT-4 Technical Report & Benchmarks",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-5-url": {
+      "parent": "card-5",
+      "order": 1,
+      "type": "text",
+      "content": "openai.com/research/gpt-4",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-5-tags": {
+      "parent": "card-5",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-5-tag-ai": {
+      "parent": "card-5-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "ai",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-5-tag-research": {
+      "parent": "card-5-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "research",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-5-footer": {
+      "parent": "card-5",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-5-timestamp": {
+      "parent": "card-5-footer",
+      "order": 0,
+      "type": "text",
+      "content": "5 days ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-5-actions": {
+      "parent": "card-5-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-5-edit": {
+      "parent": "card-5-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-5-delete": {
+      "parent": "card-5-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-6": {
+      "parent": "bookmark-grid",
+      "order": 5,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-6-title": {
+      "parent": "card-6",
+      "order": 0,
+      "type": "text",
+      "content": "Figma Variables & Theming — Deep Dive",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-6-url": {
+      "parent": "card-6",
+      "order": 1,
+      "type": "text",
+      "content": "figma.com/blog/variables-and-theming-deep-dive",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-6-tags": {
+      "parent": "card-6",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-6-tag-design": {
+      "parent": "card-6-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "design",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-6-tag-tooling": {
+      "parent": "card-6-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "tooling",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-6-tag-ux": {
+      "parent": "card-6-tags",
+      "order": 2,
+      "catalog": "chip",
+      "label": "ux",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-6-footer": {
+      "parent": "card-6",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-6-timestamp": {
+      "parent": "card-6-footer",
+      "order": 0,
+      "type": "text",
+      "content": "1 week ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-6-actions": {
+      "parent": "card-6-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-6-edit": {
+      "parent": "card-6-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-6-delete": {
+      "parent": "card-6-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-7": {
+      "parent": "bookmark-grid",
+      "order": 6,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-7-title": {
+      "parent": "card-7",
+      "order": 0,
+      "type": "text",
+      "content": "Web Performance Optimization Checklist 2024",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-7-url": {
+      "parent": "card-7",
+      "order": 1,
+      "type": "text",
+      "content": "web.dev/performance/optimization-checklist-2024",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-7-tags": {
+      "parent": "card-7",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-7-tag-perf": {
+      "parent": "card-7-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "performance",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-7-tag-frontend": {
+      "parent": "card-7-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "frontend",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-7-footer": {
+      "parent": "card-7",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-7-timestamp": {
+      "parent": "card-7-footer",
+      "order": 0,
+      "type": "text",
+      "content": "2 weeks ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-7-actions": {
+      "parent": "card-7-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-7-edit": {
+      "parent": "card-7-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-7-delete": {
+      "parent": "card-7-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-8": {
+      "parent": "bookmark-grid",
+      "order": 7,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-8-title": {
+      "parent": "card-8",
+      "order": 0,
+      "type": "text",
+      "content": "TypeScript 5.4 Release Notes — What's New",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-8-url": {
+      "parent": "card-8",
+      "order": 1,
+      "type": "text",
+      "content": "devblogs.microsoft.com/typescript/announcing-5-4",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-8-tags": {
+      "parent": "card-8",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-8-tag-ts": {
+      "parent": "card-8-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "typescript",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-8-tag-frontend": {
+      "parent": "card-8-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "frontend",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-8-footer": {
+      "parent": "card-8",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-8-timestamp": {
+      "parent": "card-8-footer",
+      "order": 0,
+      "type": "text",
+      "content": "3 weeks ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-8-actions": {
+      "parent": "card-8-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-8-edit": {
+      "parent": "card-8-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-8-delete": {
+      "parent": "card-8-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-9": {
+      "parent": "bookmark-grid",
+      "order": 8,
+      "catalog": "card",
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "sm",
+      "width": "fill",
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding": 24
+      }
+    },
+    "card-9-title": {
+      "parent": "card-9",
+      "order": 0,
+      "type": "text",
+      "content": "shadcn/ui — Copy-Paste React Components",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 4
+      }
+    },
+    "card-9-url": {
+      "parent": "card-9",
+      "order": 1,
+      "type": "text",
+      "content": "ui.shadcn.com/docs/getting-started",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "truncate": true,
+        "margin_bottom": 12
+      }
+    },
+    "card-9-tags": {
+      "parent": "card-9",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "margin_bottom": 12,
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-9-tag-react": {
+      "parent": "card-9-tags",
+      "order": 0,
+      "catalog": "chip",
+      "label": "react",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-9-tag-tooling": {
+      "parent": "card-9-tags",
+      "order": 1,
+      "catalog": "chip",
+      "label": "tooling",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-9-tag-design": {
+      "parent": "card-9-tags",
+      "order": 2,
+      "catalog": "chip",
+      "label": "design",
+      "overrides": {
+        "radius": 9999,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "font_size": 11
+      }
+    },
+    "card-9-footer": {
+      "parent": "card-9",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      }
+    },
+    "card-9-timestamp": {
+      "parent": "card-9-footer",
+      "order": 0,
+      "type": "text",
+      "content": "1 month ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "card-9-actions": {
+      "parent": "card-9-footer",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "card-9-edit": {
+      "parent": "card-9-actions",
+      "order": 0,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "pencil",
+        "aria_label": "Edit bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "card-9-delete": {
+      "parent": "card-9-actions",
+      "order": 1,
+      "catalog": "button-icon",
+      "overrides": {
+        "icon": "trash-2",
+        "aria_label": "Delete bookmark",
+        "color": "text-secondary",
+        "size": 36
+      }
+    },
+    "empty-state": {
+      "parent": "content-zone",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 0,
+        "py": 64,
+        "px": 24
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "none",
+        "text_align": "center"
+      }
+    },
+    "empty-state-illustration": {
+      "parent": "empty-state",
+      "order": 0,
+      "type": "container",
+      "width": 280,
+      "height": 200,
+      "overrides": {
+        "margin_bottom": 32,
+        "opacity_animation": "pulse 2s ease-in-out infinite alternate",
+        "opacity_from": 0.6,
+        "opacity_to": 1,
+        "aria_hidden": true
+      }
+    },
+    "empty-state-illustration-img": {
+      "parent": "empty-state-illustration",
+      "order": 0,
+      "type": "text",
+      "content": "🔖",
+      "overrides": {
+        "font_size": 80,
+        "text_align": "center",
+        "line_height": "200px"
+      }
+    },
+    "empty-state-heading": {
+      "parent": "empty-state",
+      "order": 1,
+      "type": "text",
+      "content": "No bookmarks yet",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700,
+      "overrides": {
+        "margin_bottom": 8
+      }
+    },
+    "empty-state-subtext": {
+      "parent": "empty-state",
+      "order": 2,
+      "type": "text",
+      "content": "Save your first link and it'll live right here.",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "margin_bottom": 24
+      }
+    },
+    "empty-state-cta": {
+      "parent": "empty-state",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "Save your first link",
+      "overrides": {
+        "radius": 9999,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "href": "/add"
+      }
+    },
+    "no-results-state": {
+      "parent": "content-zone",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 8,
+        "py": 48,
+        "px": 24
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "none",
+        "text_align": "center"
+      }
+    },
+    "no-results-heading": {
+      "parent": "no-results-state",
+      "order": 0,
+      "type": "text",
+      "content": "No bookmarks match your filters",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "no-results-subtext": {
+      "parent": "no-results-state",
+      "order": 1,
+      "type": "text",
+      "content": "Try a different search or clear your filters.",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "no-results-cta": {
+      "parent": "no-results-state",
+      "order": 2,
+      "catalog": "button-secondary",
+      "label": "Clear filters",
+      "overrides": {
+        "radius": 9999,
+        "color": "cta-primary",
+        "margin_top": 8
+      }
+    },
+    "toast-container": {
+      "parent": "page-root",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "align": "center"
+      },
+      "overrides": {
+        "position": "fixed",
+        "top": 24,
+        "left": "50%",
+        "transform": "translateX(-50%)",
+        "z_index": 1300,
+        "aria_live": "polite",
+        "aria_atomic": true,
+        "pointer_events": "none"
+      }
+    },
+    "toast-success": {
+      "parent": "toast-container",
+      "order": 0,
+      "catalog": "toast",
+      "label": "Bookmark deleted successfully.",
+      "overrides": {
+        "type": "success",
+        "visible": true,
+        "radius": 12,
+        "background": "surface-primary",
+        "color": "text-primary",
+        "shadow": "lg",
+        "icon": "check-circle"
+      }
+    },
+    "fab": {
+      "parent": "page-root",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "+",
+      "width": 56,
+      "height": 56,
+      "radius": 9999,
+      "shadow": "md",
+      "overrides": {
+        "position": "fixed",
+        "bottom": 24,
+        "right": 24,
+        "z_index": 1200,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "aria_label": "Add new bookmark",
+        "font_size": 28,
+        "font_weight": 400,
+        "hover_rotation": "360deg",
+        "hover_rotation_duration": "400ms",
+        "href": "/add"
+      }
+    }
+  }
+}

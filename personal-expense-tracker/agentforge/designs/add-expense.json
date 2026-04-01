@@ -1,6 +1,6 @@
 {
   "screen": "add-expense",
-  "width": 390,
+  "width": 1440,
   "nodes": {
     "page-root": {
       "parent": null,
@@ -9,1228 +9,795 @@
       "background": "background-primary",
       "layout": {
         "dir": "column",
+        "align": "stretch",
         "gap": 0
       }
     },
     "topbar": {
       "parent": "page-root",
       "order": 0,
-      "type": "header",
+      "catalog": "TopBar",
+      "label": "Add Expense",
       "background": "surface-primary",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between",
-        "px": 16,
-        "py": 12
-      },
-      "shadow": "sm",
-      "width": "fill"
-    },
-    "topbar-back-btn": {
-      "parent": "topbar",
-      "order": 0,
-      "catalog": "Button",
-      "label": "← Back",
       "overrides": {
-        "variant": "ghost"
-      }
-    },
-    "topbar-title": {
-      "parent": "topbar",
-      "order": 1,
-      "type": "text",
-      "content": "Add Expense",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "topbar-settings-btn": {
-      "parent": "topbar",
-      "order": 2,
-      "catalog": "Button",
-      "label": "⚙",
-      "overrides": {
-        "variant": "ghost",
-        "aria-label": "Settings"
+        "border_bottom": "1px solid #334155",
+        "height": 56,
+        "z_index": 1100,
+        "left_action": "back",
+        "right_action": "settings"
       }
     },
     "nav-tabs": {
       "parent": "page-root",
       "order": 1,
-      "catalog": "Tabs",
-      "width": "fill",
+      "catalog": "NavigationTabs",
+      "background": "surface-primary",
       "overrides": {
-        "tabs": [
-          {
-            "label": "Add New",
-            "active": true
-          },
-          {
-            "label": "Edit Existing",
-            "active": false
-          }
-        ]
-      }
+        "border_bottom": "1px solid #334155"
+      },
+      "items": [
+        {
+          "label": "Dashboard",
+          "href": "/",
+          "active": false
+        },
+        {
+          "label": "Add Expense",
+          "href": "/add",
+          "active": true
+        },
+        {
+          "label": "Insights",
+          "href": "/insights",
+          "active": false
+        },
+        {
+          "label": "Settings",
+          "href": "/settings",
+          "active": false
+        }
+      ]
     },
-    "scroll-body": {
+    "scroll-container": {
       "parent": "page-root",
       "order": 2,
       "type": "container",
-      "background": "background-primary",
-      "layout": {
-        "dir": "column",
-        "gap": 24,
-        "px": 16,
-        "pt": 24,
-        "pb": 120
-      },
-      "width": "fill"
-    },
-    "quick-add-section": {
-      "parent": "scroll-body",
-      "order": 0,
-      "type": "section",
       "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 10
-      }
-    },
-    "quick-add-label": {
-      "parent": "quick-add-section",
-      "order": 0,
-      "type": "text",
-      "content": "Quick Add",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
-    },
-    "quick-add-scroll-row": {
-      "parent": "quick-add-section",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "gap": 8,
-        "align": "center"
-      },
-      "width": "fill",
-      "overrides": {
-        "overflow-x": "scroll"
-      }
-    },
-    "quick-chip-coffee": {
-      "parent": "quick-add-scroll-row",
-      "order": 0,
-      "catalog": "Chip",
-      "label": "☕ Starbucks  $6.50",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "quick-chip-lunch": {
-      "parent": "quick-add-scroll-row",
-      "order": 1,
-      "catalog": "Chip",
-      "label": "🍱 Chipotle  $14.20",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "quick-chip-transit": {
-      "parent": "quick-add-scroll-row",
-      "order": 2,
-      "catalog": "Chip",
-      "label": "🚇 Metro  $3.00",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "quick-chip-gym": {
-      "parent": "quick-add-scroll-row",
-      "order": 3,
-      "catalog": "Chip",
-      "label": "🏋 Gym  $45.00",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "quick-chip-netflix": {
-      "parent": "quick-add-scroll-row",
-      "order": 4,
-      "catalog": "Chip",
-      "label": "📺 Netflix  $15.99",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "amount-hero-section": {
-      "parent": "scroll-body",
-      "order": 1,
-      "type": "container",
-      "background": "surface-primary",
-      "radius": 20,
-      "shadow": "md",
       "layout": {
         "dir": "column",
         "align": "center",
-        "justify": "center",
-        "gap": 4,
-        "py": 32,
-        "px": 24
+        "gap": 0,
+        "pt": 32,
+        "pb": 64
       },
-      "width": "fill"
+      "background": "background-primary"
     },
-    "amount-currency-label": {
-      "parent": "amount-hero-section",
+    "form-column": {
+      "parent": "scroll-container",
       "order": 0,
-      "type": "text",
-      "content": "USD",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
-    },
-    "amount-hero-input": {
-      "parent": "amount-hero-section",
-      "order": 1,
-      "catalog": "Input",
-      "label": "",
-      "placeholder": "0.00",
-      "value": "",
-      "overrides": {
-        "font-size": 56,
-        "font-weight": 700,
-        "text-align": "center",
-        "border": "none",
-        "background": "transparent",
-        "color": "text-primary",
-        "width": "100%",
-        "input-type": "number"
+      "type": "container",
+      "width": 520,
+      "layout": {
+        "dir": "column",
+        "align": "stretch",
+        "gap": 0,
+        "px": 24
       }
     },
-    "amount-hint": {
-      "parent": "amount-hero-section",
-      "order": 2,
+    "amount-section": {
+      "parent": "form-column",
+      "order": 0,
+      "type": "section",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 8,
+        "pb": 32
+      }
+    },
+    "amount-section-label": {
+      "parent": "amount-section",
+      "order": 0,
       "type": "text",
-      "content": "Tap to enter amount",
-      "typography": "body",
+      "content": "Amount",
+      "typography": "heading-2",
       "color": "text-secondary",
+      "weight": 600,
       "textAlign": "center"
     },
-    "amount-merchant-input": {
-      "parent": "amount-hero-section",
-      "order": 3,
-      "catalog": "Input",
-      "label": "Merchant",
-      "placeholder": "e.g. Whole Foods",
-      "value": "",
+    "amount-hero-input": {
+      "parent": "amount-section",
+      "order": 1,
+      "catalog": "AmountHeroInput",
+      "value": "0.00",
+      "placeholder": "0.00",
       "overrides": {
-        "width": "100%"
+        "font_size": 32,
+        "font_weight": 700,
+        "font_family": "DM Sans",
+        "font_variant_numeric": "tabular-nums",
+        "color": "text-primary",
+        "placeholder_color": "text-secondary",
+        "currency_symbol": "$",
+        "currency_size": 24,
+        "underline_color_default": "#334155",
+        "underline_color_focus": "#F59E0B",
+        "underline_width": 120,
+        "underline_height": 2,
+        "text_align": "center",
+        "inputmode": "decimal",
+        "auto_focus": true,
+        "max_value": 99999.99
+      }
+    },
+    "amount-cap-warning": {
+      "parent": "amount-section",
+      "order": 2,
+      "type": "text",
+      "content": "⚠ Maximum amount $99,999.99 reached",
+      "typography": "label",
+      "color": "warning",
+      "textAlign": "center",
+      "overrides": {
+        "aria_live": "polite",
+        "visible": false,
+        "font_size": 12,
+        "font_weight": 500
       }
     },
     "category-section": {
-      "parent": "scroll-body",
-      "order": 2,
+      "parent": "form-column",
+      "order": 1,
       "type": "section",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 12
+        "align": "stretch",
+        "gap": 12,
+        "pb": 24
       }
     },
-    "category-section-header": {
+    "category-section-label": {
       "parent": "category-section",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "space-between",
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "category-section-title": {
-      "parent": "category-section-header",
       "order": 0,
       "type": "text",
       "content": "Category",
-      "typography": "heading-3",
+      "typography": "heading-2",
       "color": "text-primary",
       "weight": 600
-    },
-    "category-section-subtitle": {
-      "parent": "category-section-header",
-      "order": 1,
-      "type": "text",
-      "content": "Required",
-      "typography": "label",
-      "color": "error"
     },
     "category-chip-grid": {
       "parent": "category-section",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
+      "catalog": "CategoryChipGrid",
+      "overrides": {
+        "columns": 3,
         "gap": 8,
-        "align": "center"
+        "single_select": true,
+        "role": "radiogroup",
+        "aria_label": "Expense category"
       },
-      "width": "fill",
-      "overrides": {
-        "flex-wrap": "wrap"
-      }
+      "items": [
+        {
+          "id": "food",
+          "label": "🍔 Food & Dining",
+          "color": "#F59E0B",
+          "selected": false
+        },
+        {
+          "id": "transport",
+          "label": "🚗 Transport",
+          "color": "#3B82F6",
+          "selected": false
+        },
+        {
+          "id": "shopping",
+          "label": "🛍 Shopping",
+          "color": "#8B5CF6",
+          "selected": true
+        },
+        {
+          "id": "health",
+          "label": "💊 Health",
+          "color": "#10B981",
+          "selected": false
+        },
+        {
+          "id": "entertainment",
+          "label": "🎬 Entertainment",
+          "color": "#EF4444",
+          "selected": false
+        },
+        {
+          "id": "bills",
+          "label": "💡 Bills",
+          "color": "#06B6D4",
+          "selected": false
+        }
+      ]
     },
-    "chip-food": {
-      "parent": "category-chip-grid",
-      "order": 0,
-      "catalog": "Chip",
-      "label": "🍔 Food",
-      "overrides": {
-        "selected": true,
-        "color_token": "amber-500"
-      }
-    },
-    "chip-transport": {
-      "parent": "category-chip-grid",
-      "order": 1,
-      "catalog": "Chip",
-      "label": "🚗 Transport",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-health": {
-      "parent": "category-chip-grid",
+    "new-category-trigger": {
+      "parent": "category-section",
       "order": 2,
-      "catalog": "Chip",
-      "label": "💊 Health",
+      "type": "text",
+      "content": "+ New Category",
+      "typography": "label",
+      "color": "cta-primary",
+      "weight": 500,
       "overrides": {
-        "selected": false
-      }
-    },
-    "chip-entertainment": {
-      "parent": "category-chip-grid",
-      "order": 3,
-      "catalog": "Chip",
-      "label": "🎬 Entertainment",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-shopping": {
-      "parent": "category-chip-grid",
-      "order": 4,
-      "catalog": "Chip",
-      "label": "🛍 Shopping",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-utilities": {
-      "parent": "category-chip-grid",
-      "order": 5,
-      "catalog": "Chip",
-      "label": "💡 Utilities",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-travel": {
-      "parent": "category-chip-grid",
-      "order": 6,
-      "catalog": "Chip",
-      "label": "✈ Travel",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-other": {
-      "parent": "category-chip-grid",
-      "order": 7,
-      "catalog": "Chip",
-      "label": "📦 Other",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "chip-add-new": {
-      "parent": "category-chip-grid",
-      "order": 8,
-      "catalog": "Chip",
-      "label": "+ New",
-      "overrides": {
-        "selected": false,
-        "variant": "dashed"
+        "cursor": "pointer",
+        "min_height": 44,
+        "display": "flex",
+        "align_items": "center",
+        "font_size": 12,
+        "font_family": "DM Mono",
+        "aria_role": "button",
+        "aria_expanded": true
       }
     },
     "new-category-inline-form": {
       "parent": "category-section",
-      "order": 2,
-      "type": "container",
-      "background": "surface-secondary",
-      "radius": 14,
+      "order": 3,
+      "catalog": "NewCategoryInlineForm",
+      "background": "surface-elevated",
+      "radius": 10,
+      "shadow": "sm",
+      "overrides": {
+        "padding": 16,
+        "expanded": true,
+        "transition": "max-height 200ms ease",
+        "max_height": 200,
+        "border": "1px solid #334155"
+      },
       "layout": {
         "dir": "column",
+        "align": "stretch",
         "gap": 12,
         "px": 16,
         "py": 16
-      },
-      "width": "fill"
+      }
     },
-    "new-cat-form-title": {
+    "new-category-name-input": {
       "parent": "new-category-inline-form",
       "order": 0,
-      "type": "text",
-      "content": "New Category",
-      "typography": "label",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "new-cat-name-input": {
-      "parent": "new-category-inline-form",
-      "order": 1,
-      "catalog": "Input",
-      "label": "Name",
-      "placeholder": "e.g. Subscriptions",
+      "catalog": "input-text",
+      "label": "Category Name",
+      "placeholder": "e.g. Gym, Subscriptions…",
       "overrides": {
-        "width": "100%"
+        "background": "background-primary",
+        "border_color": "#334155",
+        "focus_border_color": "#F59E0B",
+        "border_radius": 8,
+        "height": 44,
+        "font_family": "DM Mono",
+        "font_size": 14
       }
     },
     "color-picker-row": {
       "parent": "new-category-inline-form",
-      "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "column",
-        "gap": 8
-      },
-      "width": "fill"
-    },
-    "color-picker-label": {
-      "parent": "color-picker-row",
-      "order": 0,
-      "type": "text",
-      "content": "Color",
-      "typography": "label",
-      "color": "text-secondary"
-    },
-    "color-swatches": {
-      "parent": "color-picker-row",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "gap": 10,
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "swatch-amber": {
-      "parent": "color-swatches",
-      "order": 0,
-      "type": "container",
-      "background": "cta-primary",
-      "radius": 20,
-      "width": 28,
-      "height": 28,
+      "catalog": "ColorPickerRow",
+      "label": "Color",
       "overrides": {
-        "selected": true,
-        "ring": "2px solid white"
-      }
-    },
-    "swatch-teal": {
-      "parent": "color-swatches",
-      "order": 1,
-      "type": "container",
-      "background": "success",
-      "radius": 20,
-      "width": 28,
-      "height": 28
-    },
-    "swatch-blue": {
-      "parent": "color-swatches",
-      "order": 2,
-      "type": "container",
-      "background": "info",
-      "radius": 20,
-      "width": 28,
-      "height": 28,
-      "overrides": {
-        "background-color": "#4A90D9"
-      }
-    },
-    "swatch-rose": {
-      "parent": "color-swatches",
-      "order": 3,
-      "type": "container",
-      "background": "error",
-      "radius": 20,
-      "width": 28,
-      "height": 28
-    },
-    "swatch-purple": {
-      "parent": "color-swatches",
-      "order": 4,
-      "type": "container",
-      "radius": 20,
-      "width": 28,
-      "height": 28,
-      "overrides": {
-        "background-color": "#8B5CF6"
-      }
-    },
-    "swatch-slate": {
-      "parent": "color-swatches",
-      "order": 5,
-      "type": "container",
-      "background": "surface-primary",
-      "radius": 20,
-      "width": 28,
-      "height": 28,
-      "overrides": {
-        "background-color": "#64748B"
-      }
-    },
-    "new-cat-icon-select": {
-      "parent": "new-category-inline-form",
-      "order": 3,
-      "catalog": "Select",
-      "label": "Icon",
-      "placeholder": "Pick an emoji",
-      "overrides": {
-        "width": "100%",
-        "options": [
-          "🎯",
-          "🏠",
-          "🎮",
-          "📚",
-          "🐾",
-          "💼",
-          "🍕",
-          "🎵"
-        ]
-      }
-    },
-    "new-cat-actions": {
-      "parent": "new-category-inline-form",
-      "order": 4,
-      "type": "container",
-      "layout": {
-        "dir": "row",
+        "swatch_size": 28,
         "gap": 8,
-        "justify": "end"
+        "swatch_border_radius": "9999px"
       },
-      "width": "fill"
+      "items": [
+        {
+          "color": "#F59E0B",
+          "label": "Amber",
+          "selected": true
+        },
+        {
+          "color": "#3B82F6",
+          "label": "Blue",
+          "selected": false
+        },
+        {
+          "color": "#8B5CF6",
+          "label": "Purple",
+          "selected": false
+        },
+        {
+          "color": "#10B981",
+          "label": "Green",
+          "selected": false
+        },
+        {
+          "color": "#EF4444",
+          "label": "Red",
+          "selected": false
+        },
+        {
+          "color": "#06B6D4",
+          "label": "Cyan",
+          "selected": false
+        }
+      ]
     },
-    "new-cat-cancel-btn": {
-      "parent": "new-cat-actions",
-      "order": 0,
-      "catalog": "Button",
-      "label": "Cancel",
+    "duplicate-name-error": {
+      "parent": "new-category-inline-form",
+      "order": 2,
+      "type": "text",
+      "content": "A category with this name already exists",
+      "typography": "label",
+      "color": "error",
       "overrides": {
-        "variant": "secondary"
+        "visible": false,
+        "font_size": 12,
+        "font_family": "DM Mono",
+        "aria_live": "assertive"
       }
     },
-    "new-cat-save-btn": {
-      "parent": "new-cat-actions",
-      "order": 1,
-      "catalog": "Button",
-      "label": "Create Category",
-      "overrides": {
-        "variant": "primary"
-      }
-    },
-    "date-section": {
-      "parent": "scroll-body",
+    "save-new-category-btn": {
+      "parent": "new-category-inline-form",
       "order": 3,
+      "catalog": "button-primary",
+      "label": "Save Category",
+      "overrides": {
+        "height": 36,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "border_radius": 8,
+        "font_size": 14,
+        "font_weight": 600,
+        "disabled_background": "#334155",
+        "disabled_color": "#64748B",
+        "aria_disabled": false
+      }
+    },
+    "date-picker-section": {
+      "parent": "form-column",
+      "order": 2,
       "type": "section",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 12
+        "align": "stretch",
+        "gap": 12,
+        "pb": 24
       }
     },
-    "date-section-title": {
-      "parent": "date-section",
+    "date-section-label": {
+      "parent": "date-picker-section",
       "order": 0,
       "type": "text",
       "content": "Date",
-      "typography": "heading-3",
+      "typography": "heading-2",
       "color": "text-primary",
       "weight": 600
-    },
-    "month-selector-row": {
-      "parent": "date-section",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between"
-      },
-      "width": "fill"
-    },
-    "month-prev-btn": {
-      "parent": "month-selector-row",
-      "order": 0,
-      "catalog": "Button",
-      "label": "‹",
-      "overrides": {
-        "variant": "ghost"
-      }
-    },
-    "month-label": {
-      "parent": "month-selector-row",
-      "order": 1,
-      "type": "text",
-      "content": "July 2025",
-      "typography": "label",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "month-next-btn": {
-      "parent": "month-selector-row",
-      "order": 2,
-      "catalog": "Button",
-      "label": "›",
-      "overrides": {
-        "variant": "ghost"
-      }
     },
     "date-picker-input": {
-      "parent": "date-section",
-      "order": 2,
-      "catalog": "DatePicker",
-      "label": "Select Date",
-      "value": "2025-07-14",
-      "width": "fill",
+      "parent": "date-picker-section",
+      "order": 1,
+      "catalog": "DatePickerInput",
+      "value": "Today, March 29, 2026",
       "overrides": {
-        "show-calendar": true
+        "height": 44,
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "border_radius": 10,
+        "padding": "0 16px",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "color": "text-primary",
+        "icon": "calendar",
+        "icon_color": "#64748B",
+        "aria_label": "Date picker",
+        "aria_haspopup": "dialog"
       }
     },
     "mini-calendar-dropdown": {
-      "parent": "date-section",
-      "order": 3,
-      "type": "container",
-      "background": "surface-primary",
-      "radius": 14,
-      "shadow": "md",
-      "layout": {
-        "dir": "column",
-        "gap": 8,
-        "px": 16,
-        "py": 12
-      },
-      "width": "fill"
-    },
-    "mini-cal-weekdays": {
-      "parent": "mini-calendar-dropdown",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "space-between",
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "mini-cal-sun": {
-      "parent": "mini-cal-weekdays",
-      "order": 0,
-      "type": "text",
-      "content": "Su",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-mon": {
-      "parent": "mini-cal-weekdays",
-      "order": 1,
-      "type": "text",
-      "content": "Mo",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-tue": {
-      "parent": "mini-cal-weekdays",
+      "parent": "date-picker-section",
       "order": 2,
-      "type": "text",
-      "content": "Tu",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-wed": {
-      "parent": "mini-cal-weekdays",
-      "order": 3,
-      "type": "text",
-      "content": "We",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-thu": {
-      "parent": "mini-cal-weekdays",
-      "order": 4,
-      "type": "text",
-      "content": "Th",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-fri": {
-      "parent": "mini-cal-weekdays",
-      "order": 5,
-      "type": "text",
-      "content": "Fr",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-sat": {
-      "parent": "mini-cal-weekdays",
-      "order": 6,
-      "type": "text",
-      "content": "Sa",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-week1": {
-      "parent": "mini-calendar-dropdown",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "space-between",
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "cal-d1": {
-      "parent": "mini-cal-week1",
-      "order": 0,
-      "type": "text",
-      "content": "1",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d2": {
-      "parent": "mini-cal-week1",
-      "order": 1,
-      "type": "text",
-      "content": "2",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d3": {
-      "parent": "mini-cal-week1",
-      "order": 2,
-      "type": "text",
-      "content": "3",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d4": {
-      "parent": "mini-cal-week1",
-      "order": 3,
-      "type": "text",
-      "content": "4",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d5": {
-      "parent": "mini-cal-week1",
-      "order": 4,
-      "type": "text",
-      "content": "5",
-      "typography": "body",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "cal-d6": {
-      "parent": "mini-cal-week1",
-      "order": 5,
-      "type": "text",
-      "content": "6",
-      "typography": "body",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "mini-cal-week2": {
-      "parent": "mini-calendar-dropdown",
-      "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "space-between",
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "cal-d7": {
-      "parent": "mini-cal-week2",
-      "order": 0,
-      "type": "text",
-      "content": "7",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d8": {
-      "parent": "mini-cal-week2",
-      "order": 1,
-      "type": "text",
-      "content": "8",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d9": {
-      "parent": "mini-cal-week2",
-      "order": 2,
-      "type": "text",
-      "content": "9",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d10": {
-      "parent": "mini-cal-week2",
-      "order": 3,
-      "type": "text",
-      "content": "10",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d11": {
-      "parent": "mini-cal-week2",
-      "order": 4,
-      "type": "text",
-      "content": "11",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d12": {
-      "parent": "mini-cal-week2",
-      "order": 5,
-      "type": "text",
-      "content": "12",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d13": {
-      "parent": "mini-cal-week2",
-      "order": 6,
-      "type": "text",
-      "content": "13",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "mini-cal-week3": {
-      "parent": "mini-calendar-dropdown",
-      "order": 3,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "space-between",
-        "align": "center"
-      },
-      "width": "fill"
-    },
-    "cal-d14-selected": {
-      "parent": "mini-cal-week3",
-      "order": 0,
-      "type": "container",
-      "background": "cta-primary",
-      "radius": 20,
-      "width": 32,
-      "height": 32,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
+      "catalog": "MiniCalendarDropdown",
+      "background": "surface-elevated",
+      "radius": 16,
+      "shadow": "lg",
+      "overrides": {
+        "width": 280,
+        "padding": 16,
+        "z_index": 1000,
+        "box_shadow": "0 4px 16px rgba(0,0,0,0.4)",
+        "visible": true,
+        "selected_date": "2026-03-29",
+        "today": "2026-03-29",
+        "disable_future": true,
+        "day_cell_min_size": 40,
+        "day_cell_border_radius": 6,
+        "selected_bg": "#F59E0B",
+        "selected_color": "#0F172A",
+        "today_border": "1px solid #F59E0B",
+        "disabled_color": "#64748B",
+        "font_family": "DM Mono",
+        "font_size": 12,
+        "font_weight": 500
       }
     },
-    "cal-d14-text": {
-      "parent": "cal-d14-selected",
+    "month-selector": {
+      "parent": "mini-calendar-dropdown",
       "order": 0,
-      "type": "text",
-      "content": "14",
-      "typography": "body",
-      "color": "text-on-cta",
-      "weight": 700,
-      "textAlign": "center"
+      "catalog": "MonthSelector",
+      "label": "March 2026",
+      "overrides": {
+        "prev_btn_size": 44,
+        "next_btn_size": 44,
+        "label_typography": "heading-2",
+        "label_color": "text-primary",
+        "label_font_size": 16,
+        "label_font_weight": 600,
+        "btn_color": "#64748B",
+        "btn_hover_color": "#F59E0B"
+      }
     },
-    "cal-d15": {
-      "parent": "mini-cal-week3",
-      "order": 1,
-      "type": "text",
-      "content": "15",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d16": {
-      "parent": "mini-cal-week3",
-      "order": 2,
-      "type": "text",
-      "content": "16",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d17": {
-      "parent": "mini-cal-week3",
+    "payment-method-section": {
+      "parent": "form-column",
       "order": 3,
-      "type": "text",
-      "content": "17",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d18": {
-      "parent": "mini-cal-week3",
-      "order": 4,
-      "type": "text",
-      "content": "18",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d19": {
-      "parent": "mini-cal-week3",
-      "order": 5,
-      "type": "text",
-      "content": "19",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "cal-d20": {
-      "parent": "mini-cal-week3",
-      "order": 6,
-      "type": "text",
-      "content": "20",
-      "typography": "body",
-      "color": "text-primary",
-      "textAlign": "center"
-    },
-    "payment-section": {
-      "parent": "scroll-body",
-      "order": 4,
       "type": "section",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 12
+        "align": "stretch",
+        "gap": 12,
+        "pb": 24
       }
     },
-    "payment-section-title": {
-      "parent": "payment-section",
+    "payment-section-label": {
+      "parent": "payment-method-section",
       "order": 0,
       "type": "text",
       "content": "Payment Method",
-      "typography": "heading-3",
+      "typography": "heading-2",
       "color": "text-primary",
       "weight": 600
     },
-    "payment-chip-row": {
-      "parent": "payment-section",
+    "payment-method-chip-row": {
+      "parent": "payment-method-section",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
+      "catalog": "PaymentMethodChipRow",
+      "overrides": {
+        "direction": "row",
         "gap": 8,
-        "align": "center"
+        "overflow_x": "auto",
+        "scrollbar_width": "none",
+        "role": "radiogroup",
+        "aria_label": "Payment method",
+        "chip_height": 44,
+        "chip_border_radius": "9999px",
+        "chip_padding": "0 16px",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "selected_border_color": "#F59E0B",
+        "selected_color": "#F59E0B",
+        "default_border_color": "#334155",
+        "default_color": "#CBD5E1",
+        "background": "surface-elevated"
       },
-      "width": "fill",
-      "overrides": {
-        "flex-wrap": "wrap"
-      }
-    },
-    "pay-chip-visa": {
-      "parent": "payment-chip-row",
-      "order": 0,
-      "catalog": "Chip",
-      "label": "💳 Visa ••4242",
-      "overrides": {
-        "selected": true
-      }
-    },
-    "pay-chip-mastercard": {
-      "parent": "payment-chip-row",
-      "order": 1,
-      "catalog": "Chip",
-      "label": "💳 MC ••8891",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "pay-chip-cash": {
-      "parent": "payment-chip-row",
-      "order": 2,
-      "catalog": "Chip",
-      "label": "💵 Cash",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "pay-chip-apple": {
-      "parent": "payment-chip-row",
-      "order": 3,
-      "catalog": "Chip",
-      "label": "🍎 Apple Pay",
-      "overrides": {
-        "selected": false
-      }
-    },
-    "pay-chip-paypal": {
-      "parent": "payment-chip-row",
-      "order": 4,
-      "catalog": "Chip",
-      "label": "🅿 PayPal",
-      "overrides": {
-        "selected": false
-      }
+      "items": [
+        {
+          "id": "debit",
+          "label": "Debit Card",
+          "icon": "💳",
+          "selected": true
+        },
+        {
+          "id": "credit",
+          "label": "Credit Card",
+          "icon": "💰",
+          "selected": false
+        },
+        {
+          "id": "cash",
+          "label": "Cash",
+          "icon": "💵",
+          "selected": false
+        },
+        {
+          "id": "other",
+          "label": "Other",
+          "icon": "🔄",
+          "selected": false
+        }
+      ]
     },
     "note-section": {
-      "parent": "scroll-body",
-      "order": 5,
+      "parent": "form-column",
+      "order": 4,
       "type": "section",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 12
+        "align": "stretch",
+        "gap": 12,
+        "pb": 32
       }
     },
-    "note-section-title": {
+    "note-section-label": {
       "parent": "note-section",
       "order": 0,
       "type": "text",
-      "content": "Note",
-      "typography": "heading-3",
+      "content": "Note (optional)",
+      "typography": "heading-2",
       "color": "text-primary",
       "weight": 600
     },
     "note-input": {
       "parent": "note-section",
       "order": 1,
-      "catalog": "TextArea",
-      "label": "",
-      "placeholder": "Optional — add a note about this expense…",
-      "value": "",
-      "width": "fill",
+      "catalog": "NoteInput",
+      "placeholder": "What was this for?",
       "overrides": {
-        "rows": 3,
-        "max-length": 200
+        "height": 44,
+        "width": "100%",
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "border_radius": 10,
+        "padding": "0 16px",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "color": "text-primary",
+        "placeholder_color": "#64748B",
+        "focus_border_color": "#F59E0B",
+        "max_length": 100,
+        "transition": "border-color 150ms ease"
       }
     },
     "character-counter": {
       "parent": "note-section",
       "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "justify": "end"
-      },
-      "width": "fill"
-    },
-    "character-counter-text": {
-      "parent": "character-counter",
-      "order": 0,
-      "type": "text",
-      "content": "0 / 200",
-      "typography": "label",
-      "color": "text-secondary"
-    },
-    "edit-prefill-alert": {
-      "parent": "scroll-body",
-      "order": 6,
-      "catalog": "Alert",
-      "title": "Editing Expense",
-      "content": "All fields have been pre-filled from the selected expense. Make your changes and tap Save.",
-      "width": "fill",
+      "catalog": "CharacterCounter",
+      "value": 0,
       "overrides": {
-        "variant": "info",
-        "icon": "✏️"
-      }
-    },
-    "save-btn-container": {
-      "parent": "page-root",
-      "order": 3,
-      "type": "container",
-      "background": "surface-primary",
-      "shadow": "lg",
-      "layout": {
-        "dir": "column",
-        "gap": 8,
-        "px": 16,
-        "py": 16
-      },
-      "width": "fill",
-      "overrides": {
-        "position": "sticky",
-        "bottom": 0
+        "max": 100,
+        "visible_threshold": 80,
+        "warning_threshold": 95,
+        "normal_color": "#64748B",
+        "warning_color": "#F87171",
+        "font_family": "DM Mono",
+        "font_size": 12,
+        "font_weight": 500,
+        "text_align": "right",
+        "format": "{current}/{max}"
       }
     },
     "save-expense-button": {
-      "parent": "save-btn-container",
-      "order": 0,
-      "catalog": "Button",
+      "parent": "form-column",
+      "order": 5,
+      "catalog": "SaveExpenseButton",
       "label": "Save Expense",
-      "width": "fill",
       "overrides": {
-        "variant": "primary",
-        "size": "lg",
-        "min-height": 52,
-        "font-weight": 700
+        "width": "100%",
+        "height": 52,
+        "border_radius": 10,
+        "font_size": 16,
+        "font_weight": 600,
+        "font_family": "DM Sans",
+        "active_background": "#F59E0B",
+        "active_color": "#0F172A",
+        "hover_background": "#D97706",
+        "hover_color": "#0F172A",
+        "disabled_background": "#334155",
+        "disabled_color": "#64748B",
+        "success_background": "#14B8A6",
+        "success_color": "#0F172A",
+        "success_label": "✓ Saved!",
+        "press_scale": 0.98,
+        "success_duration": 400,
+        "aria_disabled": true,
+        "disable_condition": "amount === 0 || !categorySelected"
       }
     },
-    "save-helper-text": {
-      "parent": "save-btn-container",
-      "order": 1,
-      "type": "text",
-      "content": "Amount and category are required",
-      "typography": "label",
-      "color": "text-secondary",
-      "textAlign": "center"
-    },
-    "settings-dialog": {
-      "parent": "page-root",
-      "order": 4,
-      "catalog": "Modal",
-      "title": "Settings",
-      "width": 358,
-      "overrides": {
-        "visible": false,
-        "aria-modal": true
-      }
-    },
-    "settings-dialog-body": {
-      "parent": "settings-dialog",
-      "order": 0,
-      "type": "container",
+    "quick-add-section": {
+      "parent": "form-column",
+      "order": 6,
+      "type": "section",
       "layout": {
         "dir": "column",
-        "gap": 20,
-        "px": 4,
-        "py": 8
-      },
-      "width": "fill"
+        "align": "stretch",
+        "gap": 12,
+        "pt": 32,
+        "pb": 24
+      }
     },
-    "settings-currency-select": {
-      "parent": "settings-dialog-body",
+    "quick-add-divider": {
+      "parent": "quick-add-section",
       "order": 0,
-      "catalog": "Select",
-      "label": "Default Currency",
-      "value": "USD",
+      "type": "divider",
       "overrides": {
-        "options": [
-          "USD",
-          "EUR",
-          "GBP",
-          "JPY",
-          "CAD",
-          "AUD"
-        ],
-        "width": "100%"
+        "color": "#334155",
+        "margin_bottom": 16
       }
     },
-    "settings-budget-input": {
-      "parent": "settings-dialog-body",
+    "quick-add-header-row": {
+      "parent": "quick-add-section",
       "order": 1,
-      "catalog": "Input",
-      "label": "Monthly Budget",
-      "placeholder": "e.g. 2000",
-      "value": "2000",
-      "helper": "Sets your default_monthly_budget in UserSettings",
-      "overrides": {
-        "input-type": "number",
-        "width": "100%"
-      }
-    },
-    "settings-locale-select": {
-      "parent": "settings-dialog-body",
-      "order": 2,
-      "catalog": "Select",
-      "label": "Locale",
-      "value": "en-US",
-      "overrides": {
-        "options": [
-          "en-US",
-          "en-GB",
-          "fr-FR",
-          "de-DE",
-          "ja-JP"
-        ],
-        "width": "100%"
-      }
-    },
-    "settings-default-payment-select": {
-      "parent": "settings-dialog-body",
-      "order": 3,
-      "catalog": "Select",
-      "label": "Default Payment Method",
-      "value": "Visa ••4242",
-      "overrides": {
-        "options": [
-          "Visa ••4242",
-          "MC ••8891",
-          "Cash",
-          "Apple Pay",
-          "PayPal"
-        ],
-        "width": "100%"
-      }
-    },
-    "settings-default-switch": {
-      "parent": "settings-dialog-body",
-      "order": 4,
-      "catalog": "Switch",
-      "label": "Set payment method as default (is_default)",
-      "overrides": {
-        "checked": true
-      }
-    },
-    "settings-dialog-actions": {
-      "parent": "settings-dialog-body",
-      "order": 5,
       "type": "container",
       "layout": {
         "dir": "row",
-        "gap": 10,
-        "justify": "end"
-      },
-      "width": "fill"
+        "align": "center",
+        "justify": "space-between",
+        "gap": 8
+      }
     },
-    "settings-cancel-btn": {
-      "parent": "settings-dialog-actions",
+    "quick-add-section-label": {
+      "parent": "quick-add-header-row",
       "order": 0,
-      "catalog": "Button",
-      "label": "Cancel",
+      "type": "text",
+      "content": "Quick Add",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "quick-add-subtitle": {
+      "parent": "quick-add-header-row",
+      "order": 1,
+      "type": "text",
+      "content": "From your frequent expenses",
+      "typography": "label",
+      "color": "text-secondary",
       "overrides": {
-        "variant": "secondary"
+        "font_size": 12,
+        "font_family": "DM Mono"
       }
     },
-    "settings-save-btn": {
-      "parent": "settings-dialog-actions",
-      "order": 1,
-      "catalog": "Button",
-      "label": "Save Settings",
+    "quick-add-suggestions": {
+      "parent": "quick-add-section",
+      "order": 2,
+      "catalog": "QuickAddSuggestions",
       "overrides": {
-        "variant": "primary"
+        "direction": "row",
+        "gap": 8,
+        "overflow_x": "auto",
+        "scrollbar_width": "none",
+        "padding_bottom": 4
       }
+    },
+    "quick-add-chip-1": {
+      "parent": "quick-add-suggestions",
+      "order": 0,
+      "catalog": "QuickAddChip",
+      "label": "☕ Starbucks $4.50",
+      "overrides": {
+        "height": 44,
+        "border_radius": "9999px",
+        "padding": "0 16px",
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "color": "text-primary",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "hover_background": "#293548",
+        "flex_shrink": 0,
+        "aria_label": "Quick add: Starbucks, $4.50, Food & Dining",
+        "fills": {
+          "amount": 4.5,
+          "category": "food",
+          "payment": "debit",
+          "note": "Starbucks coffee"
+        }
+      }
+    },
+    "quick-add-chip-2": {
+      "parent": "quick-add-suggestions",
+      "order": 1,
+      "catalog": "QuickAddChip",
+      "label": "🚌 Metro Card $2.90",
+      "overrides": {
+        "height": 44,
+        "border_radius": "9999px",
+        "padding": "0 16px",
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "color": "text-primary",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "hover_background": "#293548",
+        "flex_shrink": 0,
+        "aria_label": "Quick add: Metro Card, $2.90, Transport",
+        "fills": {
+          "amount": 2.9,
+          "category": "transport",
+          "payment": "debit",
+          "note": "Metro transit"
+        }
+      }
+    },
+    "quick-add-chip-3": {
+      "parent": "quick-add-suggestions",
+      "order": 2,
+      "catalog": "QuickAddChip",
+      "label": "🥗 Sweetgreen $13.75",
+      "overrides": {
+        "height": 44,
+        "border_radius": "9999px",
+        "padding": "0 16px",
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "color": "text-primary",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "hover_background": "#293548",
+        "flex_shrink": 0,
+        "aria_label": "Quick add: Sweetgreen, $13.75, Food & Dining",
+        "fills": {
+          "amount": 13.75,
+          "category": "food",
+          "payment": "credit",
+          "note": "Sweetgreen lunch"
+        }
+      }
+    },
+    "quick-add-chip-4": {
+      "parent": "quick-add-suggestions",
+      "order": 3,
+      "catalog": "QuickAddChip",
+      "label": "🎵 Spotify $9.99",
+      "overrides": {
+        "height": 44,
+        "border_radius": "9999px",
+        "padding": "0 16px",
+        "background": "surface-elevated",
+        "border": "1px solid #334155",
+        "color": "text-primary",
+        "font_family": "DM Mono",
+        "font_size": 14,
+        "hover_background": "#293548",
+        "flex_shrink": 0,
+        "aria_label": "Quick add: Spotify, $9.99, Entertainment",
+        "fills": {
+          "amount": 9.99,
+          "category": "entertainment",
+          "payment": "credit",
+          "note": "Spotify Premium"
+        }
+      }
+    },
+    "settings-dialog": {
+      "parent": "page-root",
+      "order": 3,
+      "catalog": "SettingsDialog",
+      "title": "Settings",
+      "background": "surface-elevated",
+      "radius": 16,
+      "shadow": "lg",
+      "overrides": {
+        "visible": false,
+        "z_index": 2000,
+        "width": 400,
+        "padding": 24,
+        "backdrop": "rgba(0,0,0,0.6)",
+        "border": "1px solid #334155",
+        "box_shadow": "0 8px 32px rgba(0,0,0,0.5)"
+      },
+      "items": [
+        {
+          "id": "currency",
+          "label": "Currency",
+          "type": "select",
+          "value": "USD ($)"
+        },
+        {
+          "id": "default_payment",
+          "label": "Default Payment Method",
+          "type": "select",
+          "value": "Debit Card"
+        },
+        {
+          "id": "week_start",
+          "label": "Week Starts On",
+          "type": "select",
+          "value": "Sunday"
+        },
+        {
+          "id": "notifications",
+          "label": "Daily Reminder",
+          "type": "toggle",
+          "value": true
+        },
+        {
+          "id": "theme",
+          "label": "Theme",
+          "type": "select",
+          "value": "Dark (Default)"
+        }
+      ]
     }
   }
 }

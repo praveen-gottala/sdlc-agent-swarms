@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readYamlFile, writeYamlFile } from '../../_lib/project-reader';
+import { readYamlFile, writeYamlFile, fileExists } from '../../_lib/project-reader';
+import { getActiveRun } from '../../_lib/run-manager';
 
 interface PageEntry {
   id: string;
@@ -16,6 +17,26 @@ interface PagesFile {
 }
 
 /**
+ * If a page claims "generating" but no pipeline run is active, recover:
+ * - If a design spec exists on disk, it means the pipeline finished but
+ *   the status update was lost (server restart, crash). Set to "rendered".
+ * - Otherwise revert to "draft" — the pipeline was interrupted before output.
+ * Writes the fix back to pages.yaml so it only runs once.
+ */
+function recoverStuckGenerating(pages: PageEntry[], idx: number): void {
+  const page = pages[idx];
+  const specPath = `agentforge/designs/${page.id}.json`;
+
+  if (fileExists(specPath)) {
+    pages[idx].designStatus = 'rendered';
+  } else {
+    pages[idx].designStatus = 'draft';
+  }
+
+  writeYamlFile('agentforge/spec/pages.yaml', { pages });
+}
+
+/**
  * GET /api/pages/[pageId]
  * Returns a single page by ID from pages.yaml.
  */
@@ -26,10 +47,25 @@ export async function GET(
   const { pageId } = await params;
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
   const pages = pagesFile?.pages ?? [];
-  const page = pages.find((p) => p.id === pageId);
+  const idx = pages.findIndex((p) => p.id === pageId);
 
-  if (!page) {
+  if (idx === -1) {
     return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+  }
+
+  const page = pages[idx];
+
+  // Auto-recover orphaned "generating" status, or surface the active runId
+  let activeRunId: string | null = null;
+  if (page.designStatus === 'generating') {
+    const activeRun = getActiveRun();
+    const runBelongsToThisPage =
+      activeRun && (activeRun.params as Record<string, unknown>)?.pageId === pageId;
+    if (runBelongsToThisPage) {
+      activeRunId = activeRun!.runId;
+    } else {
+      recoverStuckGenerating(pages, idx);
+    }
   }
 
   return NextResponse.json({
@@ -40,6 +76,7 @@ export async function GET(
     status: page.status ?? 'draft',
     designStatus: page.designStatus ?? 'draft',
     components: page.components ?? [],
+    ...(activeRunId ? { activeRunId } : {}),
   });
 }
 

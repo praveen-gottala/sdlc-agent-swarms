@@ -2,13 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+export interface StageTiming {
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+}
+
 export interface RunProgressState {
   status: 'pending' | 'running' | 'complete' | 'failed' | null;
   stage: string | null;
+  stageDescription: string | null;
   progress: { current: number; total: number; label: string } | null;
   agentRole: string | null;
   cost: { totalCostUsd: number; tokensUsed: number } | null;
   error: string | null;
+  startedAt: string | null;
+  stageTimings: Record<string, StageTiming> | null;
 }
 
 const POLL_INTERVAL_MS = 2_000;
@@ -21,10 +30,13 @@ export function useRunProgress(runId: string | null): RunProgressState {
   const [state, setState] = useState<RunProgressState>({
     status: null,
     stage: null,
+    stageDescription: null,
     progress: null,
     agentRole: null,
     cost: null,
     error: null,
+    startedAt: null,
+    stageTimings: null,
   });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -38,7 +50,10 @@ export function useRunProgress(runId: string | null): RunProgressState {
 
   useEffect(() => {
     if (!runId) {
-      setState({ status: null, stage: null, progress: null, agentRole: null, cost: null, error: null });
+      setState({
+        status: null, stage: null, stageDescription: null, progress: null,
+        agentRole: null, cost: null, error: null, startedAt: null, stageTimings: null,
+      });
       return;
     }
 
@@ -55,10 +70,13 @@ export function useRunProgress(runId: string | null): RunProgressState {
         setState({
           status: data.status,
           stage: data.stage,
+          stageDescription: data.stageDescription ?? null,
           progress: data.progress,
           agentRole: data.agentRole,
           cost: data.cost,
           error: data.error,
+          startedAt: data.startedAt ?? null,
+          stageTimings: data.stageTimings ?? null,
         });
 
         // Stop polling when done

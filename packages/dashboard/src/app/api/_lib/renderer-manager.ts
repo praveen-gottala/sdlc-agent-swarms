@@ -106,10 +106,10 @@ export async function getRendererStatus(): Promise<{
     // Port is open, but was this process started by us?
     if (childPid === null) {
       // Orphan process from a previous session — we don't control it
-      return { status: 'stale', pid: null, port: PORT, error: 'Renderer was started outside this session. Click Restart to use latest code.' };
+      return { status: 'stale', pid: null, port: PORT, error: 'Renderer was started outside this session, auto-restarting' };
     }
     if (isSourceStale()) {
-      return { status: 'stale', pid: childPid, port: PORT, error: 'Source files changed since renderer started. Click Restart to pick up changes.' };
+      return { status: 'stale', pid: childPid, port: PORT, error: 'Source files changed since renderer started, auto-restarting' };
     }
     return { status: 'ready', pid: childPid, port: PORT };
   }

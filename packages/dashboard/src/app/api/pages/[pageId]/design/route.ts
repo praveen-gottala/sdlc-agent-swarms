@@ -661,6 +661,7 @@ async function runFullPipelineAsync(
       stage: 'Research',
       progress: { current: 0, total: TOTAL_STAGES, label: 'Research' },
       agentRole: 'ux_research',
+      stageDescription: 'Loading project context',
     });
     emitStageEvent(runId, 'design-penpot', 'Research', 0, TOTAL_STAGES, 'started', 'ux_research', undefined, taskId, 'Research: analyzing page requirements');
 
@@ -674,6 +675,7 @@ async function runFullPipelineAsync(
 
     emitAgentLogEvent(runId, 'Research', 'ux_research', taskId, 'info',
       'Calling LLM for UX research analysis — this may take 1-2 minutes...');
+    updateRunStatus(runId, { stageDescription: 'Calling LLM for UX research analysis' });
 
     const researchResponse = await callPipelineStage(apiKey, 'research', {
       description,
@@ -705,6 +707,7 @@ async function runFullPipelineAsync(
       stage: 'Planning',
       progress: { current: 1, total: TOTAL_STAGES, label: 'Planning' },
       agentRole: 'ux_planning',
+      stageDescription: 'Preparing planning context',
     });
     emitStageEvent(runId, 'design-penpot', 'Planning', 1, TOTAL_STAGES, 'started', 'ux_planning', undefined, taskId, 'Planning stage started');
 
@@ -713,6 +716,7 @@ async function runFullPipelineAsync(
 
     emitAgentLogEvent(runId, 'Planning', 'ux_planning', taskId, 'info',
       'Calling LLM for component tree and layout planning — this may take 1-2 minutes...');
+    updateRunStatus(runId, { stageDescription: 'Calling LLM for layout planning' });
 
     const planningResponse = await callPipelineStage(apiKey, 'planning', {
       description,
@@ -743,6 +747,7 @@ async function runFullPipelineAsync(
       stage: 'Design',
       progress: { current: 2, total: TOTAL_STAGES, label: 'Design' },
       agentRole: 'penpot_design',
+      stageDescription: 'Preparing design context',
     });
     emitStageEvent(runId, 'design-penpot', 'Design', 2, TOTAL_STAGES, 'started', 'penpot_design', undefined, taskId, 'Design stage started');
 
@@ -779,6 +784,7 @@ async function runFullPipelineAsync(
 
     emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
       `Calling LLM to generate DesignSpec v2 JSON (${(systemPrompt.length / 1024).toFixed(0)}KB prompt) — this is the longest stage, typically 2-3 minutes...`);
+    updateRunStatus(runId, { stageDescription: 'Generating DesignSpec via LLM' });
 
     const llmResponse = await callAnthropicAPI(apiKey, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL);
 
@@ -805,6 +811,7 @@ async function runFullPipelineAsync(
     const nodeCount = specNodes && typeof specNodes === 'object' ? Object.keys(specNodes as object).length : 0;
     emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
       `Design spec generated: ${nodeCount} nodes for page "${page.name}"`);
+    updateRunStatus(runId, { stageDescription: 'Saving design artifacts' });
 
     // Write spec to disk
     const designsDir = join(projectRoot, 'agentforge', 'designs');

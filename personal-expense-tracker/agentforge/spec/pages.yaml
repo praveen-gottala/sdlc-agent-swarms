@@ -67,7 +67,7 @@ pages:
       - QuickAddSuggestion
     viewports:
       - 1440
-    designStatus: draft
+    designStatus: generating
     correctionIteration: 0
     designScore: null
   - id: spending-insights
