@@ -119,7 +119,7 @@ pages:
       editing a bookmark. Supports per-field blur validation and full submit
       validation. Dirty form detection triggers inline warning bar on cancel.
     status: draft
-    designStatus: draft
+    designStatus: rendered
     components:
       - id: comp-bookmark-form
         name: BookmarkForm
@@ -237,6 +237,8 @@ pages:
         type: local-store
         description: Updates existing bookmark, refreshes updatedAt timestamp on valid
           form submit in edit mode.
+    correctionIteration: 0
+    designScore: null
   - id: page-detail
     name: Bookmark Detail
     route: /bookmark/:id

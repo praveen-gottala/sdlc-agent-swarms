@@ -988,8 +988,8 @@
       "catalog": "chip",
       "label": "Transport",
       "layout": {
-        "gap": 42,
-        "mx": 11
+        "gap": 0,
+        "mx": 0
       }
     },
     "filter-chip-housing": {
@@ -1011,7 +1011,7 @@
       "placeholder": "Search expenses...",
       "width": 200,
       "layout": {
-        "mx": 50
+        "mx": 0
       }
     },
     "expenses-divider": {

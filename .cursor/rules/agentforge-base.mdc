@@ -1,0 +1,11 @@
+---
+description: Core pointer — read canonical repo agent docs before substantive work
+alwaysApply: true
+---
+
+# AgentForge — base context
+
+1. Read **`AGENTS.md`** at the repo root for how Cursor + Claude Code docs fit together.
+2. Follow **`CLAUDE.md`** for full project rules (tests, PRD, commands, browser-first debugging).
+3. At session start, read **`docs/lessons-learned.md`** before writing code.
+4. For active design-review / renderer QA threads, use **`docs/design-review-session-handoff.md`** (episodic; do not duplicate into rules).

@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## DesignSpec browser renderer — regression prevention
+**Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx`, catalog resolver, Vite iframe  
+**Rule:** Catalog ID normalization must be shared (`normalizeCatalogIdToKebab` in `catalog/catalog-id.ts`). Color token names in `overrides` must not be applied as raw CSS — resolve via `resolveTokenColor` or filter non-CSS values in `getOverrideStyles`. After changing the renderer, hard-refresh the design page; restart port 4100 if the iframe still shows stale UI.  
+**Why:** PascalCase-only `.toLowerCase()` broke `NavigationBar` → `navigation-bar` matching; unresolved token strings made chips look empty. Playwright often looked “correct” while a cached browser tab did not.  
+**How to apply:** See `docs/design-review-session-handoff.md` section **Catching regressions next time**. Run `nx test designspec-renderer` including `catalog-id.test.ts`.  
+
+---
+
 ## Clean Code Discipline
 **Context:** Monorepo-wide code quality  
 **Rule:** Never leave dead code (unused imports, variables, etc.) even if pre-existing. Fix all issues across the full codebase, not just the files you touched.  

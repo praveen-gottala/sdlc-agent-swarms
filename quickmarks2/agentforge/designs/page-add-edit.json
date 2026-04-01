@@ -1,0 +1,721 @@
+{
+  "screen": "add-edit-bookmark",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "pt": 64,
+        "pb": 64,
+        "px": 48,
+        "gap": 0
+      }
+    },
+    "page-header": {
+      "parent": "page-root",
+      "order": 0,
+      "type": "container",
+      "width": 480,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 16,
+        "pb": 24
+      }
+    },
+    "back-navigation": {
+      "parent": "page-header",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "← Bookmarks",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "min_height": 44,
+        "padding": "0 8px"
+      }
+    },
+    "page-title": {
+      "parent": "page-header",
+      "order": 1,
+      "type": "text",
+      "content": "Add Bookmark",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "dirty-warning-bar": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "container",
+      "width": 480,
+      "background": "warning",
+      "radius": 8,
+      "shadow": "sm",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "px": 16,
+        "py": 12,
+        "pb": 24,
+        "wrap": true
+      }
+    },
+    "warning-icon": {
+      "parent": "dirty-warning-bar",
+      "order": 0,
+      "type": "text",
+      "content": "⚠",
+      "color": "text-primary",
+      "overrides": {
+        "font_size": 20,
+        "aria_hidden": true
+      }
+    },
+    "warning-text": {
+      "parent": "dirty-warning-bar",
+      "order": 1,
+      "type": "text",
+      "content": "You have unsaved changes",
+      "typography": "body",
+      "color": "text-primary",
+      "width": "fill"
+    },
+    "discard-button": {
+      "parent": "dirty-warning-bar",
+      "order": 2,
+      "catalog": "button-ghost",
+      "label": "Discard",
+      "color": "error",
+      "overrides": {
+        "font_weight": 500,
+        "font_size": 14,
+        "min_height": 44,
+        "background": "transparent",
+        "border": "none"
+      }
+    },
+    "keep-editing-button": {
+      "parent": "dirty-warning-bar",
+      "order": 3,
+      "catalog": "button-ghost",
+      "label": "Keep editing",
+      "color": "cta-primary",
+      "overrides": {
+        "font_weight": 500,
+        "font_size": 14,
+        "min_height": 44,
+        "background": "transparent",
+        "border": "none"
+      }
+    },
+    "form-container": {
+      "parent": "page-root",
+      "order": 2,
+      "type": "section",
+      "width": 480,
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "md",
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 32,
+        "py": 32
+      }
+    },
+    "field-title": {
+      "parent": "form-container",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
+    },
+    "label-title": {
+      "parent": "field-title",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "pb": 4
+      }
+    },
+    "label-title-text": {
+      "parent": "label-title",
+      "order": 0,
+      "type": "text",
+      "content": "Title",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-title-required": {
+      "parent": "label-title",
+      "order": 1,
+      "type": "text",
+      "content": "(Required)",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "input-title": {
+      "parent": "field-title",
+      "order": 1,
+      "catalog": "input-text",
+      "placeholder": "e.g. My Favourite Design Resource",
+      "width": "fill",
+      "overrides": {
+        "background": "surface-input",
+        "border_color": "border-default",
+        "border_width": 1,
+        "border_radius": 8,
+        "padding": "12px 16px",
+        "min_height": 44,
+        "font_size": 14,
+        "aria_required": true
+      }
+    },
+    "error-title": {
+      "parent": "field-title",
+      "order": 2,
+      "type": "text",
+      "content": "Title must be 2–120 characters.",
+      "typography": "label",
+      "color": "error",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "role": "alert"
+      }
+    },
+    "field-url": {
+      "parent": "form-container",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
+    },
+    "label-url": {
+      "parent": "field-url",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "pb": 4
+      }
+    },
+    "label-url-text": {
+      "parent": "label-url",
+      "order": 0,
+      "type": "text",
+      "content": "URL",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-url-required": {
+      "parent": "label-url",
+      "order": 1,
+      "type": "text",
+      "content": "(Required)",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "input-url": {
+      "parent": "field-url",
+      "order": 1,
+      "catalog": "input-text",
+      "placeholder": "https://example.com",
+      "width": "fill",
+      "overrides": {
+        "input_type": "url",
+        "autocomplete": "url",
+        "background": "surface-input",
+        "border_color": "border-default",
+        "border_width": 1,
+        "border_radius": 8,
+        "padding": "12px 16px",
+        "min_height": 44,
+        "font_size": 14,
+        "aria_required": true
+      }
+    },
+    "error-url": {
+      "parent": "field-url",
+      "order": 2,
+      "type": "text",
+      "content": "Enter a valid URL starting with http:// or https://.",
+      "typography": "label",
+      "color": "error",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "role": "alert"
+      }
+    },
+    "field-tags": {
+      "parent": "form-container",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
+    },
+    "label-tags": {
+      "parent": "field-tags",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "pb": 4
+      }
+    },
+    "label-tags-text": {
+      "parent": "label-tags",
+      "order": 0,
+      "type": "text",
+      "content": "Tags",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-tags-optional": {
+      "parent": "label-tags",
+      "order": 1,
+      "type": "text",
+      "content": "(Optional)",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "tag-input-field": {
+      "parent": "field-tags",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-input",
+      "radius": 8,
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "px": 12,
+        "py": 8
+      },
+      "overrides": {
+        "border_color": "border-default",
+        "border_width": 1
+      }
+    },
+    "tag-chip-strip": {
+      "parent": "tag-input-field",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "wrap": true
+      }
+    },
+    "tag-chip-design": {
+      "parent": "tag-chip-strip",
+      "order": 0,
+      "type": "container",
+      "background": "cta-primary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "px": 10,
+        "py": 4
+      }
+    },
+    "tag-chip-design-label": {
+      "parent": "tag-chip-design",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "typography": "label",
+      "color": "text-on-cta",
+      "weight": 500
+    },
+    "tag-chip-design-remove": {
+      "parent": "tag-chip-design",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "×",
+      "color": "text-on-cta",
+      "overrides": {
+        "font_size": 14,
+        "background": "transparent",
+        "border": "none",
+        "min_height": 44,
+        "min_width": 44,
+        "padding": "0 4px",
+        "aria_label": "Remove tag design"
+      }
+    },
+    "tag-chip-ux": {
+      "parent": "tag-chip-strip",
+      "order": 1,
+      "type": "container",
+      "background": "cta-primary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "px": 10,
+        "py": 4
+      }
+    },
+    "tag-chip-ux-label": {
+      "parent": "tag-chip-ux",
+      "order": 0,
+      "type": "text",
+      "content": "ux",
+      "typography": "label",
+      "color": "text-on-cta",
+      "weight": 500
+    },
+    "tag-chip-ux-remove": {
+      "parent": "tag-chip-ux",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "×",
+      "color": "text-on-cta",
+      "overrides": {
+        "font_size": 14,
+        "background": "transparent",
+        "border": "none",
+        "min_height": 44,
+        "min_width": 44,
+        "padding": "0 4px",
+        "aria_label": "Remove tag ux"
+      }
+    },
+    "tag-chip-resources": {
+      "parent": "tag-chip-strip",
+      "order": 2,
+      "type": "container",
+      "background": "cta-primary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "px": 10,
+        "py": 4
+      }
+    },
+    "tag-chip-resources-label": {
+      "parent": "tag-chip-resources",
+      "order": 0,
+      "type": "text",
+      "content": "resources",
+      "typography": "label",
+      "color": "text-on-cta",
+      "weight": 500
+    },
+    "tag-chip-resources-remove": {
+      "parent": "tag-chip-resources",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "×",
+      "color": "text-on-cta",
+      "overrides": {
+        "font_size": 14,
+        "background": "transparent",
+        "border": "none",
+        "min_height": 44,
+        "min_width": 44,
+        "padding": "0 4px",
+        "aria_label": "Remove tag resources"
+      }
+    },
+    "tag-text-input": {
+      "parent": "tag-input-field",
+      "order": 1,
+      "catalog": "input-text",
+      "placeholder": "Add a tag…",
+      "width": "fill",
+      "overrides": {
+        "background": "transparent",
+        "border": "none",
+        "font_size": 14,
+        "min_height": 32,
+        "aria_label": "Tag input — press comma or Enter to add",
+        "aria_describedby": "tags-helper tags-error"
+      }
+    },
+    "tags-helper-text": {
+      "parent": "field-tags",
+      "order": 2,
+      "type": "text",
+      "content": "Separate tags with commas. Letters, numbers, and hyphens only. Max 5 tags.",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "id": "tags-helper"
+      }
+    },
+    "error-tags": {
+      "parent": "field-tags",
+      "order": 3,
+      "type": "text",
+      "content": "Tags can only contain letters, numbers, and hyphens.",
+      "typography": "label",
+      "color": "error",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "role": "alert",
+        "id": "tags-error"
+      }
+    },
+    "field-notes": {
+      "parent": "form-container",
+      "order": 3,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 4
+      }
+    },
+    "label-notes": {
+      "parent": "field-notes",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "pb": 4
+      }
+    },
+    "label-notes-text": {
+      "parent": "label-notes",
+      "order": 0,
+      "type": "text",
+      "content": "Notes",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "label-notes-optional": {
+      "parent": "label-notes",
+      "order": 1,
+      "type": "text",
+      "content": "(Optional)",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "textarea-notes": {
+      "parent": "field-notes",
+      "order": 1,
+      "catalog": "input-textarea",
+      "placeholder": "Add any notes about this bookmark…",
+      "width": "fill",
+      "height": 100,
+      "overrides": {
+        "background": "surface-input",
+        "border_color": "border-default",
+        "border_width": 1,
+        "border_radius": 8,
+        "padding": "12px 16px",
+        "font_size": 14,
+        "resize": "vertical",
+        "aria_describedby": "notes-counter notes-error"
+      }
+    },
+    "notes-counter-row": {
+      "parent": "field-notes",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "justify": "end"
+      }
+    },
+    "notes-char-counter": {
+      "parent": "notes-counter-row",
+      "order": 0,
+      "type": "text",
+      "content": "42 / 280",
+      "color": "text-secondary",
+      "textAlign": "right",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "aria_live": "polite",
+        "id": "notes-counter",
+        "aria_label": "42 of 280 characters used"
+      }
+    },
+    "error-notes": {
+      "parent": "field-notes",
+      "order": 3,
+      "type": "text",
+      "content": "Notes must be 280 characters or less.",
+      "typography": "label",
+      "color": "error",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "role": "alert",
+        "id": "notes-error"
+      }
+    },
+    "form-divider": {
+      "parent": "form-container",
+      "order": 4,
+      "type": "divider",
+      "width": "fill"
+    },
+    "form-actions": {
+      "parent": "form-container",
+      "order": 5,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "justify": "start",
+        "pt": 8
+      }
+    },
+    "save-button": {
+      "parent": "form-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Save Bookmark",
+      "background": "cta-primary",
+      "color": "text-on-cta",
+      "radius": 9999,
+      "overrides": {
+        "font_family": "Sora",
+        "font_size": 15,
+        "font_weight": 500,
+        "padding": "12px 24px",
+        "min_height": 44,
+        "border": "none",
+        "type": "submit"
+      }
+    },
+    "cancel-button": {
+      "parent": "form-actions",
+      "order": 1,
+      "catalog": "button-secondary",
+      "label": "Cancel",
+      "color": "text-secondary",
+      "radius": 9999,
+      "overrides": {
+        "font_family": "Sora",
+        "font_size": 15,
+        "font_weight": 500,
+        "padding": "12px 24px",
+        "min_height": 44,
+        "background": "transparent",
+        "border_color": "border-default",
+        "border_width": 1,
+        "type": "button"
+      }
+    },
+    "not-found-state": {
+      "parent": "page-root",
+      "order": 3,
+      "type": "container",
+      "width": 480,
+      "background": "surface-primary",
+      "radius": 12,
+      "shadow": "md",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 16,
+        "px": 32,
+        "py": 32
+      }
+    },
+    "not-found-icon": {
+      "parent": "not-found-state",
+      "order": 0,
+      "type": "text",
+      "content": "🔖",
+      "overrides": {
+        "font_size": 40,
+        "aria_hidden": true
+      }
+    },
+    "not-found-text": {
+      "parent": "not-found-state",
+      "order": 1,
+      "type": "text",
+      "content": "Bookmark not found.",
+      "typography": "body",
+      "color": "text-primary",
+      "textAlign": "center"
+    },
+    "not-found-subtext": {
+      "parent": "not-found-state",
+      "order": 2,
+      "type": "text",
+      "content": "This bookmark may have been removed or the link is invalid.",
+      "typography": "body",
+      "color": "text-secondary",
+      "textAlign": "center",
+      "overrides": {
+        "font_size": 13
+      }
+    },
+    "go-back-link": {
+      "parent": "not-found-state",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "← Go back",
+      "background": "cta-primary",
+      "color": "text-on-cta",
+      "radius": 9999,
+      "overrides": {
+        "font_family": "Sora",
+        "font_size": 15,
+        "font_weight": 500,
+        "padding": "12px 24px",
+        "min_height": 44,
+        "border": "none"
+      }
+    }
+  }
+}

@@ -3,6 +3,8 @@
 Multi-agent framework for end-to-end SDLC orchestration.
 Open source, Apache 2.0.
 
+**Shared tooling:** See **`AGENTS.md`** for how this file fits with Cursor rules and episodic handoff docs (so the same practices apply in both tools).
+
 ## Current State
 Active: Design pipeline (packages/agents-ux/, packages/designspec-renderer/)
 Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)

@@ -4,6 +4,7 @@
  */
 import type { NodeSpec } from '../types/design-spec-v2.js';
 import type { CatalogEntry, CatalogMap, ResolvedNode } from '../types/catalog.js';
+import { normalizeCatalogIdToKebab } from './catalog-id.js';
 
 /** Maximum depth for extends chains to prevent infinite loops. */
 const MAX_EXTENDS_DEPTH = 5;
@@ -95,11 +96,7 @@ export function resolveNode(nodeId: string, node: NodeSpec, catalog: CatalogMap)
     };
   }
 
-  // Normalize PascalCase → kebab-case for catalog lookup
-  const kebabId = catalogId
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-    .toLowerCase();
+  const kebabId = normalizeCatalogIdToKebab(catalogId);
 
   let rawEntry = catalog[catalogId] ?? catalog[kebabId];
   // Track which catalog ID we actually found data for (may differ from the original)

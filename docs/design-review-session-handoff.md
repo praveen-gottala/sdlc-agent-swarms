@@ -164,6 +164,24 @@ React style prop on <div>/<Button>/<Badge>/etc.
 
 5. **Project switching**: Click the project selector in the dashboard sidebar (bottom-left). The page list updates automatically.
 
+6. **Renderer vs dashboard UI**: Tabs like **Properties / AI Edits / Chat** are **dashboard chrome**, not part of the design JSON. Only elements inside the design iframe (`[data-testid="design-iframe"]`) are produced by `DesignSpecRenderer`. Do not confuse them when triaging “missing text” bugs.
+
+---
+
+## Catching regressions next time
+
+Minor renderer bugs (PascalCase catalog IDs, token strings in `overrides` as invalid CSS, stale Vite bundle) are easy to miss in code review. Use this layered approach:
+
+| Layer | What | Why |
+|-------|------|-----|
+| **Unit tests** | `normalizeCatalogIdToKebab()` in `packages/designspec-renderer/src/catalog/catalog-id.ts` — resolver and renderer both import it so switch cases and catalog lookup cannot drift. | Catches the “`Button` vs `button`” class of bugs without a browser. |
+| **Unit tests** | Extend `render.test.ts` / token tests when adding new override behavior (e.g. `looksLikeCssColor` filtering). | Prevents token names like `cta-primary` from being passed as raw CSS again. |
+| **After renderer changes** | Hard-refresh the design page (`Cmd+Shift+R`). If the iframe looks wrong, `lsof -ti:4100 \| xargs kill -9` and reload so Vite serves a fresh bundle. | HMR and browser cache can show an older bundle than Playwright’s clean session. |
+| **Visual smoke** | For any change to `DesignSpecRenderer.tsx`, spot-check one page with PascalCase catalogs (e.g. Spending Insights: `Button`, `Chip`, `NavigationBar`) at **100% zoom** in the iframe and confirm labels and chip backgrounds match the JSON. | Catches empty chip text / wrong variant path before merge. |
+| **Optional (later)** | Playwright screenshot baseline or DOM assertions on fixture pages (`data-node="toggle-chip-bar"` has non-empty `textContent`, `backgroundColor` not fully transparent when spec says `cta-primary`). | Automates the manual smoke step. |
+
+**PR checklist (renderer PRs):** `nx test designspec-renderer`, `npx tsc --noEmit -p packages/designspec-renderer/tsconfig.json`, and at least one manual iframe verification step above.
+
 ---
 
 ## Test Commands

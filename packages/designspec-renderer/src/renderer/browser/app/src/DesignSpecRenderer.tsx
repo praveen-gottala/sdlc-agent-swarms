@@ -6,6 +6,7 @@
 import React, { useEffect } from 'react';
 import { buildTree } from '@shared/renderer/tree-builder';
 import { resolveNode } from '@shared/catalog/resolver';
+import { normalizeCatalogIdToKebab } from '@shared/catalog/catalog-id';
 import { buildTokenMap } from '@shared/renderer/token-resolver';
 import { resolveTypography } from '@shared/renderer/typography';
 import { resolveShadow } from '@shared/renderer/shadows';
@@ -131,8 +132,12 @@ const SAFE_OVERRIDE_KEYS = new Set([
   'height',
   // Spacing
   'padding', 'margin_inline', 'marginInline',
+  'padding_top', 'paddingTop', 'padding_bottom', 'paddingBottom',
+  'padding_left', 'paddingLeft', 'padding_right', 'paddingRight',
   'margin_top', 'marginTop', 'margin_bottom', 'marginBottom',
   'margin_left', 'marginLeft', 'margin_right', 'marginRight',
+  // Gap
+  'gap',
   // Borders
   'border', 'border_top', 'borderTop', 'border_bottom', 'borderBottom',
   'border_left', 'borderLeft', 'border_right', 'borderRight',
@@ -143,18 +148,44 @@ const SAFE_OVERRIDE_KEYS = new Set([
   // Flex item
   'flex_basis', 'flexBasis', 'flex_shrink', 'flexShrink', 'flex_grow', 'flexGrow',
   // Overflow & visibility
-  'overflow', 'pointer_events', 'pointerEvents', 'cursor', 'opacity',
+  'overflow', 'overflow_x', 'overflowX', 'overflow_y', 'overflowY',
+  'pointer_events', 'pointerEvents', 'cursor', 'opacity',
   // Typography (overrides for catalog items that need custom fonts)
   'font_size', 'fontSize', 'font_family', 'fontFamily',
   // Layout (for non-container nodes that need inline layout)
   'display', 'align_items', 'alignItems', 'justify_content', 'justifyContent',
+  'flex_direction', 'flexDirection', 'flex_wrap', 'flexWrap',
+  // Colors (hex/rgba pass through; token names won't resolve but hex values will)
+  'background', 'background_color', 'backgroundColor', 'color',
 ]);
+
+const COLOR_OVERRIDE_KEYS = new Set([
+  'background', 'background_color', 'backgroundColor', 'color',
+]);
+
+function looksLikeCssColor(v: unknown): boolean {
+  if (typeof v !== 'string') return false;
+  const s = v.trim();
+  return s.startsWith('#') || s.startsWith('rgb') || s.startsWith('hsl')
+    || s === 'transparent' || s === 'inherit' || s === 'currentColor';
+}
 
 function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefined): React.CSSProperties {
   if (!overrides) return {};
   const s: React.CSSProperties = {};
   for (const [key, value] of Object.entries(overrides)) {
+    if (key === 'direction' && typeof value === 'string') {
+      s.display = 'flex';
+      s.flexDirection = value as React.CSSProperties['flexDirection'];
+      continue;
+    }
+    if (key === 'columns' && typeof value === 'number') {
+      s.display = 'grid';
+      s.gridTemplateColumns = `repeat(${value}, 1fr)`;
+      continue;
+    }
     if (!SAFE_OVERRIDE_KEYS.has(key)) continue;
+    if (COLOR_OVERRIDE_KEYS.has(key) && !looksLikeCssColor(value)) continue;
     const normalized = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
     (s as Record<string, unknown>)[normalized] = value;
   }
@@ -404,6 +435,21 @@ function renderAccelerator(
 
     case 'divider': {
       const borderColor = resolveTokenColor(node.color ?? 'border-default', tokenMap);
+      const isVertical = typeof node.width === 'number' && typeof node.height === 'number' && node.height > node.width;
+      if (isVertical) {
+        return (
+          <div
+            key={node.id}
+            data-node={node.id}
+            style={{
+              width: node.width,
+              height: node.height,
+              backgroundColor: borderColor ?? '#333',
+              flexShrink: 0,
+            }}
+          />
+        );
+      }
       return (
         <hr
           key={node.id}
@@ -457,14 +503,14 @@ function renderCatalog(
   tokens: RendererTokens,
   tokenMap: TokenColorMap,
 ): React.ReactNode {
-  const catalogId = node.catalogId ?? '';
+  const catalogId = normalizeCatalogIdToKebab(node.catalogId ?? '');
 
   // Compute common styles (spacing, size, shadow, position) that apply to ALL
   // catalog nodes. Individual renderers may override specific properties.
   const common = getCommonNodeStyles(node, tokens);
 
-  // Button variants
-  if (catalogId.startsWith('button-')) {
+  // Button variants (both "button-primary" style and bare "Button" catalog)
+  if (catalogId === 'button' || catalogId.startsWith('button-')) {
     return renderButtonVariant(node, catalogId, tokenMap, common);
   }
 
@@ -497,12 +543,97 @@ function renderCatalog(
     case 'stat':
       return renderStat(node, tokens, tokenMap, common);
     case 'chip': {
-      return <Badge key={node.id} data-node={node.id} data-catalog="chip" variant="outline" style={Object.keys(common).length ? common : undefined}>{node.label ?? ''}</Badge>;
+      const isSelected = !!(node.overrides?.selected);
+      const states = node.catalogEntry?.states as Record<string, Record<string, string>> | undefined;
+      const stateTokens = isSelected ? states?.selected : states?.default;
+
+      const stateBg = resolveTokenColor(stateTokens?.bg, tokenMap);
+      const stateFg = resolveTokenColor(stateTokens?.text, tokenMap);
+      const stateBorder = resolveTokenColor(stateTokens?.border, tokenMap);
+
+      const fallbackCtaPrimary = resolveTokenColor('cta-primary', tokenMap) ?? '#f59e0b';
+      const fallbackTextOnCta = resolveTokenColor('text-on-cta', tokenMap) ?? '#fff';
+      const fallbackBorderDefault = resolveTokenColor('border-default', tokenMap) ?? '#333';
+      const fallbackTextSecondary = resolveTokenColor('text-secondary', tokenMap) ?? '#94a3b8';
+      const fallbackSurfaceSecondary = resolveTokenColor('surface-secondary', tokenMap) ?? 'transparent';
+
+      const chipStyle: React.CSSProperties = {
+        ...common,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: common.padding ?? '6px 14px',
+        borderRadius: common.borderRadius ?? 9999,
+        fontSize: 13,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+      };
+
+      if (isSelected) {
+        chipStyle.backgroundColor = stateBg ?? fallbackCtaPrimary;
+        chipStyle.color = stateFg ?? fallbackTextOnCta;
+        chipStyle.border = `1px solid ${stateBorder ?? stateBg ?? fallbackCtaPrimary}`;
+      } else {
+        chipStyle.backgroundColor = stateBg ?? fallbackSurfaceSecondary;
+        chipStyle.color = stateFg ?? fallbackTextSecondary;
+        chipStyle.border = `1px solid ${stateBorder ?? fallbackBorderDefault}`;
+      }
+
+      return (
+        <div key={node.id} data-node={node.id} data-catalog="chip" style={chipStyle}>
+          {node.label ?? ''}
+        </div>
+      );
     }
     case 'progress-bar-active':
       return renderProgressBar(node, common);
     case 'pagination':
       return renderPagination(node, common);
+    case 'tabs': {
+      const tabItems = (node.overrides?.tabs ?? node.items ?? []) as ReadonlyArray<Readonly<Record<string, unknown>>>;
+      const activeFg = resolveTokenColor('cta-primary', tokenMap) ?? '#f59e0b';
+      const inactiveFg = resolveTokenColor('text-secondary', tokenMap) ?? '#94a3b8';
+      return (
+        <div key={node.id} data-node={node.id} data-catalog={catalogId}
+          style={{ display: 'flex', gap: 24, alignItems: 'center', ...common }}>
+          {tabItems.map((tab, i) => {
+            const isActive = !!tab.active;
+            return (
+              <span key={i} style={{
+                color: isActive ? activeFg : inactiveFg,
+                fontWeight: isActive ? 600 : 400,
+                fontSize: 14,
+                cursor: 'pointer',
+                borderBottom: isActive ? `2px solid ${activeFg}` : '2px solid transparent',
+                paddingBottom: 4,
+              }}>
+                {String(tab.label ?? '')}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+    case 'navigation-bar':
+    case 'navbar':
+    case 'top-bar':
+    case 'app-bar': {
+      const navBg = resolveTokenColor(node.background, tokenMap);
+      const navStyle: React.CSSProperties = {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        ...common,
+      };
+      if (navBg) navStyle.backgroundColor = navBg;
+      return (
+        <nav key={node.id} data-node={node.id} data-catalog={catalogId} style={navStyle}>
+          {children}
+        </nav>
+      );
+    }
     case 'tooltip':
       return (
         <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(common).length ? common : undefined}>
@@ -510,9 +641,42 @@ function renderCatalog(
         </div>
       );
     default: {
+      const bg = resolveTokenColor(node.background, tokenMap);
+      const layoutStyle = getLayoutStyles(node.layout);
+      const style: React.CSSProperties = {
+        ...layoutStyle,
+        ...common,
+      };
+      if (bg) style.backgroundColor = bg;
+      if (node.radius) style.borderRadius = node.radius;
+
+      const hasChildren = children.length > 0;
+      const itemsEl = !hasChildren ? renderCatalogItems(node, tokenMap) : null;
+      const displayText = node.label ?? node.content
+        ?? (node.value !== undefined && node.value !== '' ? String(node.value) : undefined)
+        ?? node.placeholder;
+      const textColor = resolveTokenColor(node.color, tokenMap)
+        ?? resolveTokenColor('text-primary', tokenMap);
+      const isPlaceholder = !node.label && !node.content && (node.value === undefined || node.value === '') && !!node.placeholder;
+
+      if (itemsEl && !node.layout && !style.display) {
+        style.display = 'flex';
+        style.flexWrap = 'wrap';
+        if (!style.gap) style.gap = 8;
+      }
+
+      if (!hasChildren && !itemsEl && displayText && !style.display) {
+        style.display = 'flex';
+        style.alignItems = 'center';
+      }
+
       return (
-        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(common).length ? common : undefined}>
+        <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(style).length ? style : undefined}>
           {children}
+          {itemsEl}
+          {!hasChildren && !itemsEl && displayText && (
+            <span style={{ color: textColor, opacity: isPlaceholder ? 0.5 : undefined }}>{String(displayText)}</span>
+          )}
         </div>
       );
     }
@@ -527,13 +691,23 @@ function renderButtonVariant(
   tokenMap: TokenColorMap,
   common: React.CSSProperties,
 ): React.ReactNode {
-  const variantMap: Record<string, string> = {
+  const catalogVariantMap: Record<string, string> = {
     'button-primary': 'default',
     'button-secondary': 'outline',
     'button-destructive': 'destructive',
     'button-ghost': 'ghost',
   };
-  const variant = variantMap[catalogId] ?? 'default';
+  const overrideVariantMap: Record<string, string> = {
+    'ghost': 'ghost',
+    'secondary': 'outline',
+    'primary': 'default',
+    'destructive': 'destructive',
+    'outline': 'outline',
+  };
+  const overrideVariant = node.overrides?.variant as string | undefined;
+  const variant = catalogVariantMap[catalogId]
+    ?? (overrideVariant ? overrideVariantMap[overrideVariant] : undefined)
+    ?? 'default';
   const size = (node.overrides?.size as string) ?? 'default';
   const style: React.CSSProperties = {
     ...common,
@@ -871,6 +1045,48 @@ function renderProgressBar(node: ResolvedNode, common: React.CSSProperties): Rea
   const value = typeof node.value === 'number' ? node.value : 0;
   return (
     <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={Object.keys(common).length ? common : undefined} />
+  );
+}
+
+/**
+ * Render node.items as visual chip/tag elements for unresolved catalog nodes
+ * (CategoryChipGrid, PaymentMethodChipRow, NavigationTabs, etc.).
+ */
+function renderCatalogItems(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+): React.ReactNode | null {
+  if (!node.items?.length) return null;
+  const borderDefault = resolveTokenColor('border-default', tokenMap) ?? '#333';
+  const fg = resolveTokenColor('text-primary', tokenMap) ?? '#e2e8f0';
+  return (
+    <>
+      {node.items.map((item: Readonly<Record<string, unknown>>, i: number) => {
+        const isSelected = item.selected as boolean | undefined;
+        const itemColor = item.color as string | undefined;
+        const label = (item.label ?? item.icon ?? '') as string;
+        return (
+          <div
+            key={i}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px 12px',
+              borderRadius: 9999,
+              border: `1px solid ${isSelected && itemColor ? itemColor : borderDefault}`,
+              backgroundColor: isSelected && itemColor ? hexToRgba(itemColor, 0.15) : 'transparent',
+              color: isSelected && itemColor ? itemColor : fg,
+              fontSize: 13,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {label}
+          </div>
+        );
+      })}
+    </>
   );
 }
 
