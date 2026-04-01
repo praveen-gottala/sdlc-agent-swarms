@@ -38,6 +38,8 @@ export interface DesignCanvasProps {
   onRevertSpec?: () => void;
   /** Design spec passed from parent — eliminates duplicate fetch */
   designSpec?: object | null;
+  /** Pre-loaded renderer tokens + catalog for the iframe renderer */
+  rendererData?: { tokens: any; catalog: any } | null;
   /** Log callback for structured logging */
   onLog?: (level: string, source: string, message: string) => void;
 }
@@ -69,17 +71,19 @@ export function DesignCanvas({
   hasUnsavedChanges = false,
   onRevertSpec,
   designSpec,
+  rendererData,
   onLog,
 }: DesignCanvasProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const bridgeOnLog = useCallback<OnLogCallback>(
-    (level, message) => onLog?.(level, 'bridge', message),
+    (level, message, logSource) => onLog?.(level, logSource ?? 'bridge', message),
     [onLog],
   );
   const bridge = useRendererBridge(iframeRef, { onLog: bridgeOnLog });
   const [rendererHealthy, setRendererHealthy] = useState<boolean | null>(null);
   const [rendererStarting, setRendererStarting] = useState(false);
+  const [rendererError, setRendererError] = useState<string | null>(null);
   const [specLoading, setSpecLoading] = useState(false);
   const [renderFailed, setRenderFailed] = useState(false);
   const [correctionIteration, setCorrectionIteration] = useState(0);
@@ -153,9 +157,31 @@ export function DesignCanvas({
   const retryRendererStart = useCallback(() => {
     setRendererHealthy(null);
     setRendererStarting(false);
-    // Trigger re-check by bumping a counter
+    setRendererError(null);
     setRendererRetry((c) => c + 1);
   }, []);
+
+  const restartRenderer = useCallback(async () => {
+    setRendererHealthy(null);
+    setRendererStarting(true);
+    setRendererError(null);
+    onLog?.('INFO', 'canvas', 'Manually restarting renderer');
+    try {
+      const res = await fetch('/api/renderer/restart', { method: 'POST' });
+      const data = await res.json();
+      if (data.status === 'failed') {
+        setRendererHealthy(false);
+        setRendererStarting(false);
+        setRendererError(data.error ?? 'Restart failed');
+      } else {
+        setRendererRetry((c) => c + 1);
+      }
+    } catch {
+      setRendererHealthy(false);
+      setRendererStarting(false);
+      setRendererError('Network error during restart');
+    }
+  }, [onLog]);
   const [rendererRetry, setRendererRetry] = useState(0);
 
   useEffect(() => {
@@ -176,9 +202,24 @@ export function DesignCanvas({
           return;
         }
 
+        if (data.status === 'stale') {
+          onLog?.('WARN', 'canvas', `Renderer stale: ${data.error ?? 'unknown reason'}, auto-restarting`);
+          setRendererStarting(true);
+          const restartRes = await fetch('/api/renderer/restart', { method: 'POST' });
+          const restartData = await restartRes.json();
+          if (cancelled) return;
+          if (restartData.status === 'failed') {
+            setRendererHealthy(false);
+            setRendererStarting(false);
+            setRendererError(restartData.error ?? 'Restart failed');
+            return;
+          }
+          startPolling();
+          return;
+        }
+
         if (data.status === 'starting') {
           onLog?.('INFO', 'canvas', 'Renderer health check: already starting, polling');
-          // Already starting — just poll
           setRendererStarting(true);
           startPolling();
           return;
@@ -201,6 +242,7 @@ export function DesignCanvas({
         if (startData.status === 'failed') {
           setRendererHealthy(false);
           setRendererStarting(false);
+          setRendererError(startData.error ?? 'Unknown error starting renderer');
           return;
         }
 
@@ -233,11 +275,19 @@ export function DesignCanvas({
               setRendererHealthy(true);
               setRendererStarting(false);
             }
+          } else if (data.status === 'stopped' && data.error) {
+            if (pollTimer) clearInterval(pollTimer);
+            if (!cancelled) {
+              setRendererHealthy(false);
+              setRendererStarting(false);
+              setRendererError(data.error);
+            }
           } else if (attempts >= MAX_ATTEMPTS) {
             if (pollTimer) clearInterval(pollTimer);
             if (!cancelled) {
               setRendererHealthy(false);
               setRendererStarting(false);
+              setRendererError(data.error ?? 'Renderer failed to start within 30 seconds');
             }
           }
         } catch {
@@ -246,6 +296,7 @@ export function DesignCanvas({
             if (!cancelled) {
               setRendererHealthy(false);
               setRendererStarting(false);
+              setRendererError('Network error checking renderer status');
             }
           }
         }
@@ -268,7 +319,10 @@ export function DesignCanvas({
 
     onLog?.('INFO', 'canvas', `Loading spec into bridge for page ${page.id}`);
     setSpecLoading(true);
-    bridge.loadSpec(JSON.stringify(designSpec));
+    const payload = rendererData
+      ? { spec: designSpec, tokens: rendererData.tokens, catalog: rendererData.catalog }
+      : designSpec;
+    bridge.loadSpec(JSON.stringify(payload));
     if (status === 'rendered' || status === 'correction') {
       bridge.enableTagging();
     } else {
@@ -276,7 +330,7 @@ export function DesignCanvas({
     }
     setSpecLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page?.id, page?.designStatus, rendererHealthy, bridge.isReady, designSpec]);
+  }, [page?.id, page?.designStatus, rendererHealthy, bridge.isReady, designSpec, rendererData]);
 
   // Fetch design metadata for iteration counter
   useEffect(() => {
@@ -426,11 +480,21 @@ export function DesignCanvas({
         {page && !rendererStarting && rendererHealthy === false && ['rendered', 'correction', 'approved'].includes(status ?? '') && (
           <EmptyState
             title="Renderer unavailable"
-            description="Could not start the design renderer. Check that packages are installed."
+            description={rendererError ?? 'Could not start the design renderer. Check that packages are installed.'}
           >
-            <Button variant="secondary" size="sm" onClick={retryRendererStart}>
-              Retry
-            </Button>
+            {rendererError && (
+              <code className="mt-2 block max-w-md text-xs text-text-muted bg-bg-surface-raised px-3 py-2 rounded-md break-all whitespace-pre-wrap">
+                {rendererError}
+              </code>
+            )}
+            <div className="flex gap-2 mt-1">
+              <Button variant="secondary" size="sm" onClick={retryRendererStart}>
+                Retry
+              </Button>
+              <Button variant="secondary" size="sm" onClick={restartRenderer}>
+                Kill &amp; Restart
+              </Button>
+            </div>
           </EmptyState>
         )}
 

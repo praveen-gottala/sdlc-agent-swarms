@@ -35,7 +35,13 @@ type ChildMessage =
       source: 'agentforge';
     }
   | { type: 'ready'; source: 'agentforge' }
-  | { type: 'log'; level: string; message: string; source: 'agentforge' };
+  | {
+      type: 'log';
+      level: string;
+      message: string;
+      source: 'agentforge';
+      logSource?: 'bridge' | 'renderer';
+    };
 
 // ─── Callback types for child-to-parent events ─────────────────────────────
 
@@ -90,7 +96,7 @@ export interface UseRendererBridgeResult {
  * Messages are filtered by `source === 'agentforge'` to ignore unrelated
  * postMessage traffic.
  */
-export type OnLogCallback = (level: string, message: string) => void;
+export type OnLogCallback = (level: string, message: string, logSource?: 'bridge' | 'renderer') => void;
 
 export interface UseRendererBridgeOptions {
   onLog?: OnLogCallback;
@@ -181,13 +187,14 @@ export function useRendererBridge(
       switch (msg.type) {
         case 'ready':
           setIsReady(true);
-          onLogRef.current?.('INFO', 'Renderer iframe ready');
+          onLogRef.current?.('INFO', 'Renderer iframe ready', 'bridge');
           break;
 
         case 'render-complete':
           onLogRef.current?.(
             msg.success ? 'INFO' : 'ERROR',
             `Render complete: success=${msg.success}, nodeCount=${msg.nodeCount}`,
+            'bridge',
           );
           onRenderCompleteRef.current?.(msg.success, msg.nodeCount);
           break;
@@ -205,7 +212,7 @@ export function useRendererBridge(
           break;
 
         case 'log':
-          onLogRef.current?.(msg.level, msg.message);
+          onLogRef.current?.(msg.level, msg.message, msg.logSource ?? 'bridge');
           break;
       }
     }

@@ -669,8 +669,11 @@ async function runFullPipelineAsync(
     let totalTokensUsed = 0;
 
     emitAgentLogEvent(runId, 'Research', 'ux_research', taskId, 'info',
-      `Research context: PRD=${prdContent ? 'present' : 'absent'}, designTokens=${designTokens ? 'present' : 'absent'}, brand=${brandYaml ? 'present' : 'absent'}`,
+      `Loaded project context: PRD (${prdContent ? `${(prdContent.length / 1024).toFixed(0)}KB` : 'missing'}), design tokens (${designTokens ? 'found' : 'missing'}), brand guidelines (${brandYaml ? 'found' : 'missing'})`,
       { descriptionLength: description.length, prdLength: prdContent?.length ?? 0 });
+
+    emitAgentLogEvent(runId, 'Research', 'ux_research', taskId, 'info',
+      'Calling LLM for UX research analysis — this may take 1-2 minutes...');
 
     const researchResponse = await callPipelineStage(apiKey, 'research', {
       description,
@@ -687,17 +690,15 @@ async function runFullPipelineAsync(
       runId, 'Research', 'ux_research', taskId,
       researchResponse.meta.model, researchResponse.meta.usage.input_tokens, researchResponse.meta.usage.output_tokens,
       researchResponse.meta.costUsd, researchResponse.meta.durationMs,
-      `Research LLM: ${researchResponse.meta.usage.input_tokens + researchResponse.meta.usage.output_tokens} tokens, $${researchResponse.meta.costUsd.toFixed(4)}`,
+      `Research LLM complete: ${researchResponse.meta.usage.input_tokens + researchResponse.meta.usage.output_tokens} tokens, $${researchResponse.meta.costUsd.toFixed(4)}, ${(researchResponse.meta.durationMs / 1000).toFixed(1)}s`,
     );
 
-    const researchBriefPreview = researchResult.slice(0, 200).replace(/\n/g, ' ');
     emitAgentLogEvent(runId, 'Research', 'ux_research', taskId, 'info',
-      `Research brief: ${researchBriefPreview}${researchResult.length > 200 ? '...' : ''}`,
-      { briefLength: researchResult.length });
+      `Research brief generated: ${(researchResult.length / 1024).toFixed(1)}KB`);
 
     emitStageEvent(runId, 'design-penpot', 'Research', 0, TOTAL_STAGES, 'completed', 'ux_research',
       { totalCostUsd: researchResponse.meta.costUsd, tokensUsed: researchResponse.meta.usage.input_tokens + researchResponse.meta.usage.output_tokens },
-      taskId, 'Research complete');
+      taskId, 'Research stage complete');
 
     // ── Stage 2: Planning ──
     updateRunStatus(runId, {
@@ -705,11 +706,13 @@ async function runFullPipelineAsync(
       progress: { current: 1, total: TOTAL_STAGES, label: 'Planning' },
       agentRole: 'ux_planning',
     });
-    emitStageEvent(runId, 'design-penpot', 'Planning', 1, TOTAL_STAGES, 'started', 'ux_planning', undefined, taskId, 'Planning: designing component tree');
+    emitStageEvent(runId, 'design-penpot', 'Planning', 1, TOTAL_STAGES, 'started', 'ux_planning', undefined, taskId, 'Planning stage started');
 
     emitAgentLogEvent(runId, 'Planning', 'ux_planning', taskId, 'info',
-      `Planning input: research brief=${researchResult.length} chars, designTokens=${designTokens ? 'present' : 'absent'}`,
-      { researchBriefLength: researchResult.length });
+      `Feeding research brief (${(researchResult.length / 1024).toFixed(1)}KB) into planning agent`);
+
+    emitAgentLogEvent(runId, 'Planning', 'ux_planning', taskId, 'info',
+      'Calling LLM for component tree and layout planning — this may take 1-2 minutes...');
 
     const planningResponse = await callPipelineStage(apiKey, 'planning', {
       description,
@@ -725,17 +728,15 @@ async function runFullPipelineAsync(
       runId, 'Planning', 'ux_planning', taskId,
       planningResponse.meta.model, planningResponse.meta.usage.input_tokens, planningResponse.meta.usage.output_tokens,
       planningResponse.meta.costUsd, planningResponse.meta.durationMs,
-      `Planning LLM: ${planningResponse.meta.usage.input_tokens + planningResponse.meta.usage.output_tokens} tokens, $${planningResponse.meta.costUsd.toFixed(4)}`,
+      `Planning LLM complete: ${planningResponse.meta.usage.input_tokens + planningResponse.meta.usage.output_tokens} tokens, $${planningResponse.meta.costUsd.toFixed(4)}, ${(planningResponse.meta.durationMs / 1000).toFixed(1)}s`,
     );
 
-    const planningPreview = planningResult.slice(0, 200).replace(/\n/g, ' ');
     emitAgentLogEvent(runId, 'Planning', 'ux_planning', taskId, 'info',
-      `Planning spec: ${planningPreview}${planningResult.length > 200 ? '...' : ''}`,
-      { specLength: planningResult.length });
+      `Planning spec generated: ${(planningResult.length / 1024).toFixed(1)}KB`);
 
     emitStageEvent(runId, 'design-penpot', 'Planning', 1, TOTAL_STAGES, 'completed', 'ux_planning',
       { totalCostUsd: planningResponse.meta.costUsd, tokensUsed: planningResponse.meta.usage.input_tokens + planningResponse.meta.usage.output_tokens },
-      taskId, 'Planning complete');
+      taskId, 'Planning stage complete');
 
     // ── Stage 3: Design ──
     updateRunStatus(runId, {
@@ -743,9 +744,8 @@ async function runFullPipelineAsync(
       progress: { current: 2, total: TOTAL_STAGES, label: 'Design' },
       agentRole: 'penpot_design',
     });
-    emitStageEvent(runId, 'design-penpot', 'Design', 2, TOTAL_STAGES, 'started', 'penpot_design', undefined, taskId, 'Design: generating DesignSpec v2');
+    emitStageEvent(runId, 'design-penpot', 'Design', 2, TOTAL_STAGES, 'started', 'penpot_design', undefined, taskId, 'Design stage started');
 
-    // For design stage, use the existing DesignSpec generation
     const { SUBMIT_DESIGN_TOOL } = await import('@agentforge/designspec-renderer');
     const componentCatalog = readYamlFile<Record<string, unknown>>('agentforge/spec/component-catalog.yaml');
     const modelsYaml = readYamlFile<{ models?: Array<{ id: string; name: string; fields?: Array<{ name: string; type?: string }> }> }>('agentforge/spec/models.yaml');
@@ -754,8 +754,7 @@ async function runFullPipelineAsync(
       ? Object.keys((componentCatalog as Record<string, unknown>).components ?? {})
       : [];
     emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
-      `Design input: page=${page.name}, components=${(page.components ?? []).length}, catalog=${catalogKeys.length} entries`,
-      { pageId, componentCount: (page.components ?? []).length, catalogSize: catalogKeys.length });
+      `Design input: ${(page.components ?? []).length} components, ${catalogKeys.length} catalog entries, research + planning context from prior stages`);
 
     const systemPrompt = buildDesignSpecSystemPrompt(
       description,
@@ -768,11 +767,6 @@ async function runFullPipelineAsync(
       pageId,
     );
 
-    emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'debug',
-      `Design system prompt: ${systemPrompt.length} chars`,
-      { promptLength: systemPrompt.length });
-
-    // Enhance prompt with research + planning context
     const enrichedDescription = [
       description,
       '',
@@ -783,16 +777,17 @@ async function runFullPipelineAsync(
       planningResult,
     ].join('\n');
 
+    emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
+      `Calling LLM to generate DesignSpec v2 JSON (${(systemPrompt.length / 1024).toFixed(0)}KB prompt) — this is the longest stage, typically 2-3 minutes...`);
+
     const llmResponse = await callAnthropicAPI(apiKey, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL);
 
     if (!llmResponse.ok) {
       emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'error',
-        `Design LLM call failed: ${llmResponse.error}`,
-        { error: llmResponse.error });
+        `Design LLM call failed: ${llmResponse.error}`);
       throw new Error(`Design LLM call failed: ${llmResponse.error}`);
     }
 
-    // Emit design stage LLM metadata
     if (llmResponse.meta) {
       const m = llmResponse.meta;
       totalCostUsd += m.costUsd;
@@ -802,16 +797,14 @@ async function runFullPipelineAsync(
         runId, 'Design', 'penpot_design', taskId,
         m.model, m.usage.input_tokens, m.usage.output_tokens,
         m.costUsd, m.durationMs,
-        `Design LLM: ${m.usage.input_tokens + m.usage.output_tokens} tokens, $${m.costUsd.toFixed(4)}`,
+        `Design LLM complete: ${m.usage.input_tokens + m.usage.output_tokens} tokens, $${m.costUsd.toFixed(4)}, ${(m.durationMs / 1000).toFixed(1)}s`,
       );
     }
 
-    // Log spec output details
     const specNodes = llmResponse.designSpec?.nodes;
     const nodeCount = specNodes && typeof specNodes === 'object' ? Object.keys(specNodes as object).length : 0;
     emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
-      `Design spec generated: ${nodeCount} nodes for page ${page.name}`,
-      { nodeCount, pageId });
+      `Design spec generated: ${nodeCount} nodes for page "${page.name}"`);
 
     // Write spec to disk
     const designsDir = join(projectRoot, 'agentforge', 'designs');
@@ -831,8 +824,7 @@ async function runFullPipelineAsync(
     writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(llmResponse.designSpec, null, 2));
 
     emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'info',
-      `Artifacts written: research.json, planning.json, ${pageId}.json`,
-      { artifactsDir: `agentforge/designs/${pageId}` });
+      `Artifacts saved: research.json, planning.json, ${pageId}.json`);
 
     emitStageEvent(runId, 'design-penpot', 'Design', 2, TOTAL_STAGES, 'completed', 'penpot_design',
       llmResponse.meta
@@ -858,8 +850,7 @@ async function runFullPipelineAsync(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     emitAgentLogEvent(runId, 'Pipeline', undefined, taskId, 'error',
-      `Pipeline failed: ${message}`,
-      { error: message, stack: err instanceof Error ? err.stack : undefined });
+      `Pipeline failed: ${message}`);
     emitStageEvent(runId, 'design-penpot', 'Failed', 0, TOTAL_STAGES, 'failed', undefined, undefined, taskId, `Pipeline failed: ${message}`);
     failRun(runId, message);
 

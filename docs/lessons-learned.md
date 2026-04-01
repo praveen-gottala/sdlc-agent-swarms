@@ -404,3 +404,28 @@ return { base64: btoa(binary) };
 **Rule:** Viewport configuration should be project-level (in `agentforge.yaml`) with CLI flag override (`--viewport`). The planning agent should only generate responsive rules for configured viewports.
 **Why:** Without project-level viewport config, the planning agent generated responsive rules for mobile/tablet/desktop/wide regardless of the project's target. A desktop-only dashboard app got mobile breakpoint rules that confused the design agent and wasted tokens.
 **How to apply:** Use `resolveViewport(cliFlag?, projectConfig?)` which returns the effective viewport. Pass this to the planning agent so it generates rules only for relevant breakpoints.
+
+---
+
+## Renderer Staleness: Kill-and-Restart, Not Just Port-Check
+
+**Context:** `packages/dashboard/src/app/api/_lib/renderer-manager.ts` — Vite renderer lifecycle
+**Rule:** A TCP port check is insufficient to determine renderer health. The renderer-manager must track whether it started the process (vs an orphan from a previous session) and whether source files changed since startup.
+**Why:** We spent significant debugging time on a blank iframe caused by a stale Vite process. The port was open (status: "ready"), but the running Vite was serving old code from a previous session. The dashboard had no way to detect this and no way to restart it — only "Retry" (which just re-checks the port).
+
+### Symptoms of a stale renderer:
+1. Port 4100 responds to TCP, but iframe is blank or shows old code
+2. New `console.log` statements don't appear in browser console
+3. Dashboard reports "ready" but `load-spec` messages have no effect
+
+### What we added to prevent recurrence:
+1. **Source mtime tracking** — `startRenderer()` records `main.tsx` mtime at spawn time. `getRendererStatus()` compares current mtime and returns `status: 'stale'` if files changed.
+2. **Orphan detection** — If the port is open but `childPid` is null (process not spawned by this session), status returns `'stale'` with explanation.
+3. **`restartRenderer()`** — Kills whatever is on the port (`lsof -ti:PORT | xargs kill -9`), waits 500ms for OS port release, then starts fresh.
+4. **Auto-restart on stale** — `design-canvas.tsx` detects `status: 'stale'` and auto-calls `/api/renderer/restart` instead of showing a confusing "ready" state.
+5. **Manual "Kill & Restart" button** — UI shows both "Retry" (soft re-check) and "Kill & Restart" (hard restart) when renderer is unavailable.
+6. **`POST /api/renderer/restart` route** — Dedicated endpoint that kills + respawns.
+
+### How to apply:
+- Any time a child process is managed by a server, track: (a) who started it, (b) when, (c) what source version. Port-open alone is never enough.
+- Always provide a "hard restart" escape hatch in the UI — users should never need to manually run `lsof` and `kill`.

@@ -77,6 +77,8 @@ function DesignStudioContent() {
 
   // Color map for token resolution in inspector
   const [colorMap, setColorMap] = useState<Record<string, string>>({});
+  // Renderer tokens + catalog for the iframe renderer
+  const [rendererData, setRendererData] = useState<{ tokens: any; catalog: any } | null>(null);
 
   // Pipeline run state
   const [pipelineRunId, setPipelineRunId] = useState<string | null>(null);
@@ -139,7 +141,7 @@ function DesignStudioContent() {
       .catch(() => {});
   }, [searchParams]);
 
-  // Fetch design tokens for color map
+  // Fetch design tokens for color map (inspector use)
   useEffect(() => {
     fetch('/api/projects/tokens')
       .then((r) => (r.ok ? r.json() : { colorMap: {} }))
@@ -231,6 +233,22 @@ function DesignStudioContent() {
     [],
   );
 
+  // Safety net: if a page shows "generating" but we have no pipelineRunId,
+  // the pipeline likely finished while we were on another page. Re-check the
+  // server status every 5s until it resolves.
+  useEffect(() => {
+    if (!selectedId || pipelineRunId) return;
+    const page = pages.find((p) => p.id === selectedId);
+    if (!page || page.designStatus !== 'generating') return;
+
+    const timer = setInterval(() => {
+      refreshPage(selectedId);
+    }, 5_000);
+
+    refreshPage(selectedId);
+    return () => clearInterval(timer);
+  }, [selectedId, pipelineRunId, pages, refreshPage]);
+
   // Refresh all pages
   const refreshAllPages = useCallback(async () => {
     try {
@@ -255,12 +273,12 @@ function DesignStudioContent() {
     (id: string) => {
       log('INFO', 'registry', `Page selected: ${id}`);
       setSelectedId(id);
-      // Update URL without full navigation
+      refreshPage(id);
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', id);
       router.replace(`/design?${params.toString()}`);
     },
-    [searchParams, router, log],
+    [searchParams, router, log, refreshPage],
   );
 
   const handleCreateNew = useCallback(async () => {
@@ -292,17 +310,24 @@ function DesignStudioContent() {
     const status = page.designStatus ?? 'draft';
     if (!['rendered', 'correction', 'approved'].includes(status)) { setDesignSpec(null); return; }
 
-    log('REQ', 'studio', `Fetching design spec for page ${selectedId}`);
-    fetch(`/api/pages/${selectedId}/design/spec`)
+    log('REQ', 'studio', `Fetching design spec bundle for page ${selectedId}`);
+    fetch(`/api/pages/${selectedId}/design/spec?bundle=true`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data) {
-          log('INFO', 'studio', `Design spec loaded for page ${selectedId}`);
+        if (data?.spec) {
+          log('INFO', 'studio', `Design spec bundle loaded for page ${selectedId}`);
+          setDesignSpec(data.spec);
+          setRendererData({ tokens: data.tokens, catalog: data.catalog });
+          savedDesignSpecRef.current = JSON.parse(JSON.stringify(data.spec));
+        } else if (data) {
+          log('INFO', 'studio', `Design spec loaded for page ${selectedId} (no bundle)`);
+          setDesignSpec(data);
+          savedDesignSpecRef.current = JSON.parse(JSON.stringify(data));
         } else {
           log('WARN', 'studio', `No design spec returned for page ${selectedId}`);
+          setDesignSpec(null);
+          savedDesignSpecRef.current = null;
         }
-        setDesignSpec(data);
-        savedDesignSpecRef.current = data ? JSON.parse(JSON.stringify(data)) : null;
       })
       .catch((err) => {
         log('ERROR', 'studio', `Failed to fetch design spec: ${err instanceof Error ? err.message : 'unknown'}`);
@@ -365,6 +390,16 @@ function DesignStudioContent() {
     [],
   );
 
+  // Ref to always have latest rendererData in callbacks without re-creating them
+  const rendererDataRef = useRef(rendererData);
+  rendererDataRef.current = rendererData;
+
+  const sendSpecToBridge = useCallback((spec: any) => {
+    const rd = rendererDataRef.current;
+    const payload = rd ? { spec, tokens: rd.tokens, catalog: rd.catalog } : spec;
+    bridgeRef.current?.loadSpec(JSON.stringify(payload));
+  }, []);
+
   // Save spec to server and reload in iframe for consistency
   const handleSaveSpec = useCallback(async () => {
     if (!selectedId || !designSpec) return;
@@ -377,7 +412,7 @@ function DesignStudioContent() {
       if (res.ok) {
         setHasUnsavedChanges(false);
         savedDesignSpecRef.current = JSON.parse(JSON.stringify(designSpec));
-        bridgeRef.current?.loadSpec(JSON.stringify(designSpec));
+        sendSpecToBridge(designSpec);
         showToast('Design saved & preview updated', 'success');
       } else {
         showToast(`Save failed: ${res.status} ${res.statusText}`);
@@ -385,16 +420,16 @@ function DesignStudioContent() {
     } catch (err) {
       showToast(`Save failed: ${err instanceof Error ? err.message : 'network error'}`);
     }
-  }, [selectedId, designSpec, showToast]);
+  }, [selectedId, designSpec, showToast, sendSpecToBridge]);
 
   const handleRevertSpec = useCallback(() => {
     if (!savedDesignSpecRef.current) return;
     const reverted = JSON.parse(JSON.stringify(savedDesignSpecRef.current));
     setDesignSpec(reverted);
     setHasUnsavedChanges(false);
-    bridgeRef.current?.loadSpec(JSON.stringify(reverted));
+    sendSpecToBridge(reverted);
     showToast('Reverted to last saved state', 'success');
-  }, [showToast]);
+  }, [showToast, sendSpecToBridge]);
 
   const handleRevertNode = useCallback((nodeId: string) => {
     if (!savedDesignSpecRef.current || !designSpec) return;
@@ -416,9 +451,9 @@ function DesignStudioContent() {
       updated.nodes[nodeId] = restoredNode;
     }
     setDesignSpec(updated);
-    bridgeRef.current?.loadSpec(JSON.stringify(updated));
+    sendSpecToBridge(updated);
     showToast('Element reverted to last saved state', 'success');
-  }, [designSpec, showToast]);
+  }, [designSpec, showToast, sendSpecToBridge]);
 
   const bridgeLoggedRef = useRef(false);
   const handleBridgeReady = useCallback((bridge: UseRendererBridgeResult) => {
@@ -472,6 +507,7 @@ function DesignStudioContent() {
         p.id === selectedId ? { ...p, designStatus: 'generating' } : p,
       ),
     );
+    log('INFO', 'pipeline', `Full pipeline started for page ${selectedId}: Research → Planning → Design`);
     fetch(`/api/pages/${selectedId}/design?pipeline=full`, { method: 'POST' })
       .then(async (r) => {
         if (r.ok) {
@@ -487,7 +523,7 @@ function DesignStudioContent() {
         showToast('Network error — could not reach server');
         refreshPage(selectedId);
       });
-  }, [selectedId, refreshPage, showToast]);
+  }, [selectedId, refreshPage, showToast, log]);
 
   const handlePipelineComplete = useCallback(() => {
     if (selectedId) {
@@ -541,14 +577,16 @@ function DesignStudioContent() {
         // Refresh page data and reload spec
         await refreshPage(selectedId);
 
-        // Re-fetch spec and reload in iframe
+        // Re-fetch spec bundle and reload in iframe
         try {
-          const specRes = await fetch(`/api/pages/${selectedId}/design/spec`);
+          const specRes = await fetch(`/api/pages/${selectedId}/design/spec?bundle=true`);
           if (specRes.ok) {
-            const specData = await specRes.json();
-            setDesignSpec(specData);
+            const bundle = await specRes.json();
+            const spec = bundle.spec ?? bundle;
+            setDesignSpec(spec);
+            if (bundle.tokens) setRendererData({ tokens: bundle.tokens, catalog: bundle.catalog });
             setHasUnsavedChanges(false);
-            bridgeRef.current?.loadSpec(JSON.stringify(specData));
+            sendSpecToBridge(spec);
           }
         } catch {
           // Spec reload failure is non-critical
@@ -725,6 +763,7 @@ function DesignStudioContent() {
           hasUnsavedChanges={hasUnsavedChanges}
           onRevertSpec={handleRevertSpec}
           designSpec={designSpec}
+          rendererData={rendererData}
           onLog={handleCanvasLog}
         />
         )}

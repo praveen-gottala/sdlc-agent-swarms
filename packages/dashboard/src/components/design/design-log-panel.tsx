@@ -12,6 +12,18 @@ export function DesignLogPanel() {
   const { entries, clear } = useDesignLog();
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const prevCountRef = useRef(entries.length);
+
+  // Auto-expand when pipeline events start arriving
+  useEffect(() => {
+    if (!expanded && entries.length > prevCountRef.current) {
+      const newEntries = entries.slice(prevCountRef.current);
+      if (newEntries.some((e) => e.source === 'pipeline')) {
+        setExpanded(true);
+      }
+    }
+    prevCountRef.current = entries.length;
+  }, [entries, expanded]);
 
   // Auto-scroll to bottom when new entries arrive (if expanded)
   useEffect(() => {

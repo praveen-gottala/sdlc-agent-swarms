@@ -3,8 +3,11 @@
 // Receives: enable-tagging, disable-tagging, highlight-node, clear-highlights, load-spec
 
 /** Send a log message to the dashboard parent via postMessage. */
-export function sendLog(level: string, message: string) {
-  window.parent.postMessage({ type: 'log', level, message, source: 'agentforge' }, '*');
+export function sendLog(level: string, message: string, logSource: 'bridge' | 'renderer' = 'bridge') {
+  window.parent.postMessage(
+    { type: 'log', level, message, source: 'agentforge', logSource },
+    '*',
+  );
 }
 
 export function initIframeBridge(options?: { onLoadSpec?: (specJson: string) => void }) {

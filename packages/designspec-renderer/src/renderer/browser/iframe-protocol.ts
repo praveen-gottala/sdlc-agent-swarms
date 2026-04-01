@@ -39,4 +39,11 @@ export type ChildMessage =
       source: 'agentforge';
     }
   | { type: 'ready'; source: 'agentforge' }
-  | { type: 'log'; level: string; message: string; source: 'agentforge' };
+  | {
+      type: 'log';
+      level: string;
+      message: string;
+      source: 'agentforge';
+      /** Dashboard log panel source tag: bridge vs renderer app */
+      logSource?: 'bridge' | 'renderer';
+    };
