@@ -79,22 +79,35 @@ export function resolveNode(nodeId: string, node: NodeSpec, catalog: CatalogMap)
   // Differentiator — catalog lookup
   const catalogId = node.catalog;
   if (!catalogId) {
-    // Neither type nor catalog — return unresolved
+    // Neither type nor catalog — return unresolved but preserve overrides/layout
     return {
       id: nodeId,
       parent: node.parent,
       order: node.order,
       resolved: false,
+      layout: node.layout,
+      width: node.width,
+      height: node.height,
+      background: node.background,
+      shadow: node.shadow,
+      radius: node.radius,
+      overrides: node.overrides,
     };
   }
 
-  let rawEntry = catalog[catalogId];
+  // Normalize PascalCase → kebab-case for catalog lookup
+  const kebabId = catalogId
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase();
+
+  let rawEntry = catalog[catalogId] ?? catalog[kebabId];
   // Track which catalog ID we actually found data for (may differ from the original)
-  let dataSourceId = catalogId;
+  let dataSourceId = catalog[catalogId] ? catalogId : kebabId;
   if (!rawEntry) {
     // Fuzzy match: progressively strip last segment to find a base entry.
     // "data-table-compact-striped" → "data-table-compact" → "data-table" → "data"
-    let candidate = catalogId;
+    let candidate = kebabId;
     while (!rawEntry) {
       const lastDash = candidate.lastIndexOf('-');
       if (lastDash <= 0) break;
@@ -105,13 +118,23 @@ export function resolveNode(nodeId: string, node: NodeSpec, catalog: CatalogMap)
       }
     }
     if (!rawEntry) {
-      // No base match at any level — return unresolved
+      // No base match at any level — return unresolved but preserve all node data
       return {
         id: nodeId,
         parent: node.parent,
         order: node.order,
         resolved: false,
         catalogId,
+        label: node.label,
+        content: node.content,
+        layout: node.layout,
+        width: node.width,
+        height: node.height,
+        background: node.background,
+        shadow: node.shadow,
+        radius: node.radius,
+        overrides: node.overrides,
+        items: node.items,
       };
     }
   }

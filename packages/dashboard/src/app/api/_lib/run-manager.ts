@@ -218,7 +218,10 @@ export function listRuns(opts?: { type?: RunStatus['type']; limit?: number }): R
   return runs;
 }
 
-/** Get the currently active (pending or running) run, if any. */
+const STALE_RUN_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+/** Get the currently active (pending or running) run, if any.
+ *  Auto-fails runs stuck longer than STALE_RUN_TIMEOUT_MS. */
 export function getActiveRun(): RunStatus | null {
   ensureRunsDir();
   const dir = runsDir();
@@ -229,6 +232,17 @@ export function getActiveRun(): RunStatus | null {
     try {
       const run = JSON.parse(readFileSync(join(dir, file), 'utf-8')) as RunStatus;
       if (run.status === 'pending' || run.status === 'running') {
+        const elapsed = Date.now() - new Date(run.startedAt).getTime();
+        if (elapsed > STALE_RUN_TIMEOUT_MS) {
+          const stale: RunStatus = {
+            ...run,
+            status: 'failed',
+            completedAt: new Date().toISOString(),
+            error: `Pipeline timed out — stuck in "${run.status}" for ${Math.round(elapsed / 60000)}min (auto-cleanup)`,
+          };
+          writeFileSync(join(dir, file), JSON.stringify(stale, null, 2));
+          continue;
+        }
         return run;
       }
     } catch {

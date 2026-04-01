@@ -90,12 +90,28 @@ function getSpacingStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   return s;
 }
 
-function getFlexStyles(layout: LayoutSpec | undefined): React.CSSProperties {
+function getLayoutStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   if (!layout) return {};
+
+  if (layout.display === 'grid' && layout.columns) {
+    const s: React.CSSProperties = {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+    };
+    if (layout.gap) s.gap = layout.gap;
+    if (layout.align === 'center') s.alignItems = 'center';
+    else if (layout.align === 'end') s.alignItems = 'end';
+    else if (layout.align === 'stretch') s.alignItems = 'stretch';
+    else if (layout.align === 'start') s.alignItems = 'start';
+    Object.assign(s, getSpacingStyles(layout));
+    return s;
+  }
+
   const s: React.CSSProperties = {
     display: 'flex',
     flexDirection: layout.dir === 'row' ? 'row' : 'column',
   };
+  if (layout.wrap) s.flexWrap = 'wrap';
   if (layout.gap) s.gap = layout.gap;
   if (layout.align === 'center') s.alignItems = 'center';
   else if (layout.align === 'end') s.alignItems = 'flex-end';
@@ -105,6 +121,43 @@ function getFlexStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   else if (layout.justify === 'space-between') s.justifyContent = 'space-between';
   else if (layout.justify === 'end') s.justifyContent = 'flex-end';
   Object.assign(s, getSpacingStyles(layout));
+  return s;
+}
+
+const SAFE_OVERRIDE_KEYS = new Set([
+  // Sizing
+  'max_width', 'maxWidth', 'min_width', 'minWidth',
+  'max_height', 'maxHeight', 'min_height', 'minHeight',
+  'height',
+  // Spacing
+  'padding', 'margin_inline', 'marginInline',
+  'margin_top', 'marginTop', 'margin_bottom', 'marginBottom',
+  'margin_left', 'marginLeft', 'margin_right', 'marginRight',
+  // Borders
+  'border', 'border_top', 'borderTop', 'border_bottom', 'borderBottom',
+  'border_left', 'borderLeft', 'border_right', 'borderRight',
+  'border_radius', 'borderRadius',
+  // Positioning
+  'position', 'top', 'left', 'right', 'bottom',
+  'z_index', 'zIndex',
+  // Flex item
+  'flex_basis', 'flexBasis', 'flex_shrink', 'flexShrink', 'flex_grow', 'flexGrow',
+  // Overflow & visibility
+  'overflow', 'pointer_events', 'pointerEvents', 'cursor', 'opacity',
+  // Typography (overrides for catalog items that need custom fonts)
+  'font_size', 'fontSize', 'font_family', 'fontFamily',
+  // Layout (for non-container nodes that need inline layout)
+  'display', 'align_items', 'alignItems', 'justify_content', 'justifyContent',
+]);
+
+function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefined): React.CSSProperties {
+  if (!overrides) return {};
+  const s: React.CSSProperties = {};
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!SAFE_OVERRIDE_KEYS.has(key)) continue;
+    const normalized = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+    (s as Record<string, unknown>)[normalized] = value;
+  }
   return s;
 }
 
@@ -122,6 +175,7 @@ function getCommonNodeStyles(
     ...getSizeStyles(node.width, node.height),
     ...getShadowStyle(node.shadow, tokens),
     ...getPositionStyles(node),
+    ...getOverrideStyles(node.overrides),
   };
 }
 
@@ -233,8 +287,15 @@ function renderNode(
     return renderCatalog(node, children, tokens, tokenMap);
   }
 
-  // Unresolved — render children in a wrapper
-  const fallbackStyle = getPositionStyles(node);
+  // Unresolved — render children in a wrapper with any available styles
+  const fallbackStyle: React.CSSProperties = {
+    ...getLayoutStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    ...getOverrideStyles(node.overrides),
+  };
+  const bg = resolveTokenColor(node.background, tokenMap);
+  if (bg) fallbackStyle.backgroundColor = bg;
   return (
     <div key={node.id} data-node={node.id} style={Object.keys(fallbackStyle).length ? fallbackStyle : undefined}>
       {children}
@@ -255,8 +316,9 @@ function renderAccelerator(
   switch (node.type) {
     case 'page': {
       const style: React.CSSProperties = {
-        ...getFlexStyles(node.layout),
+        ...getLayoutStyles(node.layout),
         ...getSizeStyles(node.width, undefined),
+        ...getOverrideStyles(node.overrides),
         minHeight: '100vh',
         backgroundColor: bg,
       };
@@ -269,15 +331,15 @@ function renderAccelerator(
 
     case 'container': {
       const style: React.CSSProperties = {
-        ...getFlexStyles(node.layout),
+        ...getLayoutStyles(node.layout),
         ...getSizeStyles(node.width, node.height),
         ...getShadowStyle(node.shadow, tokens),
         ...getPositionStyles(node),
+        ...getOverrideStyles(node.overrides),
         backgroundColor: bg,
       };
       if (node.radius) {
         style.borderRadius = node.radius;
-        // Clip content when explicit dimensions are set so border-radius is visible
         if (typeof node.width === 'number' && typeof node.height === 'number') {
           style.overflow = 'hidden';
         }
@@ -291,10 +353,11 @@ function renderAccelerator(
 
     case 'section': {
       const style: React.CSSProperties = {
-        ...getFlexStyles(node.layout),
+        ...getLayoutStyles(node.layout),
         ...getSizeStyles(node.width, node.height),
         ...getShadowStyle(node.shadow, tokens),
         ...getPositionStyles(node),
+        ...getOverrideStyles(node.overrides),
         backgroundColor: bg,
         borderRadius: node.radius,
       };
@@ -307,8 +370,9 @@ function renderAccelerator(
 
     case 'header': {
       const style: React.CSSProperties = {
-        ...getFlexStyles(node.layout),
+        ...getLayoutStyles(node.layout),
         ...getShadowStyle(node.shadow, tokens),
+        ...getOverrideStyles(node.overrides),
         width: '100%',
         height: node.height,
         backgroundColor: bg,
@@ -470,12 +534,13 @@ function renderButtonVariant(
     'button-ghost': 'ghost',
   };
   const variant = variantMap[catalogId] ?? 'default';
+  const size = (node.overrides?.size as string) ?? 'default';
   const style: React.CSSProperties = {
     ...common,
     borderRadius: node.radius,
   };
   return (
-    <Button key={node.id} data-node={node.id} data-catalog={catalogId} variant={variant} style={style}>
+    <Button key={node.id} data-node={node.id} data-catalog={catalogId} variant={variant} size={size} style={style}>
       {node.label ?? 'Button'}
     </Button>
   );

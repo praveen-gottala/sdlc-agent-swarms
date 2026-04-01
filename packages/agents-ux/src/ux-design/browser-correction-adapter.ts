@@ -53,6 +53,9 @@ interface NodeSpec {
   shadow?: string;      // "sm" | "md" | "lg"
   layout?: {
     dir: "row" | "column";
+    display?: "flex" | "grid";  // layout mode (default: flex). Use "grid" for multi-column card grids.
+    columns?: number;            // grid column count — only with display: "grid". Maps to repeat(N, 1fr).
+    wrap?: boolean;              // flex wrapping — only with display: "flex". Wraps children to next line.
     gap?: number;       // pixels
     align?: "start" | "center" | "end" | "stretch";
     justify?: "start" | "center" | "end" | "space-between";
@@ -79,11 +82,12 @@ interface NodeSpec {
   textAlign?: "left" | "center" | "right";
 }
 
-IMPORTANT — Do NOT use CSS properties. The following are NOT valid and will be stripped:
-- position, top, left, right, bottom, transform, zIndex → NOT supported
-- margin, marginLeft, marginRight, marginTop, marginBottom → NOT supported (use layout.mx/my/mt/mb/ml/mr)
-- style: { ... } → NOT supported
-- display, overflow, opacity → NOT supported
+IMPORTANT — Prefer DesignSpec properties over CSS. The following are auto-aliased or stripped:
+- display → auto-aliased to layout.display ("flex" or "grid")
+- gridTemplateColumns → auto-aliased to layout.columns (extracts the number)
+- flexWrap → auto-aliased to layout.wrap (boolean)
+- marginLeft/Right/Top/Bottom → auto-aliased to layout.ml/mr/mt/mb
+- position, top, left, right, bottom, zIndex → auto-aliased to overrides (use sparingly — prefer layout-based positioning)
 - backgroundColor → use "background" instead
 - borderRadius → use "radius" instead
 - fontSize → use "typography" instead
@@ -91,10 +95,12 @@ IMPORTANT — Do NOT use CSS properties. The following are NOT valid and will be
 - alignItems → use layout.align instead
 - justifyContent → use layout.justify instead
 - padding, paddingLeft, paddingRight, paddingTop, paddingBottom → use layout.px/py/pt/pb
+- transform, margin (shorthand), style: { ... }, overflow, opacity → NOT supported, will be stripped
 
 To center a container: set layout.align: "center" and layout.justify: "center" on its PARENT.
 To push an element right in a row: set layout.justify: "space-between" on the PARENT container.
 To constrain width: set width to a pixel number. To fill available space: set width to "fill".
+For overlays/modals: use overrides with position: "fixed", top/left/zIndex as needed.
 
 EXAMPLE:
 {
@@ -131,22 +137,53 @@ const ALIAS_MAP: Record<string, { target: string; transform?: (v: unknown) => un
   padding: { target: '__strip__' },
   gap: { target: 'layout.gap' },
   // Properties to silently strip (no DesignSpec equivalent)
-  position: { target: '__strip__' },
-  positionX: { target: '__strip__' },
-  positionY: { target: '__strip__' },
-  top: { target: '__strip__' },
-  left: { target: '__strip__' },
-  right: { target: '__strip__' },
-  bottom: { target: '__strip__' },
+  // Positioning → overrides (renderer reads from overrides.position/top/left/etc.)
+  position: { target: 'overrides.position' },
+  top: { target: 'overrides.top' },
+  left: { target: 'overrides.left' },
+  right: { target: 'overrides.right' },
+  bottom: { target: 'overrides.bottom' },
+  zIndex: { target: 'overrides.zIndex' },
+  // Centering hints — renderer uses these for fixed/absolute centering
+  positionX: { target: 'overrides.positionX' },
+  positionY: { target: 'overrides.positionY' },
   transform: { target: '__strip__' },
-  zIndex: { target: '__strip__' },
+  // Margins → layout spacing equivalents
   margin: { target: '__strip__' },
-  marginLeft: { target: '__strip__' },
-  marginRight: { target: '__strip__' },
-  marginTop: { target: '__strip__' },
-  marginBottom: { target: '__strip__' },
+  marginLeft: { target: 'layout.ml' },
+  marginRight: { target: 'layout.mr' },
+  marginTop: { target: 'layout.mt' },
+  marginBottom: { target: 'layout.mb' },
   style: { target: '__strip__' },
-  display: { target: '__strip__' },
+  display: {
+    target: 'layout.display',
+    transform: (v: unknown) => {
+      const s = String(v);
+      return s === 'grid' ? 'grid' : s === 'flex' ? 'flex' : undefined;
+    },
+  },
+  gridTemplateColumns: {
+    target: 'layout.columns',
+    transform: (v: unknown) => {
+      const match = /repeat\((\d+)/.exec(String(v));
+      return match ? parseInt(match[1], 10) : undefined;
+    },
+  },
+  grid_template_columns: {
+    target: 'layout.columns',
+    transform: (v: unknown) => {
+      const match = /repeat\((\d+)/.exec(String(v));
+      return match ? parseInt(match[1], 10) : undefined;
+    },
+  },
+  flexWrap: {
+    target: 'layout.wrap',
+    transform: (v: unknown) => v === 'wrap' || v === true,
+  },
+  flex_wrap: {
+    target: 'layout.wrap',
+    transform: (v: unknown) => v === 'wrap' || v === true,
+  },
   overflow: { target: '__strip__' },
   opacity: { target: '__strip__' },
 };
@@ -163,7 +200,8 @@ const VALID_NODE_KEYS = new Set([
 
 /** Valid LayoutSpec property names. */
 const VALID_LAYOUT_KEYS = new Set([
-  'dir', 'gap', 'align', 'justify',
+  'dir', 'display', 'columns', 'wrap',
+  'gap', 'align', 'justify',
   'px', 'py', 'pt', 'pb',
   'my', 'mx', 'mt', 'mb', 'ml', 'mr',
 ]);
@@ -181,6 +219,7 @@ const ENUM_FIELDS: Record<string, readonly string[]> = {
 };
 const LAYOUT_ENUM_FIELDS: Record<string, readonly string[]> = {
   dir: ['row', 'column'],
+  display: ['flex', 'grid'],
   align: ['start', 'center', 'end', 'stretch'],
   justify: ['start', 'center', 'end', 'space-between'],
 };
@@ -283,7 +322,7 @@ function validateLayoutValues(layout: Record<string, unknown>): Record<string, u
   for (const [key, value] of Object.entries(layout)) {
     if (value === null) continue; // null in layout means no change
 
-    // Layout enum fields
+    // Layout enum fields (dir, display, align, justify)
     if (LAYOUT_ENUM_FIELDS[key]) {
       if (typeof value === 'string' && (LAYOUT_ENUM_FIELDS[key] as readonly string[]).includes(value)) {
         validated[key] = value;
@@ -294,7 +333,22 @@ function validateLayoutValues(layout: Record<string, unknown>): Record<string, u
       continue;
     }
 
-    // Numeric layout fields
+    // columns — positive integer only
+    if (key === 'columns') {
+      const n = coerceNumeric(value);
+      if (n !== null && !Number.isNaN(n) && n > 0 && Number.isInteger(n)) {
+        validated[key] = n;
+      }
+      continue;
+    }
+
+    // wrap — boolean coercion
+    if (key === 'wrap') {
+      validated[key] = value === true || value === 'wrap' || value === 'true';
+      continue;
+    }
+
+    // Numeric layout fields (gap, px, py, etc.)
     if (NUMERIC_FIELDS.has(key)) {
       const n = coerceNumeric(value);
       if (n !== null && !Number.isNaN(n)) {

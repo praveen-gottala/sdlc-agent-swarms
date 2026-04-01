@@ -3,7 +3,7 @@
  * for live preview via the iframe bridge's `update-node-style` message.
  *
  * Source of truth: NodeSpec in designspec-renderer/src/types/design-spec-v2.ts
- * and getFlexStyles() in DesignSpecRenderer.tsx.
+ * and getLayoutStyles() in DesignSpecRenderer.tsx.
  */
 
 const JUSTIFY_MAP: Record<string, string> = {

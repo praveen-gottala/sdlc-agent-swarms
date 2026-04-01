@@ -46,7 +46,7 @@ A node has `type` OR `catalog`, never both.
 
 ### Layout
 
-Container nodes use `layout` for flex configuration:
+Container nodes use `layout` for flex (default) or grid configuration:
 ```json
 {
   "layout": { "dir": "column", "gap": 16, "align": "stretch", "px": 24, "py": 16 }
@@ -54,10 +54,22 @@ Container nodes use `layout` for flex configuration:
 ```
 
 - `dir`: "row" or "column" (required)
+- `display`: "flex" (default) or "grid" — use grid for multi-column card grids
+- `columns`: number of equal grid columns (only with `display: "grid"`)
+- `wrap`: true to enable flex wrapping (only with `display: "flex"`)
 - `gap`: space between children in px
 - `align`: cross-axis alignment — "start", "center", "end", "stretch"
 - `justify`: main-axis alignment — "start", "center", "end", "space-between"
 - `px`, `py`: horizontal/vertical padding; `pt`, `pb` for top/bottom overrides
+
+Use `display: "grid"` with `columns` for card grids and multi-column layouts:
+```json
+{
+  "layout": { "dir": "row", "display": "grid", "columns": 3, "gap": 24 }
+}
+```
+
+Use `wrap: true` for chip rows or tag lists that should wrap to multiple lines.
 
 Width can be a number (px) or `"fill"` (fills parent). Height is a number (px).
 
@@ -138,5 +150,5 @@ Typography uses role references: `"heading-1"`, `"heading-2"`, `"heading-3"`, `"
 4. Use `catalog` ONLY for IDs listed in the "Renderable catalog IDs" section. All other components must be built from structural nodes (container, text, divider, etc.)
 5. Populate ALL text with realistic, domain-appropriate content — never use "Lorem ipsum" or placeholder text
 6. Every container that holds children MUST have a `layout` with at least `dir`
-7. Use `width: "fill"` for elements that should stretch to their parent's width
+7. Use `width: "fill"` for elements that should stretch to their parent's width. For multi-column card grids, use `layout.display: "grid"` with `layout.columns` instead of `layout.dir: "row"` with `width: "fill"` children
 8. Do NOT output any text, explanation, or markdown — ONLY the `submit_design` tool call

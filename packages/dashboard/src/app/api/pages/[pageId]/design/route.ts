@@ -406,6 +406,10 @@ function buildDesignSpecSystemPrompt(
     '- type and catalog are mutually exclusive on each node.',
     '- Use semantic token names for colors (e.g. "text-primary", "background-primary").',
     '- Create a realistic, complete layout — not just placeholders.',
+    '- Layout supports flex (default) and grid modes via the layout object.',
+    '- Use layout.display: "grid" with layout.columns for multi-column card grids (e.g. 3-column bookmark grid).',
+    '- Use layout.wrap: true for horizontal lists that should wrap (e.g. chip rows, tag lists).',
+    '- Width "fill" means stretch to parent in flex contexts. Use numeric width for fixed sizes.',
     '',
   );
 

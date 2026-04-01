@@ -429,3 +429,61 @@ return { base64: btoa(binary) };
 ### How to apply:
 - Any time a child process is managed by a server, track: (a) who started it, (b) when, (c) what source version. Port-open alone is never enough.
 - Always provide a "hard restart" escape hatch in the UI — users should never need to manually run `lsof` and `kill`.
+
+---
+
+## DesignSpec JSON → CSS Conversion Pipeline
+
+**Context:** `packages/designspec-renderer/` — how DesignSpec v2 JSON becomes rendered UI
+**Rule:** New layout properties must flow through ALL five layers: TypeScript types → tool schema → renderers → LLM prompts → correction adapter. Missing any layer causes silent failures.
+
+### The conversion pipeline (data flow):
+
+1. **LLM → DesignSpec JSON**: The LLM calls `submit_design` (tool schema in `submit-design-tool.ts`). The schema constrains output to valid `DesignSpecV2` structure. `LayoutSpec` fields like `dir`, `display`, `columns`, `wrap` are defined here.
+
+2. **JSON → Browser CSS**: `DesignSpecRenderer.tsx` reads DesignSpec nodes and translates `LayoutSpec` properties to CSS:
+   - `display: "flex"` (default) → `display: flex; flex-direction: <dir>`
+   - `display: "grid"` + `columns: N` → `display: grid; grid-template-columns: repeat(N, 1fr)`
+   - `wrap: true` → `flex-wrap: wrap`
+   - `width: "fill"` → `flex: 1; min-width: 0` (in flex context; ignored in grid context where children auto-size to column tracks)
+   - `gap`, `align`, `justify` → direct CSS equivalents
+   - `px`/`py`/`pt`/`pb` → `padding-left`/`padding-right`/`padding-top`/`padding-bottom`
+   - `overrides` → whitelisted keys (sizing, spacing, borders, positioning, flex-item, overflow, typography, inline-layout) are applied as CSS; unknown keys are silently dropped. See `SAFE_OVERRIDE_KEYS` in `DesignSpecRenderer.tsx`
+
+3. **Browser → Screenshot**: Playwright captures the rendered page as a PNG screenshot for evaluation.
+
+4. **Screenshot + DOM → Correction Patches**: A vision LLM sees the screenshot, DOM layout data, and current spec, then outputs `{ patches: { "node-id": { ...partial NodeSpec } } }`. These patches use DesignSpec property names (NOT CSS names).
+
+5. **Patch sanitization** (`browser-correction-adapter.ts`):
+   - `ALIAS_MAP` transforms CSS property names → DesignSpec equivalents (e.g. `gridTemplateColumns` → `layout.columns`, `flexWrap` → `layout.wrap`, `display` → `layout.display`)
+   - `VALID_LAYOUT_KEYS` whitelist prevents unknown keys from reaching the spec
+   - `validateLayoutValues()` coerces/validates types (enum, numeric, boolean)
+   - Properties in `__strip__` alias are silently dropped (e.g. `position`, `opacity`)
+
+### Bug pattern this addresses:
+
+When the LLM generates `overrides: { display: "grid", grid_template_columns: "repeat(3, 1fr)" }` but the renderer only supports flex layout, the browser renders everything in a single row. The correction adapter then strips `display` from any LLM patches (mapped to `__strip__`), preventing the correction loop from ever fixing it.
+
+**Fix:** Promote layout properties to first-class `LayoutSpec` fields with proper types, schema entries, renderer support, prompt documentation, and alias mappings. Never rely on unstructured `overrides` for layout — they bypass validation and correction.
+
+### How to add a new layout property:
+1. Add to `LayoutSpec` interface in `design-spec-v2.ts`
+2. Add to `submit-design-tool.ts` layout properties
+3. Handle in `getLayoutStyles()` in `DesignSpecRenderer.tsx` (JSON → CSS)
+4. Document in V2 prompt (`ux-penpot-designspec-v2.md`) and dashboard prompt (`route.ts`)
+5. Add to `VALID_LAYOUT_KEYS`, `ALIAS_MAP`, `LAYOUT_ENUM_FIELDS`, and `validateLayoutValues()` in `browser-correction-adapter.ts`
+6. Add validation rule in `validate.ts` if semantic constraints exist
+7. (Deferred) Handle in Penpot renderer (`shared.ts`) and React renderer (`shared.ts`)
+
+### Override resolution bug (April 2026):
+
+**Problem:** `SAFE_OVERRIDE_KEYS` whitelist in `getOverrideStyles()` only contained 5 CSS properties (`maxWidth`, `minWidth`, `maxHeight`, `minHeight`, `marginInline`). But LLM-generated designs use 30+ override CSS properties (`border`, `padding`, `position`, `font_size`, `flex_basis`, `overflow`, `cursor`, `z_index`, etc.). All of these were silently dropped.
+
+Additionally, `resolveNode()` in `resolver.ts` returned a stripped-down `ResolvedNode` for unresolved/missing catalog entries — specifically, `overrides`, `layout`, `width`, `height`, `background`, `shadow` were all dropped. Combined with PascalCase → kebab-case catalog lookup mismatch (e.g., `"NavigationBar"` not finding `"navigation-bar"`), this caused many catalog components to lose ALL styling.
+
+**Fix:**
+1. Expanded `SAFE_OVERRIDE_KEYS` to cover all CSS properties used by LLM designs
+2. Added `getOverrideStyles()` to `getCommonNodeStyles()` so catalog components get overrides
+3. Fixed `resolveNode()` to preserve `overrides`/`layout`/`width`/`height`/etc. even for unresolved nodes
+4. Added PascalCase → kebab-case normalization in catalog lookup
+5. Updated fallback rendering path (`renderNode` unresolved branch) to apply full styles

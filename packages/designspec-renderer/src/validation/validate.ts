@@ -20,6 +20,7 @@ import type { RendererTokens } from '../types/tokens.js';
  * 6. Interactive nodes meet 44px min touch target (warning)
  * 7. No sibling order gaps within parent groups (warning)
  * 8. Catalog nodes have all required_fields present (warning)
+ * 9. Grid layout requires valid columns (warning)
  */
 export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap, tokens?: RendererTokens): ValidationResult {
   const issues: ValidationIssue[] = [];
@@ -167,6 +168,20 @@ export function validateDesignSpec(spec: DesignSpecV2, catalog: CatalogMap, toke
           message: `Children of "${parentId}" have order gaps — expected 0..${sorted.length - 1}, got ${sorted.map(s => s.order).join(',')}`,
         });
         break; // One warning per parent group is enough
+      }
+    }
+  }
+
+  // Rule 9: Grid layout must have columns
+  for (const [id, node] of Object.entries(nodes)) {
+    if (node.layout?.display === 'grid') {
+      if (!node.layout.columns || node.layout.columns < 1 || !Number.isInteger(node.layout.columns)) {
+        issues.push({
+          severity: 'warning',
+          rule: 'grid-columns',
+          message: `Node "${id}" has layout.display: "grid" but missing or invalid layout.columns — grid will not render correctly`,
+          nodeId: id,
+        });
       }
     }
   }

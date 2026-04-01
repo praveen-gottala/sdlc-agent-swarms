@@ -446,11 +446,15 @@ describe('sanitizePatches', () => {
     expect(result.node1).toEqual({ width: 100, height: 50, background: 'surface-primary', radius: 8 });
   });
 
-  it('strips unknown properties', () => {
+  it('aliases positioning CSS properties to overrides', () => {
     const result = sanitizePatches({
       node1: { width: 100, position: 'fixed', zIndex: 10, top: '50%' },
     });
-    expect(result.node1).toEqual({ width: 100 });
+    expect(result.node1).toEqual({
+      width: 100,
+      overrides: { position: 'fixed', zIndex: 10, top: '50%' },
+    });
+    // Top-level CSS keys are gone — only in overrides
     expect(result.node1.position).toBeUndefined();
     expect(result.node1.zIndex).toBeUndefined();
     expect(result.node1.top).toBeUndefined();
@@ -477,7 +481,7 @@ describe('sanitizePatches', () => {
     });
   });
 
-  it('strips __strip__ targets silently', () => {
+  it('aliases positioning to overrides, margins to layout, and strips unsupported CSS', () => {
     const result = sanitizePatches({
       node1: {
         width: 100,
@@ -486,18 +490,24 @@ describe('sanitizePatches', () => {
         positionY: 'center',
         transform: 'translate(-50%)',
         margin: '0 auto',
-        marginLeft: 'auto',
+        marginLeft: 10,
         display: 'flex',
         overflow: 'hidden',
         opacity: '0.5',
         style: { color: 'red' },
       },
     });
-    // Only width survives
-    expect(result.node1).toEqual({ width: 100 });
+    expect(result.node1).toEqual({
+      width: 100,
+      overrides: { position: 'absolute', positionX: 'center', positionY: 'center' },
+      layout: { display: 'flex', ml: 10 },
+    });
+    // transform, margin (shorthand), overflow, opacity, style are stripped
+    expect(result.node1.overrides).not.toHaveProperty('transform');
+    expect(result.node1).not.toHaveProperty('style');
   });
 
-  it('sanitizes layout sub-object by stripping invalid keys', () => {
+  it('sanitizes layout sub-object by stripping invalid keys but keeping display/columns/wrap', () => {
     const result = sanitizePatches({
       node1: {
         layout: {
@@ -506,12 +516,15 @@ describe('sanitizePatches', () => {
           align: 'center',
           flexWrap: 'wrap',
           display: 'flex',
+          unknownKey: true,
         } as any,
       },
     });
-    expect(result.node1.layout).toEqual({ dir: 'row', gap: 8, align: 'center' });
+    // display and wrap are now valid layout keys; flexWrap is not a valid layout key (use wrap)
+    // but unknownKey should be stripped
+    expect(result.node1.layout).toEqual({ dir: 'row', gap: 8, align: 'center', display: 'flex' });
     expect((result.node1.layout as any).flexWrap).toBeUndefined();
-    expect((result.node1.layout as any).display).toBeUndefined();
+    expect((result.node1.layout as any).unknownKey).toBeUndefined();
   });
 
   it('preserves null values for property removal', () => {
