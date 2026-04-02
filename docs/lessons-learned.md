@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## DesignSpec `overrides` — hyphen keys and paint values
+**Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx` `getOverrideStyles`  
+**Rule:** Normalize CSS-style keys (`background-color`, `border-bottom`) to React camelCase before applying. Allow `flex` shorthand, `white-space`, CSS gradients, and `var()` in paint fields. Merge `getOverrideStyles` into `renderCard`. Prefer semantic tokens on the node over hex in `overrides`; align LLM output via `ux-penpot-designspec-v2.md` “Overrides” section.  
+**Why:** LLMs emit CSS-like keys; the renderer previously only lowercased underscores, so colors and flex were dropped.  
+**How to apply:** After renderer changes, run `nx test designspec-renderer` and hard-refresh the design iframe (port 4100).
+
+**Addendum (container `background`):** In `renderAccelerator`, `backgroundColor` from the node token must be applied **before** `...getOverrideStyles(node.overrides)` so hex/CSS `background-color` in overrides wins. Same for `page`, `header`, `section`. Otherwise stacked bar segments stay white. Implement `catalog: data-table` when `overrides.rows` / `overrides.columns` hold tabular data (no child nodes).
+
+---
+
 ## DesignSpec browser renderer — regression prevention
 **Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx`, catalog resolver, Vite iframe  
 **Rule:** Catalog ID normalization must be shared (`normalizeCatalogIdToKebab` in `catalog/catalog-id.ts`). Color token names in `overrides` must not be applied as raw CSS — resolve via `resolveTokenColor` or filter non-CSS values in `getOverrideStyles`. After changing the renderer, hard-refresh the design page; restart port 4100 if the iframe still shows stale UI.  

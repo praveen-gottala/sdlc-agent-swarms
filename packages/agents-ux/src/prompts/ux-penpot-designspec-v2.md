@@ -35,7 +35,7 @@ Every node needs `parent` (string ID or null for root) and `order` (0-based sibl
 **Component nodes** use `catalog`:
 - Reference ONLY the renderable catalog IDs listed below. These have dedicated renderers.
 - Provide content via `label`, `content`, `value`, `placeholder`, `helper`
-- Override catalog defaults via `overrides: { key: value }`
+- Override catalog defaults via `overrides: { key: value }` — see **Overrides (browser + Penpot)** below.
 
 **Renderable catalog IDs** (ONLY use these as `catalog` values):
 {{RENDERABLE_CATALOG_IDS}}
@@ -72,6 +72,16 @@ Use `display: "grid"` with `columns` for card grids and multi-column layouts:
 Use `wrap: true` for chip rows or tag lists that should wrap to multiple lines.
 
 Width can be a number (px) or `"fill"` (fills parent). Height is a number (px).
+
+### Overrides (browser + Penpot)
+
+Use **node-level fields first**; reserve `overrides` for accessibility, cursor, rare CSS that has no DesignSpec field, or inspector-driven tweaks.
+
+- **Backgrounds and fills:** set the node’s top-level `background` to a **semantic token** (e.g. `"info"`, `"warning"`, `"success"`, `"error"`, `"cta-primary"`, `"surface-secondary"`). Do **not** put `background-color` or hex colors in `overrides` for ordinary surfaces — the deterministic pipeline and browser renderer resolve tokens reliably; raw CSS in `overrides` is fragile.
+- **Sizing:** use `width` (number = px, or `"fill"`) and `height` on the node. **Do not** use CSS `flex` shorthand in `overrides` for primary layout; prefer flex parents with `width: "fill"` children or grid (`layout.display: "grid"`, `layout.columns`).
+- **Avatars and links:** put **display text** in `label` (e.g. avatar initials `"MR"` or link text). Do **not** rely on `overrides.initials` for avatar text.
+- **Separators between list rows:** use **`type: "divider"`** nodes. Do **not** simulate borders with `overrides` like `border-bottom` unless there is no other way.
+- **Hex colors:** avoid hex in the spec; prefer semantic tokens so Penpot and the browser stay aligned.
 
 ### Colors & Typography
 
@@ -151,4 +161,5 @@ Typography uses role references: `"heading-1"`, `"heading-2"`, `"heading-3"`, `"
 5. Populate ALL text with realistic, domain-appropriate content — never use "Lorem ipsum" or placeholder text
 6. Every container that holds children MUST have a `layout` with at least `dir`
 7. Use `width: "fill"` for elements that should stretch to their parent's width. For multi-column card grids, use `layout.display: "grid"` with `layout.columns` instead of `layout.dir: "row"` with `width: "fill"` children
-8. Do NOT output any text, explanation, or markdown — ONLY the `submit_design` tool call
+8. Prefer **structural containers** (`type: "container"` with `background`, `shadow`, `radius` on the node) for card-like surfaces when the catalog `card` component is not required; it keeps token-based backgrounds and sizing out of `overrides`.
+9. Do NOT output any text, explanation, or markdown — ONLY the `submit_design` tool call

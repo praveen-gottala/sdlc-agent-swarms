@@ -130,6 +130,7 @@ const SAFE_OVERRIDE_KEYS = new Set([
   'max_width', 'maxWidth', 'min_width', 'minWidth',
   'max_height', 'maxHeight', 'min_height', 'minHeight',
   'height',
+  'flex',
   // Spacing
   'padding', 'margin_inline', 'marginInline',
   'padding_top', 'paddingTop', 'padding_bottom', 'paddingBottom',
@@ -150,6 +151,7 @@ const SAFE_OVERRIDE_KEYS = new Set([
   // Overflow & visibility
   'overflow', 'overflow_x', 'overflowX', 'overflow_y', 'overflowY',
   'pointer_events', 'pointerEvents', 'cursor', 'opacity',
+  'white_space', 'whiteSpace',
   // Typography (overrides for catalog items that need custom fonts)
   'font_size', 'fontSize', 'font_family', 'fontFamily',
   // Layout (for non-container nodes that need inline layout)
@@ -163,11 +165,29 @@ const COLOR_OVERRIDE_KEYS = new Set([
   'background', 'background_color', 'backgroundColor', 'color',
 ]);
 
+/** Normalize CSS-style keys (hyphens, underscores) to React camelCase style keys. */
+function normalizeCssOverrideKey(key: string): string {
+  return key
+    .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
+    .replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
 function looksLikeCssColor(v: unknown): boolean {
   if (typeof v !== 'string') return false;
   const s = v.trim();
   return s.startsWith('#') || s.startsWith('rgb') || s.startsWith('hsl')
     || s === 'transparent' || s === 'inherit' || s === 'currentColor';
+}
+
+/** Gradients, var(), and other paint values allowed on background/color. */
+function looksLikeCssPaintValue(v: unknown): boolean {
+  if (typeof v !== 'string') return false;
+  const s = v.trim();
+  if (s.startsWith('var(')) return true;
+  if (s.startsWith('conic-gradient') || s.startsWith('linear-gradient') || s.startsWith('radial-gradient')) {
+    return true;
+  }
+  return looksLikeCssColor(v);
 }
 
 function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefined): React.CSSProperties {
@@ -184,10 +204,11 @@ function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefi
       s.gridTemplateColumns = `repeat(${value}, 1fr)`;
       continue;
     }
-    if (!SAFE_OVERRIDE_KEYS.has(key)) continue;
-    if (COLOR_OVERRIDE_KEYS.has(key) && !looksLikeCssColor(value)) continue;
-    const normalized = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-    (s as Record<string, unknown>)[normalized] = value;
+    const normalizedKey = normalizeCssOverrideKey(key);
+    if (!SAFE_OVERRIDE_KEYS.has(key) && !SAFE_OVERRIDE_KEYS.has(normalizedKey)) continue;
+    const isColorKey = COLOR_OVERRIDE_KEYS.has(key) || COLOR_OVERRIDE_KEYS.has(normalizedKey);
+    if (isColorKey && !looksLikeCssPaintValue(value)) continue;
+    (s as Record<string, unknown>)[normalizedKey] = value;
   }
   return s;
 }
@@ -349,9 +370,9 @@ function renderAccelerator(
       const style: React.CSSProperties = {
         ...getLayoutStyles(node.layout),
         ...getSizeStyles(node.width, undefined),
-        ...getOverrideStyles(node.overrides),
         minHeight: '100vh',
         backgroundColor: bg,
+        ...getOverrideStyles(node.overrides),
       };
       return (
         <div key={node.id} data-node={node.id} style={style}>
@@ -366,8 +387,8 @@ function renderAccelerator(
         ...getSizeStyles(node.width, node.height),
         ...getShadowStyle(node.shadow, tokens),
         ...getPositionStyles(node),
-        ...getOverrideStyles(node.overrides),
         backgroundColor: bg,
+        ...getOverrideStyles(node.overrides),
       };
       if (node.radius) {
         style.borderRadius = node.radius;
@@ -388,8 +409,8 @@ function renderAccelerator(
         ...getSizeStyles(node.width, node.height),
         ...getShadowStyle(node.shadow, tokens),
         ...getPositionStyles(node),
-        ...getOverrideStyles(node.overrides),
         backgroundColor: bg,
+        ...getOverrideStyles(node.overrides),
         borderRadius: node.radius,
       };
       return (
@@ -403,10 +424,10 @@ function renderAccelerator(
       const style: React.CSSProperties = {
         ...getLayoutStyles(node.layout),
         ...getShadowStyle(node.shadow, tokens),
-        ...getOverrideStyles(node.overrides),
         width: '100%',
         height: node.height,
         backgroundColor: bg,
+        ...getOverrideStyles(node.overrides),
       };
       return (
         <div key={node.id} data-node={node.id} style={style}>
@@ -520,6 +541,10 @@ function renderCatalog(
   }
 
   switch (catalogId) {
+    case 'data-table':
+      return renderDataTable(node, tokenMap, common);
+    case 'link':
+      return renderLink(node, tokenMap, common);
     case 'avatar':
       return renderAvatar(node, common);
     case 'card':
@@ -641,13 +666,19 @@ function renderCatalog(
         </div>
       );
     default: {
-      const bg = resolveTokenColor(node.background, tokenMap);
+      const bgCatalog = resolveTokenColor(node.background, tokenMap);
       const layoutStyle = getLayoutStyles(node.layout);
       const style: React.CSSProperties = {
         ...layoutStyle,
         ...common,
       };
-      if (bg) style.backgroundColor = bg;
+      if (
+        bgCatalog
+        && style.backgroundColor === undefined
+        && style.background === undefined
+      ) {
+        style.backgroundColor = bgCatalog;
+      }
       if (node.radius) style.borderRadius = node.radius;
 
       const hasChildren = children.length > 0;
@@ -762,17 +793,41 @@ function hexToRgba(color: string, alpha: number): string {
 }
 
 function renderAvatar(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
+  const initialsOverride = typeof node.overrides?.initials === 'string' ? node.overrides.initials.trim() : '';
   const label = node.label ?? '';
-  const initials = label
+  const initialsFromLabel = label
     .split(' ')
     .map((w) => w[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+  const initials = (initialsOverride || initialsFromLabel).slice(0, 2) || '?';
   return (
     <Avatar key={node.id} data-node={node.id} data-catalog="avatar" style={Object.keys(common).length ? common : undefined}>
-      <AvatarFallback>{initials || '?'}</AvatarFallback>
+      <AvatarFallback>{initials}</AvatarFallback>
     </Avatar>
+  );
+}
+
+function renderLink(node: ResolvedNode, tokenMap: TokenColorMap, common: React.CSSProperties): React.ReactNode {
+  const href = typeof node.overrides?.href === 'string' ? node.overrides.href : '#';
+  const cta = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+  const text = node.label ?? node.content ?? '';
+  return (
+    <a
+      key={node.id}
+      data-node={node.id}
+      data-catalog="link"
+      href={href}
+      style={{
+        color: cta,
+        textDecoration: 'underline',
+        cursor: 'pointer',
+        ...common,
+      }}
+    >
+      {text}
+    </a>
   );
 }
 
@@ -791,6 +846,7 @@ function renderCard(
     backgroundColor: bg,
     borderRadius: node.radius ?? 20,
     padding: node.padding ?? node.catalogEntry?.padding ?? 24,
+    ...getOverrideStyles(node.overrides),
   };
   return (
     <Card key={node.id} data-node={node.id} data-catalog="card" style={style}>
@@ -1045,6 +1101,133 @@ function renderProgressBar(node: ResolvedNode, common: React.CSSProperties): Rea
   const value = typeof node.value === 'number' ? node.value : 0;
   return (
     <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={Object.keys(common).length ? common : undefined} />
+  );
+}
+
+function renderDataTableCell(value: unknown, tokenMap: TokenColorMap): React.ReactNode {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (typeof value === 'object') {
+    const o = value as Record<string, unknown>;
+    if ('name' in o && typeof o.name === 'string') {
+      const avatar = typeof o.avatar === 'string' ? o.avatar : '';
+      const href = o.href !== undefined ? String(o.href) : '#';
+      const cta = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+      const surface = resolveTokenColor('surface-secondary', tokenMap) ?? 'rgba(0,0,0,0.06)';
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 9999,
+              backgroundColor: surface,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            {avatar.slice(0, 2)}
+          </span>
+          <a href={href} style={{ color: cta, textDecoration: 'underline' }}>
+            {o.name}
+          </a>
+        </span>
+      );
+    }
+    if ('value' in o) {
+      const status = String(o.status ?? '');
+      const err = resolveTokenColor('error', tokenMap) ?? '#ef4444';
+      const warn = resolveTokenColor('warning', tokenMap) ?? '#f59e0b';
+      const ok = resolveTokenColor('success', tokenMap) ?? '#22c55e';
+      const color = status === 'error' ? err : status === 'warning' ? warn : ok;
+      return <span style={{ color, fontWeight: 600 }}>{String(o.value ?? '')}</span>;
+    }
+  }
+  return JSON.stringify(value);
+}
+
+/** Renders DesignSpec `catalog: DataTable` with rows/columns in `overrides`. */
+function renderDataTable(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const ov = node.overrides ?? {};
+  const columns = (ov.columns as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
+  const rows = (ov.rows as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
+  const caption = ov.caption !== undefined ? String(ov.caption) : '';
+
+  if (columns.length === 0 || rows.length === 0) {
+    return (
+      <div key={node.id} data-node={node.id} data-catalog="data-table" style={common}>
+        <span style={{ color: resolveTokenColor('text-secondary', tokenMap) }}>No table data</span>
+      </div>
+    );
+  }
+
+  const border = resolveTokenColor('border-default', tokenMap) ?? '#e2e8f0';
+  const textSecondary = resolveTokenColor('text-secondary', tokenMap) ?? '#94a3b8';
+  const textPrimary = resolveTokenColor('text-primary', tokenMap) ?? '#0f172a';
+  const surfaceAlt = resolveTokenColor('surface-secondary', tokenMap) ?? 'rgba(0,0,0,0.03)';
+
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="data-table" style={{ overflow: 'auto', width: '100%', ...common }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, color: textPrimary }}>
+        {caption ? (
+          <caption style={{ captionSide: 'top', textAlign: 'left', paddingBottom: 8, color: textSecondary, fontSize: 12 }}>
+            {caption}
+          </caption>
+        ) : null}
+        <thead>
+          <tr>
+            {columns.map((col, i) => (
+              <th
+                key={i}
+                scope="col"
+                style={{
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  borderBottom: `1px solid ${border}`,
+                  color: textSecondary,
+                  fontWeight: 600,
+                  fontSize: 11,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {String(col.label ?? col.key ?? '')}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} style={{ backgroundColor: ri % 2 === 1 ? surfaceAlt : undefined }}>
+              {columns.map((col, ci) => {
+                const key = String(col.key ?? '');
+                const cell = row[key];
+                return (
+                  <td
+                    key={ci}
+                    style={{
+                      padding: '10px 12px',
+                      borderBottom: `1px solid ${border}`,
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {renderDataTableCell(cell, tokenMap)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
