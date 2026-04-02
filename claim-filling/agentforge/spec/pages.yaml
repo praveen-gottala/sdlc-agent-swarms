@@ -25,6 +25,9 @@ pages:
       - Note
     viewports:
       - 1440
+    designStatus: rendered
+    correctionIteration: 0
+    designScore: null
   - id: claims-list
     name: Claims List
     description: "Searchable, filterable, sortable table of all claims accessible to

@@ -1,0 +1,2105 @@
+{
+  "screen": "dashboard-overview",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "top-nav": {
+      "parent": "page-root",
+      "order": 0,
+      "catalog": "NavigationBar",
+      "label": "ClaimFlow",
+      "overrides": {
+        "brand_name": "ClaimFlow",
+        "nav_links": [
+          "Dashboard",
+          "Claims",
+          "Notifications"
+        ],
+        "active_link": "Dashboard"
+      }
+    },
+    "dashboard-layout": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "container",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 24,
+        "pt": 32,
+        "pb": 64
+      },
+      "width": "fill"
+    },
+    "page-header-section": {
+      "parent": "dashboard-layout",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center",
+        "gap": 16
+      },
+      "width": "fill"
+    },
+    "page-heading": {
+      "parent": "page-header-section",
+      "order": 0,
+      "type": "text",
+      "content": "Pipeline Overview",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "live-indicator": {
+      "parent": "page-header-section",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "px": 12,
+        "py": 6
+      },
+      "background": "surface-primary",
+      "radius": 20,
+      "shadow": "sm"
+    },
+    "live-dot": {
+      "parent": "live-indicator",
+      "order": 0,
+      "type": "text",
+      "content": "●",
+      "typography": "small",
+      "color": "success"
+    },
+    "live-label": {
+      "parent": "live-indicator",
+      "order": 1,
+      "type": "text",
+      "content": "Live — Updated 30s ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "kpi-row": {
+      "parent": "dashboard-layout",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 24,
+        "align": "stretch"
+      },
+      "width": "fill"
+    },
+    "stat-card-open": {
+      "parent": "kpi-row",
+      "order": 0,
+      "catalog": "Card",
+      "width": "fill",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "cursor": "pointer",
+        "role": "link",
+        "aria-label": "Open Claims: 47. Navigate to filtered claims list."
+      }
+    },
+    "stat-card-open-label-row": {
+      "parent": "stat-card-open",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "stat-card-open-label": {
+      "parent": "stat-card-open-label-row",
+      "order": 0,
+      "type": "text",
+      "content": "Open Claims",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "stat-card-open-trend": {
+      "parent": "stat-card-open-label-row",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "stat-card-open-trend-text": {
+      "parent": "stat-card-open-trend",
+      "order": 0,
+      "type": "text",
+      "content": "↑ +5%",
+      "typography": "label",
+      "color": "error",
+      "weight": 500
+    },
+    "stat-card-open-metric": {
+      "parent": "stat-card-open",
+      "order": 1,
+      "type": "text",
+      "content": "47",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "stat-card-open-sublabel": {
+      "parent": "stat-card-open",
+      "order": 2,
+      "type": "text",
+      "content": "Across all active statuses",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "stat-card-filed": {
+      "parent": "kpi-row",
+      "order": 1,
+      "catalog": "Card",
+      "width": "fill",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "cursor": "pointer",
+        "role": "link",
+        "aria-label": "Filed Today: 8. Navigate to filtered claims list."
+      }
+    },
+    "stat-card-filed-label-row": {
+      "parent": "stat-card-filed",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "stat-card-filed-label": {
+      "parent": "stat-card-filed-label-row",
+      "order": 0,
+      "type": "text",
+      "content": "Filed Today",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "stat-card-filed-trend": {
+      "parent": "stat-card-filed-label-row",
+      "order": 1,
+      "type": "text",
+      "content": "↑ +3%",
+      "typography": "label",
+      "color": "success",
+      "weight": 500
+    },
+    "stat-card-filed-metric": {
+      "parent": "stat-card-filed",
+      "order": 1,
+      "type": "text",
+      "content": "8",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "stat-card-filed-sublabel": {
+      "parent": "stat-card-filed",
+      "order": 2,
+      "type": "text",
+      "content": "Mon, Jan 15",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "stat-card-avg": {
+      "parent": "kpi-row",
+      "order": 2,
+      "catalog": "Card",
+      "width": "fill",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "cursor": "pointer",
+        "role": "link",
+        "aria-label": "Avg. Processing Time: 4.2 days. Navigate to filtered claims list."
+      }
+    },
+    "stat-card-avg-label-row": {
+      "parent": "stat-card-avg",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "stat-card-avg-label": {
+      "parent": "stat-card-avg-label-row",
+      "order": 0,
+      "type": "text",
+      "content": "Avg. Processing Time",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "stat-card-avg-trend": {
+      "parent": "stat-card-avg-label-row",
+      "order": 1,
+      "type": "text",
+      "content": "↓ −0.3d",
+      "typography": "label",
+      "color": "success",
+      "weight": 500
+    },
+    "stat-card-avg-metric": {
+      "parent": "stat-card-avg",
+      "order": 1,
+      "type": "text",
+      "content": "4.2 days",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "stat-card-avg-sublabel": {
+      "parent": "stat-card-avg",
+      "order": 2,
+      "type": "text",
+      "content": "Rolling 30-day average",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "stat-card-sla": {
+      "parent": "kpi-row",
+      "order": 3,
+      "catalog": "Card",
+      "width": "fill",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "cursor": "pointer",
+        "role": "link",
+        "aria-label": "SLA Compliance: 89%. Navigate to at-risk claims list."
+      }
+    },
+    "stat-card-sla-label-row": {
+      "parent": "stat-card-sla",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "stat-card-sla-label": {
+      "parent": "stat-card-sla-label-row",
+      "order": 0,
+      "type": "text",
+      "content": "SLA Compliance",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "stat-card-sla-trend": {
+      "parent": "stat-card-sla-label-row",
+      "order": 1,
+      "type": "text",
+      "content": "↓ −2%",
+      "typography": "label",
+      "color": "error",
+      "weight": 500
+    },
+    "stat-card-sla-metric": {
+      "parent": "stat-card-sla",
+      "order": 1,
+      "type": "text",
+      "content": "89%",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "stat-card-sla-sublabel": {
+      "parent": "stat-card-sla",
+      "order": 2,
+      "type": "text",
+      "content": "Of claims resolved on time",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "charts-row": {
+      "parent": "dashboard-layout",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 24,
+        "align": "stretch"
+      },
+      "width": "fill"
+    },
+    "bar-chart-card": {
+      "parent": "charts-row",
+      "order": 0,
+      "catalog": "Card",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "width": "fill",
+      "overrides": {
+        "flex": "2 1 0"
+      }
+    },
+    "bar-chart-header": {
+      "parent": "bar-chart-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "bar-chart-title": {
+      "parent": "bar-chart-header",
+      "order": 0,
+      "type": "text",
+      "content": "Claims by Status",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "bar-chart-updated": {
+      "parent": "bar-chart-header",
+      "order": 1,
+      "type": "text",
+      "content": "Updated just now",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "bar-chart-spacer": {
+      "parent": "bar-chart-card",
+      "order": 1,
+      "type": "spacer",
+      "height": 20
+    },
+    "bar-chart-bar": {
+      "parent": "bar-chart-card",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 2,
+        "align": "stretch"
+      },
+      "width": "fill",
+      "height": 44,
+      "radius": 8,
+      "overrides": {
+        "overflow": "hidden"
+      }
+    },
+    "bar-seg-submitted": {
+      "parent": "bar-chart-bar",
+      "order": 0,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "18 0 0",
+        "background-color": "#3B82F6",
+        "role": "img",
+        "aria-label": "Submitted: 18 claims, 26% of total"
+      }
+    },
+    "bar-seg-submitted-label": {
+      "parent": "bar-seg-submitted",
+      "order": 0,
+      "type": "text",
+      "content": "18",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-seg-review": {
+      "parent": "bar-chart-bar",
+      "order": 1,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "15 0 0",
+        "background-color": "#F59E0B",
+        "role": "img",
+        "aria-label": "Under Review: 15 claims, 22% of total"
+      }
+    },
+    "bar-seg-review-label": {
+      "parent": "bar-seg-review",
+      "order": 0,
+      "type": "text",
+      "content": "15",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-seg-info": {
+      "parent": "bar-chart-bar",
+      "order": 2,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "8 0 0",
+        "background-color": "#F97316",
+        "role": "img",
+        "aria-label": "Info Requested: 8 claims, 12% of total"
+      }
+    },
+    "bar-seg-info-label": {
+      "parent": "bar-seg-info",
+      "order": 0,
+      "type": "text",
+      "content": "8",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-seg-escalated": {
+      "parent": "bar-chart-bar",
+      "order": 3,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "5 0 0",
+        "background-color": "#9333EA",
+        "role": "img",
+        "aria-label": "Escalated: 5 claims, 7% of total"
+      }
+    },
+    "bar-seg-escalated-label": {
+      "parent": "bar-seg-escalated",
+      "order": 0,
+      "type": "text",
+      "content": "5",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-seg-approved": {
+      "parent": "bar-chart-bar",
+      "order": 4,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "14 0 0",
+        "background-color": "#16A34A",
+        "role": "img",
+        "aria-label": "Approved: 14 claims, 20% of total"
+      }
+    },
+    "bar-seg-approved-label": {
+      "parent": "bar-seg-approved",
+      "order": 0,
+      "type": "text",
+      "content": "14",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-seg-denied": {
+      "parent": "bar-chart-bar",
+      "order": 5,
+      "type": "container",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "flex": "9 0 0",
+        "background-color": "#DC2626",
+        "role": "img",
+        "aria-label": "Denied: 9 claims, 13% of total"
+      }
+    },
+    "bar-seg-denied-label": {
+      "parent": "bar-seg-denied",
+      "order": 0,
+      "type": "text",
+      "content": "9",
+      "typography": "small",
+      "color": "text-on-cta",
+      "weight": 600
+    },
+    "bar-chart-spacer2": {
+      "parent": "bar-chart-card",
+      "order": 3,
+      "type": "spacer",
+      "height": 16
+    },
+    "bar-chart-legend": {
+      "parent": "bar-chart-card",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 20,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "legend-submitted": {
+      "parent": "bar-chart-legend",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-submitted-dot": {
+      "parent": "legend-submitted",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#3B82F6"
+      }
+    },
+    "legend-submitted-text": {
+      "parent": "legend-submitted",
+      "order": 1,
+      "type": "text",
+      "content": "Submitted · 18",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-review": {
+      "parent": "bar-chart-legend",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-review-dot": {
+      "parent": "legend-review",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#F59E0B"
+      }
+    },
+    "legend-review-text": {
+      "parent": "legend-review",
+      "order": 1,
+      "type": "text",
+      "content": "Under Review · 15",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-info": {
+      "parent": "bar-chart-legend",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-info-dot": {
+      "parent": "legend-info",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#F97316"
+      }
+    },
+    "legend-info-text": {
+      "parent": "legend-info",
+      "order": 1,
+      "type": "text",
+      "content": "Info Requested · 8",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-escalated": {
+      "parent": "bar-chart-legend",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-escalated-dot": {
+      "parent": "legend-escalated",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#9333EA"
+      }
+    },
+    "legend-escalated-text": {
+      "parent": "legend-escalated",
+      "order": 1,
+      "type": "text",
+      "content": "Escalated · 5",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-approved": {
+      "parent": "bar-chart-legend",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-approved-dot": {
+      "parent": "legend-approved",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#16A34A"
+      }
+    },
+    "legend-approved-text": {
+      "parent": "legend-approved",
+      "order": 1,
+      "type": "text",
+      "content": "Approved · 14",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-denied": {
+      "parent": "bar-chart-legend",
+      "order": 5,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "legend-denied-dot": {
+      "parent": "legend-denied",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 6,
+      "overrides": {
+        "background-color": "#DC2626"
+      }
+    },
+    "legend-denied-text": {
+      "parent": "legend-denied",
+      "order": 1,
+      "type": "text",
+      "content": "Denied · 9",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "donut-card": {
+      "parent": "charts-row",
+      "order": 1,
+      "catalog": "Card",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "width": 360,
+      "overrides": {
+        "flex": "0 0 360px"
+      }
+    },
+    "donut-card-title": {
+      "parent": "donut-card",
+      "order": 0,
+      "type": "text",
+      "content": "Priority Breakdown",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "donut-spacer": {
+      "parent": "donut-card",
+      "order": 1,
+      "type": "spacer",
+      "height": 16
+    },
+    "donut-body": {
+      "parent": "donut-card",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 20
+      },
+      "width": "fill"
+    },
+    "donut-svg-wrapper": {
+      "parent": "donut-body",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center"
+      },
+      "width": 140,
+      "height": 140,
+      "overrides": {
+        "role": "img",
+        "aria-label": "Donut chart: Priority Breakdown. Low 30%, Medium 40%, High 20%, Critical 10%.",
+        "border-radius": "50%",
+        "background": "conic-gradient(#94A3B8 0% 30%, #F59E0B 30% 70%, #F97316 70% 90%, #DC2626 90% 100%)"
+      }
+    },
+    "donut-center": {
+      "parent": "donut-svg-wrapper",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 2
+      },
+      "width": 88,
+      "height": 88,
+      "radius": 44,
+      "background": "surface-primary"
+    },
+    "donut-center-count": {
+      "parent": "donut-center",
+      "order": 0,
+      "type": "text",
+      "content": "69",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600,
+      "textAlign": "center"
+    },
+    "donut-center-label": {
+      "parent": "donut-center",
+      "order": 1,
+      "type": "text",
+      "content": "Claims",
+      "typography": "small",
+      "color": "text-secondary",
+      "textAlign": "center"
+    },
+    "donut-legend": {
+      "parent": "donut-body",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      },
+      "width": "fill"
+    },
+    "donut-legend-low": {
+      "parent": "donut-legend",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "donut-legend-low-swatch": {
+      "parent": "donut-legend-low",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 3,
+      "overrides": {
+        "background-color": "#94A3B8",
+        "flex-shrink": "0"
+      }
+    },
+    "donut-legend-low-text": {
+      "parent": "donut-legend-low",
+      "order": 1,
+      "type": "text",
+      "content": "Low · 21 · 30%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "donut-legend-medium": {
+      "parent": "donut-legend",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "donut-legend-medium-swatch": {
+      "parent": "donut-legend-medium",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 3,
+      "overrides": {
+        "background-color": "#F59E0B",
+        "flex-shrink": "0"
+      }
+    },
+    "donut-legend-medium-text": {
+      "parent": "donut-legend-medium",
+      "order": 1,
+      "type": "text",
+      "content": "Medium · 28 · 40%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "donut-legend-high": {
+      "parent": "donut-legend",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "donut-legend-high-swatch": {
+      "parent": "donut-legend-high",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 3,
+      "overrides": {
+        "background-color": "#F97316",
+        "flex-shrink": "0"
+      }
+    },
+    "donut-legend-high-text": {
+      "parent": "donut-legend-high",
+      "order": 1,
+      "type": "text",
+      "content": "High · 14 · 20%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "donut-legend-critical": {
+      "parent": "donut-legend",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "donut-legend-critical-swatch": {
+      "parent": "donut-legend-critical",
+      "order": 0,
+      "type": "container",
+      "width": 12,
+      "height": 12,
+      "radius": 3,
+      "overrides": {
+        "background-color": "#DC2626",
+        "flex-shrink": "0"
+      }
+    },
+    "donut-legend-critical-text": {
+      "parent": "donut-legend-critical",
+      "order": 1,
+      "type": "text",
+      "content": "Critical · 6 · 10%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "bottom-row": {
+      "parent": "dashboard-layout",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 24,
+        "align": "stretch"
+      },
+      "width": "fill"
+    },
+    "activity-feed-card": {
+      "parent": "bottom-row",
+      "order": 0,
+      "catalog": "Card",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "flex": "5 0 0"
+      }
+    },
+    "activity-feed-header": {
+      "parent": "activity-feed-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "activity-feed-title-group": {
+      "parent": "activity-feed-header",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "activity-feed-title": {
+      "parent": "activity-feed-title-group",
+      "order": 0,
+      "type": "text",
+      "content": "Recent Activity",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "activity-feed-subtitle": {
+      "parent": "activity-feed-title-group",
+      "order": 1,
+      "type": "text",
+      "content": "Last 10 status changes",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "activity-feed-timestamp": {
+      "parent": "activity-feed-header",
+      "order": 1,
+      "type": "text",
+      "content": "Updated 30s ago",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "activity-feed-divider": {
+      "parent": "activity-feed-card",
+      "order": 1,
+      "type": "divider"
+    },
+    "activity-feed-list": {
+      "parent": "activity-feed-card",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      },
+      "width": "fill",
+      "overrides": {
+        "max-height": "480px",
+        "overflow-y": "auto"
+      }
+    },
+    "activity-item-1": {
+      "parent": "activity-feed-list",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-1": {
+      "parent": "activity-item-1",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "MT",
+        "aria-label": "Maria Torres"
+      }
+    },
+    "activity-text-1": {
+      "parent": "activity-item-1",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-1-actor": {
+      "parent": "activity-text-1",
+      "order": 0,
+      "type": "text",
+      "content": "Maria Torres moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-1-claim": {
+      "parent": "activity-text-1",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260315-0042",
+      "overrides": {
+        "href": "/claims/CLM-20260315-0042",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-1-action": {
+      "parent": "activity-text-1",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-1-badge": {
+      "parent": "activity-text-1",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "approved",
+      "overrides": {
+        "variant": "success"
+      }
+    },
+    "activity-time-1": {
+      "parent": "activity-item-1",
+      "order": 2,
+      "type": "text",
+      "content": "3 min ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-2": {
+      "parent": "activity-feed-list",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-2": {
+      "parent": "activity-item-2",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "JR",
+        "aria-label": "James Rivera"
+      }
+    },
+    "activity-text-2": {
+      "parent": "activity-item-2",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-2-actor": {
+      "parent": "activity-text-2",
+      "order": 0,
+      "type": "text",
+      "content": "James Rivera moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-2-claim": {
+      "parent": "activity-text-2",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260315-0039",
+      "overrides": {
+        "href": "/claims/CLM-20260315-0039",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-2-action": {
+      "parent": "activity-text-2",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-2-badge": {
+      "parent": "activity-text-2",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "under_review",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "activity-time-2": {
+      "parent": "activity-item-2",
+      "order": 2,
+      "type": "text",
+      "content": "11 min ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-3": {
+      "parent": "activity-feed-list",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-3": {
+      "parent": "activity-item-3",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "SC",
+        "aria-label": "Sofia Chen"
+      }
+    },
+    "activity-text-3": {
+      "parent": "activity-item-3",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-3-actor": {
+      "parent": "activity-text-3",
+      "order": 0,
+      "type": "text",
+      "content": "Sofia Chen escalated ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-3-claim": {
+      "parent": "activity-text-3",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260314-0031",
+      "overrides": {
+        "href": "/claims/CLM-20260314-0031",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-3-action": {
+      "parent": "activity-text-3",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-3-badge": {
+      "parent": "activity-text-3",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "escalated",
+      "overrides": {
+        "variant": "error"
+      }
+    },
+    "activity-time-3": {
+      "parent": "activity-item-3",
+      "order": 2,
+      "type": "text",
+      "content": "24 min ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-4": {
+      "parent": "activity-feed-list",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-4": {
+      "parent": "activity-item-4",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "DK",
+        "aria-label": "Daniel Kim"
+      }
+    },
+    "activity-text-4": {
+      "parent": "activity-item-4",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-4-actor": {
+      "parent": "activity-text-4",
+      "order": 0,
+      "type": "text",
+      "content": "Daniel Kim moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-4-claim": {
+      "parent": "activity-text-4",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260315-0044",
+      "overrides": {
+        "href": "/claims/CLM-20260315-0044",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-4-action": {
+      "parent": "activity-text-4",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-4-badge": {
+      "parent": "activity-text-4",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "info_requested",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "activity-time-4": {
+      "parent": "activity-item-4",
+      "order": 2,
+      "type": "text",
+      "content": "38 min ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-5": {
+      "parent": "activity-feed-list",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-5": {
+      "parent": "activity-item-5",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "MT",
+        "aria-label": "Maria Torres"
+      }
+    },
+    "activity-text-5": {
+      "parent": "activity-item-5",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-5-actor": {
+      "parent": "activity-text-5",
+      "order": 0,
+      "type": "text",
+      "content": "Maria Torres moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-5-claim": {
+      "parent": "activity-text-5",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260313-0028",
+      "overrides": {
+        "href": "/claims/CLM-20260313-0028",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-5-action": {
+      "parent": "activity-text-5",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-5-badge": {
+      "parent": "activity-text-5",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "denied",
+      "overrides": {
+        "variant": "error"
+      }
+    },
+    "activity-time-5": {
+      "parent": "activity-item-5",
+      "order": 2,
+      "type": "text",
+      "content": "1 hr ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-6": {
+      "parent": "activity-feed-list",
+      "order": 5,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-6": {
+      "parent": "activity-item-6",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "AL",
+        "aria-label": "Ana López"
+      }
+    },
+    "activity-text-6": {
+      "parent": "activity-item-6",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-6-actor": {
+      "parent": "activity-text-6",
+      "order": 0,
+      "type": "text",
+      "content": "Ana López moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-6-claim": {
+      "parent": "activity-text-6",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260315-0041",
+      "overrides": {
+        "href": "/claims/CLM-20260315-0041",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-6-action": {
+      "parent": "activity-text-6",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-6-badge": {
+      "parent": "activity-text-6",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "submitted",
+      "overrides": {
+        "variant": "info"
+      }
+    },
+    "activity-time-6": {
+      "parent": "activity-item-6",
+      "order": 2,
+      "type": "text",
+      "content": "2 hrs ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-7": {
+      "parent": "activity-feed-list",
+      "order": 6,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-7": {
+      "parent": "activity-item-7",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "JR",
+        "aria-label": "James Rivera"
+      }
+    },
+    "activity-text-7": {
+      "parent": "activity-item-7",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-7-actor": {
+      "parent": "activity-text-7",
+      "order": 0,
+      "type": "text",
+      "content": "James Rivera moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-7-claim": {
+      "parent": "activity-text-7",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260314-0036",
+      "overrides": {
+        "href": "/claims/CLM-20260314-0036",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-7-action": {
+      "parent": "activity-text-7",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-7-badge": {
+      "parent": "activity-text-7",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "approved",
+      "overrides": {
+        "variant": "success"
+      }
+    },
+    "activity-time-7": {
+      "parent": "activity-item-7",
+      "order": 2,
+      "type": "text",
+      "content": "3 hrs ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-8": {
+      "parent": "activity-feed-list",
+      "order": 7,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-8": {
+      "parent": "activity-item-8",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "SC",
+        "aria-label": "Sofia Chen"
+      }
+    },
+    "activity-text-8": {
+      "parent": "activity-item-8",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-8-actor": {
+      "parent": "activity-text-8",
+      "order": 0,
+      "type": "text",
+      "content": "Sofia Chen moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-8-claim": {
+      "parent": "activity-text-8",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260314-0033",
+      "overrides": {
+        "href": "/claims/CLM-20260314-0033",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-8-action": {
+      "parent": "activity-text-8",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-8-badge": {
+      "parent": "activity-text-8",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "under_review",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "activity-time-8": {
+      "parent": "activity-item-8",
+      "order": 2,
+      "type": "text",
+      "content": "4 hrs ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-9": {
+      "parent": "activity-feed-list",
+      "order": 8,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "border-bottom": "1px solid var(--border-default)",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-9": {
+      "parent": "activity-item-9",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "DK",
+        "aria-label": "Daniel Kim"
+      }
+    },
+    "activity-text-9": {
+      "parent": "activity-item-9",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-9-actor": {
+      "parent": "activity-text-9",
+      "order": 0,
+      "type": "text",
+      "content": "Daniel Kim moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-9-claim": {
+      "parent": "activity-text-9",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260313-0027",
+      "overrides": {
+        "href": "/claims/CLM-20260313-0027",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-9-action": {
+      "parent": "activity-text-9",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-9-badge": {
+      "parent": "activity-text-9",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "approved",
+      "overrides": {
+        "variant": "success"
+      }
+    },
+    "activity-time-9": {
+      "parent": "activity-item-9",
+      "order": 2,
+      "type": "text",
+      "content": "5 hrs ago",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "activity-item-10": {
+      "parent": "activity-feed-list",
+      "order": 9,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "py": 12
+      },
+      "width": "fill",
+      "overrides": {
+        "min-height": "44px",
+        "cursor": "pointer"
+      }
+    },
+    "activity-avatar-10": {
+      "parent": "activity-item-10",
+      "order": 0,
+      "catalog": "Avatar",
+      "width": 32,
+      "height": 32,
+      "overrides": {
+        "initials": "AL",
+        "aria-label": "Ana López"
+      }
+    },
+    "activity-text-10": {
+      "parent": "activity-item-10",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4,
+        "wrap": true
+      },
+      "width": "fill"
+    },
+    "activity-text-10-actor": {
+      "parent": "activity-text-10",
+      "order": 0,
+      "type": "text",
+      "content": "Ana López moved ",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-10-claim": {
+      "parent": "activity-text-10",
+      "order": 1,
+      "catalog": "Link",
+      "label": "CLM-20260312-0019",
+      "overrides": {
+        "href": "/claims/CLM-20260312-0019",
+        "font-size": "15px"
+      }
+    },
+    "activity-text-10-action": {
+      "parent": "activity-text-10",
+      "order": 2,
+      "type": "text",
+      "content": "to",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "activity-text-10-badge": {
+      "parent": "activity-text-10",
+      "order": 3,
+      "catalog": "Badge",
+      "label": "info_requested",
+      "overrides": {
+        "variant": "warning"
+      }
+    },
+    "activity-time-10": {
+      "parent": "activity-item-10",
+      "order": 2,
+      "type": "text",
+      "content": "Yesterday",
+      "typography": "small",
+      "color": "text-secondary",
+      "overrides": {
+        "white-space": "nowrap"
+      }
+    },
+    "workload-card": {
+      "parent": "bottom-row",
+      "order": 1,
+      "catalog": "Card",
+      "shadow": "sm",
+      "radius": 10,
+      "background": "surface-primary",
+      "overrides": {
+        "flex": "7 0 0"
+      }
+    },
+    "workload-card-header": {
+      "parent": "workload-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "space-between",
+        "align": "center"
+      },
+      "width": "fill"
+    },
+    "workload-card-title": {
+      "parent": "workload-card-header",
+      "order": 0,
+      "type": "text",
+      "content": "Adjuster Workload",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "workload-card-action": {
+      "parent": "workload-card-header",
+      "order": 1,
+      "catalog": "Button",
+      "label": "View All",
+      "overrides": {
+        "variant": "ghost"
+      }
+    },
+    "workload-divider": {
+      "parent": "workload-card",
+      "order": 1,
+      "type": "divider"
+    },
+    "workload-table": {
+      "parent": "workload-card",
+      "order": 2,
+      "catalog": "DataTable",
+      "width": "fill",
+      "overrides": {
+        "caption": "Adjuster Workload",
+        "aria-label": "Adjuster workload data table",
+        "columns": [
+          {
+            "key": "adjuster",
+            "label": "ADJUSTER",
+            "sortable": true,
+            "scope": "col"
+          },
+          {
+            "key": "active_claims",
+            "label": "ACTIVE CLAIMS",
+            "sortable": true,
+            "aria-sort": "descending",
+            "scope": "col"
+          },
+          {
+            "key": "avg_processing",
+            "label": "AVG. PROCESSING TIME",
+            "sortable": true,
+            "scope": "col"
+          },
+          {
+            "key": "oldest_claim",
+            "label": "OLDEST CLAIM AGE",
+            "sortable": true,
+            "scope": "col"
+          }
+        ],
+        "rows": [
+          {
+            "adjuster": {
+              "avatar": "MT",
+              "name": "Maria Torres",
+              "href": "/claims?adjuster=usr-001"
+            },
+            "active_claims": "12",
+            "avg_processing": "3.8 days",
+            "oldest_claim": {
+              "value": "18d",
+              "status": "error"
+            }
+          },
+          {
+            "adjuster": {
+              "avatar": "JR",
+              "name": "James Rivera",
+              "href": "/claims?adjuster=usr-002"
+            },
+            "active_claims": "9",
+            "avg_processing": "4.1 days",
+            "oldest_claim": {
+              "value": "11d",
+              "status": "warning"
+            }
+          },
+          {
+            "adjuster": {
+              "avatar": "SC",
+              "name": "Sofia Chen",
+              "href": "/claims?adjuster=usr-003"
+            },
+            "active_claims": "8",
+            "avg_processing": "5.2 days",
+            "oldest_claim": {
+              "value": "22d",
+              "status": "error"
+            }
+          },
+          {
+            "adjuster": {
+              "avatar": "DK",
+              "name": "Daniel Kim",
+              "href": "/claims?adjuster=usr-004"
+            },
+            "active_claims": "7",
+            "avg_processing": "3.5 days",
+            "oldest_claim": {
+              "value": "6d",
+              "status": "success"
+            }
+          },
+          {
+            "adjuster": {
+              "avatar": "AL",
+              "name": "Ana López",
+              "href": "/claims?adjuster=usr-005"
+            },
+            "active_claims": "6",
+            "avg_processing": "4.9 days",
+            "oldest_claim": {
+              "value": "14d",
+              "status": "warning"
+            }
+          },
+          {
+            "adjuster": {
+              "avatar": "BW",
+              "name": "Ben Walsh",
+              "href": "/claims?adjuster=usr-006"
+            },
+            "active_claims": "5",
+            "avg_processing": "2.9 days",
+            "oldest_claim": {
+              "value": "3d",
+              "status": "success"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
