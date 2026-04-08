@@ -22,7 +22,9 @@ import {
   Ok,
   Err,
   runAgent,
+  safeParse,
 } from '@agentforge/core';
+import { UXTestingOutputSchema } from '../schemas.js';
 
 // ============================================================================
 // Types
@@ -207,25 +209,7 @@ const recoverTruncatedTestFiles = (raw: string): { filePath: string; content: st
 /** Parse the LLM output as a UX dashboard testing JSON object. */
 export const parseTestingOutput = (output: string): Result<UXTestingOutput> => {
   const jsonStr = extractJsonFromLLMOutput(output);
-
-  try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-
-    return Ok({
-      testRunId: (parsed.testRunId as string) ?? '',
-      testFilePaths: (parsed.testFilePaths as string[]) ?? [],
-      passCount: (parsed.passCount as number) ?? 0,
-      failCount: (parsed.failCount as number) ?? 0,
-      healedCount: (parsed.healedCount as number) ?? 0,
-      ...((parsed.fixInstructions as string) ? { fixInstructions: parsed.fixInstructions as string } : {}),
-    });
-  } catch {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Failed to parse UX dashboard testing output: ${jsonStr.slice(0, 200)}`,
-      recoverable: true,
-    });
-  }
+  return safeParse(jsonStr, UXTestingOutputSchema, 'UX Testing') as Result<UXTestingOutput>;
 };
 
 // ============================================================================

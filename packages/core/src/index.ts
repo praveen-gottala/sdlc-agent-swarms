@@ -224,6 +224,43 @@ export type {
   ComponentCatalogSpec,
 } from './types/design-system.js';
 
+// Design system Zod schemas
+export {
+  PrimitiveColorsSchema,
+  SemanticColorsSchema,
+  ColorSpecSchema,
+  TypographyScaleEntrySchema,
+  TypographySpecSchema,
+  SpacingSpecSchema,
+  BorderSpecSchema,
+  TouchTargetSpecSchema,
+  ElevationLevelSchema,
+  ElevationSpecSchema,
+  LayoutSpecSchema,
+  ZIndexSpecSchema,
+  OpacitySpecSchema,
+  MotionSpecSchema,
+  BorderWidthSpecSchema,
+  TextExtrasSpecSchema,
+  StateTokensSpecSchema,
+  DesignTokensSpecSchema,
+  BrandIdentitySchema,
+  IllustrationStyleSchema,
+  MotionPrinciplesSchema,
+  AccessibilitySpecSchema,
+  BrandSpecSchema,
+  ComponentAnatomySlotSchema,
+  ComponentStateTokensSchema,
+  ComponentTokenBindingsSchema,
+  ComponentSpacingSchema,
+  ComponentAccessibilitySchema,
+  CatalogLibraryMappingSchema,
+  ComponentCatalogEntrySchema,
+  ComponentCatalogSpecSchema,
+  ReactComponentMappingSchema,
+  ComponentLibrarySpecSchema,
+} from './types/design-system.schemas.js';
+
 // Spec types (PRD v2.0 Section 5.2)
 export type {
   ComponentProp,
@@ -240,6 +277,26 @@ export type {
   PagesSpec,
   PageContext,
 } from './types/spec-types.js';
+
+// Spec types Zod schemas
+export {
+  ComponentPropSchema,
+  ComponentEntrySchema,
+  ComponentSpecSchema,
+  QueryParamSchema,
+  EndpointResponseSchema,
+  EndpointEntrySchema,
+  ApiSpecSchema,
+  ModelFieldSchema,
+  ModelEntrySchema,
+  ModelsSpecSchema,
+  PageEntrySchema,
+  PagesSpecSchema,
+  PageContextSchema,
+} from './types/spec-types.schemas.js';
+
+// Safe parse utility
+export { safeParse, extractJson } from './utils/safe-parse.js';
 
 // State: spec reader
 export type { SpecFiles } from './state/spec-reader.js';

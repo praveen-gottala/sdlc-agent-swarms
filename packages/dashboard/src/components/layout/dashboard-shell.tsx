@@ -24,7 +24,7 @@ export function DashboardShell({
   const [project, setProject] = useState<ProjectContext | undefined>();
   const [allProjects, setAllProjects] = useState<ProjectInfo[]>([]);
   const [switchError, setSwitchError] = useState<string | null>(null);
-  const switchErrorTimer = useRef<ReturnType<typeof setTimeout>>();
+  const switchErrorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     // Fetch active project and all projects in parallel

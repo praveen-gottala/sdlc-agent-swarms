@@ -21,6 +21,14 @@ import type {
 } from '../types.js';
 import { calculateCost } from '../cost-table.js';
 
+/** Safely extract cache token counts from Anthropic usage. */
+function getCacheTokens(usage: Anthropic.Usage): { cacheReadTokens?: number; cacheWriteTokens?: number } {
+  return {
+    cacheReadTokens: usage.cache_read_input_tokens ?? undefined,
+    cacheWriteTokens: usage.cache_creation_input_tokens ?? undefined,
+  };
+}
+
 const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 
 /** Map short model aliases to full Anthropic API model IDs.
@@ -213,11 +221,11 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         }));
 
         // Build usage
+        const cacheTokens = getCacheTokens(response.usage);
         const usage: TokenUsage = {
           inputTokens: response.usage.input_tokens,
           outputTokens: response.usage.output_tokens,
-          cacheReadTokens: (response.usage as unknown as Record<string, unknown>).cache_read_input_tokens as number | undefined,
-          cacheWriteTokens: (response.usage as unknown as Record<string, unknown>).cache_creation_input_tokens as number | undefined,
+          ...cacheTokens,
         };
 
         const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);
@@ -310,11 +318,11 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           if (event.type === 'message_stop') {
             const finalMessage = stream.currentMessage;
             if (finalMessage) {
+              const streamCacheTokens = getCacheTokens(finalMessage.usage);
               const usage: TokenUsage = {
                 inputTokens: finalMessage.usage.input_tokens,
                 outputTokens: finalMessage.usage.output_tokens,
-                cacheReadTokens: (finalMessage.usage as unknown as Record<string, unknown>).cache_read_input_tokens as number | undefined,
-                cacheWriteTokens: (finalMessage.usage as unknown as Record<string, unknown>).cache_creation_input_tokens as number | undefined,
+                ...streamCacheTokens,
               };
 
               const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);

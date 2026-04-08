@@ -19,10 +19,12 @@ import type {
 } from '@agentforge/core';
 import {
   Ok,
-  Err,
   runAgent,
   loadDesignTokens,
+  safeParse,
 } from '@agentforge/core';
+import { z } from 'zod';
+import { UXReviewOutputSchema, ReviewIssueSchema } from '../schemas.js';
 import type { ReviewIssue } from '../types.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
@@ -88,40 +90,32 @@ const loadSystemPrompt = (): string => {
 
 /** Parse the LLM output as a UX dashboard review JSON object. */
 export const parseReviewOutput = (output: string): Result<UXReviewOutput> => {
-  const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
+  const parseResult = safeParse(output, UXReviewOutputSchema, 'UX Review');
+  if (!parseResult.ok) return parseResult;
 
-  try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-    const issues = (parsed.issues as ReviewIssue[]) ?? [];
+  const val = parseResult.value as { reviewId: string; issues: ReviewIssue[] };
+  const { reviewId, issues } = val;
 
-    const severityOrder: Record<string, number> = { critical: 0, major: 1, minor: 2 };
-    const sortedIssues = [...issues].sort(
-      (a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3),
-    );
+  const severityOrder: Record<string, number> = { critical: 0, major: 1, minor: 2 };
+  const sortedIssues = [...issues].sort(
+    (a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3),
+  );
 
-    const hasCriticalIn = (category: string): boolean =>
-      sortedIssues.some((i) => i.category === category && i.severity === 'critical');
+  const hasCriticalIn = (category: string): boolean =>
+    sortedIssues.some((i) => i.category === category && i.severity === 'critical');
 
-    const passedAccessibility = !hasCriticalIn('accessibility');
-    const passedDesignSystem = !hasCriticalIn('design_system');
-    const passedVisualFidelity = !hasCriticalIn('visual_fidelity');
+  const passedAccessibility = !hasCriticalIn('accessibility');
+  const passedDesignSystem = !hasCriticalIn('design_system');
+  const passedVisualFidelity = !hasCriticalIn('visual_fidelity');
 
-    return Ok({
-      reviewId: (parsed.reviewId as string) ?? '',
-      issues: sortedIssues,
-      passedAccessibility,
-      passedDesignSystem,
-      passedVisualFidelity,
-      overallPassed: passedAccessibility && passedDesignSystem && passedVisualFidelity,
-    });
-  } catch {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Failed to parse UX dashboard review output: ${jsonStr.slice(0, 200)}`,
-      recoverable: true,
-    });
-  }
+  return Ok({
+    reviewId,
+    issues: sortedIssues,
+    passedAccessibility,
+    passedDesignSystem,
+    passedVisualFidelity,
+    overallPassed: passedAccessibility && passedDesignSystem && passedVisualFidelity,
+  });
 };
 
 // ============================================================================
@@ -133,14 +127,8 @@ interface LLMProvider {
 }
 
 const parseIssuesFromResponse = (content: string): readonly ReviewIssue[] => {
-  try {
-    const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(content);
-    const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
-    const parsed = JSON.parse(jsonStr) as ReviewIssue[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const result = safeParse(content, z.array(ReviewIssueSchema), 'Review Issues');
+  return result.ok ? result.value : [];
 };
 
 const checkAccessibility = async (

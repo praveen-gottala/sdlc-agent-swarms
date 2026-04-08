@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "eventemitter3": "^5.0.4",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@swc/jest": "~0.2.37",
