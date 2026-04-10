@@ -115,3 +115,9 @@ pages:
     designStatus: rendered
     correctionIteration: 0
     designScore: null
+  - id: page-a-user-settings-page-for-profile-and-pre-mnhxuttr
+    name: A user settings page for profile and preferences
+    description: A user settings page for profile and preferences
+    route: /a-user-settings-page-for-profile-and-pre
+    status: draft
+    designStatus: draft

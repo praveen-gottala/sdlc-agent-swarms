@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeYamlFile } from '../../_lib/project-reader';
+import { readYamlFile, writeYamlFile } from '../../_lib/project-reader';
+
+interface ProjectManifestFile {
+  project?: {
+    name?: string;
+    description?: string;
+  };
+}
+
+interface ProjectSpecFile {
+  version: string;
+  app: {
+    name: string;
+    description: string;
+  };
+  adrs: unknown[];
+}
+
+function buildProjectSpecFile(): ProjectSpecFile {
+  const manifest = readYamlFile<ProjectManifestFile>('agentforge.yaml');
+  const existingProjectSpec = readYamlFile<Partial<ProjectSpecFile>>('agentforge/spec/project.yaml');
+
+  return {
+    version: '1.0',
+    app: {
+      name: manifest?.project?.name ?? 'Untitled Project',
+      description: manifest?.project?.description ?? '',
+    },
+    adrs: Array.isArray(existingProjectSpec?.adrs) ? existingProjectSpec.adrs : [],
+  };
+}
 
 /**
  * POST /api/spec/approve
- * Accepts the generated spec and writes pages.yaml, models.yaml, api.yaml.
+ * Accepts the generated spec and writes project.yaml, pages.yaml, models.yaml, api.yaml.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     const written: string[] = [];
+    writeYamlFile('agentforge/spec/project.yaml', buildProjectSpecFile());
+    written.push('project.yaml');
 
     if (pages) {
       // Add required fields for pages.yaml format

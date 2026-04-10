@@ -21,9 +21,9 @@ const PIPELINE_STAGES = [
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { pageId: string } },
+  { params }: { params: Promise<{ pageId: string }> },
 ) {
-  const { pageId } = params;
+  const { pageId } = await params;
 
   // Find the most recent design-penpot run for this page
   const runs = listRuns({ type: 'design-penpot', limit: 10 });

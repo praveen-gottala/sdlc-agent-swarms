@@ -59,7 +59,7 @@ pages:
       - User
     viewports:
       - 1440
-    designStatus: draft
+    designStatus: rendered
     correctionIteration: 0
     designScore: null
   - id: new-claim
@@ -97,6 +97,9 @@ pages:
       - Document
     viewports:
       - 1440
+    designStatus: rendered
+    correctionIteration: 0
+    designScore: null
   - id: claim-detail
     name: Claim Detail
     description: "Full detail view for a single claim in a two-column layout (65%

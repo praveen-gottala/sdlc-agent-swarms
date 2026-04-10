@@ -77,5 +77,19 @@ venv/
 # TypeScript incremental build files
 *.tsbuildinfo
 
+project-yaml-browser-verify-1775164357161
+
+# Backup files
+*.bak
+
+# Test results (Playwright artifacts)
+test-results/
+
 # Test Projects
 zen-mode
+claim-filling
+music-showcase
+music-showcase-v2
+music-showcase-v3
+personal-expense-tracker
+expensetracker

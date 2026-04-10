@@ -986,7 +986,11 @@
       "parent": "filter-bar",
       "order": 3,
       "catalog": "chip",
-      "label": "Transport"
+      "label": "Transport",
+      "layout": {
+        "gap": 0,
+        "mx": 0
+      }
     },
     "filter-chip-housing": {
       "parent": "filter-bar",
@@ -1007,7 +1011,7 @@
       "placeholder": "Search expenses...",
       "width": 200,
       "layout": {
-        "mx": 50
+        "mx": 0
       }
     },
     "expenses-divider": {

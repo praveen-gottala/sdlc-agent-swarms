@@ -14,33 +14,3 @@ tasks:
     max_attempts: 3
     hitl_status: none
     hitl_channel: null
-  - id: task-design-spending-insights-1775032386726
-    title: "Design page: Spending Insights"
-    phase: design
-    agent: ux_research
-    status: completed
-    depends_on: []
-    spec_ref: agentforge/designs/spending-insights.json
-    branch: null
-    pr_number: null
-    cost_usd: 0
-    tokens_used: 0
-    attempts: 0
-    max_attempts: 3
-    hitl_status: none
-    hitl_channel: null
-  - id: task-design-add-expense-1775033192004
-    title: "Design page: Add Expense"
-    phase: design
-    agent: ux_research
-    status: in_progress
-    depends_on: []
-    spec_ref: agentforge/designs/add-expense.json
-    branch: null
-    pr_number: null
-    cost_usd: 0
-    tokens_used: 0
-    attempts: 0
-    max_attempts: 3
-    hitl_status: none
-    hitl_channel: null

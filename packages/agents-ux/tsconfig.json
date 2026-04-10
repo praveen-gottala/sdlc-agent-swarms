@@ -8,6 +8,7 @@
   "references": [
     { "path": "../agents-design" },
     { "path": "../channels" },
-    { "path": "../core" }
+    { "path": "../core" },
+    { "path": "../designspec-renderer" }
   ]
 }

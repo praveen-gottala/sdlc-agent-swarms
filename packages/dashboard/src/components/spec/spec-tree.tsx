@@ -100,7 +100,7 @@ export function SpecTree({ selectedFile, onSelectFile, tree }: SpecTreeProps) {
       <div className="border-b border-white/10 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-200">Spec Files</h2>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav className="flex-1 overflow-y-auto p-6">
         {nodes.map((node) => (
           <TreeItem
             key={node.name}

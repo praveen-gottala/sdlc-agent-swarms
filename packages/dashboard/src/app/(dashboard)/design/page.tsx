@@ -740,7 +740,7 @@ function DesignStudioContent() {
         </div>
       )}
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden px-6">
       {/* Left panel: Page Registry (200px) */}
       <div className="w-[200px] flex-shrink-0 border-r border-border bg-bg-card/30">
         <PageRegistry

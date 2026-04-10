@@ -3,10 +3,11 @@ import { getRunStatus } from '../../_lib/run-manager';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { runId: string } },
+  { params }: { params: Promise<{ runId: string }> },
 ): Promise<NextResponse> {
   try {
-    const run = getRunStatus(params.runId);
+    const { runId } = await params;
+    const run = getRunStatus(runId);
     if (!run) {
       return NextResponse.json({ error: 'Run not found' }, { status: 404 });
     }

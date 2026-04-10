@@ -3,7 +3,7 @@ import { loadCatalogForRenderer, RawCatalogSpec } from './loader.js';
 describe('loadCatalogForRenderer', () => {
   it('returns V2 built-ins when called with no args', () => {
     const catalog = loadCatalogForRenderer();
-    expect(Object.keys(catalog)).toHaveLength(22);
+    expect(Object.keys(catalog)).toHaveLength(25);
   });
 
   it('contains expected built-in entry keys', () => {
@@ -24,6 +24,9 @@ describe('loadCatalogForRenderer', () => {
     expect(catalog['button-secondary']).toBeDefined();
     expect(catalog['button-ghost']).toBeDefined();
     expect(catalog['switch']).toBeDefined();
+    expect(catalog['icon']).toBeDefined();
+    expect(catalog['image']).toBeDefined();
+    expect(catalog['illustration']).toBeDefined();
   });
 
   it('converts PascalCase component names to kebab-case keys', () => {

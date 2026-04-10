@@ -464,6 +464,18 @@ function buildDesignSpecSystemPrompt(
     sections.push('');
   }
 
+  sections.push('## Icons');
+  sections.push('Use `catalog: "icon"` with `overrides: { "name": "<icon-name>" }` for standalone icons.');
+  sections.push('Use `overrides: { "icon": "<icon-name>" }` on buttons, search inputs, and alerts when an inline icon improves clarity.');
+  sections.push('Use only these semantic icon names:');
+  sections.push(`  ${DESIGN_SPEC_ICON_NAMES.join(', ')}`);
+  sections.push('');
+
+  sections.push('## Images and Illustrations');
+  sections.push('Use `catalog: "image"` or `catalog: "illustration"` for placeholder visual assets.');
+  sections.push('Set width, height, and `overrides.alt` to describe the intended visual.');
+  sections.push('');
+
   // Component catalog context — rich anatomy + flat valid values list
   if (componentCatalog) {
     const catalogPrompt = buildComponentCatalogPrompt(componentCatalog as unknown as Parameters<typeof buildComponentCatalogPrompt>[0]);
@@ -474,6 +486,9 @@ function buildDesignSpecSystemPrompt(
     const comps = (componentCatalog as Record<string, unknown>).components;
     if (comps && typeof comps === 'object') {
       const names = Object.keys(comps as Record<string, unknown>);
+      for (const builtIn of ['icon', 'image', 'illustration']) {
+        if (!names.includes(builtIn)) names.push(builtIn);
+      }
       sections.push('## Valid catalog values');
       sections.push('When setting catalog: on a node, use ONLY these exact names:');
       sections.push(names.map(n => `  - ${n}`).join('\n'));
@@ -537,6 +552,18 @@ interface LLMResult {
   error?: string;
   meta?: LLMCallMeta;
 }
+
+const DESIGN_SPEC_ICON_NAMES = [
+  'home', 'menu', 'arrow-left', 'arrow-right', 'chevron-down', 'chevron-up', 'chevron-left', 'chevron-right', 'external-link', 'arrow-up', 'arrow-down',
+  'search', 'filter', 'sort', 'plus', 'minus', 'edit', 'delete', 'copy', 'share', 'download', 'upload', 'refresh', 'more', 'more-vertical', 'close',
+  'expand', 'collapse', 'undo', 'redo',
+  'check', 'check-circle', 'x-circle', 'alert-circle', 'info', 'alert-triangle', 'clock', 'loader', 'circle', 'circle-dot',
+  'user', 'users', 'mail', 'phone', 'calendar', 'file', 'file-text', 'folder', 'image', 'link', 'tag', 'bookmark', 'star', 'heart', 'thumbs-up',
+  'map-pin', 'globe', 'hash', 'list', 'grid', 'bar-chart', 'pie-chart', 'trending-up', 'trending-down',
+  'shopping-cart', 'credit-card', 'dollar-sign', 'receipt', 'wallet', 'percent',
+  'bell', 'message-circle', 'message-square', 'send', 'at-sign',
+  'settings', 'lock', 'unlock', 'eye', 'eye-off', 'toggle-left', 'toggle-right', 'shield', 'key', 'log-out', 'log-in', 'zap', 'help-circle',
+] as const;
 
 /* ------------------------------------------------------------------ */
 /*  Full pipeline handler (Research → Planning → Design)               */

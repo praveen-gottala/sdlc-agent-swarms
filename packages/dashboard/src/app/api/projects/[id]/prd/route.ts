@@ -12,9 +12,10 @@ function resolveProjectDir(id: string): string | null {
 /** GET /api/projects/[id]/prd — returns current PRD content */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const projectDir = resolveProjectDir(params.id);
+  const { id } = await params;
+  const projectDir = resolveProjectDir(id);
   if (!projectDir) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
@@ -31,9 +32,10 @@ export async function GET(
 /** POST /api/projects/[id]/prd — write PRD content */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const projectDir = resolveProjectDir(params.id);
+  const { id } = await params;
+  const projectDir = resolveProjectDir(id);
   if (!projectDir) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }

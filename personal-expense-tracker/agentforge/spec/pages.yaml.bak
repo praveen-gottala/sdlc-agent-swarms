@@ -67,7 +67,7 @@ pages:
       - QuickAddSuggestion
     viewports:
       - 1440
-    designStatus: draft
+    designStatus: rendered
     correctionIteration: 0
     designScore: null
   - id: spending-insights
@@ -115,82 +115,7 @@ pages:
     designStatus: rendered
     correctionIteration: 0
     designScore: null
-  - id: page_dashboard_owk437
-    description: dashboard
-    status: requested
-    created_at: 2026-03-29T09:20:32.069Z
-  - id: page_dashboard_dfrajf
-    description: dashboard
-    status: requested
-    created_at: 2026-03-29T09:40:47.394Z
-  - id: page-a-user-settings-page-for-profile-and-pre-mnesz6yw
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-    correctionIteration: 0
-  - id: page-a-user-settings-page-for-profile-and-pre-mnet1351
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnet285a
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnet5otf
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnet7q5r
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnf1i1os
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnf3zoo3
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnf6xhob
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnfjpp5o
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnfjyxf1
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnfm2grw
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-  - id: page-a-user-settings-page-for-profile-and-pre-mnfnz7pz
+  - id: page-a-user-settings-page-for-profile-and-pre-mnhxuttr
     name: A user settings page for profile and preferences
     description: A user settings page for profile and preferences
     route: /a-user-settings-page-for-profile-and-pre

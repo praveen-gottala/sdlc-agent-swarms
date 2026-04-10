@@ -105,3 +105,23 @@ export type { ParentMessage, ChildMessage } from './renderer/browser/iframe-prot
 export { getRenderableCatalogIds, registerCatalogRenderer } from './renderer/penpot/components/index.js';
 export { generateRenderer, generateCatalogEntry } from './renderer/penpot/components/catalog-dynamic.js';
 export type { DynamicCatalogSource, AnatomySlot } from './renderer/penpot/components/catalog-dynamic.js';
+
+// ─── Icons ──────────────────────────────────────────────
+export { ICON_MAP, resolveIconName, getIconComponentName, getCanonicalIconNames } from './icons/icon-map.js';
+export type { IconEntry } from './icons/icon-map.js';
+
+// ─── Source Extraction (Brownfield Import) ──────────────
+export { detectStack } from './extraction/detect-stack.js';
+export { discoverRoutes } from './extraction/discover-routes.js';
+export { extractCSSVariables } from './extraction/extract-css-variables.js';
+export { scanComponentUsage } from './extraction/scan-component-usage.js';
+export type {
+  Framework,
+  ComponentLibraryId,
+  StylingApproach,
+  DetectedStack,
+  RouteInfo,
+  ComponentUsage,
+  CSSVariable,
+  SourceIntelligence,
+} from './extraction/types.js';

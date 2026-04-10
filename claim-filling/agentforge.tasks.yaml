@@ -14,3 +14,33 @@ tasks:
     max_attempts: 3
     hitl_status: none
     hitl_channel: null
+  - id: task-design-claims-list-1775153901707
+    title: "Design page: Claims List"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/claims-list.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null
+  - id: task-design-new-claim-1775484296765
+    title: "Design page: New Claim Form"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/new-claim.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null

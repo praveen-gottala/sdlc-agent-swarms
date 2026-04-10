@@ -55,6 +55,7 @@ export function OnboardingWizard() {
   // Listen for postMessage from iframe
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
       if (event.data?.source !== 'agentforge-design-preview') return;
       if (event.data.type === 'design-option-selected') {
         setSelectedOptionIndex(event.data.optionIndex);
@@ -513,7 +514,7 @@ export function OnboardingWizard() {
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-xs">
+    <div className="flex justify-between text-xs gap-6">
       <span className="text-text-muted">{label}</span>
       <span className="text-text-primary font-medium capitalize">{value}</span>
     </div>

@@ -14,6 +14,7 @@ import type { DesignSpecV2, LayoutSpec } from '@shared/types/design-spec-v2';
 import type { RendererTokens } from '@shared/types/tokens';
 import type { CatalogMap, TreeNode, ResolvedNode } from '@shared/types/catalog';
 import type { TokenColorMap } from '@shared/renderer/token-resolver';
+import { getIconComponentName } from '@shared/icons/icon-map';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +31,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+// Full icon bundle is acceptable here because this browser app is a dev-time
+// renderer used for design review, not production UI code.
+import * as lucideIcons from 'lucide-react';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -264,6 +268,80 @@ function getTypographyStyles(
   const weight = weightOverride ?? typo.fontWeight;
   if (weight) s.fontWeight = weight;
   return s;
+}
+
+type LucideIconComponent = React.ComponentType<{
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+  style?: React.CSSProperties;
+}>;
+
+function isRenderableIconComponent(candidate: unknown): candidate is LucideIconComponent {
+  return typeof candidate === 'function'
+    || (typeof candidate === 'object' && candidate !== null && 'render' in candidate);
+}
+
+function getLucideIconComponent(iconName: unknown): LucideIconComponent | null {
+  if (typeof iconName !== 'string') return null;
+  const componentName = getIconComponentName(iconName);
+  if (!componentName) return null;
+  const candidate = (lucideIcons as Record<string, unknown>)[componentName];
+  return isRenderableIconComponent(candidate) ? candidate : null;
+}
+
+function getAlertDefaultIconName(node: ResolvedNode): string {
+  const variant = typeof node.overrides?.variant === 'string' ? node.overrides.variant.toLowerCase() : '';
+  const bg = (node.background ?? '').toLowerCase();
+  if (variant.includes('success') || bg.includes('success')) return 'check-circle';
+  if (variant.includes('error') || variant.includes('danger') || bg.includes('error')) return 'alert-circle';
+  if (variant.includes('warning') || bg.includes('warning')) return 'alert-triangle';
+  return 'info';
+}
+
+function renderAssetPlaceholder(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+  kind: 'image' | 'illustration',
+): React.ReactNode {
+  const defaultWidth = kind === 'image' ? 400 : 240;
+  const defaultHeight = kind === 'image' ? 300 : 200;
+  const alt = typeof node.overrides?.alt === 'string'
+    ? node.overrides.alt
+    : kind === 'image' ? 'Image placeholder' : 'Illustration placeholder';
+  const IconComponent = kind === 'image'
+    ? getLucideIconComponent('image')
+    : (isRenderableIconComponent(lucideIcons.Palette) ? lucideIcons.Palette : null);
+  const borderRadius = kind === 'image' ? 8 : 12;
+  const textColor = resolveTokenColor('text-secondary', tokenMap) ?? '#888';
+  const backgroundColor = resolveTokenColor(node.background ?? 'surface-secondary', tokenMap) ?? '#f0f0f0';
+
+  return (
+    <div
+      key={node.id}
+      data-node={node.id}
+      data-catalog={kind}
+      style={{
+        width: node.width === 'fill' ? '100%' : defaultWidth,
+        height: node.height ?? defaultHeight,
+        backgroundColor,
+        borderRadius,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        color: textColor,
+        fontSize: 13,
+        border: '1px dashed currentColor',
+        ...common,
+      }}
+    >
+      {IconComponent ? <IconComponent size={32} strokeWidth={1.5} /> : null}
+      <span>{alt}</span>
+    </div>
+  );
 }
 
 function getShadowStyle(
@@ -532,7 +610,7 @@ function renderCatalog(
 
   // Button variants (both "button-primary" style and bare "Button" catalog)
   if (catalogId === 'button' || catalogId.startsWith('button-')) {
-    return renderButtonVariant(node, catalogId, tokenMap, common);
+    return renderButtonVariant(node, catalogId, common);
   }
 
   // Badge variants
@@ -541,12 +619,58 @@ function renderCatalog(
   }
 
   switch (catalogId) {
+    case 'icon': {
+      const iconName = node.overrides?.name ?? node.label ?? node.content;
+      const size = typeof node.overrides?.size === 'number' ? node.overrides.size : 20;
+      const IconComponent = getLucideIconComponent(iconName);
+      const color = resolveTokenColor(node.color ?? 'text-primary', tokenMap) ?? 'currentColor';
+      const wrapperStyle: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        color,
+        ...common,
+      };
+
+      if (IconComponent) {
+        return (
+          <span key={node.id} data-node={node.id} data-catalog="icon" style={wrapperStyle}>
+            <IconComponent size={size} color="currentColor" strokeWidth={1.75} />
+          </span>
+        );
+      }
+
+      return (
+        <div
+          key={node.id}
+          data-node={node.id}
+          data-catalog="icon"
+          style={{
+            ...wrapperStyle,
+            border: '1px dashed currentColor',
+            borderRadius: 4,
+            fontSize: size * 0.6,
+            opacity: 0.5,
+          }}
+        >
+          ?
+        </div>
+      );
+    }
+    case 'image':
+      return renderAssetPlaceholder(node, tokenMap, common, 'image');
+    case 'illustration':
+      return renderAssetPlaceholder(node, tokenMap, common, 'illustration');
     case 'data-table':
       return renderDataTable(node, tokenMap, common);
     case 'link':
       return renderLink(node, tokenMap, common);
     case 'avatar':
       return renderAvatar(node, common);
+    case 'alert':
+      return renderAlertNode(node, tokenMap, common);
     case 'card':
       return renderCard(node, children, tokens, tokenMap);
     case 'input-text':
@@ -565,6 +689,9 @@ function renderCatalog(
       return renderDisplayReadonly(node, tokens, tokenMap, common);
     case 'checkbox':
       return renderCheckboxNode(node, tokens, tokenMap, common);
+    case 'switch':
+    case 'toggle':
+      return renderSwitchNode(node, tokenMap, common);
     case 'stat':
       return renderStat(node, tokens, tokenMap, common);
     case 'chip': {
@@ -719,7 +846,6 @@ function renderCatalog(
 function renderButtonVariant(
   node: ResolvedNode,
   catalogId: string,
-  tokenMap: TokenColorMap,
   common: React.CSSProperties,
 ): React.ReactNode {
   const catalogVariantMap: Record<string, string> = {
@@ -740,13 +866,25 @@ function renderButtonVariant(
     ?? (overrideVariant ? overrideVariantMap[overrideVariant] : undefined)
     ?? 'default';
   const size = (node.overrides?.size as string) ?? 'default';
+  // Buttons should not inherit fill width from catalog defaults — use auto unless explicitly sized
+  const { width: _dropWidth, ...commonWithoutWidth } = common;
+  const explicitWidth = node.width !== undefined && node.width !== 'fill' ? common.width : undefined;
   const style: React.CSSProperties = {
-    ...common,
+    ...commonWithoutWidth,
     borderRadius: node.radius,
+    ...(explicitWidth ? { width: explicitWidth } : {}),
   };
+  const iconPosition = node.overrides?.iconPosition === 'trailing' ? 'trailing' : 'leading';
+  const IconComponent = getLucideIconComponent(node.overrides?.icon);
+  const label = node.label ?? 'Button';
+
   return (
     <Button key={node.id} data-node={node.id} data-catalog={catalogId} variant={variant} size={size} style={style}>
-      {node.label ?? 'Button'}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        {IconComponent && iconPosition === 'leading' ? <IconComponent size={16} strokeWidth={2} /> : null}
+        <span>{label}</span>
+        {IconComponent && iconPosition === 'trailing' ? <IconComponent size={16} strokeWidth={2} /> : null}
+      </span>
     </Button>
   );
 }
@@ -911,15 +1049,67 @@ function renderInputCurrency(
 }
 
 function renderSearchInput(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
+  const IconComponent = getLucideIconComponent(node.overrides?.icon ?? 'search');
   return (
-    <Input
+    <div
       key={node.id}
       data-node={node.id}
       data-catalog="search-input"
-      type="search"
-      placeholder={node.placeholder ?? 'Search...'}
-      style={Object.keys(common).length ? common : undefined}
-    />
+      style={{ position: 'relative', display: 'flex', alignItems: 'center', ...common }}
+    >
+      {IconComponent ? (
+        <IconComponent
+          size={16}
+          strokeWidth={1.75}
+          style={{ position: 'absolute', left: 12, opacity: 0.5, pointerEvents: 'none' }}
+        />
+      ) : null}
+      <Input
+        type="search"
+        placeholder={node.placeholder ?? 'Search...'}
+        style={{ paddingLeft: IconComponent ? 36 : undefined }}
+      />
+    </div>
+  );
+}
+
+function renderAlertNode(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const title = node.label ?? node.title ?? '';
+  const body = node.content ?? (node.value !== undefined ? String(node.value) : '');
+  const background = resolveTokenColor(node.background ?? 'surface-secondary', tokenMap) ?? '#f8fafc';
+  const borderColor = resolveTokenColor(node.catalogEntry?.border_color as string | undefined ?? 'border-default', tokenMap) ?? '#cbd5e1';
+  const textColor = resolveTokenColor(node.color ?? node.catalogEntry?.text_color as string | undefined ?? 'text-primary', tokenMap) ?? '#0f172a';
+  const opacity = typeof node.catalogEntry?.opacity === 'number' ? node.catalogEntry.opacity : undefined;
+  const effectiveBackground = opacity !== undefined ? hexToRgba(background, opacity) : background;
+  const IconComponent = getLucideIconComponent(node.overrides?.icon ?? getAlertDefaultIconName(node));
+
+  return (
+    <div
+      key={node.id}
+      data-node={node.id}
+      data-catalog="alert"
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+        padding: '12px 16px',
+        borderRadius: node.radius ?? 12,
+        border: `1px solid ${borderColor}`,
+        backgroundColor: effectiveBackground,
+        color: textColor,
+        ...common,
+      }}
+    >
+      {IconComponent ? <IconComponent size={18} color="currentColor" strokeWidth={1.9} /> : null}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: body ? 4 : 0 }}>
+        {title ? <span style={{ fontSize: 13, fontWeight: 600 }}>{title}</span> : null}
+        {body ? <span style={{ fontSize: 13, opacity: 0.9 }}>{body}</span> : null}
+      </div>
+    </div>
   );
 }
 
@@ -1068,12 +1258,49 @@ function renderCheckboxNode(
       data-catalog="checkbox"
       style={{ ...common, display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
     >
-      <Checkbox id={node.id} />
+      <Checkbox id={node.id} defaultChecked={node.value === true || node.value === 'true' || node.value === 'on' || !!(node.overrides?.checked)} />
       {node.label && (
         <label htmlFor={node.id} style={{ fontSize: 14, color: fg, cursor: 'pointer' }}>
           {node.label}
         </label>
       )}
+    </div>
+  );
+}
+
+function renderSwitchNode(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const isOn = node.value === 'on' || node.value === true || node.value === 'true';
+  const ctaPrimary = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+  const trackBg = isOn ? ctaPrimary : '#d1d5db';
+  return (
+    <div
+      key={node.id}
+      data-node={node.id}
+      data-catalog="switch"
+      style={{ ...common, display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
+    >
+      {node.label && (
+        <span style={{ fontSize: 14, color: resolveTokenColor('text-primary', tokenMap), flex: 1 }}>
+          {node.label}
+        </span>
+      )}
+      <div style={{
+        width: 44, height: 24, borderRadius: 12, backgroundColor: trackBg,
+        position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff',
+          position: 'absolute', top: 2,
+          left: isOn ? 22 : 2,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          transition: 'left 0.2s',
+        }} />
+      </div>
     </div>
   );
 }
@@ -1104,8 +1331,67 @@ function renderProgressBar(node: ResolvedNode, common: React.CSSProperties): Rea
   );
 }
 
-function renderDataTableCell(value: unknown, tokenMap: TokenColorMap): React.ReactNode {
+function renderDataTableCell(value: unknown, tokenMap: TokenColorMap, colKey?: string, row?: Record<string, unknown>): React.ReactNode {
   if (value === null || value === undefined) return '';
+
+  // Render badge-style cells when a matching _variant key exists in the row
+  if (typeof value === 'string' && row && colKey) {
+    const variantKey = `${colKey}_variant`;
+    const variant = row[variantKey] as string | undefined;
+    if (variant) {
+      const ctaPrimary = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+      const errorColor = resolveTokenColor('error', tokenMap) ?? '#ef4444';
+      const surfaceSecondary = resolveTokenColor('surface-secondary', tokenMap) ?? '#f1f5f9';
+      const textSecondary = resolveTokenColor('text-secondary', tokenMap) ?? '#64748b';
+      const borderDefault = resolveTokenColor('border-default', tokenMap) ?? '#cbd5e1';
+      const variantColors: Record<string, { bg: string; fg: string }> = {
+        'default': { bg: ctaPrimary, fg: '#fff' },
+        'destructive': { bg: errorColor, fg: '#fff' },
+        'secondary': { bg: surfaceSecondary, fg: textSecondary },
+        'outline': { bg: 'transparent', fg: textSecondary },
+      };
+      const colors = variantColors[variant] ?? variantColors['secondary'];
+      return (
+        <span style={{
+          display: 'inline-block', padding: '2px 10px', borderRadius: 9999,
+          fontSize: 12, fontWeight: 500,
+          backgroundColor: colors.bg, color: colors.fg,
+          border: variant === 'outline' ? `1px solid ${borderDefault}` : 'none',
+        }}>
+          {value}
+        </span>
+      );
+    }
+
+    // Render avatar cells: detect by presence of 'initials' key in the same row
+    if (row.initials) {
+      // Show avatar for the FIRST text column that has sibling initials data
+      const allKeys = Object.keys(row).filter(k => !k.endsWith('_variant') && k !== 'initials' && k !== 'checkbox');
+      const isFirstTextCol = allKeys.indexOf(colKey) === 0;
+      if (isFirstTextCol) {
+        const ctaPrimary = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+        // Find a secondary text field (email, description, etc.) — second string column
+        const secondaryField = allKeys.find((k, i) => i > 0 && typeof row[k] === 'string' && !row[`${k}_variant`]);
+        return (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              width: 32, height: 32, borderRadius: 16, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: `${ctaPrimary}18`, color: ctaPrimary,
+              fontSize: 11, fontWeight: 600, flexShrink: 0,
+            }}>
+              {String(row.initials)}
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: 500 }}>{value}</span>
+              {secondaryField && <span style={{ fontSize: 12, color: resolveTokenColor('text-secondary', tokenMap) ?? '#94a3b8' }}>{String(row[secondaryField])}</span>}
+            </span>
+          </span>
+        );
+      }
+    }
+  }
+
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
@@ -1151,16 +1437,35 @@ function renderDataTableCell(value: unknown, tokenMap: TokenColorMap): React.Rea
   return JSON.stringify(value);
 }
 
-/** Renders DesignSpec `catalog: DataTable` with rows/columns in `overrides`. */
+/** Renders DesignSpec `catalog: DataTable` with rows/columns in `overrides` or flat `items`. */
 function renderDataTable(
   node: ResolvedNode,
   tokenMap: TokenColorMap,
   common: React.CSSProperties,
 ): React.ReactNode {
   const ov = node.overrides ?? {};
-  const columns = (ov.columns as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
-  const rows = (ov.rows as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
+  let columns = (ov.columns as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
+  let rows = (ov.rows as ReadonlyArray<Record<string, unknown>> | undefined) ?? [];
   const caption = ov.caption !== undefined ? String(ov.caption) : '';
+
+  // Support flat `items` array: auto-derive columns from object keys
+  const items = node.items as ReadonlyArray<Record<string, unknown>> | undefined;
+  if ((columns.length === 0 || rows.length === 0) && items && items.length > 0) {
+    const allKeys = new Set<string>();
+    for (const item of items) {
+      for (const key of Object.keys(item)) allKeys.add(key);
+    }
+    // Filter out internal/variant/meta keys
+    const skipKeys = new Set<string>();
+    for (const key of allKeys) {
+      if (key === 'checkbox' || key === 'initials') skipKeys.add(key);
+      if (key.endsWith('_variant')) skipKeys.add(key);
+    }
+    columns = Array.from(allKeys)
+      .filter(k => !skipKeys.has(k))
+      .map(k => ({ key: k, label: k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') }));
+    rows = items as ReadonlyArray<Record<string, unknown>>;
+  }
 
   if (columns.length === 0 || rows.length === 0) {
     return (
@@ -1219,7 +1524,7 @@ function renderDataTable(
                       verticalAlign: 'middle',
                     }}
                   >
-                    {renderDataTableCell(cell, tokenMap)}
+                    {renderDataTableCell(cell, tokenMap, key, row)}
                   </td>
                 );
               })}

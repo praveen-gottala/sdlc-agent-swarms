@@ -83,6 +83,31 @@ Use **node-level fields first**; reserve `overrides` for accessibility, cursor, 
 - **Separators between list rows:** use **`type: "divider"`** nodes. Do **not** simulate borders with `overrides` like `border-bottom` unless there is no other way.
 - **Hex colors:** avoid hex in the spec; prefer semantic tokens so Penpot and the browser stay aligned.
 
+### Icons
+
+Use `catalog: "icon"` for standalone icon nodes. Set `overrides: { "name": "<semantic-name>" }`.
+
+Use `overrides: { "icon": "<semantic-name>" }` on supported components such as buttons, search inputs, and alerts to add an inline icon.
+
+For icon + text pairs, create a parent `type: "container"` with `layout: { "dir": "row", "gap": 8, "align": "center" }`, then add the icon and text as sibling child nodes using `parent`.
+
+Available semantic icon names (use ONLY these; pick the closest semantic match instead of inventing a new name):
+- Navigation: `home`, `menu`, `arrow-left`, `arrow-right`, `chevron-down`, `chevron-up`, `chevron-left`, `chevron-right`, `external-link`, `arrow-up`, `arrow-down`
+- Actions: `search`, `filter`, `sort`, `plus`, `minus`, `edit`, `delete`, `copy`, `share`, `download`, `upload`, `refresh`, `more`, `more-vertical`, `close`, `expand`, `collapse`, `undo`, `redo`
+- Status: `check`, `check-circle`, `x-circle`, `alert-circle`, `info`, `alert-triangle`, `clock`, `loader`, `circle`, `circle-dot`
+- Content: `user`, `users`, `mail`, `phone`, `calendar`, `file`, `file-text`, `folder`, `image`, `link`, `tag`, `bookmark`, `star`, `heart`, `thumbs-up`, `map-pin`, `globe`, `hash`, `list`, `grid`, `bar-chart`, `pie-chart`, `trending-up`, `trending-down`
+- Commerce: `shopping-cart`, `credit-card`, `dollar-sign`, `receipt`, `wallet`, `percent`
+- Communication: `bell`, `message-circle`, `message-square`, `send`, `at-sign`
+- Settings: `settings`, `lock`, `unlock`, `eye`, `eye-off`, `toggle-left`, `toggle-right`, `shield`, `key`, `log-out`, `log-in`, `zap`, `help-circle`
+
+### Images and Illustrations
+
+Use `catalog: "image"` for content-image placeholders. Set width, height, and `overrides: { "alt": "description" }`.
+
+Use `catalog: "illustration"` for decorative placeholders such as empty states or onboarding art. Set width, height, and `overrides: { "alt": "description" }`.
+
+These render as placeholders at the correct size. Real image or illustration assets are supplied after design generation.
+
 ### Colors & Typography
 
 Always use semantic token names, never hex values:
