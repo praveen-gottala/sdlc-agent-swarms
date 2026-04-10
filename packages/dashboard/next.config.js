@@ -4,6 +4,7 @@ const nextConfig = {
     '@agentforge/core',
     '@agentforge/agents-ux',
     '@agentforge/designspec-renderer',
+    '@agentforge/providers',
     '@agentforge/cli',
   ],
   eslint: {

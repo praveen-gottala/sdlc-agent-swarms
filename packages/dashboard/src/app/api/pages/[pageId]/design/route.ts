@@ -7,7 +7,6 @@ import {
   readTextFile,
   fileExists,
   getActiveProjectRoot,
-  getEnvVar,
 } from '../../../_lib/project-reader';
 import { buildComponentCatalogPrompt } from '@agentforge/agents-ux';
 import { startRun, updateRunStatus, completeRun, failRun } from '../../../_lib/run-manager';
@@ -20,21 +19,9 @@ import {
   createRealFs,
 } from '@agentforge/core';
 import type { TaskEntry } from '@agentforge/core';
-
-/* ------------------------------------------------------------------ */
-/*  LLM pricing for cost estimation                                    */
-/* ------------------------------------------------------------------ */
-
-const MODEL_PRICING: Record<string, { inputPerMTok: number; outputPerMTok: number }> = {
-  'claude-sonnet-4-6': { inputPerMTok: 3.0, outputPerMTok: 15.0 },
-  'claude-opus-4-6': { inputPerMTok: 15.0, outputPerMTok: 75.0 },
-  'claude-haiku-4-5': { inputPerMTok: 0.80, outputPerMTok: 4.0 },
-};
-
-function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
-  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING['claude-sonnet-4-6'];
-  return (inputTokens * pricing.inputPerMTok + outputTokens * pricing.outputPerMTok) / 1_000_000;
-}
+import type { LLMProvider } from '@agentforge/providers';
+import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
+import { debugLog } from '@agentforge/core';
 
 /* ------------------------------------------------------------------ */
 /*  LLM response metadata                                              */
@@ -214,22 +201,19 @@ export async function POST(
   let mechanicalIssues: unknown[] = [];
   let pipelineNote: string | null = null;
 
-  const apiKey = getEnvVar('ANTHROPIC_API_KEY');
+  const claude = getClaudeProvider();
 
-  if (!apiKey) {
-    // No API key — cannot call LLM. Revert status and return error.
+  if (!claude) {
+    // No auth — cannot call LLM. Revert status and return error.
     pages[idx].designStatus = 'draft';
     writeYamlFile('agentforge/spec/pages.yaml', { pages });
     return NextResponse.json(
-      {
-        error: 'Design generation requires ANTHROPIC_API_KEY to be set. ' +
-          'Add it to the monorepo root .env file or set it as an environment variable.',
-        pageId,
-        designStatus: 'draft',
-      },
+      { error: NO_CLAUDE_AUTH_ERROR, pageId, designStatus: 'draft' },
       { status: 503 },
     );
   }
+
+  const provider = claude.provider;
 
   // Transition task to in_progress
   transitionTaskStatus(taskId, 'in_progress');
@@ -251,8 +235,8 @@ export async function POST(
       pageId,
     );
 
-    // Call the Anthropic API directly using fetch (avoids SDK dependency)
-    const llmResponse = await callAnthropicAPI(apiKey, systemPrompt, description, SUBMIT_DESIGN_TOOL);
+    // Call Claude via provider abstraction (supports both direct API and Vertex AI)
+    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, description, SUBMIT_DESIGN_TOOL);
 
     if (!llmResponse.ok) {
       throw new Error(`LLM API call failed: ${llmResponse.error}`);
@@ -350,7 +334,7 @@ export async function POST(
         designStatus: 'draft',
         pipelineNote:
           'The design pipeline requires: ' +
-          '(1) ANTHROPIC_API_KEY env var, ' +
+          '(1) Claude auth (ANTHROPIC_API_KEY or Vertex AI config), ' +
           '(2) @agentforge/designspec-renderer built and linked, ' +
           '(3) A valid page description in pages.yaml. ' +
           'For the full pipeline with Penpot export and browser correction, ' +
@@ -570,13 +554,15 @@ const DESIGN_SPEC_ICON_NAMES = [
 /* ------------------------------------------------------------------ */
 
 async function handleFullPipeline(pageId: string): Promise<NextResponse> {
-  const apiKey = getEnvVar('ANTHROPIC_API_KEY');
-  if (!apiKey) {
+  const claude = getClaudeProvider();
+  if (!claude) {
     return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY is required for the full pipeline' },
+      { error: NO_CLAUDE_AUTH_ERROR },
       { status: 503 },
     );
   }
+
+  const pipelineProvider = claude.provider;
 
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
   const pages = pagesFile?.pages ?? [];
@@ -633,7 +619,7 @@ async function handleFullPipeline(pageId: string): Promise<NextResponse> {
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
   // Fire-and-forget: run pipeline in background
-  runFullPipelineAsync(runId, pageId, apiKey, taskId).catch(() => {
+  runFullPipelineAsync(runId, pageId, pipelineProvider, taskId).catch(() => {
     // Ensure we always fail the run on uncaught error
     failRun(runId, 'Unexpected pipeline error');
   });
@@ -660,7 +646,7 @@ function transitionTaskStatus(taskId: string, newStatus: Parameters<typeof updat
 async function runFullPipelineAsync(
   runId: string,
   pageId: string,
-  apiKey: string,
+  provider: LLMProvider,
   taskId: string,
 ): Promise<void> {
   const TOTAL_STAGES = 3;
@@ -708,7 +694,7 @@ async function runFullPipelineAsync(
       'Calling LLM for UX research analysis — this may take 1-2 minutes...');
     updateRunStatus(runId, { stageDescription: 'Calling LLM for UX research analysis' });
 
-    const researchResponse = await callPipelineStage(apiKey, 'research', {
+    const researchResponse = await callPipelineStage(provider, 'research', {
       description,
       prdContent,
       designTokens: designTokens ? JSON.stringify(designTokens) : null,
@@ -749,7 +735,7 @@ async function runFullPipelineAsync(
       'Calling LLM for component tree and layout planning — this may take 1-2 minutes...');
     updateRunStatus(runId, { stageDescription: 'Calling LLM for layout planning' });
 
-    const planningResponse = await callPipelineStage(apiKey, 'planning', {
+    const planningResponse = await callPipelineStage(provider, 'planning', {
       description,
       researchBrief: researchResult,
       designTokens: designTokens ? JSON.stringify(designTokens) : null,
@@ -817,7 +803,7 @@ async function runFullPipelineAsync(
       `Calling LLM to generate DesignSpec v2 JSON (${(systemPrompt.length / 1024).toFixed(0)}KB prompt) — this is the longest stage, typically 2-3 minutes...`);
     updateRunStatus(runId, { stageDescription: 'Generating DesignSpec via LLM' });
 
-    const llmResponse = await callAnthropicAPI(apiKey, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL);
+    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL);
 
     if (!llmResponse.ok) {
       emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'error',
@@ -908,7 +894,7 @@ async function runFullPipelineAsync(
 }
 
 async function callPipelineStage(
-  apiKey: string,
+  provider: LLMProvider,
   stage: 'research' | 'planning',
   context: Record<string, string | null>,
   pageName?: string,
@@ -935,45 +921,40 @@ async function callPipelineStage(
 
   const startTime = Date.now();
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 8192,
+  const result = await provider.complete(
+    {
       system: systemPrompts[stage],
       messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
+    },
+    { model, maxTokens: 8192 },
+  );
 
   const durationMs = Date.now() - startTime;
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`${stage} stage API error ${response.status}: ${text}`);
+  if (!result.ok) {
+    const error = result.error;
+    const detail = 'message' in error ? error.message : JSON.stringify(error);
+    throw new Error(`${stage} stage API error (${error.code}): ${detail}`);
   }
 
-  const result = await response.json();
-  const textBlock = result.content?.find((b: { type: string }) => b.type === 'text');
-  const usage: LLMUsage = result.usage ?? { input_tokens: 0, output_tokens: 0 };
-  const costUsd = calculateCost(model, usage.input_tokens, usage.output_tokens);
+  const usage: LLMUsage = {
+    input_tokens: result.value.usage.inputTokens,
+    output_tokens: result.value.usage.outputTokens,
+  };
+  const costUsd = result.value.cost.totalCostUsd;
 
   return {
-    text: textBlock?.text ?? '',
+    text: result.value.content,
     meta: { model, usage, durationMs, costUsd },
   };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Anthropic API caller (direct fetch, no SDK dependency)             */
+/*  Claude design API caller (uses provider abstraction for Vertex AI) */
 /* ------------------------------------------------------------------ */
 
-async function callAnthropicAPI(
-  apiKey: string,
+async function callClaudeDesignAPI(
+  provider: LLMProvider,
   systemPrompt: string,
   userMessage: string,
   submitDesignTool: { name: string; description: string; parameters: Record<string, unknown> },
@@ -982,70 +963,65 @@ async function callAnthropicAPI(
   const maxTokens = retryWithHigherTokens ? 32768 : 16384;
   const model = 'claude-sonnet-4-6';
 
-  const body = {
-    model,
-    max_tokens: maxTokens,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate a DesignSpec v2 JSON for this page. Use the submit_design tool to provide the complete specification.\n\nPage: ${userMessage}`,
-      },
-    ],
-    tools: [
-      {
-        name: submitDesignTool.name,
-        description: submitDesignTool.description,
-        input_schema: submitDesignTool.parameters,
-      },
-    ],
-    tool_choice: { type: 'tool', name: 'submit_design' },
-  };
-
   const startTime = Date.now();
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+  const result = await provider.complete(
+    {
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate a DesignSpec v2 JSON for this page. Use the submit_design tool to provide the complete specification.\n\nPage: ${userMessage}`,
+        },
+      ],
+      tools: [
+        {
+          name: submitDesignTool.name,
+          description: submitDesignTool.description,
+          parameters: submitDesignTool.parameters,
+        },
+      ],
     },
-    body: JSON.stringify(body),
-  });
+    {
+      model,
+      maxTokens,
+      toolChoice: { type: 'tool', name: 'submit_design' },
+    },
+  );
 
   const durationMs = Date.now() - startTime;
 
-  if (!response.ok) {
-    const text = await response.text();
-    return { ok: false, error: `Anthropic API returned ${response.status}: ${text}` };
+  if (!result.ok) {
+    const error = result.error;
+    const detail = 'message' in error ? error.message : JSON.stringify(error);
+    return { ok: false, error: `Claude API error (${error.code}): ${detail}` };
   }
 
-  const result = await response.json();
-  const usage: LLMUsage = result.usage ?? { input_tokens: 0, output_tokens: 0 };
-  const costUsd = calculateCost(model, usage.input_tokens, usage.output_tokens);
+  const usage: LLMUsage = {
+    input_tokens: result.value.usage.inputTokens,
+    output_tokens: result.value.usage.outputTokens,
+  };
+  const costUsd = result.value.cost.totalCostUsd;
   const meta: LLMCallMeta = { model, usage, durationMs, costUsd };
 
   // Check for truncation due to token limits
-  if (result.stop_reason === 'max_tokens' && !retryWithHigherTokens) {
+  if (result.value.finishReason === 'max_tokens' && !retryWithHigherTokens) {
     // Retry once with higher token limit
-    return callAnthropicAPI(apiKey, systemPrompt, userMessage, submitDesignTool, true);
+    return callClaudeDesignAPI(provider, systemPrompt, userMessage, submitDesignTool, true);
   }
 
-  if (result.stop_reason === 'max_tokens') {
+  if (result.value.finishReason === 'max_tokens') {
     return {
       ok: false,
-      error: `LLM response was truncated (stop_reason: max_tokens, max_tokens: ${maxTokens}). The page may be too complex for a single generation pass.`,
+      error: `LLM response was truncated (finishReason: max_tokens, max_tokens: ${maxTokens}). The page may be too complex for a single generation pass.`,
       meta,
     };
   }
 
-  // Extract the tool use result from the response content
-  const toolUseBlock = result.content?.find(
-    (block: { type: string }) => block.type === 'tool_use',
-  );
+  // Extract the tool use result from the response
+  const toolCall = result.value.toolCalls.find((tc) => tc.name === 'submit_design');
 
-  if (!toolUseBlock || toolUseBlock.name !== 'submit_design') {
+  if (!toolCall) {
     return {
       ok: false,
       error: 'LLM response did not contain a submit_design tool use block',
@@ -1054,7 +1030,7 @@ async function callAnthropicAPI(
   }
 
   // Validate that the spec has nodes
-  const input = toolUseBlock.input as Record<string, unknown>;
+  const input = toolCall.args;
   const nodes = input?.nodes;
   if (!nodes || typeof nodes !== 'object' || Object.keys(nodes as object).length === 0) {
     return {

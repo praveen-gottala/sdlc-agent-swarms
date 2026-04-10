@@ -10,7 +10,7 @@ import { readFileSync } from 'fs';
 import { parse as parseYaml } from 'yaml';
 import { runBrowserCorrectionPipeline } from '@agentforge/agents-ux';
 import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
-import { createClaudeProvider } from '@agentforge/providers';
+import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { DesignSpecV2, RendererTokens } from '@agentforge/designspec-renderer';
 
 const SPEC_PATH = 'personal-expense-tracker/.agentforge/previews/dashboard/scripts/designspec-v2.json';
@@ -32,13 +32,13 @@ async function main() {
   const catalog = loadCatalogForRenderer(rawCatalog, tokens as RendererTokens);
   console.log(`Catalog: ${Object.keys(catalog).length} entries`);
 
-  // 4. Create LLM provider
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('ERROR: ANTHROPIC_API_KEY env var is required');
+  // 4. Create LLM provider (supports both API key and Vertex AI)
+  const claudeAuth = resolveClaudeAuth();
+  if (!claudeAuth) {
+    console.error('ERROR: No Claude auth found. Set ANTHROPIC_API_KEY or configure Vertex AI (ANTHROPIC_VERTEX_PROJECT_ID + CLOUD_ML_REGION).');
     process.exit(1);
   }
-  const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey });
+  const provider = createClaudeProvider('claude-sonnet-4-6', authResultToProviderConfig(claudeAuth));
   const outDir = 'personal-expense-tracker/.agentforge/previews/dashboard/scripts';
 
   // 5. Run the pipeline

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/designspec-renderer/src/renderer/browser/app",
+    "agentforge-brownfield-app"
   ],
   "scripts": {
     "dev": "next dev",

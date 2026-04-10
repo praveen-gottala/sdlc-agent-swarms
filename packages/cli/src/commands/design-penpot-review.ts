@@ -18,7 +18,7 @@ import {
 } from '@agentforge/core';
 import type { MCPClient, DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import * as path from 'node:path';
-import { createClaudeProvider, createOpenAIProvider } from '@agentforge/providers';
+import { createClaudeProvider, createOpenAIProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import {
   runPenpotPreflight,
@@ -151,22 +151,22 @@ export async function designPenpotReviewCommand(
     }
   }
 
-  // Resolve LLM provider: prefer Anthropic, fall back to OpenAI
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  // Resolve LLM provider: prefer Claude (API key or Vertex AI), fall back to OpenAI
+  const claudeAuth = resolveClaudeAuth();
   const openaiKey = process.env.OPENAI_API_KEY;
 
   let provider: LLMProvider;
   let modelName: string;
-  if (anthropicKey) {
+  if (claudeAuth) {
     modelName = resolveCLIModel();
-    provider = createClaudeProvider(modelName, { apiKey: anthropicKey });
-    output.write(infoMsg(`  LLM: Anthropic (${modelName})\n`));
+    provider = createClaudeProvider(modelName, authResultToProviderConfig(claudeAuth));
+    output.write(infoMsg(`  LLM: Claude (${modelName}, auth: ${claudeAuth.type})\n`));
   } else if (openaiKey) {
     modelName = 'gpt-4o';
     provider = createOpenAIProvider(modelName, { apiKey: openaiKey });
     output.write(infoMsg(`  LLM: OpenAI (${modelName})\n`));
   } else {
-    output.write(errorMsg('No LLM API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env\n'));
+    output.write(errorMsg('No LLM provider found. Set ANTHROPIC_API_KEY, configure Vertex AI, or set OPENAI_API_KEY in .env\n'));
     process.exitCode = 1;
     return;
   }

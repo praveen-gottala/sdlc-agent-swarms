@@ -3,10 +3,11 @@ import {
   readYamlFile,
   readTextFile,
   getActiveProjectRoot,
-  getEnvVar,
 } from '../../_lib/project-reader';
 import { startRun, updateRunStatus, completeRun, failRun } from '../../_lib/run-manager';
 import { emitStageEvent } from '../../_lib/event-writer';
+import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../_lib/llm-provider';
+import { debugLog } from '@agentforge/core';
 
 interface SpecResult {
   pages: Array<{
@@ -47,15 +48,15 @@ export async function POST() {
     logs.push({ ts: Date.now(), level, message });
   };
 
-  const apiKey = getEnvVar('ANTHROPIC_API_KEY');
-  if (!apiKey) {
-    log('error', 'ANTHROPIC_API_KEY not found in env or .env file');
+  const claude = getClaudeProvider();
+  if (!claude) {
+    log('error', NO_CLAUDE_AUTH_ERROR);
     return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY is required for spec generation', logs },
+      { error: NO_CLAUDE_AUTH_ERROR, logs },
       { status: 503 },
     );
   }
-  log('info', 'ANTHROPIC_API_KEY found');
+  log('info', `Claude auth resolved (method: ${claude.authMethod})`);
 
   // Resolve active project
   let projectRoot: string;
@@ -136,18 +137,10 @@ export async function POST() {
     });
 
     emitStageEvent(runId, 'design-generate', 'LLM generation', 1, 3, 'started', 'spec_writer');
-    log('info', 'Calling Anthropic API (model: claude-sonnet-4-6, max_tokens: 16384)');
+    log('info', `Calling Claude API (model: claude-sonnet-4-6, auth: ${claude.authMethod}, max_tokens: 16384)`);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 16384,
+    const llmResult = await claude.provider.complete(
+      {
         system: systemPrompt,
         messages: [
           {
@@ -155,29 +148,31 @@ export async function POST() {
             content: 'Generate the complete application specification based on the project context provided. Return a JSON object with pages, models, and endpoints arrays.',
           },
         ],
-      }),
-    });
+      },
+      { model: 'claude-sonnet-4-6', maxTokens: 16384 },
+    );
 
-    if (!response.ok) {
-      const text = await response.text();
-      log('error', `Anthropic API responded ${response.status}: ${text.slice(0, 200)}`);
-      throw new Error(`Anthropic API error ${response.status}: ${text}`);
+    if (!llmResult.ok) {
+      const error = llmResult.error;
+      const detail = 'message' in error ? error.message : JSON.stringify(error);
+      log('error', `Claude API error (${error.code}): ${detail}`);
+      throw new Error(`Claude API error (${error.code}): ${detail}`);
     }
 
-    log('info', `Anthropic API responded ${response.status}`);
+    debugLog(`spec-generate: LLM call succeeded (auth=${claude.authMethod}, tokens=${llmResult.value.usage.inputTokens}+${llmResult.value.usage.outputTokens})`);
+    log('info', `Claude API responded OK (${llmResult.value.usage.inputTokens}+${llmResult.value.usage.outputTokens} tokens, ${llmResult.value.latencyMs}ms)`);
 
-    const result = await response.json();
-    const textBlock = result.content?.find((b: { type: string }) => b.type === 'text');
-    if (!textBlock) {
-      log('error', 'No text content block in LLM response');
+    const responseText = llmResult.value.content;
+    if (!responseText) {
+      log('error', 'No text content in LLM response');
       throw new Error('No text content in LLM response');
     }
 
-    log('info', `LLM response received (${textBlock.text.length} chars)`);
+    log('info', `LLM response received (${responseText.length} chars)`);
 
     // Parse the JSON from the response
-    const jsonMatch = textBlock.text.match(/```(?:json)?\s*([\s\S]*?)```/) ?? [null, textBlock.text];
-    const spec = JSON.parse(jsonMatch[1]?.trim() ?? textBlock.text) as SpecResult;
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/) ?? [null, responseText];
+    const spec = JSON.parse(jsonMatch[1]?.trim() ?? responseText) as SpecResult;
 
     log('info', `Parsed spec: ${spec.pages?.length ?? 0} pages, ${spec.models?.length ?? 0} models, ${spec.endpoints?.length ?? 0} endpoints`);
 

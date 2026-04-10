@@ -5,6 +5,7 @@
  */
 
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import {
   collectPageSource,
   buildImportPrompt,
@@ -15,6 +16,11 @@ import type { RouteInfo, CSSVariable } from '@agentforge/designspec-renderer';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 
 const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'agentforge-brownfield-app');
+const HAS_BROWNFIELD_APP = existsSync(join(BROWNFIELD_APP, 'package.json'));
+
+// Skip brownfield-dependent tests when the fixture app isn't available.
+// Clone it from the pg/dashboard-plugin branch: git checkout origin/pg/dashboard-plugin -- agentforge-brownfield-app
+const itWithBrownfield = HAS_BROWNFIELD_APP ? it : it.skip;
 
 const MOCK_ROUTE: RouteInfo = {
   id: 'home',
@@ -55,7 +61,7 @@ function createFailingProvider(error: string): LLMProvider {
 }
 
 describe('collectPageSource', () => {
-  it('collects the dashboard page source and its imports', () => {
+  itWithBrownfield('collects the dashboard page source and its imports', () => {
     const { content, files } = collectPageSource('src/app/page.tsx', BROWNFIELD_APP);
 
     expect(content.length).toBeGreaterThan(100);
@@ -67,7 +73,7 @@ describe('collectPageSource', () => {
     expect(content).toContain('Button');
   });
 
-  it('collects the settings page source with form components', () => {
+  itWithBrownfield('collects the settings page source with form components', () => {
     const { content, files } = collectPageSource('src/app/settings/page.tsx', BROWNFIELD_APP);
 
     expect(files).toContain('src/app/settings/page.tsx');
@@ -76,7 +82,7 @@ describe('collectPageSource', () => {
     expect(content).toContain('Select');
   });
 
-  it('respects maxChars limit', () => {
+  itWithBrownfield('respects maxChars limit', () => {
     const full = collectPageSource('src/app/page.tsx', BROWNFIELD_APP);
     const limited = collectPageSource('src/app/page.tsx', BROWNFIELD_APP, 500);
     // Limited should have fewer files collected than unlimited
@@ -114,7 +120,7 @@ describe('buildImportPrompt', () => {
 });
 
 describe('convertPageToDesignSpec', () => {
-  it('converts a page using mock LLM provider', async () => {
+  itWithBrownfield('converts a page using mock LLM provider', async () => {
     const provider = createMockProvider();
     const result = await convertPageToDesignSpec(
       MOCK_ROUTE,
@@ -130,7 +136,7 @@ describe('convertPageToDesignSpec', () => {
     expect(result.sourceFiles.length).toBeGreaterThan(0);
   });
 
-  it('handles LLM failure gracefully', async () => {
+  itWithBrownfield('handles LLM failure gracefully', async () => {
     const provider = createFailingProvider('Rate limit exceeded');
     const result = await convertPageToDesignSpec(
       MOCK_ROUTE,
@@ -143,7 +149,7 @@ describe('convertPageToDesignSpec', () => {
     expect(result.error).toContain('Rate limit');
   });
 
-  it('handles nonexistent page file', async () => {
+  itWithBrownfield('handles nonexistent page file', async () => {
     const provider = createMockProvider();
     const result = await convertPageToDesignSpec(
       { ...MOCK_ROUTE, filePath: 'src/app/nonexistent.tsx' },

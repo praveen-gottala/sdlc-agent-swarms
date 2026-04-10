@@ -49,6 +49,8 @@ export function OnboardingWizard() {
   const [designOptions, setDesignOptions] = useState<DesignOption[] | null>(null);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [designSource, setDesignSource] = useState<'llm' | 'fallback'>('fallback');
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -77,6 +79,10 @@ export function OnboardingWizard() {
   async function generateDesignOptions(useFallback: boolean) {
     setGenerating(true);
     setError(null);
+    setPreviewHtml(null);
+    setSelectedOptionIndex(null);
+    setFallbackReason(null);
+    setErrorDetail(null);
     log('INFO', 'studio', `Generating design options${useFallback ? ' (fallback)' : ' via AI'}...`);
     try {
       log('REQ', 'studio', 'POST /api/design-options', { useFallback, appName: name });
@@ -100,8 +106,22 @@ export function OnboardingWizard() {
       setDesignOptions(data.options);
       setDesignSource(data.source);
       setSelectedOptionIndex(null);
+      setFallbackReason(data.fallbackReason ?? null);
+      setErrorDetail(data.errorDetail ?? null);
       setDesignSubStep('preview');
-      log('INFO', 'studio', `${data.options?.length ?? 0} design options received`, { source: data.source });
+
+      // Log source clearly so it's obvious whether LLM or fallback was used
+      if (data.source === 'llm') {
+        log('INFO', 'studio', `[source: LLM] ${data.options?.length ?? 0} design options generated via Claude AI`);
+      } else if (data.fallbackReason === 'no_api_key') {
+        log('WARN', 'studio', '[source: FALLBACK] Using built-in design archetypes — no API key or Vertex AI configured');
+      } else if (data.fallbackReason === 'llm_error') {
+        log('ERROR', 'studio', `[source: FALLBACK] AI generation failed: ${data.errorDetail ?? 'unknown error'}. Using built-in archetypes.`);
+      } else if (data.fallbackReason === 'user_choice') {
+        log('INFO', 'studio', '[source: FALLBACK] Using built-in design archetypes (user requested defaults)');
+      } else {
+        log('INFO', 'studio', `[source: ${data.source}] ${data.options?.length ?? 0} design options received`);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       log('ERROR', 'studio', `Design generation failed: ${msg}`);
@@ -328,6 +348,17 @@ export function OnboardingWizard() {
               </p>
             </div>
 
+            {fallbackReason && fallbackReason !== 'user_choice' && (
+              <div className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 mb-3">
+                <span className="text-yellow-400 shrink-0 text-sm">&#9888;</span>
+                <p className="text-xs text-yellow-300">
+                  {fallbackReason === 'no_api_key'
+                    ? 'No API key or Vertex AI configured. Showing built-in design archetypes. Set ANTHROPIC_API_KEY or configure Vertex AI (ANTHROPIC_VERTEX_PROJECT_ID + CLOUD_ML_REGION) to enable AI design generation.'
+                    : `AI design generation failed: ${errorDetail ?? 'unknown error'}. Showing built-in archetypes. Click "Regenerate" to try again.`}
+                </p>
+              </div>
+            )}
+
             <iframe
               ref={iframeRef}
               srcDoc={previewHtml}
@@ -364,10 +395,11 @@ export function OnboardingWizard() {
               </button>
               <button
                 onClick={() => generateDesignOptions(false)}
-                disabled={generating}
+                disabled={generating || fallbackReason === 'no_api_key'}
+                title={fallbackReason === 'no_api_key' ? 'No API key or Vertex AI configured on server' : undefined}
                 className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-elevated/50 transition-colors disabled:opacity-40"
               >
-                {generating ? <Spinner /> : 'Regenerate'}
+                {generating ? <Spinner /> : fallbackReason === 'no_api_key' ? 'Regenerate (no API key)' : 'Regenerate'}
               </button>
               <div className="flex-1" />
               <button

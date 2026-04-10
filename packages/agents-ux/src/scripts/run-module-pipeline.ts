@@ -51,7 +51,8 @@ import type { DesignTokensSpec, BrandSpec, ComponentLibrarySpec } from '@agentfo
 import { diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 import { runFigmaPreflight, PLUGIN_MANIFEST_REL } from './figma-preflight.js';
 
-import { createClaudeProvider } from '@agentforge/providers';
+import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
+import type { ProviderConfig } from '@agentforge/providers';
 import type {
   UXResearchInput,
   UXResearchOutput,
@@ -211,7 +212,7 @@ interface StageResult<T> {
 
 const runResearch = async (
   config: PipelineRunConfig,
-  apiKey: string,
+  providerCfg: ProviderConfig,
   outputDir: string,
   designTokensSpec?: DesignTokensSpec,
 ): Promise<StageResult<UXResearchOutput>> => {
@@ -224,7 +225,7 @@ const runResearch = async (
     ...(designTokensSpec ? { designTokensSpec } : {}),
   };
 
-  const provider = createClaudeProvider('claude-opus-4-6', { apiKey });
+  const provider = createClaudeProvider('claude-opus-4-6', providerCfg);
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -251,7 +252,7 @@ const runResearch = async (
 const runPlanning = async (
   config: PipelineRunConfig,
   researchOutput: UXResearchOutput,
-  apiKey: string,
+  providerCfg: ProviderConfig,
   outputDir: string,
 ): Promise<StageResult<UXPlanningOutput>> => {
   console.log('\n  [2/3] Planning — building component spec...');
@@ -263,7 +264,7 @@ const runPlanning = async (
     designBrief: researchOutput,
   };
 
-  const provider = createClaudeProvider(DEFAULT_MODEL, { apiKey });
+  const provider = createClaudeProvider(DEFAULT_MODEL, providerCfg);
   const context = createPipelineContext(config.taskId, createMockMCPClient());
 
   const t0 = Date.now();
@@ -308,7 +309,7 @@ interface DesignStageResult extends StageResult<UnifiedDesignOutput> {
 const runDesign = async (
   config: PipelineRunConfig,
   planningOutput: UXPlanningOutput,
-  apiKey: string,
+  providerCfg: ProviderConfig,
   outputDir: string,
   projectDesignSystemPrompt?: string,
 ): Promise<DesignStageResult> => {
@@ -353,7 +354,7 @@ const runDesign = async (
     }
   }
 
-  const provider = createClaudeProvider(DEFAULT_MODEL, { apiKey });
+  const provider = createClaudeProvider(DEFAULT_MODEL, providerCfg);
   const context = createPipelineContext(config.taskId, mcpClient);
 
   const t0 = Date.now();
@@ -482,7 +483,7 @@ const loadProjectTokens = (projectRoot: string): { tokens?: DesignTokensSpec; br
 
 const runPipeline = async (
   config: PipelineRunConfig,
-  apiKey: string,
+  providerCfg: ProviderConfig,
   skipToStage?: PipelineStage,
 ): Promise<PipelineSummary> => {
   const outputDir = ensureOutputDir(config.moduleId);
@@ -509,7 +510,7 @@ const runPipeline = async (
     research = { output, durationMs: 0, artifactPath };
     console.log(`        (loaded) constraints=${output.designConstraints.length}`);
   } else {
-    research = await runResearch(config, apiKey, outputDir, projectTokens.tokens);
+    research = await runResearch(config, providerCfg, outputDir, projectTokens.tokens);
   }
 
   // --- Planning ---
@@ -521,11 +522,11 @@ const runPipeline = async (
     planning = { output, durationMs: 0, artifactPath };
     console.log(`        (loaded) components=${output.componentTree.length}`);
   } else {
-    planning = await runPlanning(config, research.output, apiKey, outputDir);
+    planning = await runPlanning(config, research.output, providerCfg, outputDir);
   }
 
   // --- Design ---
-  const design = await runDesign(config, planning.output, apiKey, outputDir, designSystemPrompt);
+  const design = await runDesign(config, planning.output, providerCfg, outputDir, designSystemPrompt);
 
   return { research, planning, design };
 };
@@ -638,11 +639,12 @@ const main = async (): Promise<void> => {
 
   const config: PipelineRunConfig = { ...moduleConfig, tool: args.tool, dryRun: args.dryRun };
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY must be set');
+  const claudeAuth = resolveClaudeAuth();
+  if (!claudeAuth) {
+    console.error('No Claude auth found. Set ANTHROPIC_API_KEY or configure Vertex AI (ANTHROPIC_VERTEX_PROJECT_ID + CLOUD_ML_REGION).');
     process.exit(1);
   }
+  const providerConfig = authResultToProviderConfig(claudeAuth);
 
   console.log('='.repeat(72));
   console.log(`  AgentForge UX Pipeline — ${config.moduleId} (${config.tool})`);
@@ -657,7 +659,7 @@ const main = async (): Promise<void> => {
 
   let summary: PipelineSummary | undefined;
   try {
-    summary = await runPipeline(config, apiKey, args.stage);
+    summary = await runPipeline(config, providerConfig, args.stage);
     printApprovalSummary(config, summary);
 
     // ── Interactive feedback loop (Figma only for now) ──

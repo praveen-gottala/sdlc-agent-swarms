@@ -4,6 +4,10 @@ import {
   generatePreviewHtml,
   type DesignOption,
 } from '@agentforge/cli';
+import { getClaudeProvider } from '../_lib/llm-provider';
+import { debugLog } from '@agentforge/core';
+
+export const dynamic = 'force-dynamic';
 
 interface DesignOptionsRequest {
   appName: string;
@@ -13,8 +17,10 @@ interface DesignOptionsRequest {
   useFallback?: boolean;
 }
 
+type FallbackReason = 'user_choice' | 'no_api_key' | 'llm_error';
+
 /** POST /api/design-options — generate 3 design options with HTML preview */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = (await request.json()) as DesignOptionsRequest;
     const { appName, description, targetAudience, prdContent, useFallback } = body;
@@ -23,24 +29,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'appName is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
     let options: DesignOption[];
     let source: 'llm' | 'fallback' = 'fallback';
+    let fallbackReason: FallbackReason | undefined;
+    let errorDetail: string | undefined;
 
-    if (!apiKey || useFallback) {
+    if (useFallback) {
       options = buildFallbackOptions();
+      fallbackReason = 'user_choice';
+      debugLog('design-options: using fallback (reason=user_choice)');
     } else {
-      try {
-        options = await generateOptionsViaLLM(apiKey, {
-          appName,
-          description: description ?? '',
-          targetAudience: targetAudience ?? '',
-          prdContent,
-        });
-        source = 'llm';
-      } catch (err) {
-        console.error('LLM design options generation failed, using fallback:', err);
+      const claude = getClaudeProvider();
+
+      if (!claude) {
         options = buildFallbackOptions();
+        fallbackReason = 'no_api_key';
+        debugLog('design-options: using fallback (reason=no_api_key) — no ANTHROPIC_API_KEY or Vertex AI configured');
+      } else {
+        try {
+          options = await generateOptionsViaLLM(claude.provider, {
+            appName,
+            description: description ?? '',
+            targetAudience: targetAudience ?? '',
+            prdContent,
+          });
+          source = 'llm';
+          debugLog(`design-options: LLM generation succeeded (auth=${claude.authMethod})`);
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : String(err);
+          console.error('LLM design options generation failed, using fallback:', detail);
+          debugLog(`design-options: using fallback (reason=llm_error, detail=${detail})`);
+          options = buildFallbackOptions();
+          fallbackReason = 'llm_error';
+          errorDetail = detail;
+        }
       }
     }
 
@@ -48,15 +70,15 @@ export async function POST(request: NextRequest) {
     let previewHtml = generatePreviewHtml(appName, options);
     previewHtml = injectIframeCommunication(previewHtml);
 
-    return NextResponse.json({ previewHtml, options, source });
+    return NextResponse.json({ previewHtml, options, source, fallbackReason, errorDetail });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
 
-/** Call Anthropic API to generate design options using structured output. */
+/** Call Claude via provider to generate design options (supports both direct API and Vertex AI). */
 async function generateOptionsViaLLM(
-  apiKey: string,
+  provider: import('@agentforge/providers').LLMProvider,
   context: { appName: string; description: string; targetAudience: string; prdContent?: string },
 ): Promise<DesignOption[]> {
   const appContext = context.prdContent
@@ -65,7 +87,10 @@ async function generateOptionsViaLLM(
 
   const systemPrompt = `You are a design system expert. Generate 3 distinct design direction options for a web application.
 
-Each option should feel meaningfully different — vary the mood, color temperature, and typography personality.
+Each option MUST feel genuinely different from the others — not 3 variations of the same mood.
+Vary across these axes: color temperature (warm vs cool vs neutral), energy level (calm vs energetic vs bold), aesthetic era (classic vs contemporary vs futuristic), and personality (playful vs serious vs elegant).
+
+IMPORTANT: Do NOT default to the same 3 categories every time (e.g. always "professional", "warm", "bold"). Surprise the user with unexpected directions like retro, minimalist-zen, cyberpunk, nature-inspired, editorial, brutalist, art-deco, nordic, tropical, etc. Tailor the directions to the app's purpose and audience.
 
 Rules:
 - 5-8 primitive colors per option, using kebab-case names (e.g. "deep-teal", "warm-cream")
@@ -75,68 +100,41 @@ Rules:
 - Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)
 
 Return a JSON object with an "options" array of 3 objects, each with:
-- label: string (e.g. "Warm & Inviting")
+- label: string (creative, evocative name — e.g. "Nordic Clarity", "Sunset Studio", "Electric Ink")
 - vibe: string (short description)
 - colors: { primitive: Record<string, string>, semantic: Record<string, string> with keys: background-primary, surface-primary, surface-elevated, surface-secondary, surface-input, text-primary, text-secondary, text-disabled, text-on-cta, cta-primary, cta-hover, border-default, border-focus, border-error, error, success, warning, info, overlay }
 - fonts: { display: string, body: string }
 - brand: { tone: string, illustrationDirection: string, illustrationDescription: string, motionFeel: "snappy"|"smooth"|"bouncy"|"subtle" }
 - elevation: { levels: [{ level: number, shadow: string, description: string }] }`;
 
-  const MAX_RETRIES = 3;
-  const RETRYABLE_STATUSES = [429, 529];
+  const result = await provider.complete(
+    {
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate 3 design system options for:\n${appContext}`,
+        },
+      ],
+    },
+    {
+      model: 'claude-sonnet-4-6',
+      maxTokens: 8192,
+      temperature: 0.9,
+    },
+  );
 
-  let lastError: Error | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let result: any;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
-    }
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8192,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `Generate 3 design system options for:\n${appContext}`,
-          },
-        ],
-      }),
-    });
-
-    if (response.ok) {
-      result = await response.json();
-      lastError = null;
-      break;
-    }
-
-    const text = await response.text();
-    lastError = new Error(`Anthropic API error ${response.status}: ${text}`);
-
-    if (!RETRYABLE_STATUSES.includes(response.status)) {
-      throw lastError;
-    }
+  if (!result.ok) {
+    const error = result.error;
+    throw new Error(`Provider error (${error.code}): ${'message' in error ? error.message : JSON.stringify(error)}`);
   }
 
-  if (lastError) {
-    throw lastError;
-  }
-  const textBlock = result.content?.find((b: { type: string }) => b.type === 'text');
-  if (!textBlock) {
+  const content = result.value.content;
+  if (!content) {
     throw new Error('No text content in LLM response');
   }
 
-  const cleaned = textBlock.text.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
+  const cleaned = content.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
   const parsed = JSON.parse(cleaned) as { options: DesignOption[] };
 
   if (!parsed.options || !Array.isArray(parsed.options) || parsed.options.length < 3) {

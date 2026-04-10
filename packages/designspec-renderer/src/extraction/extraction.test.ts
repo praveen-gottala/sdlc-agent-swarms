@@ -4,6 +4,7 @@
  */
 
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { detectStack } from './detect-stack.js';
 import { discoverRoutes } from './discover-routes.js';
 import { extractCSSVariables } from './extract-css-variables.js';
@@ -11,8 +12,13 @@ import { scanComponentUsage } from './scan-component-usage.js';
 
 // Resolve the brownfield app path relative to monorepo root
 const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'agentforge-brownfield-app');
+const HAS_BROWNFIELD_APP = existsSync(join(BROWNFIELD_APP, 'package.json'));
 
-describe('detectStack', () => {
+// Skip brownfield-dependent tests when the fixture app isn't available.
+// Clone it from the pg/dashboard-plugin branch: git checkout origin/pg/dashboard-plugin -- agentforge-brownfield-app
+const describeWithBrownfield = HAS_BROWNFIELD_APP ? describe : describe.skip;
+
+describeWithBrownfield('detectStack', () => {
   it('detects Next.js App Router + shadcn + Tailwind v4 + TypeScript', () => {
     const result = detectStack(BROWNFIELD_APP);
     expect(result.ok).toBe(true);
@@ -33,7 +39,7 @@ describe('detectStack', () => {
   });
 });
 
-describe('discoverRoutes', () => {
+describeWithBrownfield('discoverRoutes', () => {
   it('discovers all 3 routes from the brownfield app', () => {
     const result = discoverRoutes(BROWNFIELD_APP, 'nextjs-app');
     expect(result.ok).toBe(true);
@@ -71,7 +77,7 @@ describe('discoverRoutes', () => {
   });
 });
 
-describe('extractCSSVariables', () => {
+describeWithBrownfield('extractCSSVariables', () => {
   it('extracts CSS custom properties from globals.css', () => {
     const result = extractCSSVariables(BROWNFIELD_APP);
     expect(result.ok).toBe(true);
@@ -121,7 +127,7 @@ describe('extractCSSVariables', () => {
   });
 });
 
-describe('scanComponentUsage', () => {
+describeWithBrownfield('scanComponentUsage', () => {
   it('finds shadcn component imports', () => {
     const result = scanComponentUsage(BROWNFIELD_APP, 'shadcn');
     expect(result.ok).toBe(true);

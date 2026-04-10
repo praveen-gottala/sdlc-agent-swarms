@@ -19,6 +19,7 @@
     "@agentforge/agents-design": "0.1.0",
     "@agentforge/channels": "0.1.0",
     "@agentforge/designspec-renderer": "0.1.0",
+    "@agentforge/providers": "0.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
