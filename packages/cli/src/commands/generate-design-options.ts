@@ -12,8 +12,8 @@ import * as fs from 'node:fs';
 import { exec } from 'node:child_process';
 import type { DesignTokensSpec, BrandSpec, ElevationSpec, PromptTrace, FileSystem, OpacitySpec, MotionSpec, StateTokensSpec, TypographyScaleEntry, SpacingSpec, BorderSpec, TouchTargetSpec, LayoutSpec, ZIndexSpec, BorderWidthSpec, TextExtrasSpec } from '@agentforge/core';
 import { validateDesignTokens, validateBrandSpec, recordPromptTrace, loadPRD, debugLog, logDefaults } from '@agentforge/core';
-import { createClaudeProvider } from '@agentforge/providers';
-import type { LLMProvider } from '@agentforge/providers';
+import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
+import type { LLMProvider, ProviderConfig } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { infoMsg, warnMsg, successMsg } from '../formatter.js';
 import { buildDesignTokensSpec } from './init.js';
@@ -1142,7 +1142,7 @@ async function resolveEffectiveDesignOptionsContext(
     out,
     `Do you have a PRD for "${effectiveContext.appName}"? (y/n): `,
   );
-  if (pauseToAddPrd === 'y' || pauseToAddPrd === 'yes') {
+  if (pauseToAddPrd.toLowerCase() === 'y' || pauseToAddPrd.toLowerCase() === 'yes') {
     await promptOnce(
       inp,
       out,
@@ -1181,13 +1181,14 @@ export async function generateDesignOptions(
   const effectiveContext = await resolveEffectiveDesignOptionsContext(context, config, inp, out);
 
   // Try LLM generation (unless --mock is set)
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  const authResult = resolveClaudeAuth();
+  const llmProviderConfig = authResult ? authResultToProviderConfig(authResult) : null;
   if (config?.mock) {
     out.write(infoMsg('\n--mock: skipping LLM, using built-in archetypes\n'));
     options = buildFallbackOptions();
-  } else if (apiKey) {
+  } else if (llmProviderConfig) {
     out.write(infoMsg('\nCalling Claude Sonnet to generate design themes...\n'));
-    const llmOptions = await tryLLMGeneration(apiKey, effectiveContext, out, promptTraces);
+    const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out, promptTraces);
     if (llmOptions) {
       options = llmOptions;
       source = 'llm';
@@ -1197,7 +1198,7 @@ export async function generateDesignOptions(
       options = buildFallbackOptions();
     }
   } else {
-    out.write(warnMsg('No ANTHROPIC_API_KEY set, using built-in archetypes\n'));
+    out.write(warnMsg('No Claude auth configured, using built-in archetypes\n'));
     options = buildFallbackOptions();
   }
 
@@ -1222,9 +1223,9 @@ export async function generateDesignOptions(
   while (choice === undefined) {
     const answer = await promptOnce(inp, out, '\nChoose 1, 2, or 3 (or \'r\' to regenerate): ');
 
-    if (answer === 'r' && apiKey && !config?.mock) {
+    if (answer === 'r' && llmProviderConfig && !config?.mock) {
       out.write(infoMsg('Regenerating via LLM...\n'));
-      const llmOptions = await tryLLMGeneration(apiKey, effectiveContext, out, promptTraces);
+      const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out, promptTraces);
       if (llmOptions) {
         options = llmOptions;
         source = 'llm';
@@ -1266,14 +1267,14 @@ export async function generateDesignOptions(
 
 /** Attempt LLM generation, return null on failure. */
 async function tryLLMGeneration(
-  apiKey: string,
+  providerConfig: ProviderConfig,
   context: { appName: string; description: string; targetAudience: string; prdContent?: string },
   output: NodeJS.WritableStream,
   promptTraces?: PromptTrace[],
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), providerConfig);
   } catch (err) {
     output.write(warnMsg(`Failed to create LLM provider: ${err instanceof Error ? err.message : String(err)}\n`));
     return null;

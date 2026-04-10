@@ -46,14 +46,17 @@ describe('designFigmaCommand', () => {
     process.exitCode = undefined;
   });
 
-  it('shows error when ANTHROPIC_API_KEY is not set', async () => {
+  it('shows error when Claude auth is not configured', async () => {
     process.env = { ...originalEnv };
     delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.AGENTFORGE_USE_VERTEX;
+    delete process.env.ANTHROPIC_VERTEX_PROJECT_ID;
+    delete process.env.CLAUDE_CODE_USE_VERTEX;
 
     const out = createOutputStream();
     await designFigmaCommand('dashboard design', out);
 
-    expect(out.output).toContain('ANTHROPIC_API_KEY must be set');
+    expect(out.output).toContain('Claude auth required');
     expect(process.exitCode).toBe(1);
   }, 15_000);
 

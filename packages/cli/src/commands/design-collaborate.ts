@@ -23,6 +23,7 @@ import {
 import type { MCPClient } from '@agentforge/core';
 import { createRealFs, PREVIEW_DIR_REL } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
   loadFigmaSession,
   runFigmaPreflight,
@@ -127,9 +128,8 @@ export async function designCollaborateCommand(
 
   // 2. Load .env and validate API key
   loadDotEnv(findProjectRoot());
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY must be set\n'));
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) {
     process.exitCode = 1;
     return;
   }
@@ -247,7 +247,7 @@ export async function designCollaborateCommand(
   }
 
   // 4. Create collaboration session and enter feedback loop
-  const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+  const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
 
   // Build design system context — prefer project-specific tokens, fall back to markdown
   const planningPath = join(outputDir, 'planning-spec.json');

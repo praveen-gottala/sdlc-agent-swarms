@@ -15,6 +15,7 @@ import { prdExists } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
 import { realFs, loadDotEnv } from '../fs-utils.js';
@@ -66,15 +67,12 @@ export async function generatePRD(
   answers: DescribeAnswers,
   output: NodeJS.WritableStream,
 ): Promise<string | null> {
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY is required for PRD generation. Set it in your environment.\n'));
-    return null;
-  }
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) return null;
 
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), providerConfig);
   } catch {
     output.write(warnMsg('Failed to create LLM provider.\n'));
     return null;

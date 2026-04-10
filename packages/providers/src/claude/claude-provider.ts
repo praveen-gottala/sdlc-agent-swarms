@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import AnthropicVertex from '@anthropic-ai/vertex-sdk';
 import { Ok, Err, debugLog, logDefaults } from '@agentforge/core';
 import type { Result, CostRecord, CostEstimate } from '@agentforge/core';
 import type {
@@ -20,8 +21,17 @@ import type {
   TokenUsage,
 } from '../types.js';
 import { calculateCost } from '../cost-table.js';
+import { detectVertexConfig } from '../vertex-config.js';
 
 const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+
+/**
+ * Minimal client interface covering what we use from both Anthropic and AnthropicVertex.
+ * AnthropicVertex's messages type is Omit<Messages, 'batches'>, which still satisfies this.
+ */
+interface AnthropicLikeClient {
+  messages: Pick<Anthropic['messages'], 'stream' | 'create'>;
+}
 
 /** Map short model aliases to full Anthropic API model IDs.
  *  The base IDs (e.g. 'claude-sonnet-4-6') are accepted by the API directly.
@@ -139,13 +149,165 @@ function mapApiError(error: unknown): ProviderError {
   return { code: 'INVALID_RESPONSE', raw: String(error) };
 }
 
+/**
+ * Extract JSON from a response that may contain markdown fences or surrounding text.
+ * Tries progressively looser extraction strategies.
+ */
+function extractJsonFromResponse(text: string): string {
+  // Try 1: strip markdown fences (```json ... ``` or ``` ... ```)
+  const fenced = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/i);
+  if (fenced) return fenced[1].trim();
+
+  // Try 2: simple fence strip (no newline required)
+  const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  if (stripped !== text.trim()) return stripped;
+
+  // Try 3: find the outermost { ... } or [ ... ]
+  const braceMatch = text.match(/(\{[\s\S]*\})/);
+  if (braceMatch) return braceMatch[1].trim();
+  const bracketMatch = text.match(/(\[[\s\S]*\])/);
+  if (bracketMatch) return bracketMatch[1].trim();
+
+  // Fallback: return raw text (let JSON.parse fail with a clear error)
+  return text.trim();
+}
+
+/** Create the appropriate Anthropic client (direct API or Vertex AI). */
+function createAnthropicClient(config: ProviderConfig): { client: AnthropicLikeClient; isVertex: boolean } {
+  // If an API key is explicitly provided, always use direct Anthropic API
+  if (config.apiKey) {
+    debugLog('claude: using direct Anthropic API (apiKey provided)');
+    return {
+      client: new Anthropic({
+        apiKey: config.apiKey,
+        ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+        ...(config.timeout ? { timeout: config.timeout } : {}),
+      }),
+      isVertex: false,
+    };
+  }
+
+  // Check if Vertex AI is configured (either via ProviderConfig or env vars)
+  const vertexConfig = config.projectId ? config : detectVertexConfig();
+
+  if (vertexConfig?.projectId) {
+    const region = vertexConfig.region ?? 'us-central1';
+    debugLog(`claude: using Vertex AI (project=${vertexConfig.projectId}, region=${region})`);
+    return {
+      client: new AnthropicVertex({
+        projectId: vertexConfig.projectId,
+        region,
+        ...(vertexConfig.timeout ? { timeout: vertexConfig.timeout } : {}),
+      }),
+      isVertex: true,
+    };
+  }
+
+  // No explicit auth — Anthropic SDK will look for ANTHROPIC_API_KEY env var
+  debugLog('claude: using direct Anthropic API (no explicit auth — SDK will check env)');
+  return {
+    client: new Anthropic({
+      ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+      ...(config.timeout ? { timeout: config.timeout } : {}),
+    }),
+    isVertex: false,
+  };
+}
+
+const STRUCTURED_OUTPUT_TOOL_NAME = '__structured_output';
+
+/**
+ * Apply structured output configuration to base params.
+ * - Direct API: adds output_config (native, schema-enforced)
+ * - Vertex AI: adds a fake tool + forced tool_choice (schema-enforced)
+ * - No schema: returns params unchanged
+ */
+function applyStructuredOutput(
+  baseParams: Anthropic.MessageCreateParams,
+  schema: Record<string, unknown> | undefined,
+  isVertex: boolean,
+): Anthropic.MessageCreateParams {
+  if (!schema) return baseParams;
+
+  if (!isVertex) {
+    // Direct Anthropic API: native output_config
+    return {
+      ...baseParams,
+      output_config: {
+        format: { type: 'json_schema' as const, schema },
+      },
+    } as Anthropic.MessageCreateParams;
+  }
+
+  // Vertex AI: use tool_use with forced tool_choice (output_config not supported)
+  const structuredTool: Anthropic.Tool = {
+    name: STRUCTURED_OUTPUT_TOOL_NAME,
+    description: 'Return the structured JSON response conforming to the provided schema.',
+    input_schema: schema as Anthropic.Tool['input_schema'],
+  };
+
+  return {
+    ...baseParams,
+    tools: [...(baseParams.tools ?? []), structuredTool],
+    tool_choice: { type: 'tool' as const, name: STRUCTURED_OUTPUT_TOOL_NAME },
+  };
+}
+
+/**
+ * Extract structured output, tool calls, and content from an Anthropic response.
+ * Separates the fake structured-output tool from real tool calls.
+ */
+function extractStructuredResult(
+  response: Anthropic.Message,
+  hasSchema: boolean,
+  isVertex: boolean,
+): {
+  content: string;
+  toolCalls: ToolCall[];
+  structured?: Record<string, unknown>;
+} {
+  const textBlocks = response.content.filter(
+    (b): b is Anthropic.TextBlock => b.type === 'text',
+  );
+  const content = textBlocks.map((b) => b.text).join('');
+
+  const toolUseBlocks = response.content.filter(
+    (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+  );
+
+  // Separate real tool calls from the structured output tool
+  let structured: Record<string, unknown> | undefined;
+  const realToolBlocks: Anthropic.ToolUseBlock[] = [];
+
+  for (const block of toolUseBlocks) {
+    if (hasSchema && isVertex && block.name === STRUCTURED_OUTPUT_TOOL_NAME) {
+      structured = block.input as Record<string, unknown>;
+    } else {
+      realToolBlocks.push(block);
+    }
+  }
+
+  const toolCalls: ToolCall[] = realToolBlocks.map((b) => ({
+    id: b.id,
+    name: b.name,
+    args: b.input as Record<string, unknown>,
+  }));
+
+  // Direct API: structured output comes in text content
+  if (hasSchema && !isVertex && content) {
+    try {
+      structured = JSON.parse(extractJsonFromResponse(content)) as Record<string, unknown>;
+    } catch {
+      debugLog('claude: failed to parse structured output as JSON');
+    }
+  }
+
+  return { content, toolCalls, ...(structured !== undefined ? { structured } : {}) };
+}
+
 /** Create a Claude LLM provider. */
 export function createClaudeProvider(model: string, config: ProviderConfig): LLMProvider {
-  const client = new Anthropic({
-    apiKey: config.apiKey,
-    ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
-    ...(config.timeout ? { timeout: config.timeout } : {}),
-  });
+  const { client, isVertex: usingVertex } = createAnthropicClient(config);
 
   return {
     name: 'claude',
@@ -175,49 +337,32 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         };
 
         const useStructuredOutput = !!options.responseSchema;
-        let response: Anthropic.Message;
 
-        if (useStructuredOutput) {
-          const structuredParams = {
-            ...baseParams,
-            output_config: {
-              format: {
-                type: 'json_schema' as const,
-                schema: options.responseSchema!.schema,
-              },
-            },
-          };
-          const stream = client.messages.stream(structuredParams, { signal: options.signal ?? undefined });
-          response = await stream.finalMessage();
-        } else {
-          const stream = client.messages.stream(baseParams, { signal: options.signal ?? undefined });
-          response = await stream.finalMessage();
-        }
+        // Apply structured output strategy (output_config or tool_use)
+        const finalParams = applyStructuredOutput(
+          baseParams,
+          options.responseSchema?.schema,
+          usingVertex,
+        );
+
+        const stream = client.messages.stream(finalParams, { signal: options.signal ?? undefined });
+        const response = await stream.finalMessage();
 
         const latencyMs = Date.now() - startMs;
 
-        // Extract text content
-        const textBlocks = response.content.filter(
-          (b): b is Anthropic.TextBlock => b.type === 'text',
+        // Extract content, tool calls, and structured output
+        const { content, toolCalls, structured } = extractStructuredResult(
+          response,
+          useStructuredOutput,
+          usingVertex,
         );
-        const content = textBlocks.map((b) => b.text).join('');
-
-        // Extract tool calls
-        const toolUseBlocks = response.content.filter(
-          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
-        );
-        const toolCalls: ToolCall[] = toolUseBlocks.map((b) => ({
-          id: b.id,
-          name: b.name,
-          args: b.input as Record<string, unknown>,
-        }));
 
         // Build usage
         const usage: TokenUsage = {
           inputTokens: response.usage.input_tokens,
           outputTokens: response.usage.output_tokens,
-          cacheReadTokens: (response.usage as unknown as Record<string, unknown>).cache_read_input_tokens as number | undefined,
-          cacheWriteTokens: (response.usage as unknown as Record<string, unknown>).cache_creation_input_tokens as number | undefined,
+          cacheReadTokens: response.usage.cache_read_input_tokens ?? undefined,
+          cacheWriteTokens: response.usage.cache_creation_input_tokens ?? undefined,
         };
 
         const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);
@@ -226,16 +371,6 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           model: options.model,
           timestamp: new Date().toISOString(),
         };
-
-        // Parse structured output when output_config was actually used
-        let structured: Record<string, unknown> | undefined;
-        if (useStructuredOutput && content) {
-          try {
-            structured = JSON.parse(content) as Record<string, unknown>;
-          } catch {
-            // API guarantees valid JSON with output_config, but handle edge cases
-          }
-        }
 
         return Ok({
           content,
@@ -313,8 +448,8 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
               const usage: TokenUsage = {
                 inputTokens: finalMessage.usage.input_tokens,
                 outputTokens: finalMessage.usage.output_tokens,
-                cacheReadTokens: (finalMessage.usage as unknown as Record<string, unknown>).cache_read_input_tokens as number | undefined,
-                cacheWriteTokens: (finalMessage.usage as unknown as Record<string, unknown>).cache_creation_input_tokens as number | undefined,
+                cacheReadTokens: finalMessage.usage.cache_read_input_tokens ?? undefined,
+                cacheWriteTokens: finalMessage.usage.cache_creation_input_tokens ?? undefined,
               };
 
               const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);

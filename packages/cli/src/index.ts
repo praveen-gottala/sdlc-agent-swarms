@@ -166,7 +166,7 @@ export function createProgram(): Command {
     .command('design:penpot')
     .description('Create a Penpot design via the UX agent pipeline (Research -> Planning -> Design)')
     .argument('<pageId>', 'Page ID from pages.yaml (e.g., "bill-entry") or page name')
-    .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, connect')
+    .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, replay-browser, connect')
     .option('--module <id>', 'Module ID override (default: page ID from pages.yaml)')
     .option('--width <pixels>', 'Viewport width in pixels (default: 1440)')
     .option('--no-wait', 'Exit after design without waiting for approval')
@@ -184,7 +184,7 @@ export function createProgram(): Command {
     .option('--no-interactive', 'Force non-interactive browser correction')
     .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; legacyCorrection?: boolean; interactive?: boolean }) => {
       await designPenpotCommand(pageId, process.stdout, {
-        stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'connect' | undefined,
+        stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'replay-browser' | 'connect' | undefined,
         module: options.module,
         width: options.width ? parseInt(options.width, 10) : undefined,
         noWait: options.wait === false,

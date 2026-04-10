@@ -40,6 +40,7 @@ import type {
   PromptTrace,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
   uxResearchWork,
   uxPlanningWork,
@@ -198,10 +199,9 @@ export async function designFigmaCommand(
   output.write(infoMsg(`  Description: ${description}\n`));
   output.write(infoMsg('='.repeat(60) + '\n'));
 
-  // Validate API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY must be set\n'));
+  // Validate Claude auth (API key or Vertex AI)
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) {
     process.exitCode = 1;
     return;
   }
@@ -270,7 +270,7 @@ export async function designFigmaCommand(
     output.write(infoMsg('  [1/3] Research — loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [1/3] Research — analyzing requirements...\n'));
-    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
     const context = createContext(taskId, createMockMCPClient(), promptTraces);
 
     const prdRequirements: string[] = [description];
@@ -317,7 +317,7 @@ export async function designFigmaCommand(
     output.write(infoMsg('  [2/3] Planning — loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [2/3] Planning — building component spec...\n'));
-    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
     const context = createContext(taskId, createMockMCPClient(), promptTraces);
 
     const input: UXPlanningInput = {
@@ -415,7 +415,7 @@ export async function designFigmaCommand(
 
   output.write(infoMsg('\n  [3/3] Design — creating Figma components...\n'));
 
-  const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+  const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
   const context = createContext(taskId, mcpClient, promptTraces);
 
   // Build project-specific design system prompt from tokens + brand
@@ -467,7 +467,7 @@ export async function designFigmaCommand(
   // ── Build implement callback ──
   const createImplementFn = (): ImplementCallback => {
     return async (design) => {
-      const implProvider = createClaudeProvider(resolveCLIModel(), { apiKey });
+      const implProvider = createClaudeProvider(resolveCLIModel(), providerConfig);
       const implContext = createContext(`${taskId}_impl`, mcpClient);
 
       // Pass design snapshot data (screenshots + extracted styles) to the implementation agent

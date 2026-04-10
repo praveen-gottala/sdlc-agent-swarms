@@ -30,6 +30,20 @@ jest.mock('@anthropic-ai/sdk', () => {
   return { __esModule: true, default: MockAnthropic, APIError: MockAPIError };
 });
 
+// Mock the Vertex SDK — shares mockStream so we can inspect calls
+const mockVertexStream = jest.fn();
+const mockVertexCreate = jest.fn();
+
+jest.mock('@anthropic-ai/vertex-sdk', () => {
+  const MockAnthropicVertex = jest.fn().mockImplementation(() => ({
+    messages: {
+      create: mockVertexCreate,
+      stream: mockVertexStream,
+    },
+  }));
+  return { __esModule: true, default: MockAnthropicVertex };
+});
+
 /** Helper: make mockStream return an object whose finalMessage() resolves to the given response. */
 function mockStreamResolving(response: Record<string, unknown>): void {
   mockStream.mockReturnValue({
@@ -275,6 +289,59 @@ describe('ClaudeProvider', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value.structured).toBeUndefined();
+      }
+    });
+
+    it('uses tool_use for structured output on Vertex AI', async () => {
+      const structuredData = { name: 'test', value: 42 };
+      mockVertexStream.mockReturnValue({
+        finalMessage: () => Promise.resolve({
+          content: [
+            {
+              type: 'tool_use',
+              id: 'call_structured',
+              name: '__structured_output',
+              input: structuredData,
+            },
+          ],
+          usage: { input_tokens: 25, output_tokens: 20 },
+          stop_reason: 'tool_use',
+        }),
+      });
+
+      // projectId without apiKey triggers Vertex path
+      const provider = createClaudeProvider('claude-sonnet-4-6', { projectId: 'test-project', region: 'us-central1' });
+      const optionsWithSchema: CompletionOptions = {
+        ...testOptions,
+        responseSchema: {
+          schema: {
+            type: 'object',
+            properties: { name: { type: 'string' }, value: { type: 'number' } },
+            required: ['name', 'value'],
+          },
+        },
+      };
+
+      const result = await provider.complete(testPrompt, optionsWithSchema);
+
+      // Verify tool_choice was forced to __structured_output
+      const callArgs = mockVertexStream.mock.calls[0][0];
+      expect(callArgs.tool_choice).toEqual({ type: 'tool', name: '__structured_output' });
+      expect(callArgs.tools).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: '__structured_output' }),
+        ]),
+      );
+
+      // Verify output_config was NOT used (not supported on Vertex)
+      expect(callArgs.output_config).toBeUndefined();
+
+      // Verify structured field is populated from tool input
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.structured).toEqual(structuredData);
+        // __structured_output should NOT appear in toolCalls
+        expect(result.value.toolCalls).toEqual([]);
       }
     });
 

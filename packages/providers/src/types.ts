@@ -181,3 +181,10 @@ export interface ProviderInfo {
   /** API key present and provider reachable. */
   readonly available: boolean;
 }
+
+// ── Auth Resolution ────────────────────────────────────────────────
+
+/** Result of resolving Claude authentication — either direct API key or Vertex AI. */
+export type ClaudeAuthResult =
+  | { readonly type: 'api_key'; readonly apiKey: string }
+  | { readonly type: 'vertex' };

@@ -36,6 +36,7 @@ import type {
   DesignConfig,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
   runPenpotPreflight,
   loadPenpotSession,
@@ -220,10 +221,9 @@ export async function designPenpotAllCommand(
   // Load .env file so ANTHROPIC_API_KEY is available
   loadDotEnv(findProjectRoot());
 
-  // Validate API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY must be set\n'));
+  // Validate Claude auth (API key or Vertex AI)
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) {
     process.exitCode = 1;
     return;
   }
@@ -298,7 +298,7 @@ export async function designPenpotAllCommand(
         // @ts-expect-error — researchOutput may not be assigned if designOnly + no cache
         if (!researchOutput) {
           output.write(infoMsg('    Research: running...\n'));
-          const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+          const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
           const context = createContext(taskId, createMockMCPClient());
           const input: UXResearchInput = { moduleId, taskId, prdRequirements: [description] };
           const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
@@ -320,7 +320,7 @@ export async function designPenpotAllCommand(
         // @ts-expect-error — planningOutput may not be assigned
         if (!planningOutput) {
           output.write(infoMsg('    Planning: running...\n'));
-          const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+          const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
           const context = createContext(taskId, createMockMCPClient());
           const input: UXPlanningInput = {
             briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
@@ -349,7 +349,7 @@ export async function designPenpotAllCommand(
 
         // Design (Penpot) — use browser agent if --browser flag is set
         const useBrowser = options.browser ?? false;
-        const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+        const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
 
         for (const viewportWidth of pageViewports) {
           const vpModuleId = pageViewports.length > 1

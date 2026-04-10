@@ -45,6 +45,7 @@ import type {
   PageEntry,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import type { LLMProvider } from '@agentforge/providers';
 import { createMockLLMProvider } from '../mock-llm-outputs/index.js';
 import {
@@ -77,7 +78,7 @@ import type {
   ImplementCallback,
 } from '@agentforge/agents-ux';
 import type { RendererTokens } from '@agentforge/designspec-renderer';
-import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
+import { loadCatalogForRenderer, openBrowserSession, openInteractivePreview } from '@agentforge/designspec-renderer';
 
 // ============================================================================
 // Types
@@ -86,10 +87,11 @@ import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 interface DesignPenpotOptions {
   /**
    * Skip to a specific stage (loads prior stages from artifacts).
-   * - 'replay': re-execute cached design script (no LLM calls)
+   * - 'replay': re-execute cached design script via Penpot MCP (no LLM calls)
+   * - 'replay-browser': re-render cached designSpec in browser via Playwright (no Penpot, no LLM)
    * - 'connect': test connection only, load design from cache
    */
-  readonly stage?: 'research' | 'planning' | 'design' | 'replay' | 'connect';
+  readonly stage?: 'research' | 'planning' | 'design' | 'replay' | 'replay-browser' | 'connect';
   /** Module ID for the design. Default: derived from description. */
   readonly module?: string;
   /** Target viewport width in pixels (default: 1440). */
@@ -429,10 +431,9 @@ export async function designPenpotCommand(
     output.write(warnMsg('  Run `agentforge design:system` first for brand-accurate designs.\n'));
   }
 
-  // Validate API key (skip when --mock since no real LLM calls are made)
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey && !options.mock) {
-    output.write(errorMsg('ANTHROPIC_API_KEY must be set\n'));
+  // Validate Claude auth (skip when --mock since no real LLM calls are made)
+  const providerConfig = options.mock ? null : requireClaudeAuth(output);
+  if (!providerConfig && !options.mock) {
     process.exitCode = 1;
     return;
   }
@@ -443,7 +444,7 @@ export async function designPenpotCommand(
       debugLog('designPenpotCommand: --mock flag set → using createMockLLMProvider (no LLM API calls)');
       return createMockLLMProvider();
     }
-    return createClaudeProvider(resolveCLIModel(), { apiKey: apiKey! });
+    return createClaudeProvider(resolveCLIModel(), providerConfig!);
   };
 
   // -- Penpot connection --
@@ -471,7 +472,7 @@ export async function designPenpotCommand(
   let researchOutput: UXResearchOutput;
   const forceFresh = options.fresh ?? false;
 
-  if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
+  if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
     const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
     if (!cached) {
       output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
@@ -527,7 +528,7 @@ export async function designPenpotCommand(
   // -- Stage 2: Planning --
   let planningOutput: UXPlanningOutput;
 
-  if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'connect') {
+  if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
     const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
     if (!cached) {
       output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
@@ -681,6 +682,105 @@ try {
     output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds ?? {}).length}\n`));
     output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
     output.write(infoMsg('='.repeat(60) + '\n'));
+    return;
+  }
+
+  // -- Stage: replay-browser (re-render cached designSpec in browser — no Penpot, no LLM) --
+  if (skipToStage === 'replay-browser') {
+    const specPath = join(outputDir, 'scripts', 'designspec-v2.json');
+    if (!existsSync(specPath)) {
+      output.write(errorMsg(`No cached DesignSpec found at ${relPath(specPath)}\n`));
+      output.write(errorMsg('Run the full pipeline first (V2 renderer is default) to generate a DesignSpec.\n'));
+      process.exitCode = 1;
+      return;
+    }
+
+    const designSpec = JSON.parse(readFileSync(specPath, 'utf-8')) as import('@agentforge/designspec-renderer').DesignSpecV2;
+    output.write(infoMsg(`  DesignSpec loaded from ${relPath(specPath)}\n`));
+
+    if (!designTokens) {
+      output.write(errorMsg('Design tokens required for browser replay. Run `agentforge init` first.\n'));
+      process.exitCode = 1;
+      return;
+    }
+
+    const replayRendererTokens = toRendererTokens(designTokens);
+    const replayCatalogMap = loadCatalogForRenderer(
+      componentCatalog as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined,
+      replayRendererTokens,
+    );
+
+    const replayViewportWidth = resolveViewports({
+      cliWidth: options.width,
+      designConfig,
+      pageViewports: resolvedPage?.viewports as number[] | undefined,
+    })[0];
+
+    const isInteractive = options.interactive === true ||
+      (options.interactive === undefined && 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY);
+
+    if (isInteractive) {
+      output.write(infoMsg('\n  [3/3] Design -- opening interactive browser preview...\n'));
+      try {
+        const preview = await openInteractivePreview(designSpec, replayRendererTokens, replayCatalogMap);
+        output.write(infoMsg(`  Preview: http://localhost:${preview.port}/index.html\n`));
+        output.write(infoMsg('  Click elements to tag feedback, then "Submit" or "Approve & Close".\n'));
+
+        const feedback = await preview.waitForFeedback();
+        await preview.close();
+
+        if (feedback.approved) {
+          output.write(successMsg('  Design approved.\n'));
+        } else {
+          output.write(infoMsg(`  Received ${feedback.tags.length} feedback tag(s).\n`));
+        }
+      } catch (err) {
+        output.write(errorMsg(`Browser preview failed: ${err instanceof Error ? err.message : String(err)}\n`));
+        output.write(errorMsg('Ensure Playwright is installed: npx playwright install chromium\n'));
+        process.exitCode = 1;
+        return;
+      }
+    } else {
+      output.write(infoMsg('\n  [3/3] Design -- replaying designSpec in browser...\n'));
+      try {
+        const t0 = Date.now();
+        const { session, initial } = await openBrowserSession(
+          designSpec,
+          replayRendererTokens,
+          replayCatalogMap,
+          { width: replayViewportWidth },
+        );
+        const ms = Date.now() - t0;
+
+        const screenshotDir = join(outputDir, 'screenshots', 'browser');
+        if (!existsSync(screenshotDir)) {
+          mkdirSync(screenshotDir, { recursive: true });
+        }
+        const screenshotPath = join(screenshotDir, 'root.png');
+        writeFileSync(screenshotPath, initial.screenshot);
+
+        const htmlPath = join(outputDir, 'replay-browser.html');
+        writeFileSync(htmlPath, initial.html);
+
+        await session.close();
+
+        output.write(successMsg(`  Browser replay complete (${(ms / 1000).toFixed(1)}s)\n`));
+        output.write('\n');
+        output.write(infoMsg('='.repeat(60) + '\n'));
+        output.write(infoMsg('  BROWSER REPLAY COMPLETE\n'));
+        output.write(infoMsg('='.repeat(60) + '\n'));
+        output.write(infoMsg(`  Module: ${moduleId}\n`));
+        output.write(infoMsg(`  Nodes: ${Object.keys(designSpec.nodes).length}\n`));
+        output.write(infoMsg(`  Screenshot: ${relPath(screenshotPath)}\n`));
+        output.write(infoMsg(`  HTML: ${relPath(htmlPath)}\n`));
+        output.write(infoMsg('='.repeat(60) + '\n'));
+      } catch (err) {
+        output.write(errorMsg(`Browser session failed: ${err instanceof Error ? err.message : String(err)}\n`));
+        output.write(errorMsg('Ensure Playwright is installed: npx playwright install chromium\n'));
+        process.exitCode = 1;
+        return;
+      }
+    }
     return;
   }
 

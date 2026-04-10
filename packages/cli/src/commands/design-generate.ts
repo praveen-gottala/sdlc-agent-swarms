@@ -14,8 +14,9 @@ import * as fs from 'node:fs';
 import type { DesignTokensSpec, BrandSpec, PromptTrace } from '@agentforge/core';
 import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS, recordPromptTrace, PREVIEW_DIR_REL } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
-import type { LLMProvider } from '@agentforge/providers';
+import type { LLMProvider, ProviderConfig } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
 import { readYaml, writeYaml, realFs, loadDotEnv } from '../fs-utils.js';
@@ -640,7 +641,7 @@ function formatPromptTrace(trace: PromptTrace): string {
 
 /** Attempt LLM generation of the app spec. */
 async function tryLLMGeneration(
-  apiKey: string,
+  providerConfig: ProviderConfig,
   context: {
     readonly appName: string;
     readonly description: string;
@@ -653,7 +654,7 @@ async function tryLLMGeneration(
 ): Promise<GeneratedAppSpec | null> {
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    provider = createClaudeProvider(resolveCLIModel(), providerConfig);
   } catch {
     output.write(warnMsg('Failed to create LLM provider.\n'));
     return null;
@@ -889,16 +890,13 @@ export async function designGenerateCommand(
   const brand = brandResult.value;
 
   // Phase 2: App Spec Generation
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY is required for spec generation. Set it in your environment.\n'));
-    return null;
-  }
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) return null;
 
   output.write(infoMsg('\nGenerating app specification with AI...\n'));
 
   let spec = await tryLLMGeneration(
-    apiKey,
+    providerConfig,
     { appName, description, tokens, brand, prdContent },
     output,
     promptTraces,
@@ -935,7 +933,7 @@ export async function designGenerateCommand(
     } else if (answer === 'r' || answer === 'regenerate') {
       output.write(infoMsg('Regenerating...\n'));
       const newSpec = await tryLLMGeneration(
-        apiKey,
+        providerConfig,
         { appName, description, tokens, brand, prdContent },
         output,
         promptTraces,

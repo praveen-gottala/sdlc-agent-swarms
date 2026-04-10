@@ -312,7 +312,7 @@ describe('designGenerateCommand', () => {
     expect(outputStr).toContain('agentforge describe');
   });
 
-  it('fails when ANTHROPIC_API_KEY is not set', async () => {
+  it('fails when Claude auth is not configured', async () => {
     const mockFs = createMockFs();
     const yaml = require('yaml');
     mockFs.files.set('/project/agentforge/spec/design-tokens.yaml', yaml.stringify(VALID_TOKENS));
@@ -325,19 +325,30 @@ describe('designGenerateCommand', () => {
     let outputStr = '';
     output.on('data', (chunk: Buffer) => { outputStr += chunk.toString(); });
 
-    // Answer 'n' to "Regenerate design system?" prompt
+    // Send '1' to select a fallback design option when prompted
     const input = new PassThrough();
-    setTimeout(() => input.write('n\n'), 50);
+    setTimeout(() => input.write('1\n'), 100);
 
     const origKey = process.env['ANTHROPIC_API_KEY'];
+    const origVertex = process.env['AGENTFORGE_USE_VERTEX'];
+    const origVertexProject = process.env['ANTHROPIC_VERTEX_PROJECT_ID'];
+    const origClaudeVertex = process.env['CLAUDE_CODE_USE_VERTEX'];
     delete process.env['ANTHROPIC_API_KEY'];
+    delete process.env['AGENTFORGE_USE_VERTEX'];
+    delete process.env['ANTHROPIC_VERTEX_PROJECT_ID'];
+    delete process.env['CLAUDE_CODE_USE_VERTEX'];
 
-    const result = await designGenerateCommand('/project', mockFs, input, output);
+    const result = await designGenerateCommand('/project', mockFs, input, output, {
+      designOptionsConfig: { mock: true, openBrowser: async () => false },
+    });
 
     process.env['ANTHROPIC_API_KEY'] = origKey;
+    if (origVertex !== undefined) process.env['AGENTFORGE_USE_VERTEX'] = origVertex;
+    if (origVertexProject !== undefined) process.env['ANTHROPIC_VERTEX_PROJECT_ID'] = origVertexProject;
+    if (origClaudeVertex !== undefined) process.env['CLAUDE_CODE_USE_VERTEX'] = origClaudeVertex;
 
     expect(result).toBeNull();
-    expect(outputStr).toContain('ANTHROPIC_API_KEY');
+    expect(outputStr).toContain('Claude auth required');
   }, 10000);
 
   it('fails when project name is missing', async () => {

@@ -40,6 +40,7 @@ import type {
   DesignConfig,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
+import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
   uxResearchWork,
   uxPlanningWork,
@@ -153,10 +154,9 @@ export async function designPenpotBrowserCommand(
   // Load .env file so ANTHROPIC_API_KEY is available
   loadDotEnv(findProjectRoot());
 
-  // Validate API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    output.write(errorMsg('ANTHROPIC_API_KEY must be set\n'));
+  // Validate Claude auth (API key or Vertex AI)
+  const providerConfig = requireClaudeAuth(output);
+  if (!providerConfig) {
     process.exitCode = 1;
     return;
   }
@@ -195,7 +195,7 @@ export async function designPenpotBrowserCommand(
     output.write(infoMsg('  [1/3] Research -- loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
-    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
     const context = createContext(taskId, createMockMCPClient());
 
     const input: UXResearchInput = {
@@ -233,7 +233,7 @@ export async function designPenpotBrowserCommand(
     output.write(infoMsg('  [2/3] Planning -- loaded from cache\n'));
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
-    const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
     const context = createContext(taskId, createMockMCPClient());
 
     const input: UXPlanningInput = {
@@ -280,7 +280,7 @@ export async function designPenpotBrowserCommand(
   // -- Stage 3: Design (Penpot + Browser) --
   output.write(infoMsg('\n  [3/3] Design -- creating Penpot components (browser mode)...\n'));
 
-  const provider = createClaudeProvider(resolveCLIModel(), { apiKey });
+  const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
   const penpotUrl = process.env.PENPOT_URL ?? DEFAULT_SERVICE_URLS.penpotUi;
   const penpotEmail = process.env.PENPOT_EMAIL ?? '';
   const penpotPassword = process.env.PENPOT_PASSWORD ?? '';
@@ -327,7 +327,7 @@ export async function designPenpotBrowserCommand(
   // ── --implement flag: generate code from design ──
   if (options.implement) {
     output.write(infoMsg('\n  [implement] Generating code from design...\n'));
-    const implProvider = createClaudeProvider(resolveCLIModel(), { apiKey });
+    const implProvider = createClaudeProvider(resolveCLIModel(), providerConfig);
     const implContext = createContext(`${taskId}_impl`, mcpClient);
 
     const implInput: UXImplementationInput = {
