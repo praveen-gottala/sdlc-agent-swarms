@@ -28,6 +28,7 @@ import {
   recordPromptTraceResponse,
   debugLog,
   logDefaults,
+  extractJson,
 } from '@agentforge/core';
 import type { UXResearchOutput } from '../ux-research/ux-research.js';
 import type { ComponentTreeNode, ResponsiveRule, ScreenDefinition } from '../types.js';
@@ -213,12 +214,11 @@ const extractPlanningFields = (parsed: Record<string, unknown>): UXPlanningOutpu
 
 /** Parse the LLM output as a UX dashboard planning JSON object (text fallback). */
 export const parsePlanningOutput = (output: string): Result<UXPlanningOutput> => {
-  const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
+  const jsonStr = extractJson(output);
 
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-    return Ok(extractPlanningFields(parsed));
+    parsed = JSON.parse(jsonStr);
   } catch {
     return Err({
       code: 'LLM_MALFORMED_OUTPUT' as const,
@@ -226,6 +226,8 @@ export const parsePlanningOutput = (output: string): Result<UXPlanningOutput> =>
       recoverable: true,
     });
   }
+
+  return Ok(extractPlanningFields(parsed as Record<string, unknown>));
 };
 
 // ============================================================================

@@ -31,7 +31,7 @@ export function BudgetCard({ label, spent, limit, threshold = 0.8 }: BudgetCardP
       <p className="text-xs text-text-muted uppercase tracking-wide">{label}</p>
       <p className="text-lg font-bold text-text-primary mt-1">
         ${spent.toFixed(2)}{' '}
-        <span className="text-sm font-normal text-text-muted">/ ${limit.toFixed(2)}</span>
+        <span className="text-sm font-normal text-text-muted">/ {limit > 0 ? `$${limit.toFixed(2)}` : '\u2014'}</span>
       </p>
       {/* Progress bar */}
       <div className="mt-3 h-2 rounded-full bg-bg-elevated overflow-hidden">

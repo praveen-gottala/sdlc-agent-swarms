@@ -36,6 +36,19 @@ paths: ["**/*.test.*", "**/*.spec.*", "**/tests/**", "**/__tests__/**"]
   warn or fail early when inputs are degenerate (e.g., prdRequirements containing
   only short labels instead of full PRD content).
 
+## Playwright E2E Tests
+- When changes touch dashboard UI, API routes, or any E2E-covered functionality,
+  run `npx playwright test` from the monorepo root after unit tests pass.
+- E2E tests live in `e2e/` with page objects in `e2e/pages/`.
+- Playwright config (`playwright.config.ts`) only starts the Next.js dashboard
+  server. The design renderer (port 4100) is auto-started by the dashboard via
+  `/api/renderer/start` — do NOT add it back as a `webServer` entry.
+- New dashboard pages or features that change user-visible behavior MUST have
+  a corresponding E2E test. Use the existing page object pattern (e.g.,
+  `DesignStudioPO`, `SidebarPO`).
+- E2E test timeout is 30s per test. If a test needs the renderer iframe,
+  use `waitForIframeReady()` which allows 30s for auto-start.
+
 ## Test & Fixture Placement Convention
 All packages must follow this layout. No exceptions.
 

@@ -1,0 +1,248 @@
+[
+  {
+    "nodeId": "nav-bar",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"nav-bar\" references unknown catalog entry \"NavigationBar\""
+  },
+  {
+    "nodeId": "status-check-new",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-new\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "status-check-under-review",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-under-review\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "status-check-pending-info",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-pending-info\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "status-check-approved",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-approved\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "status-check-denied",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-denied\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "status-check-closed",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"status-check-closed\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "priority-check-critical",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"priority-check-critical\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "priority-check-high",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"priority-check-high\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "priority-check-medium",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"priority-check-medium\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "priority-check-low",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"priority-check-low\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-auto",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-auto\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-property",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-property\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-medical",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-medical\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-theft",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-theft\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-natural",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-natural\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "incident-check-liability",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"incident-check-liability\" references unknown catalog entry \"Checkbox\""
+  },
+  {
+    "nodeId": "date-range-from",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"date-range-from\" references unknown catalog entry \"DatePicker\""
+  },
+  {
+    "nodeId": "date-range-to",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"date-range-to\" references unknown catalog entry \"DatePicker\""
+  },
+  {
+    "nodeId": "adjuster-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"adjuster-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "sidebar-clear-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"sidebar-clear-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "new-claim-btn",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"new-claim-btn\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "search-input",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"search-input\" references unknown catalog entry \"SearchInput\""
+  },
+  {
+    "nodeId": "bulk-btn-assign",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"bulk-btn-assign\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "bulk-btn-approve",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"bulk-btn-approve\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "bulk-btn-close",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"bulk-btn-close\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "bulk-btn-export",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"bulk-btn-export\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "bulk-btn-deselect",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"bulk-btn-deselect\" references unknown catalog entry \"Button\""
+  },
+  {
+    "nodeId": "claims-table",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"claims-table\" references unknown catalog entry \"DataTable\""
+  },
+  {
+    "nodeId": "badge-new",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-new\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-under-review",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-under-review\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-pending-info",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-pending-info\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-approved",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-approved\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-denied",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-denied\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-critical",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-critical\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-high",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-high\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-medium",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-medium\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "badge-low",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"badge-low\" references unknown catalog entry \"Badge\""
+  },
+  {
+    "nodeId": "pagination-controls",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"pagination-controls\" references unknown catalog entry \"Pagination\""
+  },
+  {
+    "nodeId": "per-page-select",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"per-page-select\" references unknown catalog entry \"Select\""
+  },
+  {
+    "nodeId": "page-footer",
+    "rule": "valid-catalog",
+    "autoFixable": false,
+    "description": "[error] Node \"page-footer\" references unknown catalog entry \"Footer\""
+  }
+]

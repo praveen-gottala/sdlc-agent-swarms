@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { readTextFile, fileExists, listDir } from '../../_lib/project-reader';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { readTextFile, fileExists, listDir, getActiveProjectRoot } from '../../_lib/project-reader';
 
 /**
  * Maps a spec path to the actual file path in the bookshelf project.
@@ -72,7 +74,6 @@ export async function GET(
 /**
  * PUT /api/spec/[...path]
  * Updates spec file content. Accepts { content: string } body.
- * TODO: Persist to actual YAML files.
  */
 export async function PUT(
   request: Request,
@@ -95,9 +96,20 @@ export async function PUT(
     );
   }
 
-  return NextResponse.json({
-    path: specPath,
-    savedAt: new Date().toISOString(),
-    status: 'saved',
-  });
+  try {
+    const projectRoot = getActiveProjectRoot();
+    const fullPath = join(projectRoot, `agentforge/spec/${specPath}.yaml`);
+    const dir = dirname(fullPath);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(fullPath, body.content, 'utf-8');
+
+    return NextResponse.json({
+      path: specPath,
+      savedAt: new Date().toISOString(),
+      status: 'saved',
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

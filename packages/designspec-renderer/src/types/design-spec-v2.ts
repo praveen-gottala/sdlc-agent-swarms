@@ -10,9 +10,15 @@
 /** Layout-only structural primitives. No visual identity. */
 export type AcceleratorType = 'page' | 'container' | 'section' | 'header' | 'divider' | 'spacer' | 'text';
 
-/** Flex layout configuration for containers. */
+/** Layout configuration for containers — flex (default) or CSS grid. */
 export interface LayoutSpec {
   readonly dir: 'row' | 'column';
+  /** Layout mode. Default: 'flex'. Use 'grid' for multi-column card grids. */
+  readonly display?: 'flex' | 'grid';
+  /** Number of equal grid columns — only with display: 'grid'. Maps to `grid-template-columns: repeat(N, 1fr)`. */
+  readonly columns?: number;
+  /** Enable flex wrapping — only with display: 'flex'. Maps to `flex-wrap: wrap`. */
+  readonly wrap?: boolean;
   readonly gap?: number;
   readonly align?: 'start' | 'center' | 'end' | 'stretch';
   readonly justify?: 'start' | 'center' | 'end' | 'space-between';

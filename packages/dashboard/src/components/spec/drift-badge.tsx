@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 interface DriftBadgeProps {
   hasDrift: boolean;
-  description: string;
+  description?: string;
 }
 
 /** Warning indicator for spec drift. Shows a yellow triangle when drift is detected. */

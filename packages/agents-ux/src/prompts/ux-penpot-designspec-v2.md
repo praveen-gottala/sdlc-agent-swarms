@@ -35,7 +35,7 @@ Every node needs `parent` (string ID or null for root) and `order` (0-based sibl
 **Component nodes** use `catalog`:
 - Reference ONLY the renderable catalog IDs listed below. These have dedicated renderers.
 - Provide content via `label`, `content`, `value`, `placeholder`, `helper`
-- Override catalog defaults via `overrides: { key: value }`
+- Override catalog defaults via `overrides: { key: value }` — see **Overrides (browser + Penpot)** below.
 
 **Renderable catalog IDs** (ONLY use these as `catalog` values):
 {{RENDERABLE_CATALOG_IDS}}
@@ -46,7 +46,7 @@ A node has `type` OR `catalog`, never both.
 
 ### Layout
 
-Container nodes use `layout` for flex configuration:
+Container nodes use `layout` for flex (default) or grid configuration:
 ```json
 {
   "layout": { "dir": "column", "gap": 16, "align": "stretch", "px": 24, "py": 16 }
@@ -54,12 +54,59 @@ Container nodes use `layout` for flex configuration:
 ```
 
 - `dir`: "row" or "column" (required)
+- `display`: "flex" (default) or "grid" — use grid for multi-column card grids
+- `columns`: number of equal grid columns (only with `display: "grid"`)
+- `wrap`: true to enable flex wrapping (only with `display: "flex"`)
 - `gap`: space between children in px
 - `align`: cross-axis alignment — "start", "center", "end", "stretch"
 - `justify`: main-axis alignment — "start", "center", "end", "space-between"
 - `px`, `py`: horizontal/vertical padding; `pt`, `pb` for top/bottom overrides
 
+Use `display: "grid"` with `columns` for card grids and multi-column layouts:
+```json
+{
+  "layout": { "dir": "row", "display": "grid", "columns": 3, "gap": 24 }
+}
+```
+
+Use `wrap: true` for chip rows or tag lists that should wrap to multiple lines.
+
 Width can be a number (px) or `"fill"` (fills parent). Height is a number (px).
+
+### Overrides (browser + Penpot)
+
+Use **node-level fields first**; reserve `overrides` for accessibility, cursor, rare CSS that has no DesignSpec field, or inspector-driven tweaks.
+
+- **Backgrounds and fills:** set the node’s top-level `background` to a **semantic token** (e.g. `"info"`, `"warning"`, `"success"`, `"error"`, `"cta-primary"`, `"surface-secondary"`). Do **not** put `background-color` or hex colors in `overrides` for ordinary surfaces — the deterministic pipeline and browser renderer resolve tokens reliably; raw CSS in `overrides` is fragile.
+- **Sizing:** use `width` (number = px, or `"fill"`) and `height` on the node. **Do not** use CSS `flex` shorthand in `overrides` for primary layout; prefer flex parents with `width: "fill"` children or grid (`layout.display: "grid"`, `layout.columns`).
+- **Avatars and links:** put **display text** in `label` (e.g. avatar initials `"MR"` or link text). Do **not** rely on `overrides.initials` for avatar text.
+- **Separators between list rows:** use **`type: "divider"`** nodes. Do **not** simulate borders with `overrides` like `border-bottom` unless there is no other way.
+- **Hex colors:** avoid hex in the spec; prefer semantic tokens so Penpot and the browser stay aligned.
+
+### Icons
+
+Use `catalog: "icon"` for standalone icon nodes. Set `overrides: { "name": "<semantic-name>" }`.
+
+Use `overrides: { "icon": "<semantic-name>" }` on supported components such as buttons, search inputs, and alerts to add an inline icon.
+
+For icon + text pairs, create a parent `type: "container"` with `layout: { "dir": "row", "gap": 8, "align": "center" }`, then add the icon and text as sibling child nodes using `parent`.
+
+Available semantic icon names (use ONLY these; pick the closest semantic match instead of inventing a new name):
+- Navigation: `home`, `menu`, `arrow-left`, `arrow-right`, `chevron-down`, `chevron-up`, `chevron-left`, `chevron-right`, `external-link`, `arrow-up`, `arrow-down`
+- Actions: `search`, `filter`, `sort`, `plus`, `minus`, `edit`, `delete`, `copy`, `share`, `download`, `upload`, `refresh`, `more`, `more-vertical`, `close`, `expand`, `collapse`, `undo`, `redo`
+- Status: `check`, `check-circle`, `x-circle`, `alert-circle`, `info`, `alert-triangle`, `clock`, `loader`, `circle`, `circle-dot`
+- Content: `user`, `users`, `mail`, `phone`, `calendar`, `file`, `file-text`, `folder`, `image`, `link`, `tag`, `bookmark`, `star`, `heart`, `thumbs-up`, `map-pin`, `globe`, `hash`, `list`, `grid`, `bar-chart`, `pie-chart`, `trending-up`, `trending-down`
+- Commerce: `shopping-cart`, `credit-card`, `dollar-sign`, `receipt`, `wallet`, `percent`
+- Communication: `bell`, `message-circle`, `message-square`, `send`, `at-sign`
+- Settings: `settings`, `lock`, `unlock`, `eye`, `eye-off`, `toggle-left`, `toggle-right`, `shield`, `key`, `log-out`, `log-in`, `zap`, `help-circle`
+
+### Images and Illustrations
+
+Use `catalog: "image"` for content-image placeholders. Set width, height, and `overrides: { "alt": "description" }`.
+
+Use `catalog: "illustration"` for decorative placeholders such as empty states or onboarding art. Set width, height, and `overrides: { "alt": "description" }`.
+
+These render as placeholders at the correct size. Real image or illustration assets are supplied after design generation.
 
 ### Colors & Typography
 
@@ -138,5 +185,6 @@ Typography uses role references: `"heading-1"`, `"heading-2"`, `"heading-3"`, `"
 4. Use `catalog` ONLY for IDs listed in the "Renderable catalog IDs" section. All other components must be built from structural nodes (container, text, divider, etc.)
 5. Populate ALL text with realistic, domain-appropriate content — never use "Lorem ipsum" or placeholder text
 6. Every container that holds children MUST have a `layout` with at least `dir`
-7. Use `width: "fill"` for elements that should stretch to their parent's width
-8. Do NOT output any text, explanation, or markdown — ONLY the `submit_design` tool call
+7. Use `width: "fill"` for elements that should stretch to their parent's width. For multi-column card grids, use `layout.display: "grid"` with `layout.columns` instead of `layout.dir: "row"` with `width: "fill"` children
+8. Prefer **structural containers** (`type: "container"` with `background`, `shadow`, `radius` on the node) for card-like surfaces when the catalog `card` component is not required; it keeps token-based backgrounds and sizing out of `overrides`.
+9. Do NOT output any text, explanation, or markdown — ONLY the `submit_design` tool call

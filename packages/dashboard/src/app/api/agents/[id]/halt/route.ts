@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/agents/[id]/halt
  * Halts a running agent through governance middleware.

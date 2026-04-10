@@ -15,6 +15,9 @@ export default defineConfig({
       '@agentforge/core': path.resolve(__dirname, '../../../../../core/src/index.ts'),
     },
   },
+  server: {
+    port: 4100,
+  },
   build: {
     outDir: 'dist',
   },

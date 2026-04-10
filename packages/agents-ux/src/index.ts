@@ -172,3 +172,8 @@ export type { BrowserCorrectionResult, BrowserCorrectionOptions } from './ux-des
 // Page Context
 export { formatPageContextPrompt, buildPageContext, resolvePageEntry } from './page-context-prompt.js';
 
+// Brownfield Import
+export type { LLMProvider, LLMToolResult, ImportOptions, PageImportResult } from './ux-import/index.js';
+export { collectPageSource, buildImportPrompt, convertPageToDesignSpec, convertAllPages } from './ux-import/index.js';
+export { createAnthropicProvider } from './ux-import/index.js';
+

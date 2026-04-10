@@ -73,6 +73,9 @@ const CATALOG_RENDERERS: Record<string, ComponentRenderer> = {
   'link': renderLink,
   'switch': renderSwitch,
   'data-table': renderDataTable,
+  'icon': renderCatalogGeneric,
+  'image': renderCatalogGeneric,
+  'illustration': renderCatalogGeneric,
 };
 
 /**

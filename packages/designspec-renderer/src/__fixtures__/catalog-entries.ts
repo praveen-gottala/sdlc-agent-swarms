@@ -356,6 +356,38 @@ const DATA_TABLE: CatalogEntry = {
   },
 };
 
+/** Standalone semantic icon. */
+const ICON: CatalogEntry = {
+  type: 'icon',
+  background: 'transparent',
+  required_fields: [],
+  library: {
+    shadcn: { component: 'Icon', note: 'Semantic icon resolved by browser renderer' },
+  },
+};
+
+/** Content image placeholder. */
+const IMAGE: CatalogEntry = {
+  type: 'image',
+  background: 'surface-secondary',
+  radius: 8,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'div', note: 'Image placeholder composition' },
+  },
+};
+
+/** Decorative illustration placeholder. */
+const ILLUSTRATION: CatalogEntry = {
+  type: 'illustration',
+  background: 'surface-secondary',
+  radius: 12,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'div', note: 'Illustration placeholder composition' },
+  },
+};
+
 /** All V2 built-in catalog entries. */
 export const V2_BUILTIN_CATALOG: CatalogMap = {
   'input-text': INPUT_TEXT,
@@ -380,4 +412,7 @@ export const V2_BUILTIN_CATALOG: CatalogMap = {
   'link': LINK,
   'switch': SWITCH,
   'data-table': DATA_TABLE,
+  'icon': ICON,
+  'image': IMAGE,
+  'illustration': ILLUSTRATION,
 };

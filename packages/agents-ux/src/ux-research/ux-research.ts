@@ -23,7 +23,9 @@ import {
   readSpecs,
   recordPromptTrace,
   recordPromptTraceResponse,
+  safeParse,
 } from '@agentforge/core';
+import { UXResearchOutputSchema } from '../schemas.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 import { formatPageContextPrompt } from '../page-context-prompt.js';
 import type { DesignTokensSpec, PageContext } from '@agentforge/core';
@@ -94,27 +96,7 @@ const loadSystemPrompt = (): string => {
 
 /** Parse the LLM output as a UX dashboard research JSON object. */
 export const parseResearchOutput = (output: string): Result<UXResearchOutput> => {
-  const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
-
-  try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-    return Ok({
-      briefId: (parsed.briefId as string) ?? '',
-      moduleId: (parsed.moduleId as string) ?? '',
-      requirementIds: (parsed.requirementIds as string[]) ?? [],
-      designConstraints: (parsed.designConstraints as string[]) ?? [],
-      referencePatterns: (parsed.referencePatterns as string[]) ?? [],
-      accessibilityRequirements: (parsed.accessibilityRequirements as string[]) ?? [],
-      dataModelDependencies: (parsed.dataModelDependencies as string[]) ?? [],
-    });
-  } catch {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Failed to parse UX dashboard research output: ${jsonStr.slice(0, 200)}`,
-      recoverable: true,
-    });
-  }
+  return safeParse(output, UXResearchOutputSchema, 'UX Research') as Result<UXResearchOutput>;
 };
 
 // ============================================================================

@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
-
-const validStatuses = ['pending', 'in_progress', 'review', 'done', 'blocked'];
+import {
+  loadTasks,
+  saveTasks,
+  updateTaskStatus,
+  createRealFs,
+} from '@agentforge/core';
+import { getActiveProjectRoot } from '../../../_lib/project-reader';
 
 /**
  * PATCH /api/tasks/[id]/status
- * Updates the status of a task.
- * TODO: Persist via @agentforge/core state manager.
+ * Updates the status of a task using core's task-manager (real persistence).
  */
 export async function PATCH(
   request: Request,
@@ -32,10 +36,30 @@ export async function PATCH(
     );
   }
 
-  if (!validStatuses.includes(status)) {
+  const projectRoot = getActiveProjectRoot();
+  const fs = createRealFs();
+
+  const loadResult = loadTasks(projectRoot, fs);
+  if (!loadResult.ok) {
     return NextResponse.json(
-      { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-      { status: 400 },
+      { error: `Failed to load tasks: ${loadResult.error.message}` },
+      { status: 500 },
+    );
+  }
+
+  const updateResult = updateTaskStatus(loadResult.value, id, status as Parameters<typeof updateTaskStatus>[2]);
+  if (!updateResult.ok) {
+    return NextResponse.json(
+      { error: updateResult.error.message },
+      { status: 422 },
+    );
+  }
+
+  const saveResult = saveTasks(projectRoot, updateResult.value, fs);
+  if (!saveResult.ok) {
+    return NextResponse.json(
+      { error: `Failed to save tasks: ${saveResult.error.message}` },
+      { status: 500 },
     );
   }
 

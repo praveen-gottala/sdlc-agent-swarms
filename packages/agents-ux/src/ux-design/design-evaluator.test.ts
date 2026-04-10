@@ -107,7 +107,7 @@ describe('evaluateDesign', () => {
     const result = await evaluateDesign('base64data', 'Design spec', provider);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.message).toContain('parse');
+      expect(result.error.message).toContain('invalid JSON');
     }
   });
 

@@ -1,0 +1,16 @@
+version: "1.0"
+project:
+  name: Quick Marks
+  description: UX agent stress-test artifact — targets form validation flows and
+    card-based list filtering.
+  platforms:
+    - web
+stack:
+  frontend: react
+  backend: node
+  database: postgresql
+  styling: tailwind
+budget:
+  per_task_max_usd: 2
+  per_phase_max_usd: 25
+  monthly_max_usd: 200

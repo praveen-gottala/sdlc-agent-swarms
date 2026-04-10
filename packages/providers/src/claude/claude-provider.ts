@@ -23,6 +23,14 @@ import type {
 import { calculateCost } from '../cost-table.js';
 import { detectVertexConfig } from '../vertex-config.js';
 
+/** Safely extract cache token counts from Anthropic usage. */
+function getCacheTokens(usage: Anthropic.Usage): { cacheReadTokens?: number; cacheWriteTokens?: number } {
+  return {
+    cacheReadTokens: usage.cache_read_input_tokens ?? undefined,
+    cacheWriteTokens: usage.cache_creation_input_tokens ?? undefined,
+  };
+}
+
 const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 
 /**
@@ -358,11 +366,11 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         );
 
         // Build usage
+        const cacheTokens = getCacheTokens(response.usage);
         const usage: TokenUsage = {
           inputTokens: response.usage.input_tokens,
           outputTokens: response.usage.output_tokens,
-          cacheReadTokens: response.usage.cache_read_input_tokens ?? undefined,
-          cacheWriteTokens: response.usage.cache_creation_input_tokens ?? undefined,
+          ...cacheTokens,
         };
 
         const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);
@@ -445,11 +453,11 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
           if (event.type === 'message_stop') {
             const finalMessage = stream.currentMessage;
             if (finalMessage) {
+              const streamCacheTokens = getCacheTokens(finalMessage.usage);
               const usage: TokenUsage = {
                 inputTokens: finalMessage.usage.input_tokens,
                 outputTokens: finalMessage.usage.output_tokens,
-                cacheReadTokens: finalMessage.usage.cache_read_input_tokens ?? undefined,
-                cacheWriteTokens: finalMessage.usage.cache_creation_input_tokens ?? undefined,
+                ...streamCacheTokens,
               };
 
               const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);

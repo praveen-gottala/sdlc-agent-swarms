@@ -1,0 +1,2604 @@
+{
+  "screen": "claims-list",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "nav-bar": {
+      "parent": "page-root",
+      "order": 0,
+      "catalog": "NavigationBar",
+      "label": "ClaimFlow",
+      "width": "fill"
+    },
+    "page-header": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "header",
+      "background": "surface-primary",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "pt": 24,
+        "pb": 16,
+        "gap": 12
+      },
+      "shadow": "sm"
+    },
+    "page-header-left": {
+      "parent": "page-header",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "page-title": {
+      "parent": "page-header-left",
+      "order": 0,
+      "type": "text",
+      "content": "All Claims",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "result-count": {
+      "parent": "page-header-left",
+      "order": 1,
+      "type": "text",
+      "content": "Showing 1–20 of 312 claims",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "new-claim-button": {
+      "parent": "page-header",
+      "order": 1,
+      "catalog": "Button",
+      "label": "+ New Claim",
+      "overrides": {
+        "variant": "primary"
+      }
+    },
+    "claims-layout": {
+      "parent": "page-root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "start",
+        "gap": 0
+      }
+    },
+    "filter-sidebar": {
+      "parent": "claims-layout",
+      "order": 0,
+      "type": "section",
+      "background": "surface-secondary",
+      "width": 280,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "pt": 16,
+        "pb": 24
+      },
+      "overrides": {
+        "border-right": "1px solid border-default",
+        "min-height": "100vh"
+      }
+    },
+    "sidebar-header": {
+      "parent": "filter-sidebar",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "pb": 8
+      }
+    },
+    "sidebar-title-row": {
+      "parent": "sidebar-header",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "sidebar-title": {
+      "parent": "sidebar-title-row",
+      "order": 0,
+      "type": "text",
+      "content": "Filters",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "active-filter-badge": {
+      "parent": "sidebar-title-row",
+      "order": 1,
+      "catalog": "Badge",
+      "label": "3",
+      "overrides": {
+        "variant": "info"
+      }
+    },
+    "clear-all-link": {
+      "parent": "sidebar-header",
+      "order": 1,
+      "catalog": "Link",
+      "label": "Clear all",
+      "overrides": {
+        "font-size": "13px"
+      }
+    },
+    "sidebar-divider-0": {
+      "parent": "filter-sidebar",
+      "order": 1,
+      "type": "divider",
+      "width": "fill"
+    },
+    "status-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "pt": 16,
+        "pb": 16
+      }
+    },
+    "status-group-label": {
+      "parent": "status-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "STATUS",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em",
+        "margin-bottom": "8px"
+      }
+    },
+    "status-check-submitted": {
+      "parent": "status-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "Submitted (48)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "status-check-under-review": {
+      "parent": "status-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "Under Review (31)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "status-check-info-requested": {
+      "parent": "status-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Info Requested (15)",
+      "overrides": {
+        "min-height": "44px",
+        "checked": true
+      }
+    },
+    "status-check-escalated": {
+      "parent": "status-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Escalated (9)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "status-check-approved": {
+      "parent": "status-filter-group",
+      "order": 5,
+      "catalog": "Checkbox",
+      "label": "Approved (82)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "status-check-denied": {
+      "parent": "status-filter-group",
+      "order": 6,
+      "catalog": "Checkbox",
+      "label": "Denied (24)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "status-check-closed": {
+      "parent": "status-filter-group",
+      "order": 7,
+      "catalog": "Checkbox",
+      "label": "Closed (103)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "sidebar-divider-1": {
+      "parent": "filter-sidebar",
+      "order": 3,
+      "type": "divider",
+      "width": "fill"
+    },
+    "priority-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 4,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "pt": 16,
+        "pb": 16
+      }
+    },
+    "priority-group-label": {
+      "parent": "priority-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "PRIORITY",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em",
+        "margin-bottom": "8px"
+      }
+    },
+    "priority-check-critical": {
+      "parent": "priority-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "Critical (12)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "priority-check-high": {
+      "parent": "priority-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "High (38)",
+      "overrides": {
+        "min-height": "44px",
+        "checked": true
+      }
+    },
+    "priority-check-medium": {
+      "parent": "priority-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Medium (91)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "priority-check-low": {
+      "parent": "priority-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Low (171)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "sidebar-divider-2": {
+      "parent": "filter-sidebar",
+      "order": 5,
+      "type": "divider",
+      "width": "fill"
+    },
+    "incident-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 6,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "pt": 16,
+        "pb": 16
+      }
+    },
+    "incident-group-label": {
+      "parent": "incident-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "INCIDENT TYPE",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em",
+        "margin-bottom": "8px"
+      }
+    },
+    "incident-check-water": {
+      "parent": "incident-filter-group",
+      "order": 1,
+      "catalog": "Checkbox",
+      "label": "Water Damage (67)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-fire": {
+      "parent": "incident-filter-group",
+      "order": 2,
+      "catalog": "Checkbox",
+      "label": "Fire (29)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-theft": {
+      "parent": "incident-filter-group",
+      "order": 3,
+      "catalog": "Checkbox",
+      "label": "Theft (44)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-collision": {
+      "parent": "incident-filter-group",
+      "order": 4,
+      "catalog": "Checkbox",
+      "label": "Collision (55)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-natural": {
+      "parent": "incident-filter-group",
+      "order": 5,
+      "catalog": "Checkbox",
+      "label": "Natural Disaster (38)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-vandalism": {
+      "parent": "incident-filter-group",
+      "order": 6,
+      "catalog": "Checkbox",
+      "label": "Vandalism (21)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "incident-check-other": {
+      "parent": "incident-filter-group",
+      "order": 7,
+      "catalog": "Checkbox",
+      "label": "Other (58)",
+      "overrides": {
+        "min-height": "44px"
+      }
+    },
+    "sidebar-divider-3": {
+      "parent": "filter-sidebar",
+      "order": 7,
+      "type": "divider",
+      "width": "fill"
+    },
+    "date-range-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 8,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "pt": 16,
+        "pb": 16
+      }
+    },
+    "date-group-label": {
+      "parent": "date-range-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "FILED DATE",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em"
+      }
+    },
+    "date-presets-row": {
+      "parent": "date-range-filter-group",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "wrap": true,
+        "gap": 6
+      }
+    },
+    "preset-today": {
+      "parent": "date-presets-row",
+      "order": 0,
+      "catalog": "Chip",
+      "label": "Today",
+      "overrides": {
+        "variant": "default"
+      }
+    },
+    "preset-7days": {
+      "parent": "date-presets-row",
+      "order": 1,
+      "catalog": "Chip",
+      "label": "Last 7 days",
+      "overrides": {
+        "variant": "selected"
+      }
+    },
+    "preset-30days": {
+      "parent": "date-presets-row",
+      "order": 2,
+      "catalog": "Chip",
+      "label": "Last 30 days",
+      "overrides": {
+        "variant": "default"
+      }
+    },
+    "preset-month": {
+      "parent": "date-presets-row",
+      "order": 3,
+      "catalog": "Chip",
+      "label": "This month",
+      "overrides": {
+        "variant": "default"
+      }
+    },
+    "date-range-picker": {
+      "parent": "date-range-filter-group",
+      "order": 2,
+      "catalog": "DatePicker",
+      "label": "Custom range",
+      "placeholder": "Select date range",
+      "width": "fill"
+    },
+    "active-range-display": {
+      "parent": "date-range-filter-group",
+      "order": 3,
+      "type": "text",
+      "content": "Mar 8 – Mar 15, 2026",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "sidebar-divider-4": {
+      "parent": "filter-sidebar",
+      "order": 9,
+      "type": "divider",
+      "width": "fill"
+    },
+    "adjuster-filter-group": {
+      "parent": "filter-sidebar",
+      "order": 10,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "pt": 16,
+        "pb": 16
+      }
+    },
+    "adjuster-group-label": {
+      "parent": "adjuster-filter-group",
+      "order": 0,
+      "type": "text",
+      "content": "ASSIGNED ADJUSTER",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em"
+      }
+    },
+    "adjuster-dropdown": {
+      "parent": "adjuster-filter-group",
+      "order": 1,
+      "catalog": "Select",
+      "label": "",
+      "placeholder": "All adjusters",
+      "width": "fill",
+      "items": [
+        {
+          "label": "All adjusters",
+          "value": ""
+        },
+        {
+          "label": "Sarah Chen (8 claims)",
+          "value": "sarah-chen"
+        },
+        {
+          "label": "Marcus Johnson (12 claims)",
+          "value": "marcus-johnson"
+        },
+        {
+          "label": "Priya Patel (6 claims)",
+          "value": "priya-patel"
+        },
+        {
+          "label": "Tom Rivera (10 claims)",
+          "value": "tom-rivera"
+        },
+        {
+          "label": "Unassigned (23 claims)",
+          "value": "unassigned"
+        }
+      ]
+    },
+    "main-content": {
+      "parent": "claims-layout",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 24,
+        "pt": 16,
+        "pb": 24
+      }
+    },
+    "toolbar-row": {
+      "parent": "main-content",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "pb": 12
+      }
+    },
+    "search-bar": {
+      "parent": "toolbar-row",
+      "order": 0,
+      "catalog": "SearchInput",
+      "placeholder": "Search by claim #, policyholder name, or description…",
+      "width": "fill"
+    },
+    "active-filter-chips-row": {
+      "parent": "toolbar-row",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "wrap": true,
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "chip-info-requested": {
+      "parent": "active-filter-chips-row",
+      "order": 0,
+      "catalog": "Chip",
+      "label": "Status: Info Requested ×",
+      "overrides": {
+        "variant": "selected"
+      }
+    },
+    "chip-high-priority": {
+      "parent": "active-filter-chips-row",
+      "order": 1,
+      "catalog": "Chip",
+      "label": "Priority: High ×",
+      "overrides": {
+        "variant": "selected"
+      }
+    },
+    "chip-date-range": {
+      "parent": "active-filter-chips-row",
+      "order": 2,
+      "catalog": "Chip",
+      "label": "Filed: Mar 8 – Mar 15 ×",
+      "overrides": {
+        "variant": "selected"
+      }
+    },
+    "bulk-action-bar": {
+      "parent": "main-content",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 10,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 16,
+        "py": 12
+      },
+      "overrides": {
+        "margin-bottom": "8px"
+      }
+    },
+    "bulk-left": {
+      "parent": "bulk-action-bar",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "bulk-selection-count": {
+      "parent": "bulk-left",
+      "order": 0,
+      "type": "text",
+      "content": "3 claims selected",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "bulk-deselect-all": {
+      "parent": "bulk-left",
+      "order": 1,
+      "catalog": "Button",
+      "label": "×",
+      "overrides": {
+        "variant": "ghost",
+        "padding": "4px 8px"
+      }
+    },
+    "bulk-center": {
+      "parent": "bulk-action-bar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "bulk-assign-btn": {
+      "parent": "bulk-center",
+      "order": 0,
+      "catalog": "Button",
+      "label": "Assign Adjuster",
+      "overrides": {
+        "variant": "secondary"
+      }
+    },
+    "bulk-assign-dropdown": {
+      "parent": "bulk-center",
+      "order": 1,
+      "catalog": "Select",
+      "label": "",
+      "placeholder": "Select adjuster…",
+      "width": 180,
+      "items": [
+        {
+          "label": "Sarah Chen",
+          "value": "sarah-chen"
+        },
+        {
+          "label": "Marcus Johnson",
+          "value": "marcus-johnson"
+        },
+        {
+          "label": "Priya Patel",
+          "value": "priya-patel"
+        },
+        {
+          "label": "Tom Rivera",
+          "value": "tom-rivera"
+        }
+      ]
+    },
+    "bulk-priority-btn": {
+      "parent": "bulk-center",
+      "order": 2,
+      "catalog": "Button",
+      "label": "Change Priority",
+      "overrides": {
+        "variant": "secondary"
+      }
+    },
+    "bulk-priority-dropdown": {
+      "parent": "bulk-center",
+      "order": 3,
+      "catalog": "Select",
+      "label": "",
+      "placeholder": "Select priority…",
+      "width": 150,
+      "items": [
+        {
+          "label": "Critical",
+          "value": "critical"
+        },
+        {
+          "label": "High",
+          "value": "high"
+        },
+        {
+          "label": "Medium",
+          "value": "medium"
+        },
+        {
+          "label": "Low",
+          "value": "low"
+        }
+      ]
+    },
+    "bulk-right": {
+      "parent": "bulk-action-bar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "bulk-cancel-btn": {
+      "parent": "bulk-right",
+      "order": 0,
+      "catalog": "Button",
+      "label": "Cancel",
+      "overrides": {
+        "variant": "ghost"
+      }
+    },
+    "claims-table-wrapper": {
+      "parent": "main-content",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 10,
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      },
+      "overrides": {
+        "border": "1px solid border-default",
+        "overflow": "hidden"
+      }
+    },
+    "table-header-row": {
+      "parent": "claims-table-wrapper",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-secondary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 10
+      },
+      "overrides": {
+        "border-bottom": "2px solid border-default"
+      }
+    },
+    "th-checkbox": {
+      "parent": "table-header-row",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select all claims"
+      }
+    },
+    "th-claim-number": {
+      "parent": "table-header-row",
+      "order": 1,
+      "type": "container",
+      "width": 120,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-claim-number-text": {
+      "parent": "th-claim-number",
+      "order": 0,
+      "type": "text",
+      "content": "Claim #",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "th-claim-number-sort": {
+      "parent": "th-claim-number",
+      "order": 1,
+      "type": "text",
+      "content": "↑↓",
+      "typography": "label",
+      "color": "cta-primary"
+    },
+    "th-policyholder": {
+      "parent": "table-header-row",
+      "order": 2,
+      "type": "container",
+      "width": 160,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-policyholder-text": {
+      "parent": "th-policyholder",
+      "order": 0,
+      "type": "text",
+      "content": "Policyholder",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "th-policyholder-sort": {
+      "parent": "th-policyholder",
+      "order": 1,
+      "type": "text",
+      "content": "↑↓",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "th-incident-type": {
+      "parent": "table-header-row",
+      "order": 3,
+      "type": "text",
+      "content": "Incident Type",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "width": 130
+    },
+    "th-status": {
+      "parent": "table-header-row",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-status-text": {
+      "parent": "th-status",
+      "order": 0,
+      "type": "text",
+      "content": "Status",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "th-status-sort": {
+      "parent": "th-status",
+      "order": 1,
+      "type": "text",
+      "content": "↑↓",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "th-priority": {
+      "parent": "table-header-row",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-priority-text": {
+      "parent": "th-priority",
+      "order": 0,
+      "type": "text",
+      "content": "Priority",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "th-priority-sort": {
+      "parent": "th-priority",
+      "order": 1,
+      "type": "text",
+      "content": "↑↓",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "th-filed-date": {
+      "parent": "table-header-row",
+      "order": 6,
+      "type": "container",
+      "width": 120,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-filed-date-text": {
+      "parent": "th-filed-date",
+      "order": 0,
+      "type": "text",
+      "content": "Filed Date",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "th-filed-date-sort": {
+      "parent": "th-filed-date",
+      "order": 1,
+      "type": "text",
+      "content": "↓",
+      "typography": "label",
+      "color": "cta-primary"
+    },
+    "th-assigned-to": {
+      "parent": "table-header-row",
+      "order": 7,
+      "type": "text",
+      "content": "Assigned To",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "width": 150
+    },
+    "th-est-damage": {
+      "parent": "table-header-row",
+      "order": 8,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 4
+      }
+    },
+    "th-est-damage-text": {
+      "parent": "th-est-damage",
+      "order": 0,
+      "type": "text",
+      "content": "Est. Damage",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "th-est-damage-sort": {
+      "parent": "th-est-damage",
+      "order": 1,
+      "type": "text",
+      "content": "↑↓",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "table-row-1": {
+      "parent": "claims-table-wrapper",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row1-checkbox": {
+      "parent": "table-row-1",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "checked": true,
+        "aria-label": "Select claim CLM-20260308-0042"
+      }
+    },
+    "row1-claim-number": {
+      "parent": "table-row-1",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260308-0042",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row1-policyholder": {
+      "parent": "table-row-1",
+      "order": 2,
+      "type": "text",
+      "content": "Margaret Johnson",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row1-incident-type": {
+      "parent": "table-row-1",
+      "order": 3,
+      "type": "text",
+      "content": "Water Damage",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row1-status": {
+      "parent": "table-row-1",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row1-status-badge": {
+      "parent": "row1-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Info Requested",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row1-priority": {
+      "parent": "table-row-1",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row1-priority-badge": {
+      "parent": "row1-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● High",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row1-filed-date": {
+      "parent": "table-row-1",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 8, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row1-assigned-to": {
+      "parent": "table-row-1",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row1-avatar": {
+      "parent": "row1-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "SC",
+      "width": 24,
+      "height": 24
+    },
+    "row1-adjuster-name": {
+      "parent": "row1-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Sarah Chen",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row1-est-damage": {
+      "parent": "table-row-1",
+      "order": 8,
+      "type": "text",
+      "content": "$18,500",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-2": {
+      "parent": "claims-table-wrapper",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row2-checkbox": {
+      "parent": "table-row-2",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260309-0057"
+      }
+    },
+    "row2-claim-number": {
+      "parent": "table-row-2",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260309-0057",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row2-policyholder": {
+      "parent": "table-row-2",
+      "order": 2,
+      "type": "text",
+      "content": "David Okonkwo",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row2-incident-type": {
+      "parent": "table-row-2",
+      "order": 3,
+      "type": "text",
+      "content": "Fire",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row2-status": {
+      "parent": "table-row-2",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row2-status-badge": {
+      "parent": "row2-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Escalated",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row2-priority": {
+      "parent": "table-row-2",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row2-priority-badge": {
+      "parent": "row2-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Critical",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row2-filed-date": {
+      "parent": "table-row-2",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 9, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row2-assigned-to": {
+      "parent": "table-row-2",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row2-avatar": {
+      "parent": "row2-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "MJ",
+      "width": 24,
+      "height": 24
+    },
+    "row2-adjuster-name": {
+      "parent": "row2-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Marcus Johnson",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row2-est-damage": {
+      "parent": "table-row-2",
+      "order": 8,
+      "type": "text",
+      "content": "$54,000",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-3": {
+      "parent": "claims-table-wrapper",
+      "order": 3,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-secondary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px",
+        "border-left": "3px solid cta-primary"
+      }
+    },
+    "row3-checkbox": {
+      "parent": "table-row-3",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "checked": true,
+        "aria-label": "Select claim CLM-20260310-0063"
+      }
+    },
+    "row3-claim-number": {
+      "parent": "table-row-3",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260310-0063",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row3-policyholder": {
+      "parent": "table-row-3",
+      "order": 2,
+      "type": "text",
+      "content": "Aisha Williams",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row3-incident-type": {
+      "parent": "table-row-3",
+      "order": 3,
+      "type": "text",
+      "content": "Theft",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row3-status": {
+      "parent": "table-row-3",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row3-status-badge": {
+      "parent": "row3-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Info Requested",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row3-priority": {
+      "parent": "table-row-3",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row3-priority-badge": {
+      "parent": "row3-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● High",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row3-filed-date": {
+      "parent": "table-row-3",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 10, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row3-assigned-to": {
+      "parent": "table-row-3",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row3-unassigned-dot": {
+      "parent": "row3-assigned-to",
+      "order": 0,
+      "type": "text",
+      "content": "●",
+      "typography": "label",
+      "color": "warning"
+    },
+    "row3-unassigned-label": {
+      "parent": "row3-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Unassigned",
+      "typography": "body",
+      "color": "text-disabled"
+    },
+    "row3-est-damage": {
+      "parent": "table-row-3",
+      "order": 8,
+      "type": "text",
+      "content": "$8,250",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-4": {
+      "parent": "claims-table-wrapper",
+      "order": 4,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row4-checkbox": {
+      "parent": "table-row-4",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260311-0071"
+      }
+    },
+    "row4-claim-number": {
+      "parent": "table-row-4",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260311-0071",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row4-policyholder": {
+      "parent": "table-row-4",
+      "order": 2,
+      "type": "text",
+      "content": "Robert Kim",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row4-incident-type": {
+      "parent": "table-row-4",
+      "order": 3,
+      "type": "text",
+      "content": "Collision",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row4-status": {
+      "parent": "table-row-4",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row4-status-badge": {
+      "parent": "row4-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Under Review",
+      "overrides": {
+        "variant": "info",
+        "border-radius": "pill"
+      }
+    },
+    "row4-priority": {
+      "parent": "table-row-4",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row4-priority-badge": {
+      "parent": "row4-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Medium",
+      "overrides": {
+        "variant": "info",
+        "border-radius": "pill"
+      }
+    },
+    "row4-filed-date": {
+      "parent": "table-row-4",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 11, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row4-assigned-to": {
+      "parent": "table-row-4",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row4-avatar": {
+      "parent": "row4-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "PP",
+      "width": 24,
+      "height": 24
+    },
+    "row4-adjuster-name": {
+      "parent": "row4-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Priya Patel",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row4-est-damage": {
+      "parent": "table-row-4",
+      "order": 8,
+      "type": "text",
+      "content": "$23,100",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-5": {
+      "parent": "claims-table-wrapper",
+      "order": 5,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row5-checkbox": {
+      "parent": "table-row-5",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260312-0084"
+      }
+    },
+    "row5-claim-number": {
+      "parent": "table-row-5",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260312-0084",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row5-policyholder": {
+      "parent": "table-row-5",
+      "order": 2,
+      "type": "text",
+      "content": "Elena Vasquez",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row5-incident-type": {
+      "parent": "table-row-5",
+      "order": 3,
+      "type": "text",
+      "content": "Natural Disaster",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row5-status": {
+      "parent": "table-row-5",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row5-status-badge": {
+      "parent": "row5-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Submitted",
+      "overrides": {
+        "variant": "info",
+        "border-radius": "pill"
+      }
+    },
+    "row5-priority": {
+      "parent": "table-row-5",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row5-priority-badge": {
+      "parent": "row5-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● High",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row5-filed-date": {
+      "parent": "table-row-5",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 12, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row5-assigned-to": {
+      "parent": "table-row-5",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row5-avatar": {
+      "parent": "row5-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "TR",
+      "width": 24,
+      "height": 24
+    },
+    "row5-adjuster-name": {
+      "parent": "row5-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Tom Rivera",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row5-est-damage": {
+      "parent": "table-row-5",
+      "order": 8,
+      "type": "text",
+      "content": "$142,000",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-6": {
+      "parent": "claims-table-wrapper",
+      "order": 6,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row6-checkbox": {
+      "parent": "table-row-6",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260312-0091"
+      }
+    },
+    "row6-claim-number": {
+      "parent": "table-row-6",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260312-0091",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row6-policyholder": {
+      "parent": "table-row-6",
+      "order": 2,
+      "type": "text",
+      "content": "James Thornton",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row6-incident-type": {
+      "parent": "table-row-6",
+      "order": 3,
+      "type": "text",
+      "content": "Vandalism",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row6-status": {
+      "parent": "table-row-6",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row6-status-badge": {
+      "parent": "row6-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Approved",
+      "overrides": {
+        "variant": "success",
+        "border-radius": "pill"
+      }
+    },
+    "row6-priority": {
+      "parent": "table-row-6",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row6-priority-badge": {
+      "parent": "row6-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Low",
+      "overrides": {
+        "variant": "default",
+        "border-radius": "pill"
+      }
+    },
+    "row6-filed-date": {
+      "parent": "table-row-6",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 12, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row6-assigned-to": {
+      "parent": "table-row-6",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row6-avatar": {
+      "parent": "row6-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "SC",
+      "width": 24,
+      "height": 24
+    },
+    "row6-adjuster-name": {
+      "parent": "row6-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Sarah Chen",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row6-est-damage": {
+      "parent": "table-row-6",
+      "order": 8,
+      "type": "text",
+      "content": "$4,800",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-7": {
+      "parent": "claims-table-wrapper",
+      "order": 7,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row7-checkbox": {
+      "parent": "table-row-7",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260313-0099"
+      }
+    },
+    "row7-claim-number": {
+      "parent": "table-row-7",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260313-0099",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row7-policyholder": {
+      "parent": "table-row-7",
+      "order": 2,
+      "type": "text",
+      "content": "Fatima Al-Rashid",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row7-incident-type": {
+      "parent": "table-row-7",
+      "order": 3,
+      "type": "text",
+      "content": "Fire",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row7-status": {
+      "parent": "table-row-7",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row7-status-badge": {
+      "parent": "row7-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Denied",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row7-priority": {
+      "parent": "table-row-7",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row7-priority-badge": {
+      "parent": "row7-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Medium",
+      "overrides": {
+        "variant": "info",
+        "border-radius": "pill"
+      }
+    },
+    "row7-filed-date": {
+      "parent": "table-row-7",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 13, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row7-assigned-to": {
+      "parent": "table-row-7",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row7-avatar": {
+      "parent": "row7-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "MJ",
+      "width": 24,
+      "height": 24
+    },
+    "row7-adjuster-name": {
+      "parent": "row7-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Marcus Johnson",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row7-est-damage": {
+      "parent": "table-row-7",
+      "order": 8,
+      "type": "text",
+      "content": "—",
+      "typography": "body",
+      "color": "text-disabled",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-8": {
+      "parent": "claims-table-wrapper",
+      "order": 8,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row8-checkbox": {
+      "parent": "table-row-8",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260314-0107"
+      }
+    },
+    "row8-claim-number": {
+      "parent": "table-row-8",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260314-0107",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row8-policyholder": {
+      "parent": "table-row-8",
+      "order": 2,
+      "type": "text",
+      "content": "Chen Wei",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row8-incident-type": {
+      "parent": "table-row-8",
+      "order": 3,
+      "type": "text",
+      "content": "Water Damage",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row8-status": {
+      "parent": "table-row-8",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row8-status-badge": {
+      "parent": "row8-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Info Requested",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row8-priority": {
+      "parent": "table-row-8",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row8-priority-badge": {
+      "parent": "row8-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Critical",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row8-filed-date": {
+      "parent": "table-row-8",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 14, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row8-assigned-to": {
+      "parent": "table-row-8",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row8-unassigned-dot": {
+      "parent": "row8-assigned-to",
+      "order": 0,
+      "type": "text",
+      "content": "●",
+      "typography": "label",
+      "color": "warning"
+    },
+    "row8-unassigned-label": {
+      "parent": "row8-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Unassigned",
+      "typography": "body",
+      "color": "text-disabled"
+    },
+    "row8-est-damage": {
+      "parent": "table-row-8",
+      "order": 8,
+      "type": "text",
+      "content": "$31,750",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-9": {
+      "parent": "claims-table-wrapper",
+      "order": 9,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row9-checkbox": {
+      "parent": "table-row-9",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "aria-label": "Select claim CLM-20260315-0118"
+      }
+    },
+    "row9-claim-number": {
+      "parent": "table-row-9",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260315-0118",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row9-policyholder": {
+      "parent": "table-row-9",
+      "order": 2,
+      "type": "text",
+      "content": "Linda Osei-Bonsu",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row9-incident-type": {
+      "parent": "table-row-9",
+      "order": 3,
+      "type": "text",
+      "content": "Collision",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row9-status": {
+      "parent": "table-row-9",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row9-status-badge": {
+      "parent": "row9-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Under Review",
+      "overrides": {
+        "variant": "info",
+        "border-radius": "pill"
+      }
+    },
+    "row9-priority": {
+      "parent": "table-row-9",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row9-priority-badge": {
+      "parent": "row9-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● High",
+      "overrides": {
+        "variant": "warning",
+        "border-radius": "pill"
+      }
+    },
+    "row9-filed-date": {
+      "parent": "table-row-9",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 15, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row9-assigned-to": {
+      "parent": "table-row-9",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row9-avatar": {
+      "parent": "row9-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "PP",
+      "width": 24,
+      "height": 24
+    },
+    "row9-adjuster-name": {
+      "parent": "row9-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Priya Patel",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row9-est-damage": {
+      "parent": "table-row-9",
+      "order": 8,
+      "type": "text",
+      "content": "$9,400",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "table-row-10": {
+      "parent": "claims-table-wrapper",
+      "order": 10,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 14
+      },
+      "overrides": {
+        "border-bottom": "1px solid border-default",
+        "cursor": "pointer",
+        "min-height": "52px"
+      }
+    },
+    "row10-checkbox": {
+      "parent": "table-row-10",
+      "order": 0,
+      "catalog": "Checkbox",
+      "label": "",
+      "width": 44,
+      "overrides": {
+        "checked": true,
+        "aria-label": "Select claim CLM-20260315-0122"
+      }
+    },
+    "row10-claim-number": {
+      "parent": "table-row-10",
+      "order": 1,
+      "type": "text",
+      "content": "CLM-20260315-0122",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "width": 120,
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "row10-policyholder": {
+      "parent": "table-row-10",
+      "order": 2,
+      "type": "text",
+      "content": "Yusuf Abdi",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 160
+    },
+    "row10-incident-type": {
+      "parent": "table-row-10",
+      "order": 3,
+      "type": "text",
+      "content": "Theft",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 130
+    },
+    "row10-status": {
+      "parent": "table-row-10",
+      "order": 4,
+      "type": "container",
+      "width": 130,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row10-status-badge": {
+      "parent": "row10-status",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "Escalated",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row10-priority": {
+      "parent": "table-row-10",
+      "order": 5,
+      "type": "container",
+      "width": 110,
+      "layout": {
+        "dir": "row",
+        "align": "center"
+      }
+    },
+    "row10-priority-badge": {
+      "parent": "row10-priority",
+      "order": 0,
+      "catalog": "Badge",
+      "label": "● Critical",
+      "overrides": {
+        "variant": "error",
+        "border-radius": "pill"
+      }
+    },
+    "row10-filed-date": {
+      "parent": "table-row-10",
+      "order": 6,
+      "type": "text",
+      "content": "Mar 15, 2026",
+      "typography": "body",
+      "color": "text-secondary",
+      "width": 120
+    },
+    "row10-assigned-to": {
+      "parent": "table-row-10",
+      "order": 7,
+      "type": "container",
+      "width": 150,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "row10-avatar": {
+      "parent": "row10-assigned-to",
+      "order": 0,
+      "catalog": "Avatar",
+      "label": "TR",
+      "width": 24,
+      "height": 24
+    },
+    "row10-adjuster-name": {
+      "parent": "row10-assigned-to",
+      "order": 1,
+      "type": "text",
+      "content": "Tom Rivera",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "row10-est-damage": {
+      "parent": "table-row-10",
+      "order": 8,
+      "type": "text",
+      "content": "$67,200",
+      "typography": "body",
+      "color": "text-primary",
+      "width": 130,
+      "textAlign": "right",
+      "overrides": {
+        "font-family": "JetBrains Mono"
+      }
+    },
+    "skeleton-row-1": {
+      "parent": "claims-table-wrapper",
+      "order": 11,
+      "catalog": "Skeleton",
+      "width": "fill",
+      "height": 52,
+      "overrides": {
+        "border-bottom": "1px solid border-default"
+      }
+    },
+    "skeleton-row-2": {
+      "parent": "claims-table-wrapper",
+      "order": 12,
+      "catalog": "Skeleton",
+      "width": "fill",
+      "height": 52,
+      "overrides": {
+        "border-bottom": "1px solid border-default"
+      }
+    },
+    "skeleton-row-3": {
+      "parent": "claims-table-wrapper",
+      "order": 13,
+      "catalog": "Skeleton",
+      "width": "fill",
+      "height": 52,
+      "overrides": {
+        "border-bottom": "1px solid border-default"
+      }
+    },
+    "skeleton-row-4": {
+      "parent": "claims-table-wrapper",
+      "order": 14,
+      "catalog": "Skeleton",
+      "width": "fill",
+      "height": 52,
+      "overrides": {
+        "border-bottom": "1px solid border-default"
+      }
+    },
+    "skeleton-row-5": {
+      "parent": "claims-table-wrapper",
+      "order": 15,
+      "catalog": "Skeleton",
+      "width": "fill",
+      "height": 52
+    },
+    "pagination-row": {
+      "parent": "main-content",
+      "order": 3,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "pt": 16
+      },
+      "overrides": {
+        "border-top": "1px solid border-default"
+      }
+    },
+    "pagination-summary": {
+      "parent": "pagination-row",
+      "order": 0,
+      "type": "text",
+      "content": "Showing 1–20 of 312 claims",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "pagination-controls": {
+      "parent": "pagination-row",
+      "order": 1,
+      "catalog": "Pagination",
+      "overrides": {
+        "current_page": 1,
+        "total_pages": 16,
+        "aria-label": "Pagination navigation"
+      }
+    },
+    "toast-notification": {
+      "parent": "page-root",
+      "order": 3,
+      "catalog": "Alert",
+      "label": "3 claims assigned to Marcus Johnson.",
+      "overrides": {
+        "variant": "success",
+        "position": "fixed",
+        "bottom": "24px",
+        "right": "24px",
+        "z-index": 1300,
+        "width": "360px",
+        "role": "status",
+        "aria-live": "polite"
+      },
+      "layout": {
+        "px": 8
+      }
+    }
+  }
+}

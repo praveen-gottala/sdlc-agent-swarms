@@ -1,5 +1,23 @@
 # Lessons Learned
 
+## DesignSpec `overrides` — hyphen keys and paint values
+**Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx` `getOverrideStyles`  
+**Rule:** Normalize CSS-style keys (`background-color`, `border-bottom`) to React camelCase before applying. Allow `flex` shorthand, `white-space`, CSS gradients, and `var()` in paint fields. Merge `getOverrideStyles` into `renderCard`. Prefer semantic tokens on the node over hex in `overrides`; align LLM output via `ux-penpot-designspec-v2.md` “Overrides” section.  
+**Why:** LLMs emit CSS-like keys; the renderer previously only lowercased underscores, so colors and flex were dropped.  
+**How to apply:** After renderer changes, run `nx test designspec-renderer` and hard-refresh the design iframe (port 4100).
+
+**Addendum (container `background`):** In `renderAccelerator`, `backgroundColor` from the node token must be applied **before** `...getOverrideStyles(node.overrides)` so hex/CSS `background-color` in overrides wins. Same for `page`, `header`, `section`. Otherwise stacked bar segments stay white. Implement `catalog: data-table` when `overrides.rows` / `overrides.columns` hold tabular data (no child nodes).
+
+---
+
+## DesignSpec browser renderer — regression prevention
+**Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx`, catalog resolver, Vite iframe  
+**Rule:** Catalog ID normalization must be shared (`normalizeCatalogIdToKebab` in `catalog/catalog-id.ts`). Color token names in `overrides` must not be applied as raw CSS — resolve via `resolveTokenColor` or filter non-CSS values in `getOverrideStyles`. After changing the renderer, hard-refresh the design page; restart port 4100 if the iframe still shows stale UI.  
+**Why:** PascalCase-only `.toLowerCase()` broke `NavigationBar` → `navigation-bar` matching; unresolved token strings made chips look empty. Playwright often looked “correct” while a cached browser tab did not.  
+**How to apply:** See `docs/design-review-session-handoff.md` section **Catching regressions next time**. Run `nx test designspec-renderer` including `catalog-id.test.ts`.  
+
+---
+
 ## Clean Code Discipline
 **Context:** Monorepo-wide code quality  
 **Rule:** Never leave dead code (unused imports, variables, etc.) even if pre-existing. Fix all issues across the full codebase, not just the files you touched.  
@@ -404,3 +422,86 @@ return { base64: btoa(binary) };
 **Rule:** Viewport configuration should be project-level (in `agentforge.yaml`) with CLI flag override (`--viewport`). The planning agent should only generate responsive rules for configured viewports.
 **Why:** Without project-level viewport config, the planning agent generated responsive rules for mobile/tablet/desktop/wide regardless of the project's target. A desktop-only dashboard app got mobile breakpoint rules that confused the design agent and wasted tokens.
 **How to apply:** Use `resolveViewport(cliFlag?, projectConfig?)` which returns the effective viewport. Pass this to the planning agent so it generates rules only for relevant breakpoints.
+
+---
+
+## Renderer Staleness: Kill-and-Restart, Not Just Port-Check
+
+**Context:** `packages/dashboard/src/app/api/_lib/renderer-manager.ts` — Vite renderer lifecycle
+**Rule:** A TCP port check is insufficient to determine renderer health. The renderer-manager must track whether it started the process (vs an orphan from a previous session) and whether source files changed since startup.
+**Why:** We spent significant debugging time on a blank iframe caused by a stale Vite process. The port was open (status: "ready"), but the running Vite was serving old code from a previous session. The dashboard had no way to detect this and no way to restart it — only "Retry" (which just re-checks the port).
+
+### Symptoms of a stale renderer:
+1. Port 4100 responds to TCP, but iframe is blank or shows old code
+2. New `console.log` statements don't appear in browser console
+3. Dashboard reports "ready" but `load-spec` messages have no effect
+
+### What we added to prevent recurrence:
+1. **Source mtime tracking** — `startRenderer()` records `main.tsx` mtime at spawn time. `getRendererStatus()` compares current mtime and returns `status: 'stale'` if files changed.
+2. **Orphan detection** — If the port is open but `childPid` is null (process not spawned by this session), status returns `'stale'` with explanation.
+3. **`restartRenderer()`** — Kills whatever is on the port (`lsof -ti:PORT | xargs kill -9`), waits 500ms for OS port release, then starts fresh.
+4. **Auto-restart on stale** — `design-canvas.tsx` detects `status: 'stale'` and auto-calls `/api/renderer/restart` instead of showing a confusing "ready" state.
+5. **Manual "Kill & Restart" button** — UI shows both "Retry" (soft re-check) and "Kill & Restart" (hard restart) when renderer is unavailable.
+6. **`POST /api/renderer/restart` route** — Dedicated endpoint that kills + respawns.
+
+### How to apply:
+- Any time a child process is managed by a server, track: (a) who started it, (b) when, (c) what source version. Port-open alone is never enough.
+- Always provide a "hard restart" escape hatch in the UI — users should never need to manually run `lsof` and `kill`.
+
+---
+
+## DesignSpec JSON → CSS Conversion Pipeline
+
+**Context:** `packages/designspec-renderer/` — how DesignSpec v2 JSON becomes rendered UI
+**Rule:** New layout properties must flow through ALL five layers: TypeScript types → tool schema → renderers → LLM prompts → correction adapter. Missing any layer causes silent failures.
+
+### The conversion pipeline (data flow):
+
+1. **LLM → DesignSpec JSON**: The LLM calls `submit_design` (tool schema in `submit-design-tool.ts`). The schema constrains output to valid `DesignSpecV2` structure. `LayoutSpec` fields like `dir`, `display`, `columns`, `wrap` are defined here.
+
+2. **JSON → Browser CSS**: `DesignSpecRenderer.tsx` reads DesignSpec nodes and translates `LayoutSpec` properties to CSS:
+   - `display: "flex"` (default) → `display: flex; flex-direction: <dir>`
+   - `display: "grid"` + `columns: N` → `display: grid; grid-template-columns: repeat(N, 1fr)`
+   - `wrap: true` → `flex-wrap: wrap`
+   - `width: "fill"` → `flex: 1; min-width: 0` (in flex context; ignored in grid context where children auto-size to column tracks)
+   - `gap`, `align`, `justify` → direct CSS equivalents
+   - `px`/`py`/`pt`/`pb` → `padding-left`/`padding-right`/`padding-top`/`padding-bottom`
+   - `overrides` → whitelisted keys (sizing, spacing, borders, positioning, flex-item, overflow, typography, inline-layout) are applied as CSS; unknown keys are silently dropped. See `SAFE_OVERRIDE_KEYS` in `DesignSpecRenderer.tsx`
+
+3. **Browser → Screenshot**: Playwright captures the rendered page as a PNG screenshot for evaluation.
+
+4. **Screenshot + DOM → Correction Patches**: A vision LLM sees the screenshot, DOM layout data, and current spec, then outputs `{ patches: { "node-id": { ...partial NodeSpec } } }`. These patches use DesignSpec property names (NOT CSS names).
+
+5. **Patch sanitization** (`browser-correction-adapter.ts`):
+   - `ALIAS_MAP` transforms CSS property names → DesignSpec equivalents (e.g. `gridTemplateColumns` → `layout.columns`, `flexWrap` → `layout.wrap`, `display` → `layout.display`)
+   - `VALID_LAYOUT_KEYS` whitelist prevents unknown keys from reaching the spec
+   - `validateLayoutValues()` coerces/validates types (enum, numeric, boolean)
+   - Properties in `__strip__` alias are silently dropped (e.g. `position`, `opacity`)
+
+### Bug pattern this addresses:
+
+When the LLM generates `overrides: { display: "grid", grid_template_columns: "repeat(3, 1fr)" }` but the renderer only supports flex layout, the browser renders everything in a single row. The correction adapter then strips `display` from any LLM patches (mapped to `__strip__`), preventing the correction loop from ever fixing it.
+
+**Fix:** Promote layout properties to first-class `LayoutSpec` fields with proper types, schema entries, renderer support, prompt documentation, and alias mappings. Never rely on unstructured `overrides` for layout — they bypass validation and correction.
+
+### How to add a new layout property:
+1. Add to `LayoutSpec` interface in `design-spec-v2.ts`
+2. Add to `submit-design-tool.ts` layout properties
+3. Handle in `getLayoutStyles()` in `DesignSpecRenderer.tsx` (JSON → CSS)
+4. Document in V2 prompt (`ux-penpot-designspec-v2.md`) and dashboard prompt (`route.ts`)
+5. Add to `VALID_LAYOUT_KEYS`, `ALIAS_MAP`, `LAYOUT_ENUM_FIELDS`, and `validateLayoutValues()` in `browser-correction-adapter.ts`
+6. Add validation rule in `validate.ts` if semantic constraints exist
+7. (Deferred) Handle in Penpot renderer (`shared.ts`) and React renderer (`shared.ts`)
+
+### Override resolution bug (April 2026):
+
+**Problem:** `SAFE_OVERRIDE_KEYS` whitelist in `getOverrideStyles()` only contained 5 CSS properties (`maxWidth`, `minWidth`, `maxHeight`, `minHeight`, `marginInline`). But LLM-generated designs use 30+ override CSS properties (`border`, `padding`, `position`, `font_size`, `flex_basis`, `overflow`, `cursor`, `z_index`, etc.). All of these were silently dropped.
+
+Additionally, `resolveNode()` in `resolver.ts` returned a stripped-down `ResolvedNode` for unresolved/missing catalog entries — specifically, `overrides`, `layout`, `width`, `height`, `background`, `shadow` were all dropped. Combined with PascalCase → kebab-case catalog lookup mismatch (e.g., `"NavigationBar"` not finding `"navigation-bar"`), this caused many catalog components to lose ALL styling.
+
+**Fix:**
+1. Expanded `SAFE_OVERRIDE_KEYS` to cover all CSS properties used by LLM designs
+2. Added `getOverrideStyles()` to `getCommonNodeStyles()` so catalog components get overrides
+3. Fixed `resolveNode()` to preserve `overrides`/`layout`/`width`/`height`/etc. even for unresolved nodes
+4. Added PascalCase → kebab-case normalization in catalog lookup
+5. Updated fallback rendering path (`renderNode` unresolved branch) to apply full styles

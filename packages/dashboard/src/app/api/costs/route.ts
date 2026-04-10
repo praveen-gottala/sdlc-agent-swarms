@@ -100,6 +100,10 @@ export async function GET() {
       dailyAverage,
       totalTokens: { input: Math.floor(totalTokens * 0.6), output: Math.floor(totalTokens * 0.4) },
     },
+    budgetLimits: {
+      perPhaseMaxUsd: budget?.per_phase_max_usd ?? null,
+      perTaskMaxUsd: budget?.per_task_max_usd ?? null,
+    },
     byPhase,
     byAgent,
     dailyTrend: [],

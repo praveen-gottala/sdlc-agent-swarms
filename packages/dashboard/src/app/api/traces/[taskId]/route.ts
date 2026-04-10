@@ -1,13 +1,31 @@
 import { NextResponse } from 'next/server';
 import { readTextFile } from '../../_lib/project-reader';
 
+interface LLMMeta {
+  model?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  durationMs?: number;
+}
+
 interface EventEntry {
   type?: string;
   taskId?: string;
   pageId?: string;
   timestamp?: number;
   source?: string;
+  stage?: string;
+  agentRole?: string;
+  detail?: string;
+  status?: string;
+  cost?: { totalCostUsd?: number; tokensUsed?: number };
+  llmMeta?: LLMMeta;
   [key: string]: unknown;
+}
+
+/** Normalize a timestamp that may be in seconds or milliseconds to ms. */
+function toMs(ts: number): number {
+  return ts < 1e12 ? ts * 1000 : ts;
 }
 
 /**
@@ -53,32 +71,76 @@ export async function GET(
     });
   }
 
+  // Build a map of started timestamps per stage for duration calculation
+  const stageStartTimes = new Map<string, number>();
+  for (const event of events) {
+    if (event.status === 'started' && event.stage && event.timestamp) {
+      stageStartTimes.set(event.stage, toMs(event.timestamp));
+    }
+  }
+
+  // Accumulate totals
+  let sumCost = 0;
+  let sumInputTokens = 0;
+  let sumOutputTokens = 0;
+
   const steps = events.map((event, idx) => {
     const ts = event.timestamp
-      ? new Date(event.timestamp * 1000).toISOString()
+      ? new Date(toMs(event.timestamp)).toISOString()
       : new Date().toISOString();
+
+    // Extract token usage from llmMeta or fallback to zero
+    const inputTokens = event.llmMeta?.inputTokens ?? 0;
+    const outputTokens = event.llmMeta?.outputTokens ?? 0;
+
+    // Extract cost from event
+    const stepCost = event.cost?.totalCostUsd ?? 0;
+
+    // Compute duration: use llmMeta.durationMs for LLM call events,
+    // or compute from started/completed pairs for stage events
+    let stepDurationMs: number | null = event.llmMeta?.durationMs ?? null;
+    if (stepDurationMs === null && event.status === 'completed' && event.stage && event.timestamp) {
+      const startTime = stageStartTimes.get(event.stage);
+      if (startTime) {
+        stepDurationMs = Math.round(toMs(event.timestamp) - startTime);
+      }
+    }
+
+    // Accumulate totals
+    sumCost += stepCost;
+    sumInputTokens += inputTokens;
+    sumOutputTokens += outputTokens;
+
+    // Use detail > stage > type for better readability in the timeline
+    const action = event.detail ?? event.stage ?? event.type ?? 'unknown';
+
     return {
       stepId: `step-${idx + 1}`,
-      action: event.type ?? 'unknown',
+      action,
+      stage: event.stage,
+      agentRole: event.agentRole,
+      detail: event.detail,
+      status: event.status,
       input: Object.fromEntries(
         Object.entries(event).filter(
-          ([k]) => !['type', 'taskId', 'timestamp', 'source'].includes(k),
+          ([k]) => !['type', 'taskId', 'timestamp', 'source', 'stage', 'agentRole', 'detail', 'status', 'cost', 'llmMeta'].includes(k),
         ),
       ),
       output: null,
       startedAt: ts,
-      durationMs: null,
-      tokenUsage: { input: 0, output: 0 },
-      cost: 0,
+      durationMs: stepDurationMs,
+      tokenUsage: { input: inputTokens, output: outputTokens },
+      cost: stepCost,
+      llmMeta: event.llmMeta ?? null,
     };
   });
 
   const firstTs = events[0]?.timestamp
-    ? new Date(events[0].timestamp * 1000).toISOString()
+    ? new Date(toMs(events[0].timestamp)).toISOString()
     : null;
   const lastTs =
     events.length > 1 && events[events.length - 1]?.timestamp
-      ? new Date(events[events.length - 1].timestamp! * 1000).toISOString()
+      ? new Date(toMs(events[events.length - 1].timestamp!)).toISOString()
       : null;
 
   const durationMs =
@@ -86,7 +148,7 @@ export async function GET(
     events[0]?.timestamp &&
     events[events.length - 1]?.timestamp
       ? Math.round(
-          (events[events.length - 1].timestamp! - events[0].timestamp!) * 1000,
+          toMs(events[events.length - 1].timestamp!) - toMs(events[0].timestamp!),
         )
       : null;
 
@@ -98,8 +160,8 @@ export async function GET(
     durationMs,
     status: 'complete',
     steps,
-    totalCost: 0,
-    totalTokens: { input: 0, output: 0 },
+    totalCost: sumCost,
+    totalTokens: { input: sumInputTokens, output: sumOutputTokens },
   };
 
   return NextResponse.json({ trace });

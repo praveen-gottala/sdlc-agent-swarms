@@ -23,9 +23,11 @@ import {
   readSpecs,
   recordPromptTrace,
   recordPromptTraceResponse,
+  safeParse,
 } from '@agentforge/core';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
+import { UXImplementationOutputSchema } from '../schemas.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
 
 // ============================================================================
@@ -148,24 +150,7 @@ const loadSystemPrompt = (): string => {
 
 /** Parse the LLM output as a UX dashboard implementation JSON object. */
 export const parseImplementationOutput = (output: string): Result<UXImplementationOutput> => {
-  const jsonMatch = /```json\s*\n?([\s\S]*?)```/.exec(output);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : output.trim();
-
-  try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-    return Ok({
-      moduleId: (parsed.moduleId as string) ?? '',
-      stage: (parsed.stage as ImplementationStage['stage']) ?? 'layout',
-      files: (parsed.files as GeneratedFile[]) ?? [],
-      totalCostUsd: (parsed.totalCostUsd as number) ?? 0,
-    });
-  } catch {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Failed to parse UX dashboard implementation output: ${jsonStr.slice(0, 200)}`,
-      recoverable: true,
-    });
-  }
+  return safeParse(output, UXImplementationOutputSchema, 'UX Implementation') as Result<UXImplementationOutput>;
 };
 
 // ============================================================================

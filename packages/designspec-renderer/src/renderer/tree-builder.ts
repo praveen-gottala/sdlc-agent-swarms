@@ -13,6 +13,10 @@ import type { TreeNode } from '../types/catalog.js';
  * @throws Error if no root node found or multiple roots exist
  */
 export function buildTree(nodes: Readonly<Record<string, NodeSpec>>): TreeNode {
+  if (!nodes || typeof nodes !== 'object' || Object.keys(nodes).length === 0) {
+    throw new Error('nodes is empty or undefined — the design spec may have been truncated');
+  }
+
   // 1. Find root (parent === null)
   const roots: string[] = [];
   for (const [id, node] of Object.entries(nodes)) {

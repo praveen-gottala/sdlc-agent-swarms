@@ -1,0 +1,81 @@
+version: "1.0"
+models:
+  - id: model-bookmark
+    name: Bookmark
+    description: Core data model representing a saved bookmark. Stored in
+      PostgreSQL. All filtering and tag aggregation is derived from this model.
+    fields:
+      - name: id
+        type: string
+        required: true
+        description: UUID v4, generated on create. Primary key.
+        format: uuid
+      - name: title
+        type: string
+        required: true
+        description: Display title of the bookmark. 2–120 characters after whitespace trim.
+        minLength: 2
+        maxLength: 120
+      - name: url
+        type: string
+        required: true
+        description: The bookmarked URL. Must start with http:// or https://.
+        pattern: ^https?://
+      - name: tags
+        type: string[]
+        required: false
+        description: "Array of tags. 0–5 items. Each tag: lowercase alphanumeric +
+          hyphens, max 20 chars."
+        maxItems: 5
+        itemPattern: ^[a-z0-9-]+$
+        itemMaxLength: 20
+      - name: notes
+        type: string
+        required: false
+        description: Optional freeform notes. 0–280 characters.
+        maxLength: 280
+      - name: createdAt
+        type: string
+        required: true
+        description: ISO 8601 timestamp of creation. Set on create, never updated.
+        format: date-time
+      - name: updatedAt
+        type: string
+        required: true
+        description: ISO 8601 timestamp of last update. Set on create and updated on
+          every edit.
+        format: date-time
+  - id: model-create-bookmark-input
+    name: CreateBookmarkInput
+    description: Input payload for creating a new bookmark. id, createdAt, and
+      updatedAt are server-generated.
+    fields:
+      - name: title
+        type: string
+        required: true
+      - name: url
+        type: string
+        required: true
+      - name: tags
+        type: string[]
+        required: false
+      - name: notes
+        type: string
+        required: false
+  - id: model-update-bookmark-input
+    name: UpdateBookmarkInput
+    description: Input payload for updating an existing bookmark. All fields are
+      optional (partial update). updatedAt is server-updated automatically.
+    fields:
+      - name: title
+        type: string
+        required: false
+      - name: url
+        type: string
+        required: false
+      - name: tags
+        type: string[]
+        required: false
+      - name: notes
+        type: string
+        required: false

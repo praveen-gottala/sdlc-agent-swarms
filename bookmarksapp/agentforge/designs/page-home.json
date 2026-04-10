@@ -1,0 +1,2489 @@
+{
+  "screen": "bookmark-list",
+  "width": 1440,
+  "nodes": {
+    "page-root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "filter-bar": {
+      "parent": "page-root",
+      "order": 0,
+      "type": "header",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "gap": 12,
+        "px": 24,
+        "py": 16
+      },
+      "width": "fill"
+    },
+    "search-bar": {
+      "parent": "filter-bar",
+      "order": 0,
+      "catalog": "input-text",
+      "label": "Search",
+      "placeholder": "Search bookmarks…",
+      "width": "fill",
+      "overrides": {
+        "aria_label": "Search bookmarks",
+        "role": "searchbox",
+        "border_radius": 12,
+        "height": 44,
+        "leading_icon": "search",
+        "trailing_icon": "x-circle"
+      }
+    },
+    "tag-filter-row": {
+      "parent": "filter-bar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      },
+      "width": "fill",
+      "overrides": {
+        "role": "group",
+        "aria_label": "Filter by tag",
+        "overflow_x": "auto",
+        "scrollbar_width": "none"
+      }
+    },
+    "chip-all": {
+      "parent": "tag-filter-row",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "All",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "padding_x": 12,
+        "role": "button",
+        "aria_label": "Clear all tag filters",
+        "flex_shrink": 0
+      }
+    },
+    "chip-frontend": {
+      "parent": "tag-filter-row",
+      "order": 1,
+      "catalog": "button-secondary",
+      "label": "frontend",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "frontend filter"
+      }
+    },
+    "chip-react": {
+      "parent": "tag-filter-row",
+      "order": 2,
+      "catalog": "button-secondary",
+      "label": "react",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "border_width": 0,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": true,
+        "aria_label": "react filter"
+      }
+    },
+    "chip-tooling": {
+      "parent": "tag-filter-row",
+      "order": 3,
+      "catalog": "button-secondary",
+      "label": "tooling",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "tooling filter"
+      }
+    },
+    "chip-design": {
+      "parent": "tag-filter-row",
+      "order": 4,
+      "catalog": "button-secondary",
+      "label": "design",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "design filter"
+      }
+    },
+    "chip-performance": {
+      "parent": "tag-filter-row",
+      "order": 5,
+      "catalog": "button-secondary",
+      "label": "performance",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "performance filter"
+      }
+    },
+    "chip-accessibility": {
+      "parent": "tag-filter-row",
+      "order": 6,
+      "catalog": "button-secondary",
+      "label": "accessibility",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "accessibility filter"
+      }
+    },
+    "chip-css": {
+      "parent": "tag-filter-row",
+      "order": 7,
+      "catalog": "button-secondary",
+      "label": "css",
+      "overrides": {
+        "border_radius": 9999,
+        "height": 32,
+        "font_size": 12,
+        "font_weight": 500,
+        "background": "surface-secondary",
+        "color": "text-secondary",
+        "border_color": "border-default",
+        "border_width": 1,
+        "padding_x": 12,
+        "role": "checkbox",
+        "aria_checked": false,
+        "aria_label": "css filter"
+      }
+    },
+    "content-area": {
+      "parent": "page-root",
+      "order": 1,
+      "type": "section",
+      "background": "background-primary",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 24,
+        "pt": 24,
+        "pb": 48
+      },
+      "width": "fill",
+      "overrides": {
+        "role": "main"
+      }
+    },
+    "result-count-label": {
+      "parent": "content-area",
+      "order": 0,
+      "type": "text",
+      "content": "Showing 9 of 12 bookmarks",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_bottom": 16
+      }
+    },
+    "card-grid": {
+      "parent": "content-area",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 24,
+        "align": "start"
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "grid",
+        "grid_template_columns": "repeat(3, 1fr)",
+        "grid_gap": 24
+      }
+    },
+    "card-1": {
+      "parent": "card-grid",
+      "order": 0,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "React Query v5 Migration Guide"
+      }
+    },
+    "card-1-header": {
+      "parent": "card-1",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-1-title": {
+      "parent": "card-1-header",
+      "order": 0,
+      "type": "text",
+      "content": "React Query v5 Migration Guide",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-1-actions": {
+      "parent": "card-1-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-1-edit-btn": {
+      "parent": "card-1-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "hover_color": "cta-primary",
+        "aria_label": "Edit React Query v5 Migration Guide"
+      }
+    },
+    "card-1-delete-btn": {
+      "parent": "card-1-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "hover_color": "error",
+        "aria_label": "Delete React Query v5 Migration Guide"
+      }
+    },
+    "card-1-url": {
+      "parent": "card-1",
+      "order": 1,
+      "type": "text",
+      "content": "tanstack.com/query/v5/docs/react/guides/migrating-to-v5",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-1-divider": {
+      "parent": "card-1",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-1-footer": {
+      "parent": "card-1",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-1-tags": {
+      "parent": "card-1-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-1-tag-react": {
+      "parent": "card-1-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-1-tag-react-label": {
+      "parent": "card-1-tag-react",
+      "order": 0,
+      "type": "text",
+      "content": "react",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-1-tag-frontend": {
+      "parent": "card-1-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-1-tag-frontend-label": {
+      "parent": "card-1-tag-frontend",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-1-tag-tooling": {
+      "parent": "card-1-tags",
+      "order": 2,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-1-tag-tooling-label": {
+      "parent": "card-1-tag-tooling",
+      "order": 0,
+      "type": "text",
+      "content": "tooling",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-1-timestamp": {
+      "parent": "card-1-footer",
+      "order": 1,
+      "type": "text",
+      "content": "2h ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-2": {
+      "parent": "card-grid",
+      "order": 1,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "Web Vitals — Core Performance Metrics"
+      }
+    },
+    "card-2-header": {
+      "parent": "card-2",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-2-title": {
+      "parent": "card-2-header",
+      "order": 0,
+      "type": "text",
+      "content": "Web Vitals — Core Performance Metrics",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-2-actions": {
+      "parent": "card-2-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-2-edit-btn": {
+      "parent": "card-2-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit Web Vitals — Core Performance Metrics"
+      }
+    },
+    "card-2-delete-btn": {
+      "parent": "card-2-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete Web Vitals — Core Performance Metrics"
+      }
+    },
+    "card-2-url": {
+      "parent": "card-2",
+      "order": 1,
+      "type": "text",
+      "content": "web.dev/articles/vitals",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-2-divider": {
+      "parent": "card-2",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-2-footer": {
+      "parent": "card-2",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-2-tags": {
+      "parent": "card-2-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-2-tag-perf": {
+      "parent": "card-2-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-2-tag-perf-label": {
+      "parent": "card-2-tag-perf",
+      "order": 0,
+      "type": "text",
+      "content": "performance",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-2-tag-frontend": {
+      "parent": "card-2-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-2-tag-frontend-label": {
+      "parent": "card-2-tag-frontend",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-2-timestamp": {
+      "parent": "card-2-footer",
+      "order": 1,
+      "type": "text",
+      "content": "1d ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-3": {
+      "parent": "card-grid",
+      "order": 2,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "cta-primary",
+        "role": "article",
+        "aria_label": "TypeScript Handbook — Utility Types"
+      }
+    },
+    "card-3-header": {
+      "parent": "card-3",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-3-title": {
+      "parent": "card-3-header",
+      "order": 0,
+      "type": "text",
+      "content": "TypeScript Handbook — Utility Types",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-3-actions": {
+      "parent": "card-3-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      }
+    },
+    "card-3-edit-btn": {
+      "parent": "card-3-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "cta-primary",
+        "aria_label": "Edit TypeScript Handbook — Utility Types"
+      }
+    },
+    "card-3-delete-btn": {
+      "parent": "card-3-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete TypeScript Handbook — Utility Types"
+      }
+    },
+    "card-3-url": {
+      "parent": "card-3",
+      "order": 1,
+      "type": "text",
+      "content": "typescriptlang.org/docs/handbook/utility-types.html",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-3-divider": {
+      "parent": "card-3",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-3-footer": {
+      "parent": "card-3",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-3-tags": {
+      "parent": "card-3-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-3-tag-ts": {
+      "parent": "card-3-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-3-tag-ts-label": {
+      "parent": "card-3-tag-ts",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-3-tag-tooling": {
+      "parent": "card-3-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-3-tag-tooling-label": {
+      "parent": "card-3-tag-tooling",
+      "order": 0,
+      "type": "text",
+      "content": "tooling",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-3-tag-overflow": {
+      "parent": "card-3-tags",
+      "order": 2,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-3-tag-overflow-label": {
+      "parent": "card-3-tag-overflow",
+      "order": 0,
+      "type": "text",
+      "content": "+2",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-3-timestamp": {
+      "parent": "card-3-footer",
+      "order": 1,
+      "type": "text",
+      "content": "3d ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-4": {
+      "parent": "card-grid",
+      "order": 3,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "CSS Grid Layout — Complete Guide"
+      }
+    },
+    "card-4-header": {
+      "parent": "card-4",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-4-title": {
+      "parent": "card-4-header",
+      "order": 0,
+      "type": "text",
+      "content": "CSS Grid Layout — Complete Guide",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-4-actions": {
+      "parent": "card-4-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-4-edit-btn": {
+      "parent": "card-4-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit CSS Grid Layout — Complete Guide"
+      }
+    },
+    "card-4-delete-btn": {
+      "parent": "card-4-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete CSS Grid Layout — Complete Guide"
+      }
+    },
+    "card-4-url": {
+      "parent": "card-4",
+      "order": 1,
+      "type": "text",
+      "content": "css-tricks.com/snippets/css/complete-guide-grid",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-4-divider": {
+      "parent": "card-4",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-4-footer": {
+      "parent": "card-4",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-4-tags": {
+      "parent": "card-4-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-4-tag-css": {
+      "parent": "card-4-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-4-tag-css-label": {
+      "parent": "card-4-tag-css",
+      "order": 0,
+      "type": "text",
+      "content": "css",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-4-tag-design": {
+      "parent": "card-4-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-4-tag-design-label": {
+      "parent": "card-4-tag-design",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-4-timestamp": {
+      "parent": "card-4-footer",
+      "order": 1,
+      "type": "text",
+      "content": "5d ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-5": {
+      "parent": "card-grid",
+      "order": 4,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "WCAG 2.2 Quick Reference"
+      }
+    },
+    "card-5-header": {
+      "parent": "card-5",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-5-title": {
+      "parent": "card-5-header",
+      "order": 0,
+      "type": "text",
+      "content": "WCAG 2.2 Quick Reference",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-5-actions": {
+      "parent": "card-5-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-5-edit-btn": {
+      "parent": "card-5-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit WCAG 2.2 Quick Reference"
+      }
+    },
+    "card-5-delete-btn": {
+      "parent": "card-5-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete WCAG 2.2 Quick Reference"
+      }
+    },
+    "card-5-url": {
+      "parent": "card-5",
+      "order": 1,
+      "type": "text",
+      "content": "w3.org/WAI/WCAG22/quickref",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-5-divider": {
+      "parent": "card-5",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-5-footer": {
+      "parent": "card-5",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-5-tags": {
+      "parent": "card-5-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-5-tag-a11y": {
+      "parent": "card-5-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-5-tag-a11y-label": {
+      "parent": "card-5-tag-a11y",
+      "order": 0,
+      "type": "text",
+      "content": "accessibility",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-5-tag-design": {
+      "parent": "card-5-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-5-tag-design-label": {
+      "parent": "card-5-tag-design",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-5-timestamp": {
+      "parent": "card-5-footer",
+      "order": 1,
+      "type": "text",
+      "content": "1w ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-6": {
+      "parent": "card-grid",
+      "order": 5,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "Vite — Next Generation Frontend Tooling"
+      }
+    },
+    "card-6-header": {
+      "parent": "card-6",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-6-title": {
+      "parent": "card-6-header",
+      "order": 0,
+      "type": "text",
+      "content": "Vite — Next Generation Frontend Tooling",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-6-actions": {
+      "parent": "card-6-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-6-edit-btn": {
+      "parent": "card-6-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit Vite — Next Generation Frontend Tooling"
+      }
+    },
+    "card-6-delete-btn": {
+      "parent": "card-6-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete Vite — Next Generation Frontend Tooling"
+      }
+    },
+    "card-6-url": {
+      "parent": "card-6",
+      "order": 1,
+      "type": "text",
+      "content": "vitejs.dev",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-6-divider": {
+      "parent": "card-6",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-6-footer": {
+      "parent": "card-6",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-6-tags": {
+      "parent": "card-6-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-6-tag-tooling": {
+      "parent": "card-6-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-6-tag-tooling-label": {
+      "parent": "card-6-tag-tooling",
+      "order": 0,
+      "type": "text",
+      "content": "tooling",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-6-tag-frontend": {
+      "parent": "card-6-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-6-tag-frontend-label": {
+      "parent": "card-6-tag-frontend",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-6-timestamp": {
+      "parent": "card-6-footer",
+      "order": 1,
+      "type": "text",
+      "content": "2w ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-7": {
+      "parent": "card-grid",
+      "order": 6,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "Radix UI — Unstyled Accessible Components"
+      }
+    },
+    "card-7-header": {
+      "parent": "card-7",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-7-title": {
+      "parent": "card-7-header",
+      "order": 0,
+      "type": "text",
+      "content": "Radix UI — Unstyled Accessible Components",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-7-actions": {
+      "parent": "card-7-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-7-edit-btn": {
+      "parent": "card-7-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit Radix UI — Unstyled Accessible Components"
+      }
+    },
+    "card-7-delete-btn": {
+      "parent": "card-7-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete Radix UI — Unstyled Accessible Components"
+      }
+    },
+    "card-7-url": {
+      "parent": "card-7",
+      "order": 1,
+      "type": "text",
+      "content": "radix-ui.com/primitives",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-7-divider": {
+      "parent": "card-7",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-7-footer": {
+      "parent": "card-7",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-7-tags": {
+      "parent": "card-7-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-7-tag-a11y": {
+      "parent": "card-7-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-7-tag-a11y-label": {
+      "parent": "card-7-tag-a11y",
+      "order": 0,
+      "type": "text",
+      "content": "accessibility",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-7-tag-react": {
+      "parent": "card-7-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-7-tag-react-label": {
+      "parent": "card-7-tag-react",
+      "order": 0,
+      "type": "text",
+      "content": "react",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-7-tag-design": {
+      "parent": "card-7-tags",
+      "order": 2,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-7-tag-design-label": {
+      "parent": "card-7-tag-design",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-7-timestamp": {
+      "parent": "card-7-footer",
+      "order": 1,
+      "type": "text",
+      "content": "2w ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-8": {
+      "parent": "card-grid",
+      "order": 7,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "Zustand — State Management for React"
+      }
+    },
+    "card-8-header": {
+      "parent": "card-8",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-8-title": {
+      "parent": "card-8-header",
+      "order": 0,
+      "type": "text",
+      "content": "Zustand — State Management for React",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-8-actions": {
+      "parent": "card-8-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-8-edit-btn": {
+      "parent": "card-8-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit Zustand — State Management for React"
+      }
+    },
+    "card-8-delete-btn": {
+      "parent": "card-8-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete Zustand — State Management for React"
+      }
+    },
+    "card-8-url": {
+      "parent": "card-8",
+      "order": 1,
+      "type": "text",
+      "content": "github.com/pmndrs/zustand",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-8-divider": {
+      "parent": "card-8",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-8-footer": {
+      "parent": "card-8",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-8-tags": {
+      "parent": "card-8-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-8-tag-react": {
+      "parent": "card-8-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-8-tag-react-label": {
+      "parent": "card-8-tag-react",
+      "order": 0,
+      "type": "text",
+      "content": "react",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-8-tag-frontend": {
+      "parent": "card-8-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-8-tag-frontend-label": {
+      "parent": "card-8-tag-frontend",
+      "order": 0,
+      "type": "text",
+      "content": "frontend",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-8-timestamp": {
+      "parent": "card-8-footer",
+      "order": 1,
+      "type": "text",
+      "content": "3w ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "card-9": {
+      "parent": "card-grid",
+      "order": 8,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border_width": 1,
+        "border_color": "border-default",
+        "role": "article",
+        "aria_label": "Figma Tokens — Design Token Management"
+      }
+    },
+    "card-9-header": {
+      "parent": "card-9",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-9-title": {
+      "parent": "card-9-header",
+      "order": 0,
+      "type": "text",
+      "content": "Figma Tokens — Design Token Management",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500,
+      "overrides": {
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis",
+        "max_width": "calc(100% - 72px)"
+      }
+    },
+    "card-9-actions": {
+      "parent": "card-9-header",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "opacity": 0,
+        "hover_opacity": 1,
+        "transition": "opacity 200ms ease-out"
+      }
+    },
+    "card-9-edit-btn": {
+      "parent": "card-9-actions",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "pencil",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Edit Figma Tokens — Design Token Management"
+      }
+    },
+    "card-9-delete-btn": {
+      "parent": "card-9-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "trash",
+        "icon_size": 16,
+        "width": 32,
+        "height": 32,
+        "border_radius": 8,
+        "color": "text-secondary",
+        "aria_label": "Delete Figma Tokens — Design Token Management"
+      }
+    },
+    "card-9-url": {
+      "parent": "card-9",
+      "order": 1,
+      "type": "text",
+      "content": "tokens.studio",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 12,
+        "font_weight": 500,
+        "margin_top": 4,
+        "white_space": "nowrap",
+        "overflow": "hidden",
+        "text_overflow": "ellipsis"
+      }
+    },
+    "card-9-divider": {
+      "parent": "card-9",
+      "order": 2,
+      "type": "divider",
+      "overrides": {
+        "margin_top": 12,
+        "margin_bottom": 8
+      }
+    },
+    "card-9-footer": {
+      "parent": "card-9",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center",
+        "justify": "space-between"
+      },
+      "width": "fill"
+    },
+    "card-9-tags": {
+      "parent": "card-9-footer",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "overrides": {
+        "overflow": "hidden",
+        "flex_wrap": "nowrap"
+      }
+    },
+    "card-9-tag-design": {
+      "parent": "card-9-tags",
+      "order": 0,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-9-tag-design-label": {
+      "parent": "card-9-tag-design",
+      "order": 0,
+      "type": "text",
+      "content": "design",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-9-tag-tooling": {
+      "parent": "card-9-tags",
+      "order": 1,
+      "type": "container",
+      "background": "surface-secondary",
+      "radius": 9999,
+      "layout": {
+        "dir": "row",
+        "px": 6
+      },
+      "overrides": {
+        "height": 20,
+        "border_width": 1,
+        "border_color": "border-default"
+      }
+    },
+    "card-9-tag-tooling-label": {
+      "parent": "card-9-tag-tooling",
+      "order": 0,
+      "type": "text",
+      "content": "tooling",
+      "color": "text-secondary",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400,
+        "line_height": "20px"
+      }
+    },
+    "card-9-timestamp": {
+      "parent": "card-9-footer",
+      "order": 1,
+      "type": "text",
+      "content": "1mo ago",
+      "color": "text-disabled",
+      "overrides": {
+        "font_size": 11,
+        "font_weight": 400
+      }
+    },
+    "delete-confirm-card": {
+      "parent": "content-area",
+      "order": 2,
+      "type": "container",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 12,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 16,
+        "py": 16,
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "border_width": 2,
+        "border_color": "error",
+        "role": "group",
+        "aria_live": "assertive",
+        "width": 360,
+        "margin_top": 24
+      }
+    },
+    "delete-confirm-message": {
+      "parent": "delete-confirm-card",
+      "order": 0,
+      "type": "text",
+      "content": "Delete this bookmark?",
+      "typography": "body",
+      "color": "text-primary",
+      "textAlign": "center",
+      "overrides": {
+        "font_size": 14,
+        "font_weight": 400
+      }
+    },
+    "delete-confirm-actions": {
+      "parent": "delete-confirm-card",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center",
+        "justify": "center"
+      },
+      "width": "fill"
+    },
+    "delete-cancel-btn": {
+      "parent": "delete-confirm-actions",
+      "order": 0,
+      "catalog": "button-secondary",
+      "label": "Cancel",
+      "overrides": {
+        "border_radius": 8,
+        "height": 36,
+        "font_size": 13,
+        "aria_label": "Cancel delete"
+      }
+    },
+    "delete-confirm-btn": {
+      "parent": "delete-confirm-actions",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Confirm Delete",
+      "overrides": {
+        "background": "error",
+        "color": "text-on-cta",
+        "border_radius": 8,
+        "height": 36,
+        "font_size": 13,
+        "aria_label": "Confirm delete bookmark"
+      }
+    },
+    "no-results-state": {
+      "parent": "content-area",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "align": "center",
+        "justify": "center",
+        "py": 64
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "none"
+      }
+    },
+    "no-results-message": {
+      "parent": "no-results-state",
+      "order": 0,
+      "type": "text",
+      "content": "No bookmarks match your filters.",
+      "typography": "body",
+      "color": "text-secondary",
+      "textAlign": "center",
+      "overrides": {
+        "font_size": 14,
+        "font_weight": 400
+      }
+    },
+    "clear-filters-btn": {
+      "parent": "no-results-state",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "Clear filters",
+      "overrides": {
+        "color": "cta-primary",
+        "font_size": 12,
+        "font_weight": 500,
+        "border_radius": 8,
+        "height": 44,
+        "aria_label": "Clear all filters"
+      }
+    },
+    "empty-state": {
+      "parent": "content-area",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "align": "center",
+        "justify": "center",
+        "py": 64
+      },
+      "width": "fill",
+      "overrides": {
+        "display": "none"
+      }
+    },
+    "empty-illustration": {
+      "parent": "empty-state",
+      "order": 0,
+      "type": "container",
+      "width": 240,
+      "height": 160,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center"
+      },
+      "overrides": {
+        "margin_bottom": 32,
+        "aria_hidden": true,
+        "border_width": 1.5,
+        "border_color": "border-default",
+        "border_radius": 16,
+        "background": "surface-secondary",
+        "description": "Line-art illustration of link chains forming a grid, ink-100 strokes with indigo-500 accent nodes"
+      }
+    },
+    "empty-illustration-icon": {
+      "parent": "empty-illustration",
+      "order": 0,
+      "type": "text",
+      "content": "⛓",
+      "overrides": {
+        "font_size": 48,
+        "opacity": 0.25,
+        "color": "cta-primary"
+      }
+    },
+    "empty-heading": {
+      "parent": "empty-state",
+      "order": 1,
+      "type": "text",
+      "content": "No bookmarks yet",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "textAlign": "center",
+      "weight": 700,
+      "overrides": {
+        "font_size": 24,
+        "margin_bottom": 8
+      }
+    },
+    "empty-subtext": {
+      "parent": "empty-state",
+      "order": 2,
+      "type": "text",
+      "content": "Save your first link and it'll appear here.",
+      "typography": "body",
+      "color": "text-secondary",
+      "textAlign": "center",
+      "overrides": {
+        "font_size": 14,
+        "font_weight": 400,
+        "margin_bottom": 24
+      }
+    },
+    "empty-cta-btn": {
+      "parent": "empty-state",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "Save your first bookmark",
+      "overrides": {
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "border_radius": 12,
+        "height": 44,
+        "padding_x": 24,
+        "font_size": 12,
+        "font_weight": 500,
+        "aria_label": "Save your first bookmark",
+        "href": "/add"
+      }
+    },
+    "aria-live-region": {
+      "parent": "content-area",
+      "order": 5,
+      "type": "text",
+      "content": "9 bookmarks found",
+      "overrides": {
+        "aria_live": "polite",
+        "aria_atomic": true,
+        "visually_hidden": true,
+        "position": "absolute",
+        "clip": "rect(0,0,0,0)",
+        "overflow": "hidden",
+        "white_space": "nowrap",
+        "width": 1,
+        "height": 1
+      }
+    },
+    "fab": {
+      "parent": "page-root",
+      "order": 2,
+      "catalog": "button-primary",
+      "label": "+",
+      "overrides": {
+        "position": "fixed",
+        "bottom": 24,
+        "right": 24,
+        "width": 56,
+        "height": 56,
+        "border_radius": 9999,
+        "background": "cta-primary",
+        "color": "text-on-cta",
+        "font_size": 24,
+        "font_weight": 400,
+        "shadow": "0 12px 32px rgba(13,15,18,0.14), 0 4px 8px rgba(13,15,18,0.08)",
+        "z_index": 1100,
+        "aria_label": "Add new bookmark",
+        "href": "/add",
+        "hover_background": "cta-hover",
+        "transition": "background 200ms ease-out"
+      }
+    }
+  }
+}

@@ -356,6 +356,18 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'agent:ux_design',
     timestamp: now,
   },
+  PipelineRunProgress: {
+    type: 'PipelineRunProgress',
+    runId: 'run-001',
+    pipeline: 'design-penpot',
+    stage: 'Research',
+    stageIndex: 0,
+    totalStages: 3,
+    status: 'started',
+    agentRole: 'ux_research',
+    source: 'dashboard',
+    timestamp: now,
+  },
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -550,6 +562,8 @@ describe('EventBus', () => {
       'UXTestSuiteCompleted',
       'UXModuleDeployed',
       'FigmaDesignReady',
+      // Pipeline tracking
+      'PipelineRunProgress',
     ];
 
     it('has a fixture for every defined domain event type', () => {
@@ -572,7 +586,7 @@ describe('EventBus', () => {
       },
     );
 
-    it('fixture map covers all 40 event types in the DomainEvent union', () => {
+    it('fixture map covers all event types in the DomainEvent union', () => {
       const fixtureTypes = Object.keys(fixtures).sort();
       const expectedTypes = [...allEventTypes].sort();
       expect(fixtureTypes).toEqual(expectedTypes);

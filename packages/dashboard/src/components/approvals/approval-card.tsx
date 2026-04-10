@@ -17,6 +17,7 @@ export interface ApprovalCardProps {
   diffPreview: string;
   specContext: string;
   reasoning: ReasoningStep[];
+  onDecide?: (gateId: string, decision: 'approve' | 'reject' | 'request_changes', reason?: string) => void;
 }
 
 const severityVariant: Record<ApprovalCardProps['severity'], 'success' | 'warning' | 'danger' | 'purple'> = {
@@ -41,6 +42,7 @@ export function ApprovalCard({
   diffPreview,
   specContext,
   reasoning,
+  onDecide,
 }: ApprovalCardProps) {
   const [diffOpen, setDiffOpen] = useState(false);
   const [specOpen, setSpecOpen] = useState(false);
@@ -115,6 +117,11 @@ export function ApprovalCard({
             <div className="flex gap-2">
               <button
                 className="px-3 py-1.5 text-xs font-medium rounded bg-accent-yellow text-black hover:bg-accent-yellow/90 transition-colors"
+                onClick={() => {
+                  onDecide?.(id, 'request_changes', changesFeedback);
+                  setRequestChanges(false);
+                  setChangesFeedback('');
+                }}
               >
                 Submit Feedback
               </button>
@@ -131,7 +138,10 @@ export function ApprovalCard({
           </div>
         ) : (
           <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-xs font-medium rounded bg-accent-green text-black hover:bg-accent-green/90 transition-colors">
+            <button
+              className="px-3 py-1.5 text-xs font-medium rounded bg-accent-green text-black hover:bg-accent-green/90 transition-colors"
+              onClick={() => onDecide?.(id, 'approve')}
+            >
               Approve &amp; Merge
             </button>
             <button
@@ -140,7 +150,10 @@ export function ApprovalCard({
             >
               Request Changes
             </button>
-            <button className="px-3 py-1.5 text-xs font-medium rounded bg-accent-red text-white hover:bg-accent-red/90 transition-colors">
+            <button
+              className="px-3 py-1.5 text-xs font-medium rounded bg-accent-red text-white hover:bg-accent-red/90 transition-colors"
+              onClick={() => onDecide?.(id, 'reject')}
+            >
               Reject
             </button>
           </div>

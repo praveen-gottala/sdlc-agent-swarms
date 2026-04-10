@@ -7,6 +7,7 @@
  *
  * STRICT MODE BUDGET:
  * - NodeSpec uses 21 of 24 optional fields (safe headroom)
+ * - layout sub-object: 1 required + 13 optional (dir + display/columns/wrap/gap/align/justify/px/py/pt/pb)
  * - 2 union types: AcceleratorType (7 members), width (number | 'fill') — well under 16 limit
  * - Zero recursion
  */
@@ -114,9 +115,22 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
             },
             layout: {
               type: 'object',
-              description: 'Flex layout configuration for container nodes.',
+              description: 'Layout configuration for container nodes. Supports flex (default) and CSS grid modes.',
               properties: {
                 dir: { type: 'string', enum: ['row', 'column'] },
+                display: {
+                  type: 'string',
+                  enum: ['flex', 'grid'],
+                  description: 'Layout mode. Default: flex. Use grid for multi-column card grids.',
+                },
+                columns: {
+                  type: 'integer',
+                  description: 'Number of equal grid columns (only with display: grid). E.g. 3 for a 3-column card grid.',
+                },
+                wrap: {
+                  type: 'boolean',
+                  description: 'Enable flex wrapping (only with display: flex). Wraps children to next line.',
+                },
                 gap: { type: 'number', description: 'Gap between children in px.' },
                 align: {
                   type: 'string',

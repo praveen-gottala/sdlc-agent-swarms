@@ -6,7 +6,8 @@
  */
 
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
-import { Ok, Err, DEFAULT_MODEL, recordPromptTrace, recordPromptTraceResponse } from '@agentforge/core';
+import { Ok, Err, DEFAULT_MODEL, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
+import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 
 /** JSON Schema for structured evaluation output. */
@@ -230,32 +231,26 @@ export async function evaluateDesign(
     });
   }
 
-  try {
-    // Prefer structured output, fall back to text parsing
-    const structured = result.value.structured;
-    let parsed: { score: number; issues: DesignIssue[] };
+  // Prefer structured output, fall back to text parsing with validation
+  const structured = result.value.structured;
+  let evalData: { score: number; issues: DesignIssue[] };
 
-    if (structured) {
-      parsed = structured as { score: number; issues: DesignIssue[] };
-    } else {
-      const content = result.value.content;
-      const fenceMatch = /```json\s*\n?([\s\S]*?)```/.exec(content);
-      const jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
-      parsed = JSON.parse(jsonStr) as { score: number; issues: DesignIssue[] };
-    }
-
-    const score = typeof parsed.score === 'number' ? parsed.score : 0;
-    const issues: DesignIssue[] = Array.isArray(parsed.issues) ? parsed.issues : [];
-
-    const overallQuality: DesignEvaluation['overallQuality'] =
-      score >= 80 ? 'good' : score >= 50 ? 'needs_fixes' : 'poor';
-
-    return Ok({ score, overallQuality, issues });
-  } catch {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Failed to parse evaluation response: ${result.value.content.slice(0, 200)}`,
-      recoverable: true,
-    });
+  if (structured) {
+    const structuredResult = DesignEvaluationOutputSchema.safeParse(structured);
+    evalData = structuredResult.success
+      ? structuredResult.data as { score: number; issues: DesignIssue[] }
+      : { score: 0, issues: [] };
+  } else {
+    const parseResult = safeParse(result.value.content, DesignEvaluationOutputSchema, 'Design Evaluation');
+    if (!parseResult.ok) return parseResult as Result<never>;
+    evalData = parseResult.value as { score: number; issues: DesignIssue[] };
   }
+
+  const score = typeof evalData.score === 'number' ? evalData.score : 0;
+  const issues: DesignIssue[] = Array.isArray(evalData.issues) ? evalData.issues : [];
+
+  const overallQuality: DesignEvaluation['overallQuality'] =
+    score >= 80 ? 'good' : score >= 50 ? 'needs_fixes' : 'poor';
+
+  return Ok({ score, overallQuality, issues });
 }

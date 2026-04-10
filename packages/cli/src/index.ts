@@ -354,6 +354,8 @@ export { designPenpotReviewCommand } from './commands/design-penpot-review.js';
 export { designListCommand } from './commands/design-list.js';
 export type { DescribeConfig, DescribeAnswers } from './commands/describe.js';
 export type { GeneratedAppSpec, GeneratedPage, GeneratedModel, GeneratedEndpoint, DesignGenerateResult } from './commands/design-generate.js';
+export { generatePreviewHtml, buildFallbackOptions, optionToTokens, optionToBrand } from './commands/generate-design-options.js';
+export type { DesignOption, GenerateDesignResult } from './commands/generate-design-options.js';
 export type { InitAnswers, InitConfig, DesignArchetype } from './commands/init.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
 export { formatTaskTable, formatTaskRow, debugMsg } from './formatter.js';

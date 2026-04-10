@@ -1,12 +1,7 @@
 'use client';
 
-/** Represents a single activity event in the feed. */
-interface ActivityEvent {
-  id: string;
-  icon: string;
-  description: string;
-  timestamp: string;
-}
+import { useEffect, useState } from 'react';
+import { useEventFeed, type FeedEvent } from '@/lib/hooks/use-event-feed';
 
 /** HITL level configuration per phase. */
 interface HitlPhaseConfig {
@@ -14,50 +9,31 @@ interface HitlPhaseConfig {
   level: 'full' | 'selective' | 'audit-only';
 }
 
-const MOCK_EVENTS: ActivityEvent[] = [
-  {
-    id: '1',
-    icon: '\u2705',
-    description: 'Task TSK-042 approved by reviewer',
-    timestamp: '2m ago',
-  },
-  {
-    id: '2',
-    icon: '\u{1F916}',
-    description: 'CodeGen agent started on auth module',
-    timestamp: '5m ago',
-  },
-  {
-    id: '3',
-    icon: '\u{1F6E1}\uFE0F',
-    description: 'Governance check passed for PR #18',
-    timestamp: '8m ago',
-  },
-  {
-    id: '4',
-    icon: '\u{1F4B0}',
-    description: 'Budget alert: 15% of daily limit used',
-    timestamp: '12m ago',
-  },
-  {
-    id: '5',
-    icon: '\u{1F504}',
-    description: 'Pipeline advanced to Code Gen phase',
-    timestamp: '18m ago',
-  },
-  {
-    id: '6',
-    icon: '\u{1F4CB}',
-    description: 'Task TSK-041 marked as complete',
-    timestamp: '25m ago',
-  },
-  {
-    id: '7',
-    icon: '\u{1F50D}',
-    description: 'Trace captured for spec-gen run #7',
-    timestamp: '30m ago',
-  },
-];
+/** Map event type/source to a display icon */
+function getEventIcon(event: FeedEvent): string {
+  const type = event.type.toLowerCase();
+  if (type.includes('approve') || type.includes('complete')) return '\u2705';
+  if (type.includes('agent') || type.includes('started')) return '\uD83E\uDD16';
+  if (type.includes('governance') || type.includes('trust')) return '\uD83D\uDEE1\uFE0F';
+  if (type.includes('budget') || type.includes('cost')) return '\uD83D\uDCB0';
+  if (type.includes('pipeline') || type.includes('phase')) return '\uD83D\uDD04';
+  if (type.includes('task')) return '\uD83D\uDCCB';
+  if (type.includes('trace')) return '\uD83D\uDD0D';
+  if (event.severity === 'error') return '\u274C';
+  if (event.severity === 'warning') return '\u26A0\uFE0F';
+  return '\uD83D\uDD35';
+}
+
+/** Format a timestamp as relative time */
+function formatRelativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 const HITL_CONFIG: HitlPhaseConfig[] = [
   { phase: 'Spec', level: 'full' },
@@ -80,8 +56,48 @@ export interface ActivitySidebarProps {
   onToggle: () => void;
 }
 
+interface ActiveRunInfo {
+  runId: string;
+  type: string;
+  stage: string | null;
+  agentRole: string | null;
+  progress: { current: number; total: number; label: string } | null;
+}
+
+const PIPELINE_LABELS: Record<string, string> = {
+  'init': 'Project Init',
+  'design-generate': 'Spec Generation',
+  'design-penpot': 'Design Pipeline',
+};
+
 /** Right-hand activity feed and HITL config sidebar. */
 export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
+  const { events } = useEventFeed();
+  const [activeRuns, setActiveRuns] = useState<ActiveRunInfo[]>([]);
+
+  // Poll for active runs
+  useEffect(() => {
+    let active = true;
+
+    async function fetchRuns(): Promise<void> {
+      try {
+        const res = await fetch('/api/runs?limit=5');
+        if (!res.ok || !active) return;
+        const data = await res.json();
+        const running = (data.runs ?? []).filter(
+          (r: ActiveRunInfo & { status: string }) => r.status === 'running' || r.status === 'pending',
+        );
+        if (active) setActiveRuns(running);
+      } catch {
+        // Ignore
+      }
+    }
+
+    void fetchRuns();
+    const interval = setInterval(() => void fetchRuns(), 3_000);
+    return () => { active = false; clearInterval(interval); };
+  }, []);
+
   return (
     <div className="relative flex">
       {/* Toggle button (always visible) */}
@@ -95,31 +111,81 @@ export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
 
       {open && (
         <aside className="w-[280px] h-full bg-sidebar border-l border-border flex flex-col overflow-hidden">
+          {/* Running pipelines */}
+          {activeRuns.length > 0 && (
+            <div className="border-b border-border px-4 py-3">
+              <h2 className="text-text-primary text-sm font-semibold mb-2">
+                Running Pipelines
+              </h2>
+              <div className="flex flex-col gap-2">
+                {activeRuns.map((run) => (
+                  <div key={run.runId} className="bg-bg-elevated/50 rounded-md p-2.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-text-primary text-xs font-medium">
+                        {PIPELINE_LABELS[run.type] ?? run.type}
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
+                    </div>
+                    {run.progress && (
+                      <div className="mb-1.5">
+                        <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-accent-blue rounded-full transition-all duration-500"
+                            style={{ width: `${Math.round((run.progress.current / run.progress.total) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-text-muted text-[10px] mt-0.5">
+                          {run.progress.label} ({run.progress.current}/{run.progress.total})
+                        </p>
+                      </div>
+                    )}
+                    {run.agentRole && (
+                      <p className="text-text-secondary text-[10px]">
+                        Agent: {run.agentRole}
+                      </p>
+                    )}
+                    {run.stage && (
+                      <p className="text-text-muted text-[10px]">
+                        Stage: {run.stage}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Event feed */}
           <div className="flex-1 overflow-y-auto">
             <h2 className="text-text-primary text-sm font-semibold px-4 pt-4 pb-2">
               Activity
             </h2>
-            <ul className="flex flex-col">
-              {MOCK_EVENTS.map((event) => (
-                <li
-                  key={event.id}
-                  className="flex items-start gap-2.5 px-4 py-2.5 border-b border-border/50 hover:bg-bg-elevated/30 transition-colors"
-                >
-                  <span className="text-sm flex-shrink-0 mt-0.5">
-                    {event.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-text-secondary text-xs leading-relaxed">
-                      {event.description}
-                    </p>
-                    <p className="text-text-muted text-[10px] mt-0.5">
-                      {event.timestamp}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {events.length === 0 ? (
+              <p className="text-text-muted text-xs px-4 py-6 text-center">
+                No recent activity
+              </p>
+            ) : (
+              <ul className="flex flex-col">
+                {events.map((event) => (
+                  <li
+                    key={event.id}
+                    className="flex items-start gap-2.5 px-4 py-2.5 border-b border-border/50 hover:bg-bg-elevated/30 transition-colors"
+                  >
+                    <span className="text-sm flex-shrink-0 mt-0.5">
+                      {getEventIcon(event)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-text-secondary text-xs leading-relaxed">
+                        {event.message}
+                      </p>
+                      <p className="text-text-muted text-[10px] mt-0.5">
+                        {formatRelativeTime(event.timestamp)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* HITL config summary */}

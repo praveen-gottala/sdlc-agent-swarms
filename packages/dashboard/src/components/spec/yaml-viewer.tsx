@@ -1,8 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 interface YamlViewerProps {
   content: string;
   filename: string;
+  editable?: boolean;
+  onSave?: (content: string) => void;
+  saving?: boolean;
 }
 
 /** Highlight a single line of YAML using regex-based rules. */
@@ -80,9 +85,16 @@ function highlightValue(value: string): React.ReactNode {
   return <span style={{ color: '#22c55e' }}>{value}</span>;
 }
 
-/** Syntax-highlighted YAML viewer with line numbers. */
-export function YamlViewer({ content, filename }: YamlViewerProps) {
+/** Syntax-highlighted YAML viewer with line numbers and optional edit mode. */
+export function YamlViewer({ content, filename, editable, onSave, saving }: YamlViewerProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(content);
   const lines = content.split('\n');
+
+  // Sync draft when content changes externally
+  useEffect(() => {
+    if (!editing) setDraft(content);
+  }, [content, editing]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/10 bg-[#0d0e17]">
@@ -90,23 +102,63 @@ export function YamlViewer({ content, filename }: YamlViewerProps) {
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2 text-sm text-gray-400">
         <span>📄</span>
         <span className="font-medium text-gray-200">{filename}</span>
+        {editable && (
+          <div className="ml-auto flex items-center gap-2">
+            {editing ? (
+              <>
+                <button
+                  data-testid="yaml-save"
+                  onClick={() => { onSave?.(draft); setEditing(false); }}
+                  disabled={saving}
+                  className="rounded px-2.5 py-1 text-xs font-medium bg-accent-blue text-white hover:bg-accent-blue/80 disabled:opacity-40 transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  data-testid="yaml-cancel"
+                  onClick={() => { setDraft(content); setEditing(false); }}
+                  className="rounded px-2.5 py-1 text-xs font-medium border border-white/10 text-gray-300 hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                data-testid="yaml-edit"
+                onClick={() => setEditing(true)}
+                className="rounded px-2.5 py-1 text-xs font-medium border border-white/10 text-gray-300 hover:bg-white/5 transition-colors"
+              >
+                Edit
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-0">
-        <pre className="text-sm leading-6">
-          <code>
-            {lines.map((line, i) => (
-              <div key={i} className="flex hover:bg-white/5">
-                <span className="inline-block w-12 flex-shrink-0 select-none pr-4 text-right text-gray-600" style={{ fontFamily: 'monospace' }}>
-                  {i + 1}
-                </span>
-                <span style={{ fontFamily: 'monospace' }}>{highlightLine(line)}</span>
-              </div>
-            ))}
-          </code>
-        </pre>
-      </div>
+      {editing ? (
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="flex-1 w-full resize-none bg-[#0d0e17] p-4 text-sm leading-6 text-gray-200 font-mono focus:outline-none"
+          spellCheck={false}
+        />
+      ) : (
+        <div className="flex-1 overflow-auto p-0">
+          <pre className="text-sm leading-6">
+            <code>
+              {lines.map((line, i) => (
+                <div key={i} className="flex hover:bg-white/5">
+                  <span className="inline-block w-12 flex-shrink-0 select-none pr-4 text-right text-gray-600" style={{ fontFamily: 'monospace' }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ fontFamily: 'monospace' }}>{highlightLine(line)}</span>
+                </div>
+              ))}
+            </code>
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
