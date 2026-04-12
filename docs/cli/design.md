@@ -8,7 +8,7 @@ Request a new page design from the design agent pipeline (code-first workflow).
 
 **Purpose:** Entry point for the event-driven design workflow. Publishes a
 `PageRequested` event that triggers the full UX agent pipeline: Research →
-Planning → Design → Evaluation. Unlike `design:penpot` (which runs the
+Planning → Design → Evaluation. Unlike `design:page` (which runs the
 pipeline synchronously), this command is fire-and-forget — it emits the event
 and returns immediately. Downstream agents pick up the event and process it
 asynchronously.
@@ -25,7 +25,7 @@ agentforge design <description>
 
 **When to use:**
 - Use `design` for event-driven workflows where agents run asynchronously
-- Use `design:penpot` or `design:figma` for synchronous, interactive design sessions with live tool integration
+- Use `design:page` for synchronous, interactive design sessions with live tool integration
 
 **Example:**
 ```bash
@@ -42,7 +42,7 @@ design pipeline — it turns your requirements into structured page definitions.
 
 **Purpose:** Reads the PRD (`docs/prd.md`) and project config, then uses an LLM to
 generate `pages.yaml`, `models.yaml`, and `api.yaml` under `agentforge/spec/`.
-These files drive all downstream design commands (`design:penpot`, `design:figma`).
+These files drive all downstream design commands (`design:page`).
 
 ```bash
 agentforge design:generate
@@ -87,77 +87,6 @@ agentforge design:preview
 
 ---
 
-## `agentforge design:figma`
-
-Create a Figma design via the full UX agent pipeline (Research, Planning, Design) with live Figma integration through the TalkToFigma WebSocket bridge.
-
-```bash
-agentforge design:figma <description> [options]
-```
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `description` | Yes | Natural language description of what to design |
-
-| Option | Description |
-|--------|-------------|
-| `--stage <stage>` | Skip to a stage: `research`, `planning`, `design` (loads prior stages from cache) |
-| `--module <id>` | Module ID (default: derived from description) |
-| `--no-wait` | Exit immediately after design without entering the feedback loop |
-| `--mock` | Use mock MCP (skip design tool connection, useful for testing LLM stages) |
-
-### Pipeline stages
-
-1. **Research** — Analyzes PRD requirements, produces a design brief
-2. **Planning** — Builds component spec with tree, tokens, responsive rules
-3. **Design** — Creates Figma components via TalkToFigma MCP bridge
-
-After design completes, an interactive feedback loop starts (unless `--no-wait` or non-TTY). See [Feedback Loop](#feedback-loop) below.
-
-### Artifacts
-
-All artifacts are saved to `.agentforge/previews/<module-id>/`:
-- `research-brief.json` — research stage output
-- `planning-spec.json` — planning stage output
-- `figma-design.json` — design stage output (Figma node IDs, file ID, breakpoints)
-
-### Skipping stages
-
-Use `--stage` to resume from a specific stage, loading prior outputs from cached artifacts:
-
-```bash
-# Re-run only the design stage (reuses cached research + planning)
-agentforge design:figma "cost dashboard" --stage design --module cost-dashboard
-```
-
-### Environment variables
-
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | **Required.** Anthropic API key for LLM calls |
-| `AGENTFORGE_MCP_FIGMA_WRITE_URL` | WebSocket URL for the Figma bridge (default: auto-detect) |
-| `AGENTFORGE_MCP_FIGMA_CHANNEL` | Explicit channel to join (skips discovery) |
-| `AGENTFORGE_MCP_FIGMA_FILE_ID` | Figma file ID for REST API features (screenshots, evaluation) |
-| `AGENTFORGE_MCP_FIGMA_TOKEN` | Figma Personal Access Token (enables review feature) |
-
-**Examples:**
-```bash
-# Full pipeline
-agentforge design:figma "cost dashboard with charts and tables"
-
-# Resume from design stage
-agentforge design:figma "cost dashboard" --stage design --module cost-dashboard
-
-# Skip feedback loop (CI/automation)
-agentforge design:figma "cost dashboard" --no-wait
-
-# Explicit Figma bridge connection
-AGENTFORGE_MCP_FIGMA_CHANNEL=abc123 \
-agentforge design:figma "cost dashboard" --stage design
-```
-
----
-
 ## `agentforge design:list`
 
 List all designs in the `.agentforge/previews/` directory with their status and metadata.
@@ -171,7 +100,7 @@ Scans each module directory for stage artifacts and displays a summary table:
 | Column | Description |
 |--------|-------------|
 | MODULE ID | Kebab-case identifier for the design module |
-| TOOL | Design tool used: `figma`, `penpot`, or `-` (no design stage) |
+| TOOL | Design tool used: `penpot` or `-` (no design stage) |
 | STAGES | Completed/total stages (e.g. `3/3`) |
 | LAST MODIFIED | Timestamp of the most recently modified artifact |
 | COMPONENTS | Number of components (from design or planning output) |
@@ -182,42 +111,16 @@ Found 3 design(s):
 
   MODULE ID          TOOL    STAGES  LAST MODIFIED     COMPONENTS
   ──────────────────────────────────────────────────────────────
-✔ cost-dashboard     figma   3/3     2026-03-22 00:48  12
+✔ cost-dashboard     penpot  3/3     2026-03-22 00:48  12
 ● bookshelf-catalog  penpot  2/3     2026-03-22 17:22  8
 ○ dashboard-design   -       0/3     2026-03-21 15:30  -
 ```
 
 ---
 
-## `agentforge design:collaborate`
-
-Resume an existing Figma design for interactive human-agent collaboration without re-running the pipeline.
-
-```bash
-agentforge design:collaborate --module <id>
-```
-
-| Option | Required | Description |
-|--------|----------|-------------|
-| `--module <id>` | Yes | Module ID of the design to collaborate on |
-
-Loads the saved `figma-design.json` artifact, connects to Figma, and enters the interactive feedback loop. No pipeline stages are re-run — this is purely for iterating on an existing design.
-
-**Prerequisites:**
-- A prior `design:figma` run must have completed and saved artifacts
-- The Figma bridge must be running and the plugin connected
-
-**Example:**
-```bash
-# Iterate on an existing design
-agentforge design:collaborate --module cost-dashboard
-```
-
----
-
 ## Feedback Loop
 
-Both `design:figma` and `design:collaborate` enter an interactive feedback loop where you can collaborate with the agent on the Figma design.
+The `design:page` command enters an interactive feedback loop after design completes.
 
 ### Commands
 

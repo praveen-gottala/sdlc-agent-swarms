@@ -35,13 +35,11 @@ Create and iterate on designs through the UX agent pipeline.
 | `agentforge design:generate` | Generate app spec (pages, models, API) from PRD |
 | `agentforge design:preview` | Open design system preview in browser |
 | `agentforge design <description>` | Request a code-first design (event-driven) |
-| `agentforge design:penpot <pageId>` | Create a Penpot design via Research/Planning/Design pipeline |
-| `agentforge design:penpot:all` | Batch-design all pages from `pages.yaml` |
-| `agentforge design:penpot:browser <description>` | Create Penpot design via Playwright browser automation |
-| `agentforge design:figma <description>` | Create a Figma design via Research/Planning/Design pipeline |
-| `agentforge design:penpot:review --url <url>` | Review and improve an existing Penpot design |
+| `agentforge design:page <pageId>` | Create a design via Research/Planning/Design pipeline |
+| `agentforge design:page:all` | Batch-design all pages from `pages.yaml` |
+| `agentforge design:page:browser <description>` | Create design via Playwright browser automation |
+| `agentforge design:page:review --url <url>` | Review and improve an existing design via browser agent |
 | `agentforge design:list` | List all designs with status and metadata |
-| `agentforge design:collaborate --module <id>` | Resume an existing design for human-agent collaboration |
 
 ### [Orchestration](./orchestration.md)
 

@@ -236,7 +236,7 @@ agentforge migrate --dry
 
 ## Penpot Prerequisites
 
-To use `design:penpot` or `design:collaborate --tool penpot`, the following must be configured:
+To use `design:page` with Penpot export (`--export-penpot`), the following must be configured:
 
 ### 1. Docker
 

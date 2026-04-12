@@ -39,7 +39,7 @@ When determining which viewports to generate, the system checks these sources in
 CLI --width flag  >  page.viewports (pages.yaml)  >  design config (agentforge.yaml)  >  default [1440]
 ```
 
-1. **CLI `--width` flag** — always wins. `agentforge design:penpot --width 768 "home"` generates at 768px regardless of any config.
+1. **CLI `--width` flag** — always wins. `agentforge design:page --width 768 "home"` generates at 768px regardless of any config.
 2. **Per-page `viewports`** in `agentforge/spec/pages.yaml` — per-screen overrides. If a page defines `viewports: [390, 768]`, those are used.
 3. **`design` section** in `agentforge.yaml` — project-level defaults (this config).
 4. **Hardcoded fallback** — `[1440]` if nothing is configured.
@@ -141,9 +141,9 @@ The `--width` flag on any design command overrides all config:
 
 ```bash
 # Generates at 768px regardless of agentforge.yaml or pages.yaml
-agentforge design:penpot --width 768 "home page"
-agentforge design:penpot:all --width 768
-agentforge design:penpot:browser --width 768 "home page"
+agentforge design:page --width 768 "home page"
+agentforge design:page:all --width 768
+agentforge design:page:browser --width 768 "home page"
 ```
 
 ## Architecture
@@ -160,6 +160,6 @@ The `DesignConfig` type is defined in `packages/core/src/types/project-manifest.
 
 | Command | How it uses viewport config |
 |---------|-----------------------------|
-| `design:penpot` | `resolveViewports({ cliWidth, designConfig })[0]` as `viewportWidth` |
-| `design:penpot:all` | `resolveViewports({ cliWidth, pageViewports, designConfig })` for each page |
-| `design:penpot:browser` | `resolveViewports({ cliWidth, designConfig })[0]` as `viewportWidth` |
+| `design:page` | `resolveViewports({ cliWidth, designConfig })[0]` as `viewportWidth` |
+| `design:page:all` | `resolveViewports({ cliWidth, pageViewports, designConfig })` for each page |
+| `design:page:browser` | `resolveViewports({ cliWidth, designConfig })[0]` as `viewportWidth` |

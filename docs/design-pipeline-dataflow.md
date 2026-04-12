@@ -28,7 +28,7 @@
 
 **Data flows left-to-right, top-to-bottom.** Each stage produces artifacts
 consumed by downstream stages. The pipeline is orchestrated by the CLI
-(`design:penpot` command) with per-stage caching for resumability.
+(`design:page` command) with per-stage caching for resumability.
 
 ---
 
@@ -39,6 +39,7 @@ consumed by downstream stages. The pipeline is orchestrated by the CLI
 │                         INIT COMMAND                                │
 │                                                                     │
 │  Source: packages/cli/src/commands/init.ts                          │
+│  Helpers: packages/cli/src/design/ (archetypes, tokens, tailwind)   │
 │  Entry:  initCommand(rootDir, fileSystem?, input?, output?, config?)│
 │                                                                     │
 │  ┌─────────────┐   ┌──────────────┐   ┌──────────────────────┐     │
@@ -118,6 +119,13 @@ applies `min_height` from touch targets, and validates token bindings.
 ### Design Options Generation (`generateDesignOptions()`)
 
 **Source**: `packages/cli/src/commands/generate-design-options.ts`
+**Helpers**:
+- `packages/cli/src/design/archetypes.ts` — fallback archetype definitions (`buildDesignTokensSpec`, `buildBrandSpec`)
+- `packages/cli/src/design/design-tokens-defaults.ts` — shared DEFAULT_* constants
+- `packages/cli/src/design/preview-helpers.ts` — color utilities (`resolveColor`, `isLight`, `hexWithOpacity`)
+- `packages/cli/src/design/preview-html.ts` — `generatePreviewHtml()` (HTML comparison page)
+- `packages/cli/src/design/tailwind-generator.ts` — `generateTailwindConfig()`, `generateGlobalCss()`
+- `packages/cli/src/design/design-system-writer.ts` — `writeDesignSystemFiles()` (consolidated file writer)
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
@@ -209,6 +217,7 @@ typography_scale:
 │                     DESIGN:GENERATE COMMAND                          │
 │                                                                      │
 │  Source: packages/cli/src/commands/design-generate.ts                 │
+│  Preview: packages/cli/src/preview/app-spec-preview.ts               │
 │  Entry:  designGenerateCommand(rootDir, fileSystem, input, output)    │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
@@ -670,7 +679,7 @@ The planning agent defines a 4-stage implementation plan:
 │  │                        ▼                                     │     │
 │  │               ┌───────────────┐                              │     │
 │  │               │ LLM generates │  (Penpot: JS code)           │     │
-│  │               │ modifications │  (Figma: step objects)       │     │
+│  │               │ modifications │                              │     │
 │  │               └───────┬───────┘                              │     │
 │  │                       ▼                                      │     │
 │  │               ┌───────────────┐                              │     │
@@ -781,14 +790,14 @@ shared utilities.
 
 ---
 
-## CLI Orchestration (`design:penpot`)
+## CLI Orchestration (`design:page`)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    design:penpot COMMAND                              │
+│                    design:page COMMAND                                │
 │                                                                      │
-│  Source: packages/cli/src/commands/design-penpot.ts                   │
-│  Entry:  designPenpotCommand(description, output, options)           │
+│  Source: packages/cli/src/commands/design-page.ts                    │
+│  Entry:  designPageCommand(pageId, output, options)                  │
 │                                                                      │
 │  Options:                                                            │
 │    --stage research|planning|design|replay|connect                   │
@@ -847,8 +856,8 @@ Each stage saves artifacts to `.agentforge/preview/{moduleId}/`. When using
 ├── penpot-design.json             ← Stage 4 output
 ├── research-prompt.md             ← LLM prompt trace
 ├── planning-prompt.md             ← LLM prompt trace
-├── design-penpot-prompt.md        ← LLM prompt trace
-├── design-penpot-token-correction-prompt.md  ← if token retries
+├── design-prompt.md               ← LLM prompt trace
+├── design-token-correction-prompt.md  ← if token retries
 └── scripts/
     ├── design.js                  ← Phase A generated script
     └── fixes.js                   ← Phase C correction scripts
@@ -929,7 +938,7 @@ ImplementationDraftReady
 | Models spec | `agentforge/spec/models.yaml` | YAML | Data models with fields and db tables |
 | API spec | `agentforge/spec/api.yaml` | YAML | REST endpoints with params and responses |
 
-### Pipeline Artifacts (Stages 2-7: design:penpot)
+### Pipeline Artifacts (Stages 2-7: design:page)
 
 | File | Path | Format | Purpose |
 |------|------|--------|---------|

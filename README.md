@@ -83,21 +83,15 @@ Reads your PRD and generates a complete app spec: pages, data models, and API en
 Using Figma:
 
 ```bash
-# Start the Figma bridge
-docker compose up -d figma-bridge
-
 # Design a screen
-agentforge design:figma "dashboard with analytics charts and user activity feed"
-```
+agentforge design:page bill-entry
 
-Using Penpot:
-
-```bash
+# Optionally export to Penpot
 docker compose up -d penpot-mcp
-agentforge design:penpot bill-entry
+agentforge design:page bill-entry --export-penpot
 ```
 
-Both run a three-stage pipeline: **Research** (analyzes PRD, produces design brief) -> **Planning** (component spec with tokens and responsive rules) -> **Design** (creates components in the design tool).
+The pipeline runs three stages: **Research** (analyzes PRD, produces design brief) -> **Planning** (component spec with tokens and responsive rules) -> **Design** (renders via DesignSpec V2 deterministic renderer).
 
 After design, an interactive feedback loop lets you refine:
 
@@ -161,10 +155,9 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 | Command | Description |
 |---|---|
 | `agentforge design <description>` | Code-first design (emits `PageRequested` event) |
-| `agentforge design:figma <desc>` | Full Figma pipeline: Research -> Planning -> Design |
-| `agentforge design:penpot <pageId>` | Full Penpot pipeline: Research -> Planning -> Design (V2 deterministic renderer by default) |
-| `agentforge design:penpot <pageId> --evaluate` | Run non-interactive design evaluation (CI/CD quality gate) |
-| `agentforge design:collaborate --module <id>` | Resume a design for human-agent collaboration |
+| `agentforge design:page <pageId>` | Full design pipeline: Research -> Planning -> Design (V2 deterministic renderer) |
+| `agentforge design:page <pageId> --evaluate` | Run non-interactive design evaluation (CI/CD quality gate) |
+| `agentforge design:page <pageId> --export-penpot` | Export final design to Penpot |
 | `agentforge design:generate` | Generate pages, models, and API spec from PRD |
 | `agentforge design:preview` | Open design system preview in browser |
 
