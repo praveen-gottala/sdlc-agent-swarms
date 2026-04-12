@@ -14,29 +14,23 @@
  * 6. execute_code → apply targeted fixes
  */
 
-import { resolve, join } from 'node:path';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact, deriveModuleId } from '../utils/pipeline-context.js';
 import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
 import { ensureDesignToolConnection } from './design-preflight.js';
 import {
-  Ok,
-  Err,
-  createEventBus,
   createRealFs,
   loadDesignTokens,
   loadBrandSpec,
   loadComponentCatalog,
   loadProjectManifest,
   resolveViewports,
-  PREVIEW_DIR_REL,
   PIPELINE_ARTIFACTS,
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
-  MCPClient,
   LLMProviderRef,
   DesignConfig,
 } from '@agentforge/core';
@@ -82,57 +76,11 @@ interface DesignPageBrowserOptions {
 }
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-/** Derive a kebab-case module ID from a description. */
-function deriveModuleId(description: string): string {
-  return description
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 40)
-    .replace(/-$/, '');
-}
-
-const createContext = (taskId: string, mcpClient?: MCPClient) => ({
-  taskId,
-  projectRoot: process.cwd(),
-  eventBus: createEventBus(),
-  fs: createRealFs(),
-  mcpClient,
-  runGovernance: async () => Ok({ status: 'proceed' as const }),
-  resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
-  recordAudit: () => {},
-});
-
-const ensureOutputDir = (moduleId: string): string => {
-  const dir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  return dir;
-};
-
-const saveArtifact = (dir: string, filename: string, data: unknown): string => {
-  const filePath = join(dir, filename);
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
-  return filePath;
-};
-
-const loadArtifact = <T>(dir: string, filename: string): T | null => {
-  const filePath = join(dir, filename);
-  if (!existsSync(filePath)) return null;
-  return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
-};
-
-// ============================================================================
 // Command
 // ============================================================================
 
 /**
- * Execute the design:penpot:browser command.
+ * Execute the design:page:browser command.
  * Runs the full UX pipeline with Playwright browser automation.
  */
 export async function designPageBrowserCommand(
@@ -141,7 +89,7 @@ export async function designPageBrowserCommand(
   options: DesignPageBrowserOptions = {},
 ): Promise<void> {
   const moduleId = options.module ?? deriveModuleId(description);
-  const taskId = `task_design_penpot_browser_${Date.now()}`;
+  const taskId = `task_design_page_browser_${Date.now()}`;
   const skipToStage = options.stage;
   const outputDir = ensureOutputDir(moduleId);
 
@@ -197,7 +145,7 @@ export async function designPageBrowserCommand(
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-    const context = createContext(taskId);
+    const context = createPipelineContext(taskId);
 
     const input: UXResearchInput = {
       moduleId,
@@ -235,7 +183,7 @@ export async function designPageBrowserCommand(
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-    const context = createContext(taskId);
+    const context = createPipelineContext(taskId);
 
     const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
@@ -329,7 +277,7 @@ export async function designPageBrowserCommand(
   if (options.implement) {
     output.write(infoMsg('\n  [implement] Generating code from design...\n'));
     const implProvider = createClaudeProvider(resolveCLIModel(), providerConfig);
-    const implContext = createContext(`${taskId}_impl`, mcpClient);
+    const implContext = createPipelineContext(`${taskId}_impl`, mcpClient);
 
     const implInput: UXImplementationInput = {
       specRef: planningOutput.specRef,

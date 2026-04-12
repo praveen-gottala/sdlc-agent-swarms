@@ -1,12 +1,11 @@
 /**
  * @module @agentforge/agents-ux/ux-design/capture-design-snapshot
  *
- * Tool-agnostic design snapshot capture. Works with both Figma and Penpot
+ * Tool-agnostic design snapshot capture. Works with Penpot (and future tools)
  * via a capture function callback. Saves screenshots as PNG files and
  * extracts per-component properties from the design tool.
  *
- * Used by both uxDesignWork (Figma) and penpotDesignWork (Penpot)
- * after the design stage completes.
+ * Used by penpotDesignWork after the design stage completes.
  */
 
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -19,7 +18,7 @@ import type { ComponentSnapshot, DesignSnapshotData, ScreenshotResult } from '..
 // ============================================================================
 
 /** Which design tool captured the snapshot — used for directory naming. */
-export type DesignToolName = 'figma' | 'penpot';
+export type DesignToolName = 'penpot';
 
 /** Function that captures a screenshot of a single node. */
 export type CaptureScreenshotFn = (

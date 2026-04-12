@@ -15,14 +15,13 @@
 import { resolve, join, relative } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact, saveTextArtifact, formatPromptTrace, deriveModuleId } from '../utils/pipeline-context.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
 import { ensureDesignToolConnection, createNoOpMCPClient } from './design-preflight.js';
 import {
   Ok,
-  Err,
-  createEventBus,
   createRealFs,
   loadDesignTokens,
   loadBrandSpec,
@@ -30,7 +29,6 @@ import {
   loadProjectManifest,
   resolveViewports,
   readSpecs,
-  PREVIEW_DIR_REL,
   PIPELINE_ARTIFACTS,
   debugLog,
   logDefaults,
@@ -135,111 +133,6 @@ function toRendererTokens(spec: DesignTokensSpec): RendererTokens {
   return tokens;
 }
 
-/** Derive a kebab-case module ID from a description. */
-function deriveModuleId(description: string): string {
-  return description
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 40)
-    .replace(/-$/, '');
-}
-
-/** Create an agent context. */
-const createContext = (taskId: string, mcpClient?: MCPClient, promptTraces?: PromptTrace[], baseDir?: string) => {
-  if (!baseDir) {
-    debugLog('createContext: baseDir not provided → default: process.cwd()');
-  }
-  return {
-    taskId,
-    projectRoot: baseDir ?? process.cwd(),
-    eventBus: createEventBus(),
-    fs: createRealFs(),
-    mcpClient,
-    runGovernance: async () => Ok({ status: 'proceed' as const }),
-    resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
-    recordAudit: () => {},
-    promptTraces,
-  };
-};
-
-/** Ensure output directory exists and return path. */
-const ensureOutputDir = (moduleId: string, baseDir: string): string => {
-  const dir = resolve(baseDir, PREVIEW_DIR_REL, moduleId);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  return dir;
-};
-
-/** Save a JSON artifact. */
-const saveArtifact = (dir: string, filename: string, data: unknown): string => {
-  const filePath = join(dir, filename);
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
-  return filePath;
-};
-
-/** Save a text artifact (e.g. markdown prompt traces). */
-const saveTextArtifact = (dir: string, filename: string, text: string): string => {
-  const filePath = join(dir, filename);
-  writeFileSync(filePath, text);
-  return filePath;
-};
-
-/** Format a prompt trace as a markdown document. */
-function formatPromptTrace(trace: PromptTrace): string {
-  const lines = [
-    `# Prompt: ${trace.stage}`,
-    ``,
-    `**Timestamp**: ${trace.timestamp}  `,
-    `**Model**: ${trace.model}  `,
-    `**Max Tokens**: ${trace.maxTokens}`,
-  ];
-
-  // Add response metadata if available
-  if (trace.latencyMs !== undefined) {
-    lines.push(`**Latency**: ${(trace.latencyMs / 1000).toFixed(1)}s`);
-  }
-  if (trace.finishReason) {
-    lines.push(`**Finish Reason**: ${trace.finishReason}`);
-  }
-  if (trace.usage) {
-    lines.push(`**Input Tokens**: ${trace.usage.inputTokens}  `);
-    lines.push(`**Output Tokens**: ${trace.usage.outputTokens}`);
-    if (trace.usage.cacheReadTokens) {
-      lines.push(`**Cache Read Tokens**: ${trace.usage.cacheReadTokens}`);
-    }
-    if (trace.usage.cacheWriteTokens) {
-      lines.push(`**Cache Write Tokens**: ${trace.usage.cacheWriteTokens}`);
-    }
-  }
-  if (trace.cost) {
-    lines.push(`**Cost**: $${trace.cost.totalCostUsd.toFixed(4)} (input: $${trace.cost.inputCostUsd.toFixed(4)}, output: $${trace.cost.outputCostUsd.toFixed(4)})`);
-  }
-  if (trace.hasVisionInput) {
-    lines.push(`**Vision Input**: yes`);
-  }
-
-  lines.push(``, `---`, ``, `## System Prompt`, ``, trace.system, ``, `---`, ``, `## User Message`, ``, trace.userMessage);
-
-  // Add response sections if available
-  if (trace.responseContent) {
-    lines.push(``, `---`, ``, `## LLM Response`, ``, trace.responseContent);
-  }
-  if (trace.responseToolCalls && trace.responseToolCalls.length > 0) {
-    lines.push(``, `---`, ``, `## Tool Calls`, ``);
-    for (const tc of trace.responseToolCalls) {
-      lines.push(`### ${tc.name}`, ``, '```json', JSON.stringify(tc.args, null, 2), '```', ``);
-    }
-  }
-  if (trace.responseStructured) {
-    lines.push(``, `---`, ``, `## Structured Output`, ``, '```json', JSON.stringify(trace.responseStructured, null, 2), '```');
-  }
-
-  return lines.join('\n');
-}
-
 /** Build and save pipeline-trace.json summary. */
 function savePipelineTrace(
   outputDir: string,
@@ -310,13 +203,6 @@ async function resolvePenpotExport(
     stdin.on('data', onData);
   });
 }
-
-/** Load a JSON artifact. */
-const loadArtifact = <T>(dir: string, filename: string): T | null => {
-  const filePath = join(dir, filename);
-  if (!existsSync(filePath)) return null;
-  return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
-};
 
 // ============================================================================
 // Command
@@ -492,7 +378,7 @@ export async function designPageCommand(
       output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
       if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for research\n'));
       const provider = makeProvider();
-      const context = createContext(taskId, undefined, promptTraces, baseDir);
+      const context = createPipelineContext(taskId, undefined, promptTraces, baseDir);
 
       const prdRequirements: string[] = [description];
       if (prdContent) {
@@ -548,7 +434,7 @@ export async function designPageCommand(
       output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
       if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for planning\n'));
       const provider = makeProvider();
-      const context = createContext(taskId, undefined, promptTraces, baseDir);
+      const context = createPipelineContext(taskId, undefined, promptTraces, baseDir);
 
       const input: UXPlanningInput = {
         briefId: researchOutput.briefId,
@@ -1021,7 +907,7 @@ try {
   const createImplementFn = (): ImplementCallback => {
     return async (design) => {
       const implProvider = makeProvider();
-      const implContext = createContext(`${taskId}_impl`, mcpClient, undefined, baseDir);
+      const implContext = createPipelineContext(`${taskId}_impl`, mcpClient, undefined, baseDir);
 
       const implInput: UXImplementationInput = {
         specRef: planningOutput.specRef,

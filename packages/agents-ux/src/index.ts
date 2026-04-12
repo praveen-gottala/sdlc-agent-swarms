@@ -10,7 +10,7 @@ export type {
   UXDesignOutput,
 } from './types.js';
 
-// Design Snapshot Capture (shared between Figma and Penpot)
+// Design Snapshot Capture
 export type { CaptureDesignSnapshotConfig, CaptureScreenshotFn, ExtractPropertiesFn, DesignToolName } from './ux-design/capture-design-snapshot.js';
 export { captureDesignSnapshot } from './ux-design/capture-design-snapshot.js';
 

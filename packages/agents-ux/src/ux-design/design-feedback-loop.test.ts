@@ -10,9 +10,9 @@ import { Ok, Err } from '@agentforge/core';
 // ============================================================================
 
 const makeDesign = (overrides?: Partial<UXDesignOutput>): UXDesignOutput => ({
-  figmaFileId: 'file-test',
-  figmaPageId: 'page-test',
-  figmaNodeIds: { root: '1:1' },
+  penpotProjectId: 'proj-test',
+  penpotPageId: 'page-test',
+  penpotNodeIds: { root: '1:1' },
   moduleId: 'test-module',
   breakpoints: ['desktop'],
   ...overrides,
@@ -102,7 +102,7 @@ describe('runDesignFeedbackLoop', () => {
 
   it('calls session.applyFeedback on arbitrary text', async () => {
     const input = createTTYInput();
-    const updatedDesign = makeDesign({ figmaNodeIds: { root: '1:1', card: '2:2' } });
+    const updatedDesign = makeDesign({ penpotNodeIds: { root: '1:1', card: '2:2' } });
     const session = makeSession({
       applyFeedback: jest.fn().mockResolvedValue(Ok(updatedDesign)),
     });
@@ -189,7 +189,7 @@ describe('runDesignFeedbackLoop', () => {
     it('runs auto-review after successful feedback', async () => {
       const input = createTTYInput();
       const outputStream = new PassThrough();
-      const updatedDesign = makeDesign({ figmaNodeIds: { root: '1:1', card: '2:2' } });
+      const updatedDesign = makeDesign({ penpotNodeIds: { root: '1:1', card: '2:2' } });
       const session = makeSession({
         applyFeedback: jest.fn().mockResolvedValue(Ok(updatedDesign)),
       });

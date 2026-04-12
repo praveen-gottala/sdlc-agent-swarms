@@ -9,15 +9,13 @@
  * Each page becomes a separate board in Penpot.
  */
 
-import { resolve, join } from 'node:path';
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact } from '../utils/pipeline-context.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import {
-  Ok,
-  Err,
-  createEventBus,
   createPenpotAdapter,
   readYaml,
   createRealFs,
@@ -26,7 +24,6 @@ import {
   loadComponentCatalog,
   loadProjectManifest,
   resolveViewports,
-  PREVIEW_DIR_REL,
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
@@ -78,37 +75,6 @@ type PageSpec = PageEntry;
 // Helpers
 // ============================================================================
 
-// Imported from design-preflight.ts
-
-const createContext = (taskId: string, mcpClient?: MCPClient) => ({
-  taskId,
-  projectRoot: process.cwd(),
-  eventBus: createEventBus(),
-  fs: createRealFs(),
-  mcpClient,
-  runGovernance: async () => Ok({ status: 'proceed' as const }),
-  resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
-  recordAudit: () => {},
-});
-
-const ensureOutputDir = (moduleId: string): string => {
-  const dir = resolve(process.cwd(), PREVIEW_DIR_REL, moduleId);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  return dir;
-};
-
-const saveArtifact = (dir: string, filename: string, data: unknown): string => {
-  const filePath = join(dir, filename);
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
-  return filePath;
-};
-
-const loadArtifact = <T>(dir: string, filename: string): T | null => {
-  const filePath = join(dir, filename);
-  if (!existsSync(filePath)) return null;
-  return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
-};
-
 /** Build a rich description from page spec + design tokens for the LLM. */
 function buildPageDescription(page: PageSpec, designTokens: string): string {
   const components = page.components.join(', ');
@@ -150,7 +116,7 @@ function loadDesignTokensSummary(projectRoot: string): string {
 // ============================================================================
 
 /**
- * Execute the design:penpot:all command.
+ * Execute the design:page:all command.
  * Reads pages from spec, connects to Penpot, designs each page.
  */
 export async function designPageAllCommand(
@@ -225,7 +191,7 @@ export async function designPageAllCommand(
   }
 
   output.write(infoMsg('='.repeat(60) + '\n'));
-  output.write(infoMsg('  AgentForge Penpot — Design All Screens\n'));
+  output.write(infoMsg('  AgentForge — Design All Screens\n'));
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  Project: ${projectRoot}\n`));
   output.write(infoMsg(`  Screens: ${pages.map(p => p.id).join(', ')}\n`));
@@ -295,7 +261,7 @@ export async function designPageAllCommand(
         if (!researchOutput) {
           output.write(infoMsg('    Research: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-          const context = createContext(taskId);
+          const context = createPipelineContext(taskId);
           const input: UXResearchInput = { moduleId, taskId, prdRequirements: [description] };
           const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
           if (!result.ok) throw new Error(`Research failed: ${result.error.message}`);
@@ -317,7 +283,7 @@ export async function designPageAllCommand(
         if (!planningOutput) {
           output.write(infoMsg('    Planning: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-          const context = createContext(taskId);
+          const context = createPipelineContext(taskId);
           const input: UXPlanningInput = {
             briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
             ...(designConfig ? { designConfig } : {}),
