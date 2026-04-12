@@ -396,16 +396,6 @@ export interface PipelineRunProgress extends BaseDomainEventFields {
   readonly cost?: { totalCostUsd: number; tokensUsed: number };
 }
 
-/** Fired when the Design Agent creates a Figma design from a component spec. */
-export interface FigmaDesignReady extends BaseDomainEventFields {
-  readonly type: 'FigmaDesignReady';
-  readonly moduleId: string;
-  readonly taskId: string;
-  readonly figmaFileId: string;
-  readonly figmaPageId: string;
-  readonly figmaNodeIds: Readonly<Record<string, string>>;
-}
-
 /**
  * Discriminated union of every domain event in the system.
  *
@@ -454,7 +444,6 @@ export type DomainEvent =
   | UXReviewCompleted
   | UXTestSuiteCompleted
   | UXModuleDeployed
-  | FigmaDesignReady
   | PipelineRunProgress;
 
 /** Union of all possible `type` values on a `DomainEvent`. */

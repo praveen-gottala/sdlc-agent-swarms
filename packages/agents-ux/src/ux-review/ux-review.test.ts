@@ -224,7 +224,7 @@ describe('uxReviewWork — disk-first compliance', () => {
     });
 
     // MCP calls for playwright succeed, but figma should NOT be called
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((ns: string, tool: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((ns: string, tool: string) => {
       if (ns === 'playwright') return Promise.resolve(Ok({ snapshot: 'data' }));
       // If figma is called, fail the test explicitly
       return Promise.resolve(Err({ code: 'NOT_FOUND', message: 'Should not call Figma', recoverable: false }));
@@ -247,7 +247,7 @@ describe('uxReviewWork — disk-first compliance', () => {
     expect(result.ok).toBe(true);
 
     // Verify no Figma MCP calls were made
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const figmaCalls = mcpCalls.filter((call: string[]) => call[0] === 'figma');
     expect(figmaCalls).toHaveLength(0);
   });
@@ -280,7 +280,7 @@ describe('uxReviewWork — disk-first compliance', () => {
       expect(result.error.code).toBe('DEPENDENCY_NOT_FOUND');
       expect(result.error.recoverable).toBe(false);
     }
-    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+    expect(ctx.mcpClient!.callTool).not.toHaveBeenCalled();
     errSpy.mockRestore();
   });
 });

@@ -46,6 +46,7 @@ export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
 // Constants
 export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
+export { PIPELINE_ARTIFACTS } from './pipeline-artifacts.js';
 
 export {
   readLearnings,
@@ -104,7 +105,6 @@ export type {
   UXReviewCompleted,
   UXTestSuiteCompleted,
   UXModuleDeployed,
-  FigmaDesignReady,
   PipelineRunProgress,
 } from './events/index.js';
 
@@ -346,15 +346,11 @@ export type {
   ToolDefinition,
   MCPClient,
   MCPClientConfig,
-  TalkToFigmaConfig,
-  TalkToFigmaConnection,
   DesignToolKind,
   DesignToolConnectionConfig,
   DesignToolSession,
   DesignToolAdapter,
   DesignToolScreenshotResult,
-  FigmaAdapterConfig,
-  FigmaAdapterLog,
   PenpotTransportConfig,
   PenpotConnection,
   PlaywrightTransportConfig,
@@ -370,11 +366,6 @@ export {
   createObservabilityMiddleware,
   composeMCPMiddleware,
   createMCPClient,
-  createTalkToFigmaTransport,
-  TALK_TO_FIGMA_TOOLS,
-  createFigmaAdapter,
-  discoverFigmaChannels,
-  discoverFigmaTools,
   createPenpotConnection,
   createPenpotTransport,
   createPenpotAdapter,

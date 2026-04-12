@@ -11,7 +11,7 @@ import type { MCPClient } from './mcp-client.js';
 import type { ToolDefinition } from './mcp-client.js';
 
 /** Supported design tool kinds. */
-export type DesignToolKind = 'figma' | 'penpot';
+export type DesignToolKind = 'penpot';
 
 /** Connection configuration for a design tool MCP server. */
 export interface DesignToolConnectionConfig {

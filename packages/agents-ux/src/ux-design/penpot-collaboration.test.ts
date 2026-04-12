@@ -59,14 +59,18 @@ const createMockMCPClient = (callToolResponse?: Record<string, unknown>) => ({
 // ============================================================================
 
 describe('mapPenpotToDesignOutput', () => {
-  it('maps Penpot fields to Figma field names', () => {
+  it('maps Penpot fields to Penpot field names', () => {
     const result = mapPenpotToDesignOutput(MOCK_PENPOT_DESIGN);
 
-    expect(result.figmaFileId).toBe('proj-123');
-    expect(result.figmaPageId).toBe('page-456');
-    expect(result.figmaNodeIds).toEqual({ Header: 'node-1', Sidebar: 'node-2' });
-    expect(result.moduleId).toBe('home');
-    expect(result.breakpoints).toEqual(['1280', '768']);
+    expect(result).toEqual({
+      moduleId: 'home',
+      breakpoints: ['1280', '768'],
+      screenshotPath: undefined,
+      componentSnapshots: undefined,
+      penpotProjectId: 'proj-123',
+      penpotPageId: 'page-456',
+      penpotNodeIds: { Header: 'node-1', Sidebar: 'node-2' },
+    });
   });
 
   it('preserves screenshot data', () => {

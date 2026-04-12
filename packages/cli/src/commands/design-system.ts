@@ -12,8 +12,6 @@
 import {
   loadDesignTokens,
   loadBrandSpec,
-  saveDesignTokens,
-  saveBrandSpec,
   saveComponentLibrary,
   validateDesignTokens,
   validateBrandSpec,
@@ -24,17 +22,13 @@ import {
 } from '@agentforge/core';
 import type { ComponentLibrarySpec } from '@agentforge/core';
 import type { FileSystem } from '../fs-utils.js';
-import { realFs } from '../fs-utils.js';
+import { readYaml, realFs } from '../fs-utils.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
-import {
-  generateTailwindConfig,
-  generateGlobalCss,
-} from './init.js';
+import { writeDesignSystemFiles } from '../design/design-system-writer.js';
 import {
   generateDesignOptions,
-  promptOnce,
 } from './generate-design-options.js';
-import type { GenerateDesignResult } from './generate-design-options.js';
+import { promptOnce } from '../utils/prompt-once.js';
 import { getComponentLibraryPresets } from './component-library-presets.js';
 import type { ComponentLibraryPreset } from './component-library-presets.js';
 import * as path from 'node:path';
@@ -161,22 +155,6 @@ export async function pickComponentLibrary(
 /**
  * Write design system output files (tokens, brand, tailwind, css).
  */
-function writeDesignSystemFiles(
-  rootDir: string,
-  designResult: GenerateDesignResult,
-  fileSystem: FileSystem,
-): void {
-  saveDesignTokens(rootDir, designResult.tokens, fileSystem);
-  saveBrandSpec(rootDir, designResult.brand, fileSystem);
-
-  const tailwindContent = generateTailwindConfig(designResult.tokens);
-  fileSystem.writeFile(path.join(rootDir, 'tailwind.config.ts'), tailwindContent);
-
-  const stylesDir = path.join(rootDir, 'src', 'styles');
-  fileSystem.mkdir(stylesDir);
-  const cssContent = generateGlobalCss(designResult.tokens);
-  fileSystem.writeFile(path.join(stylesDir, 'global.css'), cssContent);
-}
 
 /**
  * Update the design system — two independent steps:
@@ -195,24 +173,14 @@ export async function designSystemUpdateCommand(
   let description = '';
   let audience = 'general';
   const manifestPath = path.join(rootDir, 'agentforge.yaml');
-  const brandPath = path.join(rootDir, 'agentforge', 'spec', 'brand.yaml');
-  const manifestResult = fileSystem.readFile(manifestPath);
-  if (manifestResult.ok) {
-    const lines = manifestResult.value.split('\n');
-    for (const line of lines) {
-      const nameMatch = line.match(/^\s*name:\s*(.+)/);
-      if (nameMatch) appName = nameMatch[1].trim().replace(/^['"]|['"]$/g, '');
-      const descMatch = line.match(/^\s*description:\s*(.+)/);
-      if (descMatch) description = descMatch[1].trim().replace(/^['"]|['"]$/g, '');
-    }
+  const manifestResult = readYaml<{ project?: { name?: string; description?: string } }>(manifestPath, fileSystem);
+  if (manifestResult.ok && manifestResult.value.project) {
+    appName = manifestResult.value.project.name ?? '';
+    description = manifestResult.value.project.description ?? '';
   }
-  const brandResult = fileSystem.readFile(brandPath);
-  if (brandResult.ok) {
-    const lines = brandResult.value.split('\n');
-    for (const line of lines) {
-      const audMatch = line.match(/^\s*audience:\s*(.+)/);
-      if (audMatch) audience = audMatch[1].trim().replace(/^['"]|['"]$/g, '');
-    }
+  const brandResult = loadBrandSpec(rootDir, fileSystem);
+  if (brandResult.ok && brandResult.value.identity) {
+    audience = brandResult.value.identity.audience ?? 'general';
   }
 
   // Step 1: Component library selection
@@ -227,7 +195,7 @@ export async function designSystemUpdateCommand(
     { openBrowser: config?.openBrowser, mock: config?.mock, rootDir, fileSystem },
   );
 
-  writeDesignSystemFiles(rootDir, designResult, fileSystem);
+  writeDesignSystemFiles(rootDir, designResult.tokens, designResult.brand, fileSystem);
 
   // Step 3: Regenerate component catalog for the selected library
   const baseCatalog = loadBaseCatalog();

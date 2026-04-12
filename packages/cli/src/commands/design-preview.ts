@@ -13,8 +13,8 @@ import { loadDesignTokens, loadBrandSpec } from '@agentforge/core';
 import { infoMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
 import { readYaml, realFs } from '../fs-utils.js';
-import { openInBrowser } from './generate-design-options.js';
-import { generateAppSpecPreviewHtml } from './design-generate.js';
+import { openInBrowser } from '../utils/open-in-browser.js';
+import { generateAppSpecPreviewHtml } from '../preview/app-spec-preview.js';
 import type { GeneratedAppSpec } from './design-generate.js';
 
 /** Options for customizing behavior (e.g. in tests). */

@@ -2,7 +2,7 @@ import { PassThrough } from 'node:stream';
 import { runDesignFeedbackLoop } from './design-feedback-loop.js';
 import type { FeedbackLoopOptions, ReviewCallback, ImplementCallback } from './design-feedback-loop.js';
 import type { DesignCollaborationSession } from './design-collaboration.js';
-import type { UXDesignOutput } from './ux-design.js';
+import type { UXDesignOutput } from '../types.js';
 import { Ok, Err } from '@agentforge/core';
 
 // ============================================================================

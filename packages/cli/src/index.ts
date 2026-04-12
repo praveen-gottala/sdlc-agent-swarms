@@ -16,11 +16,9 @@ import { abortCommand } from './commands/abort.js';
 import { migrateCommand } from './commands/migrate.js';
 import { configCommand } from './commands/config.js';
 import { designCommand } from './commands/design.js';
-import { designFigmaCommand } from './commands/design-figma.js';
-import { designCollaborateCommand } from './commands/design-collaborate.js';
-import { designPenpotCommand } from './commands/design-penpot.js';
-import { designPenpotAllCommand } from './commands/design-penpot-all.js';
-import { designPenpotBrowserCommand } from './commands/design-penpot-browser.js';
+import { designPageCommand } from './commands/design-page.js';
+import { designPageAllCommand } from './commands/design-page-all.js';
+import { designPageBrowserCommand } from './commands/design-page-browser.js';
 import { doctorCommand } from './commands/doctor.js';
 import { setupCommand } from './commands/setup.js';
 import {
@@ -32,7 +30,7 @@ import {
 import { designGenerateCommand } from './commands/design-generate.js';
 import { describeCommand } from './commands/describe.js';
 import { designPreviewCommand } from './commands/design-preview.js';
-import { designPenpotReviewCommand } from './commands/design-penpot-review.js';
+import { designPageReviewCommand } from './commands/design-page-review.js';
 import { designListCommand } from './commands/design-list.js';
 
 /**
@@ -135,36 +133,8 @@ export function createProgram(): Command {
     });
 
   program
-    .command('design:figma')
-    .description('Create a Figma design via the UX agent pipeline (Research → Planning → Design)')
-    .argument('<description>', 'Natural language description of what to design')
-    .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, connect')
-    .option('--module <id>', 'Module ID (default: derived from description)')
-    .option('--no-wait', 'Exit after design without waiting for approval')
-    .option('--implement', 'Skip feedback loop and generate code directly after design')
-    .option('--mock', 'Use mock MCP (no design tool connection)')
-    .action(async (description: string, options: { stage?: string; module?: string; wait?: boolean; implement?: boolean; mock?: boolean }) => {
-      await designFigmaCommand(description, process.stdout, {
-        stage: options.stage as 'research' | 'planning' | 'design' | undefined,
-        module: options.module,
-        noWait: options.wait === false,
-        implement: options.implement,
-        mock: options.mock,
-      });
-    });
-
-  program
-    .command('design:collaborate')
-    .description('Resume an existing Figma design for interactive human-agent collaboration')
-    .requiredOption('--module <id>', 'Module ID of the design to collaborate on')
-    .option('--tool <tool>', 'Design tool to use: figma or penpot (default: figma)')
-    .action(async (options: { module: string; tool?: string }) => {
-      await designCollaborateCommand(process.stdout, { module: options.module, tool: options.tool as 'figma' | 'penpot' | undefined });
-    });
-
-  program
-    .command('design:penpot')
-    .description('Create a Penpot design via the UX agent pipeline (Research -> Planning -> Design)')
+    .command('design:page')
+    .description('Create a design page via the UX agent pipeline (Research -> Planning -> Design)')
     .argument('<pageId>', 'Page ID from pages.yaml (e.g., "bill-entry") or page name')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, replay-browser, connect')
     .option('--module <id>', 'Module ID override (default: page ID from pages.yaml)')
@@ -179,11 +149,11 @@ export function createProgram(): Command {
     .option('--evaluate-threshold <score>', 'Minimum score (0-100) for --evaluate pass (default: 75)')
     .option('--export-penpot', 'Export to Penpot after browser correction (default: prompt user)')
     .option('--no-export-penpot', 'Skip Penpot export entirely')
-    .option('--legacy-correction', 'Use legacy Penpot-based correction instead of browser correction')
+    .option('--penpot-correction', 'Use legacy Penpot-based correction instead of browser correction')
     .option('--interactive', 'Force interactive browser correction')
     .option('--no-interactive', 'Force non-interactive browser correction')
-    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; legacyCorrection?: boolean; interactive?: boolean }) => {
-      await designPenpotCommand(pageId, process.stdout, {
+    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; penpotCorrection?: boolean; interactive?: boolean }) => {
+      await designPageCommand(pageId, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'replay-browser' | 'connect' | undefined,
         module: options.module,
         width: options.width ? parseInt(options.width, 10) : undefined,
@@ -196,27 +166,27 @@ export function createProgram(): Command {
         evaluate: options.evaluate,
         evaluateThreshold: options.evaluateThreshold ? parseInt(options.evaluateThreshold, 10) : undefined,
         exportPenpot: options.exportPenpot,
-        legacyCorrection: options.legacyCorrection,
+        penpotCorrection: options.penpotCorrection,
         interactive: options.interactive,
       });
     });
 
   program
-    .command('design:penpot:all')
-    .description('Design all screens from pages.yaml in Penpot (reads project spec automatically)')
+    .command('design:page:all')
+    .description('Design all screens from pages.yaml (reads project spec automatically)')
     .option('--pages <ids>', 'Only design specific pages (comma-separated IDs, e.g. "home,book-detail")')
     .option('--width <pixels>', 'Viewport width in pixels — overrides per-page viewports (default: 1440)')
     .option('--design-only', 'Skip research+planning, use cached artifacts')
     .action(async (options: { pages?: string; width?: string; designOnly?: boolean }) => {
-      await designPenpotAllCommand(process.stdout, {
+      await designPageAllCommand(process.stdout, {
         ...options,
         width: options.width ? parseInt(options.width, 10) : undefined,
       });
     });
 
   program
-    .command('design:penpot:browser')
-    .description('Create a Penpot design with Playwright browser automation (screenshots + state reading)')
+    .command('design:page:browser')
+    .description('Create a design page with Playwright browser automation (screenshots + state reading)')
     .argument('<description>', 'Natural language description of what to design')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design (loads prior from cache)')
     .option('--module <id>', 'Module ID (default: derived from description)')
@@ -226,7 +196,7 @@ export function createProgram(): Command {
     .option('--implement', 'Skip feedback loop and generate code directly after design')
     .option('--mock', 'Use mock MCP (no design tool connection)')
     .action(async (description: string, options: { stage?: string; module?: string; width?: string; headless?: boolean; wait?: boolean; implement?: boolean; mock?: boolean }) => {
-      await designPenpotBrowserCommand(description, process.stdout, {
+      await designPageBrowserCommand(description, process.stdout, {
         stage: options.stage as 'research' | 'planning' | 'design' | undefined,
         module: options.module,
         width: options.width ? parseInt(options.width, 10) : undefined,
@@ -238,13 +208,13 @@ export function createProgram(): Command {
     });
 
   program
-    .command('design:penpot:review')
-    .description('Review and interactively improve an existing Penpot design via browser agent')
+    .command('design:page:review')
+    .description('Review and interactively improve an existing design page via browser agent')
     .requiredOption('--url <url>', 'Penpot workspace URL (user must be logged in)')
     .option('--page <id>', 'Page ID from pages.yaml to focus evaluation on')
     .option('--headless', 'Run browser headless')
     .action(async (options: { url: string; page?: string; headless?: boolean }) => {
-      await designPenpotReviewCommand(process.stdout, options);
+      await designPageReviewCommand(process.stdout, options);
     });
 
   const designSystem = program
@@ -327,7 +297,9 @@ export function createProgram(): Command {
   return program;
 }
 
-export { initCommand, buildManifest, scaffoldProject, buildDesignTokensSpec, buildBrandSpec, generateTailwindConfig, generateGlobalCss } from './commands/init.js';
+export { initCommand, buildManifest, scaffoldProject } from './commands/init.js';
+export { buildDesignTokensSpec, buildBrandSpec } from './design/archetypes.js';
+export { generateTailwindConfig, generateGlobalCss, hexToHSLChannels } from './design/tailwind-generator.js';
 export { startCommand } from './commands/start.js';
 export { statusCommand } from './commands/status.js';
 export { approveCommand } from './commands/approve.js';
@@ -335,13 +307,11 @@ export { abortCommand } from './commands/abort.js';
 export { migrateCommand } from './commands/migrate.js';
 export { configCommand } from './commands/config.js';
 export { designCommand } from './commands/design.js';
-export { designFigmaCommand } from './commands/design-figma.js';
-export { ensureDesignToolConnection, createMockMCPClient, FIGMA_SETUP_INSTRUCTIONS, PENPOT_SETUP_INSTRUCTIONS } from './commands/design-preflight.js';
+export { ensureDesignToolConnection, createNoOpMCPClient, PENPOT_SETUP_INSTRUCTIONS } from './commands/design-preflight.js';
 export type { DesignTool, PreflightResult } from './commands/design-preflight.js';
-export { designCollaborateCommand } from './commands/design-collaborate.js';
-export { designPenpotCommand } from './commands/design-penpot.js';
-export { designPenpotAllCommand } from './commands/design-penpot-all.js';
-export { designPenpotBrowserCommand } from './commands/design-penpot-browser.js';
+export { designPageCommand } from './commands/design-page.js';
+export { designPageAllCommand } from './commands/design-page-all.js';
+export { designPageBrowserCommand } from './commands/design-page-browser.js';
 export { doctorCommand } from './commands/doctor.js';
 export { setupCommand } from './commands/setup.js';
 export { designSystemShowCommand, designSystemUpdateCommand, designSystemValidateCommand, designSystemRegenerateCatalogCommand, pickComponentLibrary } from './commands/design-system.js';
@@ -350,12 +320,13 @@ export type { ComponentLibraryPreset, ComponentLibraryId } from './commands/comp
 export { designGenerateCommand } from './commands/design-generate.js';
 export { describeCommand } from './commands/describe.js';
 export { designPreviewCommand } from './commands/design-preview.js';
-export { designPenpotReviewCommand } from './commands/design-penpot-review.js';
+export { designPageReviewCommand } from './commands/design-page-review.js';
 export { designListCommand } from './commands/design-list.js';
 export type { DescribeConfig, DescribeAnswers } from './commands/describe.js';
 export type { GeneratedAppSpec, GeneratedPage, GeneratedModel, GeneratedEndpoint, DesignGenerateResult } from './commands/design-generate.js';
 export { generatePreviewHtml, buildFallbackOptions, optionToTokens, optionToBrand } from './commands/generate-design-options.js';
 export type { DesignOption, GenerateDesignResult } from './commands/generate-design-options.js';
-export type { InitAnswers, InitConfig, DesignArchetype } from './commands/init.js';
+export type { InitAnswers, InitConfig } from './commands/init.js';
+export type { DesignArchetype } from './design/archetypes.js';
 export type { ProjectManifest, TaskEntry, TasksFile } from './types.js';
 export { formatTaskTable, formatTaskRow, debugMsg } from './formatter.js';

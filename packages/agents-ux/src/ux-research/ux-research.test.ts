@@ -174,7 +174,7 @@ describe('uxResearchWork — no MCP calls', () => {
     );
 
     expect(result.ok).toBe(true);
-    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+    expect(ctx.mcpClient!.callTool).not.toHaveBeenCalled();
   });
 
   it('returns Err when design tokens are missing on disk and not passed in input', async () => {

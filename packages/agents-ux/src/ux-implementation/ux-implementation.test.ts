@@ -133,7 +133,7 @@ describe('parseImplementationOutput', () => {
 });
 
 describe('registerUXImplementation', () => {
-  it('subscribes to FigmaDesignReady', () => {
+  it('is a no-op stub that does not throw', () => {
     const ctx = makeContext();
     const mockEventBus = {
       publish: jest.fn(),
@@ -144,13 +144,8 @@ describe('registerUXImplementation', () => {
       history: jest.fn().mockReturnValue([]),
     };
 
-    registerUXImplementation(mockEventBus, ctx);
-
-    expect(mockEventBus.subscribe).toHaveBeenCalledTimes(1);
-    expect(mockEventBus.subscribe).toHaveBeenCalledWith(
-      'FigmaDesignReady',
-      expect.any(Function),
-    );
+    expect(() => registerUXImplementation(mockEventBus, ctx)).not.toThrow();
+    expect(mockEventBus.subscribe).not.toHaveBeenCalled();
   });
 });
 

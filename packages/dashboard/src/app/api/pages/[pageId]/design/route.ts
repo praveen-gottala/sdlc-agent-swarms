@@ -338,7 +338,7 @@ export async function POST(
           '(2) @agentforge/designspec-renderer built and linked, ' +
           '(3) A valid page description in pages.yaml. ' +
           'For the full pipeline with Penpot export and browser correction, ' +
-          'use the CLI: `agentforge design:penpot --page <pageId>`.',
+          'use the CLI: `agentforge design:page <pageId>`.',
       },
       { status: 500 },
     );

@@ -470,7 +470,7 @@ describe('uxPlanningWork — disk-first token loading', () => {
     expect(userContent).not.toContain('Figma Variables API');
 
     // No MCP call should have been made
-    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+    expect(ctx.mcpClient!.callTool).not.toHaveBeenCalled();
   });
 
   it('returns Err when design-tokens.yaml is missing (no MCP fallback)', async () => {
@@ -494,7 +494,7 @@ describe('uxPlanningWork — disk-first token loading', () => {
       expect(result.error.code).toBe('DEPENDENCY_NOT_FOUND');
       expect(result.error.recoverable).toBe(false);
     }
-    expect(ctx.mcpClient.callTool).not.toHaveBeenCalled();
+    expect(ctx.mcpClient!.callTool).not.toHaveBeenCalled();
     expect(provider.complete).not.toHaveBeenCalled();
     expect(errSpy).toHaveBeenCalled();
 

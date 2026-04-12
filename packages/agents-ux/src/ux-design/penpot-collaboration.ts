@@ -12,7 +12,7 @@
 import type { Result, MCPClient } from '@agentforge/core';
 import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
 import type { DesignCollaborationSession, DesignChangeRecord, DesignSystemContext } from './design-collaboration.js';
-import type { UXDesignOutput } from './ux-design.js';
+import type { UXDesignOutput } from '../types.js';
 import type { PenpotDesignOutput } from './ux-penpot-design.js';
 import type { DesignEvaluation } from './design-evaluator.js';
 import { evaluateDesign } from './design-evaluator.js';
@@ -32,19 +32,17 @@ interface LLMProvider {
 // ============================================================================
 
 /**
- * Map a PenpotDesignOutput to UXDesignOutput shape.
- * The feedback loop operates on `figmaNodeIds`/`figmaFileId`/`figmaPageId`;
- * this adapter maps Penpot fields to those names.
+ * Map a PenpotDesignOutput to a generic UXDesignOutput.
  */
 export function mapPenpotToDesignOutput(penpot: PenpotDesignOutput): UXDesignOutput {
   return {
-    figmaFileId: penpot.penpotProjectId ?? '',
-    figmaPageId: penpot.penpotPageId ?? '',
-    figmaNodeIds: (penpot.penpotNodeIds ?? {}) as Record<string, string>,
     moduleId: penpot.moduleId,
     breakpoints: penpot.breakpoints,
     screenshotPath: penpot.screenshotPath,
     componentSnapshots: penpot.componentSnapshots,
+    penpotProjectId: penpot.penpotProjectId,
+    penpotPageId: penpot.penpotPageId,
+    penpotNodeIds: penpot.penpotNodeIds,
   };
 }
 
@@ -100,7 +98,7 @@ FINDING SHAPES (findByName is auto-injected — just call it):
 
 Return ONLY a JSON object: { "code": "..." }`;
 
-      const nodeIdsDesc = Object.entries(currentDesign.figmaNodeIds)
+      const nodeIdsDesc = Object.entries(((currentDesign as Record<string, unknown>).penpotNodeIds as Record<string, string> ?? {}))
         .map(([name, id]) => `  ${name}: ${id}`)
         .join('\n');
 
@@ -199,17 +197,17 @@ ${fixCode}
         // Extract any new node IDs
         const nodeIds = parsed.result?.nodeIds as Record<string, string> | undefined;
         if (nodeIds) {
-          const updatedNodeIds = { ...currentDesign.figmaNodeIds, ...nodeIds };
+          const updatedNodeIds = { ...((currentDesign as Record<string, unknown>).penpotNodeIds as Record<string, string> ?? {}), ...nodeIds };
           for (const [key, val] of Object.entries(nodeIds)) {
             changeHistory.push({
               nodeId: val,
               field: 'penpotNodeId',
-              previousValue: currentDesign.figmaNodeIds[key] ?? null,
+              previousValue: ((currentDesign as Record<string, unknown>).penpotNodeIds as Record<string, string> ?? {})[key] ?? null,
               newValue: val,
               changedAt: Date.now(),
             });
           }
-          currentDesign = { ...currentDesign, figmaNodeIds: updatedNodeIds };
+          currentDesign = { ...currentDesign, penpotNodeIds: updatedNodeIds };
         }
       } catch {
         // Non-JSON response is OK — the fix code may not return structured data
@@ -252,7 +250,8 @@ export function createPenpotReviewCallback(
 ): ReviewCallback {
   return async (design: UXDesignOutput): Promise<Result<DesignEvaluation>> => {
     // Use provided rootShapeId, or fall back to first node ID
-    const shapeId = rootShapeId || Object.values(design.figmaNodeIds)[0];
+    const nodeIds = (design as Record<string, unknown>).penpotNodeIds as Record<string, string> | undefined;
+    const shapeId = rootShapeId || (nodeIds ? Object.values(nodeIds)[0] : undefined);
     if (!shapeId) {
       return Err({
         code: 'INVALID_STATE' as const,

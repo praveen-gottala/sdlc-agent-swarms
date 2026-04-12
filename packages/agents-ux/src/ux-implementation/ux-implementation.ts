@@ -396,22 +396,14 @@ export const executeUXImplementation = async (
 };
 
 /**
- * Register the UX dashboard implementation agent to respond to FigmaDesignReady events.
- * Uses the Figma-native workflow instead of the old wireframe preview HITL gate.
+ * Register the implementation agent on the event bus.
+ * Implementation is invoked explicitly by the CLI orchestrator after design
+ * approval (via --implement flag or feedback loop `implement` command).
  */
 export const registerUXImplementation = (
-  eventBus: EventBus,
-  context: AgentContext,
-  contract: AgentContract = UX_IMPLEMENTATION_CONTRACT,
+  _eventBus: EventBus,
+  _context: AgentContext,
+  _contract: AgentContract = UX_IMPLEMENTATION_CONTRACT,
 ): void => {
-  eventBus.subscribe('FigmaDesignReady', (event) => {
-    const input: UXImplementationInput = {
-      specRef: `figma://${event.figmaFileId}/${event.figmaPageId}`,
-      moduleId: event.moduleId,
-      taskId: event.taskId,
-      componentSpec: event as unknown as UXPlanningOutput,
-      stage: 'layout',
-    };
-    void executeUXImplementation(contract, context, input);
-  });
+  // Event-driven triggering will be wired when the full pipeline orchestrator is built.
 };

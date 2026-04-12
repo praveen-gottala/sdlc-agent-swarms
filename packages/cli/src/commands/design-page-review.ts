@@ -1,7 +1,7 @@
 /**
- * @module @agentforge/cli/commands/design-penpot-review
+ * @module @agentforge/cli/commands/design-page-review
  *
- * The `agentforge design:penpot:review --url <url>` command.
+ * The `agentforge design:page:review --url <url>` command.
  * Opens an existing Penpot workspace in a browser, takes a screenshot,
  * evaluates the design, and enters an interactive feedback loop.
  */
@@ -30,7 +30,7 @@ import {
 // Types
 // ============================================================================
 
-interface DesignPenpotReviewOptions {
+interface DesignPageReviewOptions {
   /** Penpot workspace URL (user must be logged in). */
   readonly url: string;
   /** Optional page ID to filter spec to a specific page. */
@@ -120,9 +120,9 @@ function buildDesignSpec(
  * Execute the design:penpot:review command.
  * Opens an existing Penpot design for interactive review and improvement.
  */
-export async function designPenpotReviewCommand(
+export async function designPageReviewCommand(
   output: NodeJS.WritableStream = process.stdout,
-  options: DesignPenpotReviewOptions,
+  options: DesignPageReviewOptions,
 ): Promise<void> {
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg('  AgentForge Penpot Design Review\n'));

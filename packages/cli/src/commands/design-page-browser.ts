@@ -1,7 +1,7 @@
 /**
- * @module @agentforge/cli/commands/design-penpot-browser
+ * @module @agentforge/cli/commands/design-page-browser
  *
- * The `agentforge design:penpot:browser <description>` command.
+ * The `agentforge design:page:browser <description>` command.
  * Runs the full UX design pipeline (Research -> Planning -> Design)
  * with Playwright browser automation for screenshots and state inspection.
  *
@@ -20,7 +20,7 @@ import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
-import { ensureDesignToolConnection, createMockMCPClient } from './design-preflight.js';
+import { ensureDesignToolConnection } from './design-preflight.js';
 import {
   Ok,
   Err,
@@ -32,6 +32,7 @@ import {
   loadProjectManifest,
   resolveViewports,
   PREVIEW_DIR_REL,
+  PIPELINE_ARTIFACTS,
   DEFAULT_SERVICE_URLS,
 } from '@agentforge/core';
 import type {
@@ -63,7 +64,7 @@ import type {
 // Types
 // ============================================================================
 
-interface DesignPenpotBrowserOptions {
+interface DesignPageBrowserOptions {
   /** Skip to a specific stage (loads prior stages from artifacts). */
   readonly stage?: 'research' | 'planning' | 'design';
   /** Module ID for the design. Default: derived from description. */
@@ -95,7 +96,7 @@ function deriveModuleId(description: string): string {
     .replace(/-$/, '');
 }
 
-const createContext = (taskId: string, mcpClient: MCPClient) => ({
+const createContext = (taskId: string, mcpClient?: MCPClient) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
@@ -134,10 +135,10 @@ const loadArtifact = <T>(dir: string, filename: string): T | null => {
  * Execute the design:penpot:browser command.
  * Runs the full UX pipeline with Playwright browser automation.
  */
-export async function designPenpotBrowserCommand(
+export async function designPageBrowserCommand(
   description: string,
   output: NodeJS.WritableStream = process.stdout,
-  options: DesignPenpotBrowserOptions = {},
+  options: DesignPageBrowserOptions = {},
 ): Promise<void> {
   const moduleId = options.module ?? deriveModuleId(description);
   const taskId = `task_design_penpot_browser_${Date.now()}`;
@@ -185,9 +186,9 @@ export async function designPenpotBrowserCommand(
   let researchOutput: UXResearchOutput;
 
   if (skipToStage === 'planning' || skipToStage === 'design') {
-    const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
+    const cached = loadArtifact<UXResearchOutput>(outputDir, PIPELINE_ARTIFACTS.researchBrief);
     if (!cached) {
-      output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
+      output.write(errorMsg(`No cached research output found at ${outputDir}/${PIPELINE_ARTIFACTS.researchBrief}\n`));
       process.exitCode = 1;
       return;
     }
@@ -196,7 +197,7 @@ export async function designPenpotBrowserCommand(
   } else {
     output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-    const context = createContext(taskId, createMockMCPClient());
+    const context = createContext(taskId);
 
     const input: UXResearchInput = {
       moduleId,
@@ -215,7 +216,7 @@ export async function designPenpotBrowserCommand(
     }
 
     researchOutput = result.value;
-    saveArtifact(outputDir, 'research-brief.json', researchOutput);
+    saveArtifact(outputDir, PIPELINE_ARTIFACTS.researchBrief, researchOutput);
     output.write(successMsg(`  Research complete (${(ms / 1000).toFixed(1)}s)\n`));
   }
 
@@ -223,9 +224,9 @@ export async function designPenpotBrowserCommand(
   let planningOutput: UXPlanningOutput;
 
   if (skipToStage === 'design') {
-    const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
+    const cached = loadArtifact<UXPlanningOutput>(outputDir, PIPELINE_ARTIFACTS.planningSpec);
     if (!cached) {
-      output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
+      output.write(errorMsg(`No cached planning output found at ${outputDir}/${PIPELINE_ARTIFACTS.planningSpec}\n`));
       process.exitCode = 1;
       return;
     }
@@ -234,7 +235,7 @@ export async function designPenpotBrowserCommand(
   } else {
     output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
     const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-    const context = createContext(taskId, createMockMCPClient());
+    const context = createContext(taskId);
 
     const input: UXPlanningInput = {
       briefId: researchOutput.briefId,

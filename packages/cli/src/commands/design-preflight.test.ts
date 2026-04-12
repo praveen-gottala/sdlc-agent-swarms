@@ -11,8 +11,7 @@
 
 import {
   ensureDesignToolConnection,
-  createMockMCPClient,
-  FIGMA_SETUP_INSTRUCTIONS,
+  createNoOpMCPClient,
   PENPOT_SETUP_INSTRUCTIONS,
 } from './design-preflight.js';
 
@@ -86,25 +85,6 @@ describe('ensureDesignToolConnection', () => {
     process.exitCode = undefined;
   });
 
-  describe('Figma — connection failure without --mock', () => {
-    it('shows Figma setup instructions', async () => {
-      const out = createOutputStream();
-      const result = await ensureDesignToolConnection('figma', out, {});
-
-      expect(result).toBeNull();
-      expect(out.output).toContain('Figma plugin not connected');
-      expect(out.output).toContain('docker compose up -d figma-bridge');
-      expect(out.output).toContain('Re-run this command');
-    });
-
-    it('sets process.exitCode to 1', async () => {
-      const out = createOutputStream();
-      await ensureDesignToolConnection('figma', out, {});
-
-      expect(process.exitCode).toBe(1);
-    });
-  });
-
   describe('Penpot — connection failure without --mock', () => {
     it('shows Penpot setup instructions', async () => {
       const out = createOutputStream();
@@ -128,11 +108,11 @@ describe('ensureDesignToolConnection', () => {
   describe('--mock flag', () => {
     it('returns mock client immediately with --mock (skips real connection)', async () => {
       const out = createOutputStream();
-      const result = await ensureDesignToolConnection('figma', out, { mock: true });
+      const result = await ensureDesignToolConnection('penpot', out, { mock: true });
 
       expect(result).not.toBeNull();
       expect(result!.mcpClient).toBeDefined();
-      expect(out.output).toContain('mock MCP');
+      expect(out.output).toContain('no-op MCP');
       expect(out.output).toContain('--mock');
       // Should NOT set exitCode
       expect(process.exitCode).toBeUndefined();
@@ -144,48 +124,48 @@ describe('ensureDesignToolConnection', () => {
 
       expect(result).not.toBeNull();
       expect(result!.mcpClient).toBeDefined();
-      expect(out.output).toContain('mock MCP');
+      expect(out.output).toContain('no-op MCP');
       expect(process.exitCode).toBeUndefined();
     });
   });
 
   describe('successful connection', () => {
-    it('returns real client when Figma adapter connects', async () => {
-      // Override the Figma adapter to simulate success
-      const { createFigmaAdapter } = jest.requireMock('@agentforge/core') as {
-        createFigmaAdapter: jest.Mock;
+    it('returns real client when Penpot adapter connects', async () => {
+      const { createPenpotAdapter } = jest.requireMock('@agentforge/core') as {
+        createPenpotAdapter: jest.Mock;
       };
-      createFigmaAdapter.mockReturnValueOnce({
-        runPreflight: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            kind: 'figma',
-            url: 'ws://localhost:3055',
-            channel: 'test-channel',
-            connectedAt: new Date().toISOString(),
-            supportedTools: ['create_rectangle'],
-          },
-        }),
+      createPenpotAdapter.mockReturnValueOnce({
         createMCPClient: jest.fn().mockReturnValue({
           client: { callTool: jest.fn(), listTools: jest.fn(), isAvailable: jest.fn() },
           disconnect: jest.fn(),
         }),
       });
 
+      // Mock loadPenpotSession to return a valid session
+      const agentsUx = jest.requireMock('@agentforge/agents-ux') as {
+        loadPenpotSession: jest.Mock;
+      };
+      agentsUx.loadPenpotSession.mockReturnValueOnce({
+        ok: true,
+        value: {
+          url: 'http://localhost:8080',
+          supportedTools: ['execute_code'],
+        },
+      });
+
       const out = createOutputStream();
-      const result = await ensureDesignToolConnection('figma', out, {});
+      const result = await ensureDesignToolConnection('penpot', out, {});
 
       expect(result).not.toBeNull();
       expect(result!.mcpClient).toBeDefined();
-      expect(result!.disconnectFn).toBeDefined();
       expect(process.exitCode).toBeUndefined();
     });
   });
 });
 
-describe('createMockMCPClient', () => {
+describe('createNoOpMCPClient', () => {
   it('returns an MCPClient that resolves all calls', async () => {
-    const client = createMockMCPClient();
+    const client = createNoOpMCPClient();
 
     const callResult = await client.callTool('server', 'tool', {});
     expect(callResult).toEqual({ ok: true, value: { content: [{ text: '{}' }] } });
@@ -199,12 +179,6 @@ describe('createMockMCPClient', () => {
 });
 
 describe('Setup instruction constants', () => {
-  it('FIGMA_SETUP_INSTRUCTIONS contains key steps', () => {
-    expect(FIGMA_SETUP_INSTRUCTIONS).toContain('docker compose up -d figma-bridge');
-    expect(FIGMA_SETUP_INSTRUCTIONS).toContain('manifest.json');
-    expect(FIGMA_SETUP_INSTRUCTIONS).toContain('Connect');
-  });
-
   it('PENPOT_SETUP_INSTRUCTIONS contains key steps', () => {
     expect(PENPOT_SETUP_INSTRUCTIONS).toContain('docker compose up -d penpot-frontend penpot-mcp');
     expect(PENPOT_SETUP_INSTRUCTIONS).toContain('localhost:9001');

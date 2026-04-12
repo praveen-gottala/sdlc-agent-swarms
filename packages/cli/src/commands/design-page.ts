@@ -1,7 +1,7 @@
 /**
- * @module @agentforge/cli/commands/design-penpot
+ * @module @agentforge/cli/commands/design-page
  *
- * The `agentforge design:penpot <description>` command.
+ * The `agentforge design:page <description>` command.
  * Runs the full UX design pipeline (Research -> Planning -> Design)
  * with Penpot integration via the Penpot MCP HTTP/SSE server.
  *
@@ -18,7 +18,7 @@ import { resolveCLIModel } from '../utils/resolve-cli-model.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
-import { ensureDesignToolConnection, createMockMCPClient } from './design-preflight.js';
+import { ensureDesignToolConnection, createNoOpMCPClient } from './design-preflight.js';
 import {
   Ok,
   Err,
@@ -31,6 +31,7 @@ import {
   resolveViewports,
   readSpecs,
   PREVIEW_DIR_REL,
+  PIPELINE_ARTIFACTS,
   debugLog,
   logDefaults,
 } from '@agentforge/core';
@@ -84,7 +85,7 @@ import { loadCatalogForRenderer, openBrowserSession, openInteractivePreview } fr
 // Types
 // ============================================================================
 
-interface DesignPenpotOptions {
+interface DesignPageOptions {
   /**
    * Skip to a specific stage (loads prior stages from artifacts).
    * - 'replay': re-execute cached design script via Penpot MCP (no LLM calls)
@@ -114,8 +115,8 @@ interface DesignPenpotOptions {
   readonly evaluateThreshold?: number;
   /** Export to Penpot after browser correction. undefined = prompt user, true = always, false = never. */
   readonly exportPenpot?: boolean;
-  /** Use legacy Penpot-based correction instead of browser correction. */
-  readonly legacyCorrection?: boolean;
+  /** Use Penpot-based correction instead of browser correction. */
+  readonly penpotCorrection?: boolean;
   /** Force interactive (true) or non-interactive (false) browser correction. */
   readonly interactive?: boolean;
 }
@@ -146,7 +147,7 @@ function deriveModuleId(description: string): string {
 }
 
 /** Create an agent context. */
-const createContext = (taskId: string, mcpClient: MCPClient, promptTraces?: PromptTrace[], baseDir?: string) => {
+const createContext = (taskId: string, mcpClient?: MCPClient, promptTraces?: PromptTrace[], baseDir?: string) => {
   if (!baseDir) {
     debugLog('createContext: baseDir not provided → default: process.cwd()');
   }
@@ -328,15 +329,15 @@ const loadArtifact = <T>(dir: string, filename: string): T | null => {
  * @param pageIdOrDescription - Page ID from pages.yaml (e.g., "bill-entry"),
  *   case-insensitive page name, or free-form description (legacy fallback).
  */
-export async function designPenpotCommand(
+export async function designPageCommand(
   pageIdOrDescription: string,
   output: NodeJS.WritableStream = process.stdout,
-  options: DesignPenpotOptions = {},
+  options: DesignPageOptions = {},
 ): Promise<void> {
   const taskId = `task_design_penpot_${Date.now()}`;
   const skipToStage = options.stage;
   const baseDir = options.projectDir ? resolve(process.cwd(), options.projectDir) : process.cwd();
-  logDefaults('designPenpotCommand', {
+  logDefaults('designPageCommand', {
     projectDir: [options.projectDir, 'process.cwd()'],
   });
   const promptTraces: PromptTrace[] = [];
@@ -380,7 +381,7 @@ export async function designPenpotCommand(
   // Use page.id as moduleId when page is resolved; ignore --module
   const moduleId = resolvedPage ? resolvedPage.id : (options.module ?? deriveModuleId(pageIdOrDescription));
   if (!resolvedPage && !options.module) {
-    debugLog(`designPenpotCommand: moduleId not provided → derived from description: "${moduleId}"`);
+    debugLog(`designPageCommand: moduleId not provided → derived from description: "${moduleId}"`);
   }
   const outputDir = ensureOutputDir(moduleId, baseDir);
 
@@ -441,7 +442,7 @@ export async function designPenpotCommand(
   /** Create provider — mock or real depending on --mock flag. */
   const makeProvider = (): LLMProvider => {
     if (options.mock) {
-      debugLog('designPenpotCommand: --mock flag set → using createMockLLMProvider (no LLM API calls)');
+      debugLog('designPageCommand: --mock flag set → using createMockLLMProvider (no LLM API calls)');
       return createMockLLMProvider();
     }
     return createClaudeProvider(resolveCLIModel(), providerConfig!);
@@ -449,7 +450,7 @@ export async function designPenpotCommand(
 
   // -- Penpot connection --
   // Defer connection unless legacy correction or explicit Penpot export is requested
-  const needsPenpotEarly = !!(options.legacyCorrection || options.designspecV1);
+  const needsPenpotEarly = !!(options.penpotCorrection || options.designspecV1);
   let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
 
@@ -462,7 +463,7 @@ export async function designPenpotCommand(
     disconnectFn = connectionResult.disconnectFn;
   } else {
     // Use a mock client for the pipeline — Penpot is optional
-    mcpClient = createMockMCPClient();
+    mcpClient = createNoOpMCPClient();
     output.write(infoMsg('  Penpot connection deferred (browser correction is primary)\n'));
   }
 
@@ -473,9 +474,9 @@ export async function designPenpotCommand(
   const forceFresh = options.fresh ?? false;
 
   if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
+    const cached = loadArtifact<UXResearchOutput>(outputDir, PIPELINE_ARTIFACTS.researchBrief);
     if (!cached) {
-      output.write(errorMsg(`No cached research output found at ${outputDir}/research-brief.json\n`));
+      output.write(errorMsg(`No cached research output found at ${outputDir}/${PIPELINE_ARTIFACTS.researchBrief}\n`));
       process.exitCode = 1;
       return;
     }
@@ -483,7 +484,7 @@ export async function designPenpotCommand(
     output.write(infoMsg('  [1/3] Research -- loaded from cache\n'));
   } else {
     // Auto-reuse cached research if available (unless --fresh)
-    const cachedResearch = !forceFresh ? loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json') : null;
+    const cachedResearch = !forceFresh ? loadArtifact<UXResearchOutput>(outputDir, PIPELINE_ARTIFACTS.researchBrief) : null;
     if (cachedResearch) {
       researchOutput = cachedResearch;
       output.write(infoMsg('\n  [1/3] Research -- reusing cached results (use --fresh to redo)\n'));
@@ -491,7 +492,7 @@ export async function designPenpotCommand(
       output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
       if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for research\n'));
       const provider = makeProvider();
-      const context = createContext(taskId, createMockMCPClient(), promptTraces, baseDir);
+      const context = createContext(taskId, undefined, promptTraces, baseDir);
 
       const prdRequirements: string[] = [description];
       if (prdContent) {
@@ -517,7 +518,7 @@ export async function designPenpotCommand(
       }
 
       researchOutput = result.value;
-      saveArtifact(outputDir, 'research-brief.json', researchOutput);
+      saveArtifact(outputDir, PIPELINE_ARTIFACTS.researchBrief, researchOutput);
       for (const trace of promptTraces) {
         saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
       }
@@ -529,9 +530,9 @@ export async function designPenpotCommand(
   let planningOutput: UXPlanningOutput;
 
   if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
+    const cached = loadArtifact<UXPlanningOutput>(outputDir, PIPELINE_ARTIFACTS.planningSpec);
     if (!cached) {
-      output.write(errorMsg(`No cached planning output found at ${outputDir}/planning-spec.json\n`));
+      output.write(errorMsg(`No cached planning output found at ${outputDir}/${PIPELINE_ARTIFACTS.planningSpec}\n`));
       process.exitCode = 1;
       return;
     }
@@ -539,7 +540,7 @@ export async function designPenpotCommand(
     output.write(infoMsg('  [2/3] Planning -- loaded from cache\n'));
   } else {
     // Auto-reuse cached planning if available (unless --fresh)
-    const cachedPlanning = !forceFresh ? loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json') : null;
+    const cachedPlanning = !forceFresh ? loadArtifact<UXPlanningOutput>(outputDir, PIPELINE_ARTIFACTS.planningSpec) : null;
     if (cachedPlanning) {
       planningOutput = cachedPlanning;
       output.write(infoMsg('\n  [2/3] Planning -- reusing cached results (use --fresh to redo)\n'));
@@ -547,7 +548,7 @@ export async function designPenpotCommand(
       output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
       if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for planning\n'));
       const provider = makeProvider();
-      const context = createContext(taskId, createMockMCPClient(), promptTraces, baseDir);
+      const context = createContext(taskId, undefined, promptTraces, baseDir);
 
       const input: UXPlanningInput = {
         briefId: researchOutput.briefId,
@@ -569,7 +570,7 @@ export async function designPenpotCommand(
       }
 
       planningOutput = result.value;
-      saveArtifact(outputDir, 'planning-spec.json', planningOutput);
+      saveArtifact(outputDir, PIPELINE_ARTIFACTS.planningSpec, planningOutput);
       for (const trace of promptTraces) {
         saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
       }
@@ -579,9 +580,9 @@ export async function designPenpotCommand(
 
   // -- Stage: connect (test connection only) --
   if (skipToStage === 'connect') {
-    const cached = loadArtifact<PenpotDesignOutput>(outputDir, 'penpot-design.json');
+    const cached = loadArtifact<PenpotDesignOutput>(outputDir, PIPELINE_ARTIFACTS.penpotDesign);
     if (!cached) {
-      output.write(errorMsg(`No cached design output found at ${outputDir}/penpot-design.json\n`));
+      output.write(errorMsg(`No cached design output found at ${outputDir}/${PIPELINE_ARTIFACTS.penpotDesign}\n`));
       process.exitCode = 1;
       return;
     }
@@ -608,9 +609,9 @@ export async function designPenpotCommand(
       mcpClient = connectionResult.mcpClient;
       disconnectFn = connectionResult.disconnectFn;
     }
-    const cached = loadArtifact<PenpotDesignOutput>(outputDir, 'penpot-design.json');
+    const cached = loadArtifact<PenpotDesignOutput>(outputDir, PIPELINE_ARTIFACTS.penpotDesign);
     if (!cached?.script) {
-      output.write(errorMsg(`No cached design script found in ${outputDir}/penpot-design.json\n`));
+      output.write(errorMsg(`No cached design script found in ${outputDir}/${PIPELINE_ARTIFACTS.penpotDesign}\n`));
       output.write(errorMsg('Run a full design first (without --stage) to generate a script.\n'));
       process.exitCode = 1;
       disconnectFn?.();
@@ -671,7 +672,7 @@ try {
       ...cached,
       penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : (cached.penpotNodeIds ?? {}),
     };
-    const artifactPath = saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
+    const artifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, updatedOutput);
 
     output.write(successMsg(`  Replay complete (${(ms / 1000).toFixed(1)}s)\n`));
     output.write('\n');
@@ -687,7 +688,7 @@ try {
 
   // -- Stage: replay-browser (re-render cached designSpec in browser — no Penpot, no LLM) --
   if (skipToStage === 'replay-browser') {
-    const specPath = join(outputDir, 'scripts', 'designspec-v2.json');
+    const specPath = join(outputDir, PIPELINE_ARTIFACTS.designSpecV2);
     if (!existsSync(specPath)) {
       output.write(errorMsg(`No cached DesignSpec found at ${relPath(specPath)}\n`));
       output.write(errorMsg('Run the full pipeline first (V2 renderer is default) to generate a DesignSpec.\n'));
@@ -832,7 +833,7 @@ try {
   const browserCorrectionOpts: BrowserCorrectionOptions = {
     width: effectiveViewportWidth,
     ...(options.interactive !== undefined ? { interactive: options.interactive } : {}),
-    outputDir: join(ensureOutputDir(moduleId, baseDir), 'corrections'),
+    outputDir: join(ensureOutputDir(moduleId, baseDir), PIPELINE_ARTIFACTS.corrections),
   };
 
   const penpotInput: PenpotDesignInput = {
@@ -853,7 +854,7 @@ try {
     } : {}),
     ...(pageContext ? { pageContext } : {}),
     browserCorrectionOptions: browserCorrectionOpts,
-    ...(options.legacyCorrection ? { legacyPenpotCorrection: true } : {}),
+    ...(options.penpotCorrection ? { legacyPenpotCorrection: true } : {}),
   };
 
   const t0 = Date.now();
@@ -867,7 +868,7 @@ try {
   }
 
   const designOutput = result.value;
-  const artifactPath = saveArtifact(outputDir, 'penpot-design.json', designOutput);
+  const artifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
   for (const trace of promptTraces) {
     saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
   }
@@ -934,7 +935,7 @@ try {
           penpotPageId: `page-${moduleId}`,
           penpotNodeIds: exportResult.value.nodeIds,
         };
-        saveArtifact(outputDir, 'penpot-design.json', updatedOutput);
+        saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, updatedOutput);
       } else {
         output.write(errorMsg(`  Penpot export failed: ${exportResult.error.message}\n`));
       }
@@ -1031,8 +1032,8 @@ try {
         designSnapshot: design.screenshotPath || design.componentSnapshots
           ? { screenshotPath: design.screenshotPath, componentSnapshots: design.componentSnapshots }
           : undefined,
-        designNodeIds: design.figmaNodeIds,
-        designFileId: design.figmaFileId,
+        designNodeIds: (design as Record<string, unknown>).penpotNodeIds as Readonly<Record<string, string>> | undefined,
+        designFileId: (design as Record<string, unknown>).penpotProjectId as string | undefined,
       };
 
       const implResult = await uxImplementationWork(
@@ -1135,7 +1136,7 @@ try {
     });
 
     if (loopResult.changeCount > 0) {
-      saveArtifact(outputDir, 'penpot-design.json', designOutput);
+      saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
       output.write(infoMsg(`  Updated artifact with ${loopResult.changeCount} change(s).\n`));
     }
 

@@ -9,18 +9,6 @@ volumes:
 
 services:
   # ============================================================================
-  # Figma Bridge (WebSocket MCP relay)
-  # ============================================================================
-  figma-bridge:
-    build:
-      context: ./docker/talk-to-figma
-      dockerfile: Dockerfile
-    ports:
-      - "3055:3055"
-    restart: unless-stopped
-    container_name: agentforge-figma-bridge
-
-  # ============================================================================
   # Penpot — self-hosted open-source design tool
   # UI: http://localhost:9001
   # First run: register an account (email verification disabled)

@@ -1,7 +1,7 @@
 /**
- * @module design-penpot-integration.test
+ * @module design-page-integration.test
  *
- * Integration tests for the design:penpot CLI command.
+ * Integration tests for the design:page CLI command.
  * Verifies that real files (PRD, design tokens, brand spec) are loaded
  * from disk and their presence/absence is reported in output.
  *
@@ -106,13 +106,13 @@ const createOutputStream = (): NodeJS.WritableStream & { output: string } => {
 // Tests
 // ============================================================================
 
-describe('design:penpot integration — file loading', () => {
+describe('design:page integration — file loading', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-design-penpot-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-design-page-'));
 
     // Create agentforge.yaml so findProjectRoot resolves to tmpDir
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
@@ -156,28 +156,28 @@ describe('design:penpot integration — file loading', () => {
   });
 
   it('loads PRD and reports in output', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true, mock: true });
+    await designPageCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('PRD loaded from');
   });
 
   it('loads design tokens and reports in output', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true, mock: true });
+    await designPageCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Design tokens loaded');
   });
 
   it('loads brand spec and reports in output', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true, mock: true });
+    await designPageCommand('home', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Brand spec loaded');
   });
@@ -187,10 +187,10 @@ describe('design:penpot integration — file loading', () => {
     rmSync(prdPath);
 
     try {
-      const { designPenpotCommand } = await import('./design-penpot.js');
+      const { designPageCommand } = await import('./design-page.js');
       const out = createOutputStream();
 
-      await designPenpotCommand('home', out, { noWait: true, mock: true });
+      await designPageCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No PRD found');
     } finally {
@@ -206,10 +206,10 @@ describe('design:penpot integration — file loading', () => {
     rmSync(brandPath);
 
     try {
-      const { designPenpotCommand } = await import('./design-penpot.js');
+      const { designPageCommand } = await import('./design-page.js');
       const out = createOutputStream();
 
-      await designPenpotCommand('home', out, { noWait: true, mock: true });
+      await designPageCommand('home', out, { noWait: true, mock: true });
 
       expect(out.output).toContain('No design system found');
     } finally {
@@ -227,13 +227,13 @@ describe('design:penpot integration — file loading', () => {
  * Mocks the agents-ux pipeline functions to intercept PenpotDesignInput and
  * verify it contains a designSystemPrompt built from the on-disk tokens.
  */
-describe('design:penpot integration — design system context data flow', () => {
+describe('design:page integration — design system context data flow', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-dsflow-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-dsflow-'));
 
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
@@ -324,10 +324,10 @@ describe('design:penpot integration — design system context data flow', () => 
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home dashboard', out, { noWait: true, mock: true });
+    await designPageCommand('home dashboard', out, { noWait: true, mock: true });
 
     // Verify penpotDesignWork was called with design system context
     expect(capturedInput).toBeDefined();
@@ -352,13 +352,13 @@ describe('design:penpot integration — design system context data flow', () => 
 // Stage tests: --stage replay, --stage connect, --implement
 // ============================================================================
 
-describe('design:penpot integration — stage replay', () => {
+describe('design:page integration — stage replay', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-replay-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-replay-'));
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n');
@@ -413,10 +413,10 @@ describe('design:penpot integration — stage replay', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('test app', out, { stage: 'replay', module: moduleId, mock: true });
+    await designPageCommand('test app', out, { stage: 'replay', module: moduleId, mock: true });
 
     expect(out.output).toContain('No cached design script');
     expect(process.exitCode).toBe(1);
@@ -450,23 +450,23 @@ describe('design:penpot integration — stage replay', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('replay ok', out, { stage: 'replay', module: moduleId, mock: true });
+    await designPageCommand('replay ok', out, { stage: 'replay', module: moduleId, mock: true });
 
     // With mock MCP, the replay call will succeed (mock returns Ok({}))
     expect(out.output).toContain('replaying cached script');
   });
 });
 
-describe('design:penpot integration — stage connect', () => {
+describe('design:page integration — stage connect', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-connect-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-connect-'));
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n');
@@ -520,10 +520,10 @@ describe('design:penpot integration — stage connect', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('connect test', out, { stage: 'connect', module: moduleId, mock: true });
+    await designPageCommand('connect test', out, { stage: 'connect', module: moduleId, mock: true });
 
     expect(out.output).toContain('CONNECTION TEST COMPLETE');
     expect(out.output).toContain('Components: 2');
@@ -554,23 +554,23 @@ describe('design:penpot integration — stage connect', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('connect missing', out, { stage: 'connect', module: moduleId, mock: true });
+    await designPageCommand('connect missing', out, { stage: 'connect', module: moduleId, mock: true });
 
     expect(out.output).toContain('No cached design output');
     expect(process.exitCode).toBe(1);
   });
 });
 
-describe('design:penpot integration — --implement flag', () => {
+describe('design:page integration — --implement flag', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-impl-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-impl-'));
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n');
@@ -634,10 +634,10 @@ describe('design:penpot integration — --implement flag', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { implement: true, noWait: true, mock: true });
+    await designPageCommand('home', out, { implement: true, noWait: true, mock: true });
 
     expect(implCalled).toBe(true);
     expect(out.output).toContain('[implement]');
@@ -649,14 +649,14 @@ describe('design:penpot integration — --implement flag', () => {
 // --project-dir integration tests
 // ============================================================================
 
-describe('design:penpot integration — --project-dir option', () => {
+describe('design:page integration — --project-dir option', () => {
   let repoRoot: string;
   let projectDir: string;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
     // repoRoot simulates the repo where CLI is invoked from
-    repoRoot = mkdtempSync(join(tmpdir(), 'agentforge-penpot-projdir-repo-'));
+    repoRoot = mkdtempSync(join(tmpdir(), 'agentforge-page-projdir-repo-'));
 
     // projectDir is a subdirectory simulating a separate project
     projectDir = join(repoRoot, 'my-project');
@@ -715,11 +715,11 @@ describe('design:penpot integration — --project-dir option', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
     // Run with --project-dir pointing to the subdirectory
-    await designPenpotCommand('projdir test', out, {
+    await designPageCommand('projdir test', out, {
       stage: 'replay',
       module: 'projdir-test',
       mock: true,
@@ -733,10 +733,10 @@ describe('design:penpot integration — --project-dir option', () => {
   });
 
   it('loads PRD and tokens from --project-dir', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, {
+    await designPageCommand('home', out, {
       noWait: true,
       mock: true,
       projectDir: 'my-project',
@@ -752,10 +752,10 @@ describe('design:penpot integration — --project-dir option', () => {
     const emptyDir = join(repoRoot, 'empty-project');
     mkdirSync(emptyDir, { recursive: true });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, {
+    await designPageCommand('home', out, {
       noWait: true,
       mock: true,
       projectDir: 'empty-project',
@@ -770,13 +770,13 @@ describe('design:penpot integration — --project-dir option', () => {
 // Viewport config integration tests
 // ============================================================================
 
-describe('design:penpot integration — viewport config from manifest', () => {
+describe('design:page integration — viewport config from manifest', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-viewport-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-viewport-'));
 
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n\nA test app.\n');
@@ -846,10 +846,10 @@ describe('design:penpot integration — viewport config from manifest', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { noWait: true, mock: true });
+    await designPageCommand('home', out, { noWait: true, mock: true });
 
     expect(capturedInput).toBeDefined();
     expect(capturedInput!.viewportWidth).toBe(1280);
@@ -894,10 +894,10 @@ describe('design:penpot integration — viewport config from manifest', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('home', out, { width: 768, noWait: true, mock: true });
+    await designPageCommand('home', out, { width: 768, noWait: true, mock: true });
 
     expect(capturedInput).toBeDefined();
     expect(capturedInput!.viewportWidth).toBe(768);
@@ -941,11 +941,11 @@ describe('design:penpot integration — viewport config from manifest', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
     // --fresh ensures research+planning are re-run (not loaded from cache)
-    await designPenpotCommand('home', out, { noWait: true, mock: true, fresh: true });
+    await designPageCommand('home', out, { noWait: true, mock: true, fresh: true });
 
     expect(capturedPlanningInput).toBeDefined();
     expect(capturedPlanningInput!.designConfig).toEqual({
@@ -960,13 +960,13 @@ describe('design:penpot integration — viewport config from manifest', () => {
 // Cache reuse and --fresh flag tests
 // ============================================================================
 
-describe('design:penpot integration — cache reuse', () => {
+describe('design:page integration — cache reuse', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-cache-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-cache-'));
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n\nTest app for cache reuse.\n');
@@ -1038,10 +1038,10 @@ describe('design:penpot integration — cache reuse', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('cache reuse test', out, { module: moduleId, noWait: true, mock: true });
+    await designPageCommand('cache reuse test', out, { module: moduleId, noWait: true, mock: true });
 
     // Research and planning should NOT have been called — cached artifacts used
     expect(researchCalled).toBe(false);
@@ -1093,10 +1093,10 @@ describe('design:penpot integration — cache reuse', () => {
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('fresh test', out, { module: moduleId, noWait: true, mock: true, fresh: true });
+    await designPageCommand('fresh test', out, { module: moduleId, noWait: true, mock: true, fresh: true });
 
     // With --fresh, both stages should be re-run despite cached artifacts
     expect(researchCalled).toBe(true);
@@ -1183,13 +1183,13 @@ const API_YAML = {
   ],
 };
 
-describe('design:penpot integration — page resolution from pages.yaml', () => {
+describe('design:page integration — page resolution from pages.yaml', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
   const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-penpot-pages-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-pages-'));
     writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
     mkdirSync(join(tmpDir, 'docs'), { recursive: true });
     writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# SplitEasy\n\nA bill splitting app.\n');
@@ -1218,28 +1218,28 @@ describe('design:penpot integration — page resolution from pages.yaml', () => 
   });
 
   it('resolves exact page ID and reports match', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true });
+    await designPageCommand('bill-entry', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Page matched: bill-entry (Bill Entry) — 14 components, route: /');
   });
 
   it('resolves case-insensitive page name', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('Bill Entry', out, { noWait: true, mock: true });
+    await designPageCommand('Bill Entry', out, { noWait: true, mock: true });
 
     expect(out.output).toContain('Page matched: bill-entry (Bill Entry)');
   });
 
   it('fails with available page IDs when page not found', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('nonexistent', out, { noWait: true, mock: true });
+    await designPageCommand('nonexistent', out, { noWait: true, mock: true });
 
     expect(out.output).toContain("Page 'nonexistent' not found");
     expect(out.output).toContain('bill-entry');
@@ -1249,10 +1249,10 @@ describe('design:penpot integration — page resolution from pages.yaml', () => 
   });
 
   it('uses page.id as moduleId (ignores --module)', async () => {
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, module: 'custom-id' });
+    await designPageCommand('bill-entry', out, { noWait: true, mock: true, module: 'custom-id' });
 
     // Should use page ID, not --module
     expect(out.output).toContain('Module: bill-entry');
@@ -1291,10 +1291,10 @@ describe('design:penpot integration — page resolution from pages.yaml', () => 
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
+    await designPageCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
 
     // Verify pageContext is passed to research
     expect(capturedResearchInput).toBeDefined();
@@ -1340,10 +1340,10 @@ describe('design:penpot integration — page resolution from pages.yaml', () => 
       };
     });
 
-    const { designPenpotCommand } = await import('./design-penpot.js');
+    const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    await designPenpotCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
+    await designPageCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
 
     const pageCtx = capturedResearchInput!.pageContext as { models?: Array<{ id: string }> };
     expect(pageCtx).toBeDefined();

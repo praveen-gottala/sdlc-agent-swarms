@@ -44,7 +44,6 @@ export type {
   UXReviewCompleted,
   UXTestSuiteCompleted,
   UXModuleDeployed,
-  FigmaDesignReady,
   PipelineRunProgress,
 } from './domain-events.js';
 

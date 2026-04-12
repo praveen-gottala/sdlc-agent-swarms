@@ -9,10 +9,8 @@
 import { createInterface } from 'node:readline/promises';
 import type { Result } from '@agentforge/core';
 import type { DesignCollaborationSession } from './design-collaboration.js';
-import type { UXDesignOutput } from './ux-design.js';
+import type { UXDesignOutput } from '../types.js';
 import type { DesignEvaluation } from './design-evaluator.js';
-import { evaluateDesign } from './design-evaluator.js';
-import { captureFigmaScreenshot } from './figma-screenshot.js';
 
 // ============================================================================
 // Types
@@ -85,40 +83,6 @@ function formatEvaluation(evaluation: DesignEvaluation, output: NodeJS.WritableS
   for (const issue of evaluation.issues) {
     output.write(`    [${issue.severity}] ${issue.component} — ${issue.description}\n`);
   }
-}
-
-/**
- * Create a review callback from Figma credentials and an LLM provider.
- * Returns undefined if required env vars are missing.
- */
-export function createReviewCallback(
-  provider: { complete: (...args: readonly unknown[]) => Promise<Result<{ content: string }>> },
-  planningSpec: string,
-): ReviewCallback | undefined {
-  const figmaToken = process.env.AGENTFORGE_MCP_FIGMA_TOKEN;
-  const figmaFileId = process.env.AGENTFORGE_MCP_FIGMA_FILE_ID;
-
-  if (!figmaToken || !figmaFileId) {
-    return undefined;
-  }
-
-  return async (design: UXDesignOutput): Promise<Result<DesignEvaluation>> => {
-    const rootNodeId = Object.values(design.figmaNodeIds)[0];
-    if (!rootNodeId) {
-      return { ok: false, error: { code: 'INVALID_STATE' as const, message: 'No Figma nodes to review', recoverable: false } };
-    }
-
-    const screenshotResult = await captureFigmaScreenshot(figmaToken, figmaFileId, rootNodeId);
-    if (!screenshotResult.ok) {
-      return screenshotResult as Result<never>;
-    }
-
-    return evaluateDesign(
-      screenshotResult.value.base64,
-      planningSpec,
-      provider as Parameters<typeof evaluateDesign>[2],
-    );
-  };
 }
 
 // ============================================================================

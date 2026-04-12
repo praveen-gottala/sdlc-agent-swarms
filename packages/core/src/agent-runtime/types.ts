@@ -146,7 +146,8 @@ export interface AgentContext {
   readonly projectRoot: string;
   readonly eventBus: EventBus;
   readonly fs: FileSystem;
-  readonly mcpClient: MCPClient;
+  /** MCP client for design tool interaction. Optional for agents that don't use MCP (research, planning). */
+  readonly mcpClient?: MCPClient;
   readonly runGovernance: RunGovernanceFn;
   readonly resolveProvider: ResolveProviderFn;
   readonly recordAudit: RecordAuditFn;

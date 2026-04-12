@@ -346,16 +346,6 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'orchestrator',
     timestamp: now,
   },
-  FigmaDesignReady: {
-    type: 'FigmaDesignReady',
-    moduleId: 'pipeline-view',
-    taskId: 'task-ux-1',
-    figmaFileId: 'file-abc123',
-    figmaPageId: 'page-001',
-    figmaNodeIds: { PipelineView: 'node-1', PhaseColumn: 'node-2', AgentCard: 'node-3' },
-    source: 'agent:ux_design',
-    timestamp: now,
-  },
   PipelineRunProgress: {
     type: 'PipelineRunProgress',
     runId: 'run-001',
@@ -561,7 +551,6 @@ describe('EventBus', () => {
       'UXReviewCompleted',
       'UXTestSuiteCompleted',
       'UXModuleDeployed',
-      'FigmaDesignReady',
       // Pipeline tracking
       'PipelineRunProgress',
     ];
@@ -995,21 +984,6 @@ describe('EventBus', () => {
       });
 
       bus.publish(fixtures.UXTestSuiteCompleted);
-      expect(received).toHaveLength(1);
-    });
-
-    it('FigmaDesignReady carries moduleId, taskId, figmaFileId, figmaPageId, figmaNodeIds', () => {
-      const received: DomainEvent[] = [];
-      bus.subscribe('FigmaDesignReady', (e) => {
-        expect(e.moduleId).toBe('pipeline-view');
-        expect(e.taskId).toBe('task-ux-1');
-        expect(e.figmaFileId).toBe('file-abc123');
-        expect(e.figmaPageId).toBe('page-001');
-        expect(e.figmaNodeIds).toEqual({ PipelineView: 'node-1', PhaseColumn: 'node-2', AgentCard: 'node-3' });
-        received.push(e);
-      });
-
-      bus.publish(fixtures.FigmaDesignReady);
       expect(received).toHaveLength(1);
     });
 

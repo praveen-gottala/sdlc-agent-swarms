@@ -139,6 +139,7 @@ const checkAccessibility = async (
   model: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
+    if (!context.mcpClient) return [];
     const toolResult = await context.mcpClient.callTool('playwright', 'snapshot', { componentPaths });
     if (!toolResult.ok) return [];
 
@@ -190,6 +191,7 @@ const checkVisualFidelity = async (
   model: string,
 ): Promise<readonly ReviewIssue[]> => {
   try {
+    if (!context.mcpClient) return [];
     const toolResult = await context.mcpClient.callTool('playwright', 'screenshot', { componentPaths });
     if (!toolResult.ok) return [];
 

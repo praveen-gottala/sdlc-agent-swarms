@@ -1,7 +1,7 @@
 /**
- * @module @agentforge/cli/commands/design-penpot-all
+ * @module @agentforge/cli/commands/design-page-all
  *
- * The `agentforge design:penpot:all` command.
+ * The `agentforge design:page:all` command.
  * Reads pages from the project spec (agentforge/spec/pages.yaml)
  * and design tokens (agentforge/spec/design-tokens.yaml), then runs
  * the Penpot design pipeline for each page sequentially.
@@ -60,7 +60,7 @@ import type {
 // Types
 // ============================================================================
 
-interface DesignPenpotAllOptions {
+interface DesignPageAllOptions {
   /** Only design specific pages (comma-separated IDs). */
   readonly pages?: string;
   /** Target viewport width in pixels — overrides per-page viewports. */
@@ -78,13 +78,9 @@ type PageSpec = PageEntry;
 // Helpers
 // ============================================================================
 
-const createMockMCPClient = (): MCPClient => ({
-  callTool: async () => Ok({}),
-  listTools: async () => Ok([]),
-  isAvailable: async () => true,
-});
+// Imported from design-preflight.ts
 
-const createContext = (taskId: string, mcpClient: MCPClient) => ({
+const createContext = (taskId: string, mcpClient?: MCPClient) => ({
   taskId,
   projectRoot: process.cwd(),
   eventBus: createEventBus(),
@@ -157,9 +153,9 @@ function loadDesignTokensSummary(projectRoot: string): string {
  * Execute the design:penpot:all command.
  * Reads pages from spec, connects to Penpot, designs each page.
  */
-export async function designPenpotAllCommand(
+export async function designPageAllCommand(
   output: NodeJS.WritableStream = process.stdout,
-  options: DesignPenpotAllOptions = {},
+  options: DesignPageAllOptions = {},
 ): Promise<void> {
   // Find project root (looks for agentforge.yaml)
   let projectRoot: string;
@@ -299,7 +295,7 @@ export async function designPenpotAllCommand(
         if (!researchOutput) {
           output.write(infoMsg('    Research: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-          const context = createContext(taskId, createMockMCPClient());
+          const context = createContext(taskId);
           const input: UXResearchInput = { moduleId, taskId, prdRequirements: [description] };
           const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
           if (!result.ok) throw new Error(`Research failed: ${result.error.message}`);
@@ -321,7 +317,7 @@ export async function designPenpotAllCommand(
         if (!planningOutput) {
           output.write(infoMsg('    Planning: running...\n'));
           const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-          const context = createContext(taskId, createMockMCPClient());
+          const context = createContext(taskId);
           const input: UXPlanningInput = {
             briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
             ...(designConfig ? { designConfig } : {}),

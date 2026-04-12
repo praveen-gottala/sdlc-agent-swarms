@@ -1,9 +1,6 @@
 // Design Surface
 export type { DesignSurface, DesignContext, DesignSpec, DesignTokens, DesignChange } from './design-surface.js';
 
-// Figma Adapter
-export { FigmaAdapter } from './figma-adapter/figma-adapter.js';
-
 // Page Request Handler
 export type { PageRequestInput, PageRequestOutput } from './page-request-handler/page-request-handler.js';
 export { handlePageRequest } from './page-request-handler/page-request-handler.js';

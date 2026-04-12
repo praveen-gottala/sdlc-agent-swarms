@@ -25,13 +25,13 @@ import { stringify } from 'yaml';
 import {
   uxResearchWork,
   uxPlanningWork,
-  uxDesignWork,
+  penpotDesignWork,
   buildDesignSystemContextFromSpec,
 } from '../src/index.js';
 import type {
   UXResearchInput,
   UXPlanningInput,
-  UXDesignInput,
+  PenpotDesignInput,
 } from '../src/index.js';
 
 // ============================================================================
@@ -256,7 +256,7 @@ describe('Pipeline wiring smoke test', () => {
     // Build design system prompt from spec — the path that was previously unwired
     const dsCtx = buildDesignSystemContextFromSpec(BOOKSHELF_TOKENS, BOOKSHELF_BRAND, planningOutput);
 
-    const input: UXDesignInput = {
+    const input: PenpotDesignInput = {
       specRef: planningOutput.specRef,
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -265,24 +265,23 @@ describe('Pipeline wiring smoke test', () => {
       designSystemPrompt: dsCtx.designSystemPrompt,
     };
 
-    await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    await penpotDesignWork(input, provider as unknown as LLMProviderRef, context.mcpClient);
 
     // At least 1 call for the main screen; may have additional for completeness follow-up
     expect(calls.length).toBeGreaterThanOrEqual(1);
     // Design system prompt should contain brand and token info (in the first call)
     expect(calls[0].system).toContain('warm and bookish');
     expect(calls[0].system).toContain('AA');
-    expect(calls[0].system).toContain('Project Design Tokens');
+    expect(calls[0].system).toContain('PROJECT DESIGN SYSTEM');
   });
 
-  it('design stage without designSystemPrompt uses defaults and warns', async () => {
+  it('design stage without designSystemPrompt uses fallback text', async () => {
     const { provider, calls } = createSpyProvider(CANNED_DESIGN);
     const context = createMockContext();
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const planningOutput = JSON.parse(CANNED_PLANNING);
 
-    const input: UXDesignInput = {
+    const input: PenpotDesignInput = {
       specRef: planningOutput.specRef,
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -291,18 +290,12 @@ describe('Pipeline wiring smoke test', () => {
       // intentionally no designSystemPrompt
     };
 
-    await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    await penpotDesignWork(input, provider as unknown as LLMProviderRef, context.mcpClient);
 
     // At least 1 call for the main screen; may have additional for completeness follow-up
     expect(calls.length).toBeGreaterThanOrEqual(1);
-    // Should NOT contain project-specific design system content
-    expect(calls[0].system).not.toContain('# Design System');
-    // Should have warned
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('no designSystemPrompt provided'),
-    );
-
-    warnSpy.mockRestore();
+    // Should contain the fallback placeholder, not a project-specific design system
+    expect(calls[0].system).toContain('No project design system provided');
   });
 
   it('research stage rejects empty prdRequirements', async () => {
@@ -347,7 +340,7 @@ describe('Pipeline wiring smoke test', () => {
     const { provider } = createSpyProvider(CANNED_DESIGN);
     const context = createMockContext();
 
-    const input: UXDesignInput = {
+    const input: PenpotDesignInput = {
       specRef: 'spec-001',
       moduleId: 'bookshelf-home',
       taskId: 'smoke-001',
@@ -361,11 +354,11 @@ describe('Pipeline wiring smoke test', () => {
       description: 'test',
     };
 
-    const result = await uxDesignWork(input, provider as unknown as LLMProviderRef, [], context);
+    const result = await penpotDesignWork(input, provider as unknown as LLMProviderRef, context.mcpClient);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.message).toContain('componentTree');
+      expect(result.error.message).toContain('Empty script');
     }
   });
 });

@@ -27,12 +27,16 @@ export interface ImplementationStage {
   readonly tasks: readonly string[];
 }
 
-/** A single step for creating or modifying Figma design via TalkToFigma MCP. */
-export interface FigmaCreationStep {
-  readonly tool: string;
-  readonly params: Readonly<Record<string, unknown>>;
-  readonly componentRef: string;
-  readonly description: string;
+/**
+ * Tool-agnostic design output used by the feedback loop and collaboration session.
+ * Both PenpotDesignOutput and any future design tool output extend DesignSnapshotData
+ * and satisfy this interface.
+ */
+export interface UXDesignOutput extends DesignSnapshotData {
+  readonly moduleId: string;
+  readonly breakpoints: readonly string[];
+  /** Tool-specific node ID map (component name → design tool ID). */
+  readonly [key: string]: unknown;
 }
 
 /** Result of a successful screenshot capture (shared between Figma and Penpot). */
@@ -77,16 +81,6 @@ export interface ScreenDefinition {
   /** Top-level componentTree names belonging to this screen. */
   readonly componentNames: readonly string[];
   readonly route?: string;
-}
-
-/** Per-screen design result metadata. */
-export interface PerScreenResult {
-  readonly screenId: string;
-  readonly screenName: string;
-  readonly rootNodeId: string;
-  readonly nodeIds: Readonly<Record<string, string>>;
-  readonly steps: readonly FigmaCreationStep[];
-  readonly correctionScore?: number;
 }
 
 /** A single issue found during UX review. */

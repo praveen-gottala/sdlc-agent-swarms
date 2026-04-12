@@ -4,11 +4,10 @@ export type {
   ResponsiveRule,
   ImplementationStage,
   ReviewIssue,
-  FigmaCreationStep,
   ComponentSnapshot,
   DesignSnapshotData,
   ScreenDefinition,
-  PerScreenResult,
+  UXDesignOutput,
 } from './types.js';
 
 // Design Snapshot Capture (shared between Figma and Penpot)
@@ -71,36 +70,16 @@ export {
   registerUXTesting,
 } from './ux-testing/ux-testing.js';
 
-// UX Dashboard Design
-export type { UXDesignInput, UXDesignOutput, StepExecutionResult, ExistingDesignContext } from './ux-design/ux-design.js';
-export {
-  UX_DESIGN_CONTRACT,
-  parseDesignSteps,
-  buildPerScreenPrompt,
-  executeDesignSteps,
-  uxDesignWork,
-  executeUXDesign,
-  registerUXDesign,
-} from './ux-design/ux-design.js';
-
 // Screen Partitioner
 export { extractScreenSubtree, inferSingleScreen, flattenTree, groupMissingByScreen, screenGridPosition } from './ux-design/screen-partitioner.js';
 
-// Design Collaboration
-export type { DesignCollaborationSession, DesignSystemContext } from './ux-design/design-collaboration.js';
-export { createDesignCollaborationSession, applyDesignFeedback, buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt } from './ux-design/design-collaboration.js';
-
-// Figma Screenshot
-export type { ScreenshotResult } from './ux-design/figma-screenshot.js';
-export { captureFigmaScreenshot, captureFigmaScreenshotViaBridge } from './ux-design/figma-screenshot.js';
+// Design System Context (shared across design tools)
+export type { DesignCollaborationSession, DesignSystemContext, DesignChangeRecord } from './ux-design/design-system-context.js';
+export { buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt, matchColorToFamily, buildDesignSystemPromptSection } from './ux-design/design-system-context.js';
 
 // Design Evaluator
 export type { DesignIssue, DesignEvaluation, CorrectionHistory, FixAttemptRecord } from './ux-design/design-evaluator.js';
 export { evaluateDesign } from './ux-design/design-evaluator.js';
-
-// Design Fixer
-export type { FixResult, FixerOptions } from './ux-design/design-fixer.js';
-export { executeDesignFixes } from './ux-design/design-fixer.js';
 
 // Correction Loop (shared)
 export type { CorrectionAdapter, CorrectionLoopOptions, CorrectionLoopResult, CorrectionFixResult } from './ux-design/correction-loop.js';
@@ -108,15 +87,7 @@ export { runCorrectionLoop } from './ux-design/correction-loop.js';
 
 // Design Feedback Loop
 export type { FeedbackLoopOptions, FeedbackLoopResult, ReviewCallback, ImplementCallback } from './ux-design/design-feedback-loop.js';
-export { runDesignFeedbackLoop, createReviewCallback } from './ux-design/design-feedback-loop.js';
-
-// Param Transforms (shared helper)
-export type { ParamTransformContext, TransformResult } from './ux-design/param-transforms.js';
-export { resolveAndTransformParams, hexToRgb } from './ux-design/param-transforms.js';
-
-// Figma Preflight
-export type { FigmaSession, PreflightOptions, PluginBuildResult } from './scripts/figma-preflight.js';
-export { loadFigmaSession, checkWebSocketServer, startFigmaBridgeDocker, ensureFigmaPluginBuilt, runFigmaPreflight, discoverChannels, discoverTools, PLUGIN_DIST_DIR, PLUGIN_MANIFEST_REL } from './scripts/figma-preflight.js';
+export { runDesignFeedbackLoop } from './ux-design/design-feedback-loop.js';
 
 // Penpot Preflight
 export type { PenpotPreflightOptions } from './scripts/penpot-preflight.js';
