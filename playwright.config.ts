@@ -14,6 +14,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /integration\.spec/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'integration',
+      testMatch: /integration\.spec/,
+      timeout: 300_000, // 5 min safety net for real LLM calls
       use: { ...devices['Desktop Chrome'] },
     },
   ],

@@ -84,7 +84,7 @@ test.describe('Onboarding', () => {
     await wizard.clickCreate();
 
     // Should redirect to spec page with generate param
-    await page.waitForURL('**/spec?generate=true', { timeout: 15000 });
+    await expect(page).toHaveURL(/\/spec\?generate=true/, { timeout: 15000 });
 
     // Verify the project directory was created on disk
     expect(existsSync(TEST_PROJECT_DIR)).toBe(true);

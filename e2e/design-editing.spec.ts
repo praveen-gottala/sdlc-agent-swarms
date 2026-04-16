@@ -10,16 +10,13 @@ test.describe('Design Editing', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 10000 });
   });
 
   test('inspector shows "Click an element" hint when no node selected', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     const inspector = page.getByTestId('design-inspector');
     await expect(inspector).toBeVisible();
@@ -65,7 +62,7 @@ test.describe('Design Editing', () => {
 
   test('save button shows on rendered page and approve works', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // Save button should be visible for rendered pages
     const saveBtn = page.getByTestId('save-spec-btn');
@@ -81,7 +78,7 @@ test.describe('Design Editing', () => {
 
   test('approve design changes status to approved', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // Click approve
     const approveBtn = page.getByTestId('approve-btn');

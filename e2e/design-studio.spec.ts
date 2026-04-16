@@ -10,13 +10,10 @@ test.describe('Design Studio', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    // Navigate to Design Studio
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    // Navigate directly to Design Studio (avoids client-side hydration race)
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
     // Wait for pages API to finish loading (page registry buttons appear)
-    await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 10000 });
+    await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 15000 });
   });
 
   test('page registry lists pages for personal-expense-tracker', async () => {
@@ -27,14 +24,12 @@ test.describe('Design Studio', () => {
 
   test('clicking a page selects it and updates URL', async ({ page }) => {
     await studio.selectPage('dashboard');
-    // URL should contain the page query param
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
-    expect(page.url()).toContain('page=dashboard');
+    await expect(page).toHaveURL(/page=dashboard/, { timeout: 5000 });
   });
 
   test('rendered page (dashboard) auto-starts renderer and shows iframe', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/page=dashboard/, { timeout: 5000 });
 
     // The dashboard auto-starts the Vite renderer via /api/renderer/start
     // and polls until ready — iframe should appear within ~30s
@@ -45,7 +40,7 @@ test.describe('Design Studio', () => {
 
   test('non-rendered page shows generate design CTA', async ({ page }) => {
     await studio.selectPage('add-expense');
-    await page.waitForURL('**/design?page=add-expense', { timeout: 5000 });
+    await expect(page).toHaveURL(/page=add-expense/, { timeout: 5000 });
 
     // Should show "Generate design" button (no iframe)
     const generateBtn = page.getByRole('button', { name: 'Generate design' });

@@ -85,6 +85,14 @@ function DesignStudioContent() {
   const [pipelineRunId, setPipelineRunId] = useState<string | null>(null);
   const [showPipelineChoice, setShowPipelineChoice] = useState(false);
 
+  // Model selection for design generation
+  const DESIGN_MODELS = [
+    { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6', description: 'Best cost/quality balance' },
+    { id: 'claude-opus-4-6', label: 'Opus 4.6', description: 'Highest quality, 5x cost' },
+    { id: 'claude-haiku-4-5', label: 'Haiku 4.5', description: 'Fastest, lowest cost' },
+  ] as const;
+  const [selectedModel, setSelectedModel] = useState<string>('claude-sonnet-4-6');
+
   // Coherence check state
   const [coherenceResults, setCoherenceResults] = useState<CoherenceResult[]>([]);
   const [coherenceWarnings, setCoherenceWarnings] = useState<string[]>([]);
@@ -112,7 +120,10 @@ function DesignStudioContent() {
     }
   }, []);
 
-  // Fetch pages and project name on mount
+  // Fetch pages and project name on mount.
+  // Also pre-warm the design renderer so it's ready by the time the user
+  // clicks a rendered page. The start call is idempotent (returns
+  // 'already_running' if the process is up).
   useEffect(() => {
     fetch('/api/pages')
       .then((r) => (r.ok ? r.json() : { pages: [] }))
@@ -139,6 +150,25 @@ function DesignStudioContent() {
     fetch('/api/projects/active')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data?.name) setProjectName(data.name); })
+      .catch(() => {});
+
+    // Pre-warm renderer: start Vite dev server while the user browses
+    // the page registry. By the time they click a rendered page, the
+    // renderer is already compiled and serving on port 4100.
+    // Handles stale processes from previous sessions (restart needed).
+    fetch('/api/renderer/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === 'ready') return; // already running
+        if (data.status === 'stale') {
+          // Orphan from previous session — kill and restart
+          return fetch('/api/renderer/restart', { method: 'POST' });
+        }
+        if (data.status === 'stopped') {
+          return fetch('/api/renderer/start', { method: 'POST' });
+        }
+        // 'starting' — already in progress, nothing to do
+      })
       .catch(() => {});
   }, [searchParams]);
 
@@ -314,18 +344,21 @@ function DesignStudioContent() {
     }
   }, [refreshAllPages, handleSelect]);
 
-  // Fetch design spec when a page is selected with rendered/correction/approved status
+  // Fetch design spec when a page is selected with rendered/correction/approved status.
+  // Only re-fetches when selectedId or the selected page's designStatus changes —
+  // NOT on every pages array re-render.
+  const selectedDesignStatus = pages.find((p) => p.id === selectedId)?.designStatus ?? 'draft';
   useEffect(() => {
     if (!selectedId) { setDesignSpec(null); return; }
-    const page = pages.find((p) => p.id === selectedId);
-    if (!page) return;
-    const status = page.designStatus ?? 'draft';
-    if (!['rendered', 'correction', 'approved'].includes(status)) { setDesignSpec(null); return; }
+    if (!['rendered', 'correction', 'approved'].includes(selectedDesignStatus)) { setDesignSpec(null); return; }
+
+    const controller = new AbortController();
 
     log('REQ', 'studio', `Fetching design spec bundle for page ${selectedId}`);
-    fetch(`/api/pages/${selectedId}/design/spec?bundle=true`)
+    fetch(`/api/pages/${selectedId}/design/spec?bundle=true`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        if (controller.signal.aborted) return;
         if (data?.spec) {
           log('INFO', 'studio', `Design spec bundle loaded for page ${selectedId}`);
           setDesignSpec(data.spec);
@@ -342,22 +375,28 @@ function DesignStudioContent() {
         }
       })
       .catch((err) => {
+        if (controller.signal.aborted) return;
         log('ERROR', 'studio', `Failed to fetch design spec: ${err instanceof Error ? err.message : 'unknown'}`);
         setDesignSpec(null);
         savedDesignSpecRef.current = null;
       });
 
     // Also fetch design metadata for score/iteration
-    fetch(`/api/pages/${selectedId}/design`)
+    fetch(`/api/pages/${selectedId}/design`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        if (controller.signal.aborted) return;
         if (data) {
           setScore(data.score ?? null);
           setIteration(data.correctionIteration ?? 0);
         }
       })
       .catch(() => {});
-  }, [selectedId, pages]);
+
+    return () => controller.abort();
+    // Only re-fetch when page selection or its design status changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, selectedDesignStatus]);
 
   // Handle property changes from inspector — patch spec in memory + live preview
   const handlePropertyChange = useCallback(
@@ -486,14 +525,18 @@ function DesignStudioContent() {
 
   const handleQuickGenerate = useCallback(() => {
     if (!selectedId) return;
-    log('INFO', 'studio', `Quick generate started for page ${selectedId}`);
+    log('INFO', 'studio', `Quick generate started for page ${selectedId} (model: ${selectedModel})`);
     setShowPipelineChoice(false);
     setPages((prev) =>
       prev.map((p) =>
         p.id === selectedId ? { ...p, designStatus: 'generating' } : p,
       ),
     );
-    fetch(`/api/pages/${selectedId}/design`, { method: 'POST' })
+    fetch(`/api/pages/${selectedId}/design`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: selectedModel }),
+    })
       .then((r) => {
         refreshPage(selectedId);
         if (!r.ok) {
@@ -509,7 +552,7 @@ function DesignStudioContent() {
         showToast('Network error — could not reach server');
         refreshPage(selectedId);
       });
-  }, [selectedId, refreshPage, showToast]);
+  }, [selectedId, selectedModel, refreshPage, showToast, log]);
 
   const handleFullPipeline = useCallback(() => {
     if (!selectedId) return;
@@ -519,8 +562,12 @@ function DesignStudioContent() {
         p.id === selectedId ? { ...p, designStatus: 'generating' } : p,
       ),
     );
-    log('INFO', 'pipeline', `Full pipeline started for page ${selectedId}: Research → Planning → Design`);
-    fetch(`/api/pages/${selectedId}/design?pipeline=full`, { method: 'POST' })
+    log('INFO', 'pipeline', `Full pipeline started for page ${selectedId} (model: ${selectedModel}): Research → Planning → Design`);
+    fetch(`/api/pages/${selectedId}/design?pipeline=full`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: selectedModel }),
+    })
       .then(async (r) => {
         if (r.ok) {
           const data = await r.json();
@@ -536,7 +583,7 @@ function DesignStudioContent() {
         showToast('Network error — could not reach server');
         refreshPage(selectedId);
       });
-  }, [selectedId, refreshPage, showToast, log]);
+  }, [selectedId, selectedModel, refreshPage, showToast, log]);
 
   const handlePipelineComplete = useCallback(() => {
     if (selectedId) {
@@ -544,6 +591,20 @@ function DesignStudioContent() {
       refreshPage(selectedId);
       setPipelineRunId(null);
     }
+  }, [selectedId, refreshPage]);
+
+  const handlePipelineRetry = useCallback(() => {
+    if (!selectedId) return;
+    delete pipelineRunMapRef.current[selectedId];
+    setPipelineRunId(null);
+    handleFullPipeline();
+  }, [selectedId, handleFullPipeline]);
+
+  const handlePipelineDismiss = useCallback(() => {
+    if (!selectedId) return;
+    delete pipelineRunMapRef.current[selectedId];
+    setPipelineRunId(null);
+    refreshPage(selectedId);
   }, [selectedId, refreshPage]);
 
   const handleApprove = useCallback(() => {
@@ -711,7 +772,27 @@ function DesignStudioContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl border border-border bg-sidebar p-6">
             <h2 className="text-lg font-semibold text-text-primary mb-1">Generate Design</h2>
-            <p className="text-sm text-text-muted mb-5">Choose a generation method:</p>
+            <p className="text-sm text-text-muted mb-4">Choose a model and generation method:</p>
+
+            {/* Model selector */}
+            <div className="mb-4">
+              <label htmlFor="model-select" className="block text-xs font-medium text-text-secondary mb-1.5">
+                Model
+              </label>
+              <select
+                id="model-select"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-blue"
+              >
+                {DESIGN_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} — {m.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleQuickGenerate}
@@ -756,7 +837,10 @@ function DesignStudioContent() {
         {pipelineRunId ? (
           <PipelineProgress
             runId={pipelineRunId}
+            model={selectedModel}
             onComplete={handlePipelineComplete}
+            onRetry={handlePipelineRetry}
+            onDismiss={handlePipelineDismiss}
           />
         ) : (
         <DesignCanvas

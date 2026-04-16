@@ -21,6 +21,8 @@ export interface UseEventFeedResult {
   addEvent: (event: FeedEvent) => void;
   /** Clear all events */
   clearEvents: () => void;
+  /** Manually refresh events from the server */
+  refresh: () => void;
 }
 
 /** Shape of an entry returned by /api/audit */
@@ -36,7 +38,6 @@ export interface AuditEntry {
 }
 
 const MAX_EVENTS = 50;
-const POLL_INTERVAL_MS = 5_000;
 
 /** Derive severity from the event type name when the raw data has no explicit severity */
 export function deriveSeverityFromType(
@@ -90,44 +91,38 @@ export function mapAuditEntryToFeedEvent(entry: AuditEntry): FeedEvent {
 
 /**
  * Activity feed hook that maintains a list of recent events (max 50).
- * Polls /api/audit for real events. Starts with an empty feed.
+ * Fetches from /api/audit once on mount. Use refresh() to fetch latest.
+ * No polling — avoids saturating the browser connection pool during
+ * page switches and spec loading.
  */
 export function useEventFeed(): UseEventFeedResult {
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const localEventsRef = useRef<FeedEvent[]>([]);
 
-  useEffect(() => {
-    let active = true;
+  const fetchEvents = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/audit?limit=${MAX_EVENTS}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { entries: AuditEntry[] };
 
-    async function fetchEvents(): Promise<void> {
-      try {
-        const res = await fetch(`/api/audit?limit=${MAX_EVENTS}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as { entries: AuditEntry[] };
-        if (!active) return;
+      const fetched = data.entries.map(mapAuditEntryToFeedEvent);
+      const local = localEventsRef.current;
 
-        const fetched = data.entries.map(mapAuditEntryToFeedEvent);
-        const local = localEventsRef.current;
+      // Merge: local events first (newest), then fetched, deduplicated
+      const fetchedIds = new Set(fetched.map((e) => e.id));
+      const uniqueLocal = local.filter((e) => !fetchedIds.has(e.id));
+      const merged = [...uniqueLocal, ...fetched].slice(0, MAX_EVENTS);
 
-        // Merge: local events first (newest), then fetched, deduplicated
-        const fetchedIds = new Set(fetched.map((e) => e.id));
-        const uniqueLocal = local.filter((e) => !fetchedIds.has(e.id));
-        const merged = [...uniqueLocal, ...fetched].slice(0, MAX_EVENTS);
-
-        setEvents(merged);
-      } catch {
-        // Silently ignore fetch errors — dashboard should not crash
-      }
+      setEvents(merged);
+    } catch {
+      // Silently ignore fetch errors — dashboard should not crash
     }
-
-    void fetchEvents();
-    const interval = setInterval(() => void fetchEvents(), POLL_INTERVAL_MS);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
   }, []);
+
+  // Fetch once on mount
+  useEffect(() => {
+    void fetchEvents();
+  }, [fetchEvents]);
 
   const addEvent = useCallback((event: FeedEvent) => {
     localEventsRef.current = [event, ...localEventsRef.current];
@@ -142,5 +137,5 @@ export function useEventFeed(): UseEventFeedResult {
     setEvents([]);
   }, []);
 
-  return { events, addEvent, clearEvents };
+  return { events, addEvent, clearEvents, refresh: fetchEvents };
 }

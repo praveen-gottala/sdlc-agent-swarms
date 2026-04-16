@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useEventFeed, type FeedEvent } from '@/lib/hooks/use-event-feed';
 
 /** HITL level configuration per phase. */
@@ -72,31 +72,32 @@ const PIPELINE_LABELS: Record<string, string> = {
 
 /** Right-hand activity feed and HITL config sidebar. */
 export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
-  const { events } = useEventFeed();
+  const { events, refresh: refreshEvents } = useEventFeed();
   const [activeRuns, setActiveRuns] = useState<ActiveRunInfo[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Poll for active runs
-  useEffect(() => {
-    let active = true;
-
-    async function fetchRuns(): Promise<void> {
-      try {
-        const res = await fetch('/api/runs?limit=5');
-        if (!res.ok || !active) return;
-        const data = await res.json();
-        const running = (data.runs ?? []).filter(
-          (r: ActiveRunInfo & { status: string }) => r.status === 'running' || r.status === 'pending',
-        );
-        if (active) setActiveRuns(running);
-      } catch {
-        // Ignore
-      }
+  // Fetch active runs once on mount (no polling)
+  const fetchRuns = useCallback(async () => {
+    try {
+      const res = await fetch('/api/runs?limit=5');
+      if (!res.ok) return;
+      const data = await res.json();
+      const running = (data.runs ?? []).filter(
+        (r: ActiveRunInfo & { status: string }) => r.status === 'running' || r.status === 'pending',
+      );
+      setActiveRuns(running);
+    } catch {
+      // Ignore
     }
-
-    void fetchRuns();
-    const interval = setInterval(() => void fetchRuns(), 3_000);
-    return () => { active = false; clearInterval(interval); };
   }, []);
+
+  useEffect(() => { void fetchRuns(); }, [fetchRuns]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchRuns(), refreshEvents()]);
+    setRefreshing(false);
+  };
 
   return (
     <div className="relative flex">
@@ -157,9 +158,19 @@ export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
 
           {/* Event feed */}
           <div className="flex-1 overflow-y-auto">
-            <h2 className="text-text-primary text-sm font-semibold px-4 pt-4 pb-2">
-              Activity
-            </h2>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <h2 className="text-text-primary text-sm font-semibold">
+                Activity
+              </h2>
+              <button
+                onClick={() => void handleRefresh()}
+                disabled={refreshing}
+                className="text-text-muted hover:text-text-primary text-xs transition-colors disabled:opacity-40"
+                title="Refresh activity feed"
+              >
+                {refreshing ? '\u23F3' : '\u21BB'}
+              </button>
+            </div>
             {events.length === 0 ? (
               <p className="text-text-muted text-xs px-4 py-6 text-center">
                 No recent activity

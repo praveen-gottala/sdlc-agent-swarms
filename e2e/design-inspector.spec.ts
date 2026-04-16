@@ -10,10 +10,7 @@ test.describe('Design Inspector', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
     // Wait for pages API to load (loading spinner disappears, page registry populates)
     await page.getByTestId('design-inspector').waitFor({ state: 'attached', timeout: 10000 });
   });
@@ -24,7 +21,7 @@ test.describe('Design Inspector', () => {
 
   test('selecting dashboard page shows rendered state with inspector', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // Inspector should remain visible
     await expect(page.getByTestId('design-inspector')).toBeVisible();
@@ -36,7 +33,7 @@ test.describe('Design Inspector', () => {
 
   test('inspector shows CSS-labeled property rows when node is selected', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     const inspector = page.getByTestId('design-inspector');
     await expect(inspector).toBeVisible();

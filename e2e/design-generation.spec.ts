@@ -10,10 +10,7 @@ test.describe('Design Generation', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 10000 });
   });
 
@@ -27,7 +24,7 @@ test.describe('Design Generation', () => {
     await page.getByTestId('create-page-btn').click();
 
     // After creation, the URL should update with the new page ID
-    await page.waitForURL('**/design?page=**', { timeout: 10000 });
+    await expect(page).toHaveURL(/\/design\?page=/, { timeout: 10000 });
 
     // The new page should appear in the page list
     const pages = await studio.getPageList();
@@ -37,7 +34,7 @@ test.describe('Design Generation', () => {
   test('selecting a draft page shows "Generate design" CTA', async ({ page }) => {
     // add-expense page has no designStatus set (defaults to draft)
     await studio.selectPage('add-expense');
-    await page.waitForURL('**/design?page=add-expense', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=add-expense/, { timeout: 5000 });
 
     const generateBtn = page.getByRole('button', { name: 'Generate design' });
     await expect(generateBtn).toBeVisible({ timeout: 5000 });
@@ -45,7 +42,7 @@ test.describe('Design Generation', () => {
 
   test('clicking Generate design shows pipeline choice modal', async ({ page }) => {
     await studio.selectPage('add-expense');
-    await page.waitForURL('**/design?page=add-expense', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=add-expense/, { timeout: 5000 });
 
     // Click "Generate design"
     await page.getByRole('button', { name: 'Generate design' }).click();
@@ -62,7 +59,7 @@ test.describe('Design Generation', () => {
 
   test('rendered page (dashboard) loads canvas with action bar', async ({ page }) => {
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // The action bar should show Regenerate and Approve buttons
     await expect(page.getByRole('button', { name: 'Regenerate' })).toBeVisible({ timeout: 5000 });

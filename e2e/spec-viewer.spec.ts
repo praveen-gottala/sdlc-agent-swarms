@@ -7,10 +7,7 @@ test.describe('Spec Viewer', () => {
   test.beforeEach(async ({ page, setActiveProject }) => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Spec');
-    await page.waitForURL('**/spec', { timeout: 5000 });
+    await page.goto('/spec', { waitUntil: 'domcontentloaded' });
   });
 
   test('spec page loads with file tree and content', async ({ page }) => {

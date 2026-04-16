@@ -10,15 +10,12 @@ test.describe('Design Inspector Properties', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
     await page.getByTestId('design-inspector').waitFor({ state: 'attached', timeout: 10000 });
 
     // Select the dashboard page (rendered) so the iframe loads
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
   });
 
   /**
@@ -480,11 +477,10 @@ test.describe('Design Inspector Properties', () => {
 
     // Reload the page
     await page.reload();
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('design-inspector').waitFor({ state: 'attached', timeout: 10000 });
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // Re-select the same node
     await selectFirstCanvasNode(page);
@@ -547,11 +543,10 @@ test.describe('Design Inspector Properties', () => {
 
     // Full page reload
     await page.reload();
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await sidebar.clickNavItem('Design Studio');
-    await page.waitForURL('**/design**', { timeout: 5000 });
+    await page.goto('/design', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('design-inspector').waitFor({ state: 'attached', timeout: 10000 });
     await studio.selectPage('dashboard');
-    await page.waitForURL('**/design?page=dashboard', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
     // Wait for iframe to fully render
     await studio.waitForIframeReady();

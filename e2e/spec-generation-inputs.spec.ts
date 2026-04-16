@@ -107,7 +107,7 @@ test.describe('Spec generation inputs after onboarding', () => {
     await wizard.clickCreate();
 
     // Wait for redirect to spec/generate
-    await page.waitForURL('**/spec?generate=true', { timeout: 15000 });
+    await expect(page).toHaveURL(/\/spec\?generate=true/, { timeout: 15000 });
 
     // ─── Verify all 4 input files that POST /api/spec/generate reads ───
 
@@ -214,7 +214,7 @@ test.describe('Spec generation inputs after onboarding', () => {
     await expect(page.getByText('Step 5 of 5')).toBeVisible();
     await wizard.clickCreate();
 
-    await page.waitForURL('**/spec?generate=true', { timeout: 15000 });
+    await expect(page).toHaveURL(/\/spec\?generate=true/, { timeout: 15000 });
 
     // ─── Verify required files exist ───
 
