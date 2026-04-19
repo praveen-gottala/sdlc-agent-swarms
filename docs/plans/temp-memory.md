@@ -26,7 +26,7 @@ We explored two approaches:
 
 ## Brownfield Test App
 
-A sample React app at `agentforge-brownfield-app/` serves as the development and test target:
+A sample React app at `fixtures/agentforge-brownfield-app/` serves as the development and test target:
 - Next.js 15 + TypeScript + Tailwind CSS + shadcn/ui
 - 3 pages: Dashboard, Settings, Users
 - Uses: Button, Card, Input, Select, Badge, Table, Avatar, Switch, Checkbox
@@ -79,7 +79,7 @@ Rules:
 
 ## Brownfield App Details
 
-**Location**: `agentforge-brownfield-app/`
+**Location**: `fixtures/agentforge-brownfield-app/`
 **Stack**: Next.js 16.2.2 + TypeScript + Tailwind CSS v4 + shadcn/ui
 **Build**: Passes with zero errors (`npx next build`)
 

@@ -11,6 +11,7 @@ import {
   TEXT_CLIP_TOLERANCE_PX,
 } from '../mechanical-fixes.js';
 import type { DOMLayoutData, DOMNodeLayout } from '../dom-extraction.js';
+import { defaultComputedStyles } from '../dom-extraction.js';
 import type { DesignSpecV2 } from '../../../types/design-spec-v2.js';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -27,7 +28,9 @@ function makeNode(overrides: Partial<DOMNodeLayout>): DOMNodeLayout {
     textContent: 'Test',
     parentNodeId: null,
     childNodeIds: [],
-    computed: { overflow: 'visible', display: 'flex', position: 'static' },
+    directTextContent: '',
+    attributes: { 'aria-label': null, role: null, href: null },
+    computed: { ...defaultComputedStyles(), overflow: 'visible', display: 'flex', position: 'static' },
     ...overrides,
   };
 }

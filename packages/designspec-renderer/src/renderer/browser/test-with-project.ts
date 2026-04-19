@@ -43,8 +43,8 @@ Usage:
   npx tsx test-with-project.ts <project> <screen> --dev|--screenshot
 
 Examples:
-  npx tsx .../test-with-project.ts personal-expense-tracker dashboard --dev
-  npx tsx .../test-with-project.ts personal-expense-tracker dashboard --screenshot
+  npx tsx .../test-with-project.ts fixtures/personal-expense-tracker dashboard --dev
+  npx tsx .../test-with-project.ts fixtures/personal-expense-tracker dashboard --screenshot
 `);
     process.exit(1);
   }

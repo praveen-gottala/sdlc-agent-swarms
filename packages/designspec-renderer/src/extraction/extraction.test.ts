@@ -11,7 +11,7 @@ import { extractCSSVariables } from './extract-css-variables.js';
 import { scanComponentUsage } from './scan-component-usage.js';
 
 // Resolve the brownfield app path relative to monorepo root
-const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'agentforge-brownfield-app');
+const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'fixtures', 'agentforge-brownfield-app');
 const HAS_BROWNFIELD_APP = existsSync(join(BROWNFIELD_APP, 'package.json'));
 
 // Skip brownfield-dependent tests when the fixture app isn't available.

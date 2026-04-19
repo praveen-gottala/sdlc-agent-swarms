@@ -19,7 +19,7 @@ import { V2_BUILTIN_CATALOG } from '../../../designspec-renderer/src/__fixtures_
 import type { DesignSpecV2, RendererTokens } from '@agentforge/designspec-renderer';
 
 const MONOREPO_ROOT = join(__dirname, '..', '..', '..', '..');
-const BROWNFIELD_APP = join(MONOREPO_ROOT, 'agentforge-brownfield-app');
+const BROWNFIELD_APP = join(MONOREPO_ROOT, 'fixtures', 'agentforge-brownfield-app');
 const IMPORT_DIR = join(BROWNFIELD_APP, '.agentforge', 'import');
 const SCREENSHOT_DIR = join(IMPORT_DIR, 'screenshots');
 

@@ -15,7 +15,7 @@ import type { LLMProvider, LLMToolResult } from './source-to-designspec.js';
 import type { RouteInfo, CSSVariable } from '@agentforge/designspec-renderer';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 
-const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'agentforge-brownfield-app');
+const BROWNFIELD_APP = join(__dirname, '..', '..', '..', '..', 'fixtures', 'agentforge-brownfield-app');
 const HAS_BROWNFIELD_APP = existsSync(join(BROWNFIELD_APP, 'package.json'));
 
 // Skip brownfield-dependent tests when the fixture app isn't available.

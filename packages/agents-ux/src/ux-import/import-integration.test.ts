@@ -24,7 +24,7 @@ import type { RouteInfo } from '@agentforge/designspec-renderer';
 const MONOREPO_ROOT = join(__dirname, '..', '..', '..', '..');
 config({ path: join(MONOREPO_ROOT, '.env') });
 
-const BROWNFIELD_APP = join(MONOREPO_ROOT, 'agentforge-brownfield-app');
+const BROWNFIELD_APP = join(MONOREPO_ROOT, 'fixtures', 'agentforge-brownfield-app');
 const API_KEY = process.env.ANTHROPIC_API_KEY ?? '';
 const HAS_API_KEY = API_KEY.length > 10;
 

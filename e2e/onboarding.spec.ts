@@ -6,7 +6,7 @@ import { join } from 'path';
 
 const TEST_PROJECT_NAME = 'E2E Test App';
 const TEST_PROJECT_SLUG = 'e2e-test-app';
-const TEST_PROJECT_DIR = join(ROOT, TEST_PROJECT_SLUG);
+const TEST_PROJECT_DIR = join(ROOT, 'apps', TEST_PROJECT_SLUG);
 
 function cleanupTestProject() {
   if (existsSync(TEST_PROJECT_DIR)) {
@@ -134,7 +134,7 @@ test.describe('Onboarding', () => {
     }
 
     // Switch to PET first, then switch back to verify the project persists
-    const petRoot = join(ROOT, 'personal-expense-tracker');
+    const petRoot = join(ROOT, 'fixtures', 'personal-expense-tracker');
     setActiveProject(petRoot);
     await page.goto('/');
     await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });

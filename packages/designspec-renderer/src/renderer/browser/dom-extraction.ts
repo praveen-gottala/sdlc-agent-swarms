@@ -11,6 +11,86 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PlaywrightPage = any;
 
+/** Comprehensive computed styles extracted from the DOM. */
+export interface DOMComputedStyles {
+  overflow: string;
+  display: string;
+  position: string;
+  // Sizing
+  width: string;
+  height: string;
+  flex: string;
+  flexShrink: string;
+  flexGrow: string;
+  flexBasis: string;
+  minWidth: string;
+  maxWidth: string;
+  minHeight: string;
+  maxHeight: string;
+  // Layout
+  flexDirection: string;
+  flexWrap: string;
+  gap: string;
+  alignItems: string;
+  justifyContent: string;
+  gridTemplateColumns: string;
+  // Spacing
+  paddingTop: string;
+  paddingRight: string;
+  paddingBottom: string;
+  paddingLeft: string;
+  marginTop: string;
+  marginRight: string;
+  marginBottom: string;
+  marginLeft: string;
+  // Colors
+  backgroundColor: string;
+  color: string;
+  // Typography
+  fontFamily: string;
+  fontSize: string;
+  fontWeight: string;
+  lineHeight: string;
+  textAlign: string;
+  // Visual
+  borderRadius: string;
+  boxShadow: string;
+  border: string;
+  opacity: string;
+  // Positioning
+  zIndex: string;
+  top: string;
+  left: string;
+  right: string;
+  bottom: string;
+}
+
+/** Default computed styles for test helpers. */
+export function defaultComputedStyles(): DOMComputedStyles {
+  return {
+    overflow: 'visible', display: 'block', position: 'static',
+    width: '0px', height: '0px', flex: '0 1 auto',
+    flexShrink: '1', flexGrow: '0', flexBasis: 'auto',
+    minWidth: '0px', maxWidth: 'none', minHeight: '0px', maxHeight: 'none',
+    flexDirection: 'row', flexWrap: 'nowrap', gap: 'normal',
+    alignItems: 'normal', justifyContent: 'normal', gridTemplateColumns: 'none',
+    paddingTop: '0px', paddingRight: '0px', paddingBottom: '0px', paddingLeft: '0px',
+    marginTop: '0px', marginRight: '0px', marginBottom: '0px', marginLeft: '0px',
+    backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(0, 0, 0)',
+    fontFamily: 'serif', fontSize: '16px', fontWeight: '400', lineHeight: 'normal',
+    textAlign: 'start',
+    borderRadius: '0px', boxShadow: 'none', border: '0px none rgb(0, 0, 0)', opacity: '1',
+    zIndex: 'auto', top: 'auto', left: 'auto', right: 'auto', bottom: 'auto',
+  };
+}
+
+/** HTML attributes extracted from the DOM element. */
+export interface DOMAttributes {
+  'aria-label': string | null;
+  role: string | null;
+  href: string | null;
+}
+
 /** Layout data for a single DOM node with data-node attribute. */
 export interface DOMNodeLayout {
   nodeId: string;
@@ -21,9 +101,11 @@ export interface DOMNodeLayout {
   scrollHeight: number;
   clientHeight: number;
   textContent: string;
+  directTextContent: string;
   parentNodeId: string | null;
   childNodeIds: string[];
-  computed: { overflow: string; display: string; position: string };
+  computed: DOMComputedStyles;
+  attributes: DOMAttributes;
 }
 
 /** Complete DOM layout data for a rendered DesignSpec page. */
@@ -49,9 +131,11 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
       scrollHeight: number;
       clientHeight: number;
       textContent: string;
+      directTextContent: string;
       parentNodeId: string | null;
       childNodeIds: string[];
-      computed: { overflow: string; display: string; position: string };
+      attributes: { 'aria-label': string | null; role: string | null; href: string | null };
+      computed: Record<string, string>;
     }> = {};
 
     // First pass: collect all data-node elements
@@ -101,6 +185,24 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
       // Get text content (trimmed, limited length)
       const text = htmlEl.textContent?.trim().slice(0, 200) ?? '';
 
+      // Get direct text content (own text nodes only, not descendants)
+      let directText = '';
+      for (const child of htmlEl.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) {
+          directText += child.textContent ?? '';
+        }
+      }
+      directText = directText.trim().slice(0, 200);
+
+      // Get HTML attributes for behavioral override verification
+      const ariaLabel = htmlEl.getAttribute('aria-label');
+      const role = htmlEl.getAttribute('role');
+      let href = htmlEl.getAttribute('href');
+      if (!href) {
+        const firstLink = htmlEl.querySelector('a[href]');
+        if (firstLink) href = firstLink.getAttribute('href');
+      }
+
       nodes[nodeId] = {
         nodeId,
         dataCatalog,
@@ -115,12 +217,58 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
         scrollHeight: htmlEl.scrollHeight,
         clientHeight: htmlEl.clientHeight,
         textContent: text,
+        directTextContent: directText,
         parentNodeId,
         childNodeIds,
+        attributes: {
+          'aria-label': ariaLabel,
+          role: role,
+          href: href,
+        },
         computed: {
           overflow: style.overflow,
           display: style.display,
           position: style.position,
+          width: style.width,
+          height: style.height,
+          flex: style.flex,
+          flexShrink: style.flexShrink,
+          flexGrow: style.flexGrow,
+          flexBasis: style.flexBasis,
+          minWidth: style.minWidth,
+          maxWidth: style.maxWidth,
+          minHeight: style.minHeight,
+          maxHeight: style.maxHeight,
+          flexDirection: style.flexDirection,
+          flexWrap: style.flexWrap,
+          gap: style.gap,
+          alignItems: style.alignItems,
+          justifyContent: style.justifyContent,
+          gridTemplateColumns: style.gridTemplateColumns,
+          paddingTop: style.paddingTop,
+          paddingRight: style.paddingRight,
+          paddingBottom: style.paddingBottom,
+          paddingLeft: style.paddingLeft,
+          marginTop: style.marginTop,
+          marginRight: style.marginRight,
+          marginBottom: style.marginBottom,
+          marginLeft: style.marginLeft,
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          fontFamily: style.fontFamily,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          lineHeight: style.lineHeight,
+          textAlign: style.textAlign,
+          borderRadius: style.borderRadius,
+          boxShadow: style.boxShadow,
+          border: style.border,
+          opacity: style.opacity,
+          zIndex: style.zIndex,
+          top: style.top,
+          left: style.left,
+          right: style.right,
+          bottom: style.bottom,
         },
       };
     }

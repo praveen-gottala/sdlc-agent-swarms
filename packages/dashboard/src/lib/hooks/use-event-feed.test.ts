@@ -136,32 +136,38 @@ describe('useEventFeed', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/audit?limit=50');
   });
 
-  it('polls on 5s interval', async () => {
-    mockFetchSuccess([]);
-    renderHook(() => useEventFeed());
+  it('does not poll — fetches once on mount, refresh() re-fetches', async () => {
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ entries: [], total: 0, page: 1, limit: 50, totalPages: 0 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ entries: [makeAuditEntry({ id: 'audit-refreshed' })], total: 1, page: 1, limit: 50, totalPages: 1 }),
+      });
+    global.fetch = fetchMock;
 
-    // Initial fetch
+    const { result } = renderHook(() => useEventFeed());
+
+    // Initial fetch on mount
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    // Advance 5 seconds
+    // Advancing time should NOT trigger more fetches (no polling)
     act(() => {
-      jest.advanceTimersByTime(5_000);
+      jest.advanceTimersByTime(15_000);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Manual refresh() should trigger a new fetch
+    await act(async () => {
+      await result.current.refresh();
     });
 
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-    });
-
-    // Advance another 5 seconds
-    act(() => {
-      jest.advanceTimersByTime(5_000);
-    });
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(3);
-    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.events[0].id).toBe('audit-refreshed');
   });
 
   it('handles fetch failure silently', async () => {
@@ -235,7 +241,7 @@ describe('useEventFeed', () => {
     expect(result.current.events).toEqual([]);
   });
 
-  it('preserves locally added events after poll', async () => {
+  it('preserves locally added events after refresh', async () => {
     mockFetchSuccess([]);
 
     const { result } = renderHook(() => useEventFeed());
@@ -257,29 +263,27 @@ describe('useEventFeed', () => {
       result.current.addEvent(localEvent);
     });
 
-    // Now set up a new poll response with server events
+    // Now set up a new response and manually refresh
     mockFetchSuccess([makeAuditEntry({ id: 'audit-099' })]);
 
-    act(() => {
-      jest.advanceTimersByTime(5_000);
+    await act(async () => {
+      await result.current.refresh();
     });
 
-    await waitFor(() => {
-      expect(result.current.events.length).toBeGreaterThanOrEqual(2);
-    });
+    expect(result.current.events.length).toBeGreaterThanOrEqual(2);
 
     const ids = result.current.events.map((e) => e.id);
     expect(ids).toContain('local-002');
     expect(ids).toContain('audit-099');
   });
 
-  it('cleans up interval on unmount', () => {
+  it('does not fetch after unmount', () => {
     mockFetchSuccess([]);
     const { unmount } = renderHook(() => useEventFeed());
 
     unmount();
 
-    // After unmount, advancing timers should not trigger more fetches
+    // After unmount, no additional fetches should occur
     const callCount = (global.fetch as jest.Mock).mock.calls.length;
     jest.advanceTimersByTime(15_000);
     expect((global.fetch as jest.Mock).mock.calls.length).toBe(callCount);

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-After comparing the main-branch JSON (`claim-filling/.agentforge/previews/dashboard/scripts/designspec-v2.json`, 2,464 lines) against the dashboard-plugin JSON (`claim-filling/agentforge/designs/dashboard.json`, 2,105 lines), the root cause is a **two-sided convention mismatch**: the design prompt changed to produce CSS-native patterns, but the renderer was built for the older, simpler patterns.
+After comparing the main-branch JSON (`apps/claim-filling/.agentforge/previews/dashboard/scripts/designspec-v2.json`, 2,464 lines) against the dashboard-plugin JSON (`apps/claim-filling/agentforge/designs/dashboard.json`, 2,105 lines), the root cause is a **two-sided convention mismatch**: the design prompt changed to produce CSS-native patterns, but the renderer was built for the older, simpler patterns.
 
 The main branch JSON uses **renderer-friendly primitives** (semantic token names on top-level `background`, fixed pixel widths, plain `type: "container"` for cards, `label` for avatar text, `type: "divider"` for separators). The dashboard-plugin JSON uses **CSS-native idioms** (hex colors in `overrides`, `flex` shorthand, `conic-gradient()`, `overrides.initials`, CSS-hyphenated property names). The renderer only understands the former.
 
@@ -20,7 +20,7 @@ The main branch JSON uses **renderer-friendly primitives** (semantic token names
 
 ### Phase 1: Research — VERDICT: No Issues
 
-**File:** `claim-filling/agentforge/designs/dashboard/research.json`
+**File:** `apps/claim-filling/agentforge/designs/dashboard/research.json`
 **Changes from main:** This file didn't exist on main (the entire design pipeline output is new on this branch).
 
 **Quality Assessment:** The research brief is thorough and production-grade:
@@ -38,7 +38,7 @@ The main branch JSON uses **renderer-friendly primitives** (semantic token names
 
 ### Phase 2: Planning — VERDICT: No Issues
 
-**File:** `claim-filling/agentforge/designs/dashboard/planning.json`
+**File:** `apps/claim-filling/agentforge/designs/dashboard/planning.json`
 **Changes from main:** Didn't exist on main.
 
 **Quality Assessment:** The planning spec is equally thorough:
@@ -57,8 +57,8 @@ The main branch JSON uses **renderer-friendly primitives** (semantic token names
 ### Phase 3: Design (JSON Generation) — VERDICT: MAJOR Convention Mismatch (Upgraded from Minor)
 
 **Files compared:**
-- Main branch: `claim-filling/.agentforge/previews/dashboard/scripts/designspec-v2.json` (2,464 lines)
-- Dashboard-plugin: `claim-filling/agentforge/designs/dashboard.json` (2,105 lines)
+- Main branch: `apps/claim-filling/.agentforge/previews/dashboard/scripts/designspec-v2.json` (2,464 lines)
+- Dashboard-plugin: `apps/claim-filling/agentforge/designs/dashboard.json` (2,105 lines)
 - Prompt changed: `ux-penpot-designspec-v2.md` (added grid layout docs)
 
 Comparing the two JSONs side-by-side reveals that **the design phase is generating structurally different patterns**, not just using different naming conventions. The main branch JSON was generated with conventions the renderer understands; the dashboard-plugin JSON uses idioms the renderer silently drops.
@@ -318,9 +318,9 @@ Update `packages/agents-ux/src/prompts/ux-penpot-designspec-v2.md` with explicit
 
 | File | Role |
 |---|---|
-| `claim-filling/agentforge/designs/dashboard.json` | Design spec JSON (2,105 lines) |
-| `claim-filling/agentforge/designs/dashboard/research.json` | Research brief output |
-| `claim-filling/agentforge/designs/dashboard/planning.json` | Planning spec output |
+| `apps/claim-filling/agentforge/designs/dashboard.json` | Design spec JSON (2,105 lines) |
+| `apps/claim-filling/agentforge/designs/dashboard/research.json` | Research brief output |
+| `apps/claim-filling/agentforge/designs/dashboard/planning.json` | Planning spec output |
 | `packages/designspec-renderer/src/renderer/browser/app/src/DesignSpecRenderer.tsx` | Browser renderer (1,188 lines) |
 | `packages/agents-ux/src/prompts/ux-penpot-designspec-v2.md` | LLM prompt for design generation |
 | `packages/designspec-renderer/src/renderer/browser/app/src/DesignSpecRenderer.tsx:128-160` | `SAFE_OVERRIDE_KEYS` |

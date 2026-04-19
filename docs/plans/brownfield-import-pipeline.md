@@ -307,7 +307,7 @@ Options:
 
 ## Implementation Order
 
-### Step 0: Build Brownfield Test App (`agentforge-brownfield-app/`)
+### Step 0: Build Brownfield Test App (`fixtures/agentforge-brownfield-app/`)
 Create a realistic sample React app to develop and test the import pipeline against.
 
 - **Stack**: Next.js 15 + TypeScript + Tailwind CSS 4 + shadcn/ui
@@ -341,5 +341,5 @@ Wire it all together as `agentforge design:import`.
 1. `nx run designspec-renderer:test` — extraction unit tests
 2. `nx run agents-ux:test` — import agent tests
 3. `nx run-many -t typecheck` — full type check
-4. Manual test: Run `agentforge design:import agentforge-brownfield-app/` and verify output
+4. Manual test: Run `agentforge design:import fixtures/agentforge-brownfield-app/` and verify output
 5. Round-trip test: Generate DesignSpec → render → import → compare (>=80% node preservation)

@@ -103,10 +103,10 @@ describe('POST /api/projects', () => {
     expect(mockGenerateProjectCatalog).toHaveBeenCalledTimes(1);
     expect(mockSaveComponentCatalog).toHaveBeenCalledTimes(1);
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/repo/music-showcase/agentforge/spec/project.yaml',
+      '/repo/apps/music-showcase/agentforge/spec/project.yaml',
       expect.stringContaining('app:'),
     );
-    expect(mockWritePrefs).toHaveBeenCalledWith({ activeProject: '/repo/music-showcase' });
+    expect(mockWritePrefs).toHaveBeenCalledWith({ activeProject: '/repo/apps/music-showcase' });
   });
 
   it('falls back to shadcn when the wizard sends custom', async () => {
@@ -172,11 +172,11 @@ describe('POST /api/projects', () => {
   });
 
   it('cleans up project directory on component library save failure', async () => {
-    // existsSync: false for "already exists" check, true for cleanup check
+    // existsSync calls: 1=apps/ dir (true), 2=project dir "already exists?" (false), 3+=cleanup (true)
     let callCount = 0;
     mockExistsSync.mockImplementation(() => {
       callCount++;
-      return callCount > 1; // first call = "already exists?" (false), subsequent = cleanup (true)
+      return callCount !== 2; // call 2 = project "already exists?" check → false, rest → true
     });
     mockSaveComponentLibrary.mockReturnValue({
       ok: false,
@@ -187,7 +187,7 @@ describe('POST /api/projects', () => {
 
     expect(response.status).toBe(500);
     expect(mockRmSync).toHaveBeenCalledWith(
-      '/repo/cleanup-test',
+      '/repo/apps/cleanup-test',
       { recursive: true, force: true },
     );
   });
@@ -196,7 +196,7 @@ describe('POST /api/projects', () => {
     let callCount = 0;
     mockExistsSync.mockImplementation(() => {
       callCount++;
-      return callCount > 1;
+      return callCount !== 2;
     });
     mockSaveComponentCatalog.mockReturnValue({
       ok: false,
@@ -207,7 +207,7 @@ describe('POST /api/projects', () => {
 
     expect(response.status).toBe(500);
     expect(mockRmSync).toHaveBeenCalledWith(
-      '/repo/catalog-fail',
+      '/repo/apps/catalog-fail',
       { recursive: true, force: true },
     );
   });

@@ -30,7 +30,7 @@ const PROJECT_NAME = 'TeamFlow';
 const PROJECT_DESC =
   'A collaborative project management and team communication platform for distributed teams.';
 const PROJECT_SLUG = 'teamflow';
-const PROJECT_DIR = join(ROOT, PROJECT_SLUG);
+const PROJECT_DIR = join(ROOT, 'apps', PROJECT_SLUG);
 
 // ─── Realistic PRD (~90 lines) ─────────────────────────────────────────────
 

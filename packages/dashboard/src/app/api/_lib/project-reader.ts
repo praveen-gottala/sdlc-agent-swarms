@@ -27,19 +27,20 @@ export function writePrefs(prefs: DashboardPrefs): void {
 }
 
 /**
- * Discovers all AgentForge project directories in the monorepo root.
+ * Discovers all AgentForge project directories in apps/.
  * A directory is a project if it contains agentforge.yaml.
  */
 export function discoverProjects(): { dirName: string; path: string }[] {
   const results: { dirName: string; path: string }[] = [];
-  if (!existsSync(MONOREPO_ROOT)) return results;
-  const entries = readdirSync(MONOREPO_ROOT, { withFileTypes: true });
+  const appsDir = join(MONOREPO_ROOT, 'apps');
+  if (!existsSync(appsDir)) return results;
+  const entries = readdirSync(appsDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'packages') continue;
-    const yamlPath = join(MONOREPO_ROOT, entry.name, 'agentforge.yaml');
+    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+    const yamlPath = join(appsDir, entry.name, 'agentforge.yaml');
     if (existsSync(yamlPath)) {
-      results.push({ dirName: entry.name, path: join(MONOREPO_ROOT, entry.name) });
+      results.push({ dirName: entry.name, path: join(appsDir, entry.name) });
     }
   }
   return results;
@@ -69,7 +70,7 @@ export function getActiveProjectRoot(): string {
   const projects = discoverProjects();
   if (projects.length > 0) return projects[0].path;
 
-  throw new Error('No AgentForge project found. Run `agentforge init` or set AGENTFORGE_PROJECT_DIR.');
+  throw new Error('No AgentForge project found. Create one with `agentforge init` in the apps/ directory, or set AGENTFORGE_PROJECT_DIR.');
 }
 
 /** Returns the absolute path to the active project root. */

@@ -38,7 +38,7 @@ A collaborative task management tool for distributed teams.
 - Real-time notifications
 `;
 
-const PROJECT_DIR = join(ROOT, PROJECT_SLUG);
+const PROJECT_DIR = join(ROOT, 'apps', PROJECT_SLUG);
 const PREFS_PATH = join(ROOT, '.agentforge-dashboard-prefs.json');
 
 function cleanup() {

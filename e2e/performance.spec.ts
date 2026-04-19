@@ -16,7 +16,7 @@ import { test, expect, ROOT } from './fixtures/test-base';
 import { DesignStudioPO } from './pages/design-studio.po';
 import { join } from 'path';
 
-const CLAIM_ROOT = join(ROOT, 'claim-filling-sample');
+const CLAIM_ROOT = join(ROOT, 'fixtures', 'claim-filling-sample');
 
 // Performance budgets (generous to avoid flakiness in CI)
 const BUDGET = {

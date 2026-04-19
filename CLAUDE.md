@@ -11,8 +11,17 @@ Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)
 Not started: spec/code/cicd/observe phases, V3 Dashboard, TS orchestrator
 Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 
-<!-- Update at session end -->
-Last session: (date, what was done, what's next)
+## Current State
+
+Active: design pipeline (packages/agents-ux/, packages/designspec-renderer/)
+Execution pipeline: not implemented yet.
+
+Control-plane status: inconsistent across repo.
+- packages/core + current runtime docs lean TypeScript in-process orchestration
+- README / docs/architecture / CLI start path still reference Python engine
+Treat orchestration authority as unresolved until Phase 0 produces an ADR and migration plan.
+
+Last session: execution migration Phase 0 — see docs/execution-pipeline-phase0.md
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
@@ -34,6 +43,10 @@ and test written in this project.
 ### Full Ownership of All Tests
 - Every agent MUST run the FULL test suite and fix ALL failures — not just tests
   "related to" the change. No such thing as a "pre-existing" failure.
+- There is no "unrelated" failure: if a required check (`typecheck`, `test`, or
+  applicable E2E) is red, fix it before declaring done. Do not excuse failures as
+  unrelated to the change, outside the diff, or pre-existing unless a human
+  explicitly waives that failure for this task.
 - Run `nx run-many -t typecheck` and `nx run-many -t test` after every change.
   Do not declare done until both pass with zero failures.
 - When changes touch dashboard UI, API routes, or E2E-covered functionality
@@ -141,3 +154,4 @@ Available Claude Code skills (invoke with /slash command):
 - /review-prd-compliance — Audit code vs PRD intent + TypeScript contracts
 - /write-adr [description] — Generate ADR for spec deviations
 - /demo-readiness — Fastest path to a working demo
+- /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity

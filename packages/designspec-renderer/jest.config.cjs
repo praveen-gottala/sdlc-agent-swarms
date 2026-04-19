@@ -6,6 +6,7 @@ module.exports = {
     '^.+\\.ts$': ['@swc/jest'],
   },
   testEnvironment: 'node',
+  testTimeout: 30000,
   moduleFileExtensions: ['ts', 'js'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',

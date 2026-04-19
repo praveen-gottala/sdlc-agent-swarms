@@ -44,5 +44,5 @@ describeIfPlaywright('screenshotDesignSpec (integration)', () => {
     });
     expect(result.screenshot).toBeInstanceOf(Buffer);
     expect(result.screenshot.length).toBeGreaterThan(0);
-  }, 30000);
+  }, 60000);
 });

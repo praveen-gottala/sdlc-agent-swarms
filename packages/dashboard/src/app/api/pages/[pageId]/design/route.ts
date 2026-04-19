@@ -24,6 +24,23 @@ import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provi
 import { debugLog } from '@agentforge/core';
 
 /* ------------------------------------------------------------------ */
+/*  Design model configuration                                         */
+/* ------------------------------------------------------------------ */
+
+/** Models available for design generation. Change the default here. */
+const DESIGN_MODELS = ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5'] as const;
+type DesignModel = (typeof DESIGN_MODELS)[number];
+const DEFAULT_DESIGN_MODEL: DesignModel = 'claude-sonnet-4-6';
+
+/** Validate a model string from the request. Returns the default if invalid. */
+function resolveDesignModel(raw: string | undefined | null): DesignModel {
+  if (raw && (DESIGN_MODELS as readonly string[]).includes(raw)) {
+    return raw as DesignModel;
+  }
+  return DEFAULT_DESIGN_MODEL;
+}
+
+/* ------------------------------------------------------------------ */
 /*  LLM response metadata                                              */
 /* ------------------------------------------------------------------ */
 
@@ -128,12 +145,22 @@ export async function POST(
 ) {
   const { pageId } = await params;
 
+  // Parse optional model from request body
+  let requestedModel: string | undefined;
+  try {
+    const body = await _request.json();
+    requestedModel = body?.model;
+  } catch {
+    // No body or invalid JSON — use defaults
+  }
+  const model = resolveDesignModel(requestedModel);
+
   // Check if full pipeline is requested
   const url = new URL(_request.url);
   const pipeline = url.searchParams.get('pipeline');
 
   if (pipeline === 'full') {
-    return handleFullPipeline(pageId);
+    return handleFullPipeline(pageId, model);
   }
 
   // Default: quick single-shot generation (existing behavior)
@@ -236,7 +263,7 @@ export async function POST(
     );
 
     // Call Claude via provider abstraction (supports both direct API and Vertex AI)
-    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, description, SUBMIT_DESIGN_TOOL);
+    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, description, SUBMIT_DESIGN_TOOL, model);
 
     if (!llmResponse.ok) {
       throw new Error(`LLM API call failed: ${llmResponse.error}`);
@@ -553,7 +580,7 @@ const DESIGN_SPEC_ICON_NAMES = [
 /*  Full pipeline handler (Research → Planning → Design)               */
 /* ------------------------------------------------------------------ */
 
-async function handleFullPipeline(pageId: string): Promise<NextResponse> {
+async function handleFullPipeline(pageId: string, model: DesignModel = DEFAULT_DESIGN_MODEL): Promise<NextResponse> {
   const claude = getClaudeProvider();
   if (!claude) {
     return NextResponse.json(
@@ -619,7 +646,7 @@ async function handleFullPipeline(pageId: string): Promise<NextResponse> {
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
   // Fire-and-forget: run pipeline in background
-  runFullPipelineAsync(runId, pageId, pipelineProvider, taskId).catch(() => {
+  runFullPipelineAsync(runId, pageId, pipelineProvider, taskId, model).catch(() => {
     // Ensure we always fail the run on uncaught error
     failRun(runId, 'Unexpected pipeline error');
   });
@@ -648,6 +675,7 @@ async function runFullPipelineAsync(
   pageId: string,
   provider: LLMProvider,
   taskId: string,
+  model: DesignModel = DEFAULT_DESIGN_MODEL,
 ): Promise<void> {
   const TOTAL_STAGES = 3;
   const projectRoot = getActiveProjectRoot();
@@ -699,7 +727,7 @@ async function runFullPipelineAsync(
       prdContent,
       designTokens: designTokens ? JSON.stringify(designTokens) : null,
       brandSpec: brandYaml ? JSON.stringify(brandYaml) : null,
-    }, page.name);
+    }, page.name, model);
     const researchResult = researchResponse.text;
 
     totalCostUsd += researchResponse.meta.costUsd;
@@ -739,7 +767,7 @@ async function runFullPipelineAsync(
       description,
       researchBrief: researchResult,
       designTokens: designTokens ? JSON.stringify(designTokens) : null,
-    }, page.name);
+    }, page.name, model);
     const planningResult = planningResponse.text;
 
     totalCostUsd += planningResponse.meta.costUsd;
@@ -803,7 +831,7 @@ async function runFullPipelineAsync(
       `Calling LLM to generate DesignSpec v2 JSON (${(systemPrompt.length / 1024).toFixed(0)}KB prompt) — this is the longest stage, typically 2-3 minutes...`);
     updateRunStatus(runId, { stageDescription: 'Generating DesignSpec via LLM' });
 
-    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL);
+    const llmResponse = await callClaudeDesignAPI(provider, systemPrompt, enrichedDescription, SUBMIT_DESIGN_TOOL, model);
 
     if (!llmResponse.ok) {
       emitAgentLogEvent(runId, 'Design', 'penpot_design', taskId, 'error',
@@ -898,9 +926,9 @@ async function callPipelineStage(
   stage: 'research' | 'planning',
   context: Record<string, string | null>,
   pageName?: string,
+  model: DesignModel = DEFAULT_DESIGN_MODEL,
 ): Promise<{ text: string; meta: LLMCallMeta }> {
   const pageLabel = pageName ? ` for the page named '${pageName}'` : '';
-  const model = 'claude-sonnet-4-6';
   const systemPrompts: Record<string, string> = {
     research: [
       `You are a UX Research agent. Analyze the requirements${pageLabel} and produce a design brief.`,
@@ -958,87 +986,128 @@ async function callClaudeDesignAPI(
   systemPrompt: string,
   userMessage: string,
   submitDesignTool: { name: string; description: string; parameters: Record<string, unknown> },
-  retryWithHigherTokens = false,
+  model: DesignModel = DEFAULT_DESIGN_MODEL,
 ): Promise<LLMResult> {
-  const maxTokens = retryWithHigherTokens ? 32768 : 16384;
-  const model = 'claude-sonnet-4-6';
+  const maxTokens = 64000;
+  const MAX_EMPTY_NODES_RETRIES = 1;
 
-  const startTime = Date.now();
+  // Accumulators for meta across retries
+  let totalCostUsd = 0;
+  let totalDurationMs = 0;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let attemptNumber = 0;
 
-  const result = await provider.complete(
-    {
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: `Generate a DesignSpec v2 JSON for this page. Use the submit_design tool to provide the complete specification.\n\nPage: ${userMessage}`,
-        },
-      ],
-      tools: [
-        {
-          name: submitDesignTool.name,
-          description: submitDesignTool.description,
-          parameters: submitDesignTool.parameters,
-        },
-      ],
-    },
-    {
-      model,
-      maxTokens,
-      toolChoice: { type: 'tool', name: 'submit_design' },
-    },
-  );
+  const buildMeta = (): LLMCallMeta => ({
+    model,
+    usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
+    durationMs: totalDurationMs,
+    costUsd: totalCostUsd,
+  });
 
-  const durationMs = Date.now() - startTime;
+  let currentUserContent =
+    `Generate a DesignSpec v2 JSON for this page. Use the submit_design tool to provide the complete specification.\n\nPage: ${userMessage}`;
 
-  if (!result.ok) {
-    const error = result.error;
-    const detail = 'message' in error ? error.message : JSON.stringify(error);
-    return { ok: false, error: `Claude API error (${error.code}): ${detail}` };
+  for (let emptyNodesRetry = 0; emptyNodesRetry <= MAX_EMPTY_NODES_RETRIES; emptyNodesRetry++) {
+    attemptNumber++;
+    const attemptStartTime = Date.now();
+
+    const result = await provider.complete(
+      {
+        system: systemPrompt,
+        messages: [{ role: 'user', content: currentUserContent }],
+        tools: [
+          {
+            name: submitDesignTool.name,
+            description: submitDesignTool.description,
+            parameters: submitDesignTool.parameters,
+          },
+        ],
+      },
+      {
+        model,
+        maxTokens,
+        temperature: 0.7,
+        toolChoice: { type: 'tool', name: 'submit_design' },
+      },
+    );
+
+    const attemptDurationMs = Date.now() - attemptStartTime;
+
+    if (!result.ok) {
+      const error = result.error;
+      const detail = 'message' in error ? error.message : JSON.stringify(error);
+      return { ok: false, error: `Claude API error (${error.code}): ${detail}`, meta: buildMeta() };
+    }
+
+    // Accumulate usage across retries
+    totalCostUsd += result.value.cost.totalCostUsd;
+    totalDurationMs += attemptDurationMs;
+    totalInputTokens += result.value.usage.inputTokens;
+    totalOutputTokens += result.value.usage.outputTokens;
+
+    const finishReason = result.value.finishReason;
+
+    debugLog(
+      `callClaudeDesignAPI: attempt ${attemptNumber} — ` +
+      `model=${model}, maxTokens=${maxTokens}, finishReason=${finishReason}, ` +
+      `outputTokens=${result.value.usage.outputTokens}/${maxTokens}, ` +
+      `cost=$${result.value.cost.totalCostUsd.toFixed(4)}`,
+    );
+
+    // Token limit hit — no further retry, 64K is already the max practical limit
+    if (finishReason === 'max_tokens') {
+      return {
+        ok: false,
+        error: `LLM response was truncated (finishReason: max_tokens, outputTokens: ${result.value.usage.outputTokens}/${maxTokens}). ` +
+               `The page may be too complex for a single generation pass.`,
+        meta: buildMeta(),
+      };
+    }
+
+    // Extract the tool use result from the response
+    const toolCall = result.value.toolCalls.find((tc) => tc.name === 'submit_design');
+
+    if (!toolCall) {
+      return {
+        ok: false,
+        error: `LLM response did not contain a submit_design tool use block ` +
+               `(finishReason: ${finishReason}, outputTokens: ${result.value.usage.outputTokens})`,
+        meta: buildMeta(),
+      };
+    }
+
+    // Validate that the spec has nodes
+    const input = toolCall.args;
+    const nodes = input?.nodes;
+    if (!nodes || typeof nodes !== 'object' || Object.keys(nodes as object).length === 0) {
+      if (emptyNodesRetry < MAX_EMPTY_NODES_RETRIES) {
+        debugLog(
+          `callClaudeDesignAPI: empty nodes on attempt ${attemptNumber} ` +
+          `(finishReason: ${finishReason}), retrying with reinforced prompt`,
+        );
+        // Reinforce the prompt to explicitly require nodes
+        currentUserContent =
+          `Generate a DesignSpec v2 JSON for this page. Use the submit_design tool to provide the complete specification.\n\n` +
+          `CRITICAL: Your previous attempt returned an empty 'nodes' object. You MUST include a non-empty 'nodes' object. ` +
+          `Every page requires a complete node tree — one root node (parent: null) and all child UI elements.\n\n` +
+          `Page: ${userMessage}`;
+        continue;
+      }
+
+      return {
+        ok: false,
+        error: `LLM returned a design spec with no nodes after ${attemptNumber} attempt(s). ` +
+               `The LLM completed normally (finishReason: ${finishReason}) but produced an empty nodes object. ` +
+               `This is an incomplete generation, not a truncation.`,
+        meta: buildMeta(),
+      };
+    }
+
+    // Success
+    return { ok: true, designSpec: input, meta: buildMeta() };
   }
 
-  const usage: LLMUsage = {
-    input_tokens: result.value.usage.inputTokens,
-    output_tokens: result.value.usage.outputTokens,
-  };
-  const costUsd = result.value.cost.totalCostUsd;
-  const meta: LLMCallMeta = { model, usage, durationMs, costUsd };
-
-  // Check for truncation due to token limits
-  if (result.value.finishReason === 'max_tokens' && !retryWithHigherTokens) {
-    // Retry once with higher token limit
-    return callClaudeDesignAPI(provider, systemPrompt, userMessage, submitDesignTool, true);
-  }
-
-  if (result.value.finishReason === 'max_tokens') {
-    return {
-      ok: false,
-      error: `LLM response was truncated (finishReason: max_tokens, max_tokens: ${maxTokens}). The page may be too complex for a single generation pass.`,
-      meta,
-    };
-  }
-
-  // Extract the tool use result from the response
-  const toolCall = result.value.toolCalls.find((tc) => tc.name === 'submit_design');
-
-  if (!toolCall) {
-    return {
-      ok: false,
-      error: 'LLM response did not contain a submit_design tool use block',
-      meta,
-    };
-  }
-
-  // Validate that the spec has nodes
-  const input = toolCall.args;
-  const nodes = input?.nodes;
-  if (!nodes || typeof nodes !== 'object' || Object.keys(nodes as object).length === 0) {
-    return {
-      ok: false,
-      error: 'LLM returned a design spec with no nodes. The response may have been truncated.',
-      meta,
-    };
-  }
-
-  return { ok: true, designSpec: input, meta };
+  // Should not reach here, but safety net
+  return { ok: false, error: 'Design generation exhausted all retry attempts.', meta: buildMeta() };
 }

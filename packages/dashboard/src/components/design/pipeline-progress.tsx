@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRunProgress } from '@/lib/hooks/use-run-progress';
 import type { StageTiming } from '@/lib/hooks/use-run-progress';
+import { Button } from '../ui/button';
 
 const STAGES = [
-  { name: 'Research', agent: 'ux_research', model: 'claude-sonnet-4-6' },
-  { name: 'Planning', agent: 'ux_planning', model: 'claude-sonnet-4-6' },
-  { name: 'Design', agent: 'penpot_design', model: 'claude-sonnet-4-6' },
+  { name: 'Research', agent: 'ux_research' },
+  { name: 'Planning', agent: 'ux_planning' },
+  { name: 'Design', agent: 'penpot_design' },
 ];
 
 function formatElapsed(ms: number): string {
@@ -33,10 +34,13 @@ function ElapsedTimer({ since }: { since: string }) {
 
 interface PipelineProgressProps {
   runId: string | null;
+  model?: string;
   onComplete?: () => void;
+  onRetry?: () => void;
+  onDismiss?: () => void;
 }
 
-export function PipelineProgress({ runId, onComplete }: PipelineProgressProps) {
+export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplete, onRetry, onDismiss }: PipelineProgressProps) {
   const progress = useRunProgress(runId);
 
   const currentStageIdx = progress.progress?.current ?? 0;
@@ -124,7 +128,7 @@ export function PipelineProgress({ runId, onComplete }: PipelineProgressProps) {
 
                 {/* Agent info */}
                 <p className="text-[11px] text-text-muted">
-                  {stage.agent} · {stage.model}
+                  {stage.agent} · {model}
                 </p>
 
                 {/* Status text */}
@@ -201,6 +205,22 @@ export function PipelineProgress({ runId, onComplete }: PipelineProgressProps) {
       {isFailed && progress.error && (
         <div className="mt-4 max-w-md">
           <p className="text-xs text-red-400 bg-red-400/10 rounded-md px-3 py-2">{progress.error}</p>
+        </div>
+      )}
+
+      {/* Action buttons on failure */}
+      {isFailed && (
+        <div className="mt-4 flex items-center gap-3">
+          {onRetry && (
+            <Button variant="primary" size="sm" onClick={onRetry}>
+              Retry Pipeline
+            </Button>
+          )}
+          {onDismiss && (
+            <Button variant="secondary" size="sm" onClick={onDismiss}>
+              Back to Canvas
+            </Button>
+          )}
         </div>
       )}
     </div>

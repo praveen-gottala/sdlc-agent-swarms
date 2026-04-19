@@ -1,5 +1,5 @@
 ---
-paths: ["packages/agents-ux/**", "packages/designspec-renderer/**", "packages/cli/src/commands/design-*"]
+paths: ["packages/agents-ux/**", "packages/designspec-renderer/**", "packages/cli/src/commands/design-*", "apps/*/agentforge/designs/**"]
 ---
 
 # Design Pipeline Change Checklist (MANDATORY)
@@ -86,3 +86,31 @@ grep -rn 'r: [0-9]\{2,\}' packages/designspec-renderer/src/renderer/penpot/compo
 **When delegating to subagents:** Include the Penpot API hard rules above
 in the agent prompt. Subagents do not read CLAUDE.md or lessons-learned.md
 automatically.
+
+# Design Output Verification (MANDATORY)
+After generating, modifying, or correcting a design JSON in
+`apps/<project>/agentforge/designs/`, run the verification skill:
+
+```bash
+npx tsx packages/designspec-renderer/src/renderer/browser/verify-design-render.ts apps/<project> <page>
+```
+
+Or invoke `/verify-design-render <project>/<page>`.
+
+**Pass criteria — all must hold before declaring done:**
+- 0 CSS failures (FAIL)
+- 0 dropped overrides (DROP)
+- 0 behavioral failures (DATA-FAIL)
+
+**When DATA-FAIL items appear:**
+- `aria-label` / `role` missing → accessibility bug in the renderer, not the
+  spec. The renderer must apply these as HTML attributes, not CSS properties.
+  Fix in `DesignSpecRenderer.tsx` or file as a tracked issue.
+- `brand_name` / `initials` / `caption` missing → the catalog component is not
+  consuming the override. Fix in the relevant `renderXxx()` function.
+
+**This applies to:**
+- LLM-generated designs (design:generate, design:page pipeline)
+- Correction pipeline output (browser-correction-pipeline)
+- Manual spec edits
+- Renderer changes that could affect how existing specs render

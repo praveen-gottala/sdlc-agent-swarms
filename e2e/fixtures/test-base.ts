@@ -6,7 +6,7 @@ const ROOT = resolve(__dirname, '../..');
 const PREFS_PATH = join(ROOT, '.agentforge-dashboard-prefs.json');
 const PREFS_BACKUP = join(ROOT, '.agentforge-dashboard-prefs.json.bak');
 
-const PET_ROOT = join(ROOT, 'personal-expense-tracker');
+const PET_ROOT = join(ROOT, 'fixtures', 'personal-expense-tracker');
 const PAGES_YAML = join(PET_ROOT, 'agentforge/spec/pages.yaml');
 const PAGES_YAML_BACKUP = join(PET_ROOT, 'agentforge/spec/pages.yaml.bak');
 const DESIGN_JSON = join(PET_ROOT, 'agentforge/designs/dashboard.json');

@@ -478,9 +478,9 @@ The planning agent defines a 4-stage implementation plan:
 │  │     └─ penpot:penpot_api_info (Board, FlexLayout, Fill, etc.) │   │
 │  │                                                               │   │
 │  │  2. LLM Call                                                  │   │
-│  │     Model:    claude-sonnet-4-6 (or resolved override)        │   │
-│  │     Tokens:   32000                                           │   │
-│  │     Temp:     0                                               │   │
+│  │     Model:    claude-sonnet-4-6 (configurable via UI)         │   │
+│  │     Tokens:   64000                                           │   │
+│  │     Temp:     0.7                                             │   │
 │  │     Prompt:   ux-penpot-design-system.md                      │   │
 │  │       {{DESIGN_SYSTEM}}      ← design tokens + brand          │   │
 │  │       {{PENPOT_API_DOCS}}    ← dynamic API discovery          │   │
@@ -969,7 +969,7 @@ ImplementationDraftReady
 | 3 | Planning | claude-sonnet-4-6 | 8000 | 0 | structured |
 | 3 | Token Correction | claude-sonnet-4-6 | 2000 | 0 | complete |
 | 4A | Design Script | claude-sonnet-4-6 | 32000 | 0 | complete |
-| 4B | DesignSpec v2 Gen | claude-sonnet-4-6 | 16000 | 0 | tool_use (submit_design) |
+| 4B | DesignSpec v2 Gen | claude-sonnet-4-6 (configurable) | 64000 | 0.7 | tool_use (submit_design) |
 | 4C | Fix Generation | claude-sonnet-4-6 | 8000 | 0 | structured |
 | 5 | Evaluation | claude-opus-4-6 | 4096 | 0 | structured + vision |
 | 7 | Implementation | claude-sonnet-4-6 | 16000 | 0 | streaming |

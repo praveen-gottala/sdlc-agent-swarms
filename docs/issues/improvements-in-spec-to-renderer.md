@@ -187,7 +187,7 @@ Render this with `screenshotDesignSpec()` and verify visually:
 
 Take a screenshot and report what renders correctly vs what doesn't.
 
-Then render the **Budgetly dashboard DesignSpec** (`designspec-v2.json` or the spec at `personal-expense-tracker/.agentforge/previews/dashboard/`) and verify the three real-world examples:
+Then render the **Budgetly dashboard DesignSpec** (`designspec-v2.json` or the spec at `fixtures/personal-expense-tracker/.agentforge/previews/dashboard/`) and verify the three real-world examples:
 - `donut-placeholder` (node in the left column): renders as a circle, not a rectangle
 - `filter-search` (node in the filter bar): renders at 200px wide, not stretched to ~516px
 - If `popover-overlay` has `position: fixed` and `zIndex: 1000` (from a correction run), it centers on screen above other content

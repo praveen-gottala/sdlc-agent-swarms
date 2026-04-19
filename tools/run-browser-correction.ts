@@ -13,9 +13,9 @@ import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { DesignSpecV2, RendererTokens } from '@agentforge/designspec-renderer';
 
-const SPEC_PATH = 'personal-expense-tracker/.agentforge/previews/dashboard/scripts/designspec-v2.json';
-const TOKENS_PATH = 'personal-expense-tracker/agentforge/spec/design-tokens.yaml';
-const CATALOG_PATH = 'personal-expense-tracker/agentforge/spec/component-catalog.yaml';
+const SPEC_PATH = 'fixtures/personal-expense-tracker/.agentforge/previews/dashboard/scripts/designspec-v2.json';
+const TOKENS_PATH = 'fixtures/personal-expense-tracker/agentforge/spec/design-tokens.yaml';
+const CATALOG_PATH = 'fixtures/personal-expense-tracker/agentforge/spec/component-catalog.yaml';
 
 async function main() {
   // 1. Load spec
@@ -39,7 +39,7 @@ async function main() {
     process.exit(1);
   }
   const provider = createClaudeProvider('claude-sonnet-4-6', authResultToProviderConfig(claudeAuth));
-  const outDir = 'personal-expense-tracker/.agentforge/previews/dashboard/scripts';
+  const outDir = 'fixtures/personal-expense-tracker/.agentforge/previews/dashboard/scripts';
 
   // 5. Run the pipeline
   console.log('\nStarting browser correction pipeline...\n');

@@ -132,7 +132,11 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
   } = input;
 
   const slug = slugify(name);
-  const projectDir = join(MONOREPO_ROOT, slug);
+  const appsDir = join(MONOREPO_ROOT, 'apps');
+  if (!existsSync(appsDir)) {
+    mkdirSync(appsDir, { recursive: true });
+  }
+  const projectDir = join(appsDir, slug);
 
   if (existsSync(projectDir)) {
     throw new ProjectCreationError(`Project directory "${slug}" already exists`, 409);

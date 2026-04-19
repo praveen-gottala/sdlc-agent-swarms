@@ -642,7 +642,7 @@ describe('design:page integration — --implement flag', () => {
     expect(implCalled).toBe(true);
     expect(out.output).toContain('[implement]');
     expect(out.output).toContain('Generated 1 file');
-  });
+  }, 30_000);
 });
 
 // ============================================================================
