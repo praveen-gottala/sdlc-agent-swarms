@@ -6,7 +6,7 @@ The prototype has a critical active-tab bug: `applyChromeActiveForPage()` uses r
 
 Existing E2E tests don't catch this because they test navigation (screen marker changes) but never verify active tab styling.
 
-Additionally, the Spending Insights page shows a "14" raw value from a `progress-bar-error` catalog node — a known renderer fidelity gap documented in `docs/prototype-limitations.md`.
+Additionally, the Spending Insights page shows a "14" raw value from a `progress-bar-error` catalog node — a known renderer fidelity gap documented in `docs/reference/prototype-limitations.md`.
 
 ## Prior Work (Same Session)
 

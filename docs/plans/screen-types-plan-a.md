@@ -288,7 +288,7 @@ sheet:  full width (use page default)
 **Files:**
 - `e2e/prototype-overlays.spec.ts` — Playwright E2E tests
 - Remove debug `console.log` from DesignSpecRenderer.tsx and PrototypeApp.tsx
-- Update `docs/design-pipeline-dataflow.md` per mandatory checklist
+- Update `docs/architecture/design-pipeline-dataflow.md` per mandatory checklist
 
 **E2E test scenarios (real browser, no mocks):**
 1. Load prototype with a drawer screen -> drawer renders at correct width

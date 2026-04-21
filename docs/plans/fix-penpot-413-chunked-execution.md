@@ -87,7 +87,7 @@ Two call sites:
 
 ### Step 7: Tests & docs
 - Unit tests for chunk rendering
-- Update `docs/design-pipeline-dataflow.md`
+- Update `docs/architecture/design-pipeline-dataflow.md`
 
 ## Critical Files
 

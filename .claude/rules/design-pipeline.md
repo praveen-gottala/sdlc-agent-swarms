@@ -3,7 +3,7 @@ paths: ["packages/agents-ux/**", "packages/designspec-renderer/**", "packages/cl
 ---
 
 # Design Pipeline Change Checklist (MANDATORY)
-`docs/design-pipeline-dataflow.md` is the **source of truth** for the end-to-end
+`docs/architecture/design-pipeline-dataflow.md` is the **source of truth** for the end-to-end
 design pipeline architecture. When modifying ANY of the following, you MUST update
 the corresponding section in that document:
 
@@ -44,7 +44,7 @@ the corresponding section in that document:
       `packages/designspec-renderer/src/renderer/browser/app/src/LayoutShell.tsx`,
       `packages/designspec-renderer/src/renderer/browser/app/src/iframe-bridge.ts`,
       `packages/dashboard/src/lib/hooks/use-renderer-bridge.ts`
-    - Doc: `docs/prototype-rendering-dataflow.md`
+    - Doc: `docs/architecture/prototype-rendering-dataflow.md`
 
 What to update:
 - ASCII diagrams if the flow changes

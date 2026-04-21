@@ -110,4 +110,4 @@ Rules:
 - kebab-case files, PascalCase interfaces, camelCase functions
 - Tests next to source (foo.ts → foo.test.ts)
 - Must run `nx run-many -t typecheck` and `nx run-many -t test` after changes
-- Must update `docs/design-pipeline-dataflow.md` for pipeline changes
+- Must update `docs/architecture/design-pipeline-dataflow.md` for pipeline changes

@@ -1,6 +1,6 @@
 # PRD Differences: PRD-v2.md vs PRD-revised.md
 
-This document summarizes all changes between the previous PRD (`docs/PRD-v2.md`) and the revised PRD (`docs/PRD-revised.md`).
+This document summarizes all changes between the previous PRD (`docs/specs/PRD-v2.md`) and the revised PRD (`docs/PRD-revised.md`).
 
 ---
 
