@@ -1,0 +1,19 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Calm, professional, and human. The voice of a trusted colleague guiding
+    you through a process — never robotic, never rushed.
+  audience: general
+illustration_style:
+  direction: Editorial spot art
+  description: Warm-toned spot illustrations with a hand-crafted feel — think
+    insurance paperwork and policy guides reimagined as clean editorial art.
+    Muted earth tones, simple geometric forms, and occasional hand-drawn
+    texture. Used sparingly for empty states and completion screens.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: smooth
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA

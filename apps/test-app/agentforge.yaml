@@ -1,0 +1,15 @@
+version: "1.0"
+project:
+  name: Test App
+  description: "Claim filling app "
+  platforms:
+    - web
+stack:
+  frontend: react
+  backend: node
+  database: postgresql
+  styling: tailwind
+budget:
+  per_task_max_usd: 2
+  per_phase_max_usd: 25
+  monthly_max_usd: 200

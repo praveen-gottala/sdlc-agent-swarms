@@ -1,9 +1,0 @@
-version: "1.0"
-app:
-  name: LLM E2E 1776709165487
-  description: TaskPilot is a team task management app. It has a dashboard showing
-    active tasks and team workload, a task list with filters, a task detail
-    page, a notifications drawer that slides in from the right when the bell
-    icon is clicked, and a delete confirmation dialog that appears as a centered
-    modal overlay.
-adrs: []

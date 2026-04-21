@@ -1,0 +1,5 @@
+version: "1.0"
+app:
+  name: Test App
+  description: "Claim filling app "
+adrs: []

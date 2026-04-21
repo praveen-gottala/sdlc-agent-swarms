@@ -1,0 +1,144 @@
+version: "1.0"
+created_by: agentforge-init-llm
+colors:
+  primitive:
+    warm-white: "#FAFAF8"
+    linen: "#F4F1EC"
+    stone-100: "#EAE6DF"
+    stone-400: "#A8A29E"
+    stone-700: "#57534E"
+    ink-900: "#1C1917"
+    terracotta: "#C2693A"
+    terracotta-dark: "#A3502A"
+    sage: "#4A7C6F"
+    gold: "#D4A043"
+    dusty-rose: "#C0605A"
+  semantic:
+    background-primary: "#FAFAF8"
+    surface-primary: "#FFFFFF"
+    surface-elevated: "#FFFFFF"
+    surface-secondary: "#F4F1EC"
+    surface-input: "#FFFFFF"
+    text-primary: "#1C1917"
+    text-secondary: "#57534E"
+    text-disabled: "#A8A29E"
+    text-on-cta: "#FFFFFF"
+    cta-primary: "#C2693A"
+    cta-hover: "#A3502A"
+    border-default: "#EAE6DF"
+    border-focus: "#C2693A"
+    border-error: "#C0605A"
+    error: "#C0605A"
+    success: "#4A7C6F"
+    warning: "#D4A043"
+    info: "#5B8DB8"
+    overlay: rgba(28, 25, 23, 0.6)
+typography:
+  font_families:
+    display: Playfair Display
+    body: Source Sans 3
+  scale:
+    - role: heading-1
+      size: 32
+      weight: 700
+      family: display
+      line_height: 1.2
+    - role: heading-2
+      size: 24
+      weight: 700
+      family: display
+      line_height: 1.25
+    - role: heading-3
+      size: 18
+      weight: 600
+      family: display
+      line_height: 1.3
+    - role: body
+      size: 14
+      weight: 400
+      family: body
+      line_height: 1.5
+    - role: label
+      size: 12
+      weight: 500
+      family: body
+      line_height: 1.4
+    - role: small
+      size: 11
+      weight: 400
+      family: body
+      line_height: 1.4
+spacing:
+  unit: 8
+  scale:
+    - 4
+    - 8
+    - 12
+    - 16
+    - 24
+    - 32
+    - 48
+    - 64
+borders:
+  radius:
+    small: 8
+    medium: 12
+    large: 16
+    pill: 9999
+touch_targets:
+  minimum_height: 44
+  minimum_width: 44
+elevation:
+  levels:
+    - level: 0
+      shadow: none
+      description: Flat — form fields, inline labels, and table rows
+    - level: 1
+      shadow: 0 1px 4px rgba(28,25,23,0.08), 0 0 0 1px rgba(28,25,23,0.06)
+      description: Cards — claim summary panels, step containers, and eligibility
+        status blocks
+    - level: 2
+      shadow: 0 4px 16px rgba(28,25,23,0.10), 0 1px 4px rgba(28,25,23,0.06)
+      description: Dropdowns — date pickers, issue type selectors, and tooltip panels
+    - level: 3
+      shadow: 0 16px 40px rgba(28,25,23,0.14), 0 4px 12px rgba(28,25,23,0.08)
+      description: Modals — blocker dialogs, redirect confirmations, and submit overlays
+layout:
+  grid:
+    columns: 12
+    gutter: 24
+    margin: 24
+  content_max_width: 1280
+  breakpoints:
+    mobile: 640
+    tablet: 768
+    desktop: 1024
+    wide: 1440
+z_index:
+  dropdown: 1000
+  sticky: 1100
+  modal: 1200
+  toast: 1300
+  tooltip: 1400
+opacity:
+  scale:
+    subtle: 0.1
+    muted: 0.3
+    disabled: 0.38
+    overlay: 0.5
+motion:
+  durations:
+    fast: 100
+    normal: 200
+    slow: 400
+    page: 600
+  easings:
+    default: ease-out
+    emphasized: cubic-bezier(0.2,0,0,1)
+state:
+  hover_opacity: 0.08
+  disabled_opacity: 0.38
+  focus_ring:
+    color: cta-primary
+    width: 2
+    offset: 2
