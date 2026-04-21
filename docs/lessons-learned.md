@@ -563,3 +563,12 @@ Additionally, `resolveNode()` in `resolver.ts` returned a stripped-down `Resolve
 **Rule:** Always clear `bridgeRef.current = null` before transitioning from design canvas to prototype mode. The stale bridge from the DesignCanvas iframe has `isReady: true`, which causes `sendPayload()` to succeed on the first call — but the message goes to a dead iframe.
 **Why:** The `useEffect` that sends the prototype payload fired immediately when `prototypeMode` switched to `true`. At that point, `bridgeRef` still held the old DesignCanvas bridge. The stale bridge's `isReady` was `true`, so `loadPrototype` was called on it, the message went to a detached iframe, and the polling backup never started (because `sendPayload()` returned `true`).
 **How to apply:** When transitioning between iframe-based modes that share a bridge ref, always null the ref before the mode switch. This forces the payload-sending effect to poll until the new bridge is ready.
+
+---
+
+## Payload Size Limits — Chunk at the Renderer Level
+
+**Context:** Penpot MCP script execution hit HTTP 413 (100KB limit) on large screens (158 shapes → 117K chars).
+**Rule:** When a pipeline payload exceeds external service limits, split at the renderer/semantic level (self-contained chunks with ID-based cross-chunk recovery), not at the string/transport level. String splitting breaks variable scopes and nested blocks. Minification alone isn't durable — larger screens will exceed the limit again.
+**Why:** The Penpot MCP server had a ~100KB POST body limit we couldn't change. Splitting rendered scripts into 2–4 semantic chunks (using `page.getShapeById()` for parent recovery) preserved correctness. Micro-step fragmentation (50+ chunks) caused coordination failures.
+**How to apply:** If any future pipeline hits payload limits on an external API, prefer semantic chunking (2–4 chunks) with ID-based state recovery over string splitting or aggressive minification.
