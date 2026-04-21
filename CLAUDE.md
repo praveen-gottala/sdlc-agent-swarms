@@ -55,7 +55,7 @@ and test written in this project.
   config only starts the Next.js server.
 
 ### PRD is Source of Truth
-- PRD (docs/specs/PRD-v2.md) defines WHAT and WHY. TypeScript interfaces in
+- PRD (docs/specs/PRD.md) defines WHAT and WHY. TypeScript interfaces in
   packages/core/src/types/ are authoritative for field lists, enums, and
   API contracts. When PRD and code diverge, code wins and PRD is updated.
   See ADR-038. Do not hardcode values the PRD defines as configurable.
@@ -129,7 +129,7 @@ and test written in this project.
 
 ## Architecture
 See docs/architecture/architecture.md for layer diagram.
-See docs/specs/PRD-v2.md for full product spec.
+See docs/specs/PRD.md for full product spec.
 Governance is MIDDLEWARE, not a service — it wraps agent execution.
 Agents communicate via event bus ONLY. No direct agent-to-agent calls.
 

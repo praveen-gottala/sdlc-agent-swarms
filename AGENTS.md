@@ -8,7 +8,7 @@ This file is the **navigation hub** for AI agents using **Cursor** or **Claude C
 |------|------|
 | **`CLAUDE.md`** | Full AgentForge rules: tests, PRD, architecture, commands, browser-first debugging, skills. **Claude Code loads this automatically.** Cursor agents should read it for substantive work unless mirrored in `.cursor/rules/`. |
 | **`docs/lessons-learned.md`** | Append-only learnings. **Read at session start** before writing code (per `CLAUDE.md`). |
-| **`docs/specs/PRD-v2.md`** | Product intent; TypeScript types in `packages/core/src/types/` win for field-level truth (ADR-038). |
+| **`docs/specs/PRD.md`** | Product intent; TypeScript types in `packages/core/src/types/` win for field-level truth (ADR-038). |
 | **`docs/architecture/architecture.md`** | Layer diagram and system shape. |
 
 Keep **`CLAUDE.md` roughly under ~200 lines** for context efficiency; if it grows, **move sections to `docs/`** and link instead of pasting into multiple places.
