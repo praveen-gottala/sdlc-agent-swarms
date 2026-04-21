@@ -10,7 +10,7 @@
  *
  * See: PRD v2.0 Section 21 (Developer Experience Narrative)
  *      PRD v2.0 Section 24.1 (Phase 1 Milestone Deliverable)
- *      docs/architecture.md (Communication Flow)
+ *      docs/architecture/architecture.md (Communication Flow)
  */
 
 import {

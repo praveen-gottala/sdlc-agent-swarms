@@ -1,35 +1,7 @@
-# AgentForge Web Dashboard
+# Web Dashboard
 
-## Product Requirements Document v3.0
-
-### Phase 2 Feature Specification
-
-| **Field** | **Value** |
-|---|---|
-| **Author** | Praveen |
-| **Date** | March 18, 2026 |
-| **Status** | Draft |
-| **Depends on** | PRD v2.0 (Phase 1 implemented) |
-| **License** | Apache 2.0 |
-
----
-
-## Table of Contents
-
-1. [Executive Summary](#1-executive-summary)
-2. [Scope and Assumptions](#2-scope-and-assumptions)
-3. [Dashboard Architecture](#3-dashboard-architecture)
-4. [Feature Specifications](#4-feature-specifications)
-5. [Data Model Extensions](#5-data-model-extensions)
-6. [Dashboard API](#6-dashboard-api)
-7. [Technical Stack](#7-technical-stack)
-8. [Milestones](#8-milestones)
-9. [Success Metrics](#9-success-metrics)
-10. [Risks and Mitigations](#10-risks-and-mitigations)
-11. [Appendix A: Audit Findings from Dashboard Prototype](#appendix-a-audit-findings-from-dashboard-prototype)
-12. [Appendix B: Referenced Documents](#appendix-b-referenced-documents)
-
----
+> Part of the [AgentForge PRD](./PRD.md). Phase 2 feature specification covering
+> dashboard architecture, all feature panels, API endpoints, and milestones.
 
 ## 1. Executive Summary
 
@@ -239,7 +211,7 @@ The Spec Viewer makes the living specification visible and editable. This is the
 
 - Tree navigation panel showing the spec directory structure: `project.yaml`, `pages.yaml`, `components/<page>.yaml`, `api.yaml`, `models.yaml`.
 - YAML viewer with syntax highlighting, collapsible sections, and inline annotations showing which agent last modified each section.
-- **Spec editing:** Developers can edit spec files directly in the dashboard. Edits are committed to git as human edits, triggering the spec sync conflict resolution rules from PRD v2.0 Section 8.3: **human always wins**.
+- **Spec editing:** Developers can edit spec files directly in the dashboard. Edits are committed to git as human edits, triggering the spec sync conflict resolution rules from Part I, Section 8.3: **human always wins**.
 - **Drift indicators:** When the spec sync agent detects drift between spec and code (`SpecDriftDetected` event), the affected spec section shows a warning badge. Clicking reveals the deviation description and a link to the relevant code.
 - **Component status tracking:** Each component, endpoint, and model in the spec shows its pipeline status: `designed`, `specced`, `coded`, `tested`, `deployed`. This maps directly to the status field in the data model.
 - ADR viewer: Architecture Decision Records from `project.yaml` rendered as a timeline with status badges.
@@ -294,7 +266,7 @@ This section controls what information the agent receives alongside the task. Th
 | **Spec Sections** | multi-select | Which spec files to inject. Populated from the actual spec directory. Supports glob patterns like `components/*.yaml`. |
 | **Include Learnings** | boolean | Inject the agent learnings file (`.agentforge/learnings/<role>.yaml`). Default: true. |
 | **Include ADRs** | boolean | Inject Architecture Decision Records from `project.yaml`. Default: true for architecture-sensitive agents. |
-| **Include Conventions** | boolean | Inject stack conventions from the prompt template registry (PRD v2.0 Section 16.2). Default: true. |
+| **Include Conventions** | boolean | Inject stack conventions from the prompt template registry (Part I, Section 16.2). Default: true. |
 | **Prompt Template** | select | Override prompt template. Populated from `stacks/<stack>/prompts/`. Select which prompt file to use for task formatting. |
 
 ##### Section 4: Permissions (Least Privilege)
@@ -364,7 +336,7 @@ Agent execution logs are a new data structure introduced by the dashboard. The a
 
 ### 4.8 Audit Trail
 
-Full searchable history of every agent action, governance decision, and human intervention. This is the UI for the audit log described in PRD v2.0 Section 19.3.
+Full searchable history of every agent action, governance decision, and human intervention. This is the UI for the audit log described in Part I, Section 19.3.
 
 - Filterable by: agent, action type, time range, task, cost threshold.
 - Each entry shows: timestamp, agent identity, action taken, input context summary, output summary, approving human (if HITL), cost incurred, git commit SHA.
@@ -375,7 +347,7 @@ Full searchable history of every agent action, governance decision, and human in
 
 ### 4.9 Progressive Trust Visualization
 
-Visualizes the trust model from PRD v2.0 Section 13.2 and the trust state from `data-model.md` Section 5.
+Visualizes the trust model from Part I, Section 13.2 and the trust state from `data-model.md` Section 5.
 
 - Per-agent trust card showing: current HITL level, consecutive approval count, threshold to next level, last outcome.
 - Visual progress bar toward the next trust level (e.g., 14/20 consecutive approvals toward `notify_only`).
@@ -396,7 +368,7 @@ Manages the HITL messaging channels defined in `agentforge.yaml` `hitl.channels`
 - **Channel cards:** One card per configured channel (Slack, Telegram, CLI, WhatsApp). Each card shows: connection status with live ping indicator, priority level, capability tier (`full`/`approvals`/`basic`/`notify-only`), channel-specific configuration (workspace, channel name, chat ID, bot name), message count, and last ping time.
 - **Routing rules:** Each channel card displays its routing configuration as colored tags: which event types (approvals, status updates, critical alerts) are routed to this channel, matching the `routing` section in `agentforge.yaml`. Tags are color-coded: green for all, purple for primary, gray for none/fallback.
 - **Channel actions:** Connected channels show **Settings** (opens config panel) and **Test** (sends a test message and verifies round-trip). Unconfigured channels show a **Configure** button that opens a setup wizard collecting channel-specific credentials.
-- **Escalation policy:** Below the channel cards, a dedicated panel configures the escalation behavior from PRD v2.0 Section 13.3: approval timeout (default 60 min), on-timeout action (pause and notify secondary), and secondary escalation timeout. The panel prominently displays the hard rule: **auto-approve on timeout is never allowed**.
+- **Escalation policy:** Below the channel cards, a dedicated panel configures the escalation behavior from Part I, Section 13.3: approval timeout (default 60 min), on-timeout action (pause and notify secondary), and secondary escalation timeout. The panel prominently displays the hard rule: **auto-approve on timeout is never allowed**.
 - Adding a new channel writes to `agentforge.yaml` `hitl.channels` and triggers the channel adapter registration in the orchestration engine.
 - The first-response-wins model from `messaging-integration.md` applies: approval requests go to all channels, the first response is authoritative, and all other channels are updated.
 
@@ -423,7 +395,7 @@ Manages LLM provider connections defined in `agentforge.yaml` `agents.providers`
 
 #### 4.10.4 Design Tools
 
-Manages the design tool configuration from `agentforge.yaml` `design`. Surfaces the DesignSurface abstraction from PRD v2.0 Section 11.1.3.
+Manages the design tool configuration from `agentforge.yaml` `design`. Surfaces the DesignSurface abstraction from Part I, Section 11.1.3.
 
 - **Figma card:** Shows connection status, Figma file ID, design system type (Tailwind/custom), bidirectional mode (read + write), and the full capability list: read wireframes, write designs, extract tokens, Code Connect mapping, auto-layout, Variables API. Shows the DesignSurface interface methods: `createWorkspace()`, `readDesign()`, `writeDesign()`, `getTokens()`, `onUserEdit()`, `lockForAgent()`.
 - **Storybook card:** Shows the code-first fallback configuration: localhost URL, hot reload status, visual testing capability. Prominently notes the F7 failure mode from `failure-modes.md`: Storybook auto-activates when Figma MCP is unavailable, and design agents switch to code-first mode.
@@ -639,7 +611,7 @@ Single WebSocket connection at `ws://localhost:<port>/ws`. Server relays all dom
 | WebSocket disconnects lose events | High | Client reconnects with last-seen event timestamp. Server replays missed events from event bus history. |
 | Cross-channel race conditions | Medium | Same first-response-wins model. Governance middleware is the single authority. Dashboard defers to governance. |
 | Agent trace files grow large | Low | Trace files are per-task and auto-pruned after 30 days. LLM responses are stored truncated (first 10K chars) with full response available on demand. |
-| Spec editing conflicts with agents | Medium | Human always wins (PRD v2.0 Section 8.3). Dashboard edits are human edits. File locking prevents concurrent corruption. |
+| Spec editing conflicts with agents | Medium | Human always wins (Part I, Section 8.3). Dashboard edits are human edits. File locking prevents concurrent corruption. |
 | Dashboard becomes the only interface | Low | CLI and messaging channels remain fully functional. Dashboard is additive, never required. |
 | Integration credentials exposed in UI | High | API keys are always masked in the UI. Full keys are never sent to the browser. Rotation and test operations are server-side only. Dashboard API validates auth before any credential write. |
 
@@ -671,7 +643,7 @@ The following gaps were identified during prototyping and directly informed this
 
 ## Appendix B: Referenced Documents
 
-- **PRD v2.0** (`AgentForge-PRD-v2_0.docx`) — Phase 1 specification
+- **Part I** (Core Platform) — Phase 1 specification
 - **agent-contracts.md** — Full agent contract schema and Phase 1 agent definitions
 - **architecture.md** — Layer diagram, API contracts, event bus, communication flow
 - **data-model.md** — Project manifest, living spec, task state, learnings, trust state schemas
@@ -681,5 +653,3 @@ The following gaps were identified during prototyping and directly informed this
 - **provider-abstraction.md** — LLM provider interface, streaming, budget enforcement, cost table
 
 ---
-
-*End of Document — AgentForge Dashboard PRD v3.0*

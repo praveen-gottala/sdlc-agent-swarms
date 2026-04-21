@@ -18,7 +18,7 @@ paths: ["**/*.ts", "**/*.tsx"]
 - Functional style, avoid classes except where interfaces demand it
 - All public APIs must have JSDoc comments
 - Every module exports via index.ts barrel file
-- Error handling: Result pattern (never throw), see docs/error-handling.md
+- Error handling: Result pattern (never throw), see docs/architecture/error-handling.md
 
 ## Debug Logging for Backfills and Defaults
 - When code backfills missing values, derives defaults, or applies hardcoded

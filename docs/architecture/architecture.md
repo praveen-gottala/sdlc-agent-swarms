@@ -510,7 +510,7 @@ Phase 2: Redis Streams
 
 ### Error Handling
 
-All public APIs use the Result pattern — never throw. See `docs/error-handling.md`.
+All public APIs use the Result pattern — never throw. See `docs/architecture/error-handling.md`.
 
 ```typescript
 type Result<T> = { ok: true; value: T } | { ok: false; error: AgentForgeError };

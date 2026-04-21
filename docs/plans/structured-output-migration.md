@@ -337,8 +337,8 @@ For each agent:
 **Estimated effort**: 0.5 days
 
 1. Remove dead code — old regex patterns no longer needed as primary path
-2. Update `docs/provider-abstraction.md` with structured output documentation
-3. Update `docs/agent-contracts.md` with schema references
+2. Update `docs/architecture/provider-abstraction.md` with structured output documentation
+3. Update `docs/architecture/agent-contracts.md` with schema references
 4. Add an ADR documenting the migration decision
 
 ---
@@ -390,5 +390,5 @@ After ALL agents are migrated:
 - [ ] Every agent has structured + fallback dual path
 - [ ] Every agent has at least 2 new test cases (structured + fallback)
 - [ ] No remaining raw regex JSON extraction as primary path (only as fallback)
-- [ ] docs/provider-abstraction.md updated
+- [ ] docs/architecture/provider-abstraction.md updated
 - [ ] ADR written for the migration decision

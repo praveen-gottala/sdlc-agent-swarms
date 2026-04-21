@@ -267,7 +267,7 @@ The infrastructure for multi-viewport exists but is disconnected:
 - ✅ Removed `implementationStages` from planning output/prompt/schema/tests
 - ✅ Removed `buildComponentCatalogImplPrompt` function, export, and tests
 - ✅ Removed `toDesignTokens` + `DesignTokensFlat` type, export, and tests
-- ✅ Updated `docs/design-pipeline-dataflow.md` to match
+- ✅ Updated `docs/architecture/design-pipeline-dataflow.md` to match
 
 ### PR 2: Table Renderer ✅ DONE
 - ✅ Added `data-table.ts` Penpot component renderer (header row, body rows, dividers)

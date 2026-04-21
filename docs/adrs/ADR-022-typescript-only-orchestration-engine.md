@@ -112,7 +112,7 @@ Redis Streams migration). All behavioral requirements are met.
   event bus is TypeScript or Python. The `EventBus` interface is already
   abstracted — a Redis Streams adapter can implement the same interface.
 
-- **Companion docs**: `docs/architecture.md` references the Python/LangGraph
+- **Companion docs**: `docs/architecture/architecture.md` references the Python/LangGraph
   engine. These references should be updated to reflect the TypeScript
   implementation.
 
