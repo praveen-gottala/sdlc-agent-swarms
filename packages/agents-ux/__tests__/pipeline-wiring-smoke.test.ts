@@ -47,11 +47,15 @@ const createSpyProvider = (cannedResponse: string) => {
   const calls: CapturedCall[] = [];
   const provider = {
     complete: jest.fn().mockImplementation(
-      (prompt: { system: string; messages: { role: string; content: string }[] }) => {
-        calls.push({
-          system: prompt.system,
-          userContent: prompt.messages.map(m => m.content).join('\n'),
-        });
+      (prompt: { system: string | readonly { text: string }[]; messages: { role: string; content: string | readonly { text?: string }[] }[] }) => {
+        const systemText = typeof prompt.system === 'string'
+          ? prompt.system
+          : prompt.system.map(b => b.text).join('\n');
+        const userContent = prompt.messages.map(m => {
+          if (typeof m.content === 'string') return m.content;
+          return m.content.map(b => ('text' in b && b.text) ? b.text : '').join('\n');
+        }).join('\n');
+        calls.push({ system: systemText, userContent });
         return Promise.resolve(Ok({ content: cannedResponse }));
       },
     ),

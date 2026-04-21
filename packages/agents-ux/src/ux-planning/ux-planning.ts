@@ -133,6 +133,11 @@ const PLANNING_OUTPUT_SCHEMA = {
             name: { type: 'string' },
             props: { type: 'array', items: { type: 'string' } },
             children: { type: 'array', items: { type: 'string' } },
+            defaultValues: {
+              type: 'object',
+              additionalProperties: { oneOf: [{ type: 'number' }, { type: 'string' }] },
+            },
+            navigateTo: { type: 'string' },
           },
           required: ['name'],
           additionalProperties: false,
@@ -309,55 +314,57 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
     componentLibContext = `\nComponent Library: ${lib.library_name}\nAvailable components:\n${mappingLines.join('\n')}\n\nUse these component names in your componentTree and tokenBindings where applicable.`;
   }
 
-  // 3. Build prompt
+  // 3. Build prompt with cache control on shared prefix
   const systemPrompt = loadSystemPrompt();
-  const userMessageParts = [
-    `Module ID: ${moduleId}`,
-    `\nDesign Brief:\n${JSON.stringify(designBrief, null, 2)}`,
+
+  // Shared context (same across all pages — cacheable)
+  const sharedParts = [
     `\nExisting specs:\n${specsContent}`,
+    ...(tokenContext ? [tokenContext] : []),
+    ...(componentLibContext ? [componentLibContext] : []),
+    ...(learnings.length > 0 ? [`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`] : []),
   ];
 
-  if (tokenContext) {
-    userMessageParts.push(tokenContext);
-  }
-
-  if (componentLibContext) {
-    userMessageParts.push(componentLibContext);
-  }
-
-  // Inject viewport configuration constraints from project manifest
+  // Viewport config (same across all pages)
   if (input.designConfig) {
     const { responsive_breakpoints, primary_viewport, layout_strategy } = input.designConfig;
     if (responsive_breakpoints === false) {
-      userMessageParts.push(
+      sharedParts.push(
         `\n## Viewport Configuration\nThis project is configured for desktop-only at ${primary_viewport}px. Generate responsiveRules for desktop only. Do NOT include tablet or mobile breakpoints — they will be added later when responsive_breakpoints is enabled.`,
       );
     } else if (responsive_breakpoints === true) {
       const breakpoints = layout_strategy === 'mobile-first'
         ? [375, 768, 1440]
         : [1440, 768, 375];
-      userMessageParts.push(
+      sharedParts.push(
         `\n## Viewport Configuration\nTarget breakpoints: ${breakpoints.join('px, ')}px (${layout_strategy}). Generate responsiveRules for all listed breakpoints.`,
       );
     } else if (Array.isArray(responsive_breakpoints) && responsive_breakpoints.length > 0) {
-      userMessageParts.push(
+      sharedParts.push(
         `\n## Viewport Configuration\nTarget breakpoints: ${responsive_breakpoints.join('px, ')}px (${layout_strategy}). Generate responsiveRules for all listed breakpoints.`,
       );
     }
   }
 
-  if (learnings.length > 0) {
-    userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);
-  }
+  const sharedContext = sharedParts.join('\n');
 
-  // Inject structured page context if available
-  if (input.pageContext) {
-    userMessageParts.push(formatPageContextPrompt(input.pageContext));
-  }
+  // Page-specific context (unique per page)
+  const pageParts = [
+    `Module ID: ${moduleId}`,
+    `\nDesign Brief:\n${JSON.stringify(designBrief, null, 2)}`,
+    ...(input.pageContext ? [formatPageContextPrompt(input.pageContext)] : []),
+  ];
+  const pageSpecificContext = pageParts.join('\n');
 
   const prompt = {
-    system: systemPrompt,
-    messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
+    system: [{ type: 'text' as const, text: systemPrompt, cache_control: { type: 'ephemeral' as const } }],
+    messages: [{
+      role: 'user' as const,
+      content: [
+        { type: 'text' as const, text: sharedContext, cache_control: { type: 'ephemeral' as const } },
+        { type: 'text' as const, text: pageSpecificContext },
+      ],
+    }],
   };
 
   // 3a. Record prompt trace

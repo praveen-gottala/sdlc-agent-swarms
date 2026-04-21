@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { discoverProjects, MONOREPO_ROOT } from '../../../_lib/project-reader';
+import { discoverProjects } from '../../../_lib/project-reader';
 
 function resolveProjectDir(id: string): string | null {
   const projects = discoverProjects();
-  const match = projects.find((p) => p.dirName === id);
-  return match ? match.path : null;
+  const match = projects.find((p) => p.id === id || p.dirName === id);
+  return match?.path ?? null;
 }
 
 /** GET /api/projects/[id]/prd — returns current PRD content */

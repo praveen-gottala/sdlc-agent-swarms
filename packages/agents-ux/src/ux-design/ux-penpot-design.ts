@@ -85,6 +85,15 @@ export interface PenpotDesignInput {
   readonly browserCorrectionOptions?: BrowserCorrectionOptions;
   /** Use legacy Penpot-based correction instead of browser correction. */
   readonly legacyPenpotCorrection?: boolean;
+  /**
+   * Chrome Pass: design only shared chrome; planning tree is pre-filtered; output is screen `__chrome__`.
+   * @see ADR-039
+   */
+  readonly chromeOnly?: boolean;
+  /** Shared chrome from Chrome Pass; per-page design must keep these node ids; merged after LLM. */
+  readonly frozenChromeSpec?: DesignSpecV2;
+  /** Page id for setting tab `active` on merge. */
+  readonly frozenChromePageId?: string;
 }
 
 /** Output produced by the Penpot design agent. */
@@ -383,7 +392,7 @@ export function parsePenpotFixSteps(raw: string): FixParseResult {
 export async function penpotDesignWork(
   input: PenpotDesignInput,
   provider: unknown,
-  mcpClient: MCPClient,
+  mcpClient?: MCPClient,
   traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
   const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth, resolvedModel } = input;
@@ -396,7 +405,16 @@ export async function penpotDesignWork(
 
   // ── V2 DesignSpec path ──
   if (input.useDesignSpecV2) {
-    return penpotDesignWorkV2(input, llm, mcpClient, provider as unknown as EvalLLMProvider, traceCollector);
+    return penpotDesignWorkV2(input, llm, mcpClient ?? undefined, provider as unknown as EvalLLMProvider, traceCollector);
+  }
+
+  // ── Legacy V1 path requires mcpClient ──
+  if (!mcpClient) {
+    return Err({
+      code: 'INVALID_STATE',
+      message: 'Legacy V1 design path requires mcpClient. Use useDesignSpecV2: true for browser-only mode.',
+      recoverable: false,
+    }) as Result<PenpotDesignOutput>;
   }
 
   // ── Dynamic API discovery ──

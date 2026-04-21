@@ -91,4 +91,58 @@ describe('resolveViewports', () => {
     };
     expect(resolveViewports({ designConfig })).toEqual([1024]);
   });
+
+  // Screen type priority tests
+  describe('screenType', () => {
+    it('modal returns [560]', () => {
+      expect(resolveViewports({ screenType: 'modal' })).toEqual([560]);
+    });
+
+    it('drawer returns [320]', () => {
+      expect(resolveViewports({ screenType: 'drawer' })).toEqual([320]);
+    });
+
+    it('sheet falls through to page default [1440]', () => {
+      expect(resolveViewports({ screenType: 'sheet' })).toEqual([1440]);
+    });
+
+    it('page falls through to page default [1440]', () => {
+      expect(resolveViewports({ screenType: 'page' })).toEqual([1440]);
+    });
+
+    it('CLI --width overrides screenType', () => {
+      expect(resolveViewports({ cliWidth: 800, screenType: 'drawer' })).toEqual([800]);
+    });
+
+    it('screenType overrides pageViewports', () => {
+      expect(resolveViewports({ screenType: 'modal', pageViewports: [1440, 768] })).toEqual([560]);
+    });
+
+    it('screenType overrides designConfig', () => {
+      const designConfig: DesignConfig = {
+        primary_viewport: 1440,
+        layout_strategy: 'desktop-first',
+        responsive_breakpoints: true,
+      };
+      expect(resolveViewports({ screenType: 'drawer', designConfig })).toEqual([320]);
+    });
+
+    it('sheet with designConfig uses designConfig', () => {
+      const designConfig: DesignConfig = {
+        primary_viewport: 1280,
+        layout_strategy: 'desktop-first',
+        responsive_breakpoints: false,
+      };
+      expect(resolveViewports({ screenType: 'sheet', designConfig })).toEqual([1280]);
+    });
+
+    it('sheet with pageViewports uses pageViewports', () => {
+      expect(resolveViewports({ screenType: 'sheet', pageViewports: [768] })).toEqual([768]);
+    });
+
+    it('undefined screenType behaves like page', () => {
+      expect(resolveViewports({})).toEqual([1440]);
+      expect(resolveViewports({ screenType: undefined })).toEqual([1440]);
+    });
+  });
 });

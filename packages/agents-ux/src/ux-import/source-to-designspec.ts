@@ -7,6 +7,7 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import { SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
 import type { RouteInfo, CSSVariable, ComponentLibraryId, StylingApproach } from '@agentforge/designspec-renderer';
@@ -52,17 +53,15 @@ export interface PageImportResult {
 
 // ─── Prompt Template ─────────────────────────────────────
 
-const PROMPT_TEMPLATE_PATH = join(__dirname, '..', 'prompts', 'ux-import-system.md');
-
 let cachedPromptTemplate: string | null = null;
 
 function loadPromptTemplate(): string {
   if (cachedPromptTemplate) return cachedPromptTemplate;
 
-  // Try the source path first, then the dist path
+  const currentDir = dirname(fileURLToPath(import.meta.url));
   const candidates = [
-    PROMPT_TEMPLATE_PATH,
-    join(__dirname, '..', '..', 'src', 'prompts', 'ux-import-system.md'),
+    join(currentDir, '..', 'prompts', 'ux-import-system.md'),
+    join(currentDir, '..', '..', 'src', 'prompts', 'ux-import-system.md'),
   ];
 
   for (const p of candidates) {

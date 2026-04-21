@@ -1,0 +1,67 @@
+version: "1.0"
+endpoints:
+  - method: GET
+    path: /api/tasks
+    description: "Get paginated, filtered, and sorted list of tasks. Query params:
+      status, priority, assigneeId, dueDateFrom, dueDateTo, search, page,
+      pageSize, sortBy, sortOrder."
+  - method: POST
+    path: /api/tasks
+    description: "Create a new task. Body: title, description, assigneeId, priority,
+      dueDate, labels, subtasks."
+  - method: GET
+    path: /api/tasks/stats
+    description: "Get aggregated task statistics: total active, completed today,
+      overdue count, and total tasks."
+  - method: GET
+    path: /api/tasks/:taskId
+    description: Get full detail of a single task by ID, including assignee and
+      reporter user objects.
+  - method: PUT
+    path: /api/tasks/:taskId
+    description: "Update a task by ID. Body may include any mutable task fields:
+      title, description, status, priority, assigneeId, dueDate, labels."
+  - method: DELETE
+    path: /api/tasks/:taskId
+    description: Delete a task by ID. Also deletes related subtasks, comments, and
+      activity logs.
+  - method: GET
+    path: /api/tasks/:taskId/comments
+    description: Get all comments and activity log entries for a task, sorted
+      chronologically.
+  - method: POST
+    path: /api/tasks/:taskId/comments
+    description: "Add a new comment to a task. Body: body (text content)."
+  - method: GET
+    path: /api/tasks/:taskId/subtasks
+    description: Get all subtasks for a given task.
+  - method: POST
+    path: /api/tasks/:taskId/subtasks
+    description: "Add a subtask to a task. Body: title."
+  - method: PATCH
+    path: /api/tasks/:taskId/subtasks/:subtaskId
+    description: "Update a subtask, primarily to toggle completed status. Body:
+      completed (boolean), title."
+  - method: DELETE
+    path: /api/tasks/:taskId/subtasks/:subtaskId
+    description: Delete a subtask by ID.
+  - method: GET
+    path: /api/users
+    description: Get list of all users/team members. Used for assignee selects and filters.
+  - method: GET
+    path: /api/users/workload
+    description: "Get workload data per user: task counts by status, completion
+      rate, and overdue count for the team workload widget."
+  - method: GET
+    path: /api/users/:userId
+    description: Get a single user's profile by ID.
+  - method: GET
+    path: /api/notifications
+    description: "Get notifications for the authenticated user. Query params: read
+      (boolean filter), type, page, pageSize."
+  - method: PATCH
+    path: /api/notifications/:notificationId
+    description: "Mark a single notification as read. Body: read (boolean)."
+  - method: POST
+    path: /api/notifications/mark-all-read
+    description: Mark all notifications as read for the authenticated user.

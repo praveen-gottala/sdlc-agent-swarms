@@ -40,6 +40,11 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
         type: 'number',
         description: 'Screen width in pixels (e.g. 1440)',
       },
+      screenType: {
+        type: 'string',
+        enum: ['page', 'modal', 'drawer', 'sheet'],
+        description: 'Screen type. Defaults to "page". Overlays (modal/drawer/sheet) are designed at narrower viewports and rendered as overlays in the prototype.',
+      },
       nodes: {
         type: 'object',
         description:
@@ -189,6 +194,11 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
               type: 'string',
               enum: ['left', 'center', 'right'],
               description: 'Text alignment.',
+            },
+            navigateTo: {
+              type: 'string',
+              description:
+                'Target page ID for navigation. Copy this from the planning output ComponentTreeNode.navigateTo. When set, this node acts as a clickable navigation trigger in the prototype.',
             },
             overrides: {
               type: 'object',

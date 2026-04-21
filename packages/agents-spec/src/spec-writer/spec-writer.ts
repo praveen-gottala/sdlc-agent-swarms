@@ -122,7 +122,7 @@ export const specWriterWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = as
   // 1. Get design context via MCP (if Figma IDs present)
   let designContext = '';
   if (figmaFileId && figmaNodeId) {
-    const mcpResult = await context.mcpClient.callTool('figma', 'get_code', {
+    const mcpResult = await context.mcpClient!.callTool('figma', 'get_code', {
       fileId: figmaFileId,
       nodeId: figmaNodeId,
     });

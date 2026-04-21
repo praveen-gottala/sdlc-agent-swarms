@@ -1,0 +1,389 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: AF
+        - generic [ref=e6]:
+          - generic [ref=e7]: AgentForge
+          - generic [ref=e8]: v0.1.0
+      - navigation [ref=e9]:
+        - list [ref=e10]:
+          - listitem [ref=e11]:
+            - link "🔄 Pipeline" [ref=e12] [cursor=pointer]:
+              - /url: /pipeline
+              - generic [ref=e13]: 🔄
+              - generic [ref=e14]: Pipeline
+          - listitem [ref=e15]:
+            - link "🎨 Design Studio" [ref=e16] [cursor=pointer]:
+              - /url: /design
+              - generic [ref=e17]: 🎨
+              - generic [ref=e18]: Design Studio
+          - listitem [ref=e19]:
+            - link "📋 Tasks" [ref=e20] [cursor=pointer]:
+              - /url: /tasks
+              - generic [ref=e21]: 📋
+              - generic [ref=e22]: Tasks
+          - listitem [ref=e23]:
+            - link "✅ Approvals 3" [ref=e24] [cursor=pointer]:
+              - /url: /approvals
+              - generic [ref=e25]: ✅
+              - generic [ref=e26]: Approvals
+              - generic [ref=e27]: "3"
+          - listitem [ref=e28]:
+            - link "📄 Spec" [ref=e29] [cursor=pointer]:
+              - /url: /spec
+              - generic [ref=e30]: 📄
+              - generic [ref=e31]: Spec
+          - listitem [ref=e32]:
+            - link "🤖 Agents" [ref=e33] [cursor=pointer]:
+              - /url: /agents
+              - generic [ref=e34]: 🤖
+              - generic [ref=e35]: Agents
+          - listitem [ref=e36]:
+            - link "🔍 Traces" [ref=e37] [cursor=pointer]:
+              - /url: /traces
+              - generic [ref=e38]: 🔍
+              - generic [ref=e39]: Traces
+          - listitem [ref=e40]:
+            - link "💰 Costs" [ref=e41] [cursor=pointer]:
+              - /url: /costs
+              - generic [ref=e42]: 💰
+              - generic [ref=e43]: Costs
+          - listitem [ref=e44]:
+            - link "📊 Audit" [ref=e45] [cursor=pointer]:
+              - /url: /audit
+              - generic [ref=e46]: 📊
+              - generic [ref=e47]: Audit
+          - listitem [ref=e48]:
+            - link "🛡️ Trust" [ref=e49] [cursor=pointer]:
+              - /url: /trust
+              - generic [ref=e50]: 🛡️
+              - generic [ref=e51]: Trust
+          - listitem [ref=e52]:
+            - link "🔌 Integrations" [ref=e53] [cursor=pointer]:
+              - /url: /integrations
+              - generic [ref=e54]: 🔌
+              - generic [ref=e55]: Integrations
+      - button "Collapse sidebar" [ref=e56]:
+        - generic [ref=e57]: ◀
+      - button "Personal Expense Tracker ▼ github.com/acme/my-saas-app react node" [ref=e59]:
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Personal Expense Tracker
+          - generic [ref=e62]: ▼
+        - paragraph [ref=e63]: github.com/acme/my-saas-app
+        - generic [ref=e64]:
+          - generic [ref=e65]: react
+          - generic [ref=e66]: node
+    - generic [ref=e67]:
+      - banner [ref=e68]:
+        - heading "Dashboard" [level=1] [ref=e69]
+        - generic [ref=e70]:
+          - generic [ref=e71]: Code Gen Phase
+          - generic [ref=e73]: $27.50 / $200
+          - generic [ref=e80]: 4 agents
+          - generic [ref=e81]: 03:26:26
+      - main [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - button "Prototype" [ref=e85]
+            - button "Check Coherence" [ref=e87]
+            - button "Generate All" [ref=e89]
+            - generic [ref=e90]: 3 designed pages
+          - generic [ref=e91]:
+            - generic [ref=e93]:
+              - generic [ref=e94]:
+                - heading "Pages" [level=2] [ref=e95]
+                - paragraph [ref=e96]: 9 pages
+              - generic [ref=e97]:
+                - button "Dashboard Rendered The home screen showing monthly budget status, category breakdown donut chart, and a scrollable recent expenses list. Users can filter expenses by category, click rows to open detail popovers with edit/delete actions, navigate months via the top bar selector, and access the add expense flow from the empty state CTA. Real-time budget health indicators (on track, heads up, over budget) update reactively. 14 components" [ref=e98]:
+                  - generic [ref=e99]:
+                    - generic [ref=e100]: Dashboard
+                    - generic [ref=e101]: Rendered
+                  - paragraph [ref=e102]: The home screen showing monthly budget status, category breakdown donut chart, and a scrollable recent expenses list. Users can filter expenses by category, click rows to open detail popovers with edit/delete actions, navigate months via the top bar selector, and access the add expense flow from the empty state CTA. Real-time budget health indicators (on track, heads up, over budget) update reactively.
+                  - paragraph [ref=e103]: 14 components
+                - button "Add Expense Rendered A focused single-column form for logging new expenses or editing existing ones. Features a hero amount input with large numeric display, a category chip grid with new category creation, a mini calendar date picker, payment method chip selector, optional note input, and a full-width save CTA. Quick Add suggestion chips auto-fill the form from frequent past expenses. Pre-fills all fields when navigated from an Edit action on the dashboard. 16 components" [ref=e104]:
+                  - generic [ref=e105]:
+                    - generic [ref=e106]: Add Expense
+                    - generic [ref=e107]: Rendered
+                  - paragraph [ref=e108]: A focused single-column form for logging new expenses or editing existing ones. Features a hero amount input with large numeric display, a category chip grid with new category creation, a mini calendar date picker, payment method chip selector, optional note input, and a full-width save CTA. Quick Add suggestion chips auto-fill the form from frequent past expenses. Pre-fills all fields when navigated from an Edit action on the dashboard.
+                  - paragraph [ref=e109]: 16 components
+                - button "Spending Insights Rendered An analytical view presenting spending patterns for the selected month. Contains a three-stat period summary header with trend indicators, a toggleable bar/line daily spending chart with average line, a top categories breakdown with stacked bar and per-row progress indicators, a biggest expenses ranked list, and a month-over-month comparison card with visual bars and a summary badge. An Export CSV button is right-aligned below all cards. 21 components" [ref=e110]:
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: Spending Insights
+                    - generic [ref=e113]: Rendered
+                  - paragraph [ref=e114]: An analytical view presenting spending patterns for the selected month. Contains a three-stat period summary header with trend indicators, a toggleable bar/line daily spending chart with average line, a top categories breakdown with stacked bar and per-row progress indicators, a biggest expenses ranked list, and a month-over-month comparison card with visual bars and a summary badge. An Export CSV button is right-aligned below all cards.
+                  - paragraph [ref=e115]: 21 components
+                - button "B0a-dedup-probe-1776746235709 user settings for profile and preferences Spec pending B0a-dedup-probe-1776746235709 user settings for profile and preferences" [ref=e116]:
+                  - generic [ref=e117]:
+                    - generic [ref=e118]: B0a-dedup-probe-1776746235709 user settings for profile and preferences
+                    - generic [ref=e119]: Spec pending
+                  - paragraph [ref=e120]: B0a-dedup-probe-1776746235709 user settings for profile and preferences
+                - button "B0a-dedup-probe-1776746292317 user settings for profile and preferences Spec pending B0a-dedup-probe-1776746292317 user settings for profile and preferences" [ref=e121]:
+                  - generic [ref=e122]:
+                    - generic [ref=e123]: B0a-dedup-probe-1776746292317 user settings for profile and preferences
+                    - generic [ref=e124]: Spec pending
+                  - paragraph [ref=e125]: B0a-dedup-probe-1776746292317 user settings for profile and preferences
+                - button "A user settings page for profile and preferences Spec pending A user settings page for profile and preferences" [ref=e126]:
+                  - generic [ref=e127]:
+                    - generic [ref=e128]: A user settings page for profile and preferences
+                    - generic [ref=e129]: Spec pending
+                  - paragraph [ref=e130]: A user settings page for profile and preferences
+                - button "B0a-dedup-probe-1776751009478 user settings for profile and preferences Spec pending B0a-dedup-probe-1776751009478 user settings for profile and preferences" [ref=e131]:
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: B0a-dedup-probe-1776751009478 user settings for profile and preferences
+                    - generic [ref=e134]: Spec pending
+                  - paragraph [ref=e135]: B0a-dedup-probe-1776751009478 user settings for profile and preferences
+                - button "B0a-dedup-probe-1776751479810 user settings for profile and preferences Spec pending B0a-dedup-probe-1776751479810 user settings for profile and preferences" [ref=e136]:
+                  - generic [ref=e137]:
+                    - generic [ref=e138]: B0a-dedup-probe-1776751479810 user settings for profile and preferences
+                    - generic [ref=e139]: Spec pending
+                  - paragraph [ref=e140]: B0a-dedup-probe-1776751479810 user settings for profile and preferences
+                - button "B0a-dedup-probe-1776755241481 user settings for profile and preferences Spec pending B0a-dedup-probe-1776755241481 user settings for profile and preferences" [ref=e141]:
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: B0a-dedup-probe-1776755241481 user settings for profile and preferences
+                    - generic [ref=e144]: Spec pending
+                  - paragraph [ref=e145]: B0a-dedup-probe-1776755241481 user settings for profile and preferences
+              - button "+ New page" [ref=e147]
+            - generic [ref=e149]:
+              - generic [ref=e150]:
+                - generic [ref=e151]:
+                  - generic [ref=e152]: Personal Expense Tracker
+                  - generic [ref=e153]: 9 pages
+                - generic [ref=e154]:
+                  - generic [ref=e155]: Dashboard
+                  - generic [ref=e156]: rendered
+              - generic [ref=e157]:
+                - button "−" [ref=e158]
+                - generic [ref=e159]: 17%
+                - button "+" [ref=e160]
+                - button "Fit" [ref=e162]
+                - button "100%" [ref=e163]
+              - iframe [ref=e165]:
+                - generic [ref=f1e3]:
+                  - generic [ref=f1e4]:
+                    - generic [ref=f1e5]:
+                      - paragraph [ref=f1e7]: ₿
+                      - heading "Budgetly" [level=2] [ref=f1e8]
+                    - generic [ref=f1e9]:
+                      - heading "‹" [level=2] [ref=f1e11]
+                      - heading "June 2025" [level=3] [ref=f1e13]
+                      - heading "›" [level=2] [ref=f1e15]
+                    - generic [ref=f1e16]:
+                      - button "+ Add Expense" [ref=f1e17]:
+                        - generic [ref=f1e19]: + Add Expense
+                      - paragraph [ref=f1e21]: ⚙
+                      - generic [ref=f1e23]: J
+                  - generic [ref=f1e24]:
+                    - generic [ref=f1e25]:
+                      - paragraph [ref=f1e26]: Dashboard
+                      - separator [ref=f1e27]
+                    - paragraph [ref=f1e29]: Insights
+                    - paragraph [ref=f1e31]: Add Expense
+                  - generic [ref=f1e32]:
+                    - generic [ref=f1e33]:
+                      - generic [ref=f1e34]:
+                        - generic [ref=f1e35]:
+                          - heading "Monthly Budget" [level=2] [ref=f1e36]
+                          - generic [ref=f1e37]: Heads Up
+                        - generic [ref=f1e38]:
+                          - generic [ref=f1e39]:
+                            - paragraph [ref=f1e40]: Spent
+                            - heading "$2,847.50" [level=1] [ref=f1e41]
+                          - generic [ref=f1e42]:
+                            - paragraph [ref=f1e43]: of $3,500.00
+                            - paragraph [ref=f1e44]: $652.50 left
+                        - generic [ref=f1e47]:
+                          - paragraph [ref=f1e48]: 81% used
+                          - paragraph [ref=f1e49]: 12 days remaining
+                        - generic [ref=f1e50]:
+                          - generic [ref=f1e51]:
+                            - generic [ref=f1e52]: Daily Avg
+                            - generic [ref=f1e53]: $94.92
+                          - generic [ref=f1e54]:
+                            - generic [ref=f1e55]: Transactions
+                            - generic [ref=f1e56]: "34"
+                          - generic [ref=f1e57]:
+                            - generic [ref=f1e58]: Largest
+                            - generic [ref=f1e59]: $420.00
+                      - generic [ref=f1e60]:
+                        - generic [ref=f1e61]:
+                          - heading "Category Breakdown" [level=2] [ref=f1e62]
+                          - paragraph [ref=f1e63]: June 2025
+                        - generic [ref=f1e65]:
+                          - paragraph [ref=f1e66]: Total
+                          - heading "$2,847" [level=2] [ref=f1e67]
+                          - paragraph [ref=f1e68]: 34 items
+                        - generic [ref=f1e69]:
+                          - generic [ref=f1e70]:
+                            - paragraph [ref=f1e73]: Food & Dining
+                            - generic [ref=f1e74]:
+                              - paragraph [ref=f1e75]: $842.00
+                              - paragraph [ref=f1e76]: 30%
+                          - generic [ref=f1e77]:
+                            - paragraph [ref=f1e80]: Transport
+                            - generic [ref=f1e81]:
+                              - paragraph [ref=f1e82]: $512.30
+                              - paragraph [ref=f1e83]: 18%
+                          - generic [ref=f1e84]:
+                            - paragraph [ref=f1e87]: Housing
+                            - generic [ref=f1e88]:
+                              - paragraph [ref=f1e89]: $650.00
+                              - paragraph [ref=f1e90]: 23%
+                          - generic [ref=f1e91]:
+                            - paragraph [ref=f1e94]: Entertainment
+                            - generic [ref=f1e95]:
+                              - paragraph [ref=f1e96]: $298.20
+                              - paragraph [ref=f1e97]: 10%
+                          - generic [ref=f1e98]:
+                            - paragraph [ref=f1e101]: Other
+                            - generic [ref=f1e102]:
+                              - paragraph [ref=f1e103]: $545.00
+                              - paragraph [ref=f1e104]: 19%
+                    - generic [ref=f1e106]:
+                      - generic [ref=f1e107]:
+                        - heading "Recent Expenses" [level=2] [ref=f1e108]
+                        - generic [ref=f1e109]: 34 transactions
+                      - generic [ref=f1e110]:
+                        - paragraph [ref=f1e111]: "Filter:"
+                        - generic [ref=f1e112] [cursor=pointer]: All
+                        - generic [ref=f1e113] [cursor=pointer]: Food & Dining
+                        - generic [ref=f1e114] [cursor=pointer]: Transport
+                        - generic [ref=f1e115] [cursor=pointer]: Housing
+                        - generic [ref=f1e116] [cursor=pointer]: Entertainment
+                        - generic [ref=f1e117]:
+                          - img
+                          - searchbox "Search expenses..." [ref=f1e118]
+                      - separator [ref=f1e119]
+                      - generic [ref=f1e120]:
+                        - paragraph [ref=f1e121]: Date
+                        - paragraph [ref=f1e122]: Merchant
+                        - paragraph [ref=f1e123]: Category
+                        - paragraph [ref=f1e124]: Payment
+                        - paragraph [ref=f1e125]: Amount
+                        - paragraph
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - button "Submit feedback" [disabled]
+                - generic [ref=e168]:
+                  - button "Revert" [ref=e169]
+                  - button "Save *" [ref=e170]
+                  - button "Regenerate" [ref=e171]
+                  - button "Approve" [ref=e172]
+            - generic [ref=e174]:
+              - tablist [ref=e175]:
+                - navigation [ref=e176]:
+                  - tab "Properties Free" [selected] [ref=e177]:
+                    - text: Properties
+                    - generic [ref=e178]: Free
+                  - tab "AI Edits LLM" [ref=e180]:
+                    - text: AI Edits
+                    - generic [ref=e181]: LLM
+                  - tab "Chat" [ref=e182]
+              - generic [ref=e183]:
+                - paragraph [ref=e185]: nav-tabs
+                - separator [ref=e186]
+                - generic [ref=e187]:
+                  - generic [ref=e188]:
+                    - generic "flex-direction" [ref=e189]
+                    - combobox [ref=e190]:
+                      - option "row" [selected]
+                      - option "column"
+                    - button "Remove flex-direction" [ref=e191]: x
+                  - generic [ref=e192]:
+                    - generic "gap" [ref=e193]
+                    - spinbutton [ref=e194]: "0"
+                    - button "Remove gap" [ref=e195]: x
+                  - generic [ref=e196]:
+                    - generic "justify-content" [ref=e197]
+                    - combobox [ref=e198]:
+                      - option "start"
+                      - option "center"
+                      - option "end"
+                      - option "space-between" [selected]
+                    - button "Remove justify-content" [ref=e199]: x
+                  - generic [ref=e200]:
+                    - generic "align-items" [ref=e201]
+                    - combobox [ref=e202]:
+                      - option "start"
+                      - option "center" [selected]
+                      - option "end"
+                      - option "stretch"
+                    - button "Remove align-items" [ref=e203]: x
+                  - generic [ref=e204]:
+                    - generic "padding-x" [ref=e205]
+                    - spinbutton [ref=e206]: "32"
+                    - button "Remove padding-x" [ref=e207]: x
+                  - generic [ref=e208]:
+                    - generic "width" [ref=e209]
+                    - textbox [ref=e210]: fill
+                    - button "Remove width" [ref=e211]: x
+                  - generic [ref=e212]:
+                    - generic "height" [ref=e213]
+                    - spinbutton [ref=e214]: "48"
+                    - button "Remove height" [ref=e215]: x
+                  - generic [ref=e216]:
+                    - generic "background" [ref=e217]
+                    - generic [ref=e219]:
+                      - button "Pick color" [ref=e220]
+                      - textbox [ref=e221]: "#1e293b"
+                      - textbox [ref=e222]: surface-primary
+                    - button "Remove background" [ref=e223]: x
+                  - generic [ref=e224]:
+                    - generic "box-shadow" [ref=e225]
+                    - textbox [ref=e226]: sm
+                    - button "Remove box-shadow" [ref=e227]: x
+                - button "Revert element" [ref=e228]
+                - button "+ Add property" [ref=e230]
+          - button "▲ Logs (27)" [ref=e232]:
+            - generic [ref=e233]:
+              - generic [ref=e234]: ▲
+              - text: Logs (27)
+    - generic [ref=e235]:
+      - button "Close activity sidebar" [ref=e236]:
+        - generic [ref=e237]: ▶
+      - complementary [ref=e238]:
+        - generic [ref=e239]:
+          - generic [ref=e240]:
+            - heading "Activity" [level=2] [ref=e241]
+            - button "↻" [ref=e242]
+          - list [ref=e243]:
+            - listitem [ref=e244]:
+              - generic [ref=e245]: 🔄
+              - generic [ref=e246]:
+                - paragraph [ref=e247]: Design spec generated successfully
+                - paragraph [ref=e248]: 23m ago
+            - listitem [ref=e249]:
+              - generic [ref=e250]: 🔄
+              - generic [ref=e251]:
+                - paragraph [ref=e252]: Research complete
+                - paragraph [ref=e253]: 23m ago
+            - listitem [ref=e254]:
+              - generic [ref=e255]: 🔄
+              - generic [ref=e256]:
+                - paragraph [ref=e257]: "Research: analyzing page requirements"
+                - paragraph [ref=e258]: 23m ago
+        - generic [ref=e259]:
+          - heading "HITL Configuration" [level=3] [ref=e260]
+          - generic [ref=e261]:
+            - generic [ref=e262]:
+              - generic [ref=e263]: Spec
+              - generic [ref=e264]: full
+            - generic [ref=e265]:
+              - generic [ref=e266]: Code Gen
+              - generic [ref=e267]: selective
+            - generic [ref=e268]:
+              - generic [ref=e269]: Review
+              - generic [ref=e270]: selective
+            - generic [ref=e271]:
+              - generic [ref=e272]: Test
+              - generic [ref=e273]: audit-only
+            - generic [ref=e274]:
+              - generic [ref=e275]: Deploy
+              - generic [ref=e276]: full
+  - button "Open Next.js Dev Tools" [ref=e282] [cursor=pointer]:
+    - img [ref=e283]
+  - alert [ref=e286]
+```

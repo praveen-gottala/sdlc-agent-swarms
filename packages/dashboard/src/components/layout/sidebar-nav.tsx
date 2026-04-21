@@ -237,7 +237,7 @@ export function SidebarNav({
                   const isActive = proj.path === project?.path;
                   return (
                     <button
-                      key={proj.id}
+                      key={proj.path}
                       data-testid={`project-option-${proj.id}`}
                       onClick={() => {
                         if (!isActive && onSwitchProject) {

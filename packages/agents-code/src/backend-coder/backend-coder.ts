@@ -260,7 +260,7 @@ export const backendCoderWork: AgentWorkFn<BackendCoderInput, BackendCoderOutput
   const branchName = `agentforge/task-${task.id}-${toKebabCase(pathSegment)}`;
 
   // 13. Create branch via MCP
-  const branchResult = await context.mcpClient.callTool('github', 'create_branch', {
+  const branchResult = await context.mcpClient!.callTool('github', 'create_branch', {
     branch: branchName,
   });
   if (!branchResult.ok) {
@@ -273,7 +273,7 @@ export const backendCoderWork: AgentWorkFn<BackendCoderInput, BackendCoderOutput
 
   // 14. Push code to branch via MCP
   const filePath = `src/routes/${routeFileName}`;
-  const pushResult = await context.mcpClient.callTool('github', 'push_files', {
+  const pushResult = await context.mcpClient!.callTool('github', 'push_files', {
     branch: branchName,
     files: [{ path: filePath, content: code }],
   });

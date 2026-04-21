@@ -155,7 +155,7 @@ export const securityScannerWork: AgentWorkFn<SecurityScannerInput, SecurityScan
   const { task, prNumber } = input;
 
   // 1. Read PR diff via MCP
-  const prResult = await context.mcpClient.callTool('github', 'read_pr', {
+  const prResult = await context.mcpClient!.callTool('github', 'read_pr', {
     pr_number: prNumber,
   });
   if (!prResult.ok) {
@@ -236,7 +236,7 @@ export const securityScannerWork: AgentWorkFn<SecurityScannerInput, SecurityScan
   const reviewBody = buildReviewBody(findings);
   const reviewEvent = passed ? 'COMMENT' : 'REQUEST_CHANGES';
 
-  await context.mcpClient.callTool('github', 'create_review', {
+  await context.mcpClient!.callTool('github', 'create_review', {
     pr_number: prNumber,
     body: reviewBody,
     event: reviewEvent,

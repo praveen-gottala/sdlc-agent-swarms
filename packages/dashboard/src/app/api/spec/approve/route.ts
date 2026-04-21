@@ -54,16 +54,27 @@ export async function POST(request: NextRequest) {
 
     if (pages) {
       // Add required fields for pages.yaml format
-      const pagesWithDefaults = (pages as Array<Record<string, unknown>>).map((p) => ({
-        id: p.id ?? p.name?.toString().toLowerCase().replace(/\s+/g, '-'),
-        name: p.name,
-        route: p.route ?? `/${p.name?.toString().toLowerCase().replace(/\s+/g, '-')}`,
-        description: p.description ?? '',
-        status: 'draft',
-        designStatus: 'draft',
-        components: p.components ?? [],
-        dataSources: p.dataSources ?? [],
-      }));
+      const validScreenTypes = new Set(['page', 'modal', 'drawer', 'sheet']);
+      const pagesWithDefaults = (pages as Array<Record<string, unknown>>).map((p) => {
+        const screenType = typeof p.screen_type === 'string' && validScreenTypes.has(p.screen_type)
+          ? p.screen_type
+          : 'page';
+        const entry: Record<string, unknown> = {
+          id: p.id ?? p.name?.toString().toLowerCase().replace(/\s+/g, '-'),
+          name: p.name,
+          route: p.route ?? `/${p.name?.toString().toLowerCase().replace(/\s+/g, '-')}`,
+          description: p.description ?? '',
+          status: 'draft',
+          designStatus: 'draft',
+          components: p.components ?? [],
+          dataSources: p.dataSources ?? [],
+          screen_type: screenType,
+        };
+        if (Array.isArray(p.navigates_to) && p.navigates_to.length > 0) {
+          entry.navigates_to = p.navigates_to;
+        }
+        return entry;
+      });
       writeYamlFile('agentforge/spec/pages.yaml', { version: '1.0', pages: pagesWithDefaults });
       written.push('pages.yaml');
     }

@@ -270,7 +270,7 @@ describe('securityScannerWork', () => {
 
     await securityScannerWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const readCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'github' && call[1] === 'read_pr',
     );
@@ -285,7 +285,7 @@ describe('securityScannerWork', () => {
 
     await securityScannerWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const reviewCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'github' && call[1] === 'create_review',
     );
@@ -300,7 +300,7 @@ describe('securityScannerWork', () => {
 
     await securityScannerWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const reviewCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'github' && call[1] === 'create_review',
     );
@@ -327,7 +327,7 @@ describe('securityScannerWork', () => {
 
   it('fails when PR cannot be read', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockResolvedValue(
+    (ctx.mcpClient!.callTool as jest.Mock).mockResolvedValue(
       Err({ code: 'INVALID_STATE', message: 'PR not found', recoverable: true }),
     );
     const provider = makeProvider();

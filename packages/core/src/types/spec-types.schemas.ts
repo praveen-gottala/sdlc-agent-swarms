@@ -93,6 +93,14 @@ export const ModelsSpecSchema = z.object({
 // Pages Spec
 // ---------------------------------------------------------------------------
 
+export const NavigationTargetSchema = z.object({
+  target: z.string(),
+  trigger: z.string(),
+  source_node: z.string().optional(),
+});
+
+export const ScreenTypeSchema = z.enum(['page', 'modal', 'drawer', 'sheet']);
+
 export const PageEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -102,6 +110,8 @@ export const PageEntrySchema = z.object({
   components: z.array(z.string()),
   data_sources: z.array(z.string()).optional(),
   viewports: z.array(z.number()).optional(),
+  navigates_to: z.array(NavigationTargetSchema).optional(),
+  screen_type: ScreenTypeSchema.optional(),
 });
 
 export const PagesSpecSchema = z.object({

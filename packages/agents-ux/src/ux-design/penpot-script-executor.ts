@@ -323,9 +323,14 @@ export function extractDesignSpecFromToolCall(
     });
   }
 
+  const screenType = typeof args.screenType === 'string'
+    ? args.screenType as DesignSpecV2['screenType']
+    : undefined;
+
   return Ok({
     screen: String(args.screen),
     width: Number(args.width),
     nodes: args.nodes as Record<string, import('@agentforge/designspec-renderer').NodeSpec>,
+    ...(screenType ? { screenType } : {}),
   });
 }

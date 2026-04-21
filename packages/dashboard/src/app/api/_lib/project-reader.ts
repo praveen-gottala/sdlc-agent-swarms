@@ -26,24 +26,52 @@ export function writePrefs(prefs: DashboardPrefs): void {
   writeFileSync(PREFS_FILE, JSON.stringify(prefs, null, 2));
 }
 
-/**
- * Discovers all AgentForge project directories in apps/.
- * A directory is a project if it contains agentforge.yaml.
- */
-export function discoverProjects(): { dirName: string; path: string }[] {
-  const results: { dirName: string; path: string }[] = [];
-  const appsDir = join(MONOREPO_ROOT, 'apps');
-  if (!existsSync(appsDir)) return results;
-  const entries = readdirSync(appsDir, { withFileTypes: true });
+/** One workspace AgentForge app (under `apps/`) or fixture (under `fixtures/`). */
+export interface DiscoveredProject {
+  /** API id: app slug, or `fixture-<dirName>` for monorepo fixtures (avoids id clashes). */
+  id: string;
+  /** Directory name only (last segment of `path`). */
+  dirName: string;
+  path: string;
+  scope: 'apps' | 'fixtures';
+}
+
+function scanProjectsDir(
+  rootDir: string,
+  scope: 'apps' | 'fixtures',
+  makeId: (dirName: string) => string,
+): DiscoveredProject[] {
+  const results: DiscoveredProject[] = [];
+  if (!existsSync(rootDir)) return results;
+  const entries = readdirSync(rootDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-    const yamlPath = join(appsDir, entry.name, 'agentforge.yaml');
-    if (existsSync(yamlPath)) {
-      results.push({ dirName: entry.name, path: join(appsDir, entry.name) });
-    }
+    const yamlPath = join(rootDir, entry.name, 'agentforge.yaml');
+    if (!existsSync(yamlPath)) continue;
+    const path = join(rootDir, entry.name);
+    results.push({
+      id: makeId(entry.name),
+      dirName: entry.name,
+      path,
+      scope,
+    });
   }
+  results.sort((a, b) => a.dirName.localeCompare(b.dirName));
   return results;
+}
+
+/**
+ * Discovers AgentForge projects under `apps/` and `fixtures/` (each direct child
+ * with `agentforge.yaml`). Apps are listed first so the default active project
+ * stays an app when both exist.
+ */
+export function discoverProjects(): DiscoveredProject[] {
+  const appsDir = join(MONOREPO_ROOT, 'apps');
+  const fixturesDir = join(MONOREPO_ROOT, 'fixtures');
+  const apps = scanProjectsDir(appsDir, 'apps', (d) => d);
+  const fixtures = scanProjectsDir(fixturesDir, 'fixtures', (d) => `fixture-${d}`);
+  return [...apps, ...fixtures];
 }
 
 /**
@@ -66,8 +94,10 @@ export function getActiveProjectRoot(): string {
     return prefs.activeProject;
   }
 
-  // 3. Auto-discover
+  // 3. Auto-discover — prefer an `apps/` project over a `fixtures/` project
   const projects = discoverProjects();
+  const firstApp = projects.find((p) => p.scope === 'apps');
+  if (firstApp) return firstApp.path;
   if (projects.length > 0) return projects[0].path;
 
   throw new Error('No AgentForge project found. Create one with `agentforge init` in the apps/ directory, or set AGENTFORGE_PROJECT_DIR.');

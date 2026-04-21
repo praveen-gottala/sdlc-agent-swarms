@@ -15,13 +15,12 @@ Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 
 Active: design pipeline (packages/agents-ux/, packages/designspec-renderer/)
 Execution pipeline: not implemented yet.
+**Active plan**: Screen Types Plan A — see `docs/plans/screen-types-plan-a.md` (6 phases, multi-session)
 
 Control-plane status: inconsistent across repo.
 - packages/core + current runtime docs lean TypeScript in-process orchestration
 - README / docs/architecture / CLI start path still reference Python engine
 Treat orchestration authority as unresolved until Phase 0 produces an ADR and migration plan.
-
-Last session: execution migration Phase 0 — see docs/execution-pipeline-phase0.md
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
@@ -92,10 +91,18 @@ and test written in this project.
 - After 2 failed attempts at the same problem: stop, restate the problem,
   list top 3 hypotheses, run the cheapest discriminating check first.
 
-### Session Isolation & Repo-Local Memory
-- Never write to ~/.claude/ or use external memory tools.
+### Think Before Coding (Karpathy Guidelines)
+- Follow `.claude/rules/karpathy-guidelines.md` alongside the rules above:
+  state assumptions, keep changes surgical, prefer the minimum code that
+  solves the problem, and define verifiable success criteria before
+  looping. Where project rules are stricter (e.g. full test suite must
+  pass), project rules win.
+
+### Session Continuity
 - **At session start, ALWAYS read `docs/lessons-learned.md`** before writing code.
-- Persist learnings only to `docs/lessons-learned.md`. Keep entries short and actionable.
+- Persist learnings to `docs/lessons-learned.md`. Keep entries short and actionable.
+- Auto memory (`~/.claude/projects/.../memory/MEMORY.md`) is used for cross-session
+  context. It is auto-loaded every session — check it for active plans and pointers.
 
 ## Tech Stack
 - Monorepo: Nx with TypeScript

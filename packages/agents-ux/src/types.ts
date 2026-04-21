@@ -7,6 +7,8 @@ export interface ComponentTreeNode {
   readonly children: readonly ComponentTreeNode[];
   /** Concrete default values for sizing props (padding, gap, columns, cardHeight, etc.). */
   readonly defaultValues?: Readonly<Record<string, number | string>>;
+  /** Target page ID this component navigates to when activated. */
+  readonly navigateTo?: string;
 }
 
 /** Responsive behavior rule for a breakpoint. */

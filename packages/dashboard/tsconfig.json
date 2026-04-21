@@ -28,6 +28,12 @@
       ],
       "@agentforge/core": [
         "../core/src/index.ts"
+      ],
+      "@agentforge/providers": [
+        "../providers/src/index.ts"
+      ],
+      "@agentforge/designspec-renderer": [
+        "../designspec-renderer/src/index.ts"
       ]
     }
   },

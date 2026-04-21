@@ -83,6 +83,26 @@ Produce a JSON object with the following structure:
 }
 ```
 
+## Navigation Binding
+
+When the target page has `navigates_to` entries in its page context, bind them to specific components in your componentTree by adding `"navigateTo": "target-page-id"` to the component node that triggers that navigation.
+
+Rules:
+- Only add `navigateTo` to leaf-level interactive components (buttons, tabs, links, nav items), not containers
+- Match the `trigger` description to the most appropriate component
+- If a navigation bar or tab component has options matching other screen names, add `navigateTo` to the tab/nav component itself
+
+Example:
+```json
+{
+  "name": "ViewAllClaimsButton",
+  "props": ["label"],
+  "defaultValues": { "label": "View All Claims" },
+  "navigateTo": "claims-list",
+  "children": []
+}
+```
+
 ## Screen Partitioning (REQUIRED for multi-screen apps)
 
 If the app has multiple pages/screens (e.g., a dashboard with Home, Agents, Settings pages), partition the components into screens. Every component in componentTree MUST appear in exactly one screen.

@@ -1,0 +1,1383 @@
+version: "1.0"
+created_by: agentforge-init
+components:
+  Card:
+    description: Content container with optional header, body, and footer sections
+    category: layout
+    anatomy:
+      - name: header
+        contents: title (heading-3), subtitle (body), action (Button)
+        typography_role: heading-3
+        optional: true
+      - name: body
+        contents: Primary content area — text, images, or nested components
+      - name: footer
+        contents: action buttons (Button[]), metadata (label)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        shadow: shadow-sm
+      hover:
+        bg: surface-primary
+        text: text-primary
+        shadow: shadow-md
+      selected:
+        bg: surface-secondary
+        text: text-primary
+        border: cta-primary
+        border_width: 2
+        shadow: shadow-md
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 20
+      padding-y: 16
+      font: heading-3
+    spacing:
+      padding: 16 20
+      internal_gap: "12"
+    library_mapping:
+      shadcn:
+        component_name: Card
+        import_path: "@/components/ui/card"
+        slot_mapping:
+          header: CardHeader
+          body: CardContent
+          footer: CardFooter
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=article when standalone
+        - aria-labelledby=title-id
+  Section:
+    description: Page section with heading and content area
+    category: layout
+    anatomy:
+      - name: header
+        contents: title (heading-2), description (body)
+        typography_role: heading-2
+      - name: body
+        contents: Section content — cards, lists, tables
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      font: heading-2
+    spacing:
+      padding: 24 0
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: section
+        import_path: html
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=region
+        - aria-labelledby=section-title
+  NavigationBar:
+    description: Top-level navigation with logo, nav links, and user actions
+    category: layout
+    anatomy:
+      - name: brand
+        contents: logo (image), app name (heading-3)
+      - name: nav_links
+        contents: Link[] with active state indicator
+      - name: actions
+        contents: user avatar (Avatar), notifications (Badge), settings (Button)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        shadow: shadow-sm
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 24
+      padding-y: 0
+    spacing:
+      padding: 0 24
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: nav
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=navigation
+        - aria-label=Main navigation
+      keyboard_nav: Arrow keys between nav items, Enter to activate
+  Sidebar:
+    description: Vertical navigation panel with collapsible sections
+    category: layout
+    anatomy:
+      - name: header
+        contents: logo or app name (heading-3)
+        optional: true
+      - name: nav_groups
+        contents: SidebarGroup[] each with label and nav items
+      - name: footer
+        contents: user info, settings link
+        optional: true
+    states:
+      default:
+        bg: surface-secondary
+        text: text-primary
+      collapsed:
+        bg: surface-secondary
+        text: text-primary
+    token_bindings:
+      background: surface-secondary
+      text: text-primary
+    spacing:
+      padding: "16"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Sidebar
+        import_path: "@/components/ui/sidebar"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=navigation
+        - aria-label=Sidebar navigation
+      keyboard_nav: Tab between items, Enter to expand/collapse groups
+  PageHeader:
+    description: Top section of a page with title, breadcrumbs, and page-level actions
+    category: layout
+    anatomy:
+      - name: breadcrumbs
+        contents: Breadcrumb trail (Breadcrumb)
+        optional: true
+      - name: title_row
+        contents: page title (heading-1), action buttons (Button[])
+      - name: description
+        contents: page description or subtitle (body)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+    spacing:
+      padding: 24 0
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=banner
+  Footer:
+    description: Page footer with links, copyright, and secondary actions
+    category: layout
+    anatomy:
+      - name: nav_columns
+        contents: link groups with section titles (label) and Link[]
+      - name: bottom_bar
+        contents: copyright (small), social links, legal links
+    states:
+      default:
+        bg: surface-secondary
+        text: text-secondary
+    token_bindings:
+      background: surface-secondary
+      text: text-secondary
+      padding-x: 24
+      padding-y: 32
+    spacing:
+      padding: 32 24
+      internal_gap: "24"
+    library_mapping:
+      shadcn:
+        component_name: footer
+        import_path: html
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=contentinfo
+  DataTable:
+    description: Tabular data with sortable columns, pagination, and row actions
+    category: data_display
+    anatomy:
+      - name: header_row
+        contents: column headers (label) with sort indicators
+      - name: body_rows
+        contents: data cells aligned to columns, optional row selection checkbox
+      - name: pagination
+        contents: page controls (Pagination), rows-per-page selector
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      hover_row:
+        bg: surface-secondary
+        text: text-primary
+      selected_row:
+        bg: cta-primary
+        text: text-primary
+        opacity: 0.1
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+    spacing:
+      padding: "12"
+      internal_gap: "0"
+    library_mapping:
+      shadcn:
+        component_name: Table
+        import_path: "@/components/ui/table"
+        slot_mapping:
+          header_row: TableHeader
+          body_rows: TableBody
+          pagination: Pagination
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=table
+        - aria-label=Data table description
+      keyboard_nav: Arrow keys between cells, Enter to sort column headers
+  Badge:
+    description: Small status indicator label
+    category: data_display
+    anatomy:
+      - name: label
+        contents: status text (small)
+        typography_role: small
+      - name: icon
+        contents: optional status icon
+        optional: true
+    variants:
+      success:
+        bg: success
+        text: success
+        opacity: 0.15
+      warning:
+        bg: warning
+        text: warning
+        opacity: 0.15
+      error:
+        bg: error
+        text: error
+        opacity: 0.15
+      info:
+        bg: cta-primary
+        text: cta-primary
+        opacity: 0.15
+    states:
+      default:
+        bg: surface-secondary
+        text: text-secondary
+    token_bindings:
+      background: surface-secondary
+      text: text-secondary
+      padding-x: 8
+      padding-y: 2
+      font: small
+    spacing:
+      padding: 2 8
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Badge
+        import_path: "@/components/ui/badge"
+        variant_prop: variant
+        size_prop: size
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=status
+  Avatar:
+    description: User or entity avatar with image or initials fallback
+    category: data_display
+    anatomy:
+      - name: image
+        contents: user photo or initials (label)
+      - name: status_indicator
+        contents: online/offline dot (Badge)
+        optional: true
+    states:
+      default:
+        bg: surface-secondary
+        text: text-primary
+    token_bindings:
+      background: surface-secondary
+      text: text-primary
+    spacing:
+      padding: "0"
+      internal_gap: "0"
+    library_mapping:
+      shadcn:
+        component_name: Avatar
+        import_path: "@/components/ui/avatar"
+        size_prop: size
+        slot_mapping:
+          image: AvatarImage
+          fallback: AvatarFallback
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=img
+        - aria-label=User name
+  Chip:
+    description: Compact interactive label for filtering or selection
+    category: data_display
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: chip text (label)
+        typography_role: label
+      - name: remove_button
+        contents: close/remove icon
+        optional: true
+    states:
+      default:
+        bg: surface-secondary
+        text: text-primary
+        border: border-default
+      selected:
+        bg: cta-primary
+        text: text-on-cta
+        border: cta-primary
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-secondary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 4
+      font: label
+    spacing:
+      padding: 4 12
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Badge
+        import_path: "@/components/ui/badge"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=option when in list
+      keyboard_nav: Enter to toggle, Delete to remove
+  EmptyState:
+    description: Placeholder shown when a section has no data
+    category: data_display
+    anatomy:
+      - name: illustration
+        contents: decorative image or icon
+        optional: true
+      - name: title
+        contents: heading message (heading-3)
+        typography_role: heading-3
+      - name: description
+        contents: explanatory text (body)
+      - name: action
+        contents: primary CTA button (Button)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-secondary
+    token_bindings:
+      background: surface-primary
+      text: text-secondary
+      font: heading-3
+    spacing:
+      padding: "32"
+      internal_gap: "12"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=status
+        - aria-label=No data available
+  Stat:
+    description: Single metric display with label, value, and optional trend
+    category: data_display
+    anatomy:
+      - name: label
+        contents: metric label (label)
+        typography_role: label
+      - name: value
+        contents: metric value (heading-1 or heading-2)
+        typography_role: heading-2
+      - name: trend
+        contents: change indicator (small) with up/down icon
+        optional: true
+    variants:
+      positive:
+        bg: surface-primary
+        text: success
+      negative:
+        bg: surface-primary
+        text: error
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      font: label
+    spacing:
+      padding: "16"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Card
+        import_path: "@/components/ui/card"
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=figure
+        - aria-label=Metric description
+  Button:
+    description: Interactive button with variants for primary, secondary, and ghost actions
+    category: input
+    min_height: 44
+    anatomy:
+      - name: icon_leading
+        contents: optional leading icon
+        optional: true
+      - name: label
+        contents: button text (label)
+        typography_role: label
+      - name: icon_trailing
+        contents: optional trailing icon
+        optional: true
+    variants:
+      primary:
+        bg: cta-primary
+        text: text-on-cta
+      secondary:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      ghost:
+        bg: transparent
+        text: cta-primary
+      destructive:
+        bg: error
+        text: text-on-cta
+    states:
+      default:
+        bg: cta-primary
+        text: text-on-cta
+        border: cta-primary
+        shadow: shadow-sm
+      hover:
+        bg: cta-primary
+        text: text-on-cta
+        shadow: shadow-md
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: cta-primary
+      text: text-on-cta
+      border-radius: medium
+      padding-x: 16
+      padding-y: 8
+      font: label
+    spacing:
+      padding: 8 16
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Button
+        import_path: "@/components/ui/button"
+        variant_prop: variant
+        size_prop: size
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - aria-label when icon-only
+      keyboard_nav: Enter or Space to activate
+  Input:
+    description: Text input field with label, helper text, and validation states
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+      - name: input_field
+        contents: text input with placeholder
+      - name: helper_text
+        contents: description or error message (small)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+        border_width: 1
+      focus:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        border_width: 2
+        shadow: shadow-sm
+      error:
+        bg: surface-primary
+        text: text-primary
+        border: error
+        border_width: 2
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 8
+      font: label
+    spacing:
+      padding: 8 12
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Input
+        import_path: "@/components/ui/input"
+        variant_prop: variant
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - aria-describedby=helper-text-id
+        - aria-invalid=true when error
+      keyboard_nav: Tab to focus, type to enter text
+  Select:
+    description: Dropdown selection with single or multi-select support
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+        optional: true
+      - name: trigger
+        contents: selected value display with chevron icon
+      - name: options_list
+        contents: SelectOption[] with text and optional icons
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      open:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        shadow: shadow-lg
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 8
+      font: label
+    spacing:
+      padding: 8 12
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Select
+        import_path: "@/components/ui/select"
+        variant_prop: variant
+        slot_mapping:
+          trigger: SelectTrigger
+          options_list: SelectContent
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=listbox
+        - aria-expanded=true when open
+      keyboard_nav: Arrow keys to navigate, Enter to select, Escape to close
+  Checkbox:
+    description: Toggle checkbox with label
+    category: input
+    min_height: 44
+    anatomy:
+      - name: checkbox
+        contents: check indicator box
+      - name: label
+        contents: label text (body)
+        typography_role: body
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      checked:
+        bg: cta-primary
+        text: text-on-cta
+        border: cta-primary
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Checkbox
+        import_path: "@/components/ui/checkbox"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=checkbox
+        - aria-checked
+      keyboard_nav: Space to toggle
+  Radio:
+    description: Radio button for single selection within a group
+    category: input
+    min_height: 44
+    anatomy:
+      - name: radio
+        contents: radio circle indicator
+      - name: label
+        contents: option label (body)
+        typography_role: body
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      selected:
+        bg: cta-primary
+        text: text-primary
+        border: cta-primary
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: RadioGroup
+        import_path: "@/components/ui/radio-group"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=radio
+        - aria-checked
+      keyboard_nav: Arrow keys within group, Space to select
+  Switch:
+    description: Toggle switch for binary on/off settings
+    category: input
+    min_height: 44
+    anatomy:
+      - name: track
+        contents: switch track background
+      - name: thumb
+        contents: sliding thumb indicator
+      - name: label
+        contents: setting label (body)
+        typography_role: body
+        optional: true
+    states:
+      default:
+        bg: surface-secondary
+        text: text-primary
+        border: border-default
+      checked:
+        bg: cta-primary
+        text: text-on-cta
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-secondary
+      text: text-primary
+      border-radius: medium
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Switch
+        import_path: "@/components/ui/switch"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=switch
+        - aria-checked
+      keyboard_nav: Space to toggle
+  TextArea:
+    description: Multi-line text input for longer content
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+        optional: true
+      - name: textarea
+        contents: multi-line text input with placeholder
+      - name: character_count
+        contents: remaining/total character count (small)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      focus:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        border_width: 2
+      error:
+        bg: surface-primary
+        text: text-primary
+        border: error
+        border_width: 2
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 8
+      font: label
+    spacing:
+      padding: 8 12
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Textarea
+        import_path: "@/components/ui/textarea"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - aria-describedby=helper-text-id
+      keyboard_nav: Tab to focus, type to enter text
+  DatePicker:
+    description: Date selection input with calendar dropdown
+    category: input
+    min_height: 44
+    anatomy:
+      - name: label
+        contents: field label (label)
+        typography_role: label
+        optional: true
+      - name: trigger
+        contents: date display with calendar icon
+      - name: calendar
+        contents: month grid with selectable days
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      open:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        shadow: shadow-lg
+      disabled:
+        bg: surface-secondary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 8
+      font: label
+    spacing:
+      padding: 8 12
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: DatePicker
+        import_path: "@/components/ui/date-picker"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=dialog for calendar
+        - aria-label=Choose date
+      keyboard_nav: Arrow keys to navigate calendar, Enter to select
+  SearchInput:
+    description: Search input with icon and optional clear button
+    category: input
+    min_height: 44
+    anatomy:
+      - name: search_icon
+        contents: magnifying glass icon
+      - name: input_field
+        contents: search text input with placeholder
+      - name: clear_button
+        contents: clear/X button
+        optional: true
+    states:
+      default:
+        bg: surface-secondary
+        text: text-primary
+        border: border-default
+      focus:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        shadow: shadow-sm
+    token_bindings:
+      background: surface-secondary
+      text: text-primary
+      border-radius: medium
+      padding-x: 12
+      padding-y: 8
+    spacing:
+      padding: 8 12
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Input
+        import_path: "@/components/ui/input"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=search
+        - aria-label=Search
+      keyboard_nav: Escape to clear
+  Alert:
+    description: Inline notification message with severity levels
+    category: feedback
+    anatomy:
+      - name: icon
+        contents: severity icon (info, warning, error, success)
+      - name: title
+        contents: alert title (label)
+        typography_role: label
+        optional: true
+      - name: message
+        contents: alert description (body)
+      - name: dismiss
+        contents: close button
+        optional: true
+    variants:
+      success:
+        bg: success
+        text: success
+        opacity: 0.1
+      warning:
+        bg: warning
+        text: warning
+        opacity: 0.1
+      error:
+        bg: error
+        text: error
+        opacity: 0.1
+    states:
+      default:
+        bg: cta-primary
+        text: text-primary
+        border: cta-primary
+        opacity: 0.1
+    token_bindings:
+      background: cta-primary
+      text: text-primary
+      border-radius: medium
+      padding-x: 16
+      padding-y: 12
+      font: label
+    spacing:
+      padding: 12 16
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Alert
+        import_path: "@/components/ui/alert"
+        slot_mapping:
+          title: AlertTitle
+          message: AlertDescription
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=alert
+  Modal:
+    description: Overlay dialog for focused interactions
+    category: feedback
+    anatomy:
+      - name: overlay
+        contents: dimmed background overlay
+      - name: header
+        contents: dialog title (heading-2), close button
+        typography_role: heading-2
+      - name: body
+        contents: dialog content area
+      - name: footer
+        contents: action buttons — cancel (secondary), confirm (primary)
+        optional: true
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        shadow: shadow-lg
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      font: heading-2
+    spacing:
+      padding: "24"
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: Dialog
+        import_path: "@/components/ui/dialog"
+        slot_mapping:
+          header: DialogHeader
+          body: DialogContent
+          footer: DialogFooter
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=dialog
+        - aria-modal=true
+        - aria-labelledby=dialog-title
+      keyboard_nav: Escape to close, Tab traps focus within dialog
+  LoadingSpinner:
+    description: Animated loading indicator
+    category: feedback
+    anatomy:
+      - name: spinner
+        contents: animated circular indicator
+      - name: label
+        contents: loading message (body)
+        optional: true
+    states:
+      default:
+        bg: transparent
+        text: text-secondary
+    token_bindings:
+      background: transparent
+      text: text-secondary
+    spacing:
+      padding: "0"
+      internal_gap: "8"
+    library_mapping:
+      shadcn:
+        component_name: Loader2
+        import_path: lucide-react
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=status
+        - aria-label=Loading
+  ProgressBar:
+    description: Linear progress indicator showing completion percentage
+    category: feedback
+    anatomy:
+      - name: track
+        contents: background track
+      - name: fill
+        contents: progress fill bar
+      - name: label
+        contents: percentage or status text (small)
+        typography_role: small
+        optional: true
+    variants:
+      active:
+        bg: surface-secondary
+        text: cta-primary
+      success:
+        bg: surface-secondary
+        text: success
+      error:
+        bg: surface-secondary
+        text: error
+    states:
+      default:
+        bg: surface-secondary
+        text: text-secondary
+    token_bindings:
+      background: surface-secondary
+      text: text-secondary
+      font: small
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Progress
+        import_path: "@/components/ui/progress"
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - role=progressbar
+        - aria-valuenow
+        - aria-valuemin=0
+        - aria-valuemax=100
+  Skeleton:
+    description: Placeholder loading state that mimics content layout
+    category: feedback
+    anatomy:
+      - name: shape
+        contents: rectangular or circular placeholder matching content dimensions
+    states:
+      default:
+        bg: surface-secondary
+        text: transparent
+        opacity: 0.6
+    token_bindings:
+      background: surface-secondary
+      text: transparent
+    spacing:
+      padding: "0"
+      internal_gap: "0"
+    library_mapping:
+      shadcn:
+        component_name: Skeleton
+        import_path: "@/components/ui/skeleton"
+    accessibility:
+      focus_visible: false
+      aria_labels:
+        - aria-hidden=true
+  Tabs:
+    description: Tab bar for switching between content panels
+    category: navigation
+    min_height: 44
+    anatomy:
+      - name: tab_list
+        contents: Tab[] with label and optional icon
+      - name: tab_panels
+        contents: content panels corresponding to each tab
+    states:
+      default:
+        bg: surface-primary
+        text: text-secondary
+        border: border-default
+      active:
+        bg: surface-primary
+        text: text-primary
+        border: cta-primary
+        border_width: 2
+      hover:
+        bg: surface-secondary
+        text: text-primary
+      disabled:
+        bg: surface-primary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-secondary
+      border-radius: medium
+      padding-x: 16
+      padding-y: 8
+    spacing:
+      padding: 8 16
+      internal_gap: "0"
+    library_mapping:
+      shadcn:
+        component_name: Tabs
+        import_path: "@/components/ui/tabs"
+        variant_prop: variant
+        slot_mapping:
+          tab_list: TabsList
+          tab_panels: TabsContent
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=tablist
+        - aria-selected on active tab
+      keyboard_nav: Arrow keys between tabs, Enter to activate
+  StepIndicator:
+    description: Multi-step progress indicator for wizards and workflows
+    category: navigation
+    min_height: 44
+    anatomy:
+      - name: steps
+        contents: StepItem[] with number/icon, label, and connector line
+      - name: content
+        contents: current step content area
+    states:
+      default:
+        bg: surface-primary
+        text: text-secondary
+        border: border-default
+      active:
+        bg: cta-primary
+        text: text-on-cta
+      completed:
+        bg: success
+        text: text-on-cta
+    token_bindings:
+      background: surface-primary
+      text: text-secondary
+      border-radius: medium
+    spacing:
+      padding: "0"
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=list
+        - aria-current=step on active
+      keyboard_nav: Tab between steps
+  Breadcrumb:
+    description: Navigation trail showing current page location
+    category: navigation
+    min_height: 44
+    anatomy:
+      - name: items
+        contents: BreadcrumbItem[] with link text and separator
+      - name: current
+        contents: current page name (label) — not a link
+        typography_role: label
+    states:
+      default:
+        bg: transparent
+        text: text-secondary
+      hover:
+        bg: transparent
+        text: cta-primary
+    token_bindings:
+      background: transparent
+      text: text-secondary
+      font: label
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Breadcrumb
+        import_path: "@/components/ui/breadcrumb"
+        slot_mapping:
+          items: BreadcrumbList
+          current: BreadcrumbPage
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=navigation
+        - aria-label=Breadcrumb
+  Pagination:
+    description: Page navigation controls for paginated content
+    category: navigation
+    min_height: 44
+    anatomy:
+      - name: prev_button
+        contents: previous page button
+      - name: page_numbers
+        contents: page number buttons with ellipsis
+      - name: next_button
+        contents: next page button
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      active:
+        bg: cta-primary
+        text: text-on-cta
+      disabled:
+        bg: surface-primary
+        text: text-secondary
+        opacity: 0.5
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: Pagination
+        import_path: "@/components/ui/pagination"
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=navigation
+        - aria-label=Pagination
+      keyboard_nav: Arrow keys between pages, Enter to select
+  Link:
+    description: Inline or standalone hyperlink
+    category: navigation
+    min_height: 44
+    anatomy:
+      - name: text
+        contents: link text (body)
+        typography_role: body
+      - name: icon
+        contents: optional external link icon
+        optional: true
+    states:
+      default:
+        bg: transparent
+        text: cta-primary
+      hover:
+        bg: transparent
+        text: cta-primary
+        opacity: 0.8
+      visited:
+        bg: transparent
+        text: text-secondary
+    token_bindings:
+      background: transparent
+      text: cta-primary
+      font: body
+    spacing:
+      padding: "0"
+      internal_gap: "4"
+    library_mapping:
+      shadcn:
+        component_name: a
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=link
+      keyboard_nav: Enter to follow
+  Form:
+    description: Form container with field groups, validation, and submit action
+    category: composite
+    anatomy:
+      - name: fields
+        contents: Input[], Select[], TextArea[], Checkbox[], Radio[] arranged in groups
+      - name: actions
+        contents: submit Button (primary), cancel Button (secondary)
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+      submitting:
+        bg: surface-primary
+        text: text-secondary
+        opacity: 0.7
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+    spacing:
+      padding: "24"
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: form
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=form
+        - aria-label=Form description
+      keyboard_nav: Tab between fields, Enter to submit
+  SelectionGrid:
+    description: Grid of selectable cards for option picking
+    category: composite
+    anatomy:
+      - name: grid
+        contents: Card[] in responsive grid layout, each with selection state
+      - name: selection_indicator
+        contents: checkmark or highlight on selected cards
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+      selected:
+        bg: surface-secondary
+        text: text-primary
+        border: cta-primary
+        border_width: 2
+        shadow: shadow-md
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      border-radius: medium
+    spacing:
+      padding: "0"
+      internal_gap: "16"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=listbox
+        - aria-multiselectable when multi-select
+      keyboard_nav: Arrow keys between cards, Space to toggle selection
+  FilterBar:
+    description: Horizontal bar with filter controls for data views
+    category: composite
+    anatomy:
+      - name: filters
+        contents: Select[], Input[], DatePicker[] for filter criteria
+      - name: active_filters
+        contents: Chip[] showing currently active filters with remove action
+        optional: true
+      - name: actions
+        contents: apply Button, clear-all Link
+    states:
+      default:
+        bg: surface-primary
+        text: text-primary
+    token_bindings:
+      background: surface-primary
+      text: text-primary
+      padding-x: 16
+      padding-y: 12
+    spacing:
+      padding: 12 16
+      internal_gap: "12"
+    library_mapping:
+      shadcn:
+        component_name: div
+        import_path: html
+    accessibility:
+      focus_visible: true
+      aria_labels:
+        - role=search
+        - aria-label=Filter controls
+      keyboard_nav: Tab between filter controls

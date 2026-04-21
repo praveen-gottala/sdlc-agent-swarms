@@ -28,7 +28,7 @@ function toOpenAIMessages(
   prompt: Prompt,
 ): OpenAI.ChatCompletionMessageParam[] {
   const messages: OpenAI.ChatCompletionMessageParam[] = [
-    { role: 'system', content: prompt.system },
+    { role: 'system', content: typeof prompt.system === 'string' ? prompt.system : prompt.system.map(b => b.text).join('\n') },
   ];
 
   for (const msg of prompt.messages) {

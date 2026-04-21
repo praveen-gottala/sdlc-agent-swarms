@@ -12,3 +12,165 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Navigation hotspot indicators */
+.nav-hotspot {
+  cursor: pointer !important;
+  position: relative;
+}
+.nav-hotspot * {
+  cursor: pointer !important;
+}
+.nav-hotspot:hover {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Figma-style: reveal all hotspots on body click */
+body.show-hotspots .nav-hotspot {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
+  animation: hotspot-fade 1.5s ease-out forwards;
+}
+@keyframes hotspot-fade {
+  0% { outline-color: rgba(59, 130, 246, 0.5); }
+  70% { outline-color: rgba(59, 130, 246, 0.3); }
+  100% { outline-color: transparent; }
+}
+
+/* ─── Overlay system ─── */
+
+.overlay-dialog {
+  border: none;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+}
+
+.overlay-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  animation: backdrop-fade-in 200ms ease-out;
+}
+
+.overlay-dialog[open] {
+  display: flex;
+}
+
+/* ─── Modal ─── */
+
+.overlay-modal {
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-modal .overlay-content {
+  background: #fff;
+  border-radius: 12px;
+  max-height: 85vh;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modal-scale-up 200ms ease-out;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Drawer ─── */
+
+.overlay-drawer {
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.overlay-drawer .overlay-content {
+  background: #fff;
+  height: 100vh;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+  animation: drawer-slide-in 250ms ease-out;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Sheet ─── */
+
+.overlay-sheet {
+  align-items: stretch;
+  justify-content: flex-end;
+  flex-direction: column;
+}
+
+.overlay-sheet .overlay-content {
+  background: #fff;
+  width: 100%;
+  max-height: 80vh;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+  animation: sheet-slide-up 250ms ease-out;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Shared overlay parts ─── */
+
+.overlay-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.overlay-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #374151;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms;
+}
+
+.overlay-close:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.overlay-close:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes backdrop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-scale-up {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes drawer-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

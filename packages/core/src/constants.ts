@@ -7,6 +7,9 @@ export const PREVIEW_DIR_REL = '.agentforge/previews';
 /** Default LLM model used when no override is configured. */
 export const DEFAULT_MODEL = 'claude-sonnet-4-6';
 
+/** Model for vision-based design evaluation (quality gatekeeper). */
+export const EVALUATOR_MODEL = 'claude-opus-4-7';
+
 /** Environment variable name for global model override. */
 export const ENV_MODEL_OVERRIDE = 'AGENTFORGE_DEFAULT_MODEL';
 

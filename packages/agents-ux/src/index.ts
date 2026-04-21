@@ -107,6 +107,23 @@ export { createPenpotCollaborationSession, createPenpotReviewCallback, mapPenpot
 export type { PenpotBrowserDesignInput, PenpotBrowserDesignOutput, PenpotBrowserDesignOptions } from './ux-design/penpot-browser-agent.js';
 export { PENPOT_BROWSER_DESIGN_CONTRACT, penpotBrowserDesignWork } from './ux-design/penpot-browser-agent.js';
 
+// Prototype
+export type { ScreenSummary, InteractiveNode, SharedChrome, DesignChromeInput } from './prototype/index.js';
+export {
+  buildPrototypeManifest,
+  extractScreenSummary,
+  extractNavigationFromSpecs,
+  analyzeNavigation,
+  resolveSharedComponents,
+  designChromeComponents,
+  applyFrozenChromeToPageSpec,
+  buildSharedChromeFilePayload,
+  deriveRegionsFromPageSpec,
+  findNodeIdByCatalog,
+  findSharedChromeRootNodeId,
+  propagateNavigateToChromeTabs,
+} from './prototype/index.js';
+
 // Penpot Browser Actions
 export type { CanvasScreenshotResult, PenpotShapeState, PenpotShapeInfo, ExportFormat } from './ux-design/penpot-browser-actions.js';
 export {

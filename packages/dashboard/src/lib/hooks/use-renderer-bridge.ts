@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 type ParentMessage =
   | { type: 'load-spec'; specJson: string; source: 'agentforge' }
+  | { type: 'load-prototype'; payload: string; source: 'agentforge' }
   | { type: 'update-node-style'; nodeId: string; styles: Record<string, string>; source: 'agentforge' }
   | { type: 'enable-tagging'; source: 'agentforge' }
   | { type: 'disable-tagging'; source: 'agentforge' }
@@ -69,6 +70,8 @@ export interface UseRendererBridgeResult {
   readonly isReady: boolean;
   /** Send a design spec JSON to the renderer for display */
   loadSpec: (specJson: string) => void;
+  /** Send a prototype manifest + specs to the renderer for multi-screen mode */
+  loadPrototype: (payload: string) => void;
   /** Enable interactive tagging mode in the renderer */
   enableTagging: () => void;
   /** Disable interactive tagging mode in the renderer */
@@ -131,6 +134,13 @@ export function useRendererBridge(
   const loadSpec = useCallback(
     (specJson: string) => {
       postToIframe({ type: 'load-spec', specJson, source: 'agentforge' });
+    },
+    [postToIframe],
+  );
+
+  const loadPrototype = useCallback(
+    (payload: string) => {
+      postToIframe({ type: 'load-prototype', payload, source: 'agentforge' });
     },
     [postToIframe],
   );
@@ -224,6 +234,7 @@ export function useRendererBridge(
   return {
     isReady,
     loadSpec,
+    loadPrototype,
     enableTagging,
     disableTagging,
     highlightNode,

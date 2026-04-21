@@ -197,7 +197,7 @@ export const frontendCoderWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOut
   if (component.design_ref) {
     const parsed = parseDesignRef(component.design_ref);
     if (parsed) {
-      const mcpResult = await context.mcpClient.callTool('figma', 'get_code', {
+      const mcpResult = await context.mcpClient!.callTool('figma', 'get_code', {
         fileId: parsed.fileId,
         nodeId: parsed.nodeId,
       });
@@ -289,7 +289,7 @@ export const frontendCoderWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOut
   const branchName = `agentforge/task-${task.id}-${toKebabCase(component.name)}`;
 
   // 10. Create branch via MCP
-  const branchResult = await context.mcpClient.callTool('github', 'create_branch', {
+  const branchResult = await context.mcpClient!.callTool('github', 'create_branch', {
     branch: branchName,
   });
   if (!branchResult.ok) {
@@ -302,7 +302,7 @@ export const frontendCoderWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOut
 
   // 11. Push code to branch via MCP
   const filePath = `src/components/${componentFileName}`;
-  const pushResult = await context.mcpClient.callTool('github', 'push_files', {
+  const pushResult = await context.mcpClient!.callTool('github', 'push_files', {
     branch: branchName,
     files: [{ path: filePath, content: code }],
   });

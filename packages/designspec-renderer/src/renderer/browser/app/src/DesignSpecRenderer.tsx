@@ -37,15 +37,34 @@ import * as lucideIcons from 'lucide-react';
 
 // ─── Props ──────────────────────────────────────────────
 
+interface NavigationBinding {
+  sourceNodeId: string;
+  sourceScreenId: string;
+  targetScreenId: string;
+  reason: string;
+  mode?: 'navigate' | 'overlay';
+}
+
 interface Props {
   spec: DesignSpecV2;
   tokens: RendererTokens;
   catalog: CatalogMap;
+  onNavigate?: (screenId: string) => void;
+  navigationBindings?: readonly NavigationBinding[];
+  /** When set, navigation bindings prefer this source screen for hotspot metadata (prototype). */
+  prototypeScreenId?: string;
 }
 
 // ─── Component ──────────────────────────────────────────
 
-export function DesignSpecRenderer({ spec, tokens, catalog }: Props) {
+export function DesignSpecRenderer({
+  spec,
+  tokens,
+  catalog,
+  onNavigate,
+  navigationBindings,
+  prototypeScreenId,
+}: Props) {
   if (!spec?.nodes || typeof spec.nodes !== 'object' || Object.keys(spec.nodes).length === 0) {
     return (
       <div style={{ padding: 32, color: '#ef4444', fontFamily: 'monospace' }}>
@@ -59,11 +78,34 @@ export function DesignSpecRenderer({ spec, tokens, catalog }: Props) {
   const tree = buildTree(spec.nodes);
   const tokenMap = buildTokenMap(tokens);
 
+  const navMap = new Map<string, string>();
+  // Populate from external bindings (prototype manifest)
+  if (navigationBindings) {
+    for (const binding of navigationBindings) {
+      navMap.set(binding.sourceNodeId, binding.targetScreenId);
+    }
+  }
+  // Populate from inline NodeSpec.navigateTo (spec-driven, takes precedence)
+  for (const [nodeId, node] of Object.entries(spec.nodes)) {
+    if (node.navigateTo) {
+      navMap.set(nodeId, node.navigateTo);
+    }
+  }
+
+  if (navMap.size > 0) {
+    console.log('[DesignSpecRenderer] navMap entries:', JSON.stringify(Object.fromEntries(navMap)));
+    console.log('[DesignSpecRenderer] onNavigate defined:', !!onNavigate);
+  }
+
   useEffect(() => {
     document.body.dataset.ready = 'true';
   }, []);
 
-  return <>{renderNode(tree, spec, tokens, catalog, tokenMap)}</>;
+  return (
+    <>
+      {renderNode(tree, spec, tokens, catalog, tokenMap, onNavigate, navMap, navigationBindings, prototypeScreenId)}
+    </>
+  );
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -241,7 +283,8 @@ function getSizeStyles(
 ): React.CSSProperties {
   const s: React.CSSProperties = {};
   if (width === 'fill') {
-    s.flex = 1;
+    s.flex = '1 1 auto';
+    s.width = '100%';
     s.minWidth = 0;
   } else if (typeof width === 'number') {
     s.width = width;
@@ -402,13 +445,50 @@ function renderNode(
   tokens: RendererTokens,
   catalog: CatalogMap,
   tokenMap: TokenColorMap,
+  onNavigate?: (screenId: string) => void,
+  navMap?: Map<string, string>,
+  navigationBindings?: readonly NavigationBinding[],
+  prototypeScreenId?: string,
 ): React.ReactNode {
   const nodeSpec = spec.nodes[treeNode.id];
   const node = resolveNode(treeNode.id, nodeSpec, catalog);
 
   const children = treeNode.children.map((child) =>
-    renderNode(child, spec, tokens, catalog, tokenMap),
+    renderNode(child, spec, tokens, catalog, tokenMap, onNavigate, navMap, navigationBindings, prototypeScreenId),
   );
+
+  const targetScreen = navMap?.get(treeNode.id);
+  if (targetScreen && onNavigate) {
+    const rendered = node.type
+      ? renderAccelerator(node, children, tokens, tokenMap)
+      : node.catalogId
+        ? renderCatalog(node, children, tokens, tokenMap)
+        : null;
+
+    if (rendered) {
+      const binding =
+        navigationBindings?.find(
+          b =>
+            b.sourceNodeId === treeNode.id
+            && (!prototypeScreenId || b.sourceScreenId === prototypeScreenId),
+        )
+        ?? navigationBindings?.find(b => b.sourceNodeId === treeNode.id);
+      const navMode = binding?.mode ?? 'navigate';
+
+      return (
+        <div
+          key={treeNode.id}
+          data-nav-target={targetScreen}
+          data-nav-mode={navMode === 'overlay' ? 'overlay' : 'navigate'}
+          className="nav-hotspot"
+          onClick={(e) => { e.stopPropagation(); onNavigate(targetScreen); }}
+          title={`Navigate to ${targetScreen}`}
+        >
+          {rendered}
+        </div>
+      );
+    }
+  }
 
   if (node.type) {
     return renderAccelerator(node, children, tokens, tokenMap);
@@ -737,8 +817,12 @@ function renderCatalog(
         </div>
       );
     }
+    case 'progress-bar':
     case 'progress-bar-active':
-      return renderProgressBar(node, common);
+    case 'progress-bar-error':
+    case 'progress-bar-warning':
+    case 'progress-bar-success':
+      return renderProgressBar(node, catalogId, common, tokenMap);
     case 'pagination':
       return renderPagination(node, common);
     case 'tabs': {
@@ -1324,10 +1408,20 @@ function renderStat(
   );
 }
 
-function renderProgressBar(node: ResolvedNode, common: React.CSSProperties): React.ReactNode {
+function renderProgressBar(node: ResolvedNode, catalogId: string, common: React.CSSProperties, tokenMap: TokenColorMap): React.ReactNode {
   const value = typeof node.value === 'number' ? node.value : 0;
+  const variantColorMap: Record<string, string> = {
+    'progress-bar-error': resolveTokenColor('error', tokenMap) ?? '#ef4444',
+    'progress-bar-warning': resolveTokenColor('warning', tokenMap) ?? '#f59e0b',
+    'progress-bar-success': resolveTokenColor('success', tokenMap) ?? '#22c55e',
+  };
+  const indicatorColor = variantColorMap[catalogId];
+  const style: React.CSSProperties = { ...common };
+  if (indicatorColor) {
+    (style as Record<string, unknown>)['--primary'] = indicatorColor;
+  }
   return (
-    <Progress key={node.id} data-node={node.id} data-catalog="progress-bar-active" value={value} style={Object.keys(common).length ? common : undefined} />
+    <Progress key={node.id} data-node={node.id} data-catalog={catalogId} value={value} style={Object.keys(style).length ? style : undefined} />
   );
 }
 

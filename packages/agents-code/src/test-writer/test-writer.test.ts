@@ -167,7 +167,7 @@ describe('testWriterWork', () => {
 
     await testWriterWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const readCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'github' && call[1] === 'read_file',
     );
@@ -185,7 +185,7 @@ describe('testWriterWork', () => {
 
     await testWriterWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
 
     // Should NOT call create_branch
     const branchCall = mcpCalls.find(
@@ -267,7 +267,7 @@ describe('testWriterWork', () => {
 
   it('fails when no source files can be read from branch', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((server: string, method: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((server: string, method: string) => {
       if (server === 'github' && method === 'read_file') {
         return Promise.resolve(
           Err({ code: 'INVALID_STATE', message: 'File not found', recoverable: false }),
@@ -288,7 +288,7 @@ describe('testWriterWork', () => {
 
   it('fails when push to branch fails', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((server: string, method: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((server: string, method: string) => {
       if (server === 'github' && method === 'read_file') {
         return Promise.resolve(Ok('export const Foo = () => <div />;'));
       }

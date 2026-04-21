@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { PageRegistry, type Page } from '@/components/design/page-registry';
 import { DesignCanvas } from '@/components/design/design-canvas';
 import { DesignInspector } from '@/components/design/design-inspector';
-import type { UseRendererBridgeResult } from '@/lib/hooks/use-renderer-bridge';
+import { useRendererBridge, type UseRendererBridgeResult } from '@/lib/hooks/use-renderer-bridge';
 import { propertyToCss } from '@/lib/design/property-to-css';
 import { Button } from '@/components/ui/button';
 import { CoherenceResultsModal } from '@/components/design/coherence-results-modal';
@@ -13,6 +13,7 @@ import { PipelineProgress } from '@/components/design/pipeline-progress';
 import type { CoherenceResult } from '@/lib/design/coherence-check';
 import { DesignLogProvider, useDesignLog } from '@/lib/hooks/use-design-log';
 import { DesignLogPanel } from '@/components/design/design-log-panel';
+import { NavigationEditor } from '@/components/design/navigation-editor';
 
 /**
  * Design Studio page — three-panel layout for managing page designs.
@@ -99,9 +100,94 @@ function DesignStudioContent() {
   const [coherenceLoading, setCoherenceLoading] = useState(false);
   const [showCoherenceModal, setShowCoherenceModal] = useState(false);
 
+  // Prototype mode state
+  const [prototypeMode, setPrototypeMode] = useState(false);
+  const [prototypeLoading, setPrototypeLoading] = useState(false);
+  const [prototypePayload, setPrototypePayload] = useState<string | null>(null);
+  const [showNavEditor, setShowNavEditor] = useState(false);
+  const [prototypeScreens, setPrototypeScreens] = useState<{ id: string; name: string; screenType?: 'page' | 'modal' | 'drawer' | 'sheet' }[]>([]);
+  const [activeProtoScreen, setActiveProtoScreen] = useState<string | null>(null);
+  const [pickedNode, setPickedNode] = useState<{ nodeId: string; catalogType: string | null } | null>(null);
+  const [protoKey, setProtoKey] = useState(0);
+  const protoSpecsRef = useRef<Record<string, Record<string, unknown>>>({});
+
   const approvedCount = pages.filter(
     (p) => p.designStatus === 'approved' || p.designStatus === 'rendered',
   ).length;
+
+  const handleLoadPrototype = useCallback(async () => {
+    setPrototypeLoading(true);
+    try {
+      // Prototype iframe loads http://localhost:4100 — wait until Vite actually serves HTML.
+      await fetch('/api/renderer/start', { method: 'POST' }).catch(() => {});
+      const rendererDeadline = Date.now() + 90_000;
+      while (Date.now() < rendererDeadline) {
+        const stRes = await fetch('/api/renderer/status');
+        const st = await stRes.json().catch(() => ({}));
+        if (st.status === 'ready') {
+          break;
+        }
+        if (st.status === 'stopped' && st.error) {
+          showToast(`Design renderer: ${st.error}`, 'error');
+          return;
+        }
+        await new Promise(r => setTimeout(r, 400));
+      }
+      const finalStatus = await fetch('/api/renderer/status').then(r => r.json()).catch(() => ({}));
+      if (finalStatus.status !== 'ready') {
+        showToast(
+          'Design renderer on port 4100 is not ready. Start it from the repo: npm run dev in packages/designspec-renderer/src/renderer/browser/app — or reload this page to retry auto-start.',
+          'error',
+        );
+        return;
+      }
+
+      const res = await fetch('/api/prototype');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Failed to load prototype' }));
+        showToast(data.error ?? 'No prototype available', 'error');
+        return;
+      }
+      const data = await res.json();
+      const payload = JSON.stringify({
+        manifest: data.manifest,
+        specs: data.specs,
+        tokens: data.tokens,
+        catalog: data.catalog,
+        chromeSpec: data.chromeSpec ?? null,
+      });
+      setPrototypePayload(payload);
+      setPrototypeScreens(
+        (data.manifest.screens as Array<{ screenId: string; name: string; screenType?: 'page' | 'modal' | 'drawer' | 'sheet' }>)
+          .map(s => ({ id: s.screenId, name: s.name, screenType: s.screenType })),
+      );
+      setActiveProtoScreen(
+        (data.manifest.screens as Array<{ screenId: string; isDefault?: boolean }>)
+          .find(s => s.isDefault)?.screenId ?? data.manifest.screens[0]?.screenId ?? null,
+      );
+      protoSpecsRef.current = data.specs as Record<string, Record<string, unknown>>;
+      bridgeRef.current = null;
+      setPrototypeMode(true);
+      setSelectedNode(null);
+      log('INFO', 'studio', `Prototype loaded: ${data.manifest.screens.length} screens`);
+    } catch {
+      showToast('Failed to load prototype', 'error');
+    } finally {
+      setPrototypeLoading(false);
+    }
+  }, [showToast, log]);
+
+  const handleExitPrototype = useCallback(() => {
+    setPrototypeMode(false);
+    setPrototypePayload(null);
+    setShowNavEditor(false);
+    bridgeRef.current = null;
+    if (selectedId && designSpec) {
+      const rd = rendererDataRef.current;
+      const payload = rd ? { spec: designSpec, tokens: rd.tokens, catalog: rd.catalog } : designSpec;
+      setTimeout(() => bridgeRef.current?.loadSpec(JSON.stringify(payload)), 500);
+    }
+  }, [selectedId, designSpec]);
 
   const handleCheckCoherence = useCallback(async () => {
     setCoherenceLoading(true);
@@ -445,7 +531,11 @@ function DesignStudioContent() {
   const rendererDataRef = useRef(rendererData);
   rendererDataRef.current = rendererData;
 
+  const prototypeModeRef = useRef(false);
+  prototypeModeRef.current = prototypeMode;
+
   const sendSpecToBridge = useCallback((spec: any) => {
+    if (prototypeModeRef.current) return;
     const rd = rendererDataRef.current;
     const payload = rd ? { spec, tokens: rd.tokens, catalog: rd.catalog } : spec;
     bridgeRef.current?.loadSpec(JSON.stringify(payload));
@@ -514,6 +604,24 @@ function DesignStudioContent() {
       log('INFO', 'studio', 'Bridge ready — renderer connected');
     }
   }, [log]);
+
+  // Send prototype payload to iframe when bridge is ready in prototype mode
+  // protoKey increments on save to force re-send even with same payload
+  useEffect(() => {
+    if (!prototypeMode || !prototypePayload) return;
+    const sendPayload = () => {
+      if (bridgeRef.current?.isReady) {
+        bridgeRef.current.loadPrototype(prototypePayload);
+        return true;
+      }
+      return false;
+    };
+    if (sendPayload()) return;
+    const interval = setInterval(() => {
+      if (sendPayload()) clearInterval(interval);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [prototypeMode, prototypePayload, protoKey]);
 
   const handleGenerateDesign = useCallback(() => {
     if (!selectedId) return;
@@ -606,6 +714,56 @@ function DesignStudioContent() {
     setPipelineRunId(null);
     refreshPage(selectedId);
   }, [selectedId, refreshPage]);
+
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [genAllProgress, setGenAllProgress] = useState<{ current: number; total: number } | null>(null);
+
+  const handleGenerateAll = useCallback(async () => {
+    const pendingPages = pages.filter(p => p.designStatus !== 'rendered' && p.designStatus !== 'approved');
+    if (pendingPages.length === 0) return;
+    setGeneratingAll(true);
+    setGenAllProgress({ current: 0, total: pendingPages.length });
+    log('INFO', 'studio', `Generating designs for ${pendingPages.length} pages (model: ${selectedModel})`);
+
+    for (let i = 0; i < pendingPages.length; i++) {
+      const pg = pendingPages[i];
+      setGenAllProgress({ current: i + 1, total: pendingPages.length });
+      setPages(prev => prev.map(p => p.id === pg.id ? { ...p, designStatus: 'generating' } : p));
+      log('INFO', 'studio', `[${i + 1}/${pendingPages.length}] Generating design for "${pg.name}"...`);
+      try {
+        const res = await fetch(`/api/pages/${pg.id}/design?pipeline=full`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: selectedModel }),
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const runId = (data as Record<string, unknown>).runId as string | undefined;
+          if (runId) {
+            for (let poll = 0; poll < 120; poll++) {
+              await new Promise(r => setTimeout(r, 3_000));
+              const statusRes = await fetch(`/api/runs?limit=1`).then(r => r.json()).catch(() => null);
+              const runs = (statusRes as Record<string, unknown>[] | null) ?? [];
+              const run = Array.isArray(runs) ? runs.find((r: Record<string, unknown>) => r.runId === runId) : null;
+              if (run && ((run as Record<string, unknown>).status === 'complete' || (run as Record<string, unknown>).status === 'failed')) break;
+              refreshPage(pg.id);
+            }
+          }
+          log('INFO', 'studio', `Design generated for "${pg.name}"`);
+        } else {
+          const data = await res.json().catch(() => ({ error: 'Unknown error' }));
+          log('WARN', 'studio', `Design failed for "${pg.name}": ${(data as Record<string, unknown>).error}`);
+        }
+      } catch {
+        log('WARN', 'studio', `Network error generating "${pg.name}"`);
+      }
+      refreshPage(pg.id);
+    }
+
+    setGeneratingAll(false);
+    setGenAllProgress(null);
+    log('INFO', 'studio', `Batch generation complete`);
+  }, [pages, selectedModel, refreshPage, log]);
 
   const handleApprove = useCallback(() => {
     if (!selectedId) return;
@@ -739,21 +897,133 @@ function DesignStudioContent() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] -m-6 overflow-hidden">
-      {/* Coherence toolbar */}
+      {/* Toolbar */}
       <div className="flex items-center gap-3 border-b border-border bg-bg-card/50 px-4 py-2 flex-shrink-0">
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={approvedCount < 2 || coherenceLoading}
-          onClick={handleCheckCoherence}
-        >
-          {coherenceLoading ? 'Checking...' : 'Check Coherence'}
-        </Button>
-        <span className="text-xs text-text-muted">
-          {approvedCount < 2
-            ? `Need 2+ designed pages (${approvedCount} available)`
-            : `${approvedCount} designed pages`}
-        </span>
+        {prototypeMode ? (
+          <>
+            <Button variant="secondary" size="sm" onClick={handleExitPrototype}>
+              Exit Prototype
+            </Button>
+            <div className="w-px h-4 bg-border" />
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNavEditor(!showNavEditor)}
+              >
+                Navigation
+              </Button>
+              {showNavEditor && (
+                <div className="absolute top-full left-0 mt-1 z-50 w-80 rounded-lg border border-border bg-sidebar shadow-xl">
+                  <div className="flex items-center gap-1 px-3 py-2 border-b border-border overflow-x-auto">
+                    {prototypeScreens.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActiveProtoScreen(s.id)}
+                        className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
+                          activeProtoScreen === s.id
+                            ? 'bg-accent-blue/10 text-accent-blue font-medium'
+                            : 'text-text-muted hover:text-text-primary'
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                  <NavigationEditor
+                    pages={prototypeScreens}
+                    activePageId={activeProtoScreen}
+                    pickedNode={pickedNode}
+                    onStartPicking={() => {
+                      bridgeRef.current?.enableTagging();
+                      bridgeRef.current?.onNodeClicked((nodeId, catalogType) => {
+                        setPickedNode({ nodeId, catalogType });
+                        for (const [screenId, spec] of Object.entries(protoSpecsRef.current)) {
+                          const nodes = (spec as { nodes?: Record<string, unknown> }).nodes;
+                          if (nodes && nodeId in nodes) {
+                            setActiveProtoScreen(screenId);
+                            break;
+                          }
+                        }
+                      });
+                    }}
+                    onStopPicking={() => {
+                      bridgeRef.current?.disableTagging();
+                      bridgeRef.current?.onNodeClicked(null);
+                      setPickedNode(null);
+                    }}
+                    onSaved={async () => {
+                      try {
+                        const res = await fetch('/api/prototype');
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        const payload = JSON.stringify({
+                          manifest: data.manifest,
+                          specs: data.specs,
+                          tokens: data.tokens,
+                          catalog: data.catalog,
+                        });
+                        protoSpecsRef.current = data.specs as Record<string, Record<string, unknown>>;
+                        setPrototypePayload(payload);
+                        setProtoKey(k => k + 1);
+                        log('INFO', 'studio', 'Prototype refreshed with updated navigation');
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-text-muted">
+              {prototypeScreens.length} screens
+            </span>
+            <span className="ml-auto text-xs font-medium text-accent-blue">
+              Prototype Mode
+            </span>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={approvedCount < 2 || prototypeLoading}
+              onClick={handleLoadPrototype}
+            >
+              {prototypeLoading ? 'Loading...' : 'Prototype'}
+            </Button>
+            <div className="w-px h-4 bg-border" />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={approvedCount < 2 || coherenceLoading}
+              onClick={handleCheckCoherence}
+            >
+              {coherenceLoading ? 'Checking...' : 'Check Coherence'}
+            </Button>
+            {pages.some(p => p.designStatus !== 'rendered' && p.designStatus !== 'approved' && p.designStatus !== 'generating') && (
+              <>
+                <div className="w-px h-4 bg-border" />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={generatingAll}
+                  onClick={handleGenerateAll}
+                  data-testid="generate-all-designs"
+                >
+                  {generatingAll && genAllProgress
+                    ? `Generating ${genAllProgress.current}/${genAllProgress.total}...`
+                    : 'Generate All'}
+                </Button>
+              </>
+            )}
+            <span className="text-xs text-text-muted">
+              {approvedCount < 2
+                ? `Need 2+ designed pages (${approvedCount} available)`
+                : `${approvedCount} designed pages`}
+            </span>
+          </>
+        )}
       </div>
 
       <CoherenceResultsModal
@@ -822,7 +1092,8 @@ function DesignStudioContent() {
       )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden px-6">
-      {/* Left panel: Page Registry (200px) */}
+      {/* Left panel: Page Registry — hidden in prototype mode */}
+      {!prototypeMode && (
       <div className="w-[200px] flex-shrink-0 border-r border-border bg-bg-card/30">
         <PageRegistry
           pages={pages}
@@ -831,10 +1102,13 @@ function DesignStudioContent() {
           onCreateNew={handleCreateNew}
         />
       </div>
+      )}
 
-      {/* Center panel: Design Canvas or Pipeline Progress */}
+      {/* Center panel */}
       <div className="flex-1 min-w-0 bg-bg-base">
-        {pipelineRunId ? (
+        {prototypeMode ? (
+          <PrototypeView onBridgeReady={handleBridgeReady} />
+        ) : pipelineRunId ? (
           <PipelineProgress
             runId={pipelineRunId}
             model={selectedModel}
@@ -867,8 +1141,9 @@ function DesignStudioContent() {
         )}
       </div>
 
-      {/* Right panel: Inspector */}
-      <div className="w-[260px] flex-shrink-0 border-l border-border overflow-hidden">
+      {/* Right panel: Inspector — hidden in prototype mode */}
+      {!prototypeMode && (
+      <div className="w-[260px] flex-shrink-0 border-l border-border overflow-hidden flex flex-col">
         <DesignInspector
           selectedNode={selectedNode}
           designSpec={designSpec}
@@ -883,6 +1158,7 @@ function DesignStudioContent() {
           onChatSubmit={(msg) => console.log('[DesignStudio] Chat:', msg)}
         />
       </div>
+      )}
       </div>
 
       {/* Log panel */}
@@ -898,6 +1174,30 @@ function DesignStudioContent() {
           {toastMsg.text}
         </div>
       )}
+    </div>
+  );
+}
+
+const RENDERER_URL = 'http://localhost:4100';
+
+function PrototypeView({ onBridgeReady }: { onBridgeReady: (bridge: UseRendererBridgeResult) => void }) {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const bridge = useRendererBridge(iframeRef);
+
+  useEffect(() => {
+    if (bridge.isReady) onBridgeReady(bridge);
+  }, [bridge.isReady, onBridgeReady, bridge]);
+
+  return (
+    <div className="h-full relative">
+      <iframe
+        ref={iframeRef}
+        src={RENDERER_URL}
+        data-testid="prototype-iframe"
+        title="Prototype Renderer"
+        sandbox="allow-scripts allow-same-origin"
+        className="w-full h-full border-none"
+      />
     </div>
   );
 }

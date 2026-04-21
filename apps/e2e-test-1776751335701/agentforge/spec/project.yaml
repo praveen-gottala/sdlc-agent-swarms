@@ -1,0 +1,7 @@
+version: "1.0"
+app:
+  name: E2E Test 1776751335701
+  description: A task management app with a dashboard, task list, task detail
+    view, a notifications drawer that slides in from the right, and a
+    confirmation dialog for deleting tasks.
+adrs: []

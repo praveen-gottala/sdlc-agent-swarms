@@ -130,7 +130,7 @@ describe('specWriterWork', () => {
       ctx,
     );
 
-    expect(ctx.mcpClient.callTool).toHaveBeenCalledWith('figma', 'get_code', {
+    expect(ctx.mcpClient!.callTool).toHaveBeenCalledWith('figma', 'get_code', {
       fileId: 'file123',
       nodeId: 'node456',
     });

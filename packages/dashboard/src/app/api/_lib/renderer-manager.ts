@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import { join } from 'path';
 import { createConnection } from 'net';
-import { existsSync, statSync } from 'fs';
+import { existsSync } from 'fs';
 import http from 'http';
 
 const PORT = 4100;
@@ -22,13 +22,10 @@ function findMonorepoRoot(): string {
 
 const MONOREPO_ROOT = findMonorepoRoot();
 const VITE_APP_DIR = join(MONOREPO_ROOT, 'packages/designspec-renderer/src/renderer/browser/app');
-const MAIN_TSX_PATH = join(VITE_APP_DIR, 'src/main.tsx');
 
 let childPid: number | null = null;
 let startedAt: number | null = null;
 let lastError: string | null = null;
-/** mtime of main.tsx when we last started Vite — detects stale processes */
-let startedWithMtime: number | null = null;
 
 function tryConnect(host: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -65,21 +62,6 @@ function httpHealthCheck(): Promise<boolean> {
   });
 }
 
-/**
- * Detect if source files changed since the running Vite was started.
- * Vite HMR handles most changes, but if the process was started externally
- * (e.g. by a previous dashboard session), HMR may not have the latest code.
- */
-function isSourceStale(): boolean {
-  if (!startedWithMtime) return false;
-  try {
-    const currentMtime = statSync(MAIN_TSX_PATH).mtimeMs;
-    return currentMtime > startedWithMtime;
-  } catch {
-    return false;
-  }
-}
-
 function killProcessOnPort(): void {
   try {
     const pids = execSync(`lsof -ti:${PORT}`, { encoding: 'utf-8' }).trim();
@@ -91,10 +73,6 @@ function killProcessOnPort(): void {
   }
 }
 
-function getSourceMtime(): number | null {
-  try { return statSync(MAIN_TSX_PATH).mtimeMs; } catch { return null; }
-}
-
 export async function getRendererStatus(): Promise<{
   status: 'ready' | 'starting' | 'stopped' | 'stale';
   pid: number | null;
@@ -103,14 +81,26 @@ export async function getRendererStatus(): Promise<{
 }> {
   const open = await isPortOpen();
   if (open) {
-    // Port is open, but was this process started by us?
-    if (childPid === null) {
-      // Orphan process from a previous session — we don't control it
-      return { status: 'stale', pid: null, port: PORT, error: 'Renderer was started outside this session, auto-restarting' };
+    const httpOk = await httpHealthCheck();
+    if (!httpOk) {
+      // TCP accept can race ahead of Vite's HTTP handler — treat as still booting or broken.
+      if (childPid && startedAt && Date.now() - startedAt < 90_000) {
+        return { status: 'starting', pid: childPid, port: PORT };
+      }
+      return {
+        status: 'stale',
+        pid: childPid,
+        port: PORT,
+        error: 'Renderer port is open but HTTP is not responding yet',
+      };
     }
-    if (isSourceStale()) {
-      return { status: 'stale', pid: childPid, port: PORT, error: 'Source files changed since renderer started, auto-restarting' };
-    }
+    // Port is open and HTTP is healthy — the renderer is serving, regardless
+    // of whether this Next session owns the PID. We deliberately do NOT flag
+    // externally-started servers (childPid === null) or source-staler servers
+    // as 'stale' here: the resulting /api/renderer/restart is heavy (compiles
+    // ~1.4k modules, kills & respawns Vite) and, when combined with headed
+    // Chromium during E2E, has repeatedly OOM-killed the Next dev server.
+    // Vite's own HMR handles source changes; kill-and-respawn is overkill.
     return { status: 'ready', pid: childPid, port: PORT };
   }
   if (childPid && startedAt && Date.now() - startedAt < 30_000) {
@@ -179,7 +169,6 @@ export async function startRenderer(): Promise<{
     child.unref();
     childPid = child.pid ?? null;
     startedAt = Date.now();
-    startedWithMtime = getSourceMtime();
     lastError = null;
 
     return { status: 'started' };

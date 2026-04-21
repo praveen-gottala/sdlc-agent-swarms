@@ -13,6 +13,16 @@ This file is the **navigation hub** for AI agents using **Cursor** or **Claude C
 
 Keep **`CLAUDE.md` roughly under ~200 lines** for context efficiency; if it grows, **move sections to `docs/`** and link instead of pasting into multiple places.
 
+## Focused behavioral rules (`.claude/rules/`)
+
+Short, topical rules that supplement `CLAUDE.md`. Read whichever applies to the task:
+
+| File | Role |
+|------|------|
+| **`.claude/rules/honesty.md`** | No deflection when stuck; isolate before guessing; don't loop. |
+| **`.claude/rules/karpathy-guidelines.md`** | Think before coding, simplicity first, surgical changes, goal-driven execution (adapted from Andrej Karpathy). Complements — does not replace — `CLAUDE.md`. |
+| **`.claude/rules/prd-compliance.md`**, **`testing.md`**, **`typescript.md`**, etc. | Topic-specific conventions; read when touching those areas. |
+
 ## Episodic handoff (volatile — do not turn into always-on rules)
 
 | File | Role |

@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 19 44% 7%;
+    --card: 19 44% 13%;
+    --popover: 21 44% 17%;
+    --foreground: 34 100% 95%;
+    --primary: 18 100% 58%;
+    --accent: 46 100% 62%;
+    --border: 21 44% 17%;
+    --ring: 46 100% 62%;
+    --destructive: 8 100% 56%;
+    --success: 142 69% 58%;
+    --warning: 46 100% 62%;
+    --info: 217 91% 60%;
+    --overlay: rgba(26, 15, 10, 0.88);
+    --card-foreground: 34 100% 95%;
+    --popover-foreground: 34 100% 95%;
+    --primary-foreground: 19 44% 7%;
+    --secondary-foreground: 34 100% 95%;
+    --muted-foreground: 26 100% 82%;
+    --accent-foreground: 34 100% 95%;
+    --destructive-foreground: 19 44% 7%;
+    --input: 21 44% 17%;
+    --secondary: 15 38% 10%;
+    --muted: 15 38% 10%;
+    --radius: 0.75rem;
+    --shadow-1: 2px 2px 0px rgba(255, 107, 43, 0.4);
+    --shadow-2: 4px 4px 0px rgba(255, 107, 43, 0.5), 0 2px 12px rgba(0, 0, 0, 0.4);
+    --shadow-3: 6px 6px 0px rgba(255, 107, 43, 0.45), 0 4px 20px rgba(0, 0, 0, 0.5);
+    --shadow-4: 8px 8px 0px rgba(255, 107, 43, 0.5), 0 8px 40px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(255, 210, 63, 0.2);
+  }
+}

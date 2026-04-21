@@ -6,9 +6,12 @@
  */
 
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
-import { Ok, Err, DEFAULT_MODEL, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
+import { countPlanningNavigateTo, countSpecNavigateTo } from './validate-navigate-to.js';
 
 /** JSON Schema for structured evaluation output. */
 const EVALUATION_OUTPUT_SCHEMA = {
@@ -52,6 +55,14 @@ export interface DesignEvaluation {
   readonly score: number;
   readonly overallQuality: 'good' | 'needs_fixes' | 'poor';
   readonly issues: readonly DesignIssue[];
+}
+
+/** Optional post-vision structural checks (Plan B B0b). */
+export interface EvaluateDesignOptions {
+  readonly structuralNavCheck?: {
+    readonly planning: UXPlanningOutput;
+    readonly getSpec: () => DesignSpecV2;
+  };
 }
 
 /** History entry for a previous correction attempt. */
@@ -140,6 +151,7 @@ export async function evaluateDesign(
   designTokens?: DesignTokensSpec,
   traceCollector?: { promptTraces?: PromptTrace[] },
   traceStage?: string,
+  options?: EvaluateDesignOptions,
 ): Promise<Result<DesignEvaluation>> {
   const imageBlock: ContentBlock = {
     type: 'image',
@@ -192,7 +204,7 @@ export async function evaluateDesign(
   if (traceCollector) {
     recordPromptTrace(traceCollector, evalStageName,
       { system: EVALUATION_SYSTEM_PROMPT, messages: [{ role: 'user', content: textBlock.text }] },
-      { model: DEFAULT_MODEL, maxTokens: 4096 });
+      { model: EVALUATOR_MODEL, maxTokens: 4096 });
   }
 
   const result = await provider.complete(
@@ -203,7 +215,7 @@ export async function evaluateDesign(
       ],
     },
     {
-      model: DEFAULT_MODEL,
+      model: EVALUATOR_MODEL,
       maxTokens: 4096,
       temperature: 0,
       responseSchema: EVALUATION_OUTPUT_SCHEMA,
@@ -246,11 +258,33 @@ export async function evaluateDesign(
     evalData = parseResult.value as { score: number; issues: DesignIssue[] };
   }
 
-  const score = typeof evalData.score === 'number' ? evalData.score : 0;
-  const issues: DesignIssue[] = Array.isArray(evalData.issues) ? evalData.issues : [];
+  let finalScore = typeof evalData.score === 'number' ? evalData.score : 0;
+  const issues: DesignIssue[] = Array.isArray(evalData.issues) ? [...evalData.issues] : [];
+
+  if (options?.structuralNavCheck) {
+    const { planning, getSpec } = options.structuralNavCheck;
+    const specObj = getSpec();
+    const exp = countPlanningNavigateTo(planning);
+    if (exp > 0) {
+      const act = countSpecNavigateTo(specObj);
+      if (act < exp) {
+        const gap = exp - act;
+        const deduct = Math.min(30, gap * 5);
+        finalScore = Math.max(0, finalScore - deduct);
+        const navIssue: DesignIssue = {
+          severity: 'major',
+          component: 'DesignSpec',
+          description: `Expected ${String(exp)} navigateTo binding(s) from planning; DesignSpec has ${String(act)} (missing ${String(gap)}).`,
+          fix: 'Map each componentTree node with navigateTo to a DesignSpec node with the same target.',
+          issueId: 'navigateTo-count-mismatch',
+        };
+        issues.push(navIssue);
+      }
+    }
+  }
 
   const overallQuality: DesignEvaluation['overallQuality'] =
-    score >= 80 ? 'good' : score >= 50 ? 'needs_fixes' : 'poor';
+    finalScore >= 80 ? 'good' : finalScore >= 50 ? 'needs_fixes' : 'poor';
 
-  return Ok({ score, overallQuality, issues });
+  return Ok({ score: finalScore, overallQuality, issues });
 }

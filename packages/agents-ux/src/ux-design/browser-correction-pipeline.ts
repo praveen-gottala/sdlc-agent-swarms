@@ -21,6 +21,7 @@ import type { UserFeedbackTag } from '@agentforge/designspec-renderer';
 import { runCorrectionLoop } from './correction-loop.js';
 import { evaluateDesign } from './design-evaluator.js';
 import { createBrowserCorrectionAdapter } from './browser-correction-adapter.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 // ─── Logging helpers ─────────────────────────────────────────
@@ -72,6 +73,8 @@ export interface BrowserCorrectionOptions {
   width?: number;
   /** Directory to write intermediate spec + screenshot after each correction iteration. */
   outputDir?: string;
+  /** Structural navigateTo count check in the vision evaluator (Plan B B0b). */
+  planningOutput?: UXPlanningOutput;
 }
 
 /**
@@ -194,14 +197,14 @@ export async function runBrowserCorrectionPipeline(
       return await runInteractiveCorrectionLoop(
         session, currentSpec, inputSpec, tokens, catalog, provider, dom,
         tier2Issues, latestScreenshot, latestHtml, mechanicalResults,
-        maxIterations, qualityThreshold, outputDir,
+        maxIterations, qualityThreshold, outputDir, options?.planningOutput,
       );
     } else {
       // ── Non-interactive mode: automated correction loop ──
       return await runNonInteractiveCorrectionLoop(
         session, currentSpec, inputSpec, provider, dom,
         tier2Issues, latestScreenshot, latestHtml, mechanicalResults,
-        maxIterations, qualityThreshold, outputDir,
+        maxIterations, qualityThreshold, outputDir, options?.planningOutput,
       );
     }
   } finally {
@@ -226,6 +229,7 @@ async function runInteractiveCorrectionLoop(
   maxIterations: number,
   qualityThreshold: number,
   outputDir?: string,
+  planningOutput?: UXPlanningOutput,
 ): Promise<BrowserCorrectionResult> {
   logSection('Opening interactive preview...');
 
@@ -308,6 +312,13 @@ async function runInteractiveCorrectionLoop(
         latestScreenshot.toString('base64'),
         JSON.stringify(currentSpec),
         provider,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        planningOutput
+          ? { structuralNavCheck: { planning: planningOutput, getSpec: () => specRef.value } }
+          : undefined,
       );
       if (evalResult.ok) {
         currentScore = evalResult.value.score;
@@ -347,6 +358,7 @@ async function runNonInteractiveCorrectionLoop(
   maxIterations: number,
   qualityThreshold: number,
   outputDir?: string,
+  planningOutput?: UXPlanningOutput,
 ): Promise<BrowserCorrectionResult> {
   logSection(`Starting vision-assisted correction (max ${maxIterations} iterations)...`);
   logDetail(`User tags: 0, Tier 2 mechanical issues: ${tier2Issues.length}`);
@@ -367,6 +379,9 @@ async function runNonInteractiveCorrectionLoop(
     renderDelayMs: 500,
     designSpec: JSON.stringify(currentSpec),
     provider,
+    structuralNavCheck: planningOutput
+      ? { planning: planningOutput, getSpec: () => specRef.value }
+      : undefined,
   });
 
   // Get final screenshot

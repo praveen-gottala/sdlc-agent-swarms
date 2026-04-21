@@ -311,6 +311,7 @@ export { ensureDesignToolConnection, createNoOpMCPClient, PENPOT_SETUP_INSTRUCTI
 export type { DesignTool, PreflightResult } from './commands/design-preflight.js';
 export { designPageCommand } from './commands/design-page.js';
 export { designPageAllCommand } from './commands/design-page-all.js';
+export type { DesignPageAllOptions } from './commands/design-page-all.js';
 export { designPageBrowserCommand } from './commands/design-page-browser.js';
 export { doctorCommand } from './commands/doctor.js';
 export { setupCommand } from './commands/setup.js';

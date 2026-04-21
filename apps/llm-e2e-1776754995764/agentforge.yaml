@@ -1,0 +1,19 @@
+version: "1.0"
+project:
+  name: LLM E2E 1776754995764
+  description: TaskPilot is a team task management app. It has a dashboard showing
+    active tasks and team workload, a task list with filters, a task detail
+    page, a notifications drawer that slides in from the right when the bell
+    icon is clicked, and a delete confirmation dialog that appears as a centered
+    modal overlay.
+  platforms:
+    - web
+stack:
+  frontend: react
+  backend: node
+  database: postgresql
+  styling: tailwind
+budget:
+  per_task_max_usd: 2
+  per_phase_max_usd: 25
+  monthly_max_usd: 200

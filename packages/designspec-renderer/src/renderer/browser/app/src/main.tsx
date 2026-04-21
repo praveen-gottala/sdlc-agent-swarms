@@ -3,7 +3,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { generateCssVariables } from './generate-css-variables';
 import { DesignSpecRenderer } from './DesignSpecRenderer';
+import { PrototypeApp } from './PrototypeApp';
 import { initIframeBridge, sendLog } from './iframe-bridge';
+import type { DesignSpecV2 } from '@shared/types/design-spec-v2';
+import type { SharedChromeSpec } from '@shared/types/shared-chrome';
 
 async function fetchJson(url: string): Promise<any | null> {
   try {
@@ -31,29 +34,101 @@ function injectCssVariables(tokens: any) {
 
 async function main() {
   const cacheBust = `?t=${Date.now()}`;
-  const [tokens, spec, catalog] = await Promise.all([
+  const [tokens, spec, catalog, manifest, chromeRaw] = await Promise.all([
     fetchJson(`./data/tokens.json${cacheBust}`),
     fetchJson(`./data/spec.json${cacheBust}`),
     fetchJson(`./data/catalog.json${cacheBust}`),
+    fetchJson(`./data/prototype.json${cacheBust}`),
+    fetchJson(`./data/shared-chrome.json${cacheBust}`),
   ]);
 
+  const root = ReactDOM.createRoot(document.getElementById('root')!);
+
+  const chromeFromFile: SharedChromeSpec | null =
+    chromeRaw && typeof chromeRaw === 'object' && chromeRaw !== null && 'nodes' in chromeRaw
+      ? (chromeRaw as SharedChromeSpec)
+      : null;
+
+  // Prototype mode: multi-screen with navigation
+  if (manifest?.screens?.length) {
+    if (tokens) injectCssVariables(tokens);
+    const specs: Record<string, DesignSpecV2> = {};
+    for (const screen of manifest.screens) {
+      const screenSpec = await fetchJson(`./${screen.specPath}${cacheBust}`);
+      if (screenSpec) specs[screen.screenId] = screenSpec;
+    }
+    root.render(
+      <PrototypeApp
+        manifest={manifest}
+        specs={specs}
+        tokens={tokens ?? {}}
+        catalog={catalog ?? {}}
+        chromeSpec={chromeFromFile}
+      />,
+    );
+    return;
+  }
+
+  // Single-screen mode (existing behavior)
   const hasStaticData = tokens && spec && catalog;
 
   if (hasStaticData) {
     injectCssVariables(tokens);
   }
 
-  const root = ReactDOM.createRoot(document.getElementById('root')!);
-
   let activeTokens = tokens ?? {};
   let activeCatalog = catalog ?? {};
+  let inPrototypeMode = false;
 
   if (hasStaticData) {
     root.render(<DesignSpecRenderer spec={spec} tokens={tokens} catalog={catalog} />);
   }
 
   initIframeBridge({
+    onLoadPrototype: (payload: string) => {
+      try {
+        const parsed = JSON.parse(payload);
+        const manifest = parsed.manifest;
+        const specs = parsed.specs as Record<string, DesignSpecV2>;
+        const protoTokens = parsed.tokens ?? activeTokens;
+        const protoCatalog = parsed.catalog ?? activeCatalog;
+        const chromeOpt = parsed.chromeSpec as SharedChromeSpec | null | undefined;
+
+        activeTokens = protoTokens;
+        activeCatalog = protoCatalog;
+        injectCssVariables(protoTokens);
+
+        inPrototypeMode = true;
+        sendLog('INFO', `Prototype loaded: ${manifest.screens.length} screens, ${manifest.navigation.length} nav bindings`, 'renderer');
+        root.render(
+          <PrototypeApp
+            manifest={manifest}
+            specs={specs}
+            tokens={protoTokens}
+            catalog={protoCatalog}
+            chromeSpec={chromeOpt ?? null}
+          />,
+        );
+        requestAnimationFrame(() => {
+          window.parent.postMessage(
+            { type: 'render-complete', success: true, nodeCount: manifest.screens.length, source: 'agentforge' },
+            '*',
+          );
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown parse error';
+        sendLog('ERROR', `Failed to load prototype: ${msg}`, 'renderer');
+        window.parent.postMessage(
+          { type: 'render-complete', success: false, nodeCount: 0, source: 'agentforge' },
+          '*',
+        );
+      }
+    },
     onLoadSpec: (specJson: string) => {
+      if (inPrototypeMode) {
+        sendLog('WARN', 'Ignoring load-spec while in prototype mode', 'renderer');
+        return;
+      }
       try {
         const parsed = JSON.parse(specJson);
 

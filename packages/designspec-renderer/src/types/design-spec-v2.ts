@@ -45,7 +45,7 @@ export interface SegmentedOption {
 /**
  * A single node in the design spec.
  *
- * STRICT MODE BUDGET: 21 of 24 optional fields used.
+ * STRICT MODE BUDGET: 22 of 24 optional fields used.
  * Do NOT add fields without checking Anthropic's 24-optional-field limit.
  * Move new properties to catalog defaults or overrides instead.
  */
@@ -105,6 +105,12 @@ export interface NodeSpec {
   /** Arbitrary overrides applied on top of catalog defaults. */
   readonly overrides?: Readonly<Record<string, unknown>>;
 
+  // Navigation
+  /** Target page ID for navigation. When set, this node acts as a navigation trigger. */
+  readonly navigateTo?: string;
+  /** Selected state for tabs/segmented items (prototype + Chrome Pass). */
+  readonly active?: boolean;
+
   // Data (for list components)
   /** Data items for list/repeater components. */
   readonly items?: readonly Readonly<Record<string, unknown>>[];
@@ -121,4 +127,6 @@ export interface DesignSpecV2 {
   readonly width: number;
   /** Flat map of node ID -> NodeSpec. */
   readonly nodes: Readonly<Record<string, NodeSpec>>;
+  /** Screen rendering mode. Determines how PrototypeApp renders this screen (full-page vs overlay). */
+  readonly screenType?: 'page' | 'modal' | 'drawer' | 'sheet';
 }

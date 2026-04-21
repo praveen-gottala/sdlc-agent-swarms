@@ -321,7 +321,7 @@ function createTestContext(
   governance: GovernanceMiddleware,
   auditLog: AuditEntry[],
   taskId = 'task_001',
-): AgentContext {
+): AgentContext & { mcpClient: MCPClient } {
   return {
     taskId,
     projectRoot: '/project',
@@ -695,7 +695,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // Step 2b: UX Research
       const uxWork: AgentWorkFn<UXResearcherInput, UXResearcherOutput> = async (input, _provider, _learnings, ctx) => {
-        const figmaResult = await ctx.mcpClient.callTool('figma', 'get_code', { page: input.pageId });
+        const figmaResult = await ctx.mcpClient!.callTool('figma', 'get_code', { page: input.pageId });
         expect(figmaResult.ok).toBe(true);
 
         const output: UXResearcherOutput = {
@@ -718,7 +718,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // Step 2c: Wireframe
       const wireframeWork: AgentWorkFn<WireframeGeneratorInput, WireframeGeneratorOutput> = async (input, _provider, _learnings, ctx) => {
-        await ctx.mcpClient.callTool('figma', 'generate_figma_design', { page: input.pageId, sections: input.layoutSuggestions });
+        await ctx.mcpClient!.callTool('figma', 'generate_figma_design', { page: input.pageId, sections: input.layoutSuggestions });
         const output: WireframeGeneratorOutput = { designRef: `figma://file_abc/${input.pageId}`, sectionsCreated: 3 };
         ctx.eventBus.publish({
           type: 'WireframeComplete',
@@ -744,7 +744,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // Step 2e: Visual Design
       const visualWork: AgentWorkFn<VisualDesignerInput, VisualDesignerOutput> = async (input, _provider, _learnings, ctx) => {
-        await ctx.mcpClient.callTool('figma', 'get_tokens', {});
+        await ctx.mcpClient!.callTool('figma', 'get_tokens', {});
         const output: VisualDesignerOutput = { designRef: input.designRef, tokensApplied: 12 };
         ctx.eventBus.publish({
           type: 'VisualDesignComplete',
@@ -812,7 +812,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // Execute UX researcher which calls Figma
       const uxWork: AgentWorkFn<UXResearcherInput, UXResearcherOutput> = async (input, _provider, _learnings, ctx) => {
-        await ctx.mcpClient.callTool('figma', 'get_code', { page: input.pageId });
+        await ctx.mcpClient!.callTool('figma', 'get_code', { page: input.pageId });
         return Ok({ layoutSuggestions: ['grid'], userFlows: [], accessibilityNotes: [] });
       };
 
@@ -847,7 +847,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       const specWork: AgentWorkFn<SpecWriterInput, SpecWriterOutput> = async (input, _provider, _learnings, ctx) => {
         // Read design context via MCP
-        const designResult = await ctx.mcpClient.callTool('figma', 'get_code', { node: input.figmaNodeId });
+        const designResult = await ctx.mcpClient!.callTool('figma', 'get_code', { node: input.figmaNodeId });
         expect(designResult.ok).toBe(true);
 
         // Write component spec
@@ -1047,20 +1047,20 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         ctx.fs.writeFile(`${ctx.projectRoot}/src/components/RevenueChart.tsx`, code);
 
         // Push to branch via MCP
-        const pushResult = await ctx.mcpClient.callTool('github', 'push', {
+        const pushResult = await ctx.mcpClient!.callTool('github', 'push', {
           branch: 'agentforge/task-fe-001-revenue-chart',
           files: ['src/components/RevenueChart.tsx'],
         });
         expect(pushResult.ok).toBe(true);
 
         // Trigger CI
-        const ciResult = await ctx.mcpClient.callTool('github', 'trigger_workflow', {
+        const ciResult = await ctx.mcpClient!.callTool('github', 'trigger_workflow', {
           branch: 'agentforge/task-fe-001-revenue-chart',
         });
         expect(ciResult.ok).toBe(true);
 
         // Wait for CI result
-        const ciCheck = await ctx.mcpClient.callTool('github', 'get_workflow_result', {
+        const ciCheck = await ctx.mcpClient!.callTool('github', 'get_workflow_result', {
           runId: 'run_001',
         });
         expect(ciCheck.ok).toBe(true);
@@ -1135,7 +1135,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       const ctx = createTestContext(collector.bus, fs, mcpClient, governance, auditLog, 'task_sec_001');
 
       const scanWork: AgentWorkFn<SecurityScannerInput, SecurityScannerOutput> = async (input, _provider, _learnings, ctx) => {
-        const diff = await ctx.mcpClient.callTool('github', 'read_pr', { prNumber: input.prNumber });
+        const diff = await ctx.mcpClient!.callTool('github', 'read_pr', { prNumber: input.prNumber });
         expect(diff.ok).toBe(true);
 
         const output: SecurityScannerOutput = {
@@ -1222,7 +1222,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
         const code = `import { Router } from 'express';\nconst router = Router();\nrouter.get('/revenue', async (req, res) => { res.json([]); });\nexport default router;`;
         ctx.fs.writeFile(`${ctx.projectRoot}/src/api/revenue.ts`, code);
 
-        await ctx.mcpClient.callTool('github', 'push', {
+        await ctx.mcpClient!.callTool('github', 'push', {
           branch: 'agentforge/task-be-001-revenue-api',
           files: ['src/api/revenue.ts'],
         });
@@ -1278,7 +1278,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // PR creation
       const prWork: AgentWorkFn<PRManagerInput, PRManagerOutput> = async (input, _provider, _learnings, ctx) => {
-        const prResult = await ctx.mcpClient.callTool('github', 'create_pr', {
+        const prResult = await ctx.mcpClient!.callTool('github', 'create_pr', {
           branch: input.branch,
           title: `feat: ${input.task.title}`,
           body: 'Generated by AgentForge',
@@ -1326,14 +1326,14 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       const deployWork: AgentWorkFn<DeployAgentInput, DeployAgentOutput> = async (input, _provider, _learnings, ctx) => {
         // Trigger deploy workflow
-        const triggerResult = await ctx.mcpClient.callTool('github', 'trigger_workflow', {
+        const triggerResult = await ctx.mcpClient!.callTool('github', 'trigger_workflow', {
           workflow: 'deploy-staging',
           branch: input.branch,
         });
         expect(triggerResult.ok).toBe(true);
 
         // Check health
-        const healthResult = await ctx.mcpClient.callTool('github', 'get_workflow_result', {
+        const healthResult = await ctx.mcpClient!.callTool('github', 'get_workflow_result', {
           runId: 'run_001',
         });
         expect(healthResult.ok).toBe(true);
@@ -1716,14 +1716,14 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       handlePageRequest({ description: 'Dashboard with revenue chart', projectRoot: PROJECT_ROOT }, collector.bus, fs);
 
       const uxWork: AgentWorkFn<UXResearcherInput, UXResearcherOutput> = async (input, _p, _l, ctx) => {
-        await ctx.mcpClient.callTool('figma', 'get_code', { page: input.pageId });
+        await ctx.mcpClient!.callTool('figma', 'get_code', { page: input.pageId });
         ctx.eventBus.publish({ type: 'UXResearchComplete', pageId: input.pageId, taskId: ctx.taskId, layoutSuggestions: ['grid'], source: 'test', timestamp: Date.now() });
         return Ok({ layoutSuggestions: ['grid'], userFlows: [], accessibilityNotes: [] });
       };
       await runAgent(UX_RESEARCH_CONTRACT, ctx, { pageId: 'page_1', taskId: 't1', description: 'dashboard' }, 'write_design', 'design', 'UX', uxWork);
 
       const wfWork: AgentWorkFn<WireframeGeneratorInput, WireframeGeneratorOutput> = async (input, _p, _l, ctx) => {
-        await ctx.mcpClient.callTool('figma', 'generate_figma_design', { page: input.pageId });
+        await ctx.mcpClient!.callTool('figma', 'generate_figma_design', { page: input.pageId });
         ctx.eventBus.publish({ type: 'WireframeComplete', pageId: input.pageId, taskId: ctx.taskId, designRef: 'figma://ref', source: 'test', timestamp: Date.now() });
         return Ok({ designRef: 'figma://ref', sectionsCreated: 2 });
       };
@@ -1748,7 +1748,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
       // ---- Code ----
       const codeWork: AgentWorkFn<FrontendCoderInput, FrontendCoderOutput> = async (_input, _p, _l, ctx) => {
         ctx.fs.writeFile(`${ctx.projectRoot}/src/components/Dashboard.tsx`, 'export const Dashboard = () => <div/>;');
-        await ctx.mcpClient.callTool('github', 'push', { branch: 'feat/dashboard' });
+        await ctx.mcpClient!.callTool('github', 'push', { branch: 'feat/dashboard' });
         ctx.eventBus.publish({ type: 'CodeGenComplete', taskId: ctx.taskId, agentId: 'fe', branch: 'feat/dashboard', filesGenerated: ['Dashboard.tsx'], source: 'test', timestamp: Date.now() });
         return Ok({ filesGenerated: ['Dashboard.tsx'], branch: 'feat/dashboard', totalCostUsd: 0.40, totalAttempts: 1 });
       };
@@ -1763,7 +1763,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // PR
       const prWork: AgentWorkFn<PRManagerInput, PRManagerOutput> = async (_input, _p, _l, ctx) => {
-        await ctx.mcpClient.callTool('github', 'create_pr', { branch: 'feat/dashboard' });
+        await ctx.mcpClient!.callTool('github', 'create_pr', { branch: 'feat/dashboard' });
         ctx.eventBus.publish({ type: 'PRCreated', taskId: ctx.taskId, prNumber: 42, branch: 'feat/dashboard', source: 'test', timestamp: Date.now() });
         return Ok({ prNumber: 42, prUrl: 'https://github.com/test/smoke/pull/42', branch: 'feat/dashboard' });
       };
@@ -1778,7 +1778,7 @@ describe('Full Pipeline Smoke Test — "The Tuesday Morning Test"', () => {
 
       // ---- Deploy ----
       const deployWork: AgentWorkFn<DeployAgentInput, DeployAgentOutput> = async (_input, _p, _l, ctx) => {
-        await ctx.mcpClient.callTool('github', 'trigger_workflow', { workflow: 'deploy-staging' });
+        await ctx.mcpClient!.callTool('github', 'trigger_workflow', { workflow: 'deploy-staging' });
         ctx.eventBus.publish({ type: 'DeployComplete', taskId: ctx.taskId, environment: 'staging', healthy: true, source: 'test', timestamp: Date.now() });
         return Ok({ environment: 'staging' as const, healthy: true, healthCheckDuration: 30, deployRunId: 'run_002' });
       };

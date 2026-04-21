@@ -465,7 +465,10 @@ describe('uxPlanningWork — disk-first token loading', () => {
 
     // Verify disk tokens used in prompt
     const callArgs = (provider.complete as jest.Mock).mock.calls[0][0];
-    const userContent = callArgs.messages[0].content;
+    const rawContent = callArgs.messages[0].content;
+    const userContent = typeof rawContent === 'string'
+      ? rawContent
+      : rawContent.map((b: { text?: string }) => b.text ?? '').join('\n');
     expect(userContent).toContain('design-tokens.yaml');
     expect(userContent).not.toContain('Figma Variables API');
 

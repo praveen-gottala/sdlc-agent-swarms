@@ -17,6 +17,8 @@ interface SpecResult {
     description: string;
     components: string[];
     dataSources: string[];
+    screen_type?: 'page' | 'modal' | 'drawer' | 'sheet';
+    navigates_to?: Array<{ target: string; trigger: string }>;
   }>;
   models: Array<{
     id: string;
@@ -209,9 +211,19 @@ function buildSpecGenerationPrompt(
   sections.push(
     'You are a software architect that generates application specifications.',
     'Given a project context and PRD, produce a JSON specification with:',
-    '1. pages: Array of page definitions with id, name, route, description, components, dataSources',
+    '1. pages: Array of page definitions with id, name, route, description, components, dataSources, screen_type, navigates_to',
     '2. models: Array of data model definitions with id, name, fields (name, type, required)',
     '3. endpoints: Array of API endpoint definitions with method, path, description',
+    '',
+    'Each page MUST include:',
+    '- screen_type: "page" | "modal" | "drawer" | "sheet"',
+    '  - "page" (default) — full-screen views (dashboard, list, detail, form)',
+    '  - "modal" — centered dialog overlays for confirmations, focused forms, or detail views',
+    '  - "drawer" — side panels for auxiliary content (notifications, filters, settings)',
+    '  - "sheet" — bottom-anchored panels for mobile content (share menu, action picker)',
+    '  Most screens should be "page". Use modal/drawer/sheet when the screen is clearly auxiliary.',
+    '- navigates_to: Array of { target: "other-page-id", trigger: "Click button label" }',
+    '  Capture how users flow between pages. Navigation bars and tabs on multiple pages should have consistent targets.',
     '',
     'Output ONLY valid JSON wrapped in ```json``` code fences.',
     '',

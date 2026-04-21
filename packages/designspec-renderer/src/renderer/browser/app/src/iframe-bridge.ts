@@ -10,7 +10,10 @@ export function sendLog(level: string, message: string, logSource: 'bridge' | 'r
   );
 }
 
-export function initIframeBridge(options?: { onLoadSpec?: (specJson: string) => void }) {
+export function initIframeBridge(options?: {
+  onLoadSpec?: (specJson: string) => void;
+  onLoadPrototype?: (payload: string) => void;
+}) {
   let taggingEnabled = false;
   let styleEl: HTMLStyleElement | null = null;
 
@@ -119,6 +122,10 @@ export function initIframeBridge(options?: { onLoadSpec?: (specJson: string) => 
       case 'load-spec':
         sendLog('INFO', 'load-spec received from parent');
         options?.onLoadSpec?.(data.specJson);
+        break;
+      case 'load-prototype':
+        sendLog('INFO', 'load-prototype received from parent');
+        options?.onLoadPrototype?.(data.payload);
         break;
     }
   });

@@ -223,7 +223,7 @@ describe('frontendCoderWork', () => {
 
     await frontendCoderWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
 
     // Should call figma.get_code for design context
     const figmaCall = mcpCalls.find(
@@ -314,7 +314,7 @@ describe('frontendCoderWork', () => {
 
   it('fails when MCP branch creation fails', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation(
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation(
       (server: string, method: string) => {
         if (server === 'github' && method === 'create_branch') {
           return Promise.resolve(

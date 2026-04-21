@@ -1086,4 +1086,7 @@
       "content": "",
       "typography": "label",
       "color": "text-secondary",
-      
+      "width": 80
+    }
+  }
+}

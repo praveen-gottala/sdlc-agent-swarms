@@ -196,7 +196,7 @@ describe('backendCoderWork', () => {
 
     await backendCoderWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
 
     const branchCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'github' && call[1] === 'create_branch',
@@ -217,7 +217,7 @@ describe('backendCoderWork', () => {
 
     await backendCoderWork(input, provider, [], ctx);
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const figmaCall = mcpCalls.find(
       (call: unknown[]) => call[0] === 'figma',
     );
@@ -309,7 +309,7 @@ describe('backendCoderWork', () => {
 
   it('fails when MCP branch creation fails', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation(
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation(
       (server: string, method: string) => {
         if (server === 'github' && method === 'create_branch') {
           return Promise.resolve(

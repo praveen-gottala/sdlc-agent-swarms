@@ -68,11 +68,20 @@ export async function POST(request: NextRequest) {
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
   const pages = pagesFile?.pages ?? [];
 
+  const targetRoute = `/${slug}`;
+  const existing = pages.find((p) => p.route === targetRoute);
+  if (existing) {
+    return NextResponse.json(
+      { pageId: existing.id, description: existing.description },
+      { status: 200 },
+    );
+  }
+
   const newPage: PageEntry = {
     id: pageId,
     name,
     description,
-    route: `/${slug}`,
+    route: targetRoute,
     status: 'draft',
     designStatus: 'draft',
   };

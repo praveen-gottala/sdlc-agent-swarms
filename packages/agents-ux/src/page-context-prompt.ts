@@ -25,12 +25,29 @@ export function formatPageContextPrompt(ctx: PageContext): string {
   const dataSources = tp.data_sources && tp.data_sources.length > 0
     ? tp.data_sources.join(', ')
     : '(none)';
+  const screenType = tp.screen_type ?? 'page';
   sections.push(
     `\n## Target Page: ${tp.name} (${tp.route})`,
+    `Screen Type: ${screenType}`,
     `Required Components: ${componentsList}`,
     `Data Sources: ${dataSources}`,
     `Description: ${tp.description}`,
   );
+
+  if (screenType !== 'page') {
+    sections.push(
+      `\n⚠ OVERLAY DESIGN RULES (screen_type: ${screenType}):`,
+      `- This is a ${screenType}, NOT a full page.`,
+      `- Do NOT include page-level navigation (NavigationBar, sidebar, footer).`,
+      `- Design only the panel content within the designated viewport width.`,
+      `- Include a close/dismiss affordance (X button for modal/drawer, drag handle for sheet).`,
+    );
+  }
+
+  if (tp.navigates_to && tp.navigates_to.length > 0) {
+    const navLines = tp.navigates_to.map(n => `  - "${n.trigger}" → ${n.target}`);
+    sections.push(`Navigation from this page:`, ...navLines);
+  }
 
   // All app screens (sibling context for navigation)
   if (ctx.allPages.length > 0) {

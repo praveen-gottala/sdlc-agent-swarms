@@ -98,7 +98,7 @@ export const deployAgentWork: AgentWorkFn<DeployAgentInput, DeployAgentOutput> =
   }
 
   // 1. Trigger deployment via GitHub Actions
-  const deployResult = await context.mcpClient.callTool('github', 'trigger_workflow', {
+  const deployResult = await context.mcpClient!.callTool('github', 'trigger_workflow', {
     workflow: 'deploy-staging.yml',
     ref: branch,
   });
@@ -172,7 +172,7 @@ const waitForDeployCompletion = async (
   const deadline = Date.now() + 10 * 60_000; // 10-minute timeout for deploy
 
   while (Date.now() < deadline) {
-    const statusResult = await context.mcpClient.callTool('github', 'get_workflow_run', {
+    const statusResult = await context.mcpClient!.callTool('github', 'get_workflow_run', {
       run_id: runId,
     });
 
@@ -220,7 +220,7 @@ const monitorHealth = async (
   const deadline = startTime + HEALTH_CHECK_DURATION_MS;
 
   while (Date.now() < deadline) {
-    const healthResult = await context.mcpClient.callTool('github', 'check_health', {
+    const healthResult = await context.mcpClient!.callTool('github', 'check_health', {
       environment,
       task_id: taskId,
     });

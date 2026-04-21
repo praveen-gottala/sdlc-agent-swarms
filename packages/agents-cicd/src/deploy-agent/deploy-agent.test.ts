@@ -123,7 +123,7 @@ describe('deployAgentWork', () => {
     await jest.runAllTimersAsync();
     const result = await promise;
 
-    const mcpCalls = (ctx.mcpClient.callTool as jest.Mock).mock.calls;
+    const mcpCalls = (ctx.mcpClient!.callTool as jest.Mock).mock.calls;
     const triggerCall = mcpCalls.find(
       (call: unknown[]) => call[1] === 'trigger_workflow',
     );
@@ -173,7 +173,7 @@ describe('deployAgentWork', () => {
   it('emits DeployFailed on health check failure', async () => {
     const ctx = makeContext();
     // Override health check to return unhealthy
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
       if (method === 'trigger_workflow') {
         return Promise.resolve(Ok({ run_id: 'deploy_run_789' }));
       }
@@ -204,7 +204,7 @@ describe('deployAgentWork', () => {
 
   it('emits DeployFailed when deploy workflow fails', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
       if (method === 'trigger_workflow') {
         return Promise.resolve(Ok({ run_id: 'deploy_run_789' }));
       }
@@ -228,7 +228,7 @@ describe('deployAgentWork', () => {
 
   it('fails when trigger_workflow MCP call fails', async () => {
     const ctx = makeContext();
-    (ctx.mcpClient.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
+    (ctx.mcpClient!.callTool as jest.Mock).mockImplementation((_server: string, method: string) => {
       if (method === 'trigger_workflow') {
         return Promise.resolve(
           Err({ code: 'CI_FAILED', message: 'Workflow not found', recoverable: true }),

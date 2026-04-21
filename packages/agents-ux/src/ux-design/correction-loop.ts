@@ -8,11 +8,13 @@
  * Flow: Screenshot -> Evaluate (vision LLM) -> Fix -> Repeat
  */
 
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type { Result, PromptTrace } from '@agentforge/core';
 import { logDefaults } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import { evaluateDesign } from './design-evaluator.js';
 import type { DesignIssue, CorrectionHistory, FixAttemptRecord } from './design-evaluator.js';
+import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 
 /** Result of executing design fixes (tool-specific). */
 export interface CorrectionFixResult {
@@ -57,6 +59,11 @@ export interface CorrectionLoopOptions {
   readonly provider: LLMProvider;
   /** Trace collector for recording LLM call inputs/outputs. */
   readonly traceCollector?: { promptTraces?: PromptTrace[] };
+  /**
+   * When set, the evaluator compares planning navigateTo count vs the live DesignSpec
+   * (no vision) and may dock the score. Skipped if omitted.
+   */
+  readonly structuralNavCheck?: { planning: UXPlanningOutput; getSpec: () => DesignSpecV2 };
 }
 
 /** Result of running the correction loop. */
@@ -134,6 +141,9 @@ export async function runCorrectionLoop(
       undefined,
       options.traceCollector,
       `evaluation-${iterations}`,
+      options.structuralNavCheck
+        ? { structuralNavCheck: options.structuralNavCheck }
+        : undefined,
     );
 
     if (!evalResult.ok) {
@@ -171,11 +181,19 @@ export async function runCorrectionLoop(
       break;
     }
 
-    // 5. Check stall (score not improving)
-    if (previousScore >= 0 && evaluation.score === previousScore) {
-      // eslint-disable-next-line no-console
-      console.log(`        [correction] Score not improving (${evaluation.score} === ${previousScore}), stopping`);
-      break;
+    // 5. Check stall or plateau (score not improving meaningfully)
+    if (previousScore >= 0) {
+      const improvement = evaluation.score - previousScore;
+      if (improvement <= 0) {
+        // eslint-disable-next-line no-console
+        console.log(`        [correction] Score not improving (${evaluation.score} vs ${previousScore}), stopping`);
+        break;
+      }
+      if (improvement < 3) {
+        // eslint-disable-next-line no-console
+        console.log(`        [correction] Score plateau (${previousScore} → ${evaluation.score}, +${improvement} < 3), stopping`);
+        break;
+      }
     }
     previousScore = evaluation.score;
 

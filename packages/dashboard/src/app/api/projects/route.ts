@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'yaml';
-import { discoverProjects } from '../_lib/project-reader';
+import { discoverProjects, type DiscoveredProject } from '../_lib/project-reader';
 import {
   createProject,
   CreateProjectSchema,
@@ -22,23 +22,31 @@ export async function GET() {
     const projects = discoverProjects();
     const result: ProjectInfo[] = [];
 
+    const describe = (proj: DiscoveredProject, config?: { project?: { name?: string; description?: string } }) => {
+      const base = config?.project?.description ?? '';
+      if (proj.scope === 'fixtures') {
+        return base ? `${base} (fixture)` : 'Monorepo fixture (fixtures/)';
+      }
+      return base;
+    };
+
     for (const proj of projects) {
       const yamlPath = join(proj.path, 'agentforge.yaml');
       try {
         const content = readFileSync(yamlPath, 'utf-8');
         const config = parse(content) as { project?: { name?: string; description?: string } };
         result.push({
-          id: proj.dirName,
+          id: proj.id,
           name: config?.project?.name ?? proj.dirName,
           path: proj.path,
-          description: config?.project?.description ?? '',
+          description: describe(proj, config),
         });
       } catch {
         result.push({
-          id: proj.dirName,
+          id: proj.id,
           name: proj.dirName,
           path: proj.path,
-          description: '',
+          description: proj.scope === 'fixtures' ? 'Monorepo fixture (fixtures/)' : '',
         });
       }
     }

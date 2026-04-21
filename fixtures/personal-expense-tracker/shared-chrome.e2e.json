@@ -1,0 +1,296 @@
+{
+  "screen": "__chrome__",
+  "width": 1440,
+  "regions": {
+    "header": [
+      "topbar"
+    ],
+    "footer": [
+      "nav-tabs"
+    ]
+  },
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 1440,
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      },
+      "background": "background-primary"
+    },
+    "topbar": {
+      "parent": "root",
+      "order": 0,
+      "type": "header",
+      "width": "fill",
+      "height": 64,
+      "background": "surface-primary",
+      "shadow": "sm",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 32,
+        "py": 0
+      }
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "height": 48,
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 32,
+        "gap": 0
+      },
+      "shadow": "sm"
+    },
+    "topbar-brand": {
+      "parent": "topbar",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "topbar-center": {
+      "parent": "topbar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "topbar-actions": {
+      "parent": "topbar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "nav-tab-dashboard": {
+      "parent": "nav-tabs",
+      "order": 0,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
+      "order": 1,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "nav-tab-add": {
+      "parent": "nav-tabs",
+      "order": 2,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "topbar-logo": {
+      "parent": "topbar-brand",
+      "order": 0,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 8,
+      "background": "cta-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "topbar-appname": {
+      "parent": "topbar-brand",
+      "order": 1,
+      "type": "text",
+      "content": "Budgetly",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "month-prev-btn": {
+      "parent": "topbar-center",
+      "order": 0,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 16,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "month-selector": {
+      "parent": "topbar-center",
+      "order": 1,
+      "type": "container",
+      "radius": 20,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "px": 20,
+        "py": 6
+      }
+    },
+    "month-next-btn": {
+      "parent": "topbar-center",
+      "order": 2,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 16,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "topbar-add-btn": {
+      "parent": "topbar-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "+ Add Expense",
+      "layout": {
+        "py": 10,
+        "px": 14
+      }
+    },
+    "topbar-settings-btn": {
+      "parent": "topbar-actions",
+      "order": 1,
+      "type": "container",
+      "width": 36,
+      "height": 36,
+      "radius": 18,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "topbar-avatar": {
+      "parent": "topbar-actions",
+      "order": 2,
+      "catalog": "avatar",
+      "label": "JD",
+      "overrides": {
+        "width": 36,
+        "height": 36
+      }
+    },
+    "nav-tab-dashboard-text": {
+      "parent": "nav-tab-dashboard",
+      "order": 0,
+      "type": "text",
+      "content": "Dashboard",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "nav-tab-dashboard-indicator": {
+      "parent": "nav-tab-dashboard",
+      "order": 1,
+      "type": "divider",
+      "width": "fill",
+      "height": 2,
+      "background": "cta-primary"
+    },
+    "nav-tab-insights-text": {
+      "parent": "nav-tab-insights",
+      "order": 0,
+      "type": "text",
+      "content": "Insights",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "nav-tab-add-text": {
+      "parent": "nav-tab-add",
+      "order": 0,
+      "type": "text",
+      "content": "Add Expense",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "topbar-logo-text": {
+      "parent": "topbar-logo",
+      "order": 0,
+      "type": "text",
+      "content": "₿",
+      "typography": "label",
+      "color": "text-on-cta",
+      "weight": 700
+    },
+    "month-prev-icon": {
+      "parent": "month-prev-btn",
+      "order": 0,
+      "type": "text",
+      "content": "‹",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "month-selector-text": {
+      "parent": "month-selector",
+      "order": 0,
+      "type": "text",
+      "content": "June 2025",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "month-next-icon": {
+      "parent": "month-next-btn",
+      "order": 0,
+      "type": "text",
+      "content": "›",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "topbar-settings-icon": {
+      "parent": "topbar-settings-btn",
+      "order": 0,
+      "type": "text",
+      "content": "⚙",
+      "typography": "body",
+      "color": "text-secondary"
+    }
+  }
+}

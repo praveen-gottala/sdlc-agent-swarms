@@ -1,0 +1,268 @@
+version: "1.0"
+endpoints:
+  - id: ep-001
+    method: POST
+    path: /api/auth/register
+    description: Register a new user account. Accepts username, email, and password.
+      Returns JWT token and user profile.
+    requestBody:
+      username: string
+      email: string
+      password: string
+    responses:
+      "201": User created with JWT token
+      "400": Validation error or duplicate username/email
+      "409": Username or email already exists
+    auth: false
+  - id: ep-002
+    method: POST
+    path: /api/auth/login
+    description: Authenticate existing user. Returns JWT token and user profile data.
+    requestBody:
+      email: string
+      password: string
+    responses:
+      "200": JWT token and user profile
+      "401": Invalid credentials
+      "404": User not found
+    auth: false
+  - id: ep-003
+    method: POST
+    path: /api/auth/logout
+    description: Invalidate user session / token on the server side.
+    responses:
+      "200": Logout successful
+    auth: true
+  - id: ep-004
+    method: GET
+    path: /api/profile/:id
+    description: Get public player profile including stats, rank, level, XP, and
+      recent match summary.
+    params:
+      id: uuid
+    responses:
+      "200": User profile object with stats
+      "404": User not found
+    auth: true
+  - id: ep-005
+    method: PATCH
+    path: /api/profile/:id
+    description: Update own user profile fields (avatar_url, username). Only own
+      profile editable.
+    params:
+      id: uuid
+    requestBody:
+      username: string (optional)
+      avatar_url: string (optional)
+    responses:
+      "200": Updated user profile
+      "400": Validation error
+      "403": Cannot edit another user's profile
+    auth: true
+  - id: ep-006
+    method: GET
+    path: /api/games
+    description: List all available game modes with metadata including name,
+      description, player count range, and current active sessions count.
+    responses:
+      "200": Array of game mode objects
+    auth: true
+  - id: ep-007
+    method: POST
+    path: /api/matchmaking/join
+    description: Join the matchmaking queue for a selected game mode. Validates rank
+      eligibility and adds to queue.
+    requestBody:
+      game_type: arcade | strategy | battle
+    responses:
+      "200": Queue joined, returns queue entry with estimated wait time
+      "400": Already in queue or invalid game type
+      "409": Already in an active session
+    auth: true
+  - id: ep-008
+    method: POST
+    path: /api/matchmaking/leave
+    description: Remove player from the current matchmaking queue and cancel their
+      queue entry.
+    responses:
+      "200": Successfully left queue
+      "404": Not currently in queue
+    auth: true
+  - id: ep-009
+    method: GET
+    path: /api/session/:id
+    description: Get current state of a game session including players, scores,
+      status, and game state snapshot.
+    params:
+      id: uuid
+    responses:
+      "200": Session object with players and game state
+      "403": Not a participant in this session
+      "404": Session not found
+    auth: true
+  - id: ep-010
+    method: POST
+    path: /api/session/:id/action
+    description: Submit a player game action to the session (e.g., move, attack,
+      selection). Server validates and broadcasts update via WebSocket.
+    params:
+      id: uuid
+    requestBody:
+      action_type: string
+      payload: object
+    responses:
+      "200": Action accepted
+      "400": Invalid action
+      "403": Not a participant or session not active
+      "409": Game already ended
+    auth: true
+  - id: ep-011
+    method: GET
+    path: /api/leaderboard
+    description: "Fetch global leaderboard entries. Supports query filters:
+      game_type, time_range (all_time, weekly, daily), and pagination (page,
+      limit)."
+    queryParams:
+      game_type: arcade | strategy | battle | all (optional)
+      time_range: all_time | weekly | daily (optional)
+      page: integer (default 1)
+      limit: integer (default 20, max 50)
+    responses:
+      "200": Paginated leaderboard entries with user info and scores
+    auth: true
+  - id: ep-012
+    method: GET
+    path: /api/leaderboard/friends
+    description: Fetch leaderboard restricted to the current user's friends.
+      Supports same filters as global leaderboard.
+    queryParams:
+      game_type: arcade | strategy | battle | all (optional)
+      time_range: all_time | weekly | daily (optional)
+      page: integer (default 1)
+      limit: integer (default 20)
+    responses:
+      "200": Paginated friends leaderboard entries
+    auth: true
+  - id: ep-013
+    method: GET
+    path: /api/achievements
+    description: List all available achievements. If userId query param is provided,
+      includes unlocked status and unlock date for that user.
+    queryParams:
+      userId: uuid (optional)
+    responses:
+      "200": Array of achievement objects with optional unlock status
+    auth: true
+  - id: ep-014
+    method: POST
+    path: /api/report
+    description: Submit a report against another player for abuse, cheating,
+      harassment, or AFK behavior.
+    requestBody:
+      reported_id: uuid
+      session_id: uuid (optional)
+      reason: cheating | harassment | afk | offensive_name | other
+      description: string (optional)
+    responses:
+      "201": Report submitted successfully
+      "400": Validation error
+      "409": Duplicate report for same session
+    auth: true
+  - id: ep-015
+    method: GET
+    path: /api/friends
+    description: Get current user's friends list with online status and current activity.
+    responses:
+      "200": Array of friend user objects with online status
+    auth: true
+  - id: ep-016
+    method: POST
+    path: /api/friends/request
+    description: Send a friend request to another user by their ID.
+    requestBody:
+      addressee_id: uuid
+    responses:
+      "201": Friend request sent
+      "400": Already friends or request pending
+      "404": User not found
+    auth: true
+  - id: ep-017
+    method: PATCH
+    path: /api/friends/request/:id
+    description: Accept or decline a pending friend request.
+    params:
+      id: uuid
+    requestBody:
+      status: accepted | declined
+    responses:
+      "200": Friend request updated
+      "403": Not the request recipient
+      "404": Request not found
+    auth: true
+  - id: ep-018
+    method: GET
+    path: /api/matches/recent
+    description: Get the current user's most recent matches (last 5) with game mode,
+      result, score, and opponent info.
+    responses:
+      "200": Array of recent match objects
+    auth: true
+  - id: ep-019
+    method: GET
+    path: /api/matches/history/:userId
+    description: Get paginated full match history for a given user. Supports
+      pagination and game type filter.
+    params:
+      userId: uuid
+    queryParams:
+      game_type: arcade | strategy | battle (optional)
+      page: integer (default 1)
+      limit: integer (default 20)
+    responses:
+      "200": Paginated match history array
+      "404": User not found
+    auth: true
+  - id: ep-020
+    method: GET
+    path: /api/notifications
+    description: Get paginated notifications for the current user. Supports filter
+      for unread only.
+    queryParams:
+      unread_only: boolean (optional)
+      page: integer (default 1)
+      limit: integer (default 20)
+    responses:
+      "200": Paginated notification list
+    auth: true
+  - id: ep-021
+    method: PATCH
+    path: /api/notifications/read
+    description: Mark one or all notifications as read for the current user.
+    requestBody:
+      notification_ids: uuid[] (optional, if empty marks all as read)
+    responses:
+      "200": Notifications marked as read
+      "400": Validation error
+    auth: true
+  - id: ep-022
+    method: GET
+    path: /api/events/active
+    description: Get currently active events, tournaments, or special game modes
+      displayed on the home dashboard.
+    responses:
+      "200": Array of active event objects
+    auth: true
+  - id: ep-023
+    method: POST
+    path: /api/session/:id/invite
+    description: Invite a friend to join an existing waiting game session by sending
+      a game invite notification.
+    params:
+      id: uuid
+    requestBody:
+      invited_user_id: uuid
+    responses:
+      "200": Invite sent successfully
+      "400": Session not in waiting state or user already in session
+      "404": Session or user not found
+    auth: true

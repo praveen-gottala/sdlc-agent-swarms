@@ -180,7 +180,7 @@ export const buildAgentWork: AgentWorkFn<BuildAgentInput, BuildAgentOutput> = as
 
   // 4. If a fix is available, push it via MCP
   if (fix.canFix && fix.files.length > 0) {
-    const pushResult = await context.mcpClient.callTool('github', 'push_files', {
+    const pushResult = await context.mcpClient!.callTool('github', 'push_files', {
       branch,
       files: fix.files,
       message: `fix(ci): ${fix.description}`,
@@ -195,7 +195,7 @@ export const buildAgentWork: AgentWorkFn<BuildAgentInput, BuildAgentOutput> = as
     }
 
     // Re-trigger CI
-    await context.mcpClient.callTool('github', 'trigger_workflow', {
+    await context.mcpClient!.callTool('github', 'trigger_workflow', {
       workflow: 'agentforge-ci.yml',
       ref: branch,
     });

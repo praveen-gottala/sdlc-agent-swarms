@@ -140,7 +140,7 @@ export const testWriterWork: AgentWorkFn<TestWriterInput, TestWriterOutput> = as
   // 2. Read source code from completed tasks' branches via MCP
   const sourceContents: Array<{ file: string; content: string }> = [];
   for (const sourceFile of sourceFiles) {
-    const readResult = await context.mcpClient.callTool('github', 'read_file', {
+    const readResult = await context.mcpClient!.callTool('github', 'read_file', {
       branch: targetBranch,
       path: sourceFile,
     });
@@ -250,7 +250,7 @@ export const testWriterWork: AgentWorkFn<TestWriterInput, TestWriterOutput> = as
   }));
 
   // 10. Push test files to the EXISTING branch (not creating a new one)
-  const pushResult = await context.mcpClient.callTool('github', 'push_files', {
+  const pushResult = await context.mcpClient!.callTool('github', 'push_files', {
     branch: targetBranch,
     files: testFiles.map((f) => ({ path: f.path, content: f.content })),
   });

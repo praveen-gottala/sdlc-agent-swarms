@@ -3,15 +3,23 @@
  *
  * Resolves the viewport widths for design generation using a priority chain:
  * 1. CLI --width flag (highest)
- * 2. Per-page viewports from pages.yaml
- * 3. Design config from agentforge.yaml (responsive_breakpoints / primary_viewport)
- * 4. Default [1440] (fallback)
+ * 2. Screen type default (modal: 560, drawer: 320, sheet: page default)
+ * 3. Per-page viewports from pages.yaml
+ * 4. Design config from agentforge.yaml (responsive_breakpoints / primary_viewport)
+ * 5. Default [1440] (fallback)
  *
  * Follows the same pattern as model-resolver.ts.
  */
 
-import type { DesignConfig } from '../types/index.js';
+import type { DesignConfig, ScreenType } from '../types/index.js';
 import { debugLog, logDefaults } from '../debug-log.js';
+
+/** Default viewport widths per screen type. */
+const SCREEN_TYPE_VIEWPORTS: Readonly<Record<Exclude<ScreenType, 'page'>, number>> = {
+  modal: 560,
+  drawer: 320,
+  sheet: -1, // sentinel: uses the page default chain
+};
 
 /** Standard breakpoints for desktop-first responsive design. */
 export const STANDARD_BREAKPOINTS_DESKTOP_FIRST: readonly number[] = [1440, 768, 375];
@@ -26,6 +34,8 @@ const DEFAULT_VIEWPORT = 1440;
 export interface ResolveViewportsInput {
   /** CLI --width flag value (highest priority). */
   readonly cliWidth?: number;
+  /** Screen type (page/modal/drawer/sheet) — determines default viewport for overlays. */
+  readonly screenType?: ScreenType;
   /** Per-page viewports from pages.yaml. */
   readonly pageViewports?: readonly number[];
   /** Design config section from agentforge.yaml. */
@@ -37,23 +47,34 @@ export interface ResolveViewportsInput {
  *
  * Priority chain:
  * 1. `cliWidth` set → `[cliWidth]`
- * 2. `pageViewports` set and non-empty → `pageViewports`
- * 3. `designConfig.responsive_breakpoints` is `true` → standard breakpoints based on `layout_strategy`
- * 4. `designConfig.responsive_breakpoints` is a non-empty array → that array
- * 5. `designConfig.responsive_breakpoints` is `false`/missing → `[designConfig.primary_viewport ?? 1440]`
- * 6. Nothing set → `[1440]`
+ * 2. `screenType` is modal/drawer/sheet → screen-type default (modal: 560, drawer: 320, sheet: page default)
+ * 3. `pageViewports` set and non-empty → `pageViewports`
+ * 4. `designConfig.responsive_breakpoints` is `true` → standard breakpoints based on `layout_strategy`
+ * 5. `designConfig.responsive_breakpoints` is a non-empty array → that array
+ * 6. `designConfig.responsive_breakpoints` is `false`/missing → `[designConfig.primary_viewport ?? 1440]`
+ * 7. Nothing set → `[1440]`
  *
  * @returns Array of viewport widths in generation order
  */
 export function resolveViewports(input: ResolveViewportsInput): readonly number[] {
-  const { cliWidth, pageViewports, designConfig } = input;
+  const { cliWidth, screenType, pageViewports, designConfig } = input;
 
   // 1. CLI --width flag (highest priority)
   if (cliWidth !== undefined && cliWidth > 0) {
     return [cliWidth];
   }
 
-  // 2. Per-page viewports from pages.yaml
+  // 2. Screen type defaults (modal/drawer/sheet override page viewports)
+  if (screenType && screenType !== 'page') {
+    const defaultWidth = SCREEN_TYPE_VIEWPORTS[screenType];
+    if (defaultWidth > 0) {
+      debugLog(`resolveViewports: screenType=${screenType} → [${defaultWidth}]`);
+      return [defaultWidth];
+    }
+    // sheet uses -1 sentinel → falls through to page default chain
+  }
+
+  // 3. Per-page viewports from pages.yaml
   if (pageViewports && pageViewports.length > 0) {
     return pageViewports;
   }

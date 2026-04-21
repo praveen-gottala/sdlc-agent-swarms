@@ -58,6 +58,8 @@ export type {
 } from './task.js';
 
 export type {
+  ScreenType,
+  NavigationTarget,
   ComponentProp,
   ComponentEntry,
   ComponentSpec,

@@ -144,30 +144,32 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
     effectiveTokensSpec = tokensFromSpecs;
   }
 
-  // 2. Build prompt
+  // 2. Build prompt with cache control on shared prefix
   const systemPrompt = loadSystemPrompt();
-  const userMessageParts = [
+
+  // Shared context (same across all pages — cacheable)
+  const sharedContext = [
+    `\nExisting specs:\n${specsContent}`,
+    ...(effectiveTokensSpec ? [`\nDesign Tokens (from project spec):\n${JSON.stringify(effectiveTokensSpec, null, 2)}`] : []),
+    ...(learnings.length > 0 ? [`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`] : []),
+  ].join('\n');
+
+  // Page-specific context (unique per page)
+  const pageContext = [
     `Module ID: ${moduleId}`,
     `\nPRD Requirements:\n${prdRequirements.map((r, i) => `${i + 1}. ${r}`).join('\n')}`,
-    `\nExisting specs:\n${specsContent}`,
-  ];
-
-  if (effectiveTokensSpec) {
-    userMessageParts.push(`\nDesign Tokens (from project spec):\n${JSON.stringify(effectiveTokensSpec, null, 2)}`);
-  }
-
-  if (learnings.length > 0) {
-    userMessageParts.push(`\nLearnings from previous runs:\n${JSON.stringify(learnings)}`);
-  }
-
-  // Inject structured page context if available
-  if (input.pageContext) {
-    userMessageParts.push(formatPageContextPrompt(input.pageContext));
-  }
+    ...(input.pageContext ? [formatPageContextPrompt(input.pageContext)] : []),
+  ].join('\n');
 
   const prompt = {
-    system: systemPrompt,
-    messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
+    system: [{ type: 'text' as const, text: systemPrompt, cache_control: { type: 'ephemeral' as const } }],
+    messages: [{
+      role: 'user' as const,
+      content: [
+        { type: 'text' as const, text: sharedContext, cache_control: { type: 'ephemeral' as const } },
+        { type: 'text' as const, text: pageContext },
+      ],
+    }],
   };
 
   // 2b. Record prompt trace

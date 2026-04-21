@@ -1,0 +1,436 @@
+version: "1.0"
+models:
+  - id: model-001
+    name: User
+    description: Registered platform user with gaming profile, rank, and progression data
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: username
+        type: string
+        required: true
+        unique: true
+      - name: email
+        type: string
+        required: true
+        unique: true
+      - name: password_hash
+        type: string
+        required: true
+      - name: avatar_url
+        type: string
+        required: false
+      - name: level
+        type: integer
+        required: true
+        default: 1
+      - name: xp
+        type: integer
+        required: true
+        default: 0
+      - name: rank
+        type: enum
+        required: true
+        values:
+          - bronze
+          - silver
+          - gold
+          - platinum
+          - diamond
+        default: bronze
+      - name: wins
+        type: integer
+        required: true
+        default: 0
+      - name: losses
+        type: integer
+        required: true
+        default: 0
+      - name: total_score
+        type: integer
+        required: true
+        default: 0
+      - name: is_online
+        type: boolean
+        required: true
+        default: false
+      - name: created_at
+        type: datetime
+        required: true
+      - name: updated_at
+        type: datetime
+        required: true
+  - id: model-002
+    name: GameSession
+    description: A multiplayer game session instance with status lifecycle management
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: game_type
+        type: enum
+        required: true
+        values:
+          - arcade
+          - strategy
+          - battle
+      - name: status
+        type: enum
+        required: true
+        values:
+          - waiting
+          - active
+          - completed
+          - cancelled
+        default: waiting
+      - name: max_players
+        type: integer
+        required: true
+      - name: current_players
+        type: integer
+        required: true
+        default: 0
+      - name: game_state
+        type: json
+        required: false
+      - name: created_at
+        type: datetime
+        required: true
+      - name: started_at
+        type: datetime
+        required: false
+      - name: ended_at
+        type: datetime
+        required: false
+  - id: model-003
+    name: Match
+    description: Completed or ongoing match record linking players to a game session
+      with results
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: session_id
+        type: uuid
+        required: true
+        foreignKey: GameSession.id
+      - name: winner_id
+        type: uuid
+        required: false
+        foreignKey: User.id
+      - name: score_data
+        type: json
+        required: true
+      - name: duration
+        type: integer
+        required: true
+      - name: game_type
+        type: enum
+        required: true
+        values:
+          - arcade
+          - strategy
+          - battle
+      - name: is_ranked
+        type: boolean
+        required: true
+        default: false
+      - name: created_at
+        type: datetime
+        required: true
+  - id: model-004
+    name: MatchPlayer
+    description: Junction table linking users to matches with individual performance data
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: match_id
+        type: uuid
+        required: true
+        foreignKey: Match.id
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: score
+        type: integer
+        required: true
+        default: 0
+      - name: rank_position
+        type: integer
+        required: false
+      - name: xp_earned
+        type: integer
+        required: true
+        default: 0
+      - name: result
+        type: enum
+        required: true
+        values:
+          - win
+          - loss
+          - draw
+      - name: joined_at
+        type: datetime
+        required: true
+  - id: model-005
+    name: LeaderboardEntry
+    description: Leaderboard ranking record per user, supporting global and per-mode views
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: rank_position
+        type: integer
+        required: true
+      - name: score
+        type: integer
+        required: true
+      - name: game_type
+        type: enum
+        required: false
+        values:
+          - arcade
+          - strategy
+          - battle
+          - all
+      - name: time_range
+        type: enum
+        required: false
+        values:
+          - all_time
+          - weekly
+          - daily
+      - name: updated_at
+        type: datetime
+        required: true
+  - id: model-006
+    name: Achievement
+    description: Achievement definition with criteria, rewards, and display metadata
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: name
+        type: string
+        required: true
+      - name: description
+        type: string
+        required: true
+      - name: xp_reward
+        type: integer
+        required: true
+      - name: icon_url
+        type: string
+        required: false
+      - name: criteria_type
+        type: enum
+        required: true
+        values:
+          - win_count
+          - score_threshold
+          - game_count
+          - rank_reached
+          - special
+      - name: criteria_value
+        type: integer
+        required: false
+      - name: created_at
+        type: datetime
+        required: true
+  - id: model-007
+    name: UserAchievement
+    description: Record of a specific achievement unlocked by a specific user
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: achievement_id
+        type: uuid
+        required: true
+        foreignKey: Achievement.id
+      - name: unlocked_at
+        type: datetime
+        required: true
+  - id: model-008
+    name: MatchmakingQueue
+    description: Tracks players currently in the matchmaking queue
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: game_type
+        type: enum
+        required: true
+        values:
+          - arcade
+          - strategy
+          - battle
+      - name: rank
+        type: enum
+        required: true
+        values:
+          - bronze
+          - silver
+          - gold
+          - platinum
+          - diamond
+      - name: status
+        type: enum
+        required: true
+        values:
+          - waiting
+          - matched
+          - cancelled
+        default: waiting
+      - name: joined_at
+        type: datetime
+        required: true
+      - name: matched_session_id
+        type: uuid
+        required: false
+        foreignKey: GameSession.id
+  - id: model-009
+    name: Notification
+    description: User notification record for match events, invites, and achievements
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: type
+        type: enum
+        required: true
+        values:
+          - match_ready
+          - friend_invite
+          - achievement_unlocked
+          - rank_up
+          - match_result
+      - name: title
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+      - name: payload
+        type: json
+        required: false
+      - name: is_read
+        type: boolean
+        required: true
+        default: false
+      - name: created_at
+        type: datetime
+        required: true
+  - id: model-010
+    name: Friendship
+    description: Friend relationship between two users with status tracking
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: requester_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: addressee_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: status
+        type: enum
+        required: true
+        values:
+          - pending
+          - accepted
+          - declined
+          - blocked
+        default: pending
+      - name: created_at
+        type: datetime
+        required: true
+      - name: updated_at
+        type: datetime
+        required: true
+  - id: model-011
+    name: PlayerReport
+    description: Player abuse or misconduct report submitted by one user against another
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: reporter_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: reported_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: session_id
+        type: uuid
+        required: false
+        foreignKey: GameSession.id
+      - name: reason
+        type: enum
+        required: true
+        values:
+          - cheating
+          - harassment
+          - afk
+          - offensive_name
+          - other
+      - name: description
+        type: string
+        required: false
+      - name: status
+        type: enum
+        required: true
+        values:
+          - pending
+          - reviewed
+          - resolved
+          - dismissed
+        default: pending
+      - name: created_at
+        type: datetime
+        required: true
+  - id: model-012
+    name: ChatMessage
+    description: In-game chat message scoped to a game session
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: session_id
+        type: uuid
+        required: true
+        foreignKey: GameSession.id
+      - name: user_id
+        type: uuid
+        required: true
+        foreignKey: User.id
+      - name: content
+        type: string
+        required: true
+      - name: created_at
+        type: datetime
+        required: true

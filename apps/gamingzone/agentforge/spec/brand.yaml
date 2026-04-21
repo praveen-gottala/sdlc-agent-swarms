@@ -1,0 +1,23 @@
+version: "1.0"
+created_by: agentforge-init-llm
+identity:
+  tone: Enthusiastic, encouraging, and fun without being childish. Celebrates
+    every win. Uses gaming vernacular naturally — 'GG', 'Level Up', 'New High
+    Score!' Casual players feel welcome; competitive players feel challenged.
+  audience: Gamers who are energetic and needs creative games to play
+illustration_style:
+  direction: Pixel Art / Retro Arcade
+  description: 16-bit pixel art characters with warm amber and orange palettes.
+    Game mode cards feature chunky pixel-art icons (joystick, trophy, sword,
+    shield). Rank badges styled as classic arcade medallions with dithered
+    gradients. Achievement icons use 32x32 pixel sprites with animated sparkle
+    frames. Background patterns reference classic tileset textures — brick,
+    stars, coins — at very low opacity in ember tones. Leaderboard rows use
+    pixel-art crown and flame icons for top 3.
+motion_principles:
+  page_transitions: fade
+  interaction_feel: bouncy
+  easing: ease-out
+  duration_base_ms: 200
+accessibility:
+  wcag_level: AA

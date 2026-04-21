@@ -45,7 +45,7 @@ export { debugLog, logDefaults } from './debug-log.js';
 export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
 // Constants
-export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
+export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, EVALUATOR_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
 export { PIPELINE_ARTIFACTS } from './pipeline-artifacts.js';
 
 export {
@@ -273,9 +273,11 @@ export type {
   ModelField,
   ModelEntry,
   ModelsSpec,
+  NavigationTarget,
   PageEntry,
   PagesSpec,
   PageContext,
+  ScreenType,
 } from './types/spec-types.js';
 
 // Spec types Zod schemas
@@ -290,6 +292,8 @@ export {
   ModelFieldSchema,
   ModelEntrySchema,
   ModelsSpecSchema,
+  NavigationTargetSchema,
+  ScreenTypeSchema,
   PageEntrySchema,
   PagesSpecSchema,
   PageContextSchema,

@@ -35,6 +35,16 @@ the corresponding section in that document:
    - Files: `packages/cli/src/commands/design-penpot.ts`
 10. **Cross-cutting** — event flow, LLM model/token/temp changes, budget/governance
     changes, new file artifacts
+11. **Prototype Rendering** — spec sources, scrubbing, iframe bridge,
+    DesignSpec-to-CSS mapping, LayoutShell, PrototypeApp
+    - Files: `packages/dashboard/src/app/api/prototype/route.ts`,
+      `packages/designspec-renderer/src/renderer/browser/spec-split.ts`,
+      `packages/designspec-renderer/src/renderer/browser/app/src/DesignSpecRenderer.tsx`,
+      `packages/designspec-renderer/src/renderer/browser/app/src/PrototypeApp.tsx`,
+      `packages/designspec-renderer/src/renderer/browser/app/src/LayoutShell.tsx`,
+      `packages/designspec-renderer/src/renderer/browser/app/src/iframe-bridge.ts`,
+      `packages/dashboard/src/lib/hooks/use-renderer-bridge.ts`
+    - Doc: `docs/prototype-rendering-dataflow.md`
 
 What to update:
 - ASCII diagrams if the flow changes

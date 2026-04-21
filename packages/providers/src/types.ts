@@ -9,10 +9,22 @@ import type { Result, CostRecord, CostEstimate } from '@agentforge/core';
 
 // ── Prompt & Message Types ──────────────────────────────────────────
 
+/** Cache control marker for Anthropic prompt caching. */
+export interface CacheControl {
+  readonly type: 'ephemeral';
+}
+
+/** A system prompt block with optional cache control. */
+export interface SystemBlock {
+  readonly type: 'text';
+  readonly text: string;
+  readonly cache_control?: CacheControl;
+}
+
 /** Structured prompt sent to an LLM provider. */
 export interface Prompt {
-  /** System prompt defining agent role and conventions. */
-  readonly system: string;
+  /** System prompt — string for simple prompts, SystemBlock[] for cache control. */
+  readonly system: string | readonly SystemBlock[];
   /** Conversation history. */
   readonly messages: Message[];
   /** MCP tools available to the agent. */
@@ -27,7 +39,7 @@ export interface Message {
 
 /** A block of content within a message. */
 export type ContentBlock =
-  | { readonly type: 'text'; readonly text: string }
+  | { readonly type: 'text'; readonly text: string; readonly cache_control?: CacheControl }
   | { readonly type: 'tool_use'; readonly id: string; readonly name: string; readonly input: Record<string, unknown> }
   | { readonly type: 'tool_result'; readonly tool_use_id: string; readonly content: string }
   | { readonly type: 'image'; readonly source: { readonly type: 'base64'; readonly media_type: string; readonly data: string } };

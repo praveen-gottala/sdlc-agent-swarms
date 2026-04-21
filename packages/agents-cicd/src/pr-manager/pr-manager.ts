@@ -119,7 +119,7 @@ export const prManagerWork: AgentWorkFn<PRManagerInput, PRManagerOutput> = async
   const title = `[${task.id}] ${task.title}`;
 
   // 2. Create PR via MCP
-  const prResult = await context.mcpClient.callTool('github', 'create_pr', {
+  const prResult = await context.mcpClient!.callTool('github', 'create_pr', {
     title,
     body,
     head: branch,

@@ -1,0 +1,137 @@
+version: "1.0"
+models:
+  - id: user
+    name: User
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: name
+        type: string
+        required: true
+      - name: email
+        type: string
+        required: true
+      - name: avatarUrl
+        type: string
+        required: false
+      - name: role
+        type: enum:admin,member,viewer
+        required: true
+      - name: isOnline
+        type: boolean
+        required: false
+      - name: capacity
+        type: integer
+        required: false
+      - name: createdAt
+        type: timestamp
+        required: true
+      - name: updatedAt
+        type: timestamp
+        required: true
+  - id: task
+    name: Task
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: title
+        type: string
+        required: true
+      - name: description
+        type: text
+        required: false
+      - name: status
+        type: enum:active,completed,overdue
+        required: true
+      - name: priority
+        type: enum:high,medium,low
+        required: true
+      - name: assigneeId
+        type: uuid
+        required: false
+      - name: createdById
+        type: uuid
+        required: true
+      - name: dueDate
+        type: date
+        required: false
+      - name: tags
+        type: string[]
+        required: false
+      - name: createdAt
+        type: timestamp
+        required: true
+      - name: updatedAt
+        type: timestamp
+        required: true
+  - id: comment
+    name: Comment
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: taskId
+        type: uuid
+        required: true
+      - name: authorId
+        type: uuid
+        required: true
+      - name: body
+        type: text
+        required: true
+      - name: createdAt
+        type: timestamp
+        required: true
+      - name: updatedAt
+        type: timestamp
+        required: true
+  - id: activity
+    name: Activity
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: taskId
+        type: uuid
+        required: true
+      - name: actorId
+        type: uuid
+        required: true
+      - name: type
+        type: enum:status_change,assignment,comment,creation,deletion
+        required: true
+      - name: metadata
+        type: jsonb
+        required: false
+      - name: createdAt
+        type: timestamp
+        required: true
+  - id: notification
+    name: Notification
+    fields:
+      - name: id
+        type: uuid
+        required: true
+      - name: recipientId
+        type: uuid
+        required: true
+      - name: actorId
+        type: uuid
+        required: false
+      - name: taskId
+        type: uuid
+        required: false
+      - name: type
+        type: enum:assignment,comment,status_change,mention,due_soon
+        required: true
+      - name: message
+        type: string
+        required: true
+      - name: isRead
+        type: boolean
+        required: true
+      - name: createdAt
+        type: timestamp
+        required: true

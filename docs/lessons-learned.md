@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Chrome Pass — LLM node ID mismatches and mislabeled types
+**Context:** `packages/agents-ux/src/prototype/`, `packages/designspec-renderer/src/renderer/browser/spec-split.ts`  
+**Rule:** Never assume Chrome Pass LLM and page design LLM produce matching node IDs. Use `findPageChromeRootIds()` (compact/pattern matching) instead of direct ID equality. Never strip root-level `type: "spacer"` nodes blindly — check `hasChildren()` first. LLMs mislabel content containers as spacers (e.g., PET Spending Insights has 162 nodes under a "spacer").  
+**Why:** Chrome Pass generates `nav-tab-dashboard`; page design generates `home-tab` for the same component. Naive `collectChromeRootIds()` misses the match. Stripping mislabeled spacers destroys entire page content.  
+**How to apply:** When adding chrome/LayoutShell features, test with all 3 PET pages (dashboard, spending-insights, add-expense). Spending-insights is the stress test — it has the mislabeled spacer.
+
+---
+
+## Tab active-state detection — use `navigateTo`, not ID patterns
+**Context:** `packages/designspec-renderer/src/renderer/browser/spec-split.ts` — `applyChromeActiveForPage()`  
+**Rule:** Detect tabs by `navigateTo` presence, not by node ID regex like `/-tab$/i`. Chrome tab IDs vary per LLM run (`nav-tab-dashboard`, `home-tab`, etc.) and rarely match a fixed suffix pattern.  
+**Why:** Regex `/-tab$/i` failed to match any PET chrome tab node. Active state was never computed — Dashboard tab always showed its static underline. (SUPERSEDED 2026-04-21) Previous approach relied on ID naming conventions.  
+**How to apply:** Any node with `navigateTo` in the chrome spec is navigable and should participate in active-state management.
+
+---
+
 ## DesignSpec `overrides` — hyphen keys and paint values
 **Context:** `packages/designspec-renderer` — `DesignSpecRenderer.tsx` `getOverrideStyles`  
 **Rule:** Normalize CSS-style keys (`background-color`, `border-bottom`) to React camelCase before applying. Allow `flex` shorthand, `white-space`, CSS gradients, and `var()` in paint fields. Merge `getOverrideStyles` into `renderCard`. Prefer semantic tokens on the node over hex in `overrides`; align LLM output via `ux-penpot-designspec-v2.md` “Overrides” section.  
@@ -425,7 +441,13 @@ return { base64: btoa(binary) };
 
 ---
 
-## Renderer Staleness: Kill-and-Restart, Not Just Port-Check
+## Renderer Staleness: Kill-and-Restart, Not Just Port-Check (SUPERSEDED 2026-04-20)
+
+> **⚠️ SUPERSEDED.** The auto-restart-on-stale and source-mtime tracking described below were **removed** during Plan B Phase B2 because they caused OOM death spirals during Playwright E2E runs (Vite restart compiled ~1.4k modules concurrent with headed Chromium, killing Next). `getRendererStatus()` in `packages/dashboard/src/app/api/_lib/renderer-manager.ts` now returns `'ready'` whenever the HTTP health check passes, regardless of who spawned the process or whether source changed. The orphan-detection and manual "Kill & Restart" UI paths remain available, but they are no longer triggered automatically.
+>
+> **If you hit a stale renderer today:** restart Vite manually (kill the port, re-run `nx serve browser` from `packages/designspec-renderer`). Do NOT reintroduce mtime-based staleness without a plan for the OOM failure mode — see `docs/adrs/ADR-040-prototype-runtime-scrubbing.md` and the "Context for B2.5 Implementers" block in `docs/plans/screen-types-plan-b.md`.
+>
+> The rest of this entry is kept for historical context only.
 
 **Context:** `packages/dashboard/src/app/api/_lib/renderer-manager.ts` — Vite renderer lifecycle
 **Rule:** A TCP port check is insufficient to determine renderer health. The renderer-manager must track whether it started the process (vs an orphan from a previous session) and whether source files changed since startup.
@@ -505,3 +527,39 @@ Additionally, `resolveNode()` in `resolver.ts` returned a stripped-down `Resolve
 3. Fixed `resolveNode()` to preserve `overrides`/`layout`/`width`/`height`/etc. even for unresolved nodes
 4. Added PascalCase → kebab-case normalization in catalog lookup
 5. Updated fallback rendering path (`renderNode` unresolved branch) to apply full styles
+
+---
+
+## Prototype Must Use Design Canvas Specs, Not Preview Specs
+
+**Context:** `packages/dashboard/src/app/api/prototype/route.ts` — prototype spec loading
+**Rule:** The prototype API must prefer `agentforge/designs/{pageId}.json` (design canvas source of truth) over `.agentforge/previews/*/scripts/designspec-v2.json` (older pipeline output). The prototype should always render the same content the user sees in the design canvas.
+**Why:** The prototype was showing completely different data ($2,847.50 vs $1,247.50), different layout (two-column vs single column), and different content than the design canvas. The root cause was the prototype API preferring stale pipeline preview specs. The user expects 1:1 fidelity between design canvas and prototype.
+**How to apply:** After the manifest is loaded, override each screen's `specPath` to `agentforge/designs/{screenId}.json` when that file exists. This ensures the prototype always matches what the user designed.
+
+---
+
+## Never Hardcode Node IDs in Spec Utilities
+
+**Context:** `packages/designspec-renderer/src/renderer/browser/spec-split.ts` — chrome stripping
+**Rule:** Never assume the root node ID is `'root'`. Always find the root dynamically via `Object.entries(nodes).find(([, n]) => n.parent === null)`. Different pipeline stages and LLM runs produce different root IDs (`root`, `page-root`, `screen-root`, etc.).
+**Why:** `findPageChromeRootIds`, `stripChromeFromSpec`, `filterSpecToNodes`, and `stripPersistentOverlays` all hardcoded `parent === 'root'`. Design canvas specs used `page-root` as the root ID, causing chrome stripping to silently do nothing — the duplicate navigation bar rendered on every page.
+**How to apply:** Use the `findRootId(spec)` helper added in spec-split.ts. When writing new spec utilities, always derive structural assumptions (root ID, root children) from the actual data.
+
+---
+
+## CSS `flex: 1` vs `width: 100%` for Fill Behavior
+
+**Context:** `packages/designspec-renderer/src/renderer/browser/app/src/DesignSpecRenderer.tsx` — `getSizeStyles()`
+**Rule:** `width: "fill"` must use `flex: '1 1 auto'; width: '100%'` — NOT `flex: 1` (shorthand for `flex: 1 1 0%`). The `0%` flex-basis in `flex: 1` causes two problems in column parents: (a) it overrides explicit `height` on the child, (b) with `align-items: center` the child's width collapses to intrinsic content width (often 0).
+**Why:** Chart bars in the prototype had `width: "fill"` inside a column-layout parent with `align: center`. With `flex: 1`, the bar row's width collapsed to ~0px, making all bars invisible. Switching to `flex: '1 1 auto'` preserves explicit height (auto basis falls back to the `height` property) and adding `width: '100%'` fills the cross-axis regardless of the parent's `align-items`.
+**How to apply:** When mapping a semantic "fill" concept to CSS flex, always consider both main-axis and cross-axis behavior. Test with both row and column parent layouts.
+
+---
+
+## Prototype Bridge Race Condition on First Entry
+
+**Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx` — `handleLoadPrototype`
+**Rule:** Always clear `bridgeRef.current = null` before transitioning from design canvas to prototype mode. The stale bridge from the DesignCanvas iframe has `isReady: true`, which causes `sendPayload()` to succeed on the first call — but the message goes to a dead iframe.
+**Why:** The `useEffect` that sends the prototype payload fired immediately when `prototypeMode` switched to `true`. At that point, `bridgeRef` still held the old DesignCanvas bridge. The stale bridge's `isReady` was `true`, so `loadPrototype` was called on it, the message went to a detached iframe, and the polling backup never started (because `sendPayload()` returned `true`).
+**How to apply:** When transitioning between iframe-based modes that share a bridge ref, always null the ref before the mode switch. This forces the payload-sending effect to poll until the new bridge is ready.

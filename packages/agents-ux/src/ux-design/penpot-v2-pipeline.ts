@@ -44,6 +44,7 @@ import {
 } from '@agentforge/designspec-renderer';
 import { runBrowserCorrectionPipeline } from './browser-correction-pipeline.js';
 import { buildPromptFromTokens } from '../prompts/prompt-template-builder.js';
+import { applyFrozenChromeToPageSpec } from '../prototype/merge-frozen-chrome.js';
 import type { PenpotDesignInput, PenpotDesignOutput } from './ux-penpot-design.js';
 import { PENPOT_DESIGN_CONTRACT } from './ux-penpot-design.js';
 import {
@@ -53,6 +54,7 @@ import {
   extractDesignSpecFromToolCall,
   exportShapeWithRetry,
 } from './penpot-script-executor.js';
+import { injectMissingNavigateToInPlace } from './validate-navigate-to.js';
 
 // ============================================================================
 // LLM interface (matches the one in ux-penpot-design.ts)
@@ -286,6 +288,9 @@ async function runV2CorrectionLoop(
       undefined,
       traceCollector,
       `evaluation-v2-${correction + 1}`,
+      {
+        structuralNavCheck: { planning: planningOutput, getSpec: () => spec },
+      },
     );
 
     if (!evalResult.ok) {
@@ -472,7 +477,7 @@ export async function exportDesignSpecToPenpot(
 export async function penpotDesignWorkV2(
   input: PenpotDesignInput,
   llm: LLMProvider,
-  mcpClient: MCPClient,
+  mcpClient: MCPClient | undefined,
   evalProvider: EvalLLMProvider,
   traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
@@ -537,7 +542,58 @@ export async function penpotDesignWorkV2(
 
   if (description) {
     userMessageParts.push(`\nApp Description: ${description}`);
-    userMessageParts.push(`\nIMPORTANT: Design this screen for the app described above. Populate all text with realistic, domain-appropriate content.`);
+    if (input.chromeOnly) {
+      userMessageParts.push(
+        '\nIMPORTANT: This is a chrome-only pass. Design only the shared shell in the planning output. No page body, no feature content, no cards outside the shell.',
+      );
+    } else {
+      userMessageParts.push(
+        '\nIMPORTANT: Design this screen for the app described above. Populate all text with realistic, domain-appropriate content.',
+      );
+    }
+  }
+
+  // Screen type and overlay instructions
+  const screenType = input.pageContext?.targetPage?.screen_type;
+  if (screenType && screenType !== 'page') {
+    userMessageParts.push(`\nScreen Type: ${screenType}`);
+    userMessageParts.push(`IMPORTANT: Set screenType: "${screenType}" in the submit_design tool call.`);
+  }
+
+  // navigateTo propagation instructions
+  userMessageParts.push(`\n## Navigation Propagation (REQUIRED)`);
+  userMessageParts.push(`When the planning output contains componentTree nodes with "navigateTo" fields, you MUST copy those "navigateTo" values to the corresponding DesignSpec nodes.`);
+  userMessageParts.push(`For each planning component with navigateTo: find the matching node in your DesignSpec output and set its navigateTo to the same target page ID.`);
+  userMessageParts.push(`\n## NavigationBar Flattening Example
+
+Planning output:
+{
+  "name": "NavigationBar",
+  "children": [
+    { "name": "HomeTab", "navigateTo": "dashboard" },
+    { "name": "ExpensesTab", "navigateTo": "add-expense" },
+    { "name": "InsightsTab", "navigateTo": "spending-insights" }
+  ]
+}
+
+Required DesignSpec output:
+{
+  "navigation-bar": { "parent": "root", "order": 0, "catalog": "navigation-bar" },
+  "home-tab": { "parent": "navigation-bar", "order": 0, "catalog": "tab", "label": "Home", "navigateTo": "dashboard" },
+  "expenses-tab": { "parent": "navigation-bar", "order": 1, "catalog": "tab", "label": "Expenses", "navigateTo": "add-expense" },
+  "insights-tab": { "parent": "navigation-bar", "order": 2, "catalog": "tab", "label": "Insights", "navigateTo": "spending-insights" }
+}
+
+CRITICAL: Each child becomes its own node with navigateTo copied exactly.
+DO NOT flatten NavigationBar into a single node with overrides.`);
+
+  if (input.frozenChromeSpec && input.frozenChromePageId) {
+    const ids = Object.keys(input.frozenChromeSpec.nodes).sort().join(', ');
+    userMessageParts.push(
+      `\n## Frozen shared chrome (required node ids)\n` +
+        `Include these exact node ids for the shared chrome (add new node ids only for page content): ${ids}.\n` +
+        `Current page id: ${input.frozenChromePageId}. One tab will be marked active in post-processing.`,
+    );
   }
 
   userMessageParts.push(`\nPlanning Output:\n${JSON.stringify(planningOutput, null, 2)}`);
@@ -631,6 +687,14 @@ export async function penpotDesignWorkV2(
 
   } // end if (!designSpec) — LLM generation block
 
+  if (designSpec && input.chromeOnly) {
+    designSpec = { ...designSpec, screen: '__chrome__' };
+  }
+
+  if (planningOutput && designSpec) {
+    injectMissingNavigateToInPlace(designSpec, planningOutput);
+  }
+
   // ── Validate (with dynamic catalog generation for missing entries) ──
 
   let validation = validateDesignSpec(designSpec, catalogMap);
@@ -697,7 +761,13 @@ export async function penpotDesignWorkV2(
   // ── Phase B: Correction pipeline (browser-first or legacy Penpot) ──
 
   if (input.legacyPenpotCorrection) {
-    // ── Legacy path: Penpot-based correction ──
+    if (!mcpClient) {
+      return Err({
+        code: 'INVALID_STATE',
+        message: 'Legacy Penpot correction requires mcpClient. Use browser-only mode instead.',
+        recoverable: false,
+      });
+    }
     return penpotDesignWorkV2Legacy(
       designSpec, rendererTokens, catalogMap, moduleId, planningOutput,
       effectiveModel, systemPrompt, llm, mcpClient, evalProvider, traceCollector,
@@ -720,10 +790,18 @@ export async function penpotDesignWorkV2(
       mechanicalFixes: input.browserCorrectionOptions?.mechanicalFixes,
       width: input.browserCorrectionOptions?.width ?? viewportWidth,
       outputDir: input.browserCorrectionOptions?.outputDir,
+      planningOutput,
     },
   );
 
-  const finalSpec = browserCorrectionResult.spec;
+  let finalSpec = browserCorrectionResult.spec;
+  if (input.frozenChromeSpec && input.frozenChromePageId) {
+    finalSpec = applyFrozenChromeToPageSpec(
+      finalSpec,
+      input.frozenChromeSpec,
+      input.frozenChromePageId,
+    );
+  }
 
   // ── Save corrected spec + screenshot as artifacts ──
 
@@ -747,7 +825,7 @@ export async function penpotDesignWorkV2(
 
   return Ok({
     moduleId,
-    breakpoints: [String(designSpec.width)],
+    breakpoints: [String(finalSpec.width)],
     designSpec: finalSpec,
     browserCorrectionResult,
     screenshotPath,

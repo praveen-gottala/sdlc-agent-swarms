@@ -14,9 +14,11 @@ const nextConfig = {
     // Tree-shake barrel re-exports — only compile the symbols the dashboard
     // actually imports, not every export from each monorepo package.
     // This dramatically reduces on-demand compilation in dev mode.
+    // Note: `@agentforge/agents-ux` is omitted — Next's barrel optimization can miss
+    // new named exports (e.g. after Chrome Pass), causing "is not exported" at runtime
+    // when the dashboard transpiles @agentforge/cli (which re-exports many UX symbols).
     optimizePackageImports: [
       '@agentforge/core',
-      '@agentforge/agents-ux',
       '@agentforge/designspec-renderer',
       '@agentforge/providers',
       '@agentforge/cli',

@@ -11,6 +11,8 @@ import type { ClaudeAuthResult, ProviderConfig } from './types.js';
 export type {
   LLMProvider,
   Prompt,
+  SystemBlock,
+  CacheControl,
   Message,
   ContentBlock,
   CompletionOptions,

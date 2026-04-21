@@ -122,6 +122,19 @@ export interface ModelsSpec {
 // Pages Spec (pages.yaml)
 // ---------------------------------------------------------------------------
 
+/** A navigation target from one page to another. */
+export interface NavigationTarget {
+  /** Target page ID (must reference another PageEntry.id). */
+  readonly target: string;
+  /** Human-readable description of what triggers this navigation. */
+  readonly trigger: string;
+  /** Exact node ID in the DesignSpec that triggers this navigation. Set by user click in prototype view. */
+  readonly source_node?: string;
+}
+
+/** Screen rendering mode. Determines viewport width and prototype overlay behavior. */
+export type ScreenType = 'page' | 'modal' | 'drawer' | 'sheet';
+
 /** A single page entry in the pages spec. */
 export interface PageEntry {
   readonly id: string;
@@ -133,6 +146,10 @@ export interface PageEntry {
   readonly data_sources?: readonly string[];
   /** Target viewport widths for design generation. Defaults to [1440] (desktop). Uncomment 768 (tablet) or 390 (mobile) as needed. */
   readonly viewports?: readonly number[];
+  /** Navigation targets from this page to other pages. Generated during spec generation, editable in dashboard. */
+  readonly navigates_to?: readonly NavigationTarget[];
+  /** Screen rendering mode. Defaults to 'page'. Overlays (modal/drawer/sheet) render on top of the current page in prototype mode. */
+  readonly screen_type?: ScreenType;
 }
 
 /** Pages spec file — spec/pages.yaml */

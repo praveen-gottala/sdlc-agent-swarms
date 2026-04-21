@@ -1,0 +1,529 @@
+version: "1.0"
+pages:
+  - id: page-001
+    name: Dashboard / Home
+    route: /home
+    description: Main landing page after login. Shows personalized welcome, quick
+      play CTA, game recommendations, active events, friends online, and recent
+      match history.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-001-01
+        name: WelcomeBanner
+        type: custom
+        description: Displays user avatar, username, current level, XP progress bar, and
+          rank badge. Pixel-art styled with ember-orange accent border.
+        props:
+          username: string
+          level: number
+          xp: number
+          rank: string
+          avatarUrl: string
+      - id: cmp-001-02
+        name: QuickPlayButton
+        type: shadcn/Button
+        description: Primary CTA button that triggers matchmaking flow. Uses cta-primary
+          color with bouncy hover animation.
+        props:
+          label: QUICK PLAY
+          variant: primary
+          size: lg
+      - id: cmp-001-03
+        name: RecommendedGamesCarousel
+        type: custom
+        description: Horizontal scrollable carousel of game mode cards. Each card shows
+          pixel-art icon, game name, player count, and a Play button. Cards use
+          elevation level 2 shadow.
+        props:
+          games: Game[]
+          onSelect: function
+      - id: cmp-001-04
+        name: ActiveEventsBanner
+        type: custom
+        description: Banner highlighting ongoing events or tournaments. Animated
+          pixel-art flame/star border. Links to event detail.
+        props:
+          events: Event[]
+      - id: cmp-001-05
+        name: FriendsOnlineList
+        type: custom
+        description: Sidebar/panel showing friends currently online with avatar,
+          username, status (In Game / Online). Invite button per friend.
+        props:
+          friends: User[]
+          onInvite: function
+      - id: cmp-001-06
+        name: RecentMatchesSummary
+        type: custom
+        description: Compact table or card list of last 5 matches showing game mode,
+          result (W/L), score, and date. Win rows highlighted with pixel-green,
+          loss with flame-red.
+        props:
+          matches: Match[]
+      - id: cmp-001-07
+        name: NotificationsIcon
+        type: custom
+        description: Bell icon in nav bar with unread badge count. Triggers
+          notifications slide-over panel.
+        props:
+          unreadCount: number
+          onOpen: function
+    dataSources:
+      - id: ds-001-01
+        name: currentUser
+        endpoint: GET /api/profile/:id
+        description: Fetches authenticated user's profile, level, XP, and rank
+      - id: ds-001-02
+        name: availableGames
+        endpoint: GET /api/games
+        description: Fetches list of available game modes for the carousel
+      - id: ds-001-03
+        name: friendsList
+        endpoint: GET /api/friends
+        description: Fetches friends list with online status
+      - id: ds-001-04
+        name: recentMatches
+        endpoint: GET /api/matches/recent
+        description: Fetches last 5 matches for the current user
+      - id: ds-001-05
+        name: activeEvents
+        endpoint: GET /api/events/active
+        description: Fetches currently active events or tournaments
+  - id: page-002
+    name: Game Lobby
+    route: /lobby
+    description: Matchmaking lobby where players select a game mode, join the queue,
+      and wait for a match to be found. Auto-transitions to gameplay on match
+      found.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-002-01
+        name: GameModeSelector
+        type: custom
+        description: Grid of selectable cards for Arcade, Strategy, and Battle modes.
+          Each card has pixel-art icon, mode name, description, and active
+          player count. Selected card gets ember-orange border glow.
+        props:
+          modes: GameMode[]
+          selectedMode: string
+          onSelect: function
+      - id: cmp-002-02
+        name: MatchmakingQueue
+        type: custom
+        description: Shows matchmaking status (Searching... / Match Found!), animated
+          loading pixel sprite, and estimated wait time countdown.
+        props:
+          status: idle | searching | found
+          estimatedWaitSeconds: number
+          elapsedSeconds: number
+      - id: cmp-002-03
+        name: PlayerQueueList
+        type: custom
+        description: Row of player avatar + username cards showing players currently in
+          the matched lobby. Empty slots shown as dashed pixel-art placeholders.
+        props:
+          players: User[]
+          maxPlayers: number
+      - id: cmp-002-04
+        name: CancelMatchmakingButton
+        type: shadcn/Button
+        description: Secondary button to leave the matchmaking queue. Visible only when
+          status is 'searching'.
+        props:
+          onCancel: function
+          visible: boolean
+      - id: cmp-002-05
+        name: MatchFoundModal
+        type: shadcn/Modal
+        description: Modal that appears when a match is found. Shows participating
+          player avatars, game mode, and a countdown before auto-redirect to
+          /game/:sessionId.
+        props:
+          players: User[]
+          sessionId: string
+          gameMode: string
+          countdownSeconds: number
+    dataSources:
+      - id: ds-002-01
+        name: gameModes
+        endpoint: GET /api/games
+        description: Fetches available game modes
+      - id: ds-002-02
+        name: matchmakingStatus
+        endpoint: WebSocket /ws/matchmaking
+        description: Real-time matchmaking status updates, queue position, and
+          match-found events
+      - id: ds-002-03
+        name: joinQueue
+        endpoint: POST /api/matchmaking/join
+        description: Sends join-queue request with selected game mode
+      - id: ds-002-04
+        name: leaveQueue
+        endpoint: POST /api/matchmaking/leave
+        description: Cancels active matchmaking search
+  - id: page-003
+    name: Gameplay Screen
+    route: /game/:sessionId
+    description: Active multiplayer game session. Hosts the game canvas, real-time
+      scoreboard, timer, player list, toggleable chat, and action controls.
+      Communicates via WebSocket.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-003-01
+        name: GameCanvas
+        type: custom
+        description: Main game rendering area. Receives real-time game state updates via
+          WebSocket and renders game-specific UI. Supports arcade, strategy, and
+          battle modes.
+        props:
+          sessionId: string
+          gameState: object
+          currentUserId: string
+      - id: cmp-003-02
+        name: Scoreboard
+        type: custom
+        description: Top bar showing all players' current scores, rank, and avatar.
+          Updates in real-time. Current user row highlighted with ember-orange.
+        props:
+          players: PlayerScore[]
+          currentUserId: string
+      - id: cmp-003-03
+        name: GameTimer
+        type: custom
+        description: Countdown or elapsed timer displayed prominently. Uses pixel-art
+          font (Press Start 2P). Flashes warning color at low time.
+        props:
+          durationSeconds: number
+          elapsedSeconds: number
+          mode: countdown | elapsed
+      - id: cmp-003-04
+        name: PlayerListPanel
+        type: custom
+        description: Side panel showing all active players in the session with avatar,
+          username, connection status, and live score rank.
+        props:
+          players: User[]
+          scores: object
+      - id: cmp-003-05
+        name: ChatPanel
+        type: custom
+        description: Toggleable slide-in chat panel. Shows in-game text messages with
+          username and timestamp. Input field to send messages via WebSocket.
+        props:
+          messages: ChatMessage[]
+          onSend: function
+          isOpen: boolean
+          onToggle: function
+      - id: cmp-003-06
+        name: ActionControls
+        type: custom
+        description: Game-specific action buttons rendered based on game type.
+          Dispatches player actions via WebSocket.
+        props:
+          gameType: arcade | strategy | battle
+          onAction: function
+          disabled: boolean
+      - id: cmp-003-07
+        name: GameResultModal
+        type: shadcn/Modal
+        description: "End-of-game modal showing final rankings, scores, XP gained,
+          achievements unlocked, and rank change. Uses elevation level 4 shadow.
+          Buttons: Play Again, Back to Lobby."
+        props:
+          results: MatchResult
+          xpGained: number
+          newAchievements: Achievement[]
+          rankChange: object
+          onPlayAgain: function
+          onExit: function
+    dataSources:
+      - id: ds-003-01
+        name: sessionDetails
+        endpoint: GET /api/session/:id
+        description: Fetches initial session state and player list
+      - id: ds-003-02
+        name: gameWebSocket
+        endpoint: WebSocket /ws/game/:sessionId
+        description: Bidirectional real-time channel for game state, scores, chat, and
+          game events
+      - id: ds-003-03
+        name: sendAction
+        endpoint: POST /api/session/:id/action
+        description: Sends player game action to server
+  - id: page-004
+    name: Player Profile
+    route: /profile/:id
+    description: Public/private player profile page showing avatar, rank, XP
+      progress, stats, achievements, and match history.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-004-01
+        name: ProfileHeader
+        type: custom
+        description: Large avatar display with pixel-art rank badge overlay, username in
+          display font, and join date. If own profile, shows Edit button.
+        props:
+          user: User
+          isOwnProfile: boolean
+          onEdit: function
+      - id: cmp-004-02
+        name: XPProgressBar
+        type: shadcn/Progress
+        description: Animated XP progress bar showing current XP vs XP needed for next
+          level. Labeled with current level and next level.
+        props:
+          currentXp: number
+          xpToNextLevel: number
+          level: number
+      - id: cmp-004-03
+        name: PlayerStatsGrid
+        type: custom
+        description: "Grid of stat cards: Total Wins, Total Losses, Win Rate %, Average
+          Score, Games Played, Total XP. Each card uses surface-elevated
+          background."
+        props:
+          stats: PlayerStats
+      - id: cmp-004-04
+        name: AchievementsGrid
+        type: custom
+        description: Grid of 32x32 pixel-art achievement badges. Unlocked shown in full
+          color; locked shown in grayscale with lock icon. Hovering shows
+          achievement name, description, and XP reward.
+        props:
+          achievements: Achievement[]
+          unlockedAchievements: UserAchievement[]
+      - id: cmp-004-05
+        name: MatchHistoryTable
+        type: shadcn/Table
+        description: "Paginated table of match history: Game Mode, Result, Score,
+          Opponents, Duration, Date. Win rows accented pixel-green, loss rows
+          flame-red."
+        props:
+          matches: Match[]
+          page: number
+          totalPages: number
+          onPageChange: function
+      - id: cmp-004-06
+        name: FriendActionButton
+        type: shadcn/Button
+        description: Add Friend / Invite to Game button shown on other players'
+          profiles. Hidden on own profile.
+        props:
+          userId: string
+          isFriend: boolean
+          onAddFriend: function
+          onInvite: function
+    dataSources:
+      - id: ds-004-01
+        name: playerProfile
+        endpoint: GET /api/profile/:id
+        description: Fetches full player profile with stats, level, XP, rank
+      - id: ds-004-02
+        name: playerAchievements
+        endpoint: GET /api/achievements
+        description: Fetches all achievements and the user's unlocked status
+      - id: ds-004-03
+        name: playerMatchHistory
+        endpoint: GET /api/matches/history/:userId
+        description: Paginated match history for a given user
+  - id: page-005
+    name: Leaderboards
+    route: /leaderboard
+    description: Global and friends leaderboard with rank tables, filters by game
+      mode and time range, and highlighted current user row.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-005-01
+        name: LeaderboardTabs
+        type: shadcn/Tabs
+        description: Tab switcher between Global and Friends leaderboard views.
+        props:
+          activeTab: global | friends
+          onTabChange: function
+      - id: cmp-005-02
+        name: LeaderboardFilters
+        type: custom
+        description: Filter controls for game mode (All, Arcade, Strategy, Battle) and
+          time range (All Time, This Week, Today). Rendered as pill/tab
+          selectors.
+        props:
+          gameMode: string
+          timeRange: string
+          onFilterChange: function
+      - id: cmp-005-03
+        name: LeaderboardTable
+        type: custom
+        description: Ranked table with position number, pixel-art crown/flame icon for
+          top 3, avatar, username, score, rank badge, and win rate. Current user
+          row highlighted with ember-orange background. Supports pagination.
+        props:
+          entries: LeaderboardEntry[]
+          currentUserId: string
+          page: number
+          totalPages: number
+          onPageChange: function
+      - id: cmp-005-04
+        name: LeaderboardRow
+        type: custom
+        description: Individual row component for leaderboard table. Handles top-3
+          special styling with pixel-art crown icons.
+        props:
+          entry: LeaderboardEntry
+          isCurrentUser: boolean
+          position: number
+      - id: cmp-005-05
+        name: CurrentUserRankCard
+        type: custom
+        description: Sticky card at bottom showing current user's rank position even
+          when not visible in the table. Pixel-art styled with ember-orange
+          border.
+        props:
+          entry: LeaderboardEntry
+          totalPlayers: number
+    dataSources:
+      - id: ds-005-01
+        name: globalLeaderboard
+        endpoint: GET /api/leaderboard
+        description: Fetches global leaderboard entries with filters for game mode and
+          time range
+      - id: ds-005-02
+        name: friendsLeaderboard
+        endpoint: GET /api/leaderboard/friends
+        description: Fetches friends-only leaderboard for the current user
+  - id: page-006
+    name: Notifications Panel
+    route: slide-over
+    description: "Slide-over panel accessible from the navigation bar. Shows all
+      notification types: match ready, friend invites, achievements unlocked,
+      and rank-ups."
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-006-01
+        name: NotificationsSlideOver
+        type: custom
+        description: Slide-in panel from the right side. Dark surface background with
+          list of notifications. Has mark-all-read button and close button.
+        props:
+          isOpen: boolean
+          onClose: function
+          notifications: Notification[]
+          onMarkAllRead: function
+      - id: cmp-006-02
+        name: NotificationItem
+        type: custom
+        description: Individual notification row with type-specific pixel-art icon
+          (match joystick, invite envelope, achievement star, rank arrow-up),
+          title, message, timestamp, and read/unread state.
+        props:
+          notification: Notification
+          onAction: function
+          onDismiss: function
+      - id: cmp-006-03
+        name: MatchInviteNotification
+        type: custom
+        description: Special notification card for friend game invites with Accept and
+          Decline action buttons.
+        props:
+          invite: GameInvite
+          onAccept: function
+          onDecline: function
+    dataSources:
+      - id: ds-006-01
+        name: notifications
+        endpoint: GET /api/notifications
+        description: Fetches paginated notification list for current user
+      - id: ds-006-02
+        name: markRead
+        endpoint: PATCH /api/notifications/read
+        description: Marks notifications as read
+      - id: ds-006-03
+        name: notificationsWebSocket
+        endpoint: WebSocket /ws/notifications
+        description: Real-time push for new notifications (match ready, invites,
+          achievements)
+  - id: page-007
+    name: Login
+    route: /login
+    description: Authentication page for returning users. Pixel-art themed with
+      ember-orange accents.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-007-01
+        name: LoginForm
+        type: custom
+        description: Form with email and password fields, submit button, and link to
+          register. Validation shows flame-red error messages.
+        props:
+          onSubmit: function
+          isLoading: boolean
+          error: string
+      - id: cmp-007-02
+        name: BrandLogo
+        type: custom
+        description: GamingZone logo in Press Start 2P font with pixel-art game
+          controller icon above it.
+        props: {}
+    dataSources:
+      - id: ds-007-01
+        name: login
+        endpoint: POST /api/auth/login
+        description: Authenticates user credentials and returns JWT token
+  - id: page-008
+    name: Register
+    route: /register
+    description: User registration page for new accounts. Collects username, email,
+      and password.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-008-01
+        name: RegisterForm
+        type: custom
+        description: Registration form with username, email, password, and confirm
+          password fields. Shows real-time validation. Success redirects to
+          /home.
+        props:
+          onSubmit: function
+          isLoading: boolean
+          error: string
+      - id: cmp-008-02
+        name: BrandLogo
+        type: custom
+        description: Shared brand logo component
+        props: {}
+    dataSources:
+      - id: ds-008-01
+        name: register
+        endpoint: POST /api/auth/register
+        description: Creates new user account
+  - id: page-009
+    name: Report Player
+    route: /report
+    description: Modal or page for submitting a player report for abuse, cheating,
+      or harassment. Accessible from gameplay screen and player profile.
+    status: draft
+    designStatus: draft
+    components:
+      - id: cmp-009-01
+        name: ReportForm
+        type: custom
+        description: Form with reported player (pre-filled), reason dropdown (cheating,
+          harassment, AFK, other), description textarea, and submit button.
+        props:
+          reportedUserId: string
+          reportedUsername: string
+          sessionId: string
+          onSubmit: function
+          onCancel: function
+    dataSources:
+      - id: ds-009-01
+        name: submitReport
+        endpoint: POST /api/report
+        description: Submits player report with reason and description

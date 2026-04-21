@@ -101,7 +101,14 @@ function toAnthropicMessages(
             },
           };
         }
-        return { type: 'text' as const, text: block.type === 'text' ? block.text : '' };
+        if (block.type === 'text') {
+          return {
+            type: 'text' as const,
+            text: block.text,
+            ...(block.cache_control ? { cache_control: block.cache_control } : {}),
+          };
+        }
+        return { type: 'text' as const, text: '' };
       }),
     };
   });
@@ -333,10 +340,18 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         logDefaults('claude.complete', {
           maxTokens: [options.maxTokens, '4096'],
         });
+        const systemParam = typeof prompt.system === 'string'
+          ? prompt.system
+          : prompt.system.map(block => ({
+            type: 'text' as const,
+            text: block.text,
+            ...(block.cache_control ? { cache_control: block.cache_control } : {}),
+          }));
+
         const baseParams: Anthropic.MessageCreateParams = {
           model: resolveModelId(options.model),
           max_tokens: options.maxTokens ?? 4096,
-          system: prompt.system,
+          system: systemParam,
           messages: toAnthropicMessages(prompt),
           ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
           ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
@@ -403,11 +418,19 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         logDefaults('claude.stream', {
           maxTokens: [options.maxTokens, '4096'],
         });
+        const streamSystemParam = typeof prompt.system === 'string'
+          ? prompt.system
+          : prompt.system.map(block => ({
+            type: 'text' as const,
+            text: block.text,
+            ...(block.cache_control ? { cache_control: block.cache_control } : {}),
+          }));
+
         const stream = client.messages.stream(
           {
             model: resolveModelId(options.model),
             max_tokens: options.maxTokens ?? 4096,
-            system: prompt.system,
+            system: streamSystemParam,
             messages: toAnthropicMessages(prompt),
             ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),

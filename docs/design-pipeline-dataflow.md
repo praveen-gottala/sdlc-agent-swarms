@@ -984,3 +984,15 @@ ImplementationDraftReady
 | ux_planning | review_and_override | 30k | $1.00 | 2 retries → notify + pause |
 | penpot_design | full_approval | 40k | $1.50 | 2 retries → notify + pause |
 | ux_implementation | review_and_override | 60k | $2.00 | 2 retries → notify + pause |
+
+---
+
+## What Happens Next: Prototype Rendering
+
+This document covers design generation (Stages 0-7). For how the generated
+DesignSpec JSON files are rendered as an interactive prototype in the browser,
+see **[prototype-rendering-dataflow.md](prototype-rendering-dataflow.md)**.
+
+Key topics covered there: spec source precedence (`agentforge/designs/` vs
+`.agentforge/previews/`), chrome stripping (ADR-040), iframe bridge protocol,
+and DesignSpec-to-CSS mapping.

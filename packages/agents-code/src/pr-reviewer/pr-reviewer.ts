@@ -252,7 +252,7 @@ export const prReviewerWork: AgentWorkFn<PRReviewerInput, PRReviewerOutput> = as
   const { task, stackConfigPath, promptTemplatePath, prNumber, specRef } = input;
 
   // 1. Read the PR diff via MCP
-  const prResult = await context.mcpClient.callTool('github', 'read_pr', {
+  const prResult = await context.mcpClient!.callTool('github', 'read_pr', {
     pr_number: prNumber,
   });
   if (!prResult.ok) {
@@ -333,7 +333,7 @@ export const prReviewerWork: AgentWorkFn<PRReviewerInput, PRReviewerOutput> = as
 
   // 8. Post the review via MCP
   const reviewEvent = review.decision === 'APPROVE' ? 'APPROVE' : 'REQUEST_CHANGES';
-  const postResult = await context.mcpClient.callTool('github', 'create_review', {
+  const postResult = await context.mcpClient!.callTool('github', 'create_review', {
     pr_number: prNumber,
     body: review.body,
     event: reviewEvent,

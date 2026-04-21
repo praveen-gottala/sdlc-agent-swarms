@@ -5,6 +5,10 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "packages/dashboard", "command": "next dev" }
     },
+    "dev:fresh": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "packages/dashboard", "command": "rm -rf .next && next dev" }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": { "cwd": "packages/dashboard", "command": "next build" }

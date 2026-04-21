@@ -1,0 +1,61 @@
+version: "1.0"
+endpoints:
+  - method: GET
+    path: /api/dashboard/stats
+    description: "Returns aggregate statistics: total active tasks, tasks completed
+      today, overdue tasks count, and team member count"
+  - method: GET
+    path: /api/dashboard/team-workload
+    description: Returns per-team-member task counts and workload percentage for the
+      workload chart
+  - method: GET
+    path: /api/tasks
+    description: "Returns a paginated, filtered list of tasks. Supports query
+      params: status, priority, assigneeId, search, dueDateFrom, dueDateTo,
+      page, pageSize"
+  - method: POST
+    path: /api/tasks
+    description: Creates a new task with the provided fields (name, description,
+      status, priority, assigneeId, dueDate)
+  - method: GET
+    path: /api/tasks/:taskId
+    description: Returns full detail of a single task by ID, including assignee user
+      object and creator user object
+  - method: PUT
+    path: /api/tasks/:taskId
+    description: Updates all fields of an existing task (full update)
+  - method: PATCH
+    path: /api/tasks/:taskId
+    description: Partially updates a task (e.g., status-only update from the detail
+      page status selector)
+  - method: DELETE
+    path: /api/tasks/:taskId
+    description: Deletes a task by ID. Also removes associated comments, activities,
+      and notifications.
+  - method: GET
+    path: /api/tasks/:taskId/comments
+    description: Returns all comments and activity history for a given task, sorted
+      by createdAt ascending
+  - method: POST
+    path: /api/tasks/:taskId/comments
+    description: Adds a new comment to a task. Creates a corresponding activity record.
+  - method: DELETE
+    path: /api/tasks/:taskId/comments/:commentId
+    description: Deletes a specific comment on a task
+  - method: GET
+    path: /api/users
+    description: Returns list of all team members (id, name, email, avatarUrl, role)
+      for filter dropdowns and assignee pickers
+  - method: GET
+    path: /api/users/:userId
+    description: Returns a single user's profile by ID
+  - method: GET
+    path: /api/notifications
+    description: Returns all notifications for the authenticated user, sorted by
+      createdAt descending. Includes unread count.
+  - method: PATCH
+    path: /api/notifications/:notificationId
+    description: Marks a specific notification as read
+  - method: POST
+    path: /api/notifications/mark-all-read
+    description: Marks all notifications for the authenticated user as read

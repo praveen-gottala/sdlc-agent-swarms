@@ -97,15 +97,22 @@ export interface PromptTraceResponse {
 export function recordPromptTrace(
   context: { promptTraces?: PromptTrace[] },
   stage: string,
-  prompt: { system: string; messages: { role: string; content: string }[] },
+  prompt: { system: string | readonly { text: string }[]; messages: { role: string; content: string | readonly { text?: string }[] }[] },
   opts: { model: string; maxTokens: number },
 ): void {
   if (!context.promptTraces) return;
+  const systemText = typeof prompt.system === 'string'
+    ? prompt.system
+    : prompt.system.map(b => b.text).join('\n');
+  const userMessage = prompt.messages.map(m => {
+    if (typeof m.content === 'string') return m.content;
+    return m.content.map(b => ('text' in b && b.text) ? b.text : '').join('\n');
+  }).join('\n');
   context.promptTraces.push({
     stage,
     timestamp: new Date().toISOString(),
-    system: prompt.system,
-    userMessage: prompt.messages.map(m => m.content).join('\n'),
+    system: systemText,
+    userMessage,
     model: opts.model,
     maxTokens: opts.maxTokens,
   });

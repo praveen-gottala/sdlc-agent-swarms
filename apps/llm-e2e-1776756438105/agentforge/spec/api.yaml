@@ -1,0 +1,54 @@
+version: "1.0"
+endpoints:
+  - method: GET
+    path: /api/dashboard/stats
+    description: "Returns aggregate statistics: total active tasks, tasks completed
+      today, overdue tasks count, and total team member count"
+  - method: GET
+    path: /api/dashboard/team-workload
+    description: Returns a list of users with their assigned task count, in-progress
+      task count, completed task count, and overall completion rate percentage
+  - method: GET
+    path: /api/tasks
+    description: "Returns a paginated, filterable, sortable list of tasks. Supports
+      query params: page, limit, status, priority, assigneeId, search, sortBy,
+      sortOrder, dueDateFrom, dueDateTo"
+  - method: POST
+    path: /api/tasks
+    description: Creates a new task. Accepts title, description, status, priority,
+      assigneeId, dueDate in the request body. Returns the created task.
+  - method: GET
+    path: /api/tasks/:id
+    description: Returns the full task record for the given task ID, including
+      assignee user details
+  - method: PUT
+    path: /api/tasks/:id
+    description: Updates an existing task by ID. Accepts any combination of title,
+      description, status, priority, assigneeId, dueDate. Creates an activity
+      record for changes.
+  - method: DELETE
+    path: /api/tasks/:id
+    description: Permanently deletes the task with the given ID along with its
+      associated comments and activity records
+  - method: GET
+    path: /api/tasks/:id/comments
+    description: Returns all comments and activity entries for the given task,
+      ordered chronologically, each hydrated with author user details
+  - method: POST
+    path: /api/tasks/:id/comments
+    description: Creates a new comment on the specified task. Accepts body text.
+      Also creates an activity record of type 'commented'.
+  - method: GET
+    path: /api/users
+    description: Returns the list of all users (team members) for use in assignee
+      dropdowns and filters. Returns id, name, email, avatarUrl, and role.
+  - method: GET
+    path: /api/notifications
+    description: Returns all notifications for the currently authenticated user,
+      ordered by most recent first, with read/unread status
+  - method: PUT
+    path: /api/notifications/read-all
+    description: Marks all notifications for the currently authenticated user as read
+  - method: PUT
+    path: /api/notifications/:id/read
+    description: Marks a single notification as read by its ID

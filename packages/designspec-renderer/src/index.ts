@@ -21,6 +21,18 @@ export type {
   SegmentedOption,
 } from './types/design-spec-v2.js';
 
+export type { SharedChromeSpec, SharedChromeRegionsMap, SharedChromeRegionKey } from './types/shared-chrome.js';
+
+export {
+  filterSpecToNodes,
+  stripChromeFromSpec,
+  collectChromeRootIds,
+  applyChromeActiveForPage,
+  findPageChromeRootIds,
+  stripPersistentOverlays,
+  isPersistentOverlayBackdrop,
+} from './renderer/browser/spec-split.js';
+
 export type {
   CatalogEntry,
   CatalogMap,
@@ -54,6 +66,12 @@ export type {
   ValidationIssue,
   ValidationSeverity,
 } from './types/validation.js';
+
+export type {
+  PrototypeManifest,
+  PrototypeScreen,
+  NavigationBinding,
+} from './types/prototype-manifest.js';
 
 // ─── Catalog ──────────────────────────────────────────────
 export { loadCatalogForRenderer } from './catalog/loader.js';

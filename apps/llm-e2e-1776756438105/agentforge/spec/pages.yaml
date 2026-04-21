@@ -1,0 +1,318 @@
+version: "1.0"
+pages:
+  - id: dashboard
+    name: Dashboard
+    route: /
+    description: Main dashboard showing active tasks summary cards, team workload
+      overview, and recent activity. Users can see high-level metrics and
+      navigate to detailed views.
+    status: draft
+    designStatus: draft
+    components:
+      - id: top-nav
+        type: NavigationBar
+        description: Top navigation bar with TaskPilot logo, main nav links (Dashboard,
+          Tasks), and a bell icon button to open the notifications drawer
+        props:
+          logo: TaskPilot
+          links:
+            - Dashboard
+            - Tasks
+          actions:
+            - NotificationBell
+      - id: dashboard-header
+        type: PageHeader
+        description: Page heading 'Dashboard' with a greeting and current date
+        props:
+          title: Dashboard
+          subtitle: Welcome back — here's what's happening today
+      - id: stats-cards
+        type: StatsCardRow
+        description: "Row of summary stat cards showing: Total Active Tasks, Completed
+          Today, Overdue Tasks, Team Members"
+        props:
+          cards:
+            - label: Active Tasks
+              valueKey: activeTasks
+            - label: Completed Today
+              valueKey: completedToday
+            - label: Overdue
+              valueKey: overdueTasks
+            - label: Team Members
+              valueKey: teamCount
+      - id: team-workload
+        type: TeamWorkloadTable
+        description: Table or card grid showing each team member's name, avatar, number
+          of assigned tasks, and completion rate progress bar
+        props:
+          columns:
+            - Member
+            - Assigned
+            - In Progress
+            - Completed
+            - Completion Rate
+      - id: recent-tasks
+        type: TaskList
+        description: A condensed list of the 5 most recently updated tasks with status
+          badge, assignee avatar, and due date. Each row is clickable to
+          navigate to task detail.
+        props:
+          limit: 5
+          showViewAll: true
+    dataSources:
+      - id: dashboard-stats
+        endpoint: GET /api/dashboard/stats
+        description: Fetches summary counts for active, completed, overdue tasks and
+          team member count
+      - id: team-workload-data
+        endpoint: GET /api/dashboard/team-workload
+        description: Fetches per-member task assignment and completion metrics
+      - id: recent-tasks-data
+        endpoint: GET /api/tasks?limit=5&sort=updatedAt:desc
+        description: Fetches the 5 most recently updated tasks
+    screen_type: page
+    navigates_to:
+      - target: task-list
+        trigger: Click 'Tasks' in top navigation
+        mode: overlay
+      - target: task-list
+        trigger: Click 'View All' on recent tasks list
+      - target: task-detail
+        trigger: Click a task row in the recent tasks list
+      - target: notifications-drawer
+        trigger: Click bell icon in top navigation
+  - id: task-list
+    name: Task List
+    route: /tasks
+    description: Full paginated list of all tasks with filtering by status,
+      priority, assignee, and due date. Includes a search bar and a button to
+      create a new task.
+    status: draft
+    designStatus: draft
+    components:
+      - id: top-nav
+        type: NavigationBar
+        description: Top navigation bar with TaskPilot logo, main nav links (Dashboard,
+          Tasks), and a bell icon button to open the notifications drawer
+        props:
+          logo: TaskPilot
+          links:
+            - Dashboard
+            - Tasks
+          actions:
+            - NotificationBell
+      - id: task-list-header
+        type: PageHeader
+        description: Page heading 'Tasks' with a primary 'New Task' button on the right
+        props:
+          title: Tasks
+          primaryAction:
+            label: New Task
+            icon: Plus
+      - id: filter-bar
+        type: FilterBar
+        description: "Horizontal filter controls including: text search input, status
+          dropdown (All, To Do, In Progress, Done), priority dropdown (All, Low,
+          Medium, High), assignee select, and due date range picker"
+        props:
+          filters:
+            - search
+            - status
+            - priority
+            - assignee
+            - dueDateRange
+      - id: task-table
+        type: DataTable
+        description: "Sortable table of tasks with columns: Title, Status badge,
+          Priority badge, Assignee avatar+name, Due Date, and an Actions menu
+          with Edit and Delete options per row"
+        props:
+          columns:
+            - Title
+            - Status
+            - Priority
+            - Assignee
+            - Due Date
+            - Actions
+          sortable: true
+          paginated: true
+          pageSize: 20
+      - id: pagination-control
+        type: Pagination
+        description: Pagination controls showing current page, total pages, and
+          prev/next buttons
+        props: {}
+    dataSources:
+      - id: tasks-data
+        endpoint: GET /api/tasks
+        description: Fetches paginated, filtered, and sorted list of tasks
+      - id: assignee-options
+        endpoint: GET /api/users
+        description: Fetches list of users to populate the assignee filter dropdown
+    screen_type: page
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Dashboard' in top navigation
+      - target: task-detail
+        trigger: Click a task row title
+      - target: task-detail
+        trigger: Click 'Edit' in row actions menu
+      - target: delete-confirmation-modal
+        trigger: Click 'Delete' in row actions menu
+      - target: notifications-drawer
+        trigger: Click bell icon in top navigation
+  - id: task-detail
+    name: Task Detail
+    route: /tasks/:id
+    description: "Full detail view for a single task showing all fields: title,
+      description, status, priority, assignee, due date, created date, and a
+      comments/activity feed. Includes Edit and Delete action buttons."
+    status: draft
+    designStatus: draft
+    components:
+      - id: top-nav
+        type: NavigationBar
+        description: Top navigation bar with TaskPilot logo, main nav links (Dashboard,
+          Tasks), and a bell icon button to open the notifications drawer
+        props:
+          logo: TaskPilot
+          links:
+            - Dashboard
+            - Tasks
+          actions:
+            - NotificationBell
+      - id: breadcrumb
+        type: Breadcrumb
+        description: "Breadcrumb navigation: Dashboard > Tasks > [Task Title]"
+        props:
+          items:
+            - Dashboard
+            - Tasks
+            - Task Title
+      - id: task-detail-header
+        type: PageHeader
+        description: "Task title as heading-1, with status badge and priority badge
+          inline. Action buttons on the right: 'Edit Task' (primary) and
+          'Delete' (destructive outlined)."
+        props:
+          showStatus: true
+          showPriority: true
+          primaryAction:
+            label: Edit Task
+          destructiveAction:
+            label: Delete
+      - id: task-meta-card
+        type: MetaInfoCard
+        description: "Card showing task metadata: Assignee (avatar + name), Due Date,
+          Created At, Last Updated"
+        props:
+          fields:
+            - assignee
+            - dueDate
+            - createdAt
+            - updatedAt
+      - id: task-description-card
+        type: ContentCard
+        description: Card containing the full task description rendered as formatted text
+        props:
+          label: Description
+      - id: activity-feed
+        type: ActivityFeed
+        description: Chronological list of comments and activity events (status changes,
+          assignments) with user avatars, timestamps, and a comment input box at
+          the bottom
+        props:
+          showCommentInput: true
+    dataSources:
+      - id: task-detail-data
+        endpoint: GET /api/tasks/:id
+        description: Fetches the full task record by ID
+      - id: task-comments-data
+        endpoint: GET /api/tasks/:id/comments
+        description: Fetches all comments and activity entries for the task
+    screen_type: page
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Dashboard' in top navigation or breadcrumb
+      - target: task-list
+        trigger: Click 'Tasks' in top navigation or breadcrumb
+      - target: task-detail
+        trigger: Click 'Edit Task' button (navigates to edit mode / same route with edit
+          state)
+      - target: delete-confirmation-modal
+        trigger: Click 'Delete' action button
+      - target: notifications-drawer
+        trigger: Click bell icon in top navigation
+  - id: notifications-drawer
+    name: Notifications Drawer
+    route: /notifications-drawer
+    description: "A drawer panel that slides in from the right side when the bell
+      icon is clicked. Displays a list of recent notifications: task
+      assignments, due date reminders, status changes, and comments. Each
+      notification links to the relevant task."
+    status: draft
+    designStatus: draft
+    components:
+      - id: drawer-header
+        type: DrawerHeader
+        description: Header with 'Notifications' title and a close (X) button to dismiss
+          the drawer. Optional 'Mark all as read' text button.
+        props:
+          title: Notifications
+          actions:
+            - Mark all as read
+            - Close
+      - id: notification-list
+        type: NotificationList
+        description: Scrollable list of notification items, each showing an icon
+          indicating notification type, a short description message, the
+          relevant task title, and a relative timestamp. Unread notifications
+          are visually highlighted.
+        props:
+          emptyState: You're all caught up!
+    dataSources:
+      - id: notifications-data
+        endpoint: GET /api/notifications
+        description: Fetches all notifications for the current user, ordered by most
+          recent first
+    screen_type: drawer
+    navigates_to:
+      - target: task-detail
+        trigger: Click a notification item to view the related task
+  - id: delete-confirmation-modal
+    name: Delete Confirmation Modal
+    route: /delete-confirmation-modal
+    description: A centered modal dialog overlay that asks the user to confirm
+      deletion of a task. Displays the task title for context. Has a 'Delete'
+      confirmation button (destructive) and a 'Cancel' button to dismiss.
+    status: draft
+    designStatus: draft
+    components:
+      - id: modal-header
+        type: ModalHeader
+        description: Modal title 'Delete Task' and a close X button
+        props:
+          title: Delete Task
+      - id: confirmation-body
+        type: ModalBody
+        description: "Warning text: 'Are you sure you want to delete [Task Title]? This
+          action cannot be undone.' with a caution icon."
+        props:
+          icon: AlertTriangle
+          message: This action cannot be undone.
+      - id: modal-actions
+        type: ModalFooter
+        description: "Two buttons: 'Cancel' (outlined, closes modal) and 'Delete'
+          (filled destructive coral-accent color, confirms deletion)"
+        props:
+          cancelLabel: Cancel
+          confirmLabel: Delete
+          confirmVariant: destructive
+    dataSources: []
+    screen_type: modal
+    navigates_to:
+      - target: task-list
+        trigger: Click 'Delete' confirm button — task deleted, modal closes and returns
+          to task list
+      - target: task-list
+        trigger: Click 'Cancel' button — modal closes, returns to previous page
