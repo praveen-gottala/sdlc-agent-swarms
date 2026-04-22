@@ -1,6 +1,6 @@
 # Screen Types Plan B: Shared Layouts & NavBar Generation
 
-## Status: B0–B2.6 COMPLETE — B2.7 next
+## Status: B0–B2.7 COMPLETE — B3 next
 
 Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay rendering all proven). Plan B is unblocked. Research (2026-04-20) resolved all open questions and revised the phases based on codebase analysis and industry pattern study.
 
@@ -13,7 +13,7 @@ Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay ren
 - [x] Phase B2: LayoutShell — Persistent Chrome in Prototype (2026-04-20: `SharedChromeSpec`, `filterSpecToNodes`/`stripChromeFromSpec`, `LayoutShell`, pseudo-screen + duplicate-chrome + persistent-overlay scrubbing in `/api/prototype`; `@b2` Playwright green. Visual regressions surfaced during manual verification were fixed with unit tests only — see Phase B2.5 for the Playwright backlog that should have caught them.)
 - [x] Phase B2.5: Integration Validation & Regression Hardening — full-loop E2E, visual prototype correctness, single-screen chrome consistency (2026-04-22: All 9 passing scenarios green in headed+headless; `@b2.5-single-screen-chrome` remains fixme by design)
 - [x] Phase B2.6: Pipeline → Canvas Sync (2026-04-22: `design-page-all.ts` writes specs to both `.agentforge/previews/` and `agentforge/designs/`; `design-generate.ts` migrates design files when page IDs change via route matching)
-- [ ] Phase B2.7: Vision Evaluator Fix (Vertex `temperature` parameter error)
+- [x] Phase B2.7: Vision Evaluator Fix (2026-04-22: `claude-opus-4-7` rejects `temperature` param — removed from evaluator, added model-based guard in provider to strip unsupported sampling params for 4.7+ models)
 - [ ] Phase B3: Layout-Aware Code Generation (future — depends on B2.6)
 
 ---
@@ -1000,15 +1000,25 @@ This also resolves:
 
 ### Phase B2.7: Vision Evaluator Fix
 
-**Status:** NOT STARTED
+**Status:** COMPLETE (2026-04-22)
 
 **Problem:** `temperature` parameter error on Vertex model blocks the self-correction loop. All evaluations score 0/100.
 
-**Fix:** Update the Vertex provider config to handle models that don't accept `temperature` (e.g., vision models). Either remove the parameter or cap it within the model's valid range.
+**Root cause:** `EVALUATOR_MODEL = 'claude-opus-4-7'` (constants.ts). Claude Opus 4.7+ models reject `temperature`, `top_p`, and `top_k` with a 400 error — this is model-specific, not Vertex-specific (both direct API and Vertex AI behave identically). The evaluator hardcoded `temperature: 0`.
+
+**Fix:**
+1. Removed `temperature: 0` from evaluator call (`design-evaluator.ts`)
+2. Added `modelSupportsTemperature()` guard in the Claude provider (`claude-provider.ts`) that strips temperature for 4.7+ models on both API paths, with debug logging
+3. Added `claude-opus-4-7` to `CLAUDE_MODELS` list
+4. Added 2 unit tests: strips for opus-4-7, preserves for sonnet-4-6
+5. Added `visionCorrection` flag to `BrowserCorrectionOptions` — **defaults to `false`**. Most current rendering issues are in the renderer/CSS layer, not in LLM-generated specs. Running vision correction wastes API budget until the renderer is stable. Enable via CLI `--vision-correction` or `visionCorrection: true` in options when ready.
 
 **Files:**
-- `packages/agents-ux/src/ux-design/design-evaluator.ts` — evaluator LLM config
-- `packages/providers/src/vertex/` — Vertex provider parameter handling
+- `packages/agents-ux/src/ux-design/design-evaluator.ts` — removed `temperature: 0`
+- `packages/providers/src/claude/claude-provider.ts` — `modelSupportsTemperature()` + guard in `complete()` and `stream()`
+- `packages/providers/src/claude/claude-provider.test.ts` — 2 new tests
+- `packages/agents-ux/src/ux-design/browser-correction-pipeline.ts` — `visionCorrection` flag gates the vision loop; mechanical fixes still run
+- `packages/cli/src/commands/design-page.ts` — `visionCorrection` option wired through
 
 ---
 

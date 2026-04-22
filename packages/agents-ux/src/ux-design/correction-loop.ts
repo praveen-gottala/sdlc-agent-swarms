@@ -8,8 +8,8 @@
  * Flow: Screenshot -> Evaluate (vision LLM) -> Fix -> Repeat
  */
 
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
-import type { Result, PromptTrace } from '@agentforge/core';
+import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
+import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
 import { logDefaults } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import { evaluateDesign } from './design-evaluator.js';
@@ -55,8 +55,14 @@ export interface CorrectionLoopOptions {
   readonly renderDelayMs?: number;
   /** Design specification JSON for the evaluator. */
   readonly designSpec: string;
-  /** LLM provider for the evaluator (vision model). */
+  /** LLM provider for the evaluator (vision model). Falls back to `provider` if omitted. */
+  readonly evaluatorProvider?: LLMProvider;
+  /** LLM provider (used as evaluator fallback and passed to adapter). */
   readonly provider: LLMProvider;
+  /** Design tokens for token compliance evaluation. */
+  readonly designTokens?: DesignTokensSpec;
+  /** Catalog map for catalog compliance evaluation. */
+  readonly catalogMap?: CatalogMap;
   /** Trace collector for recording LLM call inputs/outputs. */
   readonly traceCollector?: { promptTraces?: PromptTrace[] };
   /**
@@ -132,13 +138,14 @@ export async function runCorrectionLoop(
 
     const screenshotBase64 = screenshotResult.value;
 
-    // 2. Evaluate
+    // 2. Evaluate (use dedicated evaluator provider if available)
     const evalResult = await evaluateDesign(
       screenshotBase64,
       options.designSpec,
-      options.provider,
+      options.evaluatorProvider ?? options.provider,
       correctionHistory.length > 0 ? correctionHistory : undefined,
-      undefined,
+      options.designTokens,
+      options.catalogMap,
       options.traceCollector,
       `evaluation-${iterations}`,
       options.structuralNavCheck

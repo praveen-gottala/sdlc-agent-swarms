@@ -14,7 +14,8 @@ This skill forces you to prove the work before reporting it.
 ## When to invoke
 
 Fire this skill when ALL of these are true:
-- The task modifies files in `packages/dashboard/`, `packages/designspec-renderer/`, `e2e/`, or `packages/agents-ux/src/prototype/`
+- The task modifies files in `packages/dashboard/`, `packages/designspec-renderer/`, `e2e/`, `packages/agents-ux/src/prototype/`, or `packages/agents-ux/src/ux-design/`
+- OR the task modifies any file matching `*evaluator*`, `*vision*`, or `*correction-pipeline*` under `packages/agents-ux/`
 - You are about to tell the user "done", "complete", "all tests pass", or similar
 
 Do NOT invoke for pure doc changes, config changes, or work that doesn't touch the prototype/renderer/dashboard surface.
@@ -85,6 +86,21 @@ Use `--design-only` (~8s) when only fixing post-LLM logic (manifest, regions). U
 
 **Gotcha:** After `design:generate`, pages.yaml lacks `designStatus: rendered`. Prototype button stays disabled. Add `designStatus: rendered` to each page that has a design file.
 
+### Step 4b: Evaluator / vision model verification (conditional)
+
+Required ONLY when changed files include an evaluator, vision model caller, or correction pipeline (`*evaluator*`, `*vision*`, `*correction-pipeline*` under `packages/agents-ux/`).
+
+Run a real design evaluation against a known fixture screen with a rendered design (e.g., `fixtures/claim-filling-sample`). Capture the raw evaluator JSON response and verify:
+- `score` is between 1–99 (not 0, not 100)
+- `issues` array is non-empty with at least one actionable fix
+
+**Sensor failure cases — treat as BLOCKED, not DONE:**
+- Score is 0 → evaluator call likely errored silently (e.g., temperature param rejection on Vertex)
+- Score is 100 → evaluator is not inspecting the screenshot (no real design scores perfect)
+- Issues array is empty → evaluator returned a score but no actionable feedback
+
+**Origin:** Vision evaluator silently returned 0/100 for all evaluations (2026-04-22) due to a `temperature` parameter error on Vertex. The entire self-correction loop produced no corrections while appearing to run successfully.
+
 ### Step 5: Produce the verification table
 
 Before reporting "done" to the user, output this table with evidence:
@@ -98,6 +114,7 @@ Before reporting "done" to the user, output this table with evidence:
 | E2E headed mode | N/N pass | test file name, headed flag |
 | Visual verification | yes/no | screenshot description or "not applicable" |
 | Full pipeline | yes/no/n/a | viewport widths, region check, or "no generation changes" |
+| Evaluator check | yes/no/n/a/BLOCKED | raw score + issue count, or "no evaluator changes". BLOCKED if score=0, score=100, or issues=[] |
 ```
 
 If any row is "no" or blank, you are NOT done. Fix it first.

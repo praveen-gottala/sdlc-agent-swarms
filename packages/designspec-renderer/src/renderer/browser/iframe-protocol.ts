@@ -13,7 +13,8 @@ export type ParentMessage =
   | { type: 'enable-tagging'; source: 'agentforge' }
   | { type: 'disable-tagging'; source: 'agentforge' }
   | { type: 'highlight-node'; nodeId: string; source: 'agentforge' }
-  | { type: 'clear-highlights'; source: 'agentforge' };
+  | { type: 'clear-highlights'; source: 'agentforge' }
+  | { type: 'extract-dom'; source: 'agentforge' };
 
 // ─── Messages sent FROM the renderer (iframe) TO the dashboard (parent) ─────
 
@@ -39,6 +40,11 @@ export type ChildMessage =
       source: 'agentforge';
     }
   | { type: 'ready'; source: 'agentforge' }
+  | {
+      type: 'dom-extracted';
+      data: import('./dom-extraction.js').DOMLayoutData;
+      source: 'agentforge';
+    }
   | {
       type: 'log';
       level: string;

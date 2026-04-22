@@ -643,3 +643,15 @@ The design LLM receives this width as a hard constraint and lays out all content
 2. Use `page.locator('iframe').screenshot()` for iframe-only screenshots (not `page.screenshot()`)
 3. Check `boundingBox().y >= 0` and `boundingBox().height > 0` — not just `toBeVisible()`
 4. Always kill stale Vite before testing (`lsof -ti:4100 | xargs kill -9`)
+
+---
+
+## Claude 4.7+ Models Reject Sampling Parameters
+
+**Context:** `packages/providers/src/claude/claude-provider.ts`, `packages/agents-ux/src/ux-design/design-evaluator.ts`
+**Rule:** Claude Opus 4.7 and later models do not support `temperature`, `top_p`, or `top_k`. Sending any non-default value returns a 400 error. This is model-specific — both direct Anthropic API and Vertex AI behave identically.
+**Why:** The design evaluator used `EVALUATOR_MODEL = 'claude-opus-4-7'` with `temperature: 0`. Every evaluation call failed with a 400 error, blocking the self-correction loop (all scores 0/100).
+**How to apply:**
+- When adding new LLM calls, check if the target model supports sampling parameters before including them.
+- The Claude provider has a `modelSupportsTemperature()` guard that automatically strips unsupported params with a debug log. Callers don't need to handle this — the provider is defensive.
+- Models that support temperature: `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Models that don't: `claude-opus-4-7+`, `claude-sonnet-4-7+`.

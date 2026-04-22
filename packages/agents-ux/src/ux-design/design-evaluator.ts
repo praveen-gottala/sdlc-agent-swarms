@@ -7,7 +7,7 @@
 
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
 import { Ok, Err, EVALUATOR_MODEL, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
@@ -149,6 +149,7 @@ export async function evaluateDesign(
   provider: LLMProvider,
   correctionHistory?: readonly CorrectionHistory[],
   designTokens?: DesignTokensSpec,
+  catalogMap?: CatalogMap,
   traceCollector?: { promptTraces?: PromptTrace[] },
   traceStage?: string,
   options?: EvaluateDesignOptions,
@@ -194,9 +195,39 @@ export async function evaluateDesign(
 - Report token violations as issues with issueId prefix "token-"`;
   }
 
+  let catalogComplianceContext = '';
+  if (catalogMap) {
+    try {
+      const specObj = JSON.parse(designSpec);
+      const usedIds = new Set<string>();
+      if (specObj.nodes) {
+        for (const node of Object.values(specObj.nodes)) {
+          const cat = (node as Record<string, unknown>).catalog;
+          if (typeof cat === 'string') usedIds.add(cat);
+        }
+      }
+      if (usedIds.size > 0) {
+        const entries: string[] = [];
+        for (const id of usedIds) {
+          const entry = catalogMap[id];
+          if (!entry) continue;
+          const parts = [`  - ${id} (${entry.type ?? 'unknown'})`];
+          if (entry.required_fields?.length) parts.push(`required: ${entry.required_fields.join(', ')}`);
+          if (entry.background) parts.push(`bg: ${entry.background}`);
+          if (entry.text_color) parts.push(`text: ${entry.text_color}`);
+          if (entry.text_typography) parts.push(`typo: ${entry.text_typography}`);
+          entries.push(parts.join(' | '));
+        }
+        if (entries.length > 0) {
+          catalogComplianceContext = `\n\nCATALOG COMPONENT COMPLIANCE — verify these components match their catalog definition:\n${entries.join('\n')}\n- Deduct 5 points per catalog component whose visual appearance deviates from its defined tokens\n- Report catalog violations as issues with issueId prefix "catalog-"`;
+        }
+      }
+    } catch { /* spec not parseable — skip catalog context */ }
+  }
+
   const textBlock: ContentBlock = {
     type: 'text',
-    text: `Design specification:\n${designSpec}\n\nEvaluate the screenshot above against this specification.${historyContext}${tokenComplianceContext}`,
+    text: `Design specification:\n${designSpec}\n\nEvaluate the screenshot above against this specification.${historyContext}${tokenComplianceContext}${catalogComplianceContext}`,
   };
 
   // Record evaluation prompt trace
@@ -217,7 +248,6 @@ export async function evaluateDesign(
     {
       model: EVALUATOR_MODEL,
       maxTokens: 4096,
-      temperature: 0,
       responseSchema: EVALUATION_OUTPUT_SCHEMA,
     },
   );

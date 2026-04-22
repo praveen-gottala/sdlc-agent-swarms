@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import {
   PROPERTY_REGISTRY,
   getAddableProperties,
@@ -8,6 +9,8 @@ import {
   type PropertyDef,
 } from '@/lib/design/property-registry';
 import { InspectorColorInput } from './inspector-color-input';
+import { AuditTab } from './audit-tab';
+import type { MechanicalAuditResult, VisionAuditResult } from '@/lib/design/audit-types';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -34,6 +37,13 @@ export interface DesignInspectorProps {
   onAddTag?: (tag: { nodeId: string; feedback: string; status: string }) => void;
   onChatSubmit?: (message: string) => void;
   chatDisabled?: boolean;
+  activeTabOverride?: 'properties' | 'ai-edits' | 'chat' | 'audit';
+  mechanicalAudit?: MechanicalAuditResult | null;
+  mechanicalAuditLoading?: boolean;
+  visionAudit?: VisionAuditResult | null;
+  visionAuditLoading?: boolean;
+  onRunVisionAudit?: () => void;
+  visionAuditAvailable?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -49,7 +59,7 @@ function findNodeInSpec(spec: any, nodeId: string): any | null {
   return spec.nodes[nodeId] ?? null;
 }
 
-type TabKey = 'properties' | 'ai-edits' | 'chat';
+type TabKey = 'properties' | 'ai-edits' | 'chat' | 'audit';
 
 const TABS: { key: TabKey; label: string; badgeLabel: string; badgeClass: string }[] = [
   {
@@ -69,6 +79,12 @@ const TABS: { key: TabKey; label: string; badgeLabel: string; badgeClass: string
     label: 'Chat',
     badgeLabel: '',
     badgeClass: '',
+  },
+  {
+    key: 'audit',
+    label: 'Audit',
+    badgeLabel: 'Free',
+    badgeClass: 'bg-accent-green/15 text-accent-green',
   },
 ];
 
@@ -552,14 +568,25 @@ export function DesignInspector({
   onAddTag,
   onChatSubmit,
   chatDisabled,
+  activeTabOverride,
+  mechanicalAudit,
+  mechanicalAuditLoading,
+  visionAudit,
+  visionAuditLoading,
+  onRunVisionAudit,
+  visionAuditAvailable,
 }: DesignInspectorProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('properties');
+
+  useEffect(() => {
+    if (activeTabOverride) setActiveTab(activeTabOverride);
+  }, [activeTabOverride]);
 
   return (
     <div data-testid="design-inspector" className="flex h-full flex-col bg-sidebar text-text-primary">
       {/* Tab bar */}
-      <div className="border-b border-border" role="tablist">
-        <nav className="flex">
+      <div className="border-b border-border overflow-x-auto" role="tablist">
+        <nav className="flex min-w-0">
           {TABS.map((tab) => {
             const isActive = tab.key === activeTab;
             return (
@@ -570,7 +597,7 @@ export function DesignInspector({
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.key)}
                 className={[
-                  'relative flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors focus-ring',
+                  'relative flex items-center gap-1 px-2 py-2.5 text-xs font-medium transition-colors focus-ring whitespace-nowrap',
                   isActive
                     ? 'text-text-primary'
                     : 'text-text-muted hover:text-text-secondary',
@@ -614,6 +641,16 @@ export function DesignInspector({
         />
       )}
       {activeTab === 'chat' && <ChatTab onChatSubmit={onChatSubmit} chatDisabled={chatDisabled} />}
+      {activeTab === 'audit' && (
+        <AuditTab
+          mechanicalAudit={mechanicalAudit ?? null}
+          mechanicalAuditLoading={mechanicalAuditLoading ?? false}
+          visionAudit={visionAudit ?? null}
+          visionAuditLoading={visionAuditLoading ?? false}
+          onRunVisionAudit={onRunVisionAudit ?? (() => {})}
+          visionAuditAvailable={visionAuditAvailable ?? false}
+        />
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   applyMechanicalFixes,
 } from '@agentforge/designspec-renderer';
 import type { UserFeedbackTag } from '@agentforge/designspec-renderer';
+import type { DesignTokensSpec } from '@agentforge/core';
 import { runCorrectionLoop } from './correction-loop.js';
 import { evaluateDesign } from './design-evaluator.js';
 import { createBrowserCorrectionAdapter } from './browser-correction-adapter.js';
@@ -70,6 +71,21 @@ export interface BrowserCorrectionOptions {
   qualityThreshold?: number;
   interactive?: boolean;
   mechanicalFixes?: boolean;
+  /**
+   * Enable vision-based self-correction loop (screenshot → evaluate → fix).
+   * Defaults to false. Most current rendering issues are in the renderer/CSS
+   * layer, not in the LLM-generated spec — running vision correction wastes
+   * API calls and budget until the rendering layer is stable. Enable once
+   * the renderer produces faithful output and remaining issues are in LLM output.
+   */
+  visionCorrection?: boolean;
+  /**
+   * Separate provider for the vision evaluator (claude-opus-4-7).
+   * When set, the evaluator uses this provider while the fixer uses the main
+   * provider. Useful when Vertex AI rate-limits opus but a direct API key
+   * has higher quota.
+   */
+  evaluatorProvider?: LLMProvider;
   width?: number;
   /** Directory to write intermediate spec + screenshot after each correction iteration. */
   outputDir?: string;
@@ -190,7 +206,20 @@ export async function runBrowserCorrectionPipeline(
     const allMechIssues = checkMechanicalIssues(dom, currentSpec);
     const tier2Issues = allMechIssues.filter(i => !i.autoFixable);
 
-    // 4. Interactive vs non-interactive mode
+    // 4. Vision correction (gated by flag — off by default)
+    if (!options?.visionCorrection) {
+      log('Vision correction disabled (visionCorrection=false). Returning after mechanical fixes.');
+      return {
+        spec: currentSpec,
+        screenshot: latestScreenshot,
+        html: latestHtml,
+        finalScore: 0,
+        iterations: 0,
+        thresholdMet: false,
+        mechanicalResults,
+      };
+    }
+
     const outputDir = options?.outputDir;
     if (options?.interactive !== false && process.stdout.isTTY) {
       // ── Interactive mode: continuous feedback loop ──
@@ -204,7 +233,10 @@ export async function runBrowserCorrectionPipeline(
       return await runNonInteractiveCorrectionLoop(
         session, currentSpec, inputSpec, provider, dom,
         tier2Issues, latestScreenshot, latestHtml, mechanicalResults,
-        maxIterations, qualityThreshold, outputDir, options?.planningOutput,
+        maxIterations, qualityThreshold,
+        tokens, catalog,
+        outputDir, options?.planningOutput,
+        options?.evaluatorProvider,
       );
     }
   } finally {
@@ -267,6 +299,7 @@ async function runInteractiveCorrectionLoop(
           await runSingleVisionCorrection(
             session, specRef, provider, currentDom, feedback.tags, tier2Issues,
             latestScreenshot, round, maxIterations,
+            tokens, catalog,
           );
           currentSpec = specRef.value;
           const renderResult = await session.rerender(currentSpec);
@@ -295,6 +328,7 @@ async function runInteractiveCorrectionLoop(
       await runSingleVisionCorrection(
         session, specRef, provider, currentDom, feedback.tags, tier2Issues,
         latestScreenshot, round, maxIterations,
+        tokens, catalog,
       );
       currentSpec = specRef.value;
       totalIterations++;
@@ -313,7 +347,8 @@ async function runInteractiveCorrectionLoop(
         JSON.stringify(currentSpec),
         provider,
         undefined,
-        undefined,
+        tokens as unknown as DesignTokensSpec,
+        catalog,
         undefined,
         undefined,
         planningOutput
@@ -357,8 +392,11 @@ async function runNonInteractiveCorrectionLoop(
   mechanicalResults: { appliedFixes: MechanicalIssue[]; accepted: boolean } | undefined,
   maxIterations: number,
   qualityThreshold: number,
+  tokens: RendererTokens,
+  catalog: CatalogMap,
   outputDir?: string,
   planningOutput?: UXPlanningOutput,
+  evaluatorProvider?: LLMProvider,
 ): Promise<BrowserCorrectionResult> {
   logSection(`Starting vision-assisted correction (max ${maxIterations} iterations)...`);
   logDetail(`User tags: 0, Tier 2 mechanical issues: ${tier2Issues.length}`);
@@ -369,8 +407,10 @@ async function runNonInteractiveCorrectionLoop(
     specRef,
     provider,
     dom,
-    undefined, // no user tags in non-interactive mode
+    undefined,
     tier2Issues,
+    tokens,
+    catalog,
   );
 
   const correctionResult = await runCorrectionLoop(adapter, {
@@ -379,6 +419,9 @@ async function runNonInteractiveCorrectionLoop(
     renderDelayMs: 500,
     designSpec: JSON.stringify(currentSpec),
     provider,
+    evaluatorProvider: evaluatorProvider,
+    designTokens: tokens as unknown as DesignTokensSpec,
+    catalogMap: catalog,
     structuralNavCheck: planningOutput
       ? { planning: planningOutput, getSpec: () => specRef.value }
       : undefined,
@@ -409,6 +452,8 @@ async function runSingleVisionCorrection(
   latestScreenshot: Buffer,
   round: number,
   maxIterations: number,
+  tokens?: RendererTokens,
+  catalog?: CatalogMap,
 ): Promise<void> {
   logDetail(`Iteration ${round}/${maxIterations}:`);
 
@@ -419,6 +464,8 @@ async function runSingleVisionCorrection(
     dom,
     userTags,
     tier2Issues,
+    tokens,
+    catalog,
   );
 
   // Build synthetic issues from user tags so the adapter processes them

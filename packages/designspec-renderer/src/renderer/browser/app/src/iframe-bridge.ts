@@ -1,6 +1,7 @@
 // Handles postMessage communication with the dashboard parent.
-// Sends: ready, node-clicked, node-hovered, render-complete
-// Receives: enable-tagging, disable-tagging, highlight-node, clear-highlights, load-spec
+// Sends: ready, node-clicked, node-hovered, render-complete, dom-extracted
+// Receives: enable-tagging, disable-tagging, highlight-node, clear-highlights, load-spec, extract-dom
+import { extractDOMFromDocument } from '../../dom-extraction-shared.js';
 
 /** Send a log message to the dashboard parent via postMessage. */
 export function sendLog(level: string, message: string, logSource: 'bridge' | 'renderer' = 'bridge') {
@@ -127,6 +128,16 @@ export function initIframeBridge(options?: {
         sendLog('INFO', 'load-prototype received from parent');
         options?.onLoadPrototype?.(data.payload);
         break;
+      case 'extract-dom': {
+        sendLog('INFO', 'extract-dom: extracting layout data from all [data-node] elements');
+        const domData = extractDOMFromDocument();
+        window.parent.postMessage(
+          { type: 'dom-extracted', data: domData, source: 'agentforge' },
+          '*',
+        );
+        sendLog('INFO', `extract-dom: extracted ${Object.keys(domData.nodes).length} nodes`);
+        break;
+      }
     }
   });
 

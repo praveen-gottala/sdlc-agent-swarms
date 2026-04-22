@@ -100,6 +100,14 @@ function DesignStudioContent() {
   const [coherenceLoading, setCoherenceLoading] = useState(false);
   const [showCoherenceModal, setShowCoherenceModal] = useState(false);
 
+  // Audit state
+  const [mechanicalAudit, setMechanicalAudit] = useState<import('@/lib/design/audit-types').MechanicalAuditResult | null>(null);
+  const [mechanicalAuditLoading, setMechanicalAuditLoading] = useState(false);
+  const [visionAudit, setVisionAudit] = useState<import('@/lib/design/audit-types').VisionAuditResult | null>(null);
+  const [visionAuditLoading, setVisionAuditLoading] = useState(false);
+  const [visionAuditAvailable, setVisionAuditAvailable] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<'properties' | 'ai-edits' | 'chat' | 'audit' | undefined>(undefined);
+
   // Prototype mode state
   const [prototypeMode, setPrototypeMode] = useState(false);
   const [prototypeLoading, setPrototypeLoading] = useState(false);
@@ -204,6 +212,67 @@ function DesignStudioContent() {
     } finally {
       setCoherenceLoading(false);
     }
+  }, []);
+
+  // ── Audit handlers ──────────────────────────────────────
+  const handleRunMechanicalAudit = useCallback(async () => {
+    if (!designSpec || !bridgeRef.current) return;
+    setInspectorTab('audit');
+    setMechanicalAuditLoading(true);
+    setMechanicalAudit(null);
+    try {
+      const rawDom = await bridgeRef.current.extractDOM();
+      const res = await fetch('/api/design/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: selectedId, domData: rawDom }),
+      });
+      if (!res.ok) throw new Error(`Audit failed: ${res.status}`);
+      const data = await res.json();
+      setMechanicalAudit({
+        reports: data.reports,
+        mechanicalIssues: data.mechIssues,
+        summary: data.summary,
+      });
+    } catch (err) {
+      console.error('Mechanical audit failed:', err);
+    } finally {
+      setMechanicalAuditLoading(false);
+    }
+  }, [designSpec]);
+
+  const handleRunVisionAudit = useCallback(async () => {
+    if (!selectedId) return;
+    setVisionAuditLoading(true);
+    setVisionAudit(null);
+    try {
+      const res = await fetch('/api/design/audit/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: selectedId }),
+      });
+      if (res.ok) {
+        setVisionAudit(await res.json());
+      } else {
+        const err = await res.json().catch(() => ({ error: 'Vision audit failed' }));
+        console.error('Vision audit error:', err.error);
+      }
+    } catch (err) {
+      console.error('Vision audit request failed:', err);
+    } finally {
+      setVisionAuditLoading(false);
+    }
+  }, [selectedId]);
+
+  // Check vision audit auth availability on mount
+  useEffect(() => {
+    fetch('/api/design/audit/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pageId: '__auth_check__' }),
+    }).then(res => {
+      setVisionAuditAvailable(res.status !== 503);
+    }).catch(() => setVisionAuditAvailable(false));
   }, []);
 
   // Fetch pages and project name on mount.
@@ -435,8 +504,10 @@ function DesignStudioContent() {
   // NOT on every pages array re-render.
   const selectedDesignStatus = pages.find((p) => p.id === selectedId)?.designStatus ?? 'draft';
   useEffect(() => {
-    if (!selectedId) { setDesignSpec(null); return; }
-    if (!['rendered', 'correction', 'approved'].includes(selectedDesignStatus)) { setDesignSpec(null); return; }
+    if (!selectedId) { setDesignSpec(null); setMechanicalAudit(null); setVisionAudit(null); return; }
+    if (!['rendered', 'correction', 'approved'].includes(selectedDesignStatus)) { setDesignSpec(null); setMechanicalAudit(null); setVisionAudit(null); return; }
+    setMechanicalAudit(null);
+    setVisionAudit(null);
 
     const controller = new AbortController();
 
@@ -1037,6 +1108,15 @@ function DesignStudioContent() {
             >
               {coherenceLoading ? 'Checking...' : 'Check Coherence'}
             </Button>
+            <div className="w-px h-4 bg-border" />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!selectedId || !designSpec || mechanicalAuditLoading}
+              onClick={handleRunMechanicalAudit}
+            >
+              {mechanicalAuditLoading ? 'Auditing...' : 'Audit'}
+            </Button>
             {pages.some(p => p.designStatus !== 'rendered' && p.designStatus !== 'approved' && p.designStatus !== 'generating') && (
               <>
                 <div className="w-px h-4 bg-border" />
@@ -1193,6 +1273,13 @@ function DesignStudioContent() {
           onAddTag={handleAddTag}
           onChatSubmit={handleChatSubmit}
           chatDisabled={!!pipelineRunId}
+          activeTabOverride={inspectorTab}
+          mechanicalAudit={mechanicalAudit}
+          mechanicalAuditLoading={mechanicalAuditLoading}
+          visionAudit={visionAudit}
+          visionAuditLoading={visionAuditLoading}
+          onRunVisionAudit={handleRunVisionAudit}
+          visionAuditAvailable={visionAuditAvailable}
         />
       </div>
       )}

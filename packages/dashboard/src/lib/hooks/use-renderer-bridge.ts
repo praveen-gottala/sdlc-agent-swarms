@@ -12,7 +12,8 @@ type ParentMessage =
   | { type: 'enable-tagging'; source: 'agentforge' }
   | { type: 'disable-tagging'; source: 'agentforge' }
   | { type: 'highlight-node'; nodeId: string; source: 'agentforge' }
-  | { type: 'clear-highlights'; source: 'agentforge' };
+  | { type: 'clear-highlights'; source: 'agentforge' }
+  | { type: 'extract-dom'; source: 'agentforge' };
 
 type ChildMessage =
   | {
@@ -36,6 +37,11 @@ type ChildMessage =
       source: 'agentforge';
     }
   | { type: 'ready'; source: 'agentforge' }
+  | {
+      type: 'dom-extracted';
+      data: Record<string, unknown>;
+      source: 'agentforge';
+    }
   | {
       type: 'log';
       level: string;
@@ -82,6 +88,8 @@ export interface UseRendererBridgeResult {
   clearHighlights: () => void;
   /** Update a single node's inline styles for live preview */
   updateNodeStyle: (nodeId: string, styles: Record<string, string>) => void;
+  /** Extract DOM layout data from all rendered [data-node] elements */
+  extractDOM: () => Promise<Record<string, unknown>>;
   /** Register a callback for node hover events */
   onNodeHovered: (callback: NodeHoveredCallback | null) => void;
   /** Register a callback for node click events */
@@ -117,6 +125,7 @@ export function useRendererBridge(
   const onNodeHoveredRef = useRef<NodeHoveredCallback | null>(null);
   const onNodeClickedRef = useRef<NodeClickedCallback | null>(null);
   const onRenderCompleteRef = useRef<RenderCompleteCallback | null>(null);
+  const domExtractResolveRef = useRef<((data: Record<string, unknown>) => void) | null>(null);
 
   // ── Send a message to the iframe ──────────────────────────────────────────
 
@@ -171,6 +180,22 @@ export function useRendererBridge(
     [postToIframe],
   );
 
+  const extractDOM = useCallback((): Promise<Record<string, unknown>> => {
+    return new Promise((resolve, reject) => {
+      domExtractResolveRef.current = resolve;
+      postToIframe({ type: 'extract-dom', source: 'agentforge' });
+      const timeout = setTimeout(() => {
+        domExtractResolveRef.current = null;
+        reject(new Error('DOM extraction timed out after 5s'));
+      }, 5000);
+      const origResolve = resolve;
+      domExtractResolveRef.current = (data) => {
+        clearTimeout(timeout);
+        origResolve(data);
+      };
+    });
+  }, [postToIframe]);
+
   // ── Callback ref setters ──────────────────────────────────────────────────
 
   const onNodeHovered = useCallback((cb: NodeHoveredCallback | null) => {
@@ -221,6 +246,13 @@ export function useRendererBridge(
           );
           break;
 
+        case 'dom-extracted':
+          if (domExtractResolveRef.current) {
+            domExtractResolveRef.current(msg.data);
+            domExtractResolveRef.current = null;
+          }
+          break;
+
         case 'log':
           onLogRef.current?.(msg.level, msg.message, msg.logSource ?? 'bridge');
           break;
@@ -243,5 +275,6 @@ export function useRendererBridge(
     onNodeHovered,
     onNodeClicked,
     onRenderComplete,
+    extractDOM,
   };
 }

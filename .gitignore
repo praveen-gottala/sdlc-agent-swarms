@@ -5,6 +5,9 @@ dist
 tmp
 out-tsc
 
+# test output (screenshots, iteration artifacts)
+__tests__/output
+
 # dependencies
 node_modules
 

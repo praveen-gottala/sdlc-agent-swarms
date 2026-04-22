@@ -13,9 +13,11 @@ Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)
 Not started: spec/code/cicd/observe phases, V3 Dashboard, TS orchestrator
 Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 
-**Active plans** (in priority order):
-1. Screen Types Plan A — COMPLETE (all phases A1-A6 done). See `docs/plans/screen-types-plan-a.md`
-2. Screen Types Plan B — B0-B2.6 complete, B2.7 (Vision Evaluator Fix) next, then B3 (Layout-Aware Code Generation). See `docs/plans/screen-types-plan-b.md`
+**Active plans:**
+1. Screen Types Plan B — B0-B2.7 complete, B3 (Layout-Aware Code Generation) next. See `docs/plans/screen-types-plan-b.md`
+
+**Completed plans:**
+- Screen Types Plan A — COMPLETE (all phases A1-A6 done, 2026-04-22). See `docs/plans/screen-types-plan-a.md`
 
 Control-plane status: inconsistent across repo.
 - packages/core + current runtime docs lean TypeScript in-process orchestration
@@ -164,3 +166,4 @@ Available Claude Code skills (invoke with /slash command):
 - /demo-readiness — Fastest path to a working demo
 - /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity
 - /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof (use before declaring prototype/renderer work done)
+- /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.

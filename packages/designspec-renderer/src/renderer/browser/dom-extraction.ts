@@ -117,35 +117,23 @@ export interface DOMLayoutData {
 
 /**
  * Extract layout data from all [data-node] elements on the page.
- * Runs a single page.evaluate() call for efficiency.
+ * Delegates to extractDOMFromDocument() which runs inside page.evaluate().
  */
 export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutData> {
+  // extractDOMFromDocument is a pure browser function — we inline its body
+  // into page.evaluate() so it runs in the browser context.
   const result = await page.evaluate(() => {
+    // Inline extraction (must be self-contained for Playwright serialization).
+    // The canonical shared version is in dom-extraction-shared.ts.
     const elements = document.querySelectorAll('[data-node]');
-    const nodes: Record<string, {
-      nodeId: string;
-      dataCatalog: string | null;
-      rect: { x: number; y: number; width: number; height: number };
-      scrollWidth: number;
-      clientWidth: number;
-      scrollHeight: number;
-      clientHeight: number;
-      textContent: string;
-      directTextContent: string;
-      parentNodeId: string | null;
-      childNodeIds: string[];
-      attributes: { 'aria-label': string | null; role: string | null; href: string | null };
-      computed: Record<string, string>;
-    }> = {};
+    const nodes: Record<string, unknown> = {};
 
-    // First pass: collect all data-node elements
     const elementMap = new Map<string, Element>();
     for (const el of elements) {
       const nodeId = (el as HTMLElement).dataset.node!;
       elementMap.set(nodeId, el);
     }
 
-    // Second pass: extract data
     for (const el of elements) {
       const htmlEl = el as HTMLElement;
       const nodeId = htmlEl.dataset.node!;
@@ -153,7 +141,6 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
       const rect = htmlEl.getBoundingClientRect();
       const style = getComputedStyle(htmlEl);
 
-      // Find parent: walk up DOM to nearest [data-node] ancestor
       let parentNodeId: string | null = null;
       let ancestor = htmlEl.parentElement;
       while (ancestor) {
@@ -164,14 +151,12 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
         ancestor = ancestor.parentElement;
       }
 
-      // Find children: direct [data-node] descendants (not nested deeper)
       const childNodeIds: string[] = [];
       const directChildren = htmlEl.querySelectorAll('[data-node]');
       for (const child of directChildren) {
         const childHtml = child as HTMLElement;
         const childId = childHtml.dataset.node!;
         if (childId === nodeId) continue;
-        // Check that this child's nearest [data-node] ancestor is us
         let childAncestor = childHtml.parentElement;
         while (childAncestor && childAncestor !== htmlEl) {
           if (childAncestor.dataset && childAncestor.dataset.node) break;
@@ -182,10 +167,7 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
         }
       }
 
-      // Get text content (trimmed, limited length)
       const text = htmlEl.textContent?.trim().slice(0, 200) ?? '';
-
-      // Get direct text content (own text nodes only, not descendants)
       let directText = '';
       for (const child of htmlEl.childNodes) {
         if (child.nodeType === Node.TEXT_NODE) {
@@ -194,7 +176,6 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
       }
       directText = directText.trim().slice(0, 200);
 
-      // Get HTML attributes for behavioral override verification
       const ariaLabel = htmlEl.getAttribute('aria-label');
       const role = htmlEl.getAttribute('role');
       let href = htmlEl.getAttribute('href');
@@ -206,12 +187,7 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
       nodes[nodeId] = {
         nodeId,
         dataCatalog,
-        rect: {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height,
-        },
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
         scrollWidth: htmlEl.scrollWidth,
         clientWidth: htmlEl.clientWidth,
         scrollHeight: htmlEl.scrollHeight,
@@ -220,64 +196,31 @@ export async function extractDOMLayout(page: PlaywrightPage): Promise<DOMLayoutD
         directTextContent: directText,
         parentNodeId,
         childNodeIds,
-        attributes: {
-          'aria-label': ariaLabel,
-          role: role,
-          href: href,
-        },
+        attributes: { 'aria-label': ariaLabel, role, href },
         computed: {
-          overflow: style.overflow,
-          display: style.display,
-          position: style.position,
-          width: style.width,
-          height: style.height,
-          flex: style.flex,
-          flexShrink: style.flexShrink,
-          flexGrow: style.flexGrow,
-          flexBasis: style.flexBasis,
-          minWidth: style.minWidth,
-          maxWidth: style.maxWidth,
-          minHeight: style.minHeight,
-          maxHeight: style.maxHeight,
-          flexDirection: style.flexDirection,
-          flexWrap: style.flexWrap,
-          gap: style.gap,
-          alignItems: style.alignItems,
-          justifyContent: style.justifyContent,
+          overflow: style.overflow, display: style.display, position: style.position,
+          width: style.width, height: style.height, flex: style.flex,
+          flexShrink: style.flexShrink, flexGrow: style.flexGrow, flexBasis: style.flexBasis,
+          minWidth: style.minWidth, maxWidth: style.maxWidth,
+          minHeight: style.minHeight, maxHeight: style.maxHeight,
+          flexDirection: style.flexDirection, flexWrap: style.flexWrap, gap: style.gap,
+          alignItems: style.alignItems, justifyContent: style.justifyContent,
           gridTemplateColumns: style.gridTemplateColumns,
-          paddingTop: style.paddingTop,
-          paddingRight: style.paddingRight,
-          paddingBottom: style.paddingBottom,
-          paddingLeft: style.paddingLeft,
-          marginTop: style.marginTop,
-          marginRight: style.marginRight,
-          marginBottom: style.marginBottom,
-          marginLeft: style.marginLeft,
-          backgroundColor: style.backgroundColor,
-          color: style.color,
-          fontFamily: style.fontFamily,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          lineHeight: style.lineHeight,
-          textAlign: style.textAlign,
-          borderRadius: style.borderRadius,
-          boxShadow: style.boxShadow,
-          border: style.border,
-          opacity: style.opacity,
-          zIndex: style.zIndex,
-          top: style.top,
-          left: style.left,
-          right: style.right,
-          bottom: style.bottom,
+          paddingTop: style.paddingTop, paddingRight: style.paddingRight,
+          paddingBottom: style.paddingBottom, paddingLeft: style.paddingLeft,
+          marginTop: style.marginTop, marginRight: style.marginRight,
+          marginBottom: style.marginBottom, marginLeft: style.marginLeft,
+          backgroundColor: style.backgroundColor, color: style.color,
+          fontFamily: style.fontFamily, fontSize: style.fontSize,
+          fontWeight: style.fontWeight, lineHeight: style.lineHeight, textAlign: style.textAlign,
+          borderRadius: style.borderRadius, boxShadow: style.boxShadow, border: style.border,
+          opacity: style.opacity, zIndex: style.zIndex,
+          top: style.top, left: style.left, right: style.right, bottom: style.bottom,
         },
       };
     }
 
-    return {
-      nodes,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    };
+    return { nodes, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
   });
 
   return result as DOMLayoutData;

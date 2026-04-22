@@ -31,7 +31,16 @@ function getCacheTokens(usage: Anthropic.Usage): { cacheReadTokens?: number; cac
   };
 }
 
-const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+const CLAUDE_MODELS = ['claude-opus-4-7', 'claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+
+/**
+ * Claude 4.7+ models do not support temperature, top_p, or top_k.
+ * Sending non-default values returns a 400 error.
+ */
+function modelSupportsTemperature(model: string): boolean {
+  const resolved = resolveModelId(model);
+  return !(/claude-opus-4-[7-9]|claude-opus-[5-9]|claude-sonnet-4-[7-9]|claude-sonnet-[5-9]/).test(resolved);
+}
 
 /**
  * Minimal client interface covering what we use from both Anthropic and AnthropicVertex.
@@ -348,12 +357,17 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
             ...(block.cache_control ? { cache_control: block.cache_control } : {}),
           }));
 
+        const includeTemp = options.temperature !== undefined && modelSupportsTemperature(options.model);
+        if (options.temperature !== undefined && !includeTemp) {
+          debugLog(`claude: stripping temperature=${options.temperature} for ${options.model} (unsupported)`);
+        }
+
         const baseParams: Anthropic.MessageCreateParams = {
           model: resolveModelId(options.model),
           max_tokens: options.maxTokens ?? 4096,
           system: systemParam,
           messages: toAnthropicMessages(prompt),
-          ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+          ...(includeTemp ? { temperature: options.temperature } : {}),
           ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
           ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
           ...(options.toolChoice ? { tool_choice: options.toolChoice as Anthropic.MessageCreateParams['tool_choice'] } : {}),
@@ -426,13 +440,15 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
             ...(block.cache_control ? { cache_control: block.cache_control } : {}),
           }));
 
+        const streamIncludeTemp = options.temperature !== undefined && modelSupportsTemperature(options.model);
+
         const stream = client.messages.stream(
           {
             model: resolveModelId(options.model),
             max_tokens: options.maxTokens ?? 4096,
             system: streamSystemParam,
             messages: toAnthropicMessages(prompt),
-            ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+            ...(streamIncludeTemp ? { temperature: options.temperature } : {}),
             ...(options.stopSequences?.length ? { stop_sequences: options.stopSequences } : {}),
             ...(toAnthropicTools(prompt) ? { tools: toAnthropicTools(prompt) } : {}),
             ...(options.toolChoice ? { tool_choice: options.toolChoice as Anthropic.MessageCreateParams['tool_choice'] } : {}),

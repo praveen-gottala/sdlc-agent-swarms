@@ -80,6 +80,7 @@ describe('ClaudeProvider', () => {
       expect(provider.name).toBe('claude');
       expect(provider.models).toContain('claude-sonnet-4-6');
       expect(provider.models).toContain('claude-opus-4-6');
+      expect(provider.models).toContain('claude-opus-4-7');
       expect(provider.models).toContain('claude-haiku-4-5');
     });
   });
@@ -371,6 +372,41 @@ describe('ClaudeProvider', () => {
         }),
         expect.any(Object),
       );
+    });
+
+    it('strips temperature for claude-opus-4-7 (unsupported parameter)', async () => {
+      mockStreamResolving({
+        content: [{ type: 'text', text: 'response' }],
+        usage: { input_tokens: 20, output_tokens: 10 },
+        stop_reason: 'end_turn',
+        model: 'claude-opus-4-7',
+      });
+
+      const provider = createClaudeProvider('claude-opus-4-7', { apiKey: 'test' });
+      const result = await provider.complete(testPrompt, {
+        model: 'claude-opus-4-7',
+        maxTokens: 4096,
+        temperature: 0,
+      });
+
+      expect(result.ok).toBe(true);
+      const callArgs = mockStream.mock.calls[0][0];
+      expect(callArgs.temperature).toBeUndefined();
+    });
+
+    it('preserves temperature for claude-sonnet-4-6 (supported parameter)', async () => {
+      mockStreamResolving({
+        content: [{ type: 'text', text: 'response' }],
+        usage: { input_tokens: 20, output_tokens: 10 },
+        stop_reason: 'end_turn',
+        model: 'claude-sonnet-4-6',
+      });
+
+      const provider = createClaudeProvider('claude-sonnet-4-6', { apiKey: 'test' });
+      await provider.complete(testPrompt, testOptions);
+
+      const callArgs = mockStream.mock.calls[0][0];
+      expect(callArgs.temperature).toBe(0);
     });
 
     it('passes tools to Anthropic format', async () => {

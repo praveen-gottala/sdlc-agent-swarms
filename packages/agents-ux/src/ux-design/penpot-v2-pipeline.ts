@@ -286,6 +286,7 @@ async function runV2CorrectionLoop(
       evalProvider,
       undefined,
       undefined,
+      undefined,
       traceCollector,
       `evaluation-v2-${correction + 1}`,
       {
@@ -791,6 +792,7 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
       qualityThreshold: input.browserCorrectionOptions?.qualityThreshold ?? 80,
       interactive: input.browserCorrectionOptions?.interactive,
       mechanicalFixes: input.browserCorrectionOptions?.mechanicalFixes,
+      visionCorrection: input.browserCorrectionOptions?.visionCorrection,
       width: input.browserCorrectionOptions?.width ?? viewportWidth,
       outputDir: input.browserCorrectionOptions?.outputDir,
       planningOutput,

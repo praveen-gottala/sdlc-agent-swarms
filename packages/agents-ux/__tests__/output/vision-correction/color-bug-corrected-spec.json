@@ -1,0 +1,1096 @@
+{
+  "screen": "dashboard",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 1440,
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      },
+      "background": "background-primary"
+    },
+    "topbar": {
+      "parent": "root",
+      "order": 0,
+      "type": "header",
+      "width": "fill",
+      "height": 64,
+      "background": "surface-primary",
+      "shadow": "sm",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 32,
+        "py": 0
+      }
+    },
+    "topbar-brand": {
+      "parent": "topbar",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "topbar-logo": {
+      "parent": "topbar-brand",
+      "order": 0,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 8,
+      "background": "cta-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "topbar-logo-text": {
+      "parent": "topbar-logo",
+      "order": 0,
+      "type": "text",
+      "content": "₿",
+      "typography": "label",
+      "color": "text-on-cta",
+      "weight": 700
+    },
+    "topbar-appname": {
+      "parent": "topbar-brand",
+      "order": 1,
+      "type": "text",
+      "content": "Budgetly",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "topbar-center": {
+      "parent": "topbar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "month-prev-btn": {
+      "parent": "topbar-center",
+      "order": 0,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 16,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "month-prev-icon": {
+      "parent": "month-prev-btn",
+      "order": 0,
+      "type": "text",
+      "content": "‹",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "month-selector": {
+      "parent": "topbar-center",
+      "order": 1,
+      "type": "container",
+      "radius": 20,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "px": 20,
+        "py": 6
+      }
+    },
+    "month-selector-text": {
+      "parent": "month-selector",
+      "order": 0,
+      "type": "text",
+      "content": "June 2025",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "month-next-btn": {
+      "parent": "topbar-center",
+      "order": 2,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 16,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "month-next-icon": {
+      "parent": "month-next-btn",
+      "order": 0,
+      "type": "text",
+      "content": "›",
+      "typography": "heading-2",
+      "color": "text-primary"
+    },
+    "topbar-actions": {
+      "parent": "topbar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "topbar-add-btn": {
+      "parent": "topbar-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "+ Add Expense",
+      "layout": {
+        "py": 10,
+        "px": 14
+      }
+    },
+    "topbar-settings-btn": {
+      "parent": "topbar-actions",
+      "order": 1,
+      "type": "container",
+      "width": 36,
+      "height": 36,
+      "radius": 18,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "topbar-settings-icon": {
+      "parent": "topbar-settings-btn",
+      "order": 0,
+      "type": "text",
+      "content": "⚙",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "topbar-avatar": {
+      "parent": "topbar-actions",
+      "order": 2,
+      "catalog": "avatar",
+      "label": "JD",
+      "overrides": {
+        "width": 36,
+        "height": 36
+      }
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "height": 48,
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 32,
+        "gap": 42,
+        "mx": 11
+      },
+      "shadow": "sm"
+    },
+    "nav-tab-dashboard": {
+      "parent": "nav-tabs",
+      "order": 0,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "nav-tab-dashboard-text": {
+      "parent": "nav-tab-dashboard",
+      "order": 0,
+      "type": "text",
+      "content": "Dashboard",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "nav-tab-dashboard-indicator": {
+      "parent": "nav-tab-dashboard",
+      "order": 1,
+      "type": "divider",
+      "width": "fill",
+      "height": 2,
+      "background": "cta-primary"
+    },
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
+      "order": 1,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "nav-tab-insights-text": {
+      "parent": "nav-tab-insights",
+      "order": 0,
+      "type": "text",
+      "content": "Insights",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "nav-tab-add": {
+      "parent": "nav-tabs",
+      "order": 2,
+      "type": "container",
+      "height": 48,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "px": 16
+      }
+    },
+    "nav-tab-add-text": {
+      "parent": "nav-tab-add",
+      "order": 0,
+      "type": "text",
+      "content": "Add Expense",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "dashboard-body": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "start",
+        "gap": 24,
+        "px": 32,
+        "py": 32
+      }
+    },
+    "left-column": {
+      "parent": "dashboard-body",
+      "order": 0,
+      "type": "container",
+      "width": 360,
+      "layout": {
+        "dir": "column",
+        "gap": 24
+      }
+    },
+    "budget-summary-card": {
+      "parent": "left-column",
+      "order": 0,
+      "type": "section",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 16,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "budget-card-header": {
+      "parent": "budget-summary-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "budget-card-title": {
+      "parent": "budget-card-header",
+      "order": 0,
+      "type": "text",
+      "content": "Monthly Budget",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "budget-status-badge": {
+      "parent": "budget-card-header",
+      "order": 1,
+      "catalog": "badge-warning",
+      "label": "Heads Up"
+    },
+    "budget-amounts-row": {
+      "parent": "budget-summary-card",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "end",
+        "justify": "space-between"
+      }
+    },
+    "budget-spent-group": {
+      "parent": "budget-amounts-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "budget-spent-label": {
+      "parent": "budget-spent-group",
+      "order": 0,
+      "type": "text",
+      "content": "Spent",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "budget-spent-value": {
+      "parent": "budget-spent-group",
+      "order": 1,
+      "type": "text",
+      "content": "$2,847.50",
+      "typography": "heading-1",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "budget-total-group": {
+      "parent": "budget-amounts-row",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2,
+        "align": "end"
+      }
+    },
+    "budget-total-label": {
+      "parent": "budget-total-group",
+      "order": 0,
+      "type": "text",
+      "content": "of $3,500.00",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "budget-remaining-value": {
+      "parent": "budget-total-group",
+      "order": 1,
+      "type": "text",
+      "content": "$652.50 left",
+      "typography": "body",
+      "color": "warning",
+      "weight": 500
+    },
+    "budget-progress-bar": {
+      "parent": "budget-summary-card",
+      "order": 2,
+      "catalog": "progress-bar-active",
+      "value": 81,
+      "width": "fill",
+      "height": 8,
+      "radius": 4,
+      "background": "surface-elevated"
+    },
+    "budget-progress-meta": {
+      "parent": "budget-summary-card",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "budget-progress-pct": {
+      "parent": "budget-progress-meta",
+      "order": 0,
+      "type": "text",
+      "content": "81% used",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "budget-days-left": {
+      "parent": "budget-progress-meta",
+      "order": 1,
+      "type": "text",
+      "content": "12 days remaining",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "budget-stats-row": {
+      "parent": "budget-summary-card",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 12
+      }
+    },
+    "stat-daily-avg": {
+      "parent": "budget-stats-row",
+      "order": 0,
+      "catalog": "stat",
+      "label": "Daily Avg",
+      "value": "$94.92",
+      "width": "fill"
+    },
+    "stat-transactions": {
+      "parent": "budget-stats-row",
+      "order": 1,
+      "catalog": "stat",
+      "label": "Transactions",
+      "value": "34",
+      "width": "fill"
+    },
+    "stat-largest": {
+      "parent": "budget-stats-row",
+      "order": 2,
+      "catalog": "stat",
+      "label": "Largest",
+      "value": "$420.00",
+      "width": "fill"
+    },
+    "donut-chart-card": {
+      "parent": "left-column",
+      "order": 1,
+      "type": "section",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 16,
+      "layout": {
+        "dir": "column",
+        "gap": 20,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "donut-card-header": {
+      "parent": "donut-chart-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "donut-card-title": {
+      "parent": "donut-card-header",
+      "order": 0,
+      "type": "text",
+      "content": "Category Breakdown",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "donut-card-subtitle": {
+      "parent": "donut-card-header",
+      "order": 1,
+      "type": "text",
+      "content": "June 2025",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "donut-chart-visual": {
+      "parent": "donut-chart-card",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      }
+    },
+    "donut-placeholder": {
+      "parent": "donut-chart-visual",
+      "order": 0,
+      "type": "container",
+      "width": 180,
+      "height": 180,
+      "radius": 90,
+      "background": "surface-elevated",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      }
+    },
+    "donut-center-label": {
+      "parent": "donut-placeholder",
+      "order": 0,
+      "type": "text",
+      "content": "Total",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "donut-center-value": {
+      "parent": "donut-placeholder",
+      "order": 1,
+      "type": "text",
+      "content": "$2,847",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "donut-center-count": {
+      "parent": "donut-placeholder",
+      "order": 2,
+      "type": "text",
+      "content": "34 items",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "category-legend": {
+      "parent": "donut-chart-card",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "legend-food": {
+      "parent": "category-legend",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "legend-food-left": {
+      "parent": "legend-food",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "legend-food-dot": {
+      "parent": "legend-food-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 5,
+      "background": "cta-primary"
+    },
+    "legend-food-name": {
+      "parent": "legend-food-left",
+      "order": 1,
+      "type": "text",
+      "content": "Food & Dining",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "legend-food-right": {
+      "parent": "legend-food",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "legend-food-amount": {
+      "parent": "legend-food-right",
+      "order": 0,
+      "type": "text",
+      "content": "$842.00",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "legend-food-pct": {
+      "parent": "legend-food-right",
+      "order": 1,
+      "type": "text",
+      "content": "30%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-transport": {
+      "parent": "category-legend",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "legend-transport-left": {
+      "parent": "legend-transport",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "legend-transport-dot": {
+      "parent": "legend-transport-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 5,
+      "background": "success"
+    },
+    "legend-transport-name": {
+      "parent": "legend-transport-left",
+      "order": 1,
+      "type": "text",
+      "content": "Transport",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "legend-transport-right": {
+      "parent": "legend-transport",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "legend-transport-amount": {
+      "parent": "legend-transport-right",
+      "order": 0,
+      "type": "text",
+      "content": "$512.30",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "legend-transport-pct": {
+      "parent": "legend-transport-right",
+      "order": 1,
+      "type": "text",
+      "content": "18%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-housing": {
+      "parent": "category-legend",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "legend-housing-left": {
+      "parent": "legend-housing",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "legend-housing-dot": {
+      "parent": "legend-housing-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 5,
+      "background": "info"
+    },
+    "legend-housing-name": {
+      "parent": "legend-housing-left",
+      "order": 1,
+      "type": "text",
+      "content": "Housing",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "legend-housing-right": {
+      "parent": "legend-housing",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "legend-housing-amount": {
+      "parent": "legend-housing-right",
+      "order": 0,
+      "type": "text",
+      "content": "$650.00",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "legend-housing-pct": {
+      "parent": "legend-housing-right",
+      "order": 1,
+      "type": "text",
+      "content": "23%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-entertainment": {
+      "parent": "category-legend",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "legend-ent-left": {
+      "parent": "legend-entertainment",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "legend-ent-dot": {
+      "parent": "legend-ent-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 5,
+      "background": "error"
+    },
+    "legend-ent-name": {
+      "parent": "legend-ent-left",
+      "order": 1,
+      "type": "text",
+      "content": "Entertainment",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "legend-ent-right": {
+      "parent": "legend-entertainment",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "legend-ent-amount": {
+      "parent": "legend-ent-right",
+      "order": 0,
+      "type": "text",
+      "content": "$298.20",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "legend-ent-pct": {
+      "parent": "legend-ent-right",
+      "order": 1,
+      "type": "text",
+      "content": "10%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "legend-other": {
+      "parent": "category-legend",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "legend-other-left": {
+      "parent": "legend-other",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "legend-other-dot": {
+      "parent": "legend-other-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 5,
+      "background": "border-default"
+    },
+    "legend-other-name": {
+      "parent": "legend-other-left",
+      "order": 1,
+      "type": "text",
+      "content": "Other",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "legend-other-right": {
+      "parent": "legend-other",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "legend-other-amount": {
+      "parent": "legend-other-right",
+      "order": 0,
+      "type": "text",
+      "content": "$545.00",
+      "typography": "body",
+      "color": "text-primary",
+      "weight": 500
+    },
+    "legend-other-pct": {
+      "parent": "legend-other-right",
+      "order": 1,
+      "type": "text",
+      "content": "19%",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "right-column": {
+      "parent": "dashboard-body",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "expenses-card": {
+      "parent": "right-column",
+      "order": 0,
+      "type": "section",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 16,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 22,
+        "my": 0,
+        "mx": 11
+      }
+    },
+    "expenses-card-header": {
+      "parent": "expenses-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "pb": 16
+      }
+    },
+    "expenses-card-title": {
+      "parent": "expenses-card-header",
+      "order": 0,
+      "type": "text",
+      "content": "Recent Expenses",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "expenses-card-count": {
+      "parent": "expenses-card-header",
+      "order": 1,
+      "catalog": "badge-info",
+      "label": "34 transactions"
+    },
+    "filter-bar": {
+      "parent": "expenses-card",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12,
+        "pb": 0,
+        "mx": 0
+      }
+    },
+    "filter-label": {
+      "parent": "filter-bar",
+      "order": 0,
+      "type": "text",
+      "content": "Filter:",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "filter-chip-all": {
+      "parent": "filter-bar",
+      "order": 1,
+      "catalog": "chip",
+      "label": "All",
+      "overrides": {
+        "selected": true
+      }
+    },
+    "filter-chip-food": {
+      "parent": "filter-bar",
+      "order": 2,
+      "catalog": "chip",
+      "label": "Food & Dining"
+    },
+    "filter-chip-transport": {
+      "parent": "filter-bar",
+      "order": 3,
+      "catalog": "chip",
+      "label": "Transport",
+      "layout": {
+        "gap": 0,
+        "mx": 0
+      }
+    },
+    "filter-chip-housing": {
+      "parent": "filter-bar",
+      "order": 4,
+      "catalog": "chip",
+      "label": "Housing"
+    },
+    "filter-chip-entertainment": {
+      "parent": "filter-bar",
+      "order": 5,
+      "catalog": "chip",
+      "label": "Entertainment"
+    },
+    "filter-search": {
+      "parent": "filter-bar",
+      "order": 6,
+      "catalog": "search-input",
+      "placeholder": "Search expenses...",
+      "width": 200,
+      "layout": {
+        "mx": 0
+      }
+    },
+    "expenses-divider": {
+      "parent": "expenses-card",
+      "order": 2,
+      "type": "divider",
+      "width": "fill"
+    },
+    "expenses-table-header": {
+      "parent": "expenses-card",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 16,
+        "py": 0,
+        "gap": 0,
+        "my": 0
+      }
+    },
+    "th-date": {
+      "parent": "expenses-table-header",
+      "order": 0,
+      "type": "text",
+      "content": "Date",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": 100
+    },
+    "th-merchant": {
+      "parent": "expenses-table-header",
+      "order": 1,
+      "type": "text",
+      "content": "Merchant",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": "fill"
+    },
+    "th-category": {
+      "parent": "expenses-table-header",
+      "order": 2,
+      "type": "text",
+      "content": "Category",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": 160
+    },
+    "th-payment": {
+      "parent": "expenses-table-header",
+      "order": 3,
+      "type": "text",
+      "content": "Payment",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": 140
+    },
+    "th-amount": {
+      "parent": "expenses-table-header",
+      "order": 4,
+      "type": "text",
+      "content": "Amount",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": 100,
+      "textAlign": "right"
+    },
+    "th-actions": {
+      "parent": "expenses-table-header",
+      "order": 5,
+      "type": "text",
+      "content": "",
+      "typography": "label",
+      "color": "text-secondary",
+      "width": 80
+    }
+  }
+}

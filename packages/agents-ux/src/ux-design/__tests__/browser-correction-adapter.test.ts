@@ -280,9 +280,9 @@ describe('createBrowserCorrectionAdapter', () => {
     const call = provider.complete.mock.calls[0];
     const options = call[1];
     expect(options.responseSchema).toBeUndefined();
-    expect(options.model).toBeDefined();
+    expect(options.model).toBe('claude-opus-4-7');
     expect(options.maxTokens).toBeDefined();
-    expect(options.temperature).toBe(0);
+    expect(options.temperature).toBeUndefined();
   });
 
   it('parses patches from wrapped response object', async () => {

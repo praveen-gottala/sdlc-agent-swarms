@@ -117,6 +117,8 @@ interface DesignPageOptions {
   readonly penpotCorrection?: boolean;
   /** Force interactive (true) or non-interactive (false) browser correction. */
   readonly interactive?: boolean;
+  /** Enable vision-based self-correction loop. Off by default until renderer is stable. */
+  readonly visionCorrection?: boolean;
 }
 
 // ============================================================================
@@ -718,6 +720,7 @@ try {
   // Build browser correction options
   const browserCorrectionOpts: BrowserCorrectionOptions = {
     width: effectiveViewportWidth,
+    visionCorrection: options.visionCorrection ?? false,
     ...(options.interactive !== undefined ? { interactive: options.interactive } : {}),
     outputDir: join(ensureOutputDir(moduleId, baseDir), PIPELINE_ARTIFACTS.corrections),
   };

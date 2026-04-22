@@ -116,6 +116,13 @@ export type { BrowserSession } from './renderer/browser/screenshot-session.js';
 export { runInteractivePreview, openInteractivePreview } from './renderer/browser/interactive-preview.js';
 export type { UserFeedbackTag, InteractivePreviewResult, InteractivePreviewSession } from './renderer/browser/interactive-preview.js';
 
+// ─── Render Verification ──────────────────────────────
+export { verifyNode, buildSimpleTokenMap } from './renderer/browser/verify-properties.js';
+export type { NodeReport, PropertyCheck, Verdict, DOMNodeInfo } from './renderer/browser/verify-properties.js';
+
+// ─── DOM Extraction (browser-safe) ────────────────────
+export { extractDOMFromDocument } from './renderer/browser/dom-extraction-shared.js';
+
 // ─── Iframe Communication Protocol ─────────────────────
 export type { ParentMessage, ChildMessage } from './renderer/browser/iframe-protocol.js';
 

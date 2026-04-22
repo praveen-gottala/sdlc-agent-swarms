@@ -7,7 +7,7 @@
  * them directly into the DesignSpec JSON.
  */
 import type { Result } from '@agentforge/core';
-import { Ok, Err, DEFAULT_MODEL } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL } from '@agentforge/core';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { CorrectionAdapter, CorrectionFixResult } from './correction-loop.js';
 import type { DesignIssue, CorrectionHistory, FixAttemptRecord } from './design-evaluator.js';
@@ -16,6 +16,7 @@ import type { DOMLayoutData, DOMNodeLayout } from '@agentforge/designspec-render
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type { UserFeedbackTag } from '@agentforge/designspec-renderer';
 import type { MechanicalIssue } from '@agentforge/designspec-renderer';
+import type { RendererTokens, CatalogMap } from '@agentforge/designspec-renderer';
 
 /** Mutable ref to the current spec — adapter mutates this in place. */
 export interface SpecRef {
@@ -113,7 +114,10 @@ EXAMPLE:
     }
   },
   "reasoning": "Centered the card header content with space-between to push the badge right. Removed explicit width from badge so it sizes to its text content."
-}`;
+}
+
+IMPORTANT: layout patches are deep-merged — you only need to include the layout properties you want to CHANGE.
+Existing layout properties (dir, gap, px, py, align, justify) are preserved unless you explicitly set them.`;
 
 // ─── Post-processing safety net ─────────────────────────────────────────────
 
@@ -444,6 +448,8 @@ export function createBrowserCorrectionAdapter(
   domLayout: DOMLayoutData,
   userTags?: readonly UserFeedbackTag[],
   mechanicalIssues?: readonly MechanicalIssue[],
+  tokens?: RendererTokens,
+  catalog?: CatalogMap,
 ): CorrectionAdapter {
   return {
     async captureScreenshot(): Promise<Result<string>> {
@@ -528,21 +534,52 @@ export function createBrowserCorrectionAdapter(
         text: `EVALUATOR ISSUES:\n${issuesSummary}${historyContext}${mechanicalContext}`,
       };
 
+      // Build dynamic context sections for tokens and catalog
+      let tokenRefSection = '';
+      if (tokens?.colors?.semantic) {
+        const colorNames = Object.keys(tokens.colors.semantic).join(', ');
+        const typoRoles = tokens.typography?.scale?.map((e: { role: string }) => e.role).join(', ') ?? '';
+        const spacingVals = tokens.spacing?.scale?.join(', ') ?? '';
+        tokenRefSection = `\n\nDESIGN TOKEN REFERENCE (use these names in patches, NOT hex values):\n- Semantic colors: ${colorNames}\n- Typography roles: ${typoRoles}\n- Spacing scale (px): ${spacingVals}`;
+      }
+
+      let catalogRefSection = '';
+      if (catalog) {
+        const usedIds = new Set<string>();
+        for (const node of Object.values(currentSpec.value.nodes)) {
+          const cat = (node as unknown as Record<string, unknown>).catalog;
+          if (typeof cat === 'string') usedIds.add(cat);
+        }
+        if (usedIds.size > 0) {
+          const lines: string[] = [];
+          for (const id of usedIds) {
+            const entry = catalog[id];
+            if (!entry) continue;
+            const fields = entry.required_fields?.join(', ') ?? '(none)';
+            lines.push(`- ${id}: type=${entry.type ?? '?'}, required=[${fields}], bg=${entry.background ?? '?'}, text=${entry.text_color ?? '?'}`);
+          }
+          if (lines.length > 0) {
+            catalogRefSection = `\n\nCATALOG COMPONENT ANATOMY (use correct fields on catalog nodes):\n${lines.join('\n')}`;
+          }
+        }
+      }
+
+      const effectiveSystemPrompt = VISION_FIX_SYSTEM_PROMPT + tokenRefSection + catalogRefSection;
+
       // Call vision LLM (no structured output — prompt + validation instead).
       // Claude's compilation limits (24 optional, 16 unions) are incompatible
       // with our sparse patch format. We rely on the system prompt for format
       // guidance and sanitizePatches() + validatePatchValues() for safety.
       const result = await provider.complete(
         {
-          system: VISION_FIX_SYSTEM_PROMPT,
+          system: effectiveSystemPrompt,
           messages: [
             { role: 'user', content: [imageBlock, domBlock, userTagsBlock, specBlock, issuesBlock] },
           ],
         },
         {
-          model: DEFAULT_MODEL,
+          model: EVALUATOR_MODEL,
           maxTokens: 8000,
-          temperature: 0,
         },
       );
 
@@ -650,6 +687,8 @@ export function createBrowserCorrectionAdapter(
           if (key === 'removeFields') continue; // already handled
           if (value === null) {
             delete nodeRecord[key];
+          } else if (key === 'layout' && typeof value === 'object' && typeof nodeRecord.layout === 'object' && nodeRecord.layout !== null) {
+            nodeRecord.layout = { ...nodeRecord.layout, ...value };
           } else {
             nodeRecord[key] = value;
           }
