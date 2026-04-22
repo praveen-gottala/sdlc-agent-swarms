@@ -163,3 +163,4 @@ Available Claude Code skills (invoke with /slash command):
 - /write-adr [description] — Generate ADR for spec deviations
 - /demo-readiness — Fastest path to a working demo
 - /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity
+- /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof (use before declaring prototype/renderer work done)
