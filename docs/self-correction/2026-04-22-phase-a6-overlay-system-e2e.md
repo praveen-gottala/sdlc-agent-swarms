@@ -319,19 +319,78 @@ lsof -ti:4100 | xargs kill -9
 
 ---
 
-## Known Remaining Gaps
+## Known Remaining Gaps (for next session)
 
-1. **Chrome nav link `navigateTo` not wired.** `propagateNavigateToChromeTabs` handles tab bars but not header nav links ("Claims" link in top nav does nothing). Users can't navigate via the header — only via stat cards, activity feed, or ScreenSelectorBar.
+### BLOCKER: LayoutShell not activating for Claim Filling fixture
 
-2. **Bell icon not wired to notifications-panel.** Same root cause — Chrome Pass designs visually but doesn't know navigation targets for non-tab elements.
+**Symptom:** Header only shows on the current page's content area, not as a
+persistent LayoutShell header. No `data-persistent="header"` element in the
+DOM. ScreenSelectorBar pushed below the fold. Navigating between screens
+swaps the entire content including the nav bar.
 
-3. **Default screen selection by alphabetical file order.** `claim-detail.json` sorts before `dashboard.json`, so ClaimDetail loads as default. The `isDefault: screens.length === 0` fallback marks the first-discovered screen.
+**What we know:**
+- API returns `chromeSpec` with `regions: { "header": ["nav-header"] }` and
+  10 nodes (verified via `fetch('/api/prototype')` in DevTools)
+- `shared-chrome.json` exists at `.agentforge/previews/shared-chrome.json`
+  with correct regions
+- `collectChromeRootIds({ header: ["nav-header"] })` returns `["nav-header"]`
+- `layoutShellEnabled = Boolean(chromeSpec && chromeRootIds.length > 0)`
+  should be `true`
+- Killing stale Vite on :4100 did NOT fix it
+- PET fixture's LayoutShell works correctly with same code
 
-4. **`design:generate` doesn't migrate design files.** ID changes orphan existing designs.
+**What we don't know:**
+- Whether `chromeSpec` actually arrives inside the iframe (cross-origin blocks
+  direct inspection)
+- Whether the bridge `load-prototype` message includes `chromeSpec` in its
+  serialized payload
+- Whether PrototypeApp receives `chromeSpec` as a non-null prop
 
-5. **Vision evaluator broken.** `temperature` parameter error on Vertex model blocks the self-correction loop. All evaluations score 0/100.
+**Investigation for next session:**
+1. Add a `console.log` in PrototypeApp to log `chromeSpec`, `chromeRootIds`,
+   `layoutShellEnabled` — check via Logs panel in the dashboard
+2. OR add a `sendLog()` call in main.tsx's `onLoadPrototype` to report whether
+   `chromeOpt` is null after parsing
+3. Compare the full prototype API JSON response between PET and Claim Filling
+   (diff the `chromeSpec` field)
+4. Check if `design:page:all` writes `chromeSpec` into `prototype.json` — the
+   saved manifest might override the API's chromeSpec loading
 
-6. **Drawer content designed at wrong width if cached.** Existing designs aren't invalidated when `screen_type` changes. Must delete cache manually.
+**Root cause hypothesis:** The saved `prototype.json` from `design:page:all`
+may embed a `chromeSpec` that overwrites the API's file-based loading. Or the
+bridge serialization may drop `chromeSpec` under certain payload sizes.
+
+### Other gaps
+
+1. **Chrome nav link `navigateTo` not wired.** `propagateNavigateToChromeTabs`
+   handles tab bars but not header nav links ("Claims" link does nothing).
+
+2. **Bell icon not wired to notifications-panel.** Chrome Pass designs visually
+   but doesn't know navigation targets for non-tab elements.
+
+3. **Default screen selection by alphabetical file order.** `claim-detail`
+   sorts before `dashboard`, so ClaimDetail loads as default.
+
+4. **`design:generate` doesn't migrate design files.** ID changes orphan
+   existing designs. Dashboard shows "Ready to design" until manual rename.
+
+5. **Vision evaluator broken.** `temperature` parameter error on Vertex model
+   blocks self-correction loop. All evaluations score 0/100.
+
+6. **Drawer content designed at wrong width if cached.** Existing designs
+   aren't invalidated when `screen_type` changes.
+
+7. **Header alignment.** Both PET and Claim Filling show misaligned nav bar
+   items — children at different vertical positions despite `align: center`
+   on the parent container. Likely child elements with inconsistent heights.
+
+8. **`agentforge/designs/` vs `.agentforge/previews/` precedence conflict.**
+   When `agentforge/designs/` has old manually-copied specs, they override
+   fresh `design:page:all` output from `.agentforge/previews/`. This caused
+   LayoutShell to not activate because old specs didn't have frozen chrome
+   merged. Deleting old `agentforge/designs/` files fixes it, but the
+   precedence rule needs rethinking — the API should prefer the newer file,
+   not always the `designs/` directory.
 
 ---
 
