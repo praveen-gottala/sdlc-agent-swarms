@@ -2,6 +2,98 @@
 
 Commands for creating and iterating on designs through the UX agent pipeline.
 
+## `agentforge design:generate`
+
+Generate the application specification (pages, models, API) from a PRD.
+
+**Interactive.** Prompts for design theme selection and spec approval.
+
+```bash
+cd <project-root>
+agentforge design:generate
+```
+
+| Prompt | Options | Notes |
+|--------|---------|-------|
+| "Regenerate design system?" | y/n | `n` keeps existing tokens |
+| "Choose 1, 2, or 3" | 1/2/3/r | Design theme selection |
+| "Approve this spec?" | y/r/n | `y` writes pages.yaml |
+
+**Outputs:** `agentforge/spec/pages.yaml`, `agentforge/spec/models.yaml`,
+`agentforge/spec/api.yaml`
+
+**Screen type classification:** The LLM assigns `screen_type` per page:
+- `page` (default) — full-screen views
+- `drawer` — side panels (notifications, settings)
+- `modal` — confirmation dialogs
+- `sheet` — bottom panels
+
+**Gotcha: Page IDs change on regeneration.** The LLM generates new
+descriptive IDs (`dashboard`, `claims-list`) that don't match existing
+design files (`page-001.json`). Existing designs become orphaned.
+Dashboard shows "Ready to design" for pages that have designs under old
+names. Manual rename required.
+
+---
+
+## `agentforge design:page:all`
+
+Run the full design pipeline for all pages in `pages.yaml`.
+
+```bash
+cd <project-root>
+agentforge design:page:all [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--pages <ids>` | Only design specific pages (comma-separated) |
+| `--width <px>` | Override viewport width for all pages |
+| `--design-only` | Skip LLM calls, use cached research/planning/chrome |
+
+**Pipeline stages:**
+
+```
+Stage 1: Research (parallel, 3 concurrent)
+Stage 2: Planning (parallel, 3 concurrent)
+Stage 2.5: Chrome Pass (single) — designs shared header/footer once
+Stage 3: Design (parallel, 2 concurrent) — each page gets frozen chrome
+Stage 4: Manifest — builds prototype.json with screens + navigation bindings
+```
+
+**Timing (6 pages, Claim Filling Sample):**
+
+| Run type | Time | LLM calls |
+|----------|------|-----------|
+| Full | ~163s wall-clock | All stages |
+| `--design-only` | ~8s | None (cached) |
+| Chrome Pass only | ~30s | Chrome only |
+
+**Screen type → viewport resolution:**
+
+| screen_type | Design width | Rendering |
+|-------------|-------------|-----------|
+| page | 1440px (default) | Full screen replacement |
+| drawer | 320px | Right slide-in overlay |
+| modal | 560px | Centered dialog overlay |
+| sheet | full width | Bottom panel overlay |
+
+**Chrome Pass output:** `shared-chrome.json` with:
+- Shared nav header nodes (brand, links, bell icon, avatar)
+- `regions` map (header/sidebar/footer → node IDs) — set by LLM
+
+**Forcing Chrome Pass regeneration:**
+```bash
+rm .agentforge/previews/__shared-chrome__/scripts/designspec-v2.json
+rm .agentforge/previews/shared-chrome.json
+agentforge design:page:all   # NOT --design-only
+```
+
+**Critical constraint:** `--design-only` does NOT run Chrome Pass. If
+you deleted the chrome cache, you must run without `--design-only`.
+
+---
+
 ## `agentforge design`
 
 Request a new page design from the design agent pipeline (code-first workflow).

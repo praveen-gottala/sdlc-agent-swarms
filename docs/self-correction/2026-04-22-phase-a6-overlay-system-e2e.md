@@ -5,6 +5,15 @@
 **Duration:** ~4 hours
 **Cost:** ~$8 LLM API (6 pages x 3 stages + Chrome Pass, two full runs)
 
+**Where the learnings now live (canonical locations):**
+- E2E headed mode / stale Vite / visual verification → `.claude/rules/e2e-coverage.md`
+- Navigation mode data flow (5-step chain) → `docs/architecture/prototype-rendering-dataflow.md`
+- `design:generate` + `design:page:all` commands → `docs/cli/design.md`
+- Full pipeline verification rule → `.claude/rules/design-pipeline.md`
+- Screen type constraint → `docs/lessons-learned.md` "Screen Type Must Be Set BEFORE Design Generation"
+
+This doc is the raw session narrative — use it to understand WHY the rules exist.
+
 ---
 
 ## Process Lessons (read first)

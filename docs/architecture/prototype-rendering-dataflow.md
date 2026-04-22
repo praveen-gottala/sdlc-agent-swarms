@@ -290,15 +290,44 @@ generated at 1440px then rendered in a 320px drawer will overflow.
 See `docs/lessons-learned.md` "Screen Type Must Be Set BEFORE Design
 Generation" for the full rule.
 
-**Navigation mode resolution:** When `navigateTo(screenId)` is called,
-PrototypeApp determines whether to do full-page replacement or overlay:
+**Navigation mode resolution — full data flow:**
+
+The mode (overlay vs full-page) is determined through a 5-step chain.
+When debugging, check each step in order.
 
 ```
-1. Find the first NavigationBinding matching target+source screen
-2. If binding.mode exists → use it (user override)
-3. Else if target.screenType !== 'page' → 'overlay'
-4. Else → 'navigate' (full-page replacement)
+Step 1: Navigation source (two types)
+  a. Manifest binding: pages.yaml navigates_to with source_node
+     → API creates NavigationBinding with mode derived from target screenType
+  b. Inline spec: node.navigateTo in the design JSON
+     → No binding in manifest, mode must be derived at render time
+
+Step 2: Prototype API (GET /api/prototype)
+  For manifest bindings: mode = nav.mode ?? (targetType !== 'page' ? 'overlay' : 'navigate')
+  Returns: manifest.navigation[] with mode on each binding
+
+Step 3: DesignSpecRenderer (render time)
+  Populates navMap from both sources (bindings + inline navigateTo)
+  Looks up binding: navigationBindings.find(b => b.sourceNodeId === nodeId)
+  navMode = binding?.mode   (undefined if no binding — NOT defaulting to 'navigate')
+  Renders: data-nav-mode attribute, onClick → onNavigate(target, navMode)
+
+Step 4: PrototypeApp.navigateTo(screenId, resolvedMode?)
+  binding = manifest.navigation.find(target + source match)
+  mode = resolvedMode ?? binding?.mode ?? (screenType !== 'page' ? 'overlay' : 'navigate')
+  overlay → setOverlayScreenId + dialog.showModal()
+  navigate → setActiveScreenId (full page replacement)
+
+Step 5: Hash change handler
+  navigateTo sets window.location.hash → triggers onHashChange
+  handledHashRef prevents re-processing (hash already handled by step 4)
+  Without handledHashRef: onHashChange uses only screenType, overrides step 4
 ```
+
+**Key invariant:** When a node has inline `navigateTo` (no manifest binding),
+steps 3-4 pass `resolvedMode = undefined`. Step 4 falls through to the
+screenType check, which correctly opens drawers as overlays. If step 3
+defaulted to `'navigate'`, it would override the screenType check.
 
 Binding `mode` takes precedence over target `screenType`. This allows
 users to force a drawer to open as a full page via the NavigationEditor.

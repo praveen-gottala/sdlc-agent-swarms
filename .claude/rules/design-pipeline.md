@@ -124,3 +124,25 @@ Or invoke `/verify-design-render <project>/<page>`.
 - Correction pipeline output (browser-correction-pipeline)
 - Manual spec edits
 - Renderer changes that could affect how existing specs render
+
+# Full Pipeline Verification (MANDATORY for screen_type / navigation / Chrome Pass changes)
+
+When changes affect how designs are generated (not just rendered), fixture-based
+tests are insufficient. You must also verify the LLM produces correct output.
+
+**When to run `design:page:all` on a real fixture:**
+- Adding/changing `screen_type` support (viewport resolver, overlay rendering)
+- Modifying Chrome Pass (region derivation, frozen chrome merge, propagation)
+- Changing `navigateTo` propagation or navigation binding logic
+- Modifying the `submit_design` tool schema
+
+**Verification steps:**
+1. Run `design:page:all` on `fixtures/claim-filling-sample` (has drawer + modal screens)
+2. Check viewport widths: `jq '.width' .agentforge/previews/bookshelf-*/scripts/designspec-v2.json`
+3. Check `shared-chrome.json` has non-empty `regions`
+4. Open prototype in browser, verify overlay behavior visually
+5. Navigate between screens, verify ScreenSelectorBar badges
+
+**Optimized re-runs:** Use `--design-only` when only fixing post-LLM logic
+(manifest building, region derivation). This skips all LLM calls (~8s vs ~3min).
+Use full run (no flags) when changing LLM prompts or tool schemas.
