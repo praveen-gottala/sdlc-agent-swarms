@@ -124,7 +124,7 @@ test.describe('Onboarding', () => {
 
     // Verify expected log messages
     await expect(page.getByText(/Generating design options/)).toBeVisible();
-    await expect(page.getByText(/design options received/)).toBeVisible();
+    await expect(page.getByText(/Using built-in design archetypes|design options received/)).toBeVisible();
   });
 
   test('newly created project is discoverable after switching away', async ({ page, setActiveProject }) => {

@@ -75,7 +75,7 @@ pages:
       - QuickAddSuggestion
     viewports:
       - 1440
-    designStatus: rendered
+    designStatus: draft
     correctionIteration: 0
     designScore: null
     navigates_to:
@@ -137,78 +137,27 @@ pages:
         trigger: Click 'Add Expense' tab in NavigationTabs
       - target: add-expense
         trigger: Click a RankedExpenseRow to edit the expense
-  - id: page-b0a-dedup-probe-1776746235709-user-setti-mo84u1jh
-    name: B0a-dedup-probe-1776746235709 user settings for profile and preferences
-    description: B0a-dedup-probe-1776746235709 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776746235709-user-setti
+  - id: page-e2e-test-page-for-design-generation-flow-mo9kfqco
+    name: E2E test page for design generation flow
+    description: E2E test page for design generation flow
+    route: /e2e-test-page-for-design-generation-flow
+    status: draft
+    designStatus: draft
+  - id: page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3
+    name: B0a-dedup-probe-1776833153480 user settings for profile and preferences
+    description: B0a-dedup-probe-1776833153480 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776833153480-user-setti
     status: draft
     designStatus: draft
     navigates_to:
       - target: dashboard
-        trigger: Click back arrow or 'Done' button to return to Dashboard
-      - target: spending-insights
-        trigger: Click 'Insights' tab in NavigationTabs
-      - target: add-expense
-        trigger: Click 'Add Expense' tab in NavigationTabs
-  - id: page-b0a-dedup-probe-1776746292317-user-setti-mo84v97w
-    name: B0a-dedup-probe-1776746292317 user settings for profile and preferences
-    description: B0a-dedup-probe-1776746292317 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776746292317-user-setti
+        trigger: Click 'Save' or 'Done' button to return to Dashboard after updating settings
+  - id: page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64
+    name: B0a-dedup-probe-1776847734063 user settings for profile and preferences
+    description: B0a-dedup-probe-1776847734063 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776847734063-user-setti
     status: draft
     designStatus: draft
     navigates_to:
       - target: dashboard
-        trigger: Click back arrow or 'Done' button to return to Dashboard
-      - target: spending-insights
-        trigger: Click 'Insights' tab in NavigationTabs
-      - target: add-expense
-        trigger: Click 'Add Expense' tab in NavigationTabs
-  - id: page-a-user-settings-page-for-profile-and-pre-mo87gxi8
-    name: A user settings page for profile and preferences
-    description: A user settings page for profile and preferences
-    route: /a-user-settings-page-for-profile-and-pre
-    status: draft
-    designStatus: draft
-    navigates_to:
-      - target: dashboard
-        trigger: Click back or close button to return to Dashboard
-      - target: add-expense
-        trigger: Click 'Add Expense' navigation tab if present
-      - target: spending-insights
-        trigger: Click 'Insights' navigation tab if present
-  - id: page-b0a-dedup-probe-1776751009478-user-setti-mo87od09
-    name: B0a-dedup-probe-1776751009478 user settings for profile and preferences
-    description: B0a-dedup-probe-1776751009478 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776751009478-user-setti
-    status: draft
-    designStatus: draft
-    navigates_to:
-      - target: dashboard
-        trigger: Click back or close button to return to Dashboard
-  - id: page-b0a-dedup-probe-1776751479810-user-setti-mo87yfwt
-    name: B0a-dedup-probe-1776751479810 user settings for profile and preferences
-    description: B0a-dedup-probe-1776751479810 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776751479810-user-setti
-    status: draft
-    designStatus: draft
-    navigates_to:
-      - target: dashboard
-        trigger: Click back or close button to return to Dashboard
-  - id: page-b0a-dedup-probe-1776755241481-user-setti-mo8a72ft
-    name: B0a-dedup-probe-1776755241481 user settings for profile and preferences
-    description: B0a-dedup-probe-1776755241481 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776755241481-user-setti
-    status: draft
-    designStatus: draft
-    navigates_to:
-      - target: dashboard
-        trigger: Click back or close button to return to Dashboard
-  - id: page-b0a-dedup-probe-1776756673007-user-setti-mo8b1r0f
-    name: B0a-dedup-probe-1776756673007 user settings for profile and preferences
-    description: B0a-dedup-probe-1776756673007 user settings for profile and preferences
-    route: /b0a-dedup-probe-1776756673007-user-setti
-    status: draft
-    designStatus: draft
-    navigates_to:
-      - target: dashboard
-        trigger: Click back or close button to return to Dashboard
+        trigger: Click 'Save' or 'Done' button to return to Dashboard after updating settings

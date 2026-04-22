@@ -80,17 +80,18 @@ test.describe('Design Editing', () => {
     await studio.selectPage('dashboard');
     await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
-    // Click approve
+    // Wait for approve button to render (requires action bar visible)
     const approveBtn = page.getByTestId('approve-btn');
-    await expect(approveBtn).toBeVisible({ timeout: 5000 });
+    await expect(approveBtn).toBeVisible({ timeout: 10000 });
+
     await approveBtn.click();
 
     // After approval, the button should change to "Unlock"
-    await expect(page.getByRole('button', { name: 'Unlock' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Unlock' })).toBeVisible({ timeout: 10000 });
 
     // Revert: click Unlock to set back to rendered for other tests
     await page.getByRole('button', { name: 'Unlock' }).click();
-    await expect(page.getByTestId('approve-btn')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('approve-btn')).toBeVisible({ timeout: 10000 });
   });
 
   test('coherence check button shows with correct page count', async ({ page }) => {

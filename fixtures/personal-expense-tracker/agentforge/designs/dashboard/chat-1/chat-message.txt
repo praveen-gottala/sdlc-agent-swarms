@@ -1,0 +1,1 @@
+Add a Savings Goals card below Category Breakdown with 3 goals: Emergency Fund 75% of $10000, Vacation 40% of $3000, New Laptop 90% of $2000. Each goal shows a progress bar.

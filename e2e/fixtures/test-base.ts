@@ -62,5 +62,7 @@ test.afterAll(async () => {
   }
 });
 
+export const CLAIM_ROOT = join(ROOT, 'fixtures', 'claim-filling-sample');
+
 export { expect } from '@playwright/test';
 export { ROOT, PET_ROOT, PREFS_PATH };

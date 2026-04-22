@@ -4,6 +4,8 @@ import { join } from 'path';
 import { readTextFile, readYamlFile, getActiveProjectRoot } from '../../../../_lib/project-reader';
 import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/pages/[pageId]/design/spec
  * Reads the design spec JSON from {project}/agentforge/designs/{pageId}.json.

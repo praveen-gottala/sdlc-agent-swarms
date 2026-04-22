@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, PET_ROOT } from './fixtures/test-base';
 
 const PROJECT_NAME = `E2E Test ${Date.now()}`;
 const PROJECT_DESC =
@@ -41,6 +41,10 @@ test.describe('Onboarding wizard', () => {
 });
 
 test.describe('Prototype NavigationEditor', () => {
+  test.beforeEach(async ({ setActiveProject }) => {
+    setActiveProject(PET_ROOT);
+  });
+
   test('should load prototype mode and show NavigationEditor panel', async ({ page }) => {
     await page.goto('/design', { waitUntil: 'networkidle', timeout: 30_000 });
     await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });

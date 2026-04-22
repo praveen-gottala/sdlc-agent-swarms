@@ -1,5 +1,14 @@
 # Lessons Learned
 
+## Chat-driven design iteration — canvas refresh and bridge style updates
+**Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx`, `packages/designspec-renderer/src/renderer/browser/app/src/iframe-bridge.ts`
+**Rule:** After pipeline completion, the canvas doesn't auto-refresh because `refreshPage` only fetches page metadata, not the design spec. Fixed by adding `cache: 'no-store'` to all spec fetches, `export const dynamic = 'force-dynamic'` to API routes, and fixing `PipelineProgress` to use `useEffect` for the `onComplete` callback instead of a render-body side effect.
+**Known issue:** The `update-node-style` postMessage from dashboard to renderer iframe is not applying styles to nodes. Two E2E tests (`design-inspector-properties:justify-content` and `:width`) fail because `getPropertyValue()` returns `""` after style updates. Root cause is in the iframe bridge message handler — the `document.querySelector('[data-node="nav-tabs"]')` may not find the element, or the cross-origin message isn't being processed. Needs investigation in the renderer's iframe-bridge.ts.
+**How to apply:** When debugging bridge-related issues, verify that postMessage is received by adding console.log in the iframe-bridge.ts message handler. Test with the browser's cross-origin iframe tools.
+
+---
+
+
 ## Chrome Pass — LLM node ID mismatches and mislabeled types
 **Context:** `packages/agents-ux/src/prototype/`, `packages/designspec-renderer/src/renderer/browser/spec-split.ts`  
 **Rule:** Never assume Chrome Pass LLM and page design LLM produce matching node IDs. Use `findPageChromeRootIds()` (compact/pattern matching) instead of direct ID equality. Never strip root-level `type: "spacer"` nodes blindly — check `hasChildren()` first. LLMs mislabel content containers as spacers (e.g., PET Spending Insights has 162 nodes under a "spacer").  

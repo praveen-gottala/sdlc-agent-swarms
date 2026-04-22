@@ -333,7 +333,7 @@ function DesignStudioContent() {
   const refreshPage = useCallback(
     async (pageId: string) => {
       try {
-        const res = await fetch(`/api/pages/${pageId}`);
+        const res = await fetch(`/api/pages/${pageId}`, { cache: 'no-store' });
         if (!res.ok) return;
         const updated = await res.json();
         setPages((prev) =>
@@ -441,7 +441,7 @@ function DesignStudioContent() {
     const controller = new AbortController();
 
     log('REQ', 'studio', `Fetching design spec bundle for page ${selectedId}`);
-    fetch(`/api/pages/${selectedId}/design/spec?bundle=true`, { signal: controller.signal })
+    fetch(`/api/pages/${selectedId}/design/spec?bundle=true&t=${Date.now()}`, { signal: controller.signal, cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (controller.signal.aborted) return;
@@ -468,7 +468,7 @@ function DesignStudioContent() {
       });
 
     // Also fetch design metadata for score/iteration
-    fetch(`/api/pages/${selectedId}/design`, { signal: controller.signal })
+    fetch(`/api/pages/${selectedId}/design`, { signal: controller.signal, cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (controller.signal.aborted) return;
@@ -715,6 +715,35 @@ function DesignStudioContent() {
     refreshPage(selectedId);
   }, [selectedId, refreshPage]);
 
+  const handleChatSubmit = useCallback(async (message: string) => {
+    if (!selectedId) return;
+    setPages((prev) =>
+      prev.map((p) =>
+        p.id === selectedId ? { ...p, designStatus: 'generating' } : p,
+      ),
+    );
+    log('INFO', 'chat', `Chat iteration started for page ${selectedId}: "${message.slice(0, 80)}"`);
+    try {
+      const res = await fetch(`/api/pages/${selectedId}/design/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, model: selectedModel }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPipelineRunId(data.runId);
+        pipelineRunMapRef.current[selectedId] = data.runId;
+      } else {
+        const data = await res.json().catch(() => ({ error: 'Chat pipeline failed' }));
+        showToast(data.error ?? 'Chat pipeline failed');
+        refreshPage(selectedId);
+      }
+    } catch {
+      showToast('Network error — could not reach server');
+      refreshPage(selectedId);
+    }
+  }, [selectedId, selectedModel, refreshPage, showToast, log]);
+
   const [generatingAll, setGeneratingAll] = useState(false);
   const [genAllProgress, setGenAllProgress] = useState<{ current: number; total: number } | null>(null);
 
@@ -765,9 +794,9 @@ function DesignStudioContent() {
     log('INFO', 'studio', `Batch generation complete`);
   }, [pages, selectedModel, refreshPage, log]);
 
-  const handleApprove = useCallback(() => {
+  const handleApprove = useCallback(async () => {
     if (!selectedId) return;
-    refreshPage(selectedId);
+    await refreshPage(selectedId);
   }, [selectedId, refreshPage]);
 
   // Add a feedback tag for the selected node
@@ -1155,7 +1184,8 @@ function DesignStudioContent() {
           onPropertyChange={handlePropertyChange}
           onRevertNode={handleRevertNode}
           onAddTag={handleAddTag}
-          onChatSubmit={(msg) => console.log('[DesignStudio] Chat:', msg)}
+          onChatSubmit={handleChatSubmit}
+          chatDisabled={!!pipelineRunId}
         />
       </div>
       )}

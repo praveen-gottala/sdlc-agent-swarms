@@ -350,13 +350,14 @@ export function DesignCanvas({
     onGenerateDesign?.();
   }, [page?.id, onGenerateDesign]);
 
-  const handleApprove = useCallback(() => {
+  const handleApprove = useCallback(async () => {
     if (!page) return;
-    fetch(`/api/pages/${page.id}/design/approve`, { method: 'POST' })
-      .then((r) => {
-        if (r.ok) onApprove?.();
-      })
-      .catch(() => {});
+    try {
+      const r = await fetch(`/api/pages/${page.id}/design/approve`, { method: 'POST', cache: 'no-store' });
+      if (r.ok) onApprove?.();
+    } catch {
+      // Best effort
+    }
   }, [page, onApprove]);
 
   const status = page?.designStatus ?? undefined;
@@ -550,9 +551,9 @@ export function DesignCanvas({
         )}
       </div>
 
-      {/* Action bar */}
+      {/* Action bar — z-10 ensures it stacks above the inspector panel */}
       {page && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-bg-card/50">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-bg-card/50 relative z-10">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -605,6 +606,7 @@ export function DesignCanvas({
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ designStatus: 'rendered' }),
+                    cache: 'no-store',
                   }).then(() => onApprove?.());
                 }}
               >

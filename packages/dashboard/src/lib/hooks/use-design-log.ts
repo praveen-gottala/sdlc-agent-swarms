@@ -6,7 +6,7 @@ import React, { createContext, useCallback, useContext, useRef, useState } from 
 
 export type DesignLogLevel = 'INFO' | 'WARN' | 'ERROR' | 'REQ' | 'BRIDGE';
 
-export type DesignLogSource = 'registry' | 'studio' | 'canvas' | 'bridge' | 'renderer' | 'pipeline';
+export type DesignLogSource = 'registry' | 'studio' | 'canvas' | 'bridge' | 'renderer' | 'pipeline' | 'chat';
 
 export interface DesignLogEntry {
   id: string;

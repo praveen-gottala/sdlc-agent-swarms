@@ -18,7 +18,7 @@ test.describe('Design Generation', () => {
     // Click "+ New page" button — this triggers window.prompt in the real code
     // For E2E, we need to handle the dialog
     page.once('dialog', async (dialog) => {
-      await dialog.accept('A user settings page for profile and preferences');
+      await dialog.accept('E2E test page for design generation flow');
     });
 
     await page.getByTestId('create-page-btn').click();

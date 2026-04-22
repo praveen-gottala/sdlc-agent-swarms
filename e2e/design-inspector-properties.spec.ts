@@ -65,6 +65,32 @@ test.describe('Design Inspector Properties', () => {
   }
 
   /**
+   * Helper: wait for an inline style on the selected node inside the iframe.
+   * Polls up to 5s for the postMessage-driven style update to propagate.
+   */
+  async function expectIframeNodeStyle(
+    page: import('@playwright/test').Page,
+    nodeId: string,
+    cssProp: string,
+    matcher: (val: string) => boolean,
+  ): Promise<string> {
+    const iframeLocator = page.frameLocator('[data-testid="design-iframe"]');
+    const node = iframeLocator.locator(`[data-node="${nodeId}"]`);
+    let lastValue = '';
+    await expect.poll(
+      async () => {
+        lastValue = await node.evaluate(
+          (el, prop) => (el as HTMLElement).style.getPropertyValue(prop),
+          cssProp,
+        );
+        return matcher(lastValue);
+      },
+      { timeout: 5000, message: `Timed out waiting for ${cssProp} on node ${nodeId}` },
+    ).toBe(true);
+    return lastValue;
+  }
+
+  /**
    * Helper: find a property row by its CSS label.
    */
   function findPropertyRow(page: import('@playwright/test').Page, cssLabel: string) {
@@ -264,12 +290,10 @@ test.describe('Design Inspector Properties', () => {
     const justifySelect = await ensureProperty(page, 'prop-layout-justify', 'justify-content');
 
     await justifySelect.selectOption('center');
-    const jc = await getIframeNodeStyle(page, nodeId, 'justify-content');
-    expect(jc).toBe('center');
+    await expectIframeNodeStyle(page, nodeId, 'justify-content', (v) => v === 'center');
 
     await justifySelect.selectOption('between');
-    const jcBetween = await getIframeNodeStyle(page, nodeId, 'justify-content');
-    expect(jcBetween).toBe('space-between');
+    await expectIframeNodeStyle(page, nodeId, 'justify-content', (v) => v === 'space-between');
   });
 
   test('align-items change reflected on iframe', async ({ page }) => {
@@ -377,13 +401,11 @@ test.describe('Design Inspector Properties', () => {
 
     // Numeric value → px
     await widthInput.fill('200');
-    const w = await getIframeNodeStyle(page, nodeId, 'width');
-    expect(w).toBe('200px');
+    await expectIframeNodeStyle(page, nodeId, 'width', (v) => v === '200px');
 
     // "fill" → flex: 1
     await widthInput.fill('fill');
-    const flex = await getIframeNodeStyle(page, nodeId, 'flex');
-    expect(flex).toMatch(/^1(\s|$)/);
+    await expectIframeNodeStyle(page, nodeId, 'flex', (v) => /^1(\s|$)/.test(v));
   });
 
   test('height change reflected on iframe', async ({ page }) => {

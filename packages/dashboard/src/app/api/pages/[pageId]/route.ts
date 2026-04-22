@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readYamlFile, writeYamlFile, fileExists } from '../../_lib/project-reader';
 import { getActiveRun } from '../../_lib/run-manager';
 
+export const dynamic = 'force-dynamic';
+
 interface PageEntry {
   id: string;
   name: string;

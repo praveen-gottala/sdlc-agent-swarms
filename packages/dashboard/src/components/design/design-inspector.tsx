@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   PROPERTY_REGISTRY,
   getAddableProperties,
@@ -33,6 +33,7 @@ export interface DesignInspectorProps {
   onRevertNode?: (nodeId: string) => void;
   onAddTag?: (tag: { nodeId: string; feedback: string; status: string }) => void;
   onChatSubmit?: (message: string) => void;
+  chatDisabled?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -469,32 +470,39 @@ function AIEditsTab({
   );
 }
 
-function ChatTab({ onChatSubmit }: Pick<DesignInspectorProps, 'onChatSubmit'>) {
+function ChatTab({ onChatSubmit, chatDisabled }: Pick<DesignInspectorProps, 'onChatSubmit' | 'chatDisabled'>) {
   const [message, setMessage] = useState('');
-  const [toast, setToast] = useState(false);
+  const [history, setHistory] = useState<Array<{ text: string; ts: number }>>([]);
+  const historyRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = useCallback(() => {
-    if (!message.trim()) return;
-    onChatSubmit?.(message.trim());
+    if (!message.trim() || chatDisabled) return;
+    const msg = message.trim();
+    setHistory((prev) => [...prev, { text: msg, ts: Date.now() }]);
     setMessage('');
-    setToast(true);
-    setTimeout(() => setToast(false), 2500);
-  }, [message, onChatSubmit]);
+    onChatSubmit?.(msg);
+  }, [message, chatDisabled, onChatSubmit]);
+
+  useEffect(() => {
+    historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight, behavior: 'smooth' });
+  }, [history.length]);
 
   return (
     <div className="flex flex-1 flex-col p-3">
-      <div className="flex-1" />
+      <div ref={historyRef} className="flex-1 overflow-y-auto space-y-2 mb-2">
+        {history.map((entry) => (
+          <div
+            key={entry.ts}
+            className="rounded-md bg-accent-blue/10 px-3 py-2 text-xs text-text-primary"
+          >
+            {entry.text}
+          </div>
+        ))}
+      </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className="mb-2 rounded-md bg-accent-purple/15 px-3 py-2 text-xs text-accent-purple">
-          Structural edits coming soon
-        </div>
-      )}
-
-      {/* Input area */}
       <div className="space-y-2">
         <textarea
+          data-testid="chat-textarea"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
@@ -503,18 +511,20 @@ function ChatTab({ onChatSubmit }: Pick<DesignInspectorProps, 'onChatSubmit'>) {
               handleSubmit();
             }
           }}
-          placeholder="Describe the change you want..."
+          placeholder={chatDisabled ? 'Pipeline running...' : 'Describe the change you want...'}
           rows={3}
-          className="w-full resize-none rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted hover:border-text-muted focus-ring transition-colors"
+          disabled={chatDisabled}
+          className="w-full resize-none rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted hover:border-text-muted focus-ring transition-colors disabled:opacity-50"
         />
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-text-muted">
             AI edits use LLM tokens
           </span>
           <button
+            data-testid="chat-send-btn"
             type="button"
             onClick={handleSubmit}
-            disabled={!message.trim()}
+            disabled={!message.trim() || chatDisabled}
             className="inline-flex items-center justify-center rounded-md bg-accent-blue px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-blue/90 active:bg-accent-blue/80 disabled:opacity-50 disabled:pointer-events-none focus-ring"
           >
             Send
@@ -541,6 +551,7 @@ export function DesignInspector({
   onRevertNode,
   onAddTag,
   onChatSubmit,
+  chatDisabled,
 }: DesignInspectorProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('properties');
 
@@ -602,7 +613,7 @@ export function DesignInspector({
           onAddTag={onAddTag}
         />
       )}
-      {activeTab === 'chat' && <ChatTab onChatSubmit={onChatSubmit} />}
+      {activeTab === 'chat' && <ChatTab onChatSubmit={onChatSubmit} chatDisabled={chatDisabled} />}
     </div>
   );
 }

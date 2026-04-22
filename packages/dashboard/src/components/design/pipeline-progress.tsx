@@ -50,10 +50,12 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
   const isPending = progress.status === 'pending';
   const isLoading = progress.status === null;
 
-  // Auto-call onComplete
-  if (isComplete && onComplete) {
-    setTimeout(onComplete, 100);
-  }
+  useEffect(() => {
+    if (isComplete && onComplete) {
+      const timer = setTimeout(onComplete, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, onComplete]);
 
   if (isLoading) {
     return (

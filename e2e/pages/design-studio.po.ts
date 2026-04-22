@@ -49,4 +49,20 @@ export class DesignStudioPO {
     const visible = await this.isCanvasIframeVisible();
     return visible ? 'iframe' : 'empty';
   }
+
+  /** Click the Chat tab in the inspector panel. */
+  async clickChatTab(): Promise<void> {
+    const inspector = this.page.getByTestId('design-inspector');
+    await inspector.getByRole('tab', { name: 'Chat' }).click();
+  }
+
+  /** Fill the chat textarea with a message. */
+  async fillChatMessage(msg: string): Promise<void> {
+    await this.page.getByTestId('chat-textarea').fill(msg);
+  }
+
+  /** Click the Send button in the chat panel. */
+  async clickChatSend(): Promise<void> {
+    await this.page.getByTestId('chat-send-btn').click();
+  }
 }
