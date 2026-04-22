@@ -1,6 +1,6 @@
 # Screen Types Plan B: Shared Layouts & NavBar Generation
 
-## Status: READY — Research Complete, Phases Revised
+## Status: B0–B2.5 COMPLETE — B3 (future)
 
 Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay rendering all proven). Plan B is unblocked. Research (2026-04-20) resolved all open questions and revised the phases based on codebase analysis and industry pattern study.
 
@@ -11,7 +11,7 @@ Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay ren
 - [x] Phase B0: Fix Prerequisites (duplicate pages + navigateTo propagation) — B0a + B0b implemented 2026-04-20; B0b E2E on designspec/manifest skips when `.agentforge/previews` absent (gitignored); observational log test still `fixme`
 - [x] Phase B1: Chrome Pass — Design Shared Components Once (2026-04-20: `resolveSharedComponents`, `designChromeComponents`, frozen merge, `shared-chrome.json`; ADR-039)
 - [x] Phase B2: LayoutShell — Persistent Chrome in Prototype (2026-04-20: `SharedChromeSpec`, `filterSpecToNodes`/`stripChromeFromSpec`, `LayoutShell`, pseudo-screen + duplicate-chrome + persistent-overlay scrubbing in `/api/prototype`; `@b2` Playwright green. Visual regressions surfaced during manual verification were fixed with unit tests only — see Phase B2.5 for the Playwright backlog that should have caught them.)
-- [ ] Phase B2.5: Integration Validation & Regression Hardening — full-loop E2E, visual prototype correctness, single-screen chrome consistency
+- [x] Phase B2.5: Integration Validation & Regression Hardening — full-loop E2E, visual prototype correctness, single-screen chrome consistency (2026-04-22: All 9 passing scenarios green in headed+headless; `@b2.5-single-screen-chrome` remains fixme by design)
 - [ ] Phase B3: Layout-Aware Code Generation (future — informs B1/B2 decisions)
 
 ---

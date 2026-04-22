@@ -1,6 +1,7 @@
 /** @type {import('jest').Config} */
 module.exports = {
   testPathIgnorePatterns: ["/dist/", "/node_modules/"],
+  testMatch: ['**/*.test.ts'],
   displayName: 'e2e-test',
   transform: {
     '^.+\\.ts$': ['@swc/jest'],

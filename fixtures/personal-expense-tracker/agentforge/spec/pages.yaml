@@ -161,3 +161,57 @@ pages:
     navigates_to:
       - target: dashboard
         trigger: Click 'Save' or 'Done' button to return to Dashboard after updating settings
+  - id: page-b0a-dedup-probe-1776849502128-user-setti-mo9ubef4
+    name: B0a-dedup-probe-1776849502128 user settings for profile and preferences
+    description: B0a-dedup-probe-1776849502128 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776849502128-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Save' or 'Done' button to return to Dashboard
+  - id: page-b0a-dedup-probe-1776850160373-user-setti-mo9upibw
+    name: B0a-dedup-probe-1776850160373 user settings for profile and preferences
+    description: B0a-dedup-probe-1776850160373 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776850160373-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Save' or 'Done' button to return to Dashboard
+  - id: page-b0a-dedup-probe-1776851489036-user-setti-mo9vhzj2
+    name: B0a-dedup-probe-1776851489036 user settings for profile and preferences
+    description: B0a-dedup-probe-1776851489036 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776851489036-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click save or back button to return to Dashboard
+  - id: page-b0a-dedup-probe-1776851707101-user-setti-mo9vmnsf
+    name: B0a-dedup-probe-1776851707101 user settings for profile and preferences
+    description: B0a-dedup-probe-1776851707101 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776851707101-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click save or back button to return to Dashboard
+  - id: page-b0a-dedup-probe-1776851977811-user-setti-mo9vsgo3
+    name: B0a-dedup-probe-1776851977811 user settings for profile and preferences
+    description: B0a-dedup-probe-1776851977811 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776851977811-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click save or back button to return to Dashboard
+  - id: page-b0a-dedup-probe-1776852244681-user-setti-mo9vy6vc
+    name: B0a-dedup-probe-1776852244681 user settings for profile and preferences
+    description: B0a-dedup-probe-1776852244681 user settings for profile and preferences
+    route: /b0a-dedup-probe-1776852244681-user-setti
+    status: draft
+    designStatus: draft
+    navigates_to:
+      - target: dashboard
+        trigger: Click save or back button to return to Dashboard

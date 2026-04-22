@@ -47,7 +47,7 @@ export const PROPERTY_REGISTRY: PropertyDef[] = [
       { label: 'start', value: 'start' },
       { label: 'center', value: 'center' },
       { label: 'end', value: 'end' },
-      { label: 'space-between', value: 'between' },
+      { label: 'space-between', value: 'space-between' },
     ],
     defaultValue: 'start',
   },

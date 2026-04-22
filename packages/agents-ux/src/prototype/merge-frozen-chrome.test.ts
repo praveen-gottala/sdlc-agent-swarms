@@ -176,4 +176,42 @@ describe('propagateNavigateToChromeTabs', () => {
     const result = propagateNavigateToChromeTabs(spec, noPages);
     expect(result).toBe(spec);
   });
+
+  it('wires non-page screen types (drawer/modal) via aria-label', () => {
+    const pagesWithDrawer: PageEntry[] = [
+      ...pages,
+      { id: 'notifications-panel', name: 'Notifications', description: '', route: '/notifications', status: 'approved', screen_type: 'drawer', components: [] },
+    ] as PageEntry[];
+
+    const spec: DesignSpecV2 = {
+      screen: '__chrome__', width: 1440,
+      nodes: {
+        root: { parent: null, order: 0, type: 'page' },
+        'nav-header': { parent: 'root', order: 0, type: 'container' },
+        'nav-actions': { parent: 'nav-header', order: 1, type: 'container' },
+        'nav-bell': { parent: 'nav-actions', order: 0, type: 'container', overrides: { 'aria-label': 'Notifications' } },
+      },
+    } as unknown as DesignSpecV2;
+
+    const result = propagateNavigateToChromeTabs(spec, pagesWithDrawer);
+    const nodes = result.nodes as Record<string, { navigateTo?: string }>;
+    expect(nodes['nav-bell'].navigateTo).toBe('notifications-panel');
+  });
+
+  it('wires deeply nested nav links by text matching', () => {
+    const spec: DesignSpecV2 = {
+      screen: '__chrome__', width: 1440,
+      nodes: {
+        root: { parent: null, order: 0, type: 'page' },
+        'nav-header': { parent: 'root', order: 0, type: 'container' },
+        'nav-links': { parent: 'nav-header', order: 0, type: 'container' },
+        'link-dashboard': { parent: 'nav-links', order: 0, type: 'container' },
+        'link-dashboard-text': { parent: 'link-dashboard', order: 0, type: 'text', content: 'Dashboard' },
+      },
+    } as unknown as DesignSpecV2;
+
+    const result = propagateNavigateToChromeTabs(spec, pages);
+    const nodes = result.nodes as Record<string, { navigateTo?: string }>;
+    expect(nodes['link-dashboard'].navigateTo).toBe('dashboard');
+  });
 });

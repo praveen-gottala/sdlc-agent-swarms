@@ -501,10 +501,16 @@ function DesignStudioContent() {
           if (!target[parts[i]]) target[parts[i]] = {};
           target = target[parts[i]];
         }
+        const key = parts[parts.length - 1];
         if (value === undefined || value === null) {
-          delete target[parts[parts.length - 1]];
+          delete target[key];
         } else {
-          target[parts[parts.length - 1]] = value;
+          const numericFields = new Set(['width', 'height', 'gap', 'px', 'py', 'pt', 'pb', 'pl', 'pr']);
+          if (numericFields.has(key) && typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
+            target[key] = Number(value);
+          } else {
+            target[key] = value;
+          }
         }
       }
       setDesignSpec(updated);
@@ -991,6 +997,7 @@ function DesignStudioContent() {
                           specs: data.specs,
                           tokens: data.tokens,
                           catalog: data.catalog,
+                          chromeSpec: data.chromeSpec ?? null,
                         });
                         protoSpecsRef.current = data.specs as Record<string, Record<string, unknown>>;
                         setPrototypePayload(payload);

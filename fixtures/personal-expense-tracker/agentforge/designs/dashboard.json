@@ -211,7 +211,8 @@
         "dir": "row",
         "align": "center",
         "px": 32,
-        "gap": 0
+        "gap": 42,
+        "mx": 11
       },
       "shadow": "sm"
     },

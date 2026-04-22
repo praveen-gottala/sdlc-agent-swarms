@@ -99,7 +99,10 @@ async function main() {
         injectCssVariables(protoTokens);
 
         inPrototypeMode = true;
-        sendLog('INFO', `Prototype loaded: ${manifest.screens.length} screens, ${manifest.navigation.length} nav bindings`, 'renderer');
+        const chromeStatus = chromeOpt
+          ? `regions=${JSON.stringify(Object.keys(chromeOpt.regions ?? {}))}, nodes=${Object.keys(chromeOpt.nodes ?? {}).length}`
+          : 'null';
+        sendLog('INFO', `Prototype loaded: ${manifest.screens.length} screens, ${manifest.navigation.length} nav bindings, chrome=${chromeStatus}`, 'renderer');
         root.render(
           <PrototypeApp
             manifest={manifest}

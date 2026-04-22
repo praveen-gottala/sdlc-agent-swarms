@@ -104,6 +104,17 @@ export async function GET() {
         ),
       };
     }
+
+    // After filtering pseudo-screens, ensure exactly one default screen exists.
+    // Prefer route '/' or '/dashboard'; fall back to first page-type screen.
+    const hasDefault = manifest.screens.some(s => s.isDefault);
+    if (!hasDefault && manifest.screens.length > 0) {
+      const best =
+        manifest.screens.find(s => s.route === '/' || s.route === '/dashboard') ??
+        manifest.screens.find(s => !s.screenType || s.screenType === 'page') ??
+        manifest.screens[0];
+      best.isDefault = true;
+    }
   }
 
   // Build manifest from available screens if none saved

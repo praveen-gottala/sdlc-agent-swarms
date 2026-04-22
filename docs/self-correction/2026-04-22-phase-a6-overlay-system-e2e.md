@@ -321,55 +321,24 @@ lsof -ti:4100 | xargs kill -9
 
 ## Known Remaining Gaps (for next session)
 
-### BLOCKER: LayoutShell not activating for Claim Filling fixture
+### RESOLVED: LayoutShell not activating for Claim Filling fixture
 
-**Symptom:** Header only shows on the current page's content area, not as a
-persistent LayoutShell header. No `data-persistent="header"` element in the
-DOM. ScreenSelectorBar pushed below the fold. Navigating between screens
-swaps the entire content including the nav bar.
+**Root cause (2026-04-22):** Stale Vite process serving old compiled code. Killing Vite on port 4100 and letting the dashboard auto-start a fresh instance resolved LayoutShell activation. Diagnostic logging confirmed `layoutShellEnabled=true, chromeSpec=true, rootIds=["nav-header"]` inside the iframe after a clean Vite restart.
 
-**What we know:**
-- API returns `chromeSpec` with `regions: { "header": ["nav-header"] }` and
-  10 nodes (verified via `fetch('/api/prototype')` in DevTools)
-- `shared-chrome.json` exists at `.agentforge/previews/shared-chrome.json`
-  with correct regions
-- `collectChromeRootIds({ header: ["nav-header"] })` returns `["nav-header"]`
-- `layoutShellEnabled = Boolean(chromeSpec && chromeRootIds.length > 0)`
-  should be `true`
-- Killing stale Vite on :4100 did NOT fix it
-- PET fixture's LayoutShell works correctly with same code
-
-**What we don't know:**
-- Whether `chromeSpec` actually arrives inside the iframe (cross-origin blocks
-  direct inspection)
-- Whether the bridge `load-prototype` message includes `chromeSpec` in its
-  serialized payload
-- Whether PrototypeApp receives `chromeSpec` as a non-null prop
-
-**Investigation for next session:**
-1. Add a `console.log` in PrototypeApp to log `chromeSpec`, `chromeRootIds`,
-   `layoutShellEnabled` — check via Logs panel in the dashboard
-2. OR add a `sendLog()` call in main.tsx's `onLoadPrototype` to report whether
-   `chromeOpt` is null after parsing
-3. Compare the full prototype API JSON response between PET and Claim Filling
-   (diff the `chromeSpec` field)
-4. Check if `design:page:all` writes `chromeSpec` into `prototype.json` — the
-   saved manifest might override the API's chromeSpec loading
-
-**Root cause hypothesis:** The saved `prototype.json` from `design:page:all`
-may embed a `chromeSpec` that overwrites the API's file-based loading. Or the
-bridge serialization may drop `chromeSpec` under certain payload sizes.
+**Additional bugs found and fixed during investigation:**
+- `onSaved` callback in NavigationEditor dropped `chromeSpec` from re-serialized payload (page.tsx:999) — LayoutShell would deactivate after any nav edit
+- Spec precedence always preferred `agentforge/designs/` over `.agentforge/previews/` regardless of file age — now compares mtimes
+- Default screen fallback after pseudo-screen filtering didn't ensure a default existed
+- `propagateNavigateToChromeTabs` only handled tab containers and page-type screens — extended to handle deeply nested elements, aria-labels, and non-page screen types (drawer/modal)
+- Added diagnostic `sendLog` in main.tsx onLoadPrototype for future chrome debugging
 
 ### Other gaps
 
-1. **Chrome nav link `navigateTo` not wired.** `propagateNavigateToChromeTabs`
-   handles tab bars but not header nav links ("Claims" link does nothing).
+1. ~~**Chrome nav link `navigateTo` not wired.**~~ FIXED: `propagateNavigateToChromeTabs` now scans all descendants of root-level chrome containers and matches against ALL approved screens (not just page-type).
 
-2. **Bell icon not wired to notifications-panel.** Chrome Pass designs visually
-   but doesn't know navigation targets for non-tab elements.
+2. ~~**Bell icon not wired to notifications-panel.**~~ FIXED: `propagateNavigateToChromeTabs` now checks `overrides.aria-label` for text matching, so `aria-label: "Notifications"` matches `notifications-panel`.
 
-3. **Default screen selection by alphabetical file order.** `claim-detail`
-   sorts before `dashboard`, so ClaimDetail loads as default.
+3. ~~**Default screen selection by alphabetical file order.**~~ FIXED: After pseudo-screen filtering, the API route ensures a default screen exists (prefers `/` or `/dashboard` route, then first page-type screen).
 
 4. **`design:generate` doesn't migrate design files.** ID changes orphan
    existing designs. Dashboard shows "Ready to design" until manual rename.
@@ -384,13 +353,7 @@ bridge serialization may drop `chromeSpec` under certain payload sizes.
    items — children at different vertical positions despite `align: center`
    on the parent container. Likely child elements with inconsistent heights.
 
-8. **`agentforge/designs/` vs `.agentforge/previews/` precedence conflict.**
-   When `agentforge/designs/` has old manually-copied specs, they override
-   fresh `design:page:all` output from `.agentforge/previews/`. This caused
-   LayoutShell to not activate because old specs didn't have frozen chrome
-   merged. Deleting old `agentforge/designs/` files fixes it, but the
-   precedence rule needs rethinking — the API should prefer the newer file,
-   not always the `designs/` directory.
+8. **`agentforge/designs/` vs `.agentforge/previews/` precedence conflict.** OPEN: `agentforge/designs/` must always win (design canvas is source of truth). The real fix is for `design:page:all` to also write output to `agentforge/designs/`, not just `.agentforge/previews/`. An mtime-based approach was tried and reverted — it caused the prototype to show different content than the canvas.
 
 ---
 

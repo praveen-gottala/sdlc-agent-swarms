@@ -292,7 +292,7 @@ test.describe('Design Inspector Properties', () => {
     await justifySelect.selectOption('center');
     await expectIframeNodeStyle(page, nodeId, 'justify-content', (v) => v === 'center');
 
-    await justifySelect.selectOption('between');
+    await justifySelect.selectOption('space-between');
     await expectIframeNodeStyle(page, nodeId, 'justify-content', (v) => v === 'space-between');
   });
 

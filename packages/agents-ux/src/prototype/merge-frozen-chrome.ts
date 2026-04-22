@@ -254,31 +254,42 @@ export function propagateNavigateToChromeTabs(
   chromeSpec: DesignSpecV2,
   pages: readonly PageEntry[],
 ): DesignSpecV2 {
-  const pageScreens = pages.filter(
-    (p) => p.status === 'approved' && (p.screen_type ?? 'page') === 'page',
-  );
-  if (pageScreens.length === 0) return chromeSpec;
+  const approvedScreens = pages.filter((p) => p.status === 'approved');
+  if (approvedScreens.length === 0) return chromeSpec;
 
   const nodes = { ...chromeSpec.nodes } as Record<string, NodeSpec>;
   let changed = false;
 
+  // Collect all root-level chrome subtree node IDs for the broader pass.
+  const chromeSubtree = new Set<string>();
+  for (const [id, n] of Object.entries(nodes)) {
+    if (n.parent === 'root') {
+      for (const descendant of collectSubtreeIdsLocal(nodes, id)) {
+        chromeSubtree.add(descendant);
+      }
+    }
+  }
+
   for (const [id, node] of Object.entries(nodes)) {
     if ((node as { navigateTo?: string }).navigateTo) continue;
     if (node.parent === 'root') continue;
-    const parentNode = node.parent ? nodes[node.parent] : null;
-    if (!parentNode) continue;
-    const isTabContainer = parentNode.parent === 'root'
-      && /tab|nav/i.test(node.parent ?? '');
-    if (!isTabContainer) continue;
+    if (!chromeSubtree.has(id)) continue;
 
+    // Gather matchable text: content/label text + aria-label from overrides
     const text = collectNodeText(chromeSpec, id).toLowerCase();
-    if (!text) continue;
+    const ariaLabel = ((node as { overrides?: Record<string, unknown> }).overrides?.['aria-label'] as string | undefined)?.toLowerCase() ?? '';
+    if (!text && !ariaLabel) continue;
 
-    for (const page of pageScreens) {
+    for (const page of approvedScreens) {
       const pageName = page.name.toLowerCase();
       const pageId = page.id.toLowerCase();
-      if (text === pageName || text === pageId
-        || pageName.includes(text) || text.includes(pageName)) {
+      const matchable = [text, ariaLabel].filter(Boolean);
+      const matched = matchable.some(
+        (m) => m === pageName || m === pageId
+          || pageName.includes(m) || m.includes(pageName)
+          || pageId.includes(m) || m.includes(pageId),
+      );
+      if (matched) {
         nodes[id] = { ...node, navigateTo: page.id } as NodeSpec;
         changed = true;
         break;
@@ -287,6 +298,22 @@ export function propagateNavigateToChromeTabs(
   }
 
   return changed ? { ...chromeSpec, nodes } : chromeSpec;
+}
+
+function collectSubtreeIdsLocal(
+  nodes: Record<string, NodeSpec>,
+  rootId: string,
+): Set<string> {
+  const out = new Set<string>();
+  const visit = (id: string) => {
+    if (out.has(id)) return;
+    out.add(id);
+    for (const [nid, n] of Object.entries(nodes)) {
+      if (n.parent === id) visit(nid);
+    }
+  };
+  visit(rootId);
+  return out;
 }
 
 /**
