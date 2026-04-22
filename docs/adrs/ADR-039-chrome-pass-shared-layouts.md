@@ -12,7 +12,7 @@ Plan B (`docs/plans/screen-types-plan-b.md`) requires designing TopBar, Navigati
 
 1. **Derive** shared chrome with `resolveSharedComponents()` from `status === 'approved'` page entries and the component catalog (category + name heuristics). No new YAML schema.
 
-2. **Chrome Pass** runs after planning and before per-page design: one V2 design call with a planning slice limited to the shared component names (`extractScreenSubtree`), `PenpotDesignInput.chromeOnly: true`, and `moduleId` `__shared-chrome__`. Output is saved as `.agentforge/previews/shared-chrome.json` with `screen: "__chrome__"` and a `regions` map (header / footer / sidebar root node ids).
+2. **Chrome Pass** runs after planning and before per-page design: one V2 design call with a planning slice limited to the shared component names (`extractScreenSubtree`), `PenpotDesignInput.chromeOnly: true`, and `moduleId` `__shared-chrome__`. Output is saved as `agentforge/shared-chrome.json` with `screen: "__chrome__"` and a `regions` map (header / footer / sidebar root node ids).
 
 3. **Per-page design** passes `frozenChromeSpec` + `frozenChromePageId` into the V2 pipeline. After the browser correction loop, `applyFrozenChromeToPageSpec` overwrites node entries present in the frozen spec and sets `active` on `catalog === "tab"` nodes where `navigateTo ===` current page id.
 

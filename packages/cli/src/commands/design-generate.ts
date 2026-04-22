@@ -657,6 +657,32 @@ export async function designGenerateCommand(
     }
   }
 
+  // Migrate design files if page IDs changed
+  const designsDir = path.join(rootDir, 'agentforge', 'designs');
+  const pagesPath = path.join(rootDir, 'agentforge', 'spec', 'pages.yaml');
+  const existingPagesResult = readYaml<{ pages?: Array<{ id: string; route: string }> }>(pagesPath, fileSystem);
+  if (existingPagesResult.ok && existingPagesResult.value.pages) {
+    const oldRouteToId = new Map<string, string>();
+    for (const p of existingPagesResult.value.pages) {
+      if (p.route) oldRouteToId.set(p.route, p.id);
+    }
+
+    let renamedCount = 0;
+    for (const newPage of spec.pages) {
+      const oldId = oldRouteToId.get(newPage.route);
+      if (!oldId || oldId === newPage.id) continue;
+      const oldPath = path.join(designsDir, `${oldId}.json`);
+      const newPath = path.join(designsDir, `${newPage.id}.json`);
+      if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
+        fs.renameSync(oldPath, newPath);
+        renamedCount++;
+      }
+    }
+    if (renamedCount > 0) {
+      output.write(successMsg(`\nMigrated ${renamedCount} design file(s) to match new page IDs.\n`));
+    }
+  }
+
   // Write spec files
   writeSpecFiles(rootDir, spec, fileSystem);
   output.write(successMsg(`\nApp spec written:\n`));

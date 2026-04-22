@@ -57,7 +57,8 @@ async function waitForRendererReady(page: Page, timeoutMs = 90_000): Promise<voi
 
 const PAGES_YAML_PATH = join(PET_ROOT, 'agentforge/spec/pages.yaml');
 const PREVIEWS_DIR = join(PET_ROOT, '.agentforge/previews');
-const SHARED_CHROME_PATH = join(PREVIEWS_DIR, 'shared-chrome.json');
+const AGENTFORGE_DIR = join(PET_ROOT, 'agentforge');
+const SHARED_CHROME_PATH = join(AGENTFORGE_DIR, 'shared-chrome.json');
 
 interface PageEntry {
   id: string;
@@ -80,9 +81,9 @@ function readPrototypeManifest(): {
   screens: Array<{ screenId: string; name: string; specPath: string }>;
   navigation: Array<{ sourceScreenId: string; targetScreenId: string; sourceNodeId: string; mode?: string }>;
 } | null {
-  const path = join(PREVIEWS_DIR, 'prototype.json');
-  if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, 'utf-8'));
+  const p = join(AGENTFORGE_DIR, 'prototype.json');
+  if (!existsSync(p)) return null;
+  return JSON.parse(readFileSync(p, 'utf-8'));
 }
 
 function readDesignSpec(pageId: string): { nodes: Record<string, { parent: string | null; catalog?: string; navigateTo?: string; order: number }> } | null {
@@ -269,7 +270,7 @@ test.describe('Plan B — Phase B1: Chrome Pass @b1', () => {
     setActiveProject(PET_ROOT);
   });
 
-  test('shared-chrome.json is produced at .agentforge/previews/shared-chrome.json', async ({}, testInfo) => {
+  test('shared-chrome.json is produced at agentforge/shared-chrome.json', async ({}, testInfo) => {
     if (!existsSync(SHARED_CHROME_PATH)) {
       testInfo.skip(
         true,
@@ -783,7 +784,7 @@ test.describe.serial('Plan B — Phase B2.5: full loop @b2.5-full-loop', () => {
     expect(genRes.ok(), await genRes.text()).toBe(true);
     const genBody = (await genRes.json()) as { projectRoot?: string };
     expect(genBody.projectRoot).toBeTruthy();
-    const sharedChrome = join(genBody.projectRoot!, '.agentforge/previews/shared-chrome.json');
+    const sharedChrome = join(genBody.projectRoot!, 'agentforge/shared-chrome.json');
     expect(existsSync(sharedChrome)).toBe(true);
 
     await page.goto('/design', { waitUntil: 'domcontentloaded', timeout: 30_000 });

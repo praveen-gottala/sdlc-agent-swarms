@@ -155,7 +155,7 @@ export function buildSharedChromeRegions(
 }
 
 /**
- * Payload written to `.agentforge/previews/shared-chrome.json` (DesignSpec + `regions` + `screen: __chrome__`).
+ * Payload written to `agentforge/shared-chrome.json` (DesignSpec + `regions` + `screen: __chrome__`).
  */
 export function buildSharedChromeFilePayload(
   spec: DesignSpecV2,

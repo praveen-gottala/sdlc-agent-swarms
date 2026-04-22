@@ -78,7 +78,7 @@ node ../../packages/cli/dist/bin.js design:page:all
 
 Then verify:
 - Viewport widths: `jq '.width' .agentforge/previews/bookshelf-*/scripts/designspec-v2.json`
-- Shared chrome regions: `jq '.regions' .agentforge/previews/shared-chrome.json` (must be non-empty)
+- Shared chrome regions: `jq '.regions' agentforge/shared-chrome.json` (must be non-empty)
 - Open prototype in browser and visually verify overlay behavior
 
 Use `--design-only` (~8s) when only fixing post-LLM logic (manifest, regions). Use full run (~3min) when changing prompts or tool schemas.

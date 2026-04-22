@@ -7,7 +7,7 @@ export type SharedChromeRegionKey = 'header' | 'sidebar' | 'footer';
 
 export type SharedChromeRegionsMap = Partial<Record<SharedChromeRegionKey, readonly string[]>>;
 
-/** Written to `.agentforge/previews/shared-chrome.json`; consumed by LayoutShell. */
+/** Written to `agentforge/shared-chrome.json`; consumed by LayoutShell. */
 export interface SharedChromeSpec extends DesignSpecV2 {
   readonly regions?: SharedChromeRegionsMap;
 }

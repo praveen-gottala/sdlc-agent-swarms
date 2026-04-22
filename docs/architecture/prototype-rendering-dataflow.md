@@ -71,9 +71,9 @@ in the dashboard), the preview spec is used as fallback.
 
 | File | Source | Purpose |
 |------|--------|---------|
-| `.agentforge/previews/shared-chrome.json` | `design:page:all` chrome pass | Shared navigation bar/footer for LayoutShell |
+| `agentforge/shared-chrome.json` | `design:page:all` chrome pass | Shared navigation bar/footer for LayoutShell |
 | `shared-chrome.e2e.json` (repo root) | Committed fallback | E2E tests without a local generate step |
-| `.agentforge/previews/prototype.json` | `design:page:all` stage 4 | Navigation manifest (screen list + bindings) |
+| `agentforge/prototype.json` | `design:page:all` stage 4 | Navigation manifest (screen list + bindings) |
 | `agentforge/spec/design-tokens.yaml` | `agentforge init` / user-edited | Color, typography, spacing tokens |
 | `agentforge/spec/component-catalog.yaml` | `agentforge init` / user-edited | Catalog component definitions |
 

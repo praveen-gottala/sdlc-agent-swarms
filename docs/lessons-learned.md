@@ -621,3 +621,25 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When a pipeline payload exceeds external service limits, split at the renderer/semantic level (self-contained chunks with ID-based cross-chunk recovery), not at the string/transport level. String splitting breaks variable scopes and nested blocks. Minification alone isn't durable — larger screens will exceed the limit again.
 **Why:** The Penpot MCP server had a ~100KB POST body limit we couldn't change. Splitting rendered scripts into 2–4 semantic chunks (using `page.getShapeById()` for parent recovery) preserved correctness. Micro-step fragmentation (50+ chunks) caused coordination failures.
 **How to apply:** If any future pipeline hits payload limits on an external API, prefer semantic chunking (2–4 chunks) with ID-based state recovery over string splitting or aggressive minification.
+
+---
+
+## Nested `height: 100vh` in Flex Containers Breaks Layout
+
+**Context:** `packages/designspec-renderer/src/renderer/browser/app/src/LayoutShell.tsx` — persistent chrome header pushed below viewport
+**Rule:** Never use `height: 100vh` on a flex child that lives inside another `height: 100vh` flex container. Use `flex: '1 1 0%'` with `minHeight: 0` instead.
+**Why:** LayoutShell had `height: 100vh` inside PrototypeApp's `height: 100vh` flex column. The inner `100vh` prevented flex shrinking — the ScreenSelectorBar (40px, `flexShrink: 0`) couldn't fit, pushing the entire layout off-screen. The header existed in the DOM (Playwright `toBeVisible()` passed, `boundingBox().height=64`) but was visually below the viewport fold. The fix was `flex: '1 1 0%'` + `minHeight: 0` + `overflow: hidden` — LayoutShell now fills available space without fighting the parent.
+**How to apply:** When a component renders inside a parent flex container and should fill remaining space, always use `flex: 1` instead of `height: 100vh`. Reserve `height: 100vh` for the outermost viewport container only.
+
+---
+
+## Cross-Origin Iframe Debugging — Use Playwright, Not Chrome DevTools MCP
+
+**Context:** Debugging LayoutShell activation inside the prototype iframe (localhost:4100 inside localhost:3000)
+**Rule:** Use Playwright's `page.frameLocator('iframe')` for cross-origin iframe DOM inspection. Chrome DevTools MCP's `evaluate_script` cannot access cross-origin iframe content. `toBeVisible()` does NOT check viewport position — use `boundingBox()` to verify the element is actually on-screen.
+**Why:** Spent 2+ hours debugging via Chrome DevTools MCP postMessage diagnostics. The sendLog messages confirmed the code was correct (`layoutShellEnabled=true`), but the VISUAL issue (header pushed below viewport by nested `100vh`) was only diagnosable via Playwright's direct iframe access + iframe-element screenshots (`page.locator('iframe').screenshot()`).
+**How to apply:**
+1. Write Playwright tests with `page.frameLocator('iframe[data-testid="..."]')` for direct DOM queries
+2. Use `page.locator('iframe').screenshot()` for iframe-only screenshots (not `page.screenshot()`)
+3. Check `boundingBox().y >= 0` and `boundingBox().height > 0` — not just `toBeVisible()`
+4. Always kill stale Vite before testing (`lsof -ti:4100 | xargs kill -9`)

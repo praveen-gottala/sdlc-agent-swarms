@@ -14,7 +14,7 @@ import { join } from 'path';
 import type { FrameLocator, Page } from '@playwright/test';
 import { test, expect, CLAIM_ROOT } from './fixtures/test-base';
 
-const SHARED_CHROME_PATH = join(CLAIM_ROOT, '.agentforge/previews/shared-chrome.json');
+const SHARED_CHROME_PATH = join(CLAIM_ROOT, 'agentforge/shared-chrome.json');
 
 async function waitForRendererReady(page: Page, timeoutMs = 90_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

@@ -1,6 +1,6 @@
 # Screen Types Plan B: Shared Layouts & NavBar Generation
 
-## Status: B0–B2.5 COMPLETE — B3 (future)
+## Status: B0–B2.6 COMPLETE — B2.7 next
 
 Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay rendering all proven). Plan B is unblocked. Research (2026-04-20) resolved all open questions and revised the phases based on codebase analysis and industry pattern study.
 
@@ -12,7 +12,9 @@ Plan A phases A1-A4 are complete (screen types, viewport resolution, overlay ren
 - [x] Phase B1: Chrome Pass — Design Shared Components Once (2026-04-20: `resolveSharedComponents`, `designChromeComponents`, frozen merge, `shared-chrome.json`; ADR-039)
 - [x] Phase B2: LayoutShell — Persistent Chrome in Prototype (2026-04-20: `SharedChromeSpec`, `filterSpecToNodes`/`stripChromeFromSpec`, `LayoutShell`, pseudo-screen + duplicate-chrome + persistent-overlay scrubbing in `/api/prototype`; `@b2` Playwright green. Visual regressions surfaced during manual verification were fixed with unit tests only — see Phase B2.5 for the Playwright backlog that should have caught them.)
 - [x] Phase B2.5: Integration Validation & Regression Hardening — full-loop E2E, visual prototype correctness, single-screen chrome consistency (2026-04-22: All 9 passing scenarios green in headed+headless; `@b2.5-single-screen-chrome` remains fixme by design)
-- [ ] Phase B3: Layout-Aware Code Generation (future — informs B1/B2 decisions)
+- [x] Phase B2.6: Pipeline → Canvas Sync (2026-04-22: `design-page-all.ts` writes specs to both `.agentforge/previews/` and `agentforge/designs/`; `design-generate.ts` migrates design files when page IDs change via route matching)
+- [ ] Phase B2.7: Vision Evaluator Fix (Vertex `temperature` parameter error)
+- [ ] Phase B3: Layout-Aware Code Generation (future — depends on B2.6)
 
 ---
 
@@ -972,9 +974,47 @@ nx run-many -t test
 
 ---
 
+### Phase B2.6: Pipeline → Canvas Sync (prerequisite for B3)
+
+**Status:** NOT STARTED
+
+**Problem:** `design:page:all` writes output only to `.agentforge/previews/`. The prototype API prefers `agentforge/designs/` (design canvas source of truth). After a pipeline run, the prototype shows stale canvas specs instead of fresh pipeline output. An mtime-based fix was tried and reverted — it caused the prototype and canvas to show different designs.
+
+**Fix:** `design:page:all` should write its output to BOTH locations:
+1. `.agentforge/previews/bookshelf-{pageId}/scripts/designspec-v2.json` (existing, for CLI artifacts)
+2. `agentforge/designs/{pageId}.json` (new, for canvas + prototype)
+
+This also resolves:
+- Cached drawer width not invalidated when `screen_type` changes
+- Manual file renames needed after `design:generate` changes page IDs
+
+**Files:**
+- `packages/cli/src/commands/design-page-all.ts` — write to both locations after design stage
+- `packages/cli/src/commands/design-generate.ts` — rename `agentforge/designs/*.json` when page IDs change
+
+**Acceptance Criteria:**
+- After `design:page:all`, both `agentforge/designs/{pageId}.json` and `.agentforge/previews/bookshelf-{pageId}/scripts/designspec-v2.json` exist with identical content
+- Design canvas and prototype show the same spec for every page
+
+---
+
+### Phase B2.7: Vision Evaluator Fix
+
+**Status:** NOT STARTED
+
+**Problem:** `temperature` parameter error on Vertex model blocks the self-correction loop. All evaluations score 0/100.
+
+**Fix:** Update the Vertex provider config to handle models that don't accept `temperature` (e.g., vision models). Either remove the parameter or cap it within the model's valid range.
+
+**Files:**
+- `packages/agents-ux/src/ux-design/design-evaluator.ts` — evaluator LLM config
+- `packages/providers/src/vertex/` — Vertex provider parameter handling
+
+---
+
 ### Phase B3: Layout-Aware Code Generation (future)
 
-This is future work but informs decisions in B1/B2 — the layout representation must be consumable by the implementation agent.
+**Status:** NOT STARTED — depends on B2.6
 
 **Direction:** `screen_type` maps to Next.js patterns:
 - Shared chrome → `app/layout.tsx` with `{children}` slot
@@ -983,6 +1023,52 @@ This is future work but informs decisions in B1/B2 — the layout representation
 - `drawer` → state-controlled side panel
 
 The `resolveSharedComponents()` output + `shared-chrome.json` provides the implementation agent with concrete layout structure. No additional schema needed — the derived data is sufficient.
+
+---
+
+### Known Visual Issues (low priority)
+
+- **Header alignment:** Both PET and Claim Filling show misaligned nav bar items — children at different vertical positions despite `align: center`. Likely inconsistent child heights in DesignSpecRenderer.
+- **LayoutShell `height: 100vh` fix (2026-04-22):** Changed to `flex: '1 1 0%'` + `minHeight: 0` to prevent nested 100vh from pushing ScreenSelectorBar off-screen. See `docs/lessons-learned.md` for details.
+
+### Open Issues (prototype overlay + navigation)
+
+#### OI-1: Modal overlay has excessive whitespace + double close button
+
+**Symptom:** The Approve Claim modal stretches to ~85% of viewport height even though the form content is short. Large empty whitespace below the buttons. Two close buttons appear (one from the overlay system, one from the design spec).
+
+**Root cause:** In `globals.css`, `.overlay-body { flex: 1 }` stretches to fill `max-height: 85vh` regardless of content height. The overlay system unconditionally renders its own `<button class="overlay-close">` (PrototypeApp.tsx:294); if the design spec also includes a close/dismiss element, both render.
+
+**Fix:** Change `.overlay-body` from `flex: 1` to `flex: 0 1 auto` so the modal shrinks to content. For the double close, either suppress the overlay system's close button when the spec contains one, or strip close-affordance nodes from overlay specs at render time.
+
+**Files:** `globals.css` (`.overlay-body`), `PrototypeApp.tsx` (overlay close button rendering)
+
+#### OI-2: Shared chrome navigation triggers only work on the page where binding was created
+
+**Symptom:** Clicking the bell icon in the header navigates to notifications-panel on the Dashboard page but does nothing on Claims List or other pages — even though the header is shared chrome rendered persistently by LayoutShell.
+
+**Root cause:** `extractNavigationFromSpecs` (build-manifest.ts:105) stamps each binding with a single `sourceScreenId` (the page where `navigateTo` appeared in the spec). The bell icon's `navigateTo` exists only in the dashboard spec, so the binding has `sourceScreenId: "dashboard"`. When the user views Claims List, `PrototypeApp` filters bindings to `activeScreenId === "claims-list"` for the content renderer — but LayoutShell receives the full unfiltered list and the navMap lookup works by `sourceNodeId` alone.
+
+The real gap: `propagateNavigateToChromeTabs` enriches `shared-chrome.json` with `navigateTo`, but `extractNavigationFromSpecs` only reads per-page specs, not `shared-chrome.json`. So the enriched chrome bindings are never extracted into the manifest's navigation array.
+
+**Architectural question (from user):** Node IDs in shared chrome are globally unique (from one spec). Why do we need `sourceScreenId` at all for chrome bindings? Options:
+- **A:** When building navigation bindings, also extract from `shared-chrome.json` and mark chrome bindings with `sourceScreenId: "__chrome__"`. PrototypeApp skips the `sourceScreenId` filter for `__chrome__` bindings.
+- **B:** Duplicate chrome-node bindings across all page-type screens so the bell icon has a binding for every screen.
+- **C:** Drop `sourceScreenId` filtering entirely for bindings where the source node ID exists in `shared-chrome.json`'s node set.
+
+**Files:** `build-manifest.ts` (`extractNavigationFromSpecs`), `PrototypeApp.tsx` (binding filtering), `prototype/route.ts` (chrome binding injection)
+
+#### OI-3: Notifications Panel drawer renders at full width instead of 320px
+
+**Symptom:** The Notifications Panel overlay fills the right side at full width instead of the expected 320px drawer width.
+
+**Root cause:** The design spec in `apps/claim-filling/agentforge/designs/notifications-panel.json` has `screenType: "sheet"`, not `"drawer"`. `getOverlayWidth()` in PrototypeApp.tsx returns widths only for `modal` (560) and `drawer` (320) — `sheet` returns `undefined`, so no width constraint is applied. Meanwhile, `pages.yaml` declares this page as `screen_type: drawer`. The mismatch occurs because the LLM-generated design spec and the LLM-generated pages.yaml can disagree on screen type.
+
+**Fix options:**
+- **A (quick):** In the prototype API, override the spec's `screenType` with the authoritative `pages.yaml` `screen_type` value (pages.yaml is user-editable and should win).
+- **B (proper):** Also fix `getOverlayWidth()` to handle `sheet` (full width, max-height 80vh — per the Plan A spec).
+
+**Files:** `PrototypeApp.tsx` (`getOverlayWidth`), `prototype/route.ts` (screenType override from pages.yaml)
 
 ---
 
@@ -995,9 +1081,12 @@ The `resolveSharedComponents()` output + `shared-chrome.json` provides the imple
 | B1: Chrome Pass orchestration | ~6-8 hrs | Eliminates cross-page chrome drift | B0a |
 | B2: LayoutShell renderer | ~6-8 hrs | Persistent chrome in prototype | B1 |
 | B2.5: Integration validation + regression E2E | ~4-6 hrs | Converts manual/unit-only fixes into Playwright guards; proves the full onboard → prototype loop | B2 |
-| B3: Code generation (future) | TBD | Layout.tsx generation | B1, B2 |
+| B2.6: Pipeline → Canvas Sync | ~3-4 hrs | Prototype matches canvas; unblocks B3 | B2.5 |
+| B2.7: Vision Evaluator Fix | ~1-2 hrs | Unblocks self-correction loop | None |
+| B3: Code generation (future) | TBD | Layout.tsx generation | B2.6 |
 
-**Total for B0-B2.5:** ~22-30 hours across 4 sessions.
+**Total for B0-B2.5:** ~22-30 hours across 4 sessions (COMPLETE).
+**Remaining for B2.6-B3:** ~6-8 hours + B3 TBD.
 
 ---
 
@@ -1072,7 +1161,7 @@ npx playwright test e2e/screen-types-plan-b.spec.ts -g "@b1"
 
 ## Relationship to Other Plans
 
-- **Plan A** (`screen-types-plan-a.md`): Phases A1-A4 complete. A5-A6 can proceed in parallel with Plan B. Plan B builds on Plan A's screen types, viewport resolution, and overlay rendering.
+- **Plan A** (`screen-types-plan-a.md`): **COMPLETE** (A1-A6 all done, 2026-04-22). Plan B builds on Plan A's screen types, viewport resolution, and overlay rendering.
 - **Original plan** (`screen-types-overlays-shared-layouts.md`): Plan B covers the original plan's Phase 3 (Layout & Shared Components) and Phase 5 (NavigationBar Enhancement), with a Chrome Pass approach instead of override rendering or coherence checking.
 - **Critical review**: Full analysis with live LLM validation data is in `screen-types-critical-review.md`.
 - **Understanding doc**: `understanding-plan-b-shared-layouts.md` provides a newcomer-friendly walkthrough of the problems, research, and recommendations.

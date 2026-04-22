@@ -10,8 +10,8 @@ import { join } from 'path';
 import type { FrameLocator, Page } from '@playwright/test';
 import { test, expect, PET_ROOT } from './fixtures/test-base';
 
-const PREVIEWS_DIR = join(PET_ROOT, '.agentforge/previews');
-const SHARED_CHROME_PATH = join(PREVIEWS_DIR, 'shared-chrome.json');
+const AGENTFORGE_DIR = join(PET_ROOT, 'agentforge');
+const SHARED_CHROME_PATH = join(AGENTFORGE_DIR, 'shared-chrome.json');
 
 async function waitForRendererReady(page: Page, timeoutMs = 90_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

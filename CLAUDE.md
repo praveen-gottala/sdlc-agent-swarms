@@ -15,7 +15,7 @@ Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 
 **Active plans** (in priority order):
 1. Screen Types Plan A — COMPLETE (all phases A1-A6 done). See `docs/plans/screen-types-plan-a.md`
-2. Screen Types Plan B — B0-B2.5 complete, B3 (Layout-Aware Code Generation) next. See `docs/plans/screen-types-plan-b.md`
+2. Screen Types Plan B — B0-B2.6 complete, B2.7 (Vision Evaluator Fix) next, then B3 (Layout-Aware Code Generation). See `docs/plans/screen-types-plan-b.md`
 
 Control-plane status: inconsistent across repo.
 - packages/core + current runtime docs lean TypeScript in-process orchestration

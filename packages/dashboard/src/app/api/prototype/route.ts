@@ -58,7 +58,8 @@ interface PrototypeManifest {
 export async function GET() {
   const projectRoot = getActiveProjectRoot();
   const previewsDir = join(projectRoot, PREVIEW_DIR);
-  const designsDir = join(projectRoot, 'agentforge', 'designs');
+  const agentforgeDir = join(projectRoot, 'agentforge');
+  const designsDir = join(agentforgeDir, 'designs');
 
   if (!existsSync(previewsDir) && !existsSync(designsDir)) {
     return NextResponse.json({ error: 'No designs found' }, { status: 404 });
@@ -68,8 +69,8 @@ export async function GET() {
   const pages = pagesFile?.pages ?? [];
   const pageMap = new Map(pages.map(p => [p.id, p]));
 
-  // Try to read saved prototype.json (from CLI pipeline)
-  const savedManifestPath = join(previewsDir, 'prototype.json');
+  // Read prototype.json (from CLI pipeline)
+  const savedManifestPath = join(agentforgeDir, 'prototype.json');
   let manifest: PrototypeManifest | null = null;
 
   if (existsSync(savedManifestPath)) {
@@ -288,9 +289,9 @@ export async function GET() {
     return null;
   }
 
-  /** Pipeline output first; committed PET fallback (`shared-chrome.e2e.json`) for E2E without a local generate step. */
+  /** Pipeline output first; committed fallback (`shared-chrome.e2e.json`) for E2E without a local generate step. */
   const chromeSpec =
-    tryReadSharedChrome(join(previewsDir, 'shared-chrome.json'))
+    tryReadSharedChrome(join(agentforgeDir, 'shared-chrome.json'))
     ?? tryReadSharedChrome(join(projectRoot, 'shared-chrome.e2e.json'));
 
   /**

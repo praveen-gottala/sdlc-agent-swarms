@@ -340,8 +340,7 @@ lsof -ti:4100 | xargs kill -9
 
 3. ~~**Default screen selection by alphabetical file order.**~~ FIXED: After pseudo-screen filtering, the API route ensures a default screen exists (prefers `/` or `/dashboard` route, then first page-type screen).
 
-4. **`design:generate` doesn't migrate design files.** ID changes orphan
-   existing designs. Dashboard shows "Ready to design" until manual rename.
+4. ~~**`design:generate` doesn't migrate design files.**~~ FIXED (B2.6): `design-generate.ts` now reads old page IDs before overwriting `pages.yaml`, matches by route, and renames `agentforge/designs/{oldId}.json` → `{newId}.json`.
 
 5. **Vision evaluator broken.** `temperature` parameter error on Vertex model
    blocks self-correction loop. All evaluations score 0/100.
@@ -353,7 +352,7 @@ lsof -ti:4100 | xargs kill -9
    items — children at different vertical positions despite `align: center`
    on the parent container. Likely child elements with inconsistent heights.
 
-8. **`agentforge/designs/` vs `.agentforge/previews/` precedence conflict.** OPEN: `agentforge/designs/` must always win (design canvas is source of truth). The real fix is for `design:page:all` to also write output to `agentforge/designs/`, not just `.agentforge/previews/`. An mtime-based approach was tried and reverted — it caused the prototype to show different content than the canvas.
+8. ~~**`agentforge/designs/` vs `.agentforge/previews/` precedence conflict.**~~ FIXED (B2.6): `design-page-all.ts` now writes specs to both `.agentforge/previews/bookshelf-{id}/scripts/designspec-v2.json` AND `agentforge/designs/{id}.json` after each page succeeds. The prototype API still prefers `agentforge/designs/` — now both locations always have identical content after a pipeline run.
 
 ---
 
