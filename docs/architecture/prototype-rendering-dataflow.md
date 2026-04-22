@@ -309,7 +309,9 @@ Step 2: Prototype API (GET /api/prototype)
 Step 3: DesignSpecRenderer (render time)
   Populates navMap from both sources (bindings + inline navigateTo)
   Looks up binding: navigationBindings.find(b => b.sourceNodeId === nodeId)
-  navMode = binding?.mode   (undefined if no binding — NOT defaulting to 'navigate')
+  navMode = binding?.mode   (undefined if no binding)
+  BUG FIXED: previously defaulted to 'navigate' when no binding existed,
+    which overrode screenType-based overlay derivation for inline navigateTo nodes
   Renders: data-nav-mode attribute, onClick → onNavigate(target, navMode)
 
 Step 4: PrototypeApp.navigateTo(screenId, resolvedMode?)
@@ -321,6 +323,8 @@ Step 4: PrototypeApp.navigateTo(screenId, resolvedMode?)
 Step 5: Hash change handler
   navigateTo sets window.location.hash → triggers onHashChange
   handledHashRef prevents re-processing (hash already handled by step 4)
+  BUG FIXED: without handledHashRef, onHashChange re-derived mode using only
+    screenType, overriding step 4's binding-mode decision for drawer screens
   Without handledHashRef: onHashChange uses only screenType, overrides step 4
 ```
 

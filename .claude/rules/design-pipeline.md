@@ -143,6 +143,12 @@ tests are insufficient. You must also verify the LLM produces correct output.
 4. Open prototype in browser, verify overlay behavior visually
 5. Navigate between screens, verify ScreenSelectorBar badges
 
+**Gotcha after `design:generate`:** The LLM-regenerated pages.yaml does NOT
+include `designStatus: rendered`. The Prototype button stays disabled until
+you add `designStatus: rendered` to each page that has a matching design
+file in `agentforge/designs/`.
+
 **Optimized re-runs:** Use `--design-only` when only fixing post-LLM logic
 (manifest building, region derivation). This skips all LLM calls (~8s vs ~3min).
 Use full run (no flags) when changing LLM prompts or tool schemas.
+See also `docs/cli/design.md` for full command reference.

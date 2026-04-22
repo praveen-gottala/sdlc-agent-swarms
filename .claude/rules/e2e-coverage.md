@@ -38,13 +38,16 @@ When tests touch `DesignSpecRenderer.tsx`, `PrototypeApp.tsx`, `LayoutShell.tsx`
    ```bash
    lsof -ti:4100 | xargs kill -9
    ```
-   The dashboard auto-starts a fresh Vite when `/design` loads. Tests use
-   `waitForRendererReady()` to wait for it.
+   Stale Vite has caused 3+ wasted debug cycles in prior sessions — the test
+   passes but the browser shows old behavior. The dashboard auto-starts a
+   fresh Vite when `/design` loads. Tests use `waitForRendererReady()` to
+   wait for it.
 
 2. **Test the full pipeline, not just the renderer.** Fixture-based tests prove
    the renderer works. But they don't prove the LLM produces correct input.
    For features that change how design specs are generated (screen_type,
    navigateTo, Chrome Pass), also run `design:page:all` on a real fixture
+   (see `.claude/rules/design-pipeline.md` "Full Pipeline Verification")
    and visually verify the prototype.
 
 3. **Visual verification is non-negotiable for overlay/navigation work.** Use
@@ -52,3 +55,14 @@ When tests touch `DesignSpecRenderer.tsx`, `PrototypeApp.tsx`, `LayoutShell.tsx`
    click elements, verify drawer/modal behavior. Code-only verification has
    missed 4+ bugs in overlay rendering that were immediately visible in
    screenshots.
+
+   MCP tool sequence for prototype verification:
+   ```
+   navigate_page → http://localhost:3000/design
+   take_snapshot  → find the Prototype button uid
+   click          → enter prototype mode
+   wait_for       → "Prototype Mode"
+   take_screenshot → verify rendered state
+   take_snapshot  → find target element uid
+   click          → interact, then screenshot again to verify
+   ```

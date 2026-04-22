@@ -8,6 +8,10 @@ Generate the application specification (pages, models, API) from a PRD.
 
 **Interactive.** Prompts for design theme selection and spec approval.
 
+**Claude Code limitation:** Piped input (`printf 'n\ny\n' |`) partially works
+but hangs on the theme selection prompt (expects 1/2/3, not y). Run
+interactively via `! cd <project> && node ../../packages/cli/dist/bin.js design:generate`.
+
 ```bash
 cd <project-root>
 agentforge design:generate
@@ -67,7 +71,7 @@ Stage 4: Manifest — builds prototype.json with screens + navigation bindings
 |----------|------|-----------|
 | Full | ~163s wall-clock | All stages |
 | `--design-only` | ~8s | None (cached) |
-| Chrome Pass only | ~30s | Chrome only |
+| Chrome Pass (within full run) | ~30s | Chrome LLM only (no separate flag) |
 
 **Screen type → viewport resolution:**
 
