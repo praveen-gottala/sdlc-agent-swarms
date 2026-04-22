@@ -49,7 +49,7 @@ interface Props {
   spec: DesignSpecV2;
   tokens: RendererTokens;
   catalog: CatalogMap;
-  onNavigate?: (screenId: string) => void;
+  onNavigate?: (screenId: string, mode?: 'navigate' | 'overlay') => void;
   navigationBindings?: readonly NavigationBinding[];
   /** When set, navigation bindings prefer this source screen for hotspot metadata (prototype). */
   prototypeScreenId?: string;
@@ -90,11 +90,6 @@ export function DesignSpecRenderer({
     if (node.navigateTo) {
       navMap.set(nodeId, node.navigateTo);
     }
-  }
-
-  if (navMap.size > 0) {
-    console.log('[DesignSpecRenderer] navMap entries:', JSON.stringify(Object.fromEntries(navMap)));
-    console.log('[DesignSpecRenderer] onNavigate defined:', !!onNavigate);
   }
 
   useEffect(() => {
@@ -165,7 +160,7 @@ function getLayoutStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   else if (layout.align === 'stretch') s.alignItems = 'stretch';
   else if (layout.align === 'start') s.alignItems = 'flex-start';
   if (layout.justify === 'center') s.justifyContent = 'center';
-  else if (layout.justify === 'space-between') s.justifyContent = 'space-between';
+  else if (layout.justify === 'space-between' || layout.justify === 'between') s.justifyContent = 'space-between';
   else if (layout.justify === 'end') s.justifyContent = 'flex-end';
   Object.assign(s, getSpacingStyles(layout));
   return s;
@@ -288,6 +283,10 @@ function getSizeStyles(
     s.minWidth = 0;
   } else if (typeof width === 'number') {
     s.width = width;
+    s.flex = 'none';
+    s.flexShrink = 0;
+  } else if (typeof width === 'string' && /^\d+(\.\d+)?$/.test(width)) {
+    s.width = Number(width);
     s.flex = 'none';
     s.flexShrink = 0;
   }
@@ -445,7 +444,7 @@ function renderNode(
   tokens: RendererTokens,
   catalog: CatalogMap,
   tokenMap: TokenColorMap,
-  onNavigate?: (screenId: string) => void,
+  onNavigate?: (screenId: string, mode?: 'navigate' | 'overlay') => void,
   navMap?: Map<string, string>,
   navigationBindings?: readonly NavigationBinding[],
   prototypeScreenId?: string,
@@ -473,15 +472,15 @@ function renderNode(
             && (!prototypeScreenId || b.sourceScreenId === prototypeScreenId),
         )
         ?? navigationBindings?.find(b => b.sourceNodeId === treeNode.id);
-      const navMode = binding?.mode ?? 'navigate';
+      const navMode = binding?.mode;
 
       return (
         <div
           key={treeNode.id}
           data-nav-target={targetScreen}
-          data-nav-mode={navMode === 'overlay' ? 'overlay' : 'navigate'}
+          data-nav-mode={navMode === 'overlay' ? 'overlay' : navMode === 'navigate' ? 'navigate' : ''}
           className="nav-hotspot"
-          onClick={(e) => { e.stopPropagation(); onNavigate(targetScreen); }}
+          onClick={(e) => { e.stopPropagation(); onNavigate(targetScreen, navMode); }}
           title={`Navigate to ${targetScreen}`}
         >
           {rendered}

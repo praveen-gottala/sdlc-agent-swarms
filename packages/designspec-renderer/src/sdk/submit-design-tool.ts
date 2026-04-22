@@ -45,6 +45,15 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
         enum: ['page', 'modal', 'drawer', 'sheet'],
         description: 'Screen type. Defaults to "page". Overlays (modal/drawer/sheet) are designed at narrower viewports and rendered as overlays in the prototype.',
       },
+      regions: {
+        type: 'object',
+        description: 'Chrome-only: map root-level node IDs to layout regions. Only used when designing shared chrome.',
+        properties: {
+          header: { type: 'array', items: { type: 'string' }, description: 'Node IDs for the top/header region (e.g. navigation bar).' },
+          sidebar: { type: 'array', items: { type: 'string' }, description: 'Node IDs for the sidebar region.' },
+          footer: { type: 'array', items: { type: 'string' }, description: 'Node IDs for the bottom/footer region (e.g. tab bar).' },
+        },
+      },
       nodes: {
         type: 'object',
         description:

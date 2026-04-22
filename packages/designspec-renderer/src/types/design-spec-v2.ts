@@ -129,4 +129,6 @@ export interface DesignSpecV2 {
   readonly nodes: Readonly<Record<string, NodeSpec>>;
   /** Screen rendering mode. Determines how PrototypeApp renders this screen (full-page vs overlay). */
   readonly screenType?: 'page' | 'modal' | 'drawer' | 'sheet';
+  /** Chrome-only: maps root-level node IDs to layout regions (header/sidebar/footer). Set by the LLM during Chrome Pass. */
+  readonly regions?: Readonly<Record<string, readonly string[]>>;
 }

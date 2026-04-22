@@ -1,0 +1,72 @@
+{
+  "screen": "confirm-delete",
+  "screenType": "modal",
+  "width": 560,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 560,
+      "layout": { "dir": "column", "gap": 24, "py": 32, "px": 32 },
+      "background": "surface-primary"
+    },
+    "confirm-title": {
+      "parent": "root",
+      "order": 0,
+      "type": "text",
+      "content": "Delete Expense?",
+      "font": "heading-2"
+    },
+    "confirm-body": {
+      "parent": "root",
+      "order": 1,
+      "type": "text",
+      "content": "This action cannot be undone. The expense record will be permanently removed.",
+      "font": "body-1"
+    },
+    "confirm-actions": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": { "dir": "row", "gap": 12, "justify": "flex-end" }
+    },
+    "confirm-cancel-btn": {
+      "parent": "confirm-actions",
+      "order": 0,
+      "type": "container",
+      "catalog": "button",
+      "width": 100,
+      "height": 40,
+      "radius": 8,
+      "background": "neutral-100",
+      "layout": { "dir": "row", "align": "center", "justify": "center" }
+    },
+    "confirm-cancel-label": {
+      "parent": "confirm-cancel-btn",
+      "order": 0,
+      "type": "text",
+      "content": "Cancel",
+      "font": "body-1"
+    },
+    "confirm-delete-btn": {
+      "parent": "confirm-actions",
+      "order": 1,
+      "type": "container",
+      "catalog": "button",
+      "width": 100,
+      "height": 40,
+      "radius": 8,
+      "background": "error",
+      "layout": { "dir": "row", "align": "center", "justify": "center" }
+    },
+    "confirm-delete-label": {
+      "parent": "confirm-delete-btn",
+      "order": 0,
+      "type": "text",
+      "content": "Delete",
+      "font": "body-1"
+    }
+  }
+}

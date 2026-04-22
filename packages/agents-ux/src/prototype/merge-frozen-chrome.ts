@@ -65,12 +65,25 @@ export function findSharedChromeRootNodeId(
   for (const [id] of children) {
     if (compact(id) === compact(kebab)) return id;
   }
+  // Substring match: split component name into keyword segments and check if
+  // all segments appear in a root child ID (e.g. NavigationHeader → ["nav","header"]
+  // matches "nav-header"). Catches LLM abbreviation mismatches.
+  const segments = kebab.split('-');
+  if (segments.length >= 2) {
+    for (const [id] of children) {
+      if (segments.every(seg => id.includes(seg.slice(0, 3)))) return id;
+    }
+  }
   if (componentName === 'NavigationTabs') {
     const hit = children.find(([id]) => /nav-tabs|bottom-nav|tab-bar/i.test(id));
     if (hit) return hit[0];
   }
   if (componentName === 'TopBar') {
     const hit = children.find(([id]) => /top-bar|app-bar|header/i.test(id));
+    if (hit) return hit[0];
+  }
+  if (componentName === 'NavigationHeader') {
+    const hit = children.find(([id]) => /nav-header|navigation|top-nav/i.test(id));
     if (hit) return hit[0];
   }
   return undefined;
@@ -148,7 +161,10 @@ export function buildSharedChromeFilePayload(
   spec: DesignSpecV2,
   shared: SharedChrome,
 ): Record<string, unknown> {
-  const regions = buildSharedChromeRegions(spec, shared);
+  const llmRegions = spec.regions && Object.keys(spec.regions).length > 0
+    ? spec.regions
+    : null;
+  const regions = llmRegions ?? buildSharedChromeRegions(spec, shared);
   return {
     ...spec,
     screen: '__chrome__',

@@ -272,6 +272,65 @@ Manages screen navigation and overlay dialogs.
 - Overlay screens (modal/drawer/sheet) render in `<dialog>` element
 - `ScreenSelectorBar` at bottom for direct screen switching
 
+### Screen Types & Overlay Rendering
+
+Pages in `pages.yaml` have an optional `screen_type` field:
+
+| screen_type | Rendering | Default Width | CSS Class |
+|-------------|-----------|---------------|-----------|
+| `page` (default) | Full screen replacement | 1440 | — |
+| `modal` | Centered dialog with backdrop | 560 | `overlay-modal` |
+| `drawer` | Right-aligned slide-in panel | 320 | `overlay-drawer` |
+| `sheet` | Bottom-aligned panel | full width | `overlay-sheet` |
+
+**Critical constraint:** `screen_type` must be set on a page BEFORE its
+design is generated. The viewport resolver constrains the design LLM to
+the overlay viewport (320px for drawer, 560px for modal). A design
+generated at 1440px then rendered in a 320px drawer will overflow.
+See `docs/lessons-learned.md` "Screen Type Must Be Set BEFORE Design
+Generation" for the full rule.
+
+**Navigation mode resolution:** When `navigateTo(screenId)` is called,
+PrototypeApp determines whether to do full-page replacement or overlay:
+
+```
+1. Find the first NavigationBinding matching target+source screen
+2. If binding.mode exists → use it (user override)
+3. Else if target.screenType !== 'page' → 'overlay'
+4. Else → 'navigate' (full-page replacement)
+```
+
+Binding `mode` takes precedence over target `screenType`. This allows
+users to force a drawer to open as a full page via the NavigationEditor.
+
+**Overlay implementation:** Native `<dialog>` with `showModal()` for:
+- Focus trapping (browser-native)
+- Escape key handling (via `cancel` event)
+- `inert` attribute on the background page container
+- Backdrop click closes the overlay
+- Focus returns to the trigger element on close
+
+**CSS animations** (`globals.css`):
+- Modal: `scale-up` (opacity 0→1, scale 0.95→1)
+- Drawer: `slide-in-right` (translateX 100%→0)
+- Sheet: `slide-up` (translateY 100%→0)
+- Backdrop: `fade-in` (opacity 0→1)
+
+**ScreenSelectorBar badges:** Non-page screens show `[drawer]`, `[modal]`,
+or `[sheet]` next to the screen name.
+
+### NavigationEditor (Dashboard)
+
+Dashboard component for editing navigation bindings per page:
+- Shows screen type badge with color coding (purple=modal, blue=drawer, amber=sheet)
+- Auto-derives `mode: 'overlay'` for non-page targets
+- Mode toggle button allows manual override (overlay ↔ navigate)
+- Persists via `PUT /api/navigation` → updates `pages.yaml`
+
+**Key files:**
+- `packages/dashboard/src/components/design/navigation-editor.tsx`
+- `packages/dashboard/src/app/api/navigation/route.ts`
+
 **Key files:**
 - `packages/designspec-renderer/src/renderer/browser/app/src/LayoutShell.tsx`
 - `packages/designspec-renderer/src/renderer/browser/app/src/PrototypeApp.tsx`

@@ -6,16 +6,16 @@ Open source, Apache 2.0.
 **Shared tooling:** See **`AGENTS.md`** for how this file fits with Cursor rules and episodic handoff docs (so the same practices apply in both tools).
 
 ## Current State
-Active: Design pipeline (packages/agents-ux/, packages/designspec-renderer/)
+
+Active: design pipeline (packages/agents-ux/, packages/designspec-renderer/)
+Execution pipeline: not implemented yet.
 Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)
 Not started: spec/code/cicd/observe phases, V3 Dashboard, TS orchestrator
 Decision pending: TypeScript vs Python engine for future phases (needs ADR)
 
-## Current State
-
-Active: design pipeline (packages/agents-ux/, packages/designspec-renderer/)
-Execution pipeline: not implemented yet.
-**Active plan**: Screen Types Plan A — see `docs/plans/screen-types-plan-a.md` (6 phases, multi-session)
+**Active plans** (in priority order):
+1. Screen Types Plan A — COMPLETE (all phases A1-A6 done). See `docs/plans/screen-types-plan-a.md`
+2. Screen Types Plan B — B0-B2.5 complete, B3 (Layout-Aware Code Generation) next. See `docs/plans/screen-types-plan-b.md`
 
 Control-plane status: inconsistent across repo.
 - packages/core + current runtime docs lean TypeScript in-process orchestration
@@ -155,6 +155,7 @@ designspec-renderer depends on: core (type-only devDependency, zero runtime deps
 
 ## Skills Library
 Available Claude Code skills (invoke with /slash command):
+- /session-start — Read key docs and produce a briefing before coding (use at every session start)
 - /analyze-codebase — Full gap analysis + prioritized task roadmap
 - /implement-feature [name] — PRD-traced implementation workflow
 - /sprint-plan [duration] — Sprint planning from task backlog

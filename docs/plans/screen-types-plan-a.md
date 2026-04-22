@@ -6,8 +6,8 @@
 - [x] Phase A2: App Spec Generation (LLM Prompt)
 - [x] Phase A3: Viewport Resolution + Design Prompt Context + LLM Chain Fixes
 - [x] Phase A4: Prototype Overlay Rendering
-- [ ] Phase A5: Dashboard Navigation Editor
-- [ ] Phase A6: E2E Tests + Cleanup
+- [x] Phase A5: Dashboard Navigation Editor
+- [x] Phase A6: E2E Tests + Cleanup
 
 ## Session Boundaries (recommended)
 
@@ -36,8 +36,8 @@
 
 _Updated after each session. New sessions should read this section first._
 
-**Last completed phase**: A1 + A2 + A3 + A4 (2026-04-20)
-**Current state**: All four phases complete. Phase A4 adds overlay rendering for modal/drawer/sheet screen types.
+**Last completed phase**: A1 + A2 + A3 + A4 + A5 + A6 (2026-04-22)
+**Current state**: ALL PHASES COMPLETE. Plan A is done.
 
 **Phase A4 changes:**
 - `PrototypeApp.tsx`: Full rewrite with overlay state management. Uses native `<dialog>` with `showModal()` for focus trapping and Escape handling. Renders background page + overlay simultaneously. `navigateTo` checks binding `mode` and target `screenType` to decide overlay vs full-page replacement. Focus returns to trigger element on close. `inert` attribute set on background when overlay is open. ScreenSelectorBar shows `[drawer]`/`[modal]`/`[sheet]` type badges.
@@ -50,7 +50,17 @@ _Updated after each session. New sessions should read this section first._
 
 **Gotchas discovered**: PrototypeApp.tsx, DesignSpecRenderer.tsx, and the dashboard API route all had stale inline copies of `PrototypeScreen` and `NavigationBinding` interfaces that lacked `screenType` and `mode`. The Vite browser app can't directly import the canonical types (different bundle entry), so the inline interfaces were updated in place. The dashboard API route also had a stale `PageEntry` interface missing `screen_type`.
 
-Next session: Phase A5 (Dashboard Navigation Editor) + Phase A6 (E2E Tests + Cleanup).
+**Phase A5 status (2026-04-22):** Already implemented in a prior session. `navigation-editor.tsx` has screen type badges (color-coded: purple=modal, blue=drawer, amber=sheet), auto-derived overlay mode for non-page targets, mode toggle button, and full CRUD for navigation bindings. `/api/navigation` route persists `mode` field via pages.yaml.
+
+**Phase A6 changes (2026-04-22):**
+- `DesignSpecRenderer.tsx`: Removed 2 debug `console.log` statements (navMap entries logging).
+- `e2e/prototype-overlays.spec.ts`: New Playwright E2E test file with 8 test scenarios covering all plan requirements: drawer/modal badge in ScreenSelectorBar, overlay hotspot opens drawer with slide-in, Escape closes drawer, backdrop click closes drawer, modal focus trapping, page-to-page navigation regression, and binding mode=navigate override for full-page replacement of drawer targets.
+- `fixtures/personal-expense-tracker/agentforge/designs/settings.json`: Drawer design spec fixture (320px, settings panel with theme/notifications toggles).
+- `fixtures/personal-expense-tracker/agentforge/designs/confirm-delete.json`: Modal design spec fixture (560px, delete confirmation dialog with Cancel/Delete buttons).
+- `docs/architecture/prototype-rendering-dataflow.md`: Added screen types/overlay rendering documentation (screen type table, navigation mode resolution flow, overlay CSS animations, NavigationEditor section).
+- All typecheck + unit test suites pass (28 suites, 562 tests).
+
+**Plan A is complete.** All 6 phases (A1-A6) are implemented and verified.
 
 ---
 

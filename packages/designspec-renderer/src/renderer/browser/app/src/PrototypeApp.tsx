@@ -85,10 +85,17 @@ export function PrototypeApp({ manifest, specs, tokens, catalog, chromeSpec }: P
     [manifest.screens],
   );
 
+  // Hash changes triggered by navigateTo are already processed — skip them.
+  const handledHashRef = useRef<string | null>(null);
+
   useEffect(() => {
     function onHashChange(): void {
       const id = getScreenIdFromHash();
       if (!id) return;
+      if (handledHashRef.current === id) {
+        handledHashRef.current = null;
+        return;
+      }
       const screen = screenMap.get(id);
       if (!screen) return;
       const effectiveType = screen.screenType ?? 'page';
@@ -141,15 +148,16 @@ export function PrototypeApp({ manifest, specs, tokens, catalog, chromeSpec }: P
     return () => dialog.removeEventListener('cancel', onCancel);
   }, []);
 
-  const navigateTo = useCallback((screenId: string) => {
+  const navigateTo = useCallback((screenId: string, resolvedMode?: 'navigate' | 'overlay') => {
     const screen = screenMap.get(screenId);
     const effectiveType = screen?.screenType ?? 'page';
 
     const binding = manifest.navigation.find(
       b => b.targetScreenId === screenId && b.sourceScreenId === activeScreenId,
     );
-    const mode = binding?.mode ?? (effectiveType !== 'page' ? 'overlay' : 'navigate');
+    const mode = resolvedMode ?? binding?.mode ?? (effectiveType !== 'page' ? 'overlay' : 'navigate');
 
+    handledHashRef.current = screenId;
     if (mode === 'overlay') {
       triggerRef.current = document.activeElement instanceof HTMLElement
         ? document.activeElement

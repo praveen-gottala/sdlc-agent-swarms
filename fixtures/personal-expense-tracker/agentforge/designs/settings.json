@@ -1,0 +1,72 @@
+{
+  "screen": "settings",
+  "screenType": "drawer",
+  "width": 320,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 320,
+      "layout": { "dir": "column", "gap": 16, "py": 24, "px": 16 },
+      "background": "surface-primary"
+    },
+    "settings-title": {
+      "parent": "root",
+      "order": 0,
+      "type": "text",
+      "content": "Settings",
+      "font": "heading-2"
+    },
+    "settings-theme": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "height": 48,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 8 }
+    },
+    "settings-theme-label": {
+      "parent": "settings-theme",
+      "order": 0,
+      "type": "text",
+      "content": "Dark Mode",
+      "font": "body-1"
+    },
+    "settings-theme-toggle": {
+      "parent": "settings-theme",
+      "order": 1,
+      "type": "container",
+      "catalog": "switch",
+      "width": 44,
+      "height": 24,
+      "radius": 12,
+      "background": "cta-primary"
+    },
+    "settings-notifications": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "height": 48,
+      "layout": { "dir": "row", "align": "center", "justify": "space-between", "px": 8 }
+    },
+    "settings-notifications-label": {
+      "parent": "settings-notifications",
+      "order": 0,
+      "type": "text",
+      "content": "Notifications",
+      "font": "body-1"
+    },
+    "settings-notifications-toggle": {
+      "parent": "settings-notifications",
+      "order": 1,
+      "type": "container",
+      "catalog": "switch",
+      "width": 44,
+      "height": 24,
+      "radius": 12,
+      "background": "neutral-300"
+    }
+  }
+}

@@ -173,6 +173,42 @@ export async function GET() {
     };
   }
 
+  // Augment manifest with screens from agentforge/designs/ not already present.
+  // A user may create new pages in the dashboard after the CLI pipeline ran.
+  {
+    const existingIds = new Set(manifest.screens.map(s => s.screenId));
+    if (existsSync(designsDir)) {
+      const designFiles = readdirSync(designsDir).filter(f => f.endsWith('.json') && !f.includes('.issues.'));
+      for (const file of designFiles) {
+        const pageId = file.replace(/\.json$/, '');
+        if (existingIds.has(pageId)) continue;
+
+        const specPath = join(designsDir, file);
+        try {
+          const content = JSON.parse(readFileSync(specPath, 'utf-8'));
+          if (!content.nodes || typeof content.nodes !== 'object') continue;
+        } catch { continue; }
+
+        const page = pageMap.get(pageId);
+        const st = page?.screen_type;
+        manifest = {
+          ...manifest,
+          screens: [
+            ...manifest.screens,
+            {
+              screenId: pageId,
+              name: page?.name ?? pageId,
+              route: page?.route ?? `/${pageId}`,
+              specPath: join('agentforge', 'designs', file),
+              ...(st && st !== 'page' ? { screenType: st } : {}),
+            },
+          ],
+        };
+        existingIds.add(pageId);
+      }
+    }
+  }
+
   // Inject navigation bindings from pages.yaml navigates_to (user-defined)
   const screenIds = new Set(manifest.screens.map(s => s.screenId));
   const screenTypeMap = new Map(manifest.screens.map(s => [s.screenId, s.screenType]));

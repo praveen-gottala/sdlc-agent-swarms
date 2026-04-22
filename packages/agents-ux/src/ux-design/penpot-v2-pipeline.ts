@@ -544,7 +544,10 @@ export async function penpotDesignWorkV2(
     userMessageParts.push(`\nApp Description: ${description}`);
     if (input.chromeOnly) {
       userMessageParts.push(
-        '\nIMPORTANT: This is a chrome-only pass. Design only the shared shell in the planning output. No page body, no feature content, no cards outside the shell.',
+        '\nIMPORTANT: This is a chrome-only pass. Design only the shared shell in the planning output. No page body, no feature content, no cards outside the shell.'
+        + '\n\nYou MUST include a "regions" field in the submit_design tool call that maps each root-level node to its layout region.'
+        + '\nExample: { "regions": { "header": ["nav-header"], "footer": ["tab-bar"] } }'
+        + '\nUse "header" for top navigation bars, "footer" for bottom tab bars, "sidebar" for side navigation. Every root child must appear in exactly one region.',
       );
     } else {
       userMessageParts.push(

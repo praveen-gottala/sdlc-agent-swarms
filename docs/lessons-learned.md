@@ -3,11 +3,27 @@
 ## Chat-driven design iteration — canvas refresh and bridge style updates
 **Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx`, `packages/designspec-renderer/src/renderer/browser/app/src/iframe-bridge.ts`
 **Rule:** After pipeline completion, the canvas doesn't auto-refresh because `refreshPage` only fetches page metadata, not the design spec. Fixed by adding `cache: 'no-store'` to all spec fetches, `export const dynamic = 'force-dynamic'` to API routes, and fixing `PipelineProgress` to use `useEffect` for the `onComplete` callback instead of a render-body side effect.
-**Known issue:** The `update-node-style` postMessage from dashboard to renderer iframe is not applying styles to nodes. Two E2E tests (`design-inspector-properties:justify-content` and `:width`) fail because `getPropertyValue()` returns `""` after style updates. Root cause is in the iframe bridge message handler — the `document.querySelector('[data-node="nav-tabs"]')` may not find the element, or the cross-origin message isn't being processed. Needs investigation in the renderer's iframe-bridge.ts.
+**Resolved (2026-04-22):** The `update-node-style` postMessage works correctly — the bridge applies inline styles. The two E2E test failures (`justify-content`, `width`) were caused by a spec-reload race: `setDesignSpec()` triggers a `useEffect` that re-renders the iframe from spec data, wiping inline styles. For `justify-content`, the property registry stored shorthand `'between'` — fixed by changing the registry to store the canonical `'space-between'` (matching LayoutSpec type and correction adapter). For `width`, inspector stored string `'200'` — fixed by adding numeric coercion in `handlePropertyChange`. The renderer also has a defensive `'between'` alias and string-numeric width handler as safety nets.
 **How to apply:** When debugging bridge-related issues, verify that postMessage is received by adding console.log in the iframe-bridge.ts message handler. Test with the browser's cross-origin iframe tools.
 
 ---
 
+
+## Design Inspector Spec-Reload Race Condition
+**Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx` — `handlePropertyChange`, `DesignCanvas` useEffect
+**Rule:** `handlePropertyChange` pushes inline styles via `updateNodeStyle()` AND calls `setDesignSpec(updated)`. The state update triggers a `useEffect` that reloads the entire spec into the iframe. The iframe re-renders from spec data, wiping inline styles. For most properties this is invisible (the renderer produces the same CSS), but for value-format mismatches it causes visible failures.
+**Why:** Two properties exposed the race: (1) `layout.justify` — the property registry stored shorthand `'between'` but the canonical LayoutSpec type and correction adapter expect `'space-between'`. Root-cause fix: changed registry to store `'space-between'`. (2) `width` — text inputs produce strings (`'200'`) but `getSizeStyles` only accepted `number | 'fill'`. Root-cause fix: added coercion in `handlePropertyChange`. Both also have renderer-side safety nets for old specs.
+**How to apply:** When adding new properties to the design inspector, ensure the stored spec value and the renderer's expected value match exactly. Test by: (1) changing the property in the inspector, (2) waiting 500ms for the spec-reload cycle, (3) checking the iframe node's computed style — not just the immediate inline style.
+
+---
+
+## Test Runner Scoping: Playwright *.spec.ts, Jest *.test.ts
+**Context:** `packages/e2e-test/` — mixed Playwright + Jest test files
+**Rule:** Scope Playwright to `testMatch: '**/*.spec.ts'` and Jest to `testMatch: ['**/*.test.ts']` when both coexist in the same directory. Playwright's default `testMatch` (`**/*.@(spec|test).*`) picks up Jest files, causing `ReferenceError: describe is not defined`.
+**Why:** `packages/e2e-test/src/full-pipeline.test.ts` (Jest) was picked up by Playwright and crashed. Also, `onboarding-prototype.spec.ts` was a stale copy of the root `e2e/` version without `test-base` fixtures — removed since the root version is authoritative.
+**How to apply:** When a package needs both test runners, explicitly scope each via `testMatch` in their respective configs. Never rely on default file-pattern matching.
+
+---
 
 ## Chrome Pass — LLM node ID mismatches and mislabeled types
 **Context:** `packages/agents-ux/src/prototype/`, `packages/designspec-renderer/src/renderer/browser/spec-split.ts`  
@@ -572,6 +588,30 @@ Additionally, `resolveNode()` in `resolver.ts` returned a stripped-down `Resolve
 **Rule:** Always clear `bridgeRef.current = null` before transitioning from design canvas to prototype mode. The stale bridge from the DesignCanvas iframe has `isReady: true`, which causes `sendPayload()` to succeed on the first call — but the message goes to a dead iframe.
 **Why:** The `useEffect` that sends the prototype payload fired immediately when `prototypeMode` switched to `true`. At that point, `bridgeRef` still held the old DesignCanvas bridge. The stale bridge's `isReady` was `true`, so `loadPrototype` was called on it, the message went to a detached iframe, and the polling backup never started (because `sendPayload()` returned `true`).
 **How to apply:** When transitioning between iframe-based modes that share a bridge ref, always null the ref before the mode switch. This forces the payload-sending effect to poll until the new bridge is ready.
+
+---
+
+## Screen Type Must Be Set BEFORE Design Generation
+
+**Context:** `screen_type` (page/modal/drawer/sheet) in pages.yaml, viewport resolver in `packages/core/src/config/viewport-resolver.ts`, design agent prompt context
+**Rule:** `screen_type` must be set on a page BEFORE its design is generated. Setting it after generation produces a design at the wrong viewport width that overflows when rendered as an overlay. Regenerating the design is the only fix — there is no post-hoc resize.
+**Why:** The viewport resolver (Phase A3) reads `screen_type` during design generation:
+- `drawer` → 320px viewport
+- `modal` → 560px viewport
+- `sheet` → full width
+- `page` → 1440px (default)
+
+The design LLM receives this width as a hard constraint and lays out all content within it. The design prompt also injects overlay-specific instructions ("do not include page-level navigation", "include a close affordance"). A design generated at 1440px then crammed into a 320px drawer overlay clips and overflows.
+
+**Three constraints discovered (Claim Filling Sample, 2026-04-22):**
+
+1. **Overlay designs must be generated at overlay viewport.** The NotificationsPanel was designed at 1440px (before `screen_type: drawer` existed). Setting `screen_type: drawer` on the page AFTER design generation makes the prototype render it as a drawer, but the content is 1440px wide — it overflows the 320px panel. Fix: regenerate via the design pipeline with `screen_type` already set.
+
+2. **Chrome (header/nav) must come from Chrome Pass, not per-page LLM.** Each page's design LLM independently produces its own TopNavigation — some flat (single catalog node, zero children, no bell icon), some decomposed (with children and navigateTo). This produces inconsistent headers across pages and breaks overlay navigation wiring. Fix: Plan B Phase B1 (Chrome Pass) designs shared chrome once and injects it into all pages.
+
+3. **`design:generate` changing page IDs breaks existing designs.** The LLM produces descriptive IDs (`dashboard`, `claims-list`) but existing design files use old IDs (`page-001`, `page-002`). The dashboard shows "Ready to design" because it can't match `dashboard.json` to `page-001.json`. Fix needed: `design:generate` should either preserve existing page IDs or rename design files to match new IDs.
+
+**How to apply:** When adding `screen_type` to an existing page, always regenerate its design afterward. When testing overlay rendering, verify the design spec's `"width"` field matches the overlay viewport (320 for drawer, 560 for modal). If it doesn't, the design was generated before screen_type was set.
 
 ---
 

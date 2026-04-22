@@ -327,10 +327,15 @@ export function extractDesignSpecFromToolCall(
     ? args.screenType as DesignSpecV2['screenType']
     : undefined;
 
+  const regions = args.regions && typeof args.regions === 'object'
+    ? args.regions as Record<string, string[]>
+    : undefined;
+
   return Ok({
     screen: String(args.screen),
     width: Number(args.width),
     nodes: args.nodes as Record<string, import('@agentforge/designspec-renderer').NodeSpec>,
     ...(screenType ? { screenType } : {}),
+    ...(regions ? { regions } : {}),
   });
 }
