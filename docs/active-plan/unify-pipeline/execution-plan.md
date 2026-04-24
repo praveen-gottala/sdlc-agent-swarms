@@ -19,10 +19,10 @@ AgentForge has two parallel implementations of the UX design pipeline. The CLI c
 Update this checklist as each task completes. Commit convention: `[unify-pipeline:X.Y] <description>`.
 
 ### Phase 0 — Contract Lockdown
-- [ ] **0.1** Zod schemas in `packages/core/src/types/`
-- [ ] **0.2** Parity test (red/skipped)
-- [ ] **0.3** Import boundary lint rule
-- [ ] **0.4** Narrow dashboard shape fix (shallow wrapper) + unit test
+- [x] **0.1** Zod schemas in `packages/core/src/types/` (2026-04-24)
+- [x] **0.2** Parity test (red/skipped) (2026-04-24)
+- [x] **0.3** Import boundary lint rule (2026-04-24)
+- [x] **0.4** Narrow dashboard shape fix (shallow wrapper) + unit test (2026-04-24)
 
 ### Phase 0.5 — Scaffolding
 - [ ] **0.5.1a** Move design utilities from CLI to core

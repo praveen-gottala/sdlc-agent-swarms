@@ -119,7 +119,7 @@ export function useRendererBridge(
 ): UseRendererBridgeResult {
   const [isReady, setIsReady] = useState(false);
   const onLogRef = useRef<OnLogCallback | undefined>(options?.onLog);
-  onLogRef.current = options?.onLog;
+  useEffect(() => { onLogRef.current = options?.onLog; }, [options?.onLog]);
 
   // Callback refs — avoids re-registering the message listener on every change
   const onNodeHoveredRef = useRef<NodeHoveredCallback | null>(null);

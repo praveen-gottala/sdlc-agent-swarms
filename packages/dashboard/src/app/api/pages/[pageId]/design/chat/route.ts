@@ -8,6 +8,7 @@ import {
   getActiveProjectRoot,
 } from '../../../../_lib/project-reader';
 import { startRun, updateRunStatus, completeRun, failRun } from '../../../../_lib/run-manager';
+import { wrapResearchShallow, wrapPlanningShallow } from '../../../../_lib/shallow-wrappers';
 import { emitStageEvent, emitLLMCallEvent, emitAgentLogEvent } from '../../../../_lib/event-writer';
 import {
   addTask,
@@ -27,7 +28,7 @@ import {
   DEFAULT_DESIGN_MODEL,
 } from '../../../../_lib/pipeline-helpers';
 import type { DesignModel } from '../../../../_lib/pipeline-helpers';
-import type { PageEntry, PagesFile, DesignTokensFile } from '../../../../_lib/shared-types';
+import type { PagesFile, DesignTokensFile } from '../../../../_lib/shared-types';
 
 /**
  * POST /api/pages/[pageId]/design/chat
@@ -318,8 +319,8 @@ async function runChatPipelineAsync(
     if (!existsSync(artifactsDir)) {
       mkdirSync(artifactsDir, { recursive: true });
     }
-    writeFileSync(join(artifactsDir, 'research.json'), JSON.stringify({ brief: researchResult }, null, 2));
-    writeFileSync(join(artifactsDir, 'planning.json'), JSON.stringify({ spec: planningResult }, null, 2));
+    writeFileSync(join(artifactsDir, 'research.json'), JSON.stringify(wrapResearchShallow(pageId, researchResult), null, 2));
+    writeFileSync(join(artifactsDir, 'planning.json'), JSON.stringify(wrapPlanningShallow(pageId, planningResult), null, 2));
     writeFileSync(join(artifactsDir, 'chat-message.txt'), chatMessage);
 
     writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(llmResponse.designSpec, null, 2));

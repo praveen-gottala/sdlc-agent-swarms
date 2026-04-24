@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, readdirSync, writeFileSync, mkdirSync } from 'fs';
-import { join, basename } from 'path';
+import { join } from 'path';
 import { parse, stringify } from 'yaml';
 
 /** Resolve the monorepo root (two levels up from packages/dashboard). */

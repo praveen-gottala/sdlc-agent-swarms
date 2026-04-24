@@ -355,7 +355,7 @@ export async function GET() {
   const rawCatalog = readYamlFile<unknown>('agentforge/spec/component-catalog.yaml');
 
   const tokens = rawTokens
-    ? (() => { const { version: _v, created_by: _cb, ...rest } = rawTokens; return rest; })()
+    ? (() => { const { version: _, created_by: __, ...rest } = rawTokens as Record<string, unknown>; void _; void __; return rest; })()
     : {};
   const catalog = loadCatalogForRenderer(
     (rawCatalog ?? undefined) as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined,

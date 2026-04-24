@@ -23,17 +23,16 @@ export function HeaderBar({
   budgetTotal = 200,
   activeAgents = 4,
 }: HeaderBarProps) {
-  const [clock, setClock] = useState<string>('');
+  const fmt = () =>
+    new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  const [clock, setClock] = useState(fmt);
 
   useEffect(() => {
-    const fmt = () =>
-      new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-    setClock(fmt());
     const id = setInterval(() => setClock(fmt()), 1000);
     return () => clearInterval(id);
   }, []);

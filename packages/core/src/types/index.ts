@@ -103,3 +103,6 @@ export type {
   ReactComponentMapping,
   ComponentLibrarySpec,
 } from './design-system.js';
+
+export { DesignToolSchema, DesignOutputSchema } from './design-phase-state.js';
+export type { DesignTool, DesignOutput } from './design-phase-state.js';

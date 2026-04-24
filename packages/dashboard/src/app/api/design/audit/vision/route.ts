@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   const rawCatalog = readYamlFile<RawCatalogSpec>('agentforge/spec/component-catalog.yaml');
 
   const tokens: RendererTokens = rawTokens
-    ? (() => { const { version: _v, created_by: _cb, ...rest } = rawTokens as DesignTokensSpec & Record<string, unknown>; return rest as RendererTokens; })()
+    ? (() => { const { version: _, created_by: __, ...rest } = rawTokens as DesignTokensSpec & Record<string, unknown>; void _; void __; return rest as RendererTokens; })()
     : {} as RendererTokens;
   const { loadCatalogForRenderer } = await import('@agentforge/designspec-renderer');
   const catalog = loadCatalogForRenderer(rawCatalog ?? undefined, tokens);

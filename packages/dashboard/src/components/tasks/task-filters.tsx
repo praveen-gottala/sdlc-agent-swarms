@@ -3,13 +3,6 @@
 import React from 'react';
 import type { TaskStatus } from './task-card';
 
-/** Filter option with label and count. */
-interface FilterChip {
-  label: string;
-  value: TaskStatus | 'all';
-  count: number;
-}
-
 export interface TaskFiltersProps {
   /** Currently active filter value. */
   active: TaskStatus | 'all';

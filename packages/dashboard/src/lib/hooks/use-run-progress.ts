@@ -22,22 +22,24 @@ export interface RunProgressState {
 
 const POLL_INTERVAL_MS = 2_000;
 
+const INITIAL_STATE: RunProgressState = {
+  status: null,
+  stage: null,
+  stageDescription: null,
+  progress: null,
+  agentRole: null,
+  cost: null,
+  error: null,
+  startedAt: null,
+  stageTimings: null,
+};
+
 /**
  * Polls GET /api/runs/<runId> every 2s while status is "running" or "pending".
  * Stops polling once the run completes or fails.
  */
 export function useRunProgress(runId: string | null): RunProgressState {
-  const [state, setState] = useState<RunProgressState>({
-    status: null,
-    stage: null,
-    stageDescription: null,
-    progress: null,
-    agentRole: null,
-    cost: null,
-    error: null,
-    startedAt: null,
-    stageTimings: null,
-  });
+  const [state, setState] = useState<RunProgressState>(INITIAL_STATE);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -50,10 +52,6 @@ export function useRunProgress(runId: string | null): RunProgressState {
 
   useEffect(() => {
     if (!runId) {
-      setState({
-        status: null, stage: null, stageDescription: null, progress: null,
-        agentRole: null, cost: null, error: null, startedAt: null, stageTimings: null,
-      });
       return;
     }
 
@@ -96,6 +94,9 @@ export function useRunProgress(runId: string | null): RunProgressState {
       stopPolling();
     };
   }, [runId, stopPolling]);
+
+  // When runId is null, return the initial (reset) state
+  if (!runId) return INITIAL_STATE;
 
   return state;
 }

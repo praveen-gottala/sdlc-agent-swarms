@@ -38,7 +38,7 @@ interface SpecReviewProps {
 
 export function SpecReview({ spec, onApprove, onRegenerate, approving = false }: SpecReviewProps) {
   const [activeTab, setActiveTab] = useState<'pages' | 'models' | 'endpoints'>('pages');
-  const [editedSpec, setEditedSpec] = useState<GeneratedSpec>(spec);
+  const [editedSpec] = useState<GeneratedSpec>(spec);
 
   const tabs = [
     { key: 'pages' as const, label: 'Pages', count: editedSpec.pages.length },

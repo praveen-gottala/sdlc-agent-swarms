@@ -4,14 +4,12 @@ import {
   verifyNode,
   buildSimpleTokenMap,
   checkMechanicalIssues,
-  loadCatalogForRenderer,
 } from '@agentforge/designspec-renderer';
 import type {
   DesignSpecV2,
   RendererTokens,
   DOMLayoutData,
   NodeSpec,
-  RawCatalogSpec,
 } from '@agentforge/designspec-renderer';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const rawTokens = readYamlFile<Record<string, unknown>>('agentforge/spec/design-tokens.yaml');
   const tokens: RendererTokens = rawTokens
-    ? (() => { const { version: _v, created_by: _cb, ...rest } = rawTokens; return rest as RendererTokens; })()
+    ? (() => { const { version: _, created_by: __, ...rest } = rawTokens; void _; void __; return rest as RendererTokens; })()
     : {} as RendererTokens;
 
   const tokenMap = buildSimpleTokenMap(tokens);

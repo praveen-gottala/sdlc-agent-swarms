@@ -44,6 +44,9 @@ export { Ok, Err } from './types/index.js';
 export { debugLog, logDefaults } from './debug-log.js';
 export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 
+export { DesignToolSchema, DesignOutputSchema } from './types/index.js';
+export type { DesignTool, DesignOutput } from './types/index.js';
+
 // Constants
 export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, EVALUATOR_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
 export { PIPELINE_ARTIFACTS } from './pipeline-artifacts.js';

@@ -56,7 +56,7 @@ jest.mock('fs', () => ({
 }));
 
 import { readYamlFile, getActiveProjectRoot } from '../../../../../_lib/project-reader';
-import { startRun, failRun } from '../../../../../_lib/run-manager';
+import { startRun } from '../../../../../_lib/run-manager';
 import { getClaudeProvider } from '../../../../../_lib/llm-provider';
 import { existsSync } from 'fs';
 

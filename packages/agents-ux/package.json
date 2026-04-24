@@ -9,6 +9,10 @@
     ".": {
       "@agentforge/source": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./schemas": {
+      "@agentforge/source": "./src/schemas.ts",
+      "default": "./dist/schemas.js"
     }
   },
   "scripts": {

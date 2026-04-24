@@ -1,3 +1,14 @@
+// Agent output Zod schemas
+export {
+  UXResearchOutputSchema,
+  UXPlanningOutputSchema,
+  UXImplementationOutputSchema,
+  UXTestingOutputSchema,
+  ReviewIssueSchema,
+  UXReviewOutputSchema,
+  DesignEvaluationOutputSchema,
+} from './schemas.js';
+
 // Exports added as agents are implemented
 export type {
   ComponentTreeNode,

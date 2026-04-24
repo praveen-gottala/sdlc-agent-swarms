@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface YamlViewerProps {
   content: string;
@@ -88,13 +88,13 @@ function highlightValue(value: string): React.ReactNode {
 /** Syntax-highlighted YAML viewer with line numbers and optional edit mode. */
 export function YamlViewer({ content, filename, editable, onSave, saving }: YamlViewerProps) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(content);
+  const [localDraft, setLocalDraft] = useState(content);
   const lines = content.split('\n');
 
-  // Sync draft when content changes externally
-  useEffect(() => {
-    if (!editing) setDraft(content);
-  }, [content, editing]);
+  // When not editing, draft mirrors the external content (derived state).
+  // When editing, use the local draft the user is typing into.
+  const draft = editing ? localDraft : content;
+  const setDraft = setLocalDraft;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/10 bg-[#0d0e17]">

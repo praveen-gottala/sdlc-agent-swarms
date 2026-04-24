@@ -11,7 +11,7 @@
         "dir": "column",
         "gap": 0
       },
-      "background": "background-primary"
+      "background": "#FF0000"
     },
     "topbar": {
       "parent": "root",
@@ -415,10 +415,7 @@
       "order": 2,
       "catalog": "progress-bar-active",
       "value": 81,
-      "width": "fill",
-      "height": 8,
-      "radius": 4,
-      "background": "surface-elevated"
+      "width": "fill"
     },
     "budget-progress-meta": {
       "parent": "budget-summary-card",
@@ -918,9 +915,9 @@
       "radius": 16,
       "layout": {
         "dir": "column",
-        "gap": 0,
-        "px": 0,
-        "py": 0,
+        "gap": 42,
+        "px": 24,
+        "py": 22,
         "my": 0,
         "mx": 11
       }
@@ -933,9 +930,7 @@
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "pb": 16,
-        "px": 24,
-        "py": 20
+        "pb": 16
       }
     },
     "expenses-card-title": {
@@ -960,11 +955,9 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12,
+        "gap": 32,
         "pb": 0,
-        "mx": 0,
-        "px": 24,
-        "py": 16
+        "mx": 11
       }
     },
     "filter-label": {
@@ -1035,8 +1028,8 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "px": 24,
-        "py": 12,
+        "px": 16,
+        "py": 0,
         "gap": 0,
         "my": 0
       }

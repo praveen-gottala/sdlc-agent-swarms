@@ -186,7 +186,7 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
           {progress.startedAt && (
             <p className="text-[11px] text-text-muted mt-1">
               Completed in {formatElapsed(
-                new Date(progress.stageTimings?.[STAGES[STAGES.length - 1].name]?.completedAt ?? Date.now()).getTime()
+                new Date(progress.stageTimings?.[STAGES[STAGES.length - 1].name]?.completedAt ?? progress.startedAt).getTime()
                 - new Date(progress.startedAt).getTime(),
               )}
             </p>

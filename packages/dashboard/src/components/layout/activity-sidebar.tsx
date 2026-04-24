@@ -76,7 +76,7 @@ export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
   const [activeRuns, setActiveRuns] = useState<ActiveRunInfo[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch active runs once on mount (no polling)
+  // Fetch active runs
   const fetchRuns = useCallback(async () => {
     try {
       const res = await fetch('/api/runs?limit=5');
@@ -91,7 +91,26 @@ export function ActivitySidebar({ open, onToggle }: ActivitySidebarProps) {
     }
   }, []);
 
-  useEffect(() => { void fetchRuns(); }, [fetchRuns]);
+  // Fetch once on mount (no polling). Using an IIFE with await to ensure
+  // setState happens asynchronously after the fetch resolves.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/runs?limit=5');
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const running = (data.runs ?? []).filter(
+          (r: ActiveRunInfo & { status: string }) => r.status === 'running' || r.status === 'pending',
+        );
+        setActiveRuns(running);
+      } catch {
+        // Ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);

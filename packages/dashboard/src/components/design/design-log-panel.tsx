@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDesignLog } from '@/lib/hooks/use-design-log';
 import { LogEntry, type LogLevel } from '@/components/live-monitor/log-entry';
 
@@ -10,20 +10,19 @@ import { LogEntry, type LogLevel } from '@/components/live-monitor/log-entry';
  */
 export function DesignLogPanel() {
   const { entries, clear } = useDesignLog();
-  const [expanded, setExpanded] = useState(false);
+  const [userToggled, setUserToggled] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const prevCountRef = useRef(entries.length);
 
-  // Auto-expand when pipeline events start arriving
-  useEffect(() => {
-    if (!expanded && entries.length > prevCountRef.current) {
-      const newEntries = entries.slice(prevCountRef.current);
-      if (newEntries.some((e) => e.source === 'pipeline')) {
-        setExpanded(true);
-      }
-    }
-    prevCountRef.current = entries.length;
-  }, [entries, expanded]);
+  // Derive auto-expand: panel should open when pipeline entries exist
+  const hasPipelineEntries = useMemo(
+    () => entries.some((e) => e.source === 'pipeline'),
+    [entries],
+  );
+  // User toggle takes precedence; otherwise auto-expand when pipeline entries arrive
+  const expanded = userToggled ?? hasPipelineEntries;
+  const setExpanded = (v: boolean | ((prev: boolean) => boolean)) => {
+    setUserToggled(typeof v === 'function' ? v(expanded) : v);
+  };
 
   // Auto-scroll to bottom when new entries arrive (if expanded)
   useEffect(() => {

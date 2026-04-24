@@ -577,10 +577,7 @@ export function DesignInspector({
   visionAuditAvailable,
 }: DesignInspectorProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('properties');
-
-  useEffect(() => {
-    if (activeTabOverride) setActiveTab(activeTabOverride);
-  }, [activeTabOverride]);
+  const effectiveTab = activeTabOverride ?? activeTab;
 
   return (
     <div data-testid="design-inspector" className="flex h-full flex-col bg-sidebar text-text-primary">
@@ -588,7 +585,7 @@ export function DesignInspector({
       <div className="border-b border-border overflow-x-auto" role="tablist">
         <nav className="flex min-w-0">
           {TABS.map((tab) => {
-            const isActive = tab.key === activeTab;
+            const isActive = tab.key === effectiveTab;
             return (
               <button
                 key={tab.key}
@@ -621,7 +618,7 @@ export function DesignInspector({
       </div>
 
       {/* Tab content */}
-      {activeTab === 'properties' && (
+      {effectiveTab === 'properties' && (
         <PropertiesTab
           selectedNode={selectedNode}
           designSpec={designSpec}
@@ -630,7 +627,7 @@ export function DesignInspector({
           onRevertNode={onRevertNode}
         />
       )}
-      {activeTab === 'ai-edits' && (
+      {effectiveTab === 'ai-edits' && (
         <AIEditsTab
           score={score}
           tags={tags}
@@ -640,8 +637,8 @@ export function DesignInspector({
           onAddTag={onAddTag}
         />
       )}
-      {activeTab === 'chat' && <ChatTab onChatSubmit={onChatSubmit} chatDisabled={chatDisabled} />}
-      {activeTab === 'audit' && (
+      {effectiveTab === 'chat' && <ChatTab onChatSubmit={onChatSubmit} chatDisabled={chatDisabled} />}
+      {effectiveTab === 'audit' && (
         <AuditTab
           mechanicalAudit={mechanicalAudit ?? null}
           mechanicalAuditLoading={mechanicalAuditLoading ?? false}

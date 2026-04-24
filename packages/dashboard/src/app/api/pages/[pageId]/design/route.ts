@@ -11,6 +11,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 import { startRun, updateRunStatus, completeRun, failRun } from '../../../_lib/run-manager';
+import { wrapResearchShallow, wrapPlanningShallow } from '../../../_lib/shallow-wrappers';
 import { emitStageEvent, emitLLMCallEvent, emitAgentLogEvent } from '../../../_lib/event-writer';
 import {
   addTask,
@@ -30,7 +31,7 @@ import {
   DEFAULT_DESIGN_MODEL,
 } from '../../../_lib/pipeline-helpers';
 import type { DesignModel } from '../../../_lib/pipeline-helpers';
-import type { PageEntry, PagesFile, DesignTokensFile } from '../../../_lib/shared-types';
+import type { PagesFile, DesignTokensFile } from '../../../_lib/shared-types';
 
 /* ------------------------------------------------------------------ */
 /*  GET /api/pages/[pageId]/design                                     */
@@ -608,8 +609,8 @@ async function runFullPipelineAsync(
     if (!existsSync(artifactsDir)) {
       mkdirSync(artifactsDir, { recursive: true });
     }
-    writeFileSync(join(artifactsDir, 'research.json'), JSON.stringify({ brief: researchResult }, null, 2));
-    writeFileSync(join(artifactsDir, 'planning.json'), JSON.stringify({ spec: planningResult }, null, 2));
+    writeFileSync(join(artifactsDir, 'research.json'), JSON.stringify(wrapResearchShallow(pageId, researchResult), null, 2));
+    writeFileSync(join(artifactsDir, 'planning.json'), JSON.stringify(wrapPlanningShallow(pageId, planningResult), null, 2));
 
     // Write design spec
     writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(llmResponse.designSpec, null, 2));

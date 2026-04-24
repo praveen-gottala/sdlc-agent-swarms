@@ -21,15 +21,6 @@ interface ActiveThread {
   startedAt: string;
 }
 
-interface ProjectConfig {
-  budget?: {
-    per_task_max_usd?: number;
-    per_phase_max_usd?: number;
-    monthly_max_usd?: number;
-    alert_threshold?: number;
-  };
-}
-
 const PHASE_DISPLAY_NAMES: Record<string, string> = {
   design: 'Design',
   spec: 'Spec',
