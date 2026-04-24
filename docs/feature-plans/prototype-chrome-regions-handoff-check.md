@@ -27,7 +27,7 @@
 8. **`propagateNavigateToChromeTabs()`** in `merge-frozen-chrome.ts`. Needed because the **Chrome Pass LLM omits `navigateTo`** on tab nodes (designs chrome in isolation without page context).
 9. Stripping it **destroys the entire page content** (blank page). Instead, keep it and **coerce to `type: "container"`** so the renderer shows its children.
 10. **No.** Regex was **removed entirely** per ADR-041. It produced incorrect results (`NavigationTabs` → footer). There is no fallback — if the reference page spec is unavailable, regions default to empty.
-11. (a) **`docs/adrs/ADR-041-spec-order-chrome-regions.md`**, (b) **`docs/plans/prototype-active-tab-fix-and-e2e-tests.md`**, (c) **`docs/lessons-learned.md`** (first two entries).
+11. (a) **`docs/adrs/ADR-041-spec-order-chrome-regions.md`**, (b) **`docs/lessons-learned.md`** (Chrome Pass & Navigation entries), (c) **`docs/feature-plans/screen-types-plan-b.md`** (Phase B1 Chrome Pass).
 12. **`e2e/prototype-chrome-regions.spec.ts`**
 
 ## Turn 3 — Doc Gap Report

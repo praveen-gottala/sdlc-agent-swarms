@@ -316,7 +316,7 @@ sheet:  full width (use page default)
 
 ## Plan B: Shared Layouts & NavBar Generation (separate, after Plan A)
 
-Full plan: `docs/plans/screen-types-plan-b.md`
+Full plan: `docs/feature-plans/screen-types-plan-b.md`
 
 ---
 

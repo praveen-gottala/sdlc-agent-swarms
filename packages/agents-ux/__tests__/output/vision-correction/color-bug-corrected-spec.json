@@ -918,9 +918,9 @@
       "radius": 16,
       "layout": {
         "dir": "column",
-        "gap": 16,
-        "px": 24,
-        "py": 22,
+        "gap": 0,
+        "px": 0,
+        "py": 0,
         "my": 0,
         "mx": 11
       }
@@ -933,7 +933,9 @@
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "pb": 16
+        "pb": 16,
+        "px": 24,
+        "py": 20
       }
     },
     "expenses-card-title": {
@@ -960,7 +962,9 @@
         "align": "center",
         "gap": 12,
         "pb": 0,
-        "mx": 0
+        "mx": 0,
+        "px": 24,
+        "py": 16
       }
     },
     "filter-label": {
@@ -1031,8 +1035,8 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "px": 16,
-        "py": 0,
+        "px": 24,
+        "py": 12,
         "gap": 0,
         "my": 0
       }

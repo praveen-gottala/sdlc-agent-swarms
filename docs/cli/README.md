@@ -24,7 +24,7 @@ Project initialization, settings, and integration verification.
 | `agentforge config [key] [value]` | View or update configuration |
 | `agentforge doctor` | Verify integrations are reachable |
 | `agentforge migrate [--dry]` | Apply schema migrations to YAML files |
-| `agentforge setup` | Bootstrap the Python orchestration engine |
+| `agentforge setup` | Bootstrap project dependencies |
 
 ### [Design](./design.md)
 

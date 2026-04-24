@@ -68,7 +68,7 @@ The interactive wizard asks for project name, description, Git repo, Slack chann
 agentforge describe
 ```
 
-Provide an existing PRD or answer a short Q&A (app description, target users, key features, technical constraints). Outputs `docs/prd.md` as the single source of truth.
+Provide an existing PRD or answer a short Q&A (app description, target users, key features, technical constraints). Outputs `docs/specs/prd.md` as the single source of truth.
 
 ### 3. Generate app spec
 

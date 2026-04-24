@@ -6,7 +6,7 @@ Accepted (2026-04-20)
 
 ## Context
 
-Plan B (`docs/plans/screen-types-plan-b.md`) requires designing TopBar, NavigationTabs, and similar components once, then reusing them across page DesignSpecs. Research rejected adding a new `layout` block to `pages.yaml` (no consumers; duplicates detection already in `page-context-prompt.ts`).
+Plan B (`docs/feature-plans/screen-types-plan-b.md`) requires designing TopBar, NavigationTabs, and similar components once, then reusing them across page DesignSpecs. Research rejected adding a new `layout` block to `pages.yaml` (no consumers; duplicates detection already in `page-context-prompt.ts`).
 
 ## Decision
 

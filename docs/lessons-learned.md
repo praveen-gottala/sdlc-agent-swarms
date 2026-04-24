@@ -1,5 +1,75 @@
 # Lessons Learned
 
+> Status markers: **RESOLVED** = fixed, entry documents the fix. **RULE** = ongoing principle. **SUPERSEDED** = replaced by different approach. **REFERENCE** = API docs / quick reference.
+
+## Table of contents
+
+**Design Canvas & Bridge**
+- [Chat-driven design iteration](#chat-driven-design-iteration--canvas-refresh-and-bridge-style-updates) — RESOLVED
+- [Design Inspector Spec-Reload Race Condition](#design-inspector-spec-reload-race-condition) — RESOLVED
+- [Prototype Bridge Race Condition on First Entry](#prototype-bridge-race-condition-on-first-entry) — RESOLVED
+
+**Chrome & Navigation**
+- [Chrome Pass — LLM node ID mismatches](#chrome-pass--llm-node-id-mismatches-and-mislabeled-types) — RESOLVED
+- [Tab active-state detection](#tab-active-state-detection--use-navigateto-not-id-patterns) — RESOLVED
+- [Never Hardcode Node IDs in Spec Utilities](#never-hardcode-node-ids-in-spec-utilities) — RESOLVED
+
+**DesignSpec Renderer**
+- [DesignSpec overrides — hyphen keys and paint values](#designspec-overrides--hyphen-keys-and-paint-values) — RESOLVED
+- [DesignSpec browser renderer — regression prevention](#designspec-browser-renderer--regression-prevention) — RULE
+- [Override Key Naming: Check Both Aliases](#override-key-naming-check-both-aliases) — RESOLVED
+- [Catalog YAML: renderer_defaults and token_bindings](#catalog-yaml-renderer_defaults-and-token_bindings-both-apply) — RESOLVED
+- [DesignSpec JSON → CSS Conversion Pipeline](#designspec-json--css-conversion-pipeline) — RESOLVED
+- [DesignSpec v2: Separate WHAT from HOW](#designspec-v2-separate-what-from-how) — RULE
+- [CSS flex: 1 vs width: 100%](#css-flex-1-vs-width-100-for-fill-behavior) — RESOLVED
+- [Nested height: 100vh in Flex Containers](#nested-height-100vh-in-flex-containers-breaks-layout) — RESOLVED
+
+**Prototype**
+- [Prototype Must Use Design Canvas Specs](#prototype-must-use-design-canvas-specs-not-preview-specs) — RESOLVED
+- [Screen Type Must Be Set BEFORE Design](#screen-type-must-be-set-before-design-generation) — RULE
+
+**Testing & Quality**
+- [Test Runner Scoping: Playwright vs Jest](#test-runner-scoping-playwright-spects-jest-testts) — RESOLVED
+- [Mock-Only Tests Hide Wiring Bugs](#mock-only-tests-hide-wiring-bugs) — RESOLVED
+- [Mocks Belong Only in Test Files](#mocks-belong-only-in-test-files-testts) — RULE
+- [Test Fixtures Must Be Generic](#test-fixtures-must-be-generic-not-app-specific) — RULE
+- [Fixture Token Values Must Match Source](#fixture-token-values-must-match-real-source-of-truth) — RULE
+- [Never Assume Coverage — Always Verify](#never-assume-coverage--always-verify-mechanically) — RULE
+- [Clean Code Discipline](#clean-code-discipline) — RULE
+- [Engine Test Strategy](#engine-test-strategy) — RULE
+
+**Architecture & Process**
+- [ADR-021: Single on_complete Emission Rule](#adr-021-single-on_complete-emission-rule) — RULE
+- [ADR-022: TypeScript-Only Engine](#adr-022-typescript-only-engine) — RULE
+- [ADRs Must Describe Reality, Not Intent](#adrs-must-describe-reality-not-intent) — RULE
+- [No Shortcuts — Ever](#no-shortcuts--ever) — RULE
+- [Prompt Injection Order Matters](#prompt-injection-order-matters-tokens-before-examples) — RESOLVED
+- [Viewport Config: Project-Level with CLI Override](#viewport-config-project-level-with-cli-override) — RESOLVED
+
+**Renderer Lifecycle**
+- [Renderer Staleness: Kill-and-Restart](#renderer-staleness-kill-and-restart-not-just-port-check-superseded-2026-04-20) — SUPERSEDED
+
+**Penpot Integration**
+- [Penpot Plugin API Rules](#penpot-plugin-api-rules-quick-reference) — REFERENCE
+- [Penpot Text Objects Do NOT Support textAlign](#penpot-text-objects-do-not-support-textalign) — REFERENCE
+- [Penpot MCP export_shape Is Broken](#penpot-mcp-export_shape-is-broken--use-execute_code--shapeexport) — REFERENCE
+- [Component Default Widths: effectiveWidth](#component-default-widths-should-use-effectivewidth) — RESOLVED
+- [Verify Renderer Output Against Working Scripts](#verify-renderer-output-against-real-working-scripts) — RULE
+- [Payload Size Limits — Chunk at Renderer Level](#payload-size-limits--chunk-at-the-renderer-level) — RESOLVED
+- [Phase C Corrections Invalidate Phase D Node IDs](#phase-c-corrections-invalidate-phase-d-node-ids) — RESOLVED
+- [Missing Catalog Renderers Must Be Added](#missing-catalog-renderers-must-be-added-not-just-logged) — RULE
+- [Export Retry Must Fail Fast](#export-retry-must-fail-fast-on-systemic-failures) — RESOLVED
+- [Future: Pipeline Integration Test (Phase 4)](#future-pipeline-integration-test-phase-4) — RULE
+
+**Figma Self-Correction**
+- [Phase C: Visual Self-Correction Loop — Issue Tracker](#phase-c-visual-self-correction-loop--issue-tracker) — RESOLVED (most issues)
+
+**Debugging**
+- [Cross-Origin Iframe Debugging](#cross-origin-iframe-debugging--use-playwright-not-chrome-devtools-mcp) — REFERENCE
+- [Claude 4.7+ Models Reject Sampling Parameters](#claude-47-models-reject-sampling-parameters) — REFERENCE
+
+---
+
 ## Chat-driven design iteration — canvas refresh and bridge style updates
 **Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx`, `packages/designspec-renderer/src/renderer/browser/app/src/iframe-bridge.ts`
 **Rule:** After pipeline completion, the canvas doesn't auto-refresh because `refreshPage` only fetches page metadata, not the design spec. Fixed by adding `cache: 'no-store'` to all spec fetches, `export const dynamic = 'force-dynamic'` to API routes, and fixing `PipelineProgress` to use `useEffect` for the `onComplete` callback instead of a render-body side effect.
@@ -470,7 +540,7 @@ return { base64: btoa(binary) };
 
 > **⚠️ SUPERSEDED.** The auto-restart-on-stale and source-mtime tracking described below were **removed** during Plan B Phase B2 because they caused OOM death spirals during Playwright E2E runs (Vite restart compiled ~1.4k modules concurrent with headed Chromium, killing Next). `getRendererStatus()` in `packages/dashboard/src/app/api/_lib/renderer-manager.ts` now returns `'ready'` whenever the HTTP health check passes, regardless of who spawned the process or whether source changed. The orphan-detection and manual "Kill & Restart" UI paths remain available, but they are no longer triggered automatically.
 >
-> **If you hit a stale renderer today:** restart Vite manually (kill the port, re-run `nx serve browser` from `packages/designspec-renderer`). Do NOT reintroduce mtime-based staleness without a plan for the OOM failure mode — see `docs/adrs/ADR-040-prototype-runtime-scrubbing.md` and the "Context for B2.5 Implementers" block in `docs/plans/screen-types-plan-b.md`.
+> **If you hit a stale renderer today:** restart Vite manually (kill the port, re-run `nx serve browser` from `packages/designspec-renderer`). Do NOT reintroduce mtime-based staleness without a plan for the OOM failure mode — see `docs/adrs/ADR-040-prototype-runtime-scrubbing.md` and the "Context for B2.5 Implementers" block in `docs/feature-plans/screen-types-plan-b.md`.
 >
 > The rest of this entry is kept for historical context only.
 

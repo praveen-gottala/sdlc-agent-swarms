@@ -23,7 +23,7 @@
 | Platform Architecture | [platform-architecture.md](./platform-architecture.md) | Framework layers, data model, schema versioning, agent communication |
 | SDLC Agents | [sdlc-agents.md](./sdlc-agents.md) | Spec sync, onboarding, agent taxonomy, design/code/CI/CD/observability phases |
 | Governance & Operations | [governance-and-operations.md](./governance-and-operations.md) | HITL config, trust model, messaging, sandbox, stacks, providers, MCP, security |
-| Roadmap & Reference | [roadmap.md](./roadmap.md) | Failure modes, DX, tech stack, milestones, metrics, risks, event catalog, ADRs |
+| Appendices | [appendices.md](./appendices.md) | DX narrative, tech stack, milestones, success metrics, risks, reference implementations |
 | Web Dashboard | [dashboard.md](./dashboard.md) | Dashboard architecture, all feature panels, API endpoints, milestones |
 
 ---

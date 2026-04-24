@@ -121,20 +121,20 @@ body.show-hotspots .nav-hotspot {
 /* ─── Shared overlay parts ─── */
 
 .overlay-body {
-  flex: 1;
+  flex: 0 1 auto;
   overflow: auto;
 }
 
-.overlay-close {
+.overlay-close-system {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: -40px;
+  right: 0;
   z-index: 10;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.9);
   color: #374151;
   font-size: 16px;
   cursor: pointer;
@@ -142,13 +142,14 @@ body.show-hotspots .nav-hotspot {
   align-items: center;
   justify-content: center;
   transition: background 150ms;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.overlay-close:hover {
-  background: rgba(0, 0, 0, 0.12);
+.overlay-close-system:hover {
+  background: #fff;
 }
 
-.overlay-close:focus-visible {
+.overlay-close-system:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }

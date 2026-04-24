@@ -10,6 +10,7 @@ import {
   type DesignSpecV2,
   type SharedChromeSpec,
 } from '@agentforge/designspec-renderer';
+import { extractNavigationFromChromeSpec } from '@agentforge/agents-ux';
 
 const PREVIEW_DIR = '.agentforge/previews';
 
@@ -221,7 +222,41 @@ export async function GET() {
     }
   }
 
-  // Inject navigation bindings from pages.yaml navigates_to (user-defined)
+  // Prefer agentforge/designs/ specs (design canvas source of truth) over
+  // .agentforge/previews/ specs so the prototype always matches the design canvas.
+  for (const screen of manifest.screens) {
+    const designPath = join('agentforge', 'designs', `${screen.screenId}.json`);
+    const absDesignPath = join(projectRoot, designPath);
+    if (existsSync(absDesignPath)) {
+      screen.specPath = designPath;
+    }
+  }
+
+  // Load all screen specs
+  const specs: Record<string, unknown> = {};
+  for (const screen of manifest.screens) {
+    const specPath = join(projectRoot, screen.specPath);
+    if (existsSync(specPath)) {
+      try {
+        specs[screen.screenId] = JSON.parse(readFileSync(specPath, 'utf-8'));
+      } catch {
+        // skip unreadable specs
+      }
+    }
+  }
+
+  // Backfill missing screenType from design spec JSON.
+  // Matches CLI's build-manifest.ts:51 fallback: page.screen_type ?? spec.screenType ?? 'page'
+  for (const screen of manifest.screens) {
+    if (screen.screenType) continue;
+    const spec = specs[screen.screenId] as Record<string, unknown> | undefined;
+    if (spec?.screenType && spec.screenType !== 'page') {
+      screen.screenType = spec.screenType as PrototypeScreen['screenType'];
+    }
+  }
+
+  // Inject navigation bindings from pages.yaml navigates_to (user-defined).
+  // Computed after screenType backfill so mode derivation uses correct screenTypes.
   const screenIds = new Set(manifest.screens.map(s => s.screenId));
   const screenTypeMap = new Map(manifest.screens.map(s => [s.screenId, s.screenType]));
   const userBindings: NavigationBindingEntry[] = [];
@@ -249,29 +284,6 @@ export async function GET() {
     };
   }
 
-  // Prefer agentforge/designs/ specs (design canvas source of truth) over
-  // .agentforge/previews/ specs so the prototype always matches the design canvas.
-  for (const screen of manifest.screens) {
-    const designPath = join('agentforge', 'designs', `${screen.screenId}.json`);
-    const absDesignPath = join(projectRoot, designPath);
-    if (existsSync(absDesignPath)) {
-      screen.specPath = designPath;
-    }
-  }
-
-  // Load all screen specs
-  const specs: Record<string, unknown> = {};
-  for (const screen of manifest.screens) {
-    const specPath = join(projectRoot, screen.specPath);
-    if (existsSync(specPath)) {
-      try {
-        specs[screen.screenId] = JSON.parse(readFileSync(specPath, 'utf-8'));
-      } catch {
-        // skip unreadable specs
-      }
-    }
-  }
-
   if (Object.keys(specs).length === 0) {
     return NextResponse.json({ error: 'No valid screen specs found' }, { status: 404 });
   }
@@ -293,6 +305,20 @@ export async function GET() {
   const chromeSpec =
     tryReadSharedChrome(join(agentforgeDir, 'shared-chrome.json'))
     ?? tryReadSharedChrome(join(projectRoot, 'shared-chrome.e2e.json'));
+
+  // Extract chrome navigation bindings (bell icon, logo, etc.) — apply on ALL pages
+  if (chromeSpec) {
+    const chromeBindings = extractNavigationFromChromeSpec(
+      chromeSpec as DesignSpecV2,
+      manifest.screens,
+    );
+    if (chromeBindings.length > 0) {
+      manifest = {
+        ...manifest,
+        navigation: [...manifest.navigation, ...chromeBindings],
+      };
+    }
+  }
 
   /**
    * Scrub duplicates from page specs before serving them to the renderer:

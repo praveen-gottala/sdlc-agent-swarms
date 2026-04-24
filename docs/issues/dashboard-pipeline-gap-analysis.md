@@ -1,7 +1,10 @@
 # Dashboard Pipeline Gap Analysis: pg/dashboard-plugin vs main
 
 **Created:** 2026-04-02
-**Status:** In Progress
+**Status:** Partially Resolved
+**Note:** Renderer fix items (Issues 4.1-4.4, 4.7) are resolved and documented in
+`docs/lessons-learned.md`. Remaining content: pipeline quality analysis, JSON comparison,
+and prompt improvement recommendations.
 **Goal:** Identify why the claim-filling dashboard rendered on `pg/dashboard-plugin` (Screenshot A — sparse, broken charts) looks significantly worse than the design generated from `main` branch code (Screenshot B — rich, colorful, data-complete).
 
 ---

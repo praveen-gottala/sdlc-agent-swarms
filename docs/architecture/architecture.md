@@ -13,18 +13,16 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 │  Commands: init, start, status, approve, abort, migrate, config,     │
 │            design                                                    │
 ├──────────────────────────────────────────────────────────────────────┤
-│  Orchestration Layer (Python / LangGraph)                            │
-│  services/engine                                                     │
-│  NOTE: services/engine/ exists but contains only stub agents.        │
-│  All active workflows use TypeScript packages directly. See ADR-022. │
+│  Orchestration Layer — @langchain/langgraph (TypeScript)             │
+│  Target: packages/core + @langchain/langgraph (see ADR-043)         │
 │                                                                      │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ │
 │  │  Design   │ │   Spec   │ │   Code   │ │   CICD   │ │  Observe  │ │
 │  │  Phase    │ │  Phase   │ │   Gen    │ │  Phase   │ │  Phase    │ │
 │  │  Graph    │ │  Graph   │ │  Graph   │ │  Graph   │ │  Graph    │ │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └───────────┘ │
-│  FastAPI server, task dependency resolution, HITL interrupt nodes,   │
-│  concurrency control, phase transitions                              │
+│  StateGraph topology, typed Zod state channels, HITL interrupt      │
+│  nodes, MemorySaver/PostgresSaver checkpointing, concurrency        │
 ├───────────────┬──────────────────────┬───────────────────────────────┤
 │ Agent Runtime │  Governance Layer    │  Integration Layer            │
 │ packages/core │  packages/governance │  packages/channels            │
@@ -43,10 +41,10 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 │               │                      │  stack: auth, rate limit,     │
 │               │                      │  cache, retry, observability) │
 ├───────────────┴──────────────────────┴───────────────────────────────┤
-│  Event Bus                                                           │
+│  Event Bus (telemetry plane only — NOT coordination substrate)        │
 │  In-memory EventEmitter (v1) / Redis Streams (v2)                    │
 │  31 typed domain events, flat payloads (ADR-002)                     │
-│  Python ↔ TypeScript bridge via .agentforge/events.jsonl             │
+│  Coordination uses typed LangGraph channels (ADR-043, vision L2)     │
 ├──────────────────────────────────────────────────────────────────────┤
 │  State Store                                                         │
 │  YAML files in git (v1) / PostgreSQL (v2)                            │
@@ -68,7 +66,7 @@ agentforge/
 │   ├── governance/            # Middleware: permission, budget, HITL, audit
 │   ├── providers/             # LLM adapters (Claude, OpenAI), cost tables
 │   ├── channels/              # HITL channels (Slack, Telegram, CLI), channel router
-│   ├── cli/                   # Commander.js CLI (8 commands), engine client
+│   ├── cli/                   # Commander.js CLI (8 commands)
 │   ├── agents-design/         # Design agent (UX research, wireframe, visual)
 │   ├── agents-spec/           # Spec writer (components, API, models)
 │   ├── agents-code/           # Code generator (frontend, backend, tests)
@@ -79,21 +77,8 @@ agentforge/
 │   └── stacks/
 │       └── react-node-prisma/ # Scaffold template for generated projects
 ├── services/
-│   └── engine/                # Python + LangGraph orchestration engine
-│       └── src/agentforge_engine/
-│           ├── server.py      # FastAPI (6 endpoints)
-│           ├── models.py      # Pydantic event models
-│           ├── config.py      # YAML config loader
-│           ├── event_bridge.py # Python ↔ TypeScript event transport
-│           ├── concurrency.py # Parallel task execution
-│           ├── task_resolver.py # Dependency resolution
-│           └── graphs/        # LangGraph state graphs per phase
-│               ├── common.py
-│               ├── design_phase.py
-│               ├── spec_phase.py
-│               ├── code_gen_phase.py
-│               ├── cicd_phase.py
-│               └── observe_phase.py
+│   └── engine/                # DEPRECATED — Python LangGraph prototype (stub agents only)
+│                              # Scheduled for deletion per ADR-043. Do not extend.
 └── docs/
     ├── PRD-v2.md              # Product requirements (source of truth)
     ├── architecture.md        # This file
@@ -119,20 +104,7 @@ Build order: `core` → `governance`, `providers` (parallel) → `channels` → 
 
 ## API Contracts Between Layers
 
-### Engine API (services/engine — FastAPI)
-
-```
-POST /phase/start         Start a phase graph (design, spec, code, cicd, observe)
-GET  /status              Read current task + phase state
-POST /phase/pause         Pause a running phase
-POST /gate/approve        Resume with HITL decision (approved, rejected, changes_requested)
-POST /task/abort          Cancel a running or pending task
-GET  /health              Liveness check
-```
-
-The CLI communicates with the engine via an HTTP client (`packages/cli/src/engine-client.ts`).
-
-### Orchestrator Interface (services/engine → packages/core)
+### Orchestrator Interface (@langchain/langgraph TypeScript — ADR-043)
 
 ```typescript
 interface Orchestrator {
@@ -492,22 +464,6 @@ Agent task ready to execute
          Immutable JSON lines: agent, action, outcome, cost, decision, approver
 ```
 
-### Python ↔ TypeScript Event Bridge
-
-The orchestration engine (Python/LangGraph) and agent packages (TypeScript) communicate through a shared event transport:
-
-```
-Phase 1: File-based transport
-  - Shared file: .agentforge/events.jsonl (append-only, truncated on phase start)
-  - TypeScript: fs.watch + tail for new lines
-  - Python: append JSON lines, poll for incoming events
-  - Delivery guarantee: at-least-once (both sides track last-read offset)
-
-Phase 2: Redis Streams
-  - Both runtimes become native Redis consumers
-  - Same DomainEvent schema, swappable transport adapter
-```
-
 ### Error Handling
 
 All public APIs use the Result pattern — never throw. See `docs/architecture/error-handling.md`.
@@ -532,3 +488,5 @@ interface AgentForgeError {
 | [ADR-002](adrs/ADR-002-event-payload-structure.md) | Flat event payloads (no nested `payload` field) |
 | [ADR-003](adrs/ADR-003-event-bus-method-naming.md) | Both `publish()` and `emit()` on event bus |
 | [ADR-004](adrs/ADR-004-governance-middleware-ordering.md) | Governance ordering: permission → budget → HITL (budget before HITL) |
+| [ADR-022](adrs/ADR-022-typescript-only-orchestration-engine.md) | TypeScript-only orchestration (Phase 1). Superseded by ADR-043. |
+| [ADR-043](adrs/ADR-043-typescript-only-orchestration.md) | Deprecate Python engine, commit to @langchain/langgraph (TypeScript) |

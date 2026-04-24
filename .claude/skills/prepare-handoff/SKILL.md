@@ -45,7 +45,7 @@ Each update must be a single focused edit. Do not rewrite existing docs.
 
 Location: `docs/plans/<phase-or-topic>-handoff-check.md`.
 
-Structure (match `docs/plans/screen-types-plan-b-handoff-check.md` exactly):
+Structure (match `docs/plans/screen-types-plan-b-handoff-check.md` as a reference):
 
 - **Turn 1 block** — 10–15 questions targeting the gotchas from step 1. Include one "trap" question where the intuitive answer is wrong (e.g. "should you follow <superseded lesson>?"), and one "coverage probe" that forces the agent to name all three critical docs in order.
 - **Turn 2 block** — authoritative answer key with **bolded keywords** (keywords are what grading diffs against; prose is irrelevant). Each answer cites the exact file + section anchor.

@@ -385,5 +385,5 @@ lsof -ti:4100 | xargs kill -9
 |------|--------|
 | `docs/lessons-learned.md` | Screen Type BEFORE Design Generation constraint |
 | `docs/architecture/prototype-rendering-dataflow.md` | Overlay rendering, NavigationEditor |
-| `docs/plans/screen-types-plan-a.md` | All phases marked complete |
+| `docs/feature-plans/screen-types-plan-a.md` | All phases marked complete |
 | `CLAUDE.md` | Plan A status → COMPLETE |

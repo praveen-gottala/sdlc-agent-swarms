@@ -6,7 +6,7 @@ Accepted (2026-04-20)
 
 ## Context
 
-Plan B Phase B2 (`docs/plans/screen-types-plan-b.md`) ships `LayoutShell`, which renders header/footer/sidebar regions from `shared-chrome.json` as persistent DOM around a swappable content area. While verifying the Personal Expense Tracker fixture end-to-end, two user-visible regressions surfaced that are not caused by the LayoutShell itself but by the upstream LLM-generated page specs:
+Plan B Phase B2 (`docs/feature-plans/screen-types-plan-b.md`) ships `LayoutShell`, which renders header/footer/sidebar regions from `shared-chrome.json` as persistent DOM around a swappable content area. While verifying the Personal Expense Tracker fixture end-to-end, two user-visible regressions surfaced that are not caused by the LayoutShell itself but by the upstream LLM-generated page specs:
 
 1. **Duplicate chrome.** `shared-chrome.json` declares header region `topbar`. Individual page specs (`dashboard.json`, etc.) still include a root-level `top-bar` (hyphenated) node with near-identical structure. Both render — one inside `LayoutShell`'s `[data-persistent="header"]`, one as the first child of `[data-persistent="content"]` — producing a visibly doubled header.
 

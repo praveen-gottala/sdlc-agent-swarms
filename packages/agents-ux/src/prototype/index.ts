@@ -1,4 +1,4 @@
-export { buildPrototypeManifest, extractScreenSummary, extractNavigationFromSpecs } from './build-manifest.js';
+export { buildPrototypeManifest, extractScreenSummary, extractNavigationFromSpecs, extractNavigationFromChromeSpec } from './build-manifest.js';
 export type { ScreenSummary, InteractiveNode } from './build-manifest.js';
 export { analyzeNavigation } from './analyze-navigation.js';
 export type { SharedChrome, SharedChromeRegion, SharedLayoutPosition } from './resolve-shared-components.js';

@@ -12,7 +12,7 @@ AgentForge is structured as a layered architecture with clear separation of conc
   ---------------------------------------------------------------------------------------------------------------------------
   **Layer**       **Responsibility**                                               **Key Technologies**
   --------------- ---------------------------------------------------------------- ------------------------------------------
-  Orchestration   Supervisor agent, workflow engine, state management, event bus   TypeScript (custom DAG engine)
+  Orchestration   Supervisor agent, workflow engine, state management, event bus   @langchain/langgraph (TypeScript)
 
   Agent Runtime   Agent lifecycle, memory, tool access, LLM routing, streaming     MCP protocol, provider adapters
 
@@ -23,7 +23,7 @@ AgentForge is structured as a layered architecture with clear separation of conc
   Observability   Tracing, metrics, eval, drift detection                          OpenTelemetry, Langfuse/OpenLIT adapters
   ---------------------------------------------------------------------------------------------------------------------------
 
-> *Updated per ADR-022: Orchestration engine implemented in TypeScript, not Python/LangGraph. All behavioral requirements met.*
+> *Updated per ADR-043: Orchestration engine is `@langchain/langgraph` (TypeScript). Python engine (`services/engine/`) deprecated. See ADR-043 for migration plan.*
 
 **4.2 Core Design Principles**
 
@@ -31,7 +31,7 @@ AgentForge is structured as a layered architecture with clear separation of conc
 
 -   Agent isolation: Each agent operates in a sandboxed context with explicit permissions. A design agent cannot push to production. A CI/CD agent cannot modify design files. Permissions are defined in the agent contract and enforced by the governance middleware.
 
--   Event-driven coordination: Agents communicate through an event bus, not direct calls. When the design agent completes a page, it emits a DesignComplete event. The spec agent subscribes and begins work. No agent ever calls another agent directly.
+-   Typed-channel coordination: Agents coordinate via typed LangGraph state channels with Zod schemas (vision Layer 2, ADR-043). The event bus (`EventEmitter`) is retained for telemetry and observability only — it is not the coordination substrate. No agent ever calls another agent directly.
 
 -   Fail-safe defaults: Every destructive action (merge, deploy, delete) requires explicit human approval by default. Teams opt into autonomy, not out of safety.
 
@@ -61,7 +61,7 @@ For Phase 1, the entire framework runs as a single Node.js process invoked via t
 >
 > \|\-- Governance engine (middleware, not a separate service)
 >
-> *Updated per ADR-022: Implementation is TypeScript-only, no Python process, no REST/gRPC bridge. All orchestration runs in-process.*
+> *Updated per ADR-043: Implementation is TypeScript-only via `@langchain/langgraph`. No Python process, no REST/gRPC bridge. Run state persisted via MemorySaver (dev) / PostgresSaver (production).*
 
 **4.4 API Contracts Between Layers**
 
@@ -71,7 +71,7 @@ Within a single process, layers communicate via TypeScript interfaces. The gover
 >
 > startPhase(phase, config) -\> void
 >
-> getStatus() -\> ProjectState // Note: active_agent_count exists in Python engine only (services/engine/), not in active TypeScript workflow
+> getStatus() -\> ProjectState
 >
 > pausePhase(phase) -\> void
 >

@@ -179,7 +179,7 @@ test.describe('Prototype Overlays — Phase A6 @a6', () => {
     await expect(dialog).toBeVisible({ timeout: 5_000 });
     await expect(dialog).toHaveClass(/overlay-modal/);
 
-    const closeBtn = iframe.locator('dialog .overlay-close');
+    const closeBtn = iframe.locator('dialog .overlay-close-system');
     await expect(closeBtn).toBeVisible();
 
     // Tab should cycle within the dialog, never leaving it.

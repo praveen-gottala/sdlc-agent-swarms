@@ -46,6 +46,7 @@ import {
   buildComponentCatalogPrompt,
   buildPrototypeManifest,
   extractNavigationFromSpecs,
+  extractNavigationFromChromeSpec,
   extractScreenSummary,
   analyzeNavigation,
   buildPageContext,
@@ -622,6 +623,15 @@ export async function designPageAllCommand(
 
     // Extract navigation from NodeSpec.navigateTo (deterministic, no LLM)
     let navigation = extractNavigationFromSpecs(manifest.screens, designedSpecs);
+
+    if (sharedChromeSpec) {
+      const chromeBindings = extractNavigationFromChromeSpec(sharedChromeSpec, manifest.screens);
+      if (chromeBindings.length > 0) {
+        navigation = [...navigation, ...chromeBindings];
+        output.write(infoMsg(`    Chrome navigation: ${chromeBindings.length} bindings\n`));
+      }
+    }
+
     output.write(infoMsg(`    Spec-driven navigation: ${navigation.length} bindings\n`));
 
     // Fallback: LLM analysis if no spec-driven bindings found

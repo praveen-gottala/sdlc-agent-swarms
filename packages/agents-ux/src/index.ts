@@ -113,6 +113,7 @@ export {
   buildPrototypeManifest,
   extractScreenSummary,
   extractNavigationFromSpecs,
+  extractNavigationFromChromeSpec,
   analyzeNavigation,
   resolveSharedComponents,
   designChromeComponents,

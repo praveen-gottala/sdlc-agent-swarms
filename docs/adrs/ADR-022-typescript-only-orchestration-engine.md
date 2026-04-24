@@ -4,17 +4,18 @@
 2026-03-18
 
 ## Status
-Partially Implemented — The decision to go TypeScript-only is correct in practice
-(all active workflows are TS), but the Python engine code and its CLI wiring
-(engine-client.ts, engine-setup.ts, start/approve/abort commands) were never
-removed. The Python engine contains real orchestration patterns (LangGraph state
-machines, HITL interrupts, task dependency resolution) but zero real agent
-implementations — all agent nodes are stubs.
+Superseded by [ADR-043](ADR-043-typescript-only-orchestration.md) on open questions
+(2026-04-23). The original decision (TypeScript orchestration over Python sidecar
+for Phase 1) remains valid; ADR-043 supersedes on (a) the deferred LangGraph
+technology decision — option (a) chosen, (b) the deletion timeline for
+services/engine/, (c) the event bus scope.
 
-Future: When building spec/code/cicd/observe phases, decide whether to:
-(a) Port LangGraph patterns to TypeScript orchestrator in @agentforge/core, or
-(b) Wire real agents into the existing Python engine.
-This decision should be made before starting Phase 2 SDLC pipeline work.
+The open question below is now closed. See ADR-043 for the migration plan.
+
+~~Future: decide whether to:~~
+~~(a) Port LangGraph patterns to TypeScript orchestrator in @agentforge/core, or~~
+~~(b) Wire real agents into the existing Python engine.~~
+**Resolved:** Option (a) — port to `@langchain/langgraph` TypeScript.
 
 ## PRD Reference
 Section 4.1 — Architecture Layers:

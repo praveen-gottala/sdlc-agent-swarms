@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readYamlFile, writeYamlFile } from '../_lib/project-reader';
+import { readYamlFile, writeYamlFile, fileExists } from '../_lib/project-reader';
 
 interface PageEntry {
   id: string;
@@ -27,7 +27,11 @@ export async function GET() {
     description: p.description ?? '',
     route: p.route ?? '',
     status: p.status ?? 'draft',
-    designStatus: p.designStatus ?? 'draft',
+    designStatus: (() => {
+      const raw = p.designStatus ?? 'draft';
+      if (raw !== 'draft' && !fileExists(`agentforge/designs/${p.id}.json`)) return 'draft';
+      return raw;
+    })(),
     components: p.components ?? [],
   }));
 

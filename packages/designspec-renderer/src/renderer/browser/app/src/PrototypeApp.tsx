@@ -66,6 +66,7 @@ function getOverlayWidth(screenType: ScreenType): number | undefined {
   switch (screenType) {
     case 'modal': return 560;
     case 'drawer': return 320;
+    case 'sheet': return undefined; // full-width, controlled by CSS
     default: return undefined;
   }
 }
@@ -195,12 +196,16 @@ export function PrototypeApp({ manifest, specs, tokens, catalog, chromeSpec }: P
   const overlayType = overlayScreen?.screenType ?? 'modal';
 
   const activeBindings = useMemo(
-    () => manifest.navigation.filter(b => b.sourceScreenId === activeScreenId),
+    () => manifest.navigation.filter(
+      b => b.sourceScreenId === activeScreenId || b.sourceScreenId === '__chrome__',
+    ),
     [manifest.navigation, activeScreenId],
   );
   const overlayBindings = useMemo(
     () => overlayScreenId
-      ? manifest.navigation.filter(b => b.sourceScreenId === overlayScreenId)
+      ? manifest.navigation.filter(
+          b => b.sourceScreenId === overlayScreenId || b.sourceScreenId === '__chrome__',
+        )
       : [],
     [manifest.navigation, overlayScreenId],
   );
@@ -287,27 +292,29 @@ export function PrototypeApp({ manifest, specs, tokens, catalog, chromeSpec }: P
         onClick={handleBackdropClick}
       >
         {overlaySpec && (
-          <div
-            className="overlay-content"
-            style={overlayWidth ? { width: overlayWidth } : undefined}
-          >
+          <div style={{ position: 'relative' }}>
             <button
-              className="overlay-close"
+              className="overlay-close-system"
               onClick={closeOverlay}
               aria-label="Close"
               type="button"
             >
               &#x2715;
             </button>
-            <div className="overlay-body">
-              <DesignSpecRenderer
-                spec={overlaySpec}
-                tokens={tokens}
-                catalog={catalog}
-                onNavigate={navigateTo}
-                navigationBindings={overlayBindings}
-                prototypeScreenId={overlayScreenId ?? undefined}
-              />
+            <div
+              className="overlay-content"
+              style={overlayWidth ? { width: overlayWidth } : undefined}
+            >
+              <div className="overlay-body">
+                <DesignSpecRenderer
+                  spec={overlaySpec}
+                  tokens={tokens}
+                  catalog={catalog}
+                  onNavigate={navigateTo}
+                  navigationBindings={overlayBindings}
+                  prototypeScreenId={overlayScreenId ?? undefined}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -353,10 +360,14 @@ function ScreenSelectorBar({ screens, activeScreenId, overlayScreenId, onSelect,
         const typeLabel = screen.screenType && screen.screenType !== 'page'
           ? ` [${screen.screenType}]`
           : '';
+        const badgeTitle = screen.screenType && screen.screenType !== 'page'
+          ? `Screen type: ${screen.screenType}. Override in pages.yaml → screen_type`
+          : undefined;
         return (
           <button
             key={screen.screenId}
             onClick={() => onSelect(screen.screenId)}
+            title={badgeTitle}
             style={{
               padding: '4px 12px',
               borderRadius: 6,

@@ -115,6 +115,35 @@ export function extractNavigationFromSpecs(
   return bindings;
 }
 
+/**
+ * Extract NavigationBindings from shared chrome spec nodes that have navigateTo.
+ * Chrome bindings use sourceScreenId: '__chrome__' to indicate they apply on ALL pages.
+ */
+export function extractNavigationFromChromeSpec(
+  chromeSpec: DesignSpecV2,
+  screens: readonly PrototypeScreen[],
+): NavigationBinding[] {
+  const bindings: NavigationBinding[] = [];
+  const validScreenIds = new Set(screens.map(s => s.screenId));
+  const screenTypeMap = new Map(screens.map(s => [s.screenId, s.screenType]));
+
+  for (const [nodeId, node] of Object.entries(chromeSpec.nodes)) {
+    if (node.navigateTo && validScreenIds.has(node.navigateTo)) {
+      const targetType = screenTypeMap.get(node.navigateTo);
+      const mode = targetType && targetType !== 'page' ? 'overlay' as const : 'navigate' as const;
+      bindings.push({
+        sourceScreenId: '__chrome__',
+        sourceNodeId: nodeId,
+        targetScreenId: node.navigateTo,
+        reason: `chrome: ${node.catalog ?? node.type ?? 'node'} navigates to ${node.navigateTo}`,
+        mode,
+      });
+    }
+  }
+
+  return bindings;
+}
+
 export function extractScreenSummary(
   screenId: string,
   route: string,

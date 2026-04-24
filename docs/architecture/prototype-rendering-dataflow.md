@@ -283,6 +283,14 @@ Pages in `pages.yaml` have an optional `screen_type` field:
 | `drawer` | Right-aligned slide-in panel | 320 | `overlay-drawer` |
 | `sheet` | Bottom-aligned panel | full width | `overlay-sheet` |
 
+**screenType resolution chain** (dashboard API and CLI use the same logic):
+```
+page.screen_type (pages.yaml)  →  spec.screenType (design JSON)  →  'page' (default)
+```
+The app spec (`pages.yaml`) is user-editable and wins. The design spec's
+`screenType` is the LLM's declared intent and serves as fallback. See
+`prototype/route.ts` backfill after spec loading.
+
 **Critical constraint:** `screen_type` must be set on a page BEFORE its
 design is generated. The viewport resolver constrains the design LLM to
 the overlay viewport (320px for drawer, 560px for modal). A design
@@ -290,16 +298,30 @@ generated at 1440px then rendered in a 320px drawer will overflow.
 See `docs/lessons-learned.md` "Screen Type Must Be Set BEFORE Design
 Generation" for the full rule.
 
+**Chrome navigation bindings (`__chrome__` convention):**
+
+Shared chrome nodes (header bell icon, nav tabs) have `navigateTo` fields
+that should work on ALL pages, not just the page where the binding was
+originally created. Chrome bindings use `sourceScreenId: '__chrome__'`
+as a sentinel. PrototypeApp includes `__chrome__` bindings in both
+`activeBindings` and `overlayBindings` regardless of the active screen.
+
+Extraction: `extractNavigationFromChromeSpec()` in `build-manifest.ts`
+scans `shared-chrome.json` nodes for `navigateTo`. Called from both
+`design-page-all.ts` (CLI) and `prototype/route.ts` (dashboard API).
+
 **Navigation mode resolution — full data flow:**
 
 The mode (overlay vs full-page) is determined through a 5-step chain.
 When debugging, check each step in order.
 
 ```
-Step 1: Navigation source (two types)
+Step 1: Navigation source (three types)
   a. Manifest binding: pages.yaml navigates_to with source_node
      → API creates NavigationBinding with mode derived from target screenType
-  b. Inline spec: node.navigateTo in the design JSON
+  b. Chrome binding: shared-chrome.json nodes with navigateTo
+     → sourceScreenId: '__chrome__', included on all pages
+  c. Inline spec: node.navigateTo in the design JSON
      → No binding in manifest, mode must be derived at render time
 
 Step 2: Prototype API (GET /api/prototype)

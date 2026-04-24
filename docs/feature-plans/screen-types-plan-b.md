@@ -1080,6 +1080,16 @@ The real gap: `propagateNavigateToChromeTabs` enriches `shared-chrome.json` with
 
 **Files:** `PrototypeApp.tsx` (`getOverlayWidth`), `prototype/route.ts` (screenType override from pages.yaml)
 
+#### OI-4: Screen type dropdown in NavigationEditor (future)
+
+**Symptom:** Users must edit `pages.yaml` manually to change `screen_type`. The NavigationEditor already shows screen type badges with color coding (purple=modal, blue=drawer, amber=sheet) but provides no way to change them.
+
+**Fix:** Add a dropdown to the NavigationEditor that lets users change `screen_type` directly, writing back via `PUT /api/navigation` → pages.yaml. This replaces the need to edit YAML for screen type corrections.
+
+**Interim UX:** A tooltip on the ScreenSelectorBar badge tells users where the screen type comes from and how to override it in pages.yaml.
+
+**Files:** `packages/dashboard/src/components/design/navigation-editor.tsx`, `packages/dashboard/src/app/api/navigation/route.ts`
+
 ---
 
 ## Effort Estimates
@@ -1174,4 +1184,3 @@ npx playwright test e2e/screen-types-plan-b.spec.ts -g "@b1"
 - **Plan A** (`screen-types-plan-a.md`): **COMPLETE** (A1-A6 all done, 2026-04-22). Plan B builds on Plan A's screen types, viewport resolution, and overlay rendering.
 - **Original plan** (`screen-types-overlays-shared-layouts.md`): Plan B covers the original plan's Phase 3 (Layout & Shared Components) and Phase 5 (NavigationBar Enhancement), with a Chrome Pass approach instead of override rendering or coherence checking.
 - **Critical review**: Full analysis with live LLM validation data is in `screen-types-critical-review.md`.
-- **Understanding doc**: `understanding-plan-b-shared-layouts.md` provides a newcomer-friendly walkthrough of the problems, research, and recommendations.

@@ -10,5 +10,5 @@ Git history tracks all revisions; no version-numbered copies are kept.
 | `platform-architecture.md` | Framework layers, data model, schema, agent communication |
 | `sdlc-agents.md` | Spec sync, onboarding, agent taxonomy, all SDLC phases |
 | `governance-and-operations.md` | HITL, trust, messaging, sandbox, stacks, providers, MCP, security |
-| `roadmap.md` | Failure modes, DX, tech stack, milestones, risks, event catalog, ADRs |
+| `appendices.md` | DX narrative, tech stack, milestones, success metrics, risks, reference implementations |
 | `dashboard.md` | Web dashboard architecture, features, API, milestones |

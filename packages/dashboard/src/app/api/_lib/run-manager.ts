@@ -191,6 +191,22 @@ export function getRunStatus(runId: string): RunStatus | null {
   return readRun(runId);
 }
 
+const STALE_RUN_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+function failIfStale(run: RunStatus, filePath: string): RunStatus {
+  if (run.status !== 'pending' && run.status !== 'running') return run;
+  const elapsed = Date.now() - new Date(run.startedAt).getTime();
+  if (elapsed <= STALE_RUN_TIMEOUT_MS) return run;
+  const failed: RunStatus = {
+    ...run,
+    status: 'failed',
+    completedAt: new Date().toISOString(),
+    error: `Pipeline timed out — stuck in "${run.status}" for ${Math.round(elapsed / 60000)}min (auto-cleanup)`,
+  };
+  writeFileSync(filePath, JSON.stringify(failed, null, 2));
+  return failed;
+}
+
 /** List all runs, optionally filtered by type. Most recent first. */
 export function listRuns(opts?: { type?: RunStatus['type']; limit?: number }): RunStatus[] {
   ensureRunsDir();
@@ -200,7 +216,8 @@ export function listRuns(opts?: { type?: RunStatus['type']; limit?: number }): R
   let runs: RunStatus[] = [];
   for (const file of files) {
     try {
-      const run = JSON.parse(readFileSync(join(dir, file), 'utf-8')) as RunStatus;
+      const raw = JSON.parse(readFileSync(join(dir, file), 'utf-8')) as RunStatus;
+      const run = failIfStale(raw, join(dir, file));
       if (opts?.type && run.type !== opts.type) continue;
       runs.push(run);
     } catch {
@@ -218,8 +235,6 @@ export function listRuns(opts?: { type?: RunStatus['type']; limit?: number }): R
   return runs;
 }
 
-const STALE_RUN_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-
 /** Get the currently active (pending or running) run, if any.
  *  Auto-fails runs stuck longer than STALE_RUN_TIMEOUT_MS. */
 export function getActiveRun(): RunStatus | null {
@@ -230,19 +245,10 @@ export function getActiveRun(): RunStatus | null {
 
   for (const file of files) {
     try {
-      const run = JSON.parse(readFileSync(join(dir, file), 'utf-8')) as RunStatus;
-      if (run.status === 'pending' || run.status === 'running') {
-        const elapsed = Date.now() - new Date(run.startedAt).getTime();
-        if (elapsed > STALE_RUN_TIMEOUT_MS) {
-          const stale: RunStatus = {
-            ...run,
-            status: 'failed',
-            completedAt: new Date().toISOString(),
-            error: `Pipeline timed out — stuck in "${run.status}" for ${Math.round(elapsed / 60000)}min (auto-cleanup)`,
-          };
-          writeFileSync(join(dir, file), JSON.stringify(stale, null, 2));
-          continue;
-        }
+      const raw = JSON.parse(readFileSync(join(dir, file), 'utf-8')) as RunStatus;
+      if (raw.status === 'pending' || raw.status === 'running') {
+        const run = failIfStale(raw, join(dir, file));
+        if (run.status === 'failed') continue;
         return run;
       }
     } catch {

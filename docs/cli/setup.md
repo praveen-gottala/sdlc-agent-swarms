@@ -147,13 +147,13 @@ agentforge design-system validate
 
 ## `agentforge setup`
 
-Bootstrap the Python orchestration engine environment.
+Bootstrap project dependencies.
 
 ```bash
 agentforge setup
 ```
 
-No arguments. Creates a Python virtual environment and installs LangGraph dependencies. Automatically triggered by `agentforge start` if not already set up.
+No arguments. Installs project dependencies and verifies the environment. Previously bootstrapped the Python orchestration engine; that engine is now deprecated per ADR-043.
 
 ---
 
@@ -198,7 +198,7 @@ agentforge doctor
 ```
 
 No arguments. Checks:
-- **Infrastructure:** Python availability, engine source files
+- **Infrastructure:** Node.js availability, project dependencies
 - **LLM providers:** Anthropic, OpenAI, Vertex AI API connectivity
 - **Channels:** Slack, Telegram, Figma env var validation
 

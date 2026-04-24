@@ -1,4 +1,15 @@
-# ARCHON: The Ideal Autonomous SDLC Framework for 2026
+# The Ideal Autonomous SDLC Framework for 2026
+
+## How to use this report
+
+This is the deep-dive research that grounds ARCHON's architectural decisions. 
+Read it linearly when you want to understand a topic in full.
+
+For other reading modes:
+- Current architectural decisions → `vision.md`
+- Why we rejected alternatives → `design-decisions.md`
+
+This document is the most stable. Updated only when major new research lands.
 
 ## Executive summary
 
@@ -19,7 +30,7 @@ The rest of this report builds out these claims.
 
 ### The agent taxonomy problem
 
-The ARCHON/AgentForge baseline (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs) reflects how human org charts look, not how LLMs succeed. Two converging pieces of evidence reject this decomposition:
+The AgentForge baseline (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs) reflects how human org charts look, not how LLMs succeed. Two converging pieces of evidence reject this decomposition:
 
 - **Cognition's "Don't Build Multi-Agents"** (Jun 2025) argues that coordinated writes across parallel agents produce incompatible outputs the orchestrator cannot safely merge. Every coding agent that went to production single-threaded — Devin, Claude Code, Cursor Composer — did so for this reason.
 - **Anthropic's "How we built our multi-agent research system"** validates the opposite for *reads*: one lead plus N parallel subagents beat single-agent by 90.2% on research breadth at ~15× token cost.
@@ -41,7 +52,7 @@ The synthesis is a **thin vertical spine with horizontal specialists**:
 
 Why this works: the spine is predictable and resumable; specialists are read-heavy or narrow-write, which is the safe multi-agent regime; only one writer touches any given artifact at a time, eliminating merge hell; specialists can be parallelised without cross-contamination because they return summaries, not raw outputs.
 
-The **PM Agent and Product Agent in the ARCHON baseline are overhead.** Their job is absorbed into the Clarifier + Architect pair. The **DevOps Agent and Docs Agent** should also be demoted to specialists invoked during Implementation, not spine-level agents — they do not own a phase, they own a narrow write inside a phase.
+The **PM Agent and Product Agent in the AgentForge baseline are overhead.** Their job is absorbed into the Clarifier + Architect pair. The **DevOps Agent and Docs Agent** should also be demoted to specialists invoked during Implementation, not spine-level agents — they do not own a phase, they own a narrow write inside a phase.
 
 ### Orchestration model
 
@@ -68,7 +79,7 @@ Five patterns, ranked by fit:
 4. **Event stream (OpenTelemetry)** — for observability, not control flow. Everything the spine does gets traced; nothing in the spine makes decisions based on arbitrary events from the bus.
 5. **Direct handoff (control transfer)** — avoid unless the receiver genuinely owns the next phase. Hard to trace; drops context at the boundary.
 
-This kills the "event bus as primary orchestration" choice in the ARCHON baseline. The event bus belongs in the telemetry plane, not the coordination plane. Agents coordinate through typed state transitions and explicit tool calls.
+This kills the "event bus as primary orchestration" choice in the AgentForge baseline. The event bus belongs in the telemetry plane, not the coordination plane. Agents coordinate through typed state transitions and explicit tool calls.
 
 ### Document system: living docs, specs, artifacts, ephemeral
 
@@ -132,7 +143,7 @@ The enterprise research converges on a surprisingly consistent set of principles
 - **GitHub Copilot coding agent** is the reference implementation for sandboxed autonomous execution: ephemeral Actions container, firewalled egress with default allowlist, trusted MCP gateway in a separate container, API proxy holding LLM tokens (a "zero-secret agent" design), required human approval before any CI runs, CodeQL autofix on generated code. This is the most detailed publicly documented security architecture in the space.
 - **Gartner's "agent washing" warning and 40%-cancellation-by-2027 prediction** are genuine signals. Gate autonomy by risk tier; default to PR-based async for production workloads; budget explicitly for failed experiments.
 
-One important terminology clarification: four different things are all called ADLC/AI-DLC/Agentic-SDLC in 2025–2026 literature. EPAM/IBM/Salesforce mean "lifecycle for building AI agents themselves." AWS means "process for using agents to build software." Cycode means "evolution of existing SDLC with autonomous code generation." AI-SDLC means "human-led SDLC with AI assistants." ARCHON is mostly in the third and fourth buckets — don't let vendor docs from the first two confuse the design.
+One important terminology clarification: four different things are all called ADLC/AI-DLC/Agentic-SDLC in 2025–2026 literature. EPAM/IBM/Salesforce mean "lifecycle for building AI agents themselves." AWS means "process for using agents to build software." Cycode means "evolution of existing SDLC with autonomous code generation." AI-SDLC means "human-led SDLC with AI assistants." AgentForge is mostly in the third and fourth buckets — don't let vendor docs from the first two confuse the design.
 
 ### Lessons from agentic coding tools
 
@@ -154,7 +165,7 @@ What fails in production, observed across Devin, Cursor, Copilot Workspace, Repl
 - **Hallucinated features and APIs** (Devin on Railway's deployment constraints): the agent presses forward on infeasible tasks rather than flagging infeasibility.
 - **Project-convention blindness** (Devin on nbdev/Quarto): custom toolchains regularly defeat autonomous agents regardless of docs.
 
-Devin's actual success rate deserves direct citation. Answer.AI's month-long controlled test (Hamel Husain, Isaac Flath, Johno Whitaker, Jan 2025) ran 20 tasks and recorded **3 successes, 14 failures, 3 inconclusive**, with no reliable signal for which tasks would succeed. Their verdict: "tasks it can do are those that are so small and well-defined that I may as well do them myself faster." Devin's contribution was productization (Slack UX, sandbox, async work), not autonomous capability. Plan ARCHON around the same limits Devin hit and don't believe benchmark numbers without trajectory-level inspection.
+Devin's actual success rate deserves direct citation. Answer.AI's month-long controlled test (Hamel Husain, Isaac Flath, Johno Whitaker, Jan 2025) ran 20 tasks and recorded **3 successes, 14 failures, 3 inconclusive**, with no reliable signal for which tasks would succeed. Their verdict: "tasks it can do are those that are so small and well-defined that I may as well do them myself faster." Devin's contribution was productization (Slack UX, sandbox, async work), not autonomous capability. Plan AgentForge around the same limits Devin hit and don't believe benchmark numbers without trajectory-level inspection.
 
 ---
 
@@ -266,7 +277,7 @@ LLM inference dominates by 10–50×. The RAG layer itself is not where cost liv
 
 **Weeks 5–6 — spine integration.** Clarifier → Architect → Implementer → Reviewer spine in LangGraph with typed channels, checkpointers, and interrupt-based HITL at phase boundaries. Git worktree isolation for parallel tasks. Reviewer subagent pattern. Test/type/lint gates. ~10 days.
 
-**Total POC: ~6 weeks, 1 senior engineer.** Add a second engineer to halve it or to run UI work (Playwright MCP integration, visual validation) in parallel.
+**Sequencing:** See `future-roadmap.md` for the phased rollout plan with exit criteria and decision gates per phase.
 
 ### Upgrade paths from POC to production
 
@@ -287,7 +298,7 @@ LLM inference dominates by 10–50×. The RAG layer itself is not where cost liv
 
 ## Part 3: Conversational clarification agents
 
-The clarifier is ARCHON's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up.
+The clarifier is AgentForge's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up.
 
 ### Smart question-asking patterns
 
@@ -331,7 +342,7 @@ The **assumption ledger threads through every stage**. Clarifier emits assumptio
 
 ---
 
-## Part 4: Gap analysis of the current ARCHON/AgentForge design
+## Part 4: Gap analysis of the current AgentForge design
 
 The baseline design — PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs Agents with event-bus orchestration and YAML state — makes four structural choices that the evidence now argues against.
 
@@ -394,6 +405,25 @@ The baseline design jumps from PRD to Architecture. The evidence (Devin's failur
 
 ---
 
+## Part 4.5: Why the POC sketch is structurally simple but operationally complex
+
+A 30-line spine sketch (Clarify -> Architect -> Implement -> Review with specialists as tools) captures the *structural* commitment. Production adds ten additive operational areas:
+
+1. Functions are 10-50x bigger (tools, budgets, error categorization, telemetry, cost tracking, timeout handling, artifact extraction).
+2. Context engineering is the actual product (60-80% of real effort).
+3. LLM calls fail in ways the sketch doesn't model (timeouts, content filters, refusals, semantic errors, grounding failures, drift).
+4. Review is structurally much harder (deterministic gates + LLM review + spec-conformance + assumption-drift + blast-radius + visual regression + contract tests + migration validation).
+5. HITL is a real product surface (approval UIs, diff UIs, question UIs, escalation UIs, async approvals, timeout handling, auth).
+6. Durable execution is substantial (checkpointing, storage, crash recovery, side-effect reconciliation, idempotency, time-travel, versioning, GC).
+7. Sandboxing is non-optional at scale (containers, network allowlist, secrets management, prompt-injection scanning, destructive-op approval).
+8. Observability is survival (tracing, prompt versioning, replay, metrics, alerting, logs, cost attribution).
+9. Evaluation is how you know if you're improving (golden sets, automated eval, regression, A/B, human eval loop).
+10. Org-level process (on-call, runbooks, cost governance, compliance, legal, vendor management, budget).
+
+Structure is ~10% of the work. It's the 10% that makes the other 90% possible.
+
+---
+
 ## Part 5: Recommended POC roadmap
 
 ### What to build first (weeks 1–6)
@@ -450,7 +480,7 @@ The ordering below prioritizes demonstrable value per week and front-loads the d
 5. **RAG: deterministic structure first (Aider repo map), semantic search second (voyage-code-3 + Qdrant + Cohere rerank), GraphRAG skipped.** Measured justification: Cursor's 2.6% code-retention gain on large repos validates semantic search; no benchmark validates GraphRAG on code.
 6. **EARS + INVEST + explicit assumption ledger are the spec-artifact backbone.** Kiro's structural rigor, AI-DLC's audit trail, and ClarifyGPT's consistency ambiguity detection are all incorporated. This is how the framework differentiates against Kiro/Spec Kit/Devin.
 7. **Sandboxed execution with egress controls from day one.** GitHub Copilot's security architecture is the reference. Don't retrofit; design in.
-8. **Budget explicitly for 40% cancellation risk per Gartner.** Set measurable gates at weeks 3, 6, and 10; be willing to kill branches that don't hit them.
+8. **Budget explicitly for 40% cancellation risk per Gartner.** Set measurable gates per phase; be willing to kill branches that don't hit them. See `future-roadmap.md` decision gates.
 
 ---
 
@@ -458,6 +488,35 @@ The ordering below prioritizes demonstrable value per week and front-loads the d
 
 The evidence from 2025–2026 is unusually consistent across otherwise-competing sources. Cognition's argument that coordinated parallel writes break, Anthropic's argument that parallel reads work, EPAM's emphasis on evaluation over delivery, AWS's phase-gated AI-DLC, GitHub's sandboxed-agent security architecture, Cursor's hybrid-retrieval A/B data, and the academic stack (MARE, SAGE, ClarifyGPT, UA-Multi) all point in the same direction: **durable orchestration, thin-spine plus specialist-tool taxonomy, grounded clarification, spec-driven artifacts, structural HITL gates, and context engineering as the primary discipline**.
 
-ARCHON's baseline — a flat ten-agent event bus — was a defensible 2024 design. In 2026 it is out of step with the empirical record. The redesign proposed here is not incremental; it rethinks the coordination model while preserving the functional decomposition the user already understands. The Clarifier pipeline is the strongest single differentiation bet in the space, because every commercial tool from Linear AI to Devin has left this layer underbuilt. The RAG stack is deliberately boring: Aider's repo map plus hybrid vector retrieval plus a reranker, no GraphRAG, no Mem0, no speculative memory infrastructure — production-grade in 6 weeks with one senior engineer, and with clean upgrade paths when scale demands them.
+AgentForge's baseline — a flat ten-agent event bus — was a defensible 2024 design. In 2026 it is out of step with the empirical record. The redesign proposed here is not incremental; it rethinks the coordination model while preserving the functional decomposition the user already understands. The Clarifier pipeline is the strongest single differentiation bet in the space, because every commercial tool from Linear AI to Devin has left this layer underbuilt. The RAG stack is deliberately boring: Aider's repo map plus hybrid vector retrieval plus a reranker, no GraphRAG, no Mem0, no speculative memory infrastructure — production-grade in 6 weeks with one senior engineer, and with clean upgrade paths when scale demands them.
 
 The framework's durable advantage will not come from having more agents than the next tool. It will come from having fewer agents, better context, gated phases, and honest traceability. That is the shape of the ideal 2026 multi-agent SDLC framework, and it is within reach as a POC this quarter.
+
+---
+
+## Primary source index
+
+For follow-up reading or when decisions need to be questioned:
+
+**Multi-agent architecture:**
+- Anthropic: https://www.anthropic.com/engineering/multi-agent-research-system
+- Cognition: https://cognition.ai/blog/dont-build-multi-agents
+
+**Agentic coding in production:**
+- Cursor semantic search A/B: https://cursor.com/blog/semsearch
+- Devin performance review: https://cognition.ai/blog/devin-annual-performance-review-2025
+- Answer.AI Devin evaluation: https://www.answer.ai/posts/2025-01-08-devin.html
+
+**Clarification research:**
+- ClarifyGPT: https://dl.acm.org/doi/10.1145/3660810
+
+**RAG over code:**
+- cAST: https://arxiv.org/html/2506.15655v1
+- Aider repo map: (Aider's source code and blog posts)
+- Voyage code-3: https://blog.voyageai.com/2025/01/07/voyage-3-large/
+
+**Enterprise SDLC:**
+- AWS AI-DLC: https://aws.amazon.com/blogs/devops/building-with-ai-dlc-using-amazon-q-developer/
+- EPAM ADLC: https://www.epam.com/insights/ai/blogs/agentic-development-lifecycle-explained
+- GitHub Copilot agent security: https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/
+- ISO/IEC 5338:2023 catalog entry: https://oecd.ai/en/catalogue/tools/

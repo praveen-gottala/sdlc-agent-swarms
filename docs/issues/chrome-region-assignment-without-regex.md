@@ -22,7 +22,7 @@ Chrome Pass today maps shared components (e.g. `TopBar`, `NavigationTabs`) to `L
 - **Region → node ids:** `buildSharedChromeRegions()` in `packages/agents-ux/src/prototype/merge-frozen-chrome.ts` maps component names to root node ids on a **reference page** spec.
 - **Runtime:** `LayoutShell` renders `header` / `sidebar` / `footer` in a fixed vertical column; footer is **physically** at the bottom regardless of how the reference page drew the same subtree.
 
-Related: ADR-039 (Chrome Pass, derived layout), Plan B docs (`docs/plans/screen-types-plan-b.md`), `LayoutShell` in `packages/designspec-renderer/.../LayoutShell.tsx`.
+Related: ADR-039 (Chrome Pass, derived layout), Plan B docs (`docs/feature-plans/screen-types-plan-b.md`), `LayoutShell` in `packages/designspec-renderer/.../LayoutShell.tsx`.
 
 ## Goals
 
@@ -93,7 +93,7 @@ Planning agent emits **which shared components are header vs footer** once per p
 - `packages/agents-ux/src/prototype/resolve-shared-components.ts` — `resolveSharedComponents`, `positionFor`
 - `packages/agents-ux/src/prototype/merge-frozen-chrome.ts` — `buildSharedChromeRegions`, `buildSharedChromeFilePayload`
 - `docs/adrs/ADR-039-chrome-pass-shared-layouts.md` (if present) — Chrome Pass decision context
-- `docs/plans/screen-types-plan-b.md` — Plan B shared chrome / prototype behavior
+- `docs/feature-plans/screen-types-plan-b.md` — Plan B shared chrome / prototype behavior
 
 ---
 
