@@ -64,7 +64,7 @@ Trigger: Developer runs agentforge init. The CLI wizard has a quick-start mode w
 
 -   Project scaffold: The orchestrator creates the project structure with Nx mono-repo, CI/CD config, design system seed, environment configs, and agentforge.yaml manifest.
 
--   Design workspace provisioning: The design orchestrator initializes the agentforge/designs/ directory for DesignSpec JSON outputs. If a Penpot is configured, it also creates a workspace there for optional human collaboration. Falls back to browser-rendered prototypes if no design tool is configured.
+-   Design workspace provisioning: The design orchestrator initializes the agentforge/designs/ directory for DesignSpec JSON outputs. The browser-rendered prototype is the primary design surface (see `vision.md` Layer 7). If Penpot is configured, an optional collaboration workspace is also created for human designers.
 
 -   Agent registration: Each SDLC phase gets its agents registered in agentforge/agents.yaml with all 7 sections defined in Section 10.1.
 
@@ -96,23 +96,51 @@ Deferred to Phase 3. When implemented, it will start with a narrow claim: the an
 
 **10. Agent Taxonomy**
 
-AgentForge defines five agent categories plus a future research category. Every agent has a defined role, permissions, input/output contract, and HITL policy.
+AgentForge uses a four-stage sequential spine with specialist tools invoked by each stage (see `vision.md` Layer 3 — locked decision). Every agent has a defined role, permissions, input/output contract, and HITL policy.
 
-  ------------------------------------------------------------------------------------------------------------------------------------------
-  **Category**         **Agents**                                                               **Default HITL**   **LLM Fit**
-  -------------------- ------------------------------------------------------------------------ ------------------ -------------------------
-  Design               UX researcher, Layout planner, Design generator, Design evaluator   Approval gate      Claude/GPT-4 (vision)
+**Spine stages (sequential, single writer per stage):**
 
-  Spec & Planning      Spec writer, Task decomposer, Architect, Estimator                       Review gate        Claude Opus (reasoning)
+  -------------------------------------------------------------------------------------------------
+  **Stage**        **Role**                                                  **Default HITL**   **LLM Fit**
+  ---------------- --------------------------------------------------------- ------------------ ----------------------------
+  Clarifier        Reads input, runs clarification pipeline, emits enriched  Approval gate      `claude-opus-4-6` (reasoning)
+                   requirement + assumption ledger
 
-  Code Generation      Frontend coder, Backend coder, Test writer, Refactorer, PR reviewer      PR approval        Mixed (cost-optimized)
+  Architect        Produces architecture spec, ADRs, task plan, screen       Review gate        `claude-opus-4-6` (reasoning)
+                   designs (via Design specialist)
 
-  CI/CD                Build agent, Security scanner, Deploy agent, Rollback agent              Pre-deploy gate    Sonnet/Haiku (speed)
+  Implementer      Single-threaded tool-loop; writes all code for a task     PR approval        `claude-sonnet-4-6` (balanced)
+                   in sequence. Cross-task parallelism via git worktrees.
 
-  Observability        Metrics monitor, Drift detector, Cost tracker, Incident responder        Alert + suggest    Haiku (cost) — *not yet created*
+  Reviewer         Fresh-context diff review with deterministic gates        Merge gate         `claude-sonnet-4-6` (balanced)
+                   first, LLM review second
+  -------------------------------------------------------------------------------------------------
 
-  Research (Phase 3)   UX researcher, Performance analyst, SEO auditor, Accessibility auditor   Suggest only       Sonnet (balanced) — *not yet created*
-  ------------------------------------------------------------------------------------------------------------------------------------------
+**Specialist tools (invoked by spine stages, not independent agents):**
+
+  -----------------------------------------------------------------------------------------------------------
+  **Specialist**            **Invoked by**              **Capability**                        **LLM Fit**
+  ------------------------- --------------------------- ------------------------------------- -------------------------
+  Design pipeline           Architect, Implementer      UX research, layout planning,         `claude-opus-4-6` (vision)
+                                                        DesignSpec generation, evaluation
+
+  Test generator            Implementer                 Emits failing tests before             `claude-sonnet-4-6` (pattern)
+                                                        implementation
+
+  Security scanner          Reviewer                    Semgrep/CodeQL + LLM triage            `claude-haiku-4-5` (speed)
+
+  Research subagents        All stages                  Read-only codebase/docs exploration    `claude-haiku-4-5` (cost)
+
+  Visual validator          Reviewer                    Playwright for UI verification         N/A (browser tool)
+
+  Build/Deploy agents       Implementer (post-merge)    CI/CD monitoring, deploy, rollback     `claude-haiku-4-5` (speed)
+
+  Documentation generator   Implementer                 API docs, user guides                  `claude-sonnet-4-6` (balanced)
+
+  Observability agents      Post-deploy (Phase 5)       Metrics, drift detection, cost         `claude-haiku-4-5` (cost)
+  -----------------------------------------------------------------------------------------------------------
+
+  > *Previous taxonomy (five categories with 20+ peer agents) is superseded. See `vision.md` Layer 3 for rationale.*
 
 **10.1 Agent Contract Definition**
 
@@ -153,6 +181,8 @@ The design phase operates as a multi-agent pipeline that produces a DesignSpec J
 -   User approves final screenshot via configured HITL channel (Slack/Telegram/CLI/Dashboard).
 
 -   On approval: DesignPhaseComplete event emitted, DesignSpec JSON committed to agentforge/designs/\<screen\>.json.
+
+> **Screen Types & Shared Chrome (completed):** The design pipeline now supports `screen_type` (page, modal, drawer, sheet) per screen, shared chrome artifacts (TopBar, NavigationTabs, Sidebar) generated once via a Chrome Pass and applied to all screens, and LayoutShell for splitting persistent chrome from per-screen content. See `docs/feature-plans/screen-types-plan-b.md` for implementation details.
 
 **11.1.2 Design Correction Architecture**
 
@@ -208,6 +238,8 @@ The DesignSpec JSON is the contract between design and code generation. The code
 -   Interactions → React event handlers (onClick, onHover)
 -   Data bindings → React hooks and props
 
+> **DesignSpec v2 (current):** The renderer uses a v2 schema that separates structure (WHAT — JSON node tree with layout, typography, color references) from rendering (HOW — CSS generation, token resolution, shadow/typography computation). See `packages/designspec-renderer/src/types/design-spec-v2.ts` for the authoritative schema.
+
 **Interoperability:** DesignSpec can be exported to json-render format (Vercel's Generative UI framework) for teams that want to use json-render's multi-framework renderers (React, Vue, Svelte, React Native) or progressive streaming infrastructure. The export maps DesignSpec layout nodes to json-render element types and catalog references to json-render component entries. This is a one-way export — AgentForge's design pipeline generates DesignSpec natively; json-render is a downstream consumer option.
 
 **11.1.4 Design Tool Integration (Optional)**
@@ -229,7 +261,7 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
   --------------------------------------------------------------------------------------------------------------------
   **Agent**        **Responsibility**                                            **Output**
   ---------------- ------------------------------------------------------------- -------------------------------------
-  Frontend coder   Generates UI components from design spec + Figma context      React components with TypeScript
+  Frontend coder   Generates UI components from DesignSpec JSON + design tokens   React components with TypeScript
 
   Backend coder    Generates API endpoints, business logic, data access layers   Node.js services, Prisma migrations
 
@@ -242,19 +274,21 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
 
 **11.3.2 LLM Provider Routing**
 
-  -----------------------------------------------------------------------------------------
-  **Task Type**               **Recommended Provider**       **Rationale**
-  --------------------------- ------------------------------ ------------------------------
-  Complex architecture        Claude Opus / GPT-4            Highest reasoning capability
+  --------------------------------------------------------------------------------------------------
+  **Task Type**               **Recommended Provider**                     **Rationale**
+  --------------------------- -------------------------------------------- -------------------------
+  Complex architecture        `claude-opus-4-6` or equivalent tier         Highest reasoning capability
 
-  Standard component gen      Claude Sonnet / GPT-4-mini     Good quality, lower cost
+  Standard component gen      `claude-sonnet-4-6` or equivalent tier       Good quality, lower cost
 
-  Test generation             Claude Sonnet / Gemini Flash   High volume, pattern-based
+  Test generation             `claude-sonnet-4-6` or equivalent tier       High volume, pattern-based
 
-  Code review                 Claude Haiku / GPT-4-mini      Fast, cost-effective
+  Code review                 `claude-haiku-4-5` or equivalent tier        Fast, cost-effective
 
-  Boilerplate / scaffolding   Local model (Llama/Mistral)    Zero API cost
-  -----------------------------------------------------------------------------------------
+  Boilerplate / scaffolding   Local model (Llama/Mistral)                  Zero API cost
+  --------------------------------------------------------------------------------------------------
+
+  > Model IDs reflect the latest Claude family. See `CLAUDE.md` for the canonical model ID list. Provider routing is configurable per-agent via the agent contract's `provider` section.
 
 **11.3.3 Code Generation Workflow**
 
@@ -274,9 +308,12 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
 
 **11.3.4 Concurrency Model**
 
-Each task gets its own agent instance. The orchestrator spawns up to N concurrent agents (configurable via max_concurrent_agents, default 3). When an agent is blocked waiting for CI results, the slot does not open; instead, the next independent task is assigned to a new agent instance up to the concurrency limit.
+The Implementer is single-threaded within a task: it writes frontend, backend, tests, and migrations in sequence, not in parallel. This is a locked decision (see `vision.md` Layer 8). Within-task parallelism of frontend+backend+tests coders is a rejected pattern — it creates write-coupling conflicts and context fragmentation.
 
-> *Updated per ADR-007: CI-waiting agents do not release slots. Clarified separation between dependency graph slot accounting and orchestrator agent lifecycle management.*
+Cross-task parallelism is supported via git worktrees: independent tasks can execute concurrently in separate worktrees, each with its own single-threaded Implementer instance. The orchestrator schedules up to N concurrent tasks (configurable via max_concurrent_tasks, default 3). When a task is blocked waiting for CI results, the slot does not open; the next independent task is assigned to a new worktree up to the concurrency limit.
+
+> *Updated per ADR-007: CI-waiting tasks do not release slots.*
+> *Updated per vision Layer 8: Single-threaded implementer within a task. Cross-task parallelism via worktrees.*
 
 **11.4 Phase 4: CI/CD Agents**
 

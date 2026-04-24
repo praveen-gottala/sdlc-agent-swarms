@@ -1,6 +1,6 @@
 ---
 name: check-drift
-description: Mid-session audit — are we still following the rules we started with? Reads the canonical rules, inventories this session's changes, and reports concrete rule violations with file+line cites. Use before commits, before marking tasks "complete", or anytime the session has gone long enough that early-session instructions may have faded.
+description: Mid-session audit — are we still following the rules we started with? Reads the canonical docs in CLAUDE.md's prescribed order (vision.md, lessons-learned.md, ADRs, CLAUDE.md + topical rules), inventories this session's changes, and reports concrete rule violations with file+line cites. Use before commits, before marking tasks "complete", or anytime the session has gone long enough that early-session instructions may have faded.
 context: inline
 agent: main
 ---
@@ -44,14 +44,18 @@ If the totals look off (e.g. 12 production files, 0 tests), flag it immediately 
 
 ### 2. Re-read the canonical rules
 
-Read these files completely (not skim — complete):
+Read these files completely (not skim — complete), in this order. This order is set by `CLAUDE.md` §"Reading order (IMPORTANT)" and is the authority when sources conflict (`CLAUDE.md` security/test rules → `vision.md` → ADRs → `PRD.md` → legacy codebase):
 
-1. `AGENTS.md` (the map)
-2. `CLAUDE.md` (primary rules)
-3. `.claude/rules/honesty.md`
-4. `.claude/rules/karpathy-guidelines.md`
-5. Any `.claude/rules/<topic>.md` that matches the files touched in step 1 (e.g. `testing.md` if tests were edited, `typescript.md` if `.ts` files were edited, `prd-compliance.md` if behaviour changed).
-6. If the session is working inside an active plan (you'll know — it's usually `docs/plans/<phase>.md` and has a Guardrails section), read that plan's Guardrails section too.
+1. `CLAUDE.md` (primary rules — reading order, conflict hierarchy, non-negotiables)
+2. `docs/vision.md` (architectural authority; wins over PRD on patterns — Layers 1-3 and 8 are the highest-drift surface)
+3. `docs/lessons-learned.md` (Do Not Repeat list; watch SUPERSEDED and RESOLVED markers)
+4. `docs/adrs/` (read ADRs this session's changes plausibly touch; check the `Status` / `Supersedes` / `Superseded by` headers — e.g. ADR-043 supersedes ADR-022)
+5. `docs/specs/PRD.md` (product truth, not pattern truth — only if this session touched product scope, interfaces, API contracts, enums, or field lists)
+6. `.claude/rules/honesty.md`
+7. `.claude/rules/karpathy-guidelines.md`
+8. Any `.claude/rules/<topic>.md` that matches the files touched in step 1 (e.g. `testing.md` if tests were edited, `typescript.md` if `.ts` files were edited, `prd-compliance.md` if behaviour changed).
+9. If the session is working inside an active plan, read that plan's Guardrails section too. Plans live in `docs/active-plan/<plan>/*.md` (e.g. `docs/active-plan/unify-pipeline/execution-plan.md`) or `docs/feature-plans/<plan>.md` (e.g. `docs/feature-plans/screen-types-plan-b.md` has `## Agent Guardrails — READ FIRST`).
+10. `AGENTS.md` last — it's a navigation map, not an authority; use it to confirm you haven't missed a canonical doc.
 
 After reading, output a short block naming the rules you read. If you skipped any that look relevant, say why.
 
@@ -86,6 +90,8 @@ For each rule that applies, produce one block:
 6. **Skipped or disabled tests.** Grep for `.skip(`, `.only(`, `xdescribe`, `xit`, `test.fixme` added in this session. Each one needs a linked issue/ADR or it's a VIOLATION.
 7. **Commented-out code in production files.** Any new commented-out code is a VIOLATION unless the comment explains why.
 8. **Premature abstraction.** Did we add an abstraction layer without at least 2 concrete consumers? If so, VIOLATION of karpathy-guidelines (simplicity first).
+9. **Vision-rejected patterns.** Grep the session's production changes for patterns `CLAUDE.md` §"Rejected Patterns — Check Before Proposing" and `docs/vision.md` call out: event bus / `EventEmitter` used for coordination (not just telemetry) — vision Layer 2 / `CLAUDE.md` line 152; parallel frontend/backend/tests coders within one task — vision Layer 8 / `CLAUDE.md` line 153-154; new code extending `services/engine/` (Python orchestration) — ADR-043 / `CLAUDE.md` line 28; untyped inter-node payloads instead of typed LangGraph channels with Zod — vision Layer 2 / `CLAUDE.md` line 120-127; stub fallbacks on missing imports — `CLAUDE.md` line 313. Each hit is a VIOLATION unless an ADR authorizes it.
+10. **Superseded-pattern revival.** Cross-reference the session's changes against `docs/lessons-learned.md` SUPERSEDED entries and against ADRs whose `Status` reads "Superseded by ADR-NNN". If the session reintroduces a pattern explicitly marked SUPERSEDED (e.g. `docs/lessons-learned.md` §"Renderer Staleness: Kill-and-Restart" SUPERSEDED 2026-04-20, or new code modeled on ADR-022 now that ADR-043 supersedes it), that's a VIOLATION — cite the superseding entry.
 
 ### 4. Balance — what's still clean
 

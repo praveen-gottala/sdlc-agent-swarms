@@ -16,7 +16,7 @@ AgentForge is structured as a layered architecture with clear separation of conc
 
   Agent Runtime   Agent lifecycle, memory, tool access, LLM routing, streaming     MCP protocol, provider adapters
 
-  Integration     Adapters for external tools (Figma, GitHub, Slack, Telegram)     MCP servers, REST/GraphQL adapters
+  Integration     Adapters for external tools (Penpot, GitHub, Slack, Telegram)    MCP servers, REST/GraphQL adapters
 
   Governance      HITL gates, approval workflows, audit logging, cost controls     Middleware pattern, policy-as-code, RBAC
 
@@ -57,7 +57,7 @@ For Phase 1, the entire framework runs as a single Node.js process invoked via t
 >
 > \|\-- Event Bus (in-memory EventEmitter for v1, Redis Streams later)
 >
-> \|\-- MCP Client layer (Figma, GitHub, Slack, Telegram)
+> \|\-- MCP Client layer (Penpot, GitHub, Slack, Telegram)
 >
 > \|\-- Governance engine (middleware, not a separate service)
 >
@@ -167,7 +167,7 @@ The configuration file that describes how AgentForge manages the project. Lives 
 >
 > orchestration:
 >
-> max_concurrent_agents: 3
+> max_concurrent_tasks: 3  # cross-task parallelism via worktrees (vision Layer 8)
 >
 > ci_wait_strategy: \"spawn_next\"
 >
@@ -281,7 +281,9 @@ Every YAML file includes a version field. The agentforge migrate command reads f
 
 **7. Agent Communication Protocol**
 
-Agents do not communicate with each other directly. All coordination flows through the event bus and shared spec files. This is a deliberate architectural decision.
+> **SUPERSEDED:** This section describes the legacy event-bus coordination pattern. Per `vision.md` Layer 2, the coordination substrate is typed LangGraph channels with Zod schemas. The event bus (`EventEmitter`) is retained for telemetry and observability only — it is not the coordination substrate. See Section 4.2 for the updated architecture.
+
+Agents do not communicate with each other directly. All coordination flows through typed LangGraph state channels and shared spec files.
 
 **7.1 Inter-Phase Communication**
 

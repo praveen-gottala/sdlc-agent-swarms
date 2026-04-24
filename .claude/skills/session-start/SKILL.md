@@ -15,8 +15,8 @@ You are beginning a new session on this codebase. Before writing any code, you m
 
 Read each file fully. Do not skim.
 
-1. **`docs/lessons-learned.md`** — every entry. Pay special attention to entries marked `SUPERSEDED` or `Resolved` — these contain traps where the intuitive approach is wrong.
-2. **Active plan** — find the `**Active plan**:` line in `CLAUDE.md` (under `## Current State`). Read the referenced plan doc. Also check the memory file at `~/.claude/projects/.../memory/MEMORY.md` for any `Active Work` pointers to other plans.
+1. **`docs/lessons-learned.md`** — every entry. The file's own status-marker key is at line 3: `RESOLVED`, `RULE`, `SUPERSEDED`, `REFERENCE`. Pay special attention to `SUPERSEDED` and `RESOLVED` entries — these contain traps where the intuitive approach is wrong. `RULE` entries are ongoing principles that apply to every session; pull them verbatim into "Top gotchas" when relevant.
+2. **Active plans** — find the `**Active plans:**` block in `CLAUDE.md` (under `## Current State`). Read every referenced plan doc. Plans live in `docs/feature-plans/<plan>.md` (e.g. `docs/feature-plans/screen-types-plan-b.md`) or `docs/active-plan/<plan>/*.md` (e.g. `docs/active-plan/unify-pipeline/execution-plan.md`). Also scan the adjacent `**Completed plans:**` block — a plan listed there must not be treated as active. Also check the memory file at `~/.claude/projects/.../memory/MEMORY.md` for any `Active Work` pointers to other plans.
 3. **Rules** — read all files under `.claude/rules/`. These are non-negotiable.
 
 ### 2. Produce the acknowledgment
@@ -54,5 +54,5 @@ Do **not** start coding, reading additional files, or proposing plans until the 
 
 - **Do not guess.** Every line in the briefing must cite a specific document you read. If you can't find the active plan, say so — don't fabricate one.
 - **Do not editorialize.** The "Top gotchas" section states rules verbatim from the docs. Do not rephrase, soften, or add your own interpretation.
-- **Flag staleness.** If `CLAUDE.md`'s "Active plan" points to a completed plan (all phases checked off), flag it in "Open questions" — the pointer needs updating.
+- **Flag staleness.** If any entry under `CLAUDE.md`'s `**Active plans:**` block points to a plan with all phases checked off, or duplicated under the adjacent `**Completed plans:**` block, flag it in "Open questions" — the pointer needs updating. Likewise, if `docs/active-plan/` contains a plan directory not referenced under `**Active plans:**`, surface it as possible drift.
 - **Be fast.** This should take under 60 seconds. Read efficiently — you're proving comprehension, not writing a book report.

@@ -1,11 +1,14 @@
 # CLI vs Dashboard Pipeline Divergence
 
 **Created:** 2026-04-24
-**Last updated:** 2026-04-24 — added "Why this blocks the roadmap" after reading `docs/vision.md`, `docs/future-roadmap.md`, and ADR-043
+**Last updated:** 2026-04-24 (rev 2) — reconciled with spec-sync changes to `sdlc-agents.md`, `appendices.md`, `dashboard.md`, `governance-and-operations.md`, `platform-architecture.md`, and `PRD.md`. Key effects: (a) Figma is now formally removed across the specs (`sdlc-agents.md:249`, `appendices.md:250`, `governance-and-operations.md:137`); the shared-pipeline `designTool` enum is therefore `'browser' | 'penpot'` only. (b) Line citations into `sdlc-agents.md` updated for the doc's new length (Phase C: `:191-197` → `:221-227`; §11.1.4: `:213-217` → `:245-249`). (c) Browser-first framing is now the top-line language in §11.1.1 (`:67`) and explicit in `dashboard.md:400` ("source of truth for layout fidelity — not an optional tool"), which strengthens the Category-A reframing rather than weakening it.
+**Last updated (rev 1):** 2026-04-24 — reclassified each divergence as A/B/C/D after confirming browser-only is the PRD target and that the intended fix is a single shared pipeline parameterized by `designTool`. Stage 0 row corrected — dashboard does have an init entry point.
 **Status:** Open — affects active pipeline (design)
-**Severity:** High — silent architectural divergence; violates core `CLAUDE.md` rules; blocks roadmap Phase 4 and ADR-043 Phase M-3
+**Severity:** Mixed — see the A/B/C/D classification below. Category B items are `CLAUDE.md` violations and block roadmap Phase 4 / ADR-043 Phase M-3. Category A items are intentional design choices missing a shared-layer extraction, not bugs.
 **Owner:** TBD
-**Related:** `docs/architecture/design-pipeline-dataflow.md`, `docs/issues/dashboard-pipeline-gap-analysis.md`, `docs/issues/design-pipeline-audit.md`, `docs/feature-plans/unify-design-pipeline.md` (proposed fix), `docs/adrs/ADR-043-typescript-only-orchestration.md`
+**Related:** `docs/architecture/design-pipeline-dataflow.md`, `docs/issues/dashboard-pipeline-gap-analysis.md`, `docs/issues/design-pipeline-audit.md`, `docs/feature-plans/unify-design-pipeline.md` (proposed fix), `docs/adrs/ADR-043-typescript-only-orchestration.md`, `docs/specs/sdlc-agents.md` §11.1.1 + §11.1.2 Phase C + §11.1.4 (browser-only target), `docs/specs/dashboard.md` §4.10.4 (Browser Renderer card)
+
+> **Framing note (new in rev 2):** per the revised agent taxonomy in `sdlc-agents.md:§10`, the Design pipeline is a **specialist tool** invoked by the Architect spine stage — not a top-level agent category. The stages this doc enumerates as "Stage 0" through "Stage 7" are the *internal* stages of that Design specialist. The CLI/dashboard divergence is therefore inside the Design specialist; the four-stage spine (Clarifier → Architect → Implementer → Reviewer) is unaffected by this analysis.
 
 ---
 
@@ -48,16 +51,47 @@ The CLI was built first, for testability. The dashboard was added later, with th
 
 ## What actually diverged — summary table
 
-| Stage | CLI entry point | Dashboard entry point | Shared impl? | Severity |
-|---|---|---|---|---|
-| 0 — Init | `initCommand` @ `packages/cli/src/commands/init.ts:421` | *none* | N/A (different channel) | Low — acceptable |
-| 1 — App spec (`design:generate`) | `designGenerateCommand` @ `packages/cli/src/commands/design-generate.ts:504` | `POST /api/spec/generate/route.ts:47` + `POST /api/spec/approve/route.ts:38` | **No** — parallel prompts, different `maxTokens`, different default statuses | **High** |
-| 2 — Research | `uxResearchWork` @ `packages/cli/src/commands/design-page.ts:399` | `callPipelineStage(provider, 'research', ...)` @ `packages/dashboard/src/app/api/_lib/pipeline-helpers.ts:250` | **No** | **High** |
-| 3 — Planning | `uxPlanningWork` @ `packages/cli/src/commands/design-page.ts:451` | `callPipelineStage(provider, 'planning', ...)` | **No** | **High** |
-| 4 — Design (Penpot / DesignSpec v2) | `penpotDesignWork` @ `packages/cli/src/commands/design-page.ts:750` | `callClaudeDesignAPI` @ `packages/dashboard/src/app/api/_lib/pipeline-helpers.ts:311` | **Partial** — shares `buildDesignSpecSystemPrompt`, `buildComponentCatalogPrompt`, `SUBMIT_DESIGN_TOOL`; does NOT share `penpotDesignWork` | **High** |
-| 5 — Design evaluator | `evaluateDesign` via `--evaluate` @ `design-page.ts:882` | `evaluateDesign` @ `api/design/audit/vision/route.ts:67` | **Partial** — shared function, but not wired into the main design flow; called with different second-argument shape | Medium |
-| 6 — Feedback loop | `runDesignFeedbackLoop` @ `design-page.ts:1017` | `runChatPipelineAsync` @ `api/pages/[pageId]/design/chat/route.ts:190` (re-runs all 3 LLM stages) + `api/pages/[pageId]/design/correct/route.ts` (annotations only; explicit TODO for full pipeline at `:155`) | **No** | **High** |
-| 7 — Implementation | `uxImplementationWork` @ `design-page.ts:928` | *none* | **No — missing entirely** | **Critical** |
+Each row carries a **Category** column (A/B/C/D). The legend is defined in the "Reframing" section immediately below this table. In short: A = intentional channel/tool choice, needs shared adapter; B = real bug / `CLAUDE.md` violation; C = legitimate input-collection difference, shared work-function missing; D = minor cleanup.
+
+| Stage | CLI entry point | Dashboard entry point | Shared impl? | Category | Severity |
+|---|---|---|---|---|---|
+| 0 — Init / Scaffold | `initCommand` @ `packages/cli/src/commands/init.ts:421` → `scaffoldProject` | `OnboardingWizard` (`packages/dashboard/src/components/onboarding/onboarding-wizard.tsx`) → `POST /api/projects` → `createProject` @ `packages/dashboard/src/app/api/_lib/project-creation.ts:123` | **No** — two scaffolding implementations; different `platforms`/`stack`/`budget` defaults; CLI collects Slack/Telegram, dashboard collects archetype + component library | **C** — legitimate channel-specific input collection, but the file-writing work should be one shared function | Medium |
+| 1 — App spec (`design:generate`) | `designGenerateCommand` @ `packages/cli/src/commands/design-generate.ts:504` | `POST /api/spec/generate/route.ts:47` + `POST /api/spec/approve/route.ts:38` | **No** — parallel prompts, different `maxTokens`, different default statuses | **B** — prompts and LLM calls duplicated with no channel justification | **High** |
+| 2 — Research | `uxResearchWork` @ `packages/cli/src/commands/design-page.ts:399` | `callPipelineStage(provider, 'research', ...)` @ `packages/dashboard/src/app/api/_lib/pipeline-helpers.ts:250` | **No** | **B** — free-text markdown instead of typed `UXResearchOutput`; no Zod validation; direct `CLAUDE.md` violation | **High** |
+| 3 — Planning | `uxPlanningWork` @ `packages/cli/src/commands/design-page.ts:451` | `callPipelineStage(provider, 'planning', ...)` | **No** | **B** — same pattern as Research; no schema, no contract enforcement | **High** |
+| 4 — Design (DesignSpec v2 generation) | `penpotDesignWork` @ `packages/cli/src/commands/design-page.ts:750` | `callClaudeDesignAPI` @ `packages/dashboard/src/app/api/_lib/pipeline-helpers.ts:311` | **Partial** — shares `buildDesignSpecSystemPrompt`, `buildComponentCatalogPrompt`, `SUBMIT_DESIGN_TOOL`; does NOT share a design work function | **A** — intentional channel choice (dashboard is browser-only per `sdlc-agents.md:221-227`, Phase C target; CLI can be Penpot or browser — Figma removed in the 2026-04-24 sync). Needs shared work-function dispatch, parameterized by `designTool`. Not a bug — a missing shared adapter. | Medium |
+| 5 — Design evaluator | `evaluateDesign` via `--evaluate` @ `design-page.ts:883` | `evaluateDesign` @ `api/design/audit/vision/route.ts:67` | **Partial** — shared function; called with different second-argument shape (planning JSON vs DesignSpec JSON) | **D** — minor; tighten the function signature | Low |
+| 6 — Feedback loop | `runDesignFeedbackLoop` @ `design-page.ts:1017` (Penpot collaboration session, multi-turn) | `runChatPipelineAsync` @ `api/pages/[pageId]/design/chat/route.ts:190` (re-runs all 3 LLM stages per chat message) + `api/pages/[pageId]/design/correct/route.ts` (annotations only; explicit TODO at `:155`) | **No** | **A** on the channel choice (browser chat vs Penpot session is legitimate); **B** on the mechanism (re-running research + planning + design per chat message is wasteful and was never an architectural decision — it's stopgap code) | **High** (mechanism); Medium (channel) |
+| 7 — Implementation | `uxImplementationWork` @ `design-page.ts:928` | *none* | **No — absent from dashboard by current scope** | **A** — explicit deferral until Stages 2–6 run on the unified shared pipeline. Not a bug; a scope decision that needs to be recorded. | Medium (tracked, not broken) |
+
+---
+
+## Reframing — browser-only is the PRD target, not a divergence
+
+The original v1 of this doc framed every row in the table as a bug. That framing is wrong for the rows marked **A**. Three authoritative sources make this explicit (after the 2026-04-24 spec sync):
+
+- `docs/specs/sdlc-agents.md:67` (§11.1.1) — top-line statement: *"The browser-rendered prototype is the primary design surface. If Penpot is configured, an optional collaboration workspace is also created for human designers."* (This was previously "Falls back to browser-rendered prototypes if no design tool is configured" — the sync inverted it.)
+- `docs/specs/sdlc-agents.md:221-227` (§11.1.2, **Phase C: Remove self-correction, browser-only pipeline**) commits to browser rendering as the verification path. Quote: *"The pipeline simplifies to: LLM → JSON → Browser render → DOM extraction → mechanical fixes → interactive preview → vision-assisted correction → user approval."*
+- `docs/specs/sdlc-agents.md:245-249` (§11.1.4, **Design Tool Integration (Optional)**) locks in: *"Design tools are NOT in the verification path — the browser renderer is the source of truth for layout fidelity."* Penpot is the sole optional collaboration adapter; **Figma support was removed** in this sync (`sdlc-agents.md:249`: *"Figma support removed."*, reinforced by `appendices.md:250` and `governance-and-operations.md:137`).
+- `docs/specs/dashboard.md:400` (Design Tools view) adds the strongest-worded version: *"The browser renderer is the source of truth for layout fidelity — not an optional tool."*
+
+So the dashboard's browser-only Stage 4 is **the committed target**, not an accident. What's missing is not a bug fix but a shared-layer extraction: one pipeline that takes a `designTool: 'browser' | 'penpot'` parameter, with browser as the default. CLI users can opt into Penpot via `--tool=penpot`; the dashboard hardcodes `'browser'` until a future dashboard UI exposes the choice. (Figma is explicitly not a supported value — it was removed from the framework in the 2026-04-24 sync. The `DesignSurface` interface is still extensible, so a future Figma adapter could return, but that would be a new ADR, not a resurrection of existing plumbing.)
+
+### Classification legend
+
+| Label | Meaning | What's actually different | How to resolve |
+|---|---|---|---|
+| **A — Intentional channel/tool choice** | The *work itself* genuinely differs by design (e.g., Penpot script generation vs browser render). The current "two copies" state exists because the shared adapter/parameter hasn't been extracted yet. | The backend work | Extract a shared work function with a channel/tool parameter; both callers dispatch through it. No code is deleted. |
+| **B — Real bug / `CLAUDE.md` violation** | Nothing should legitimately differ, but something does (e.g., free-text markdown instead of typed `UXResearchOutput`). No channel/tool justification exists. | Output shape / contract enforcement | Fix the dashboard to call the typed work function. No ADR needed. |
+| **C — Legitimate input-collection difference, shared work missing** | Only the *input-gathering UI* is channel-specific (stdin wizard vs React form). The *work behind it* (writing files, computing defaults) is identical and duplicated. | Only the UI layer | Extract the work as a shared function; each channel keeps its own UI and maps its inputs to the shared function's signature. |
+| **D — Minor cleanup** | Tiny signature or argument-shape inconsistencies. | Function signatures | Tighten the interface; no architectural change. |
+
+### Where this leaves each category
+
+- **A (Stages 4, 6-channel, 7):** Not bugs. Need a shared pipeline with a `designTool: 'browser' | 'penpot'` parameter (see `docs/feature-plans/unify-design-pipeline.md`). ADRs recording "browser-only is the default" and "Stage 7 deferred until shared layer lands" can follow the shared-layer implementation rather than precede it.
+- **B (Stages 1, 2, 3, 6-mechanism, wrong-shape artifacts, `maxTokens` drift):** Real bugs. Fix independently of any ADR. These are the items that block Phase 4 / M-3.
+- **C (Stage 0):** Extract `scaffoldProject` as a shared work function in `packages/agents-ux` or `packages/core`. CLI `initCommand` and dashboard `createProject` both call it. Channel-specific extras (Slack/Telegram on CLI; archetype/component-library on dashboard) stay as optional fields on the shared input object.
+- **D (Stage 5):** Tighten `evaluateDesign`'s second-argument contract so both callers pass the same shape.
 
 ---
 
@@ -78,7 +112,7 @@ The research/planning JSON wrappers on disk are **vestigial** — nothing reads 
 When `callPipelineStage` is used instead of `uxResearchWork` / `uxPlanningWork`:
 
 1. **No Zod validation** — `UXResearchOutputSchema`, `UXPlanningOutputSchema`, and the token-binding correction loop in planning are never invoked.
-2. **No agent contracts** — `UX_RESEARCH_CONTRACT` and `UX_PLANNING_CONTRACT` (budgets, token limits, model selection, `on_complete` event, governance policy) are silently ignored. Dashboard hard-codes `maxTokens: 8192` at `pipeline-helpers.ts:283`, which is **different** from the contract's `8000`.
+2. **No agent contracts** — `UX_RESEARCH_CONTRACT` and `UX_PLANNING_CONTRACT` (budgets, token limits, model selection, `on_complete` event, governance policy) are silently ignored. Dashboard hard-codes `maxTokens: 8192` at `pipeline-helpers.ts:283`, disconnected from the contract's per-task budget (`UX_RESEARCH_CONTRACT.budget.max_tokens_per_task = 40000` @ `ux-research.ts:74`). The dashboard's per-call cap is never reconciled against the contract — it's just a hard-coded number.
 3. **No spec context reads** — `readSpecs()`, disk token enforcement, and learnings injection (`ux-research.ts:130-154`) do not happen. The dashboard feeds a minimal `{ description, prdContent, designTokens, brandSpec }` context and nothing else.
 4. **No prompt trace** — `recordPromptTrace` / `recordPromptTraceResponse` (`ux-research.ts:175-201`) are skipped. The dashboard has its own `emitLLMCallEvent` / `run-manager.ts` telemetry — similar intent, different data shape, not interchangeable with the CLI's `*-prompt.md` traces.
 5. **No governance** — neither path calls `runAgent()` (CLI calls `uxResearchWork` directly too, so governance is bypassed on both — but the CLI at least has the structured output layer).
@@ -200,16 +234,28 @@ export const UX_RESEARCH_CONTRACT: AgentContract = {
 
 ## Recommended resolution direction
 
-**One pipeline. Direction is one-way: the dashboard calls shared agent work functions; work functions do not know about the dashboard.** The CLI's typed work functions are the canonical spec; the dashboard is a thin HTTP shell with streaming telemetry on top.
+**One pipeline, parameterized by `designTool`.** Not "pick one and delete the other." The CLI and dashboard call the same shared Layer B (`runDesignPipeline`), which dispatches the design stage to `browserDesignWork` or `penpotDesignWork` based on a `designTool: 'browser' | 'penpot'` parameter. Dashboard hardcodes `'browser'` for now; CLI accepts both values via `--tool=browser|penpot`; both default to `'browser'` (matching the `sdlc-agents.md:221-227` Phase C target). Figma is not a supported value — it was removed from the framework in the 2026-04-24 spec sync (`sdlc-agents.md:249`).
+
+Direction of dependency stays one-way: transport/telemetry (CLI args, HTTP routes, SSE) → pipeline orchestrator (Layer B) → work functions (Layer A). Work functions never import transport code.
 
 Detailed plan: see `docs/feature-plans/unify-design-pipeline.md`.
+
+Category-specific actions:
+
+- **Category A (Stages 4, 6-channel, 7):** extract the shared parameterized pipeline. ADRs recording "browser default" and "Stage 7 deferral" follow the landing, not precede it.
+- **Category B (Stages 1, 2, 3, 6-mechanism, wrong-shape artifacts, `maxTokens` drift):** fix the dashboard to call the typed work functions (`uxResearchWork`, `uxPlanningWork`, a shared `generateAppSpec`). No ADR needed — these are `CLAUDE.md` violations.
+- **Category C (Stage 0):** extract `scaffoldProject` as a shared work function. Each channel keeps its own input-collection UI.
+- **Category D (Stage 5):** tighten `evaluateDesign`'s second-argument contract.
 
 Preventive measures that should accompany the fix:
 
 1. **Lint rule or import boundary test** so dashboard API routes cannot import `@anthropic-ai/sdk` or call `provider.complete` directly. All LLM calls must go through a shared work function or the typed LLM wrapper.
-2. **Contract parity test** — a single integration test that runs the same input through both the CLI and the dashboard entry points and asserts the on-disk artifacts are byte-identical (or differ only by expected telemetry envelopes).
-3. **ADR** recording the unification decision and the rejected alternative ("dashboard-specific pipeline for UX reasons").
-4. **Update `docs/architecture/design-pipeline-dataflow.md`** to reflect whichever path wins, and add a "Channels and callers" section listing who calls what.
+2. **Contract parity test** — runs identical inputs through both the CLI and the dashboard entry points and asserts the on-disk artifacts are byte-identical (modulo telemetry envelopes). **Scope:** parity is asserted for `(CLI, designTool='browser')` vs `(Dashboard, designTool='browser')`. `(CLI, designTool='penpot')` is a separate CLI-only matrix — the dashboard is not exercised against it.
+3. **ADRs to follow (not gate) the shared-layer landing:**
+   - Browser as the default `designTool`; Penpot as a CLI-only flag; dashboard hardcoded to `'browser'` until further notice.
+   - Stage 7 (implementation) deferred in the dashboard until Stages 2–6 unify.
+   - Feedback-loop strategy: structured DesignSpec patches for the browser channel; Penpot collaboration session for `--tool=penpot`.
+4. **Update `docs/architecture/design-pipeline-dataflow.md`** to describe the three-layer structure (transport → Layer B → Layer A) with a "Channels and callers" section listing who calls what and with which `designTool` values.
 
 ---
 

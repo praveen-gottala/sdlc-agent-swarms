@@ -18,7 +18,7 @@ The developer installs the CLI (npm install -g agentforge), runs agentforge init
 
 **21.2 Design Phase**
 
-The developer describes the desired page in natural language. Within minutes, a Slack notification arrives: design is ready in Penpot. The developer opens Penpot, makes adjustments. AgentForge detects the edits, applies design system tokens, and sends another notification. The developer approves via a Slack button on their phone.
+The developer describes the desired page in natural language. Within minutes, a Slack notification arrives: design is ready for review. The developer opens the browser-rendered prototype, sees the DesignSpec come to life as real components. If Penpot is configured, they can also make visual adjustments there. AgentForge detects the edits, applies design system tokens, and sends another notification. The developer approves via a Slack button on their phone.
 
 **21.3 Code Generation Phase**
 
@@ -37,7 +37,7 @@ The developer opens the AgentForge web dashboard and sees the Pipeline View with
   ---------------------- ----------------------------------------- -----------------------------------------------
   CLI                    Node.js (TypeScript, Commander.js)        Developer-facing interface, npm ecosystem
 
-  Orchestration engine   TypeScript (custom DAG engine)            Stateful agents, persistence, HITL interrupts
+  Orchestration engine   @langchain/langgraph (TypeScript)          Stateful agents, checkpointing, HITL interrupts
 
   Event bus              In-memory (v1), Redis Streams (v2)        Lightweight event routing between agents
 
@@ -48,7 +48,7 @@ The developer opens the AgentForge web dashboard and sees the Pipeline View with
   Design renderer        Playwright (headless Chromium)            Browser-accurate layout verification from DesignSpec
   ----------------------------------------------------------------------------------------------------------------
 
-> *Updated per ADR-022: Orchestration engine implemented in TypeScript, not Python/LangGraph.*
+> *Updated per ADR-043: Orchestration engine is `@langchain/langgraph` (TypeScript). Python engine deprecated. ADR-022's "not LangGraph" note is superseded — LangGraph TS is now the locked decision.*
 
 > **Current versions:** See package.json files in each package.
 
@@ -113,7 +113,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 **24.1 Phase 1: Foundation (Months 1--3)**
 
-**Milestone deliverable:** A developer can run agentforge init, describe a web app, collaborate with design agents in Figma, approve the spec, and get a working deployed React + Node.js application with CI/CD pipeline.
+**Milestone deliverable:** A developer can run agentforge init, describe a web app, collaborate with design agents via browser-rendered DesignSpec prototypes (Penpot optional), approve the spec, and get a working deployed React + Node.js application with CI/CD pipeline.
 
 -   Core orchestration engine with event bus and state management (TypeScript)
 
@@ -175,7 +175,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 -   Dashboard preferences and agent execution traces (V3-new data structures)
 
--   Multi-agent code generation (frontend + backend + tests in parallel)
+-   ~~Multi-agent code generation (frontend + backend + tests in parallel)~~ *Superseded by `vision.md` Layer 8: single-threaded Implementer per task. Cross-task parallelism via git worktrees.*
 
 -   React Native mobile support
 
@@ -250,7 +250,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
   ---------------------------------------------------- -------------- ------------------------------------------------------------------------------------------------
   LLM provider API changes break agent contracts       High           Provider adapter abstraction. Automated integration tests. Version pinning.
 
-  Figma API limitations prevent full write-back        Medium         Design surface abstraction. Code-first fallback. Community plugin bridge.
+  ~~Figma API limitations prevent full write-back~~     ~~Medium~~     *Figma removed. Penpot is the optional design tool. Browser rendering is primary.*
 
   Runaway agent loops consume budget                   High           Per-task budget limits. Circuit breaker. Automatic pause + human notification.
 
@@ -273,7 +273,7 @@ Third-party contributors can create: custom agents, custom MCP adapters, custom 
 
 **31.1 Orchestration Frameworks**
 
--   LangGraph (github.com/langchain-ai/langgraph) --- Stateful multi-agent orchestration (reference only; not used per ADR-022)
+-   LangGraph (github.com/langchain-ai/langgraph) --- Stateful multi-agent orchestration (TypeScript version is the sole orchestration runtime per ADR-043)
 
 -   CrewAI (github.com/crewAIInc/crewAI) --- Role-playing multi-agent collaboration
 

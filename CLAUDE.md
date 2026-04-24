@@ -280,6 +280,13 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - When making an architectural change that touches vision Layer N, update
   `docs/vision.md` Layer N's Current State section.
 
+### Spec Sync on Feature Completion
+- When completing a feature plan phase, update the relevant domain spec section
+  in `docs/specs/` to reflect the implemented behavior.
+- When a `vision.md` locked decision changes, grep all domain specs for the
+  affected pattern and update or annotate them.
+- Run `/review-spec-sync` before major releases to catch drift.
+
 ## Skills Library
 Available Claude Code skills (invoke with /slash command):
 - /session-start — Read key docs and produce a briefing before coding (use at every session start)
@@ -292,6 +299,7 @@ Available Claude Code skills (invoke with /slash command):
 - /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity
 - /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof (use before declaring prototype/renderer work done)
 - /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.
+- /review-spec-sync — Audit domain specs against vision.md and codebase for stale patterns, Figma references, wrong model IDs, and rejected architectural patterns.
 
 ## IMPORTANT
 - ALWAYS run `typecheck` after making changes across packages

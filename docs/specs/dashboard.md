@@ -376,7 +376,7 @@ Manages the HITL messaging channels defined in `agentforge.yaml` `hitl.channels`
 
 Manages Model Context Protocol server connections defined in `agentforge.yaml` `mcp`. This is the visual equivalent of the MCP client configuration from `architecture.md`.
 
-- **Server cards:** One card per MCP server (Figma, GitHub, Storybook, Jira, Slack Notify, Telegram Notify). Each card shows: server name, URI, connection status, authentication method and validity, rate limit usage (current/max RPM), 24-hour call count, error count, and a description.
+- **Server cards:** One card per MCP server (Penpot, GitHub, Storybook, Jira, Slack Notify, Telegram Notify). Each card shows: server name, URI, connection status, authentication method and validity, rate limit usage (current/max RPM), 24-hour call count, error count, and a description.
 - **Tool inventory:** Each card lists the MCP tools exposed by that server, rendered as `server.tool_name` tags. These are the same tools available in the agent contract `tools` field (Section 4.5.2 Section 7). This provides visibility into what capabilities each MCP server provides.
 - **Health metrics:** Four stat boxes per card: auth status, rate limit usage, 24h calls, and 24h errors. Rate limit usage turns red when above 80% capacity.
 - **Server actions:** Connected servers show **Config**, **Ping** (sends a health check), and **Disconnect** buttons. Unconfigured servers show a **Connect** button that collects URI, auth credentials, and rate limit settings.
@@ -397,9 +397,9 @@ Manages LLM provider connections defined in `agentforge.yaml` `agents.providers`
 
 Manages the design tool configuration from `agentforge.yaml` `design`. Surfaces the DesignSurface abstraction from Part I, Section 11.1.3.
 
-- **Figma card:** Shows connection status, Figma file ID, design system type (Tailwind/custom), bidirectional mode (read + write), and the full capability list: read wireframes, write designs, extract tokens, Code Connect mapping, auto-layout, Variables API. Shows the DesignSurface interface methods: `createWorkspace()`, `readDesign()`, `writeDesign()`, `getTokens()`, `onUserEdit()`, `lockForAgent()`.
-- **Storybook card:** Shows the code-first fallback configuration: localhost URL, hot reload status, visual testing capability. Prominently notes the F7 failure mode from `failure-modes.md`: Storybook auto-activates when Figma MCP is unavailable, and design agents switch to code-first mode.
-- **Abstraction panel:** Below the tool cards, a panel shows the DesignSurface interface and which adapters are implemented (Figma, Storybook) vs planned (Framer Phase 3, code-first Phase 3). Emphasizes that switching design tools requires zero changes to agent contracts.
+- **Penpot card:** Shows connection status, workspace ID, design system type (Tailwind/custom), bidirectional mode (read + write via Plugin API), and the capability list: read designs, write designs, extract tokens, sync DesignSpec JSON. Shows the DesignSurface interface methods: `createWorkspace()`, `readDesign()`, `writeDesign()`, `getTokens()`, `onUserEdit()`, `lockForAgent()`.
+- **Browser Renderer card:** Shows the primary design rendering surface (port 4100). Displays DesignSpec v2 rendering status, prototype mode availability, and shared chrome configuration. The browser renderer is the source of truth for layout fidelity — not an optional tool.
+- **Abstraction panel:** Below the tool cards, a panel shows the DesignSurface interface and which adapters are implemented (Penpot, Browser Renderer) vs planned (Framer Phase 3). Emphasizes that switching design tools requires zero changes to agent contracts.
 
 #### 4.10.5 Data Source
 
@@ -518,7 +518,7 @@ The dashboard backend exposes REST endpoints and a WebSocket connection. All end
 | `PUT` | `/api/mcp/:id` | Update MCP server config (URI, auth, rate limit) |
 | `POST` | `/api/mcp/:id/ping` | Health check an MCP server (verifies connectivity) |
 | `DELETE` | `/api/mcp/:id` | Disconnect an MCP server |
-| `GET` | `/api/design` | Design tool configuration (Figma, Storybook) |
+| `GET` | `/api/design` | Design tool configuration (Penpot, Browser Renderer) |
 | `PUT` | `/api/design` | Update design tool config (writes to `agentforge.yaml`) |
 | `GET` | `/api/escalation` | Escalation policy settings |
 | `PUT` | `/api/escalation` | Update escalation timeouts and behavior |
@@ -580,7 +580,7 @@ Single WebSocket connection at `ws://localhost:<port>/ws`. Server relays all dom
 - Spec editing: Monaco editor integration, git commit on save, conflict resolution.
 - Cost trend charts (daily/weekly spend over time).
 - Agent learnings CRUD: add, edit, delete observations.
-- Integrations: Design Tools view with Figma and Storybook configuration, DesignSurface abstraction panel, fallback mode visualization.
+- Integrations: Design Tools view with Penpot and Browser Renderer configuration, DesignSurface abstraction panel.
 - Integrations polish: channel setup wizards, MCP server auto-discovery, provider health monitoring.
 - Dashboard user preferences persistence.
 - Accessibility audit: keyboard navigation, screen reader support, color contrast compliance.

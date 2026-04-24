@@ -135,7 +135,9 @@ The Model Context Protocol (MCP) is AgentForge's primary integration standard. A
   ----------------------------------------------------------------------------------------------
   **MCP Server**    **Purpose**                             **Used By**         **Status**
   ----------------- --------------------------------------- ------------------- ----------------
-  Figma MCP         Design context, write-back              Design, Code gen    GA
+  ~~Figma MCP~~     ~~Design context, write-back~~           ~~Design, Code gen~~ *Removed — Penpot MCP is the optional design tool adapter*
+
+  Penpot MCP        Design context, write-back              Design              Optional
 
   GitHub MCP        Repo operations, PRs, Actions           Code, CI/CD         GA
 

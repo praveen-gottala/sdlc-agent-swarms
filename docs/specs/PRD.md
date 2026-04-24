@@ -32,7 +32,7 @@
 
 AgentForge is an open-source, community-driven multi-agent framework that orchestrates the complete software development lifecycle (SDLC) from UX design through production deployment and observability. It provides a pluggable, configurable system where specialized AI agents collaborate with human developers across every phase of application development.
 
-The framework is designed to onboard any greenfield application into an agent-assisted workflow where design agents, specification agents, code generation agents, CI/CD agents, and observability agents coordinate through a shared orchestration layer built on the Model Context Protocol (MCP).
+The framework is designed to onboard any greenfield application into an agent-assisted workflow where a four-stage spine (Clarifier, Architect, Implementer, Reviewer) and specialist tools coordinate through a typed LangGraph state graph with Zod-typed channels (see `vision.md` Layer 2). The Model Context Protocol (MCP) serves as the tool protocol for external integrations (GitHub, Penpot, Slack).
 
 **Core thesis:** No single AI agent can build production software. But a coordinated system of specialized agents, each operating within clearly defined boundaries and governed by configurable human-in-the-loop policies, can compress the SDLC from months to days while maintaining quality, security, and architectural integrity.
 
@@ -48,7 +48,7 @@ The framework is designed to onboard any greenfield application into an agent-as
 
 -   LLM-agnostic: Pluggable provider layer supporting Claude, GPT, Gemini, and local models. Each agent can use a different provider optimized for its task. Providers support both request/response and streaming modes.
 
--   Messaging-first UX: Slack (interactive, primary) and Telegram (interactive, secondary) as HITL channels with live-updating task boards. CLI as universal fallback. Web dashboard added in Phase 2.
+-   Messaging-first UX: Slack (interactive, primary) and Telegram (interactive, secondary) as HITL channels with live-updating task boards. CLI as universal fallback. Web dashboard (design studio implemented in `packages/dashboard/`; full V3 dashboard features are ongoing per `dashboard.md`).
 
 -   GitHub Actions sandbox: Agent-generated code executes in isolated CI environments, never on the developer's machine. Results are validated before any PR is created.
 
@@ -96,7 +96,7 @@ Teams must manually stitch together 8--12 tools to get from idea to production. 
 
 ### 3.2 The Context Loss Problem
 
-When design decisions move from Figma to a specification document to code generation, each handoff loses context. The code generation agent does not know why the designer chose a specific layout. The CI/CD agent does not know which components are experimental versus production-ready.
+When design decisions move from design to specification to code generation, each handoff loses context. The code generation agent does not know why the designer chose a specific layout. The CI/CD agent does not know which components are experimental versus production-ready.
 
 ### 3.3 The Governance Problem
 

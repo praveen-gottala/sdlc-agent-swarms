@@ -1,6 +1,6 @@
 ---
 name: verify-done
-description: Pre-completion gate for dashboard, prototype, and renderer work. Blocks "done" claims until headed E2E, stale-Vite kill, Chrome DevTools visual verification, and (when applicable) full LLM pipeline verification are proven. Born from a session where 4 premature "done" calls cost ~4 hours.
+description: Pre-completion gate for dashboard, prototype, and renderer work. Blocks "done" claims until the CLAUDE.md test triad (typecheck, test, lint) plus headed E2E, stale-Vite kill, Chrome DevTools visual verification, full LLM pipeline verification (when applicable), and evaluator/vision sanity-check (when applicable) are proven. Born from a session where 4 premature "done" calls cost ~4 hours.
 context: inline
 agent: main
 ---
@@ -21,6 +21,18 @@ Fire this skill when ALL of these are true:
 Do NOT invoke for pure doc changes, config changes, or work that doesn't touch the prototype/renderer/dashboard surface.
 
 ## Protocol
+
+### Step 0: Run the CLAUDE.md test triad (prerequisite)
+
+Per `CLAUDE.md` §"Full Ownership of All Tests" (lines 60-73), no task is "done" until all three of these pass with zero failures:
+
+```bash
+nx run-many -t typecheck
+nx run-many -t test
+nx run-many -t lint
+```
+
+This skill assumes these are green — the 2026-04-22 origin failures all had typecheck + unit tests passing while the browser was broken. If Step 0 is red, stop here; Steps 1–5 only matter once the universal gate is clean.
 
 ### Step 1: Kill stale Vite (always)
 
@@ -79,7 +91,7 @@ node ../../packages/cli/dist/bin.js design:page:all
 
 Then verify:
 - Viewport widths: `jq '.width' .agentforge/previews/bookshelf-*/scripts/designspec-v2.json`
-- Shared chrome regions: `jq '.regions' agentforge/shared-chrome.json` (must be non-empty)
+- Shared chrome regions: `jq '.regions' .agentforge/previews/shared-chrome.json` (must be non-empty)
 - Open prototype in browser and visually verify overlay behavior
 
 Use `--design-only` (~8s) when only fixing post-LLM logic (manifest, regions). Use full run (~3min) when changing prompts or tool schemas.
@@ -95,11 +107,11 @@ Run a real design evaluation against a known fixture screen with a rendered desi
 - `issues` array is non-empty with at least one actionable fix
 
 **Sensor failure cases — treat as BLOCKED, not DONE:**
-- Score is 0 → evaluator call likely errored silently (e.g., temperature param rejection on Vertex)
+- Score is 0 → evaluator call likely errored silently. The canonical cause is `docs/lessons-learned.md` §"Claude 4.7+ Models Reject Sampling Parameters": `claude-opus-4-7+` and `claude-sonnet-4-7+` return 400 on any non-default `temperature` / `top_p` / `top_k`, on **both** Anthropic-direct and Vertex (not Vertex-specific). `modelSupportsTemperature()` in `packages/providers/src/claude/claude-provider.ts` now strips unsupported params; if you're on a version without that guard, pin to `claude-opus-4-6` / `claude-sonnet-4-6` / `claude-haiku-4-5` (per `CLAUDE.md` lines 204-207) or drop the sampling params.
 - Score is 100 → evaluator is not inspecting the screenshot (no real design scores perfect)
 - Issues array is empty → evaluator returned a score but no actionable feedback
 
-**Origin:** Vision evaluator silently returned 0/100 for all evaluations (2026-04-22) due to a `temperature` parameter error on Vertex. The entire self-correction loop produced no corrections while appearing to run successfully.
+**Origin:** Vision evaluator silently returned 0/100 for all evaluations (2026-04-22) because `EVALUATOR_MODEL = 'claude-opus-4-7'` was called with `temperature: 0` and the model family rejects sampling params. The entire self-correction loop produced no corrections while appearing to run successfully. See `docs/lessons-learned.md` §"Claude 4.7+ Models Reject Sampling Parameters".
 
 ### Step 5: Produce the verification table
 
@@ -110,6 +122,7 @@ Before reporting "done" to the user, output this table with evidence:
 
 | Check | Status | Evidence |
 |-------|--------|----------|
+| CLAUDE.md test triad | N/N pass | `nx run-many -t typecheck`, `-t test`, `-t lint` output lines |
 | Stale Vite killed | yes/no | `lsof -ti:4100` output |
 | E2E headed mode | N/N pass | test file name, headed flag |
 | Visual verification | yes/no | screenshot description or "not applicable" |
