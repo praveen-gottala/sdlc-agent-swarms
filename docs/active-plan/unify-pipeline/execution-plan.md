@@ -40,11 +40,12 @@ Update this checklist as each task completes. Commit convention: `[unify-pipelin
 - [x] **0.6.5** Unit tests for `isVisionLLMEnabled` + evaluator skip behavior (2026-04-24)
 
 ### Phase 1 — Layer B
-- [ ] **1.1** `PipelineTelemetrySink` interface + `PipelineInput` (with `chromePass`)
-- [ ] **1.1s** Spike: validate single-shot patch
-- [ ] **1.2** Stage node functions + `browserDesignWork`
-- [ ] **1.3** `runDesignPipeline` orchestrator
-- [ ] **1.4** Sink contract tests
+- [x] **1.0** Extract legacy-artifact migration helpers to core (2026-04-25)
+- [x] **1.1** `PipelineTelemetrySink` interface + `PipelineInput` (with `chromePass`) + ADR-044 + feature-plan §1.5 annotation (2026-04-25)
+- [ ] **1.1s** Spike: validate single-shot patch — **BLOCKER for Phase 2.5**
+- [x] **1.2** Stage node functions + `browserDesignWork` (superset of `callClaudeDesignAPI`); evaluator stubbed in Phase 1 — see ADR-045 (2026-04-25)
+- [x] **1.3** `runDesignPipeline` orchestrator + cache adapter + pipeline unit tests (2026-04-25)
+- [x] **1.4** Sink contract test harness (2026-04-25)
 
 ### Phase 2 — CLI Migration
 - [ ] **2.1** CLI telemetry sink + migration

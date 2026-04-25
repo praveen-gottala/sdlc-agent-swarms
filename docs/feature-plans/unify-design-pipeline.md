@@ -338,7 +338,9 @@ export async function runDesignPipeline(input: PipelineInput): Promise<Result<De
 
 1.4. Internally, this function replicates what `design-page.ts` does today: Stage 2 → 3 → 4 → 5 → 6 → 7, with caching to `.agentforge/previews/{moduleId}/`, resume from cache, `--fresh` to bypass. **But it dispatches to `researchNode` / `planningNode` / etc. — never inlines them.** The wrapper is ≤ 100 lines; each node is its own testable unit.
 
-1.5. Define `PipelineTelemetrySink` in an **OpenTelemetry-compatible shape** (vision Layer 11 locks OTel + Langfuse as the tracing target). The sink is not a custom event protocol — it is a thin adapter over the OTel `Tracer` / `Span` API so that when Phase 7 of the roadmap lands OTel + Langfuse, every current consumer becomes a valid OTel consumer:
+> **Superseded by execution-plan §1.1.** Flat callbacks (`onStageStart`, `onStageComplete`, `onStageFail`, `onLlmCall`, `onLog`). OTel span shape deferred to Phase 7.
+
+1.5. ~~Define `PipelineTelemetrySink` in an **OpenTelemetry-compatible shape**~~ (vision Layer 11 locks OTel + Langfuse as the tracing target). The sink is not a custom event protocol — it is a thin adapter over the OTel `Tracer` / `Span` API so that when Phase 7 of the roadmap lands OTel + Langfuse, every current consumer becomes a valid OTel consumer:
 
 ```typescript
 // Span-shaped telemetry, compatible with @opentelemetry/api Span.

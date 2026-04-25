@@ -18,8 +18,10 @@ const nextConfig = {
     // Note: `@agentforge/agents-ux` is omitted — Next's barrel optimization can miss
     // new named exports (e.g. after Chrome Pass), causing "is not exported" at runtime
     // when the dashboard transpiles @agentforge/cli (which re-exports many UX symbols).
+    // Note: `@agentforge/core` and `@agentforge/agents-ux` are omitted — Next's
+    // barrel optimization can miss new named exports (e.g. isVisionLLMEnabled),
+    // causing "is not exported" at runtime when transitive imports reference them.
     optimizePackageImports: [
-      '@agentforge/core',
       '@agentforge/designspec-renderer',
       '@agentforge/providers',
       '@agentforge/cli',

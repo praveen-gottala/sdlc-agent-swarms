@@ -255,7 +255,7 @@
 
 ### What we added to prevent recurrence:
 1. **CLI file-loading integration tests** — Use `mkdtempSync` + real files on disk. See `design-figma-integration.test.ts`.
-2. **Pipeline wiring smoke test** — Spy provider captures prompts; asserts that PRD content, design tokens, and design system prompt actually appear in LLM calls. See `pipeline-wiring-smoke.test.ts`. Runs in CI, no API key needed.
+2. **Pipeline wiring smoke test** — Spy provider captures prompts; asserts that PRD content, design tokens, and design system prompt actually appear in LLM calls. See `pipeline-wiring-smoke.test.ts`. Runs in CI, no API key needed. **Sub-rule:** A smoke test that imports the real codepath but asserts only on structural outputs (output present, files written, provider called N times) is *not* a wiring smoke test. The test must `expect(promptString).toContain(upstreamInputSubstring)` for each cross-stage handoff. If you can rip a field out of the input and the test still passes, the test is not testing wiring.
 3. **Runtime input validation guards** — Each pipeline stage now validates its inputs and warns/errors on degenerate data (e.g., `prdRequirements` with only short labels).
 4. **Dead-code detection script** — `scripts/check-unused-exports.sh` finds exported symbols with zero external consumers.
 5. **CLAUDE.md rules** — "CLI Command File-Loading Tests" and "Data Flow Coverage" sections codify the testing requirements.
@@ -770,3 +770,29 @@ The design LLM receives this width as a hard constraint and lays out all content
 - When adding new LLM calls, check if the target model supports sampling parameters before including them.
 - The Claude provider has a `modelSupportsTemperature()` guard that automatically strips unsupported params with a debug log. Callers don't need to handle this — the provider is defensive.
 - Models that support temperature: `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Models that don't: `claude-opus-4-7+`, `claude-sonnet-4-7+`.
+
+---
+
+## Cross-Package ESM Imports Break Dashboard Jest
+
+**Context:** Phase 1 Layer B (2026-04-25). Equivalence pin test needed to import `buildBrowserDesignUserMessage` from `@agentforge/agents-ux` into a dashboard test file.
+**Rule:** Dashboard's Jest `moduleNameMapper` resolves `@agentforge/core` → source, but the `.js` extension rewrite (`'^(\\..*)\\.js$': '$1'`) only fires for relative imports within the *same* package. Core's internal `.js` imports (e.g. `scaffolding/scaffold-project.ts` → `../catalogs/index.js`) are never rewritten, causing `SyntaxError: Cannot use import statement outside a module`.
+**What doesn't work:** (1) `jest.requireActual` — triggers the chain. (2) Mocking `@agentforge/core` with spread of actual — same crash. (3) Mocking providers too — yet another transitive dep crashes. (4) `transformIgnorePatterns` — wrong diagnosis, it's not node_modules. (5) Deep subpath `moduleNameMapper` entries — chain still crashes through core.
+**What works:** (a) Mock the workspace package entirely with only the symbols the test needs. (b) Read the source file as a string via `readFileSync` + grep. (c) Put the test in the package whose import chain Jest can resolve (agents-ux for agents-ux code, dashboard for dashboard code).
+**How to apply:** When writing a test that compares behavior across packages (agents-ux vs dashboard), place the content assertions in whichever package owns the function under test. In the other package, write existence/shape assertions using `readFileSync`. Consider migrating dashboard tests to Vitest (handles ESM natively) as a follow-up.
+
+---
+
+## Pure Helpers That Need Cross-Layer Access Live in Core
+
+**Context:** Phase 1 Layer B (2026-04-25). `migrateResearchArtifact` / `migratePlanningArtifact` were defined in `packages/dashboard/` (Layer C) but needed by `packages/agents-ux/` (Layer A) for the cache resume path.
+**Rule:** When a pure helper (no external deps, no side effects) is defined in Layer C (dashboard/CLI) but needs to be called from Layer A (agents-ux) or both, move it to `packages/core/`. Re-export from the original location for backward compat.
+**How to apply:** Before writing a new helper in dashboard or CLI, check if agents-ux or another lower-layer package will ever need it. If yes, put it in core from the start.
+
+---
+
+## Adding Core Barrel Exports — Audit `next.config.js` `optimizePackageImports`
+
+**Context:** Phase 1 Layer B (2026-04-25). `@agentforge/core` re-exported new symbols from `packages/core/src/migrations/index.ts` (the legacy-artifact migration helpers). The dashboard's `next.config.js` listed `@agentforge/core` under `experimental.optimizePackageImports`, and Next's barrel optimizer can fail to pick up newly added named exports — the dashboard then crashes at runtime with `"X is not exported from @agentforge/core"` even though `tsc` is green.
+**Rule:** Whenever a new symbol is added to a `@agentforge/core` barrel (`packages/core/src/index.ts` or any nested `index.ts`), check that no consumer's `next.config.js` lists `@agentforge/core` under `optimizePackageImports`. If it does, either remove core from that list (preferred — the optimization gain is small relative to the foot-gun) or add an explicit named-export sub-path import on the consumer side.
+**How to apply:** `rg "optimizePackageImports" -A 10 packages/` after editing any core barrel. The dashboard already has a comment block at `packages/dashboard/next.config.js` documenting why `@agentforge/core` and `@agentforge/agents-ux` are excluded — extend that comment if a future consumer hits the same issue.

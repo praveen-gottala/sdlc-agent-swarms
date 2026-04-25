@@ -127,6 +127,10 @@ Before adding ANY new test, verify all of:
    is forbidden — use `withEnv` from `@agentforge/core`.
 6. **~10s wall-time budget per `*.test.ts` file.** Collapse repeated end-to-end
    runs of the same flow into one assertion-dense test.
+7. **Wiring tests inspect inputs, not just outputs.** A spy/recording provider
+   that captures prompts must be queried for substring evidence of upstream
+   data. If you can drop a field upstream and the test still passes, it is
+   not a wiring test — it is an integration test and a poorly named one.
 
 Detail, examples, and the bug story live in `docs/lessons-learned.md`
 § Test Quality Gates — One Canonical Site Per Behavior.

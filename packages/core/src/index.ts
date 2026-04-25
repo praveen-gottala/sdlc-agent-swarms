@@ -390,6 +390,14 @@ export {
   PLAYWRIGHT_TOOLS,
 } from './mcp/index.js';
 
+// Legacy artifact migrations (unify-pipeline)
+export {
+  wrapResearchShallow,
+  wrapPlanningShallow,
+  migrateResearchArtifact,
+  migratePlanningArtifact,
+} from './migrations/index.js';
+
 // Design utilities (archetypes, tailwind/CSS generation, token defaults)
 export { buildDesignTokensSpec, buildBrandSpec } from './design/index.js';
 export type { DesignArchetype } from './design/index.js';
