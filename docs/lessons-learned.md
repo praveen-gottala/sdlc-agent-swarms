@@ -46,6 +46,7 @@
 - [No Shortcuts — Ever](#no-shortcuts--ever) — RULE
 - [Prompt Injection Order Matters](#prompt-injection-order-matters-tokens-before-examples) — RESOLVED
 - [Viewport Config: Project-Level with CLI Override](#viewport-config-project-level-with-cli-override) — RESOLVED
+- [Plans Must Trace Data Flows and Verify Claims](#plans-must-trace-data-flows-and-verify-claims) — RULE
 
 **Renderer Lifecycle**
 - [Renderer Staleness: Kill-and-Restart](#renderer-staleness-kill-and-restart-not-just-port-check-superseded-2026-04-20) — SUPERSEDED
@@ -796,3 +797,16 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Context:** Phase 1 Layer B (2026-04-25). `@agentforge/core` re-exported new symbols from `packages/core/src/migrations/index.ts` (the legacy-artifact migration helpers). The dashboard's `next.config.js` listed `@agentforge/core` under `experimental.optimizePackageImports`, and Next's barrel optimizer can fail to pick up newly added named exports — the dashboard then crashes at runtime with `"X is not exported from @agentforge/core"` even though `tsc` is green.
 **Rule:** Whenever a new symbol is added to a `@agentforge/core` barrel (`packages/core/src/index.ts` or any nested `index.ts`), check that no consumer's `next.config.js` lists `@agentforge/core` under `optimizePackageImports`. If it does, either remove core from that list (preferred — the optimization gain is small relative to the foot-gun) or add an explicit named-export sub-path import on the consumer side.
 **How to apply:** `rg "optimizePackageImports" -A 10 packages/` after editing any core barrel. The dashboard already has a comment block at `packages/dashboard/next.config.js` documenting why `@agentforge/core` and `@agentforge/agents-ux` are excluded — extend that comment if a future consumer hits the same issue.
+
+---
+
+## Plans Must Trace Data Flows and Verify Claims
+
+**Context:** Phase 2 plan (2026-04-25). The initial CLI migration plan was challenged on 5 concrete gaps: (1) browser correction silently dropped — `browserDesignWork` is "Phase A only, does NOT include browser correction" but the plan claimed "same artifacts as before"; (2) Phase 2.5 deferred despite the parent execution plan explicitly marking it non-deferrable; (3) cache filename mismatch — pipeline writes `designspec-v2.json` but connect/replay stages read `penpot-design.json` (different shape); (4) `--tool` flag assumed to exist but not in Commander registration; (5) `--concurrency` flag orphaned by the move to sequential processing. All 5 were catchable with mechanical verification.
+**Rule:** Before writing "same as before," "stays as-is," or "no user-visible change" in any plan:
+1. **Trace data flows end-to-end.** For every "X stays," enumerate: what artifact format does X read, what does the new code write, do schemas match? Function signatures alone are insufficient — verify data shapes.
+2. **Read parent plan gates as hard constraints.** If this task is part of a larger execution plan, its demo checkpoints and "not deferrable" sections are requirements, not suggestions. Do not defer work the parent plan explicitly forbids deferring.
+3. **Verify every factual claim against code.** "Flag exists" → grep the Commander registration. "Same artifacts" → grep artifact filenames, compare schemas. Apply lessons-learned §"Never Assume Coverage": enumerate the expected set, verify each item.
+4. **Enumerate public API changes.** Any CLI flag added, removed, or made vestigial is a contract change needing explicit handling.
+5. **For each downstream consumer of changed code, verify compatibility.** If saying "special stages stay," list what they read/write and prove the new pipeline preserves those contracts.
+**How to apply:** Before every plan submission, run a mental (or actual) grep for each claim. If you can't point to the line of code that proves the claim, the claim is unverified and should be flagged, not asserted.

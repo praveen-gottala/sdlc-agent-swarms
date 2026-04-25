@@ -40,6 +40,37 @@ names. Manual rename required.
 
 ---
 
+## `agentforge design:page`
+
+Run the full UX pipeline (Research → Planning → Design) for a single page.
+
+```bash
+cd <project-root>
+agentforge design:page <pageId> [options]
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--tool <tool>` | string | `browser` | Design tool: `browser` or `penpot` |
+| `--stage <stage>` | string | — | Skip to stage: `research`, `planning`, `design`, `replay`, `replay-browser`, `connect` |
+| `--width <px>` | number | 1440 | Viewport width in pixels |
+| `--fresh` | boolean | false | Force re-run all stages, ignoring cached artifacts |
+| `--evaluate` | boolean | false | Non-interactive design evaluation (CI/CD mode) |
+| `--evaluate-threshold <score>` | number | 75 | Minimum score (0-100) for `--evaluate` |
+| `--implement` | boolean | false | Skip feedback loop, generate code directly |
+| `--interactive` / `--no-interactive` | boolean | auto | Force interactive/non-interactive browser correction |
+| `--export-penpot` / `--no-export-penpot` | boolean | prompt | Export to Penpot after design |
+| `--penpot-correction` | boolean | false | Use legacy Penpot-based correction |
+| `--mock` | boolean | false | Use mock LLM provider (no API key needed) |
+| `--no-wait` | boolean | false | Exit after design without feedback loop |
+
+**Special stages (`--stage`):**
+- `replay` — re-execute cached Penpot script (requires Penpot connection, `--tool penpot` only)
+- `replay-browser` — re-render cached DesignSpec v2 in browser. Works for both `--tool browser` and `--tool penpot` runs since both produce `scripts/designspec-v2.json` in DesignSpecV2 format.
+- `connect` — test Penpot connection only
+
+---
+
 ## `agentforge design:page:all`
 
 Run the full design pipeline for all pages in `pages.yaml`.
@@ -49,29 +80,37 @@ cd <project-root>
 agentforge design:page:all [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--pages <ids>` | Only design specific pages (comma-separated) |
-| `--width <px>` | Override viewport width for all pages |
-| `--design-only` | Skip LLM calls, use cached research/planning/chrome |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--tool <tool>` | string | `browser` | Design tool: `browser` or `penpot` |
+| `--pages <ids>` | string | — | Only design specific pages (comma-separated) |
+| `--width <px>` | number | 1440 | Override viewport width for all pages |
+| `--design-only` | boolean | false | Skip LLM calls, use cached research/planning/chrome |
 
-**Pipeline stages:**
+**Pipeline stages (sequential per vision Layer 7):**
 
 ```
-Stage 1: Research (parallel, 3 concurrent)
-Stage 2: Planning (parallel, 3 concurrent)
-Stage 2.5: Chrome Pass (single) — designs shared header/footer once
-Stage 3: Design (parallel, 2 concurrent) — each page gets frozen chrome
-Stage 4: Manifest — builds prototype.json with screens + navigation bindings
+Chrome Pass: runDesignPipeline({ chromePass: { mode: 'generate' }, ... })
+             on the reference page — produces shared-chrome.json once.
+For each remaining page (sequentially, in spec order):
+  runDesignPipeline({ chromePass: { mode: 'consume', spec, activePageId }, ... })
+    → Research → Planning → Design (LLM) → Evaluator
+  Post-pipeline: runBrowserCorrectionPipeline (non-interactive, --tool browser only)
+  Write penpot-design.json envelope (script/nodeIds/projectId for --tool penpot,
+  browserCorrectionResult for --tool browser).
+Manifest: build prototype.json with screens + navigation bindings.
 ```
 
-**Timing (6 pages, Claim Filling Sample):**
+Sequential per-page processing matches vision Layer 7 ("across-screen
+generation is sequential via topological order"); the previous parallel
+stage model has been removed. The `--concurrency` flag is deprecated and
+ignored — a warning is printed if set.
 
-| Run type | Time | LLM calls |
-|----------|------|-----------|
-| Full | ~163s wall-clock | All stages |
-| `--design-only` | ~8s | None (cached) |
-| Chrome Pass (within full run) | ~30s | Chrome LLM only (no separate flag) |
+**Timing:** Sequential processing trades wall-clock for vision-correct
+ordering. Expect roughly `pages × single-page-time`, with cache warm-up
+benefiting `--design-only` runs (no LLM calls when research/planning
+artifacts are present). Reference numbers from the prior parallel model
+(~163s wall-clock for 6 pages) no longer apply — measure on your project.
 
 **Screen type → viewport resolution:**
 

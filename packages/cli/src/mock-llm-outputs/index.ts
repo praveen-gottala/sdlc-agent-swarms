@@ -22,10 +22,16 @@ export { mockResearchResult } from './research.js';
 export { mockPlanningResult } from './planning.js';
 export { mockDesignPenpotV2Result } from './design-penpot-v2.js';
 
-/** Ordered list of mock responses, one per pipeline stage. */
+/**
+ * Ordered list of mock responses, one per provider.complete() call.
+ * Planning may trigger a token-binding correction retry (2nd call),
+ * so we include the planning response twice.
+ */
 const MOCK_STAGES: ReadonlyArray<{ stage: string; mock: { ok: true; value: CompletionResult } }> = [
   { stage: 'research', mock: mockResearchResult as { ok: true; value: CompletionResult } },
   { stage: 'planning', mock: mockPlanningResult as { ok: true; value: CompletionResult } },
+  { stage: 'planning-correction-1', mock: mockPlanningResult as { ok: true; value: CompletionResult } },
+  { stage: 'planning-correction-2', mock: mockPlanningResult as { ok: true; value: CompletionResult } },
   { stage: 'design-penpot-v2', mock: mockDesignPenpotV2Result as { ok: true; value: CompletionResult } },
 ];
 

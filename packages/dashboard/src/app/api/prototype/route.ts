@@ -46,6 +46,17 @@ interface PrototypeManifest {
   navigation: NavigationBindingEntry[];
 }
 
+function normalizeDesignSpecShape(raw: unknown): DesignSpecV2 | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  if (record.nodes && typeof record.nodes === 'object') return record as unknown as DesignSpecV2;
+  if (record.spec && typeof record.spec === 'object') {
+    const nested = record.spec as Record<string, unknown>;
+    if (nested.nodes && typeof nested.nodes === 'object') return nested as unknown as DesignSpecV2;
+  }
+  return null;
+}
+
 /**
  * GET /api/prototype
  *
@@ -238,7 +249,11 @@ export async function GET() {
     const specPath = join(projectRoot, screen.specPath);
     if (existsSync(specPath)) {
       try {
-        specs[screen.screenId] = JSON.parse(readFileSync(specPath, 'utf-8'));
+        const parsed = JSON.parse(readFileSync(specPath, 'utf-8'));
+        const normalized = normalizeDesignSpecShape(parsed);
+        if (normalized) {
+          specs[screen.screenId] = normalized;
+        }
       } catch {
         // skip unreadable specs
       }

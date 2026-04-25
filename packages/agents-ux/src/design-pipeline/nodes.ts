@@ -117,7 +117,12 @@ export async function designNode(
     value: {
       design: {
         spec: result.value.designSpec as unknown as Record<string, unknown>,
-        designToolMetadata: { tool: 'penpot' as const },
+        designToolMetadata: {
+          tool: 'penpot' as const,
+          ...(result.value.script ? { script: result.value.script } : {}),
+          ...(result.value.penpotNodeIds ? { nodeIds: result.value.penpotNodeIds } : {}),
+          ...(result.value.penpotProjectId ? { projectId: result.value.penpotProjectId } : {}),
+        },
       },
     },
   };

@@ -14,6 +14,7 @@ module.exports = {
     '^@agentforge/channels$': '<rootDir>/../channels/src/index.ts',
     '^@agentforge/agents-design$': '<rootDir>/../agents-design/src/index.ts',
     '^@agentforge/agents-ux$': '<rootDir>/../agents-ux/src/index.ts',
+    '^@agentforge/agents-ux/(.*)$': '<rootDir>/../agents-ux/src/$1',
     '^@agentforge/designspec-renderer$': '<rootDir>/../designspec-renderer/src/index.ts',
     '^(\\..*)\\.js$': '$1',
   },

@@ -192,6 +192,10 @@ export {
   runDesignPipeline,
 } from './design-pipeline/index.js';
 
+// Feedback Adapters (Phase 2 Task 2.5 — unified feedback loop)
+export type { FeedbackAdapter, DesignSpecPatch } from './feedback/index.js';
+export { DesignSpecPatchSchema, BrowserFeedbackAdapter, PenpotFeedbackAdapter, BrowserCollaborationSession, mapBrowserSpecToDesignOutput } from './feedback/index.js';
+
 // Brownfield Import
 export type { LLMProvider, LLMToolResult, ImportOptions, PageImportResult } from './ux-import/index.js';
 export { collectPageSource, buildImportPrompt, convertPageToDesignSpec, convertAllPages } from './ux-import/index.js';

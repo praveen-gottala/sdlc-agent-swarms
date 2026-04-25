@@ -136,6 +136,7 @@ export function createProgram(): Command {
     .command('design:page')
     .description('Create a design page via the UX agent pipeline (Research -> Planning -> Design)')
     .argument('<pageId>', 'Page ID from pages.yaml (e.g., "bill-entry") or page name')
+    .option('--tool <tool>', 'Design tool: browser (default) or penpot', 'browser')
     .option('--stage <stage>', 'Skip to a stage: research, planning, design, replay, replay-browser, connect')
     .option('--module <id>', 'Module ID override (default: page ID from pages.yaml)')
     .option('--width <pixels>', 'Viewport width in pixels (default: 1440)')
@@ -152,8 +153,9 @@ export function createProgram(): Command {
     .option('--penpot-correction', 'Use legacy Penpot-based correction instead of browser correction')
     .option('--interactive', 'Force interactive browser correction')
     .option('--no-interactive', 'Force non-interactive browser correction')
-    .action(async (pageId: string, options: { stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; penpotCorrection?: boolean; interactive?: boolean }) => {
+    .action(async (pageId: string, options: { tool?: string; stage?: string; module?: string; width?: string; wait?: boolean; implement?: boolean; mock?: boolean; projectDir?: string; designspecV1?: boolean; fresh?: boolean; evaluate?: boolean; evaluateThreshold?: string; exportPenpot?: boolean; penpotCorrection?: boolean; interactive?: boolean }) => {
       await designPageCommand(pageId, process.stdout, {
+        tool: (options.tool as 'browser' | 'penpot') ?? 'browser',
         stage: options.stage as 'research' | 'planning' | 'design' | 'replay' | 'replay-browser' | 'connect' | undefined,
         module: options.module,
         width: options.width ? parseInt(options.width, 10) : undefined,
@@ -174,12 +176,14 @@ export function createProgram(): Command {
   program
     .command('design:page:all')
     .description('Design all screens from pages.yaml (reads project spec automatically)')
+    .option('--tool <tool>', 'Design tool: browser (default) or penpot', 'browser')
     .option('--pages <ids>', 'Only design specific pages (comma-separated IDs, e.g. "home,book-detail")')
     .option('--width <pixels>', 'Viewport width in pixels — overrides per-page viewports (default: 1440)')
     .option('--design-only', 'Skip research+planning, use cached artifacts')
-    .action(async (options: { pages?: string; width?: string; designOnly?: boolean }) => {
+    .action(async (options: { tool?: string; pages?: string; width?: string; designOnly?: boolean }) => {
       await designPageAllCommand(process.stdout, {
         ...options,
+        tool: (options.tool as 'browser' | 'penpot') ?? 'browser',
         width: options.width ? parseInt(options.width, 10) : undefined,
       });
     });

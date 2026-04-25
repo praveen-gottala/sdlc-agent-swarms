@@ -14,7 +14,7 @@
  * into those work fns or wrap them with timing/cost instrumentation.
  */
 
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runDesignPipeline } from '../pipeline.js';
@@ -200,6 +200,9 @@ describe('pipeline wiring smoke test', () => {
     expect(existsSync(join(previewDir, 'research-brief.json'))).toBe(true);
     expect(existsSync(join(previewDir, 'planning-spec.json'))).toBe(true);
     expect(existsSync(join(previewDir, 'scripts/designspec-v2.json'))).toBe(true);
+    const cachedDesignSpec = JSON.parse(readFileSync(join(previewDir, 'scripts/designspec-v2.json'), 'utf-8')) as Record<string, unknown>;
+    expect(cachedDesignSpec.nodes).toBeDefined();
+    expect(cachedDesignSpec.spec).toBeUndefined();
   }, 10_000);
 
   it('chromePass.spec appears in design prompt when mode=consume', async () => {

@@ -4,17 +4,16 @@
  * The `agentforge design:page:all` command.
  * Reads pages from the project spec (agentforge/spec/pages.yaml)
  * and design tokens (agentforge/spec/design-tokens.yaml), then runs
- * the browser-based design pipeline for all pages in parallel.
+ * the unified design pipeline for all pages sequentially.
  *
- * Stages run in parallel per page: Research → Planning → Design.
- * The V2 DesignSpec renderer is used (browser-only, no Penpot connection).
+ * Sequential per-page processing per vision Layer 7: "Across-screen
+ * generation is sequential via topological order" with shared running context.
  */
 
 import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
-import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact } from '../utils/pipeline-context.js';
-import { runParallel } from '../utils/parallel-pipeline.js';
+import { createPipelineContext, ensureOutputDir, saveArtifact } from '../utils/pipeline-context.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import {
@@ -25,8 +24,8 @@ import {
   loadComponentCatalog,
   loadProjectManifest,
   resolveViewports,
-  Ok,
   PREVIEW_DIR_REL,
+  PIPELINE_ARTIFACTS,
 } from '@agentforge/core';
 import type {
   LLMProviderRef,
@@ -39,10 +38,6 @@ import type { RendererTokens } from '@agentforge/designspec-renderer';
 import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
-  uxResearchWork,
-  uxPlanningWork,
-  penpotDesignWork,
-  buildDesignSystemContextFromSpec,
   buildComponentCatalogPrompt,
   buildPrototypeManifest,
   extractNavigationFromSpecs,
@@ -51,19 +46,21 @@ import {
   analyzeNavigation,
   buildPageContext,
   resolveSharedComponents,
-  designChromeComponents,
   buildSharedChromeFilePayload,
   deriveRegionsFromPageSpec,
   propagateNavigateToChromeTabs,
+  runDesignPipeline,
+  runBrowserCorrectionPipeline,
 } from '@agentforge/agents-ux';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type {
-  UXResearchInput,
-  UXResearchOutput,
-  UXPlanningInput,
-  UXPlanningOutput,
-  PenpotDesignInput,
+  BrowserCorrectionOptions,
+  BrowserCorrectionResult,
+  PenpotDesignOutput,
+  PipelineInput,
 } from '@agentforge/agents-ux';
+import type { LLMProvider } from '@agentforge/providers';
+import { CliStdoutSink } from '../telemetry/cli-sink.js';
 
 // ============================================================================
 // Types
@@ -72,11 +69,13 @@ import type {
 export interface DesignPageAllOptions {
   /** Only design specific pages (comma-separated IDs). */
   readonly pages?: string;
+  /** Design tool backend: 'browser' (default) or 'penpot'. */
+  readonly tool?: 'browser' | 'penpot';
   /** Target viewport width in pixels — overrides per-page viewports. */
   readonly width?: number;
   /** Skip research+planning, use cached artifacts. */
   readonly designOnly?: boolean;
-  /** Maximum concurrent LLM calls per stage. Default: 3 */
+  /** @deprecated Sequential processing per vision Layer 7. Ignored. */
   readonly concurrency?: number;
   /**
    * When set, use this directory as the AgentForge project root instead of
@@ -92,6 +91,17 @@ type PageSpec = PageEntry;
 function toRendererTokens(spec: DesignTokensSpec): RendererTokens {
   const { version, created_by, ...tokens } = spec;
   return tokens;
+}
+
+function normalizeDesignSpecShape(raw: unknown): DesignSpecV2 | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  if (record.nodes && typeof record.nodes === 'object') return record as unknown as DesignSpecV2;
+  if (record.spec && typeof record.spec === 'object') {
+    const nested = record.spec as Record<string, unknown>;
+    if (nested.nodes && typeof nested.nodes === 'object') return nested as unknown as DesignSpecV2;
+  }
+  return null;
 }
 
 // ============================================================================
@@ -210,7 +220,8 @@ export async function designPageAllCommand(
   // Load structured design tokens for prompt injection
   const realFs = createRealFs();
   const structuredTokensResult = loadDesignTokens(projectRoot, realFs);
-  const brandSpecResult = loadBrandSpec(projectRoot, realFs);
+  // Brand spec loaded for future use by pipeline nodes (design system prompt)
+  loadBrandSpec(projectRoot, realFs);
   const catalogResult = loadComponentCatalog(projectRoot, realFs);
   const componentCatalog = catalogResult.ok ? catalogResult.value : undefined;
   const componentCatalogPromptStr = buildComponentCatalogPrompt(componentCatalog);
@@ -251,131 +262,24 @@ export async function designPageAllCommand(
   );
   output.write(infoMsg(`  Renderer: V2 browser-only (${Object.keys(catalogMapV2).length} catalog entries)\n`));
 
-  const concurrency = options.concurrency ?? 3;
-  output.write(infoMsg(`  Concurrency: ${concurrency}\n\n`));
-
-  // ── Stage 1: Research all pages in parallel ──
-
-  output.write(infoMsg('  Stage 1/4: Research\n'));
-
-  const researchResults = await runParallel<PageSpec, UXResearchOutput>(
-    pages,
-    async (page, i) => {
-      const moduleId = `bookshelf-${page.id}`;
-      const outputDir = ensureOutputDir(moduleId);
-
-      if (options.designOnly) {
-        const cached = loadArtifact<UXResearchOutput>(outputDir, 'research-brief.json');
-        if (cached) return Ok(cached);
-      }
-
-      const taskId = `task_research_${page.id}_${Date.now()}`;
-      const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-      const context = createPipelineContext(taskId);
-      const description = buildPageDescription(page, designTokens);
-      const input: UXResearchInput = { moduleId, taskId, prdRequirements: [description] };
-      const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
-      if (result.ok) saveArtifact(outputDir, 'research-brief.json', result.value);
-      return result;
-    },
-    {
-      concurrency,
-      onStart: (i) => output.write(infoMsg(`    [${i + 1}/${pages.length}] ${pages[i].name} — researching...\n`)),
-      onComplete: (i, _total, ok, ms) => output.write(
-        ok ? successMsg(`    [${i + 1}/${pages.length}] ${pages[i].name} — research done (${(ms / 1000).toFixed(1)}s)\n`)
-           : errorMsg(`    [${i + 1}/${pages.length}] ${pages[i].name} — research failed\n`),
-      ),
-    },
-  );
-
-  // Check all research succeeded
-  const researchMap = new Map<string, UXResearchOutput>();
-  for (let i = 0; i < pages.length; i++) {
-    const r = researchResults[i];
-    if (r.result.ok) {
-      researchMap.set(pages[i].id, r.result.value);
-    } else {
-      output.write(errorMsg(`  Research failed for ${pages[i].id}: ${r.result.error.message}\n`));
-    }
+  if (options.concurrency !== undefined) {
+    output.write(warnMsg('  --concurrency is deprecated (sequential processing per vision Layer 7). Ignored.\n'));
   }
+  output.write('\n');
 
-  const researchedPages = pages.filter(p => researchMap.has(p.id));
-  if (researchedPages.length === 0) {
-    output.write(errorMsg('  All research stages failed. Aborting.\n'));
-    process.exitCode = 1;
-    return;
-  }
+  // ── Provider factory for runDesignPipeline ──
 
-  // ── Stage 2: Planning all pages in parallel ──
+  const designTool = options.tool ?? 'browser';
+  const providerFactory = (model: string): LLMProviderRef =>
+    createClaudeProvider(model, providerConfig) as unknown as LLMProviderRef;
 
-  output.write(infoMsg('\n  Stage 2/4: Planning\n'));
+  const componentCatalogPrompt = componentCatalogPromptStr;
 
-  const planningResults = await runParallel<PageSpec, UXPlanningOutput>(
-    researchedPages,
-    async (page) => {
-      const moduleId = `bookshelf-${page.id}`;
-      const outputDir = ensureOutputDir(moduleId);
-
-      if (options.designOnly) {
-        const cached = loadArtifact<UXPlanningOutput>(outputDir, 'planning-spec.json');
-        if (cached) return Ok(cached);
-      }
-
-      const researchOutput = researchMap.get(page.id)!;
-      const taskId = `task_planning_${page.id}_${Date.now()}`;
-      const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-      const context = createPipelineContext(taskId);
-      const input: UXPlanningInput = {
-        briefId: researchOutput.briefId, moduleId, taskId, designBrief: researchOutput,
-        ...(designConfig ? { designConfig } : {}),
-      };
-      const result = await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
-      if (result.ok) saveArtifact(outputDir, 'planning-spec.json', result.value);
-      return result;
-    },
-    {
-      concurrency,
-      onStart: (i) => output.write(infoMsg(`    [${i + 1}/${researchedPages.length}] ${researchedPages[i].name} — planning...\n`)),
-      onComplete: (i, _total, ok, ms) => output.write(
-        ok ? successMsg(`    [${i + 1}/${researchedPages.length}] ${researchedPages[i].name} — planning done (${(ms / 1000).toFixed(1)}s)\n`)
-           : errorMsg(`    [${i + 1}/${researchedPages.length}] ${researchedPages[i].name} — planning failed\n`),
-      ),
-    },
-  );
-
-  // Collect planning outputs
-  const planningMap = new Map<string, UXPlanningOutput>();
-  for (let i = 0; i < researchedPages.length; i++) {
-    const r = planningResults[i];
-    if (r.result.ok) {
-      planningMap.set(researchedPages[i].id, r.result.value);
-    } else {
-      output.write(errorMsg(`  Planning failed for ${researchedPages[i].id}: ${r.result.error.message}\n`));
-    }
-  }
-
-  const plannedPages = researchedPages.filter(p => planningMap.has(p.id));
-  if (plannedPages.length === 0) {
-    output.write(errorMsg('  All planning stages failed. Aborting.\n'));
-    process.exitCode = 1;
-    return;
-  }
-
-  // ── Build shared design system prompt (once, shared across all designs) ──
-
-  let sharedDesignSystemPrompt: string | undefined;
-  if (structuredTokensResult.ok && brandSpecResult.ok) {
-    const firstPlanning = planningMap.values().next().value;
-    if (firstPlanning) {
-      const dsCtx = buildDesignSystemContextFromSpec(structuredTokensResult.value, brandSpecResult.value, firstPlanning);
-      sharedDesignSystemPrompt = dsCtx.designSystemPrompt;
-    }
-  }
-
-  // ── Stage 2.5: Chrome Pass (shared shell once) ──
+  // ── Chrome Pass (shared shell, reference page first) ──
 
   let sharedChromeSpec: DesignSpecV2 | undefined;
-  let sharedMeta = resolveSharedComponents(pages);
+  const sharedMeta = resolveSharedComponents(pages);
+
   if (options.designOnly) {
     const chromePath = join(projectRoot, 'agentforge', 'shared-chrome.json');
     if (existsSync(chromePath)) {
@@ -383,161 +287,174 @@ export async function designPageAllCommand(
         const raw = JSON.parse(readFileSync(chromePath, 'utf-8')) as Record<string, unknown>;
         delete raw.regions;
         sharedChromeSpec = raw as unknown as DesignSpecV2;
-        output.write(infoMsg(`\n  Stage 2.5/4: Chrome — loaded ${chromePath}\n`));
+        output.write(infoMsg(`  Chrome — loaded ${chromePath}\n`));
       } catch {
         output.write(warnMsg('  Could not read shared-chrome.json; continuing without frozen chrome\n'));
       }
     }
-  } else {
-    if (sharedMeta) {
-      const refPage = pages.find(p => p.id === sharedMeta.referencePageId);
-      const refPlanning = refPage ? planningMap.get(refPage.id) : undefined;
-      if (refPage && refPlanning) {
-        output.write(
-          infoMsg(
-            `\n  Stage 2.5/4: Chrome Pass — ${sharedMeta.components.join(', ')} (ref: ${refPage.id})\n`,
-          ),
-        );
-        const refViewport = resolveViewports({
-          cliWidth: options.width,
-          screenType: refPage.screen_type,
-          pageViewports: refPage.viewports,
-          designConfig,
-        })[0];
-        const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-        const chromeResult = await designChromeComponents(
-          {
-            refPage,
-            refPlanning,
-            sharedChrome: sharedMeta,
-            rendererTokens,
-            catalogMap: catalogMapV2,
-            ...(sharedDesignSystemPrompt ? { designSystemPrompt: sharedDesignSystemPrompt } : {}),
-            ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
-            viewportWidth: refViewport,
-          },
-          provider as unknown as LLMProviderRef,
-        );
-        if (chromeResult.ok) {
-          sharedChromeSpec = chromeResult.value;
-          const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
-          const agentforgeDir = join(projectRoot, 'agentforge');
-          if (!existsSync(agentforgeDir)) mkdirSync(agentforgeDir, { recursive: true });
-          const chromePath = join(agentforgeDir, 'shared-chrome.json');
-          writeFileSync(chromePath, JSON.stringify(payload, null, 2));
-          output.write(
-            successMsg(
-              `    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`,
-            ),
-          );
-        } else {
-          output.write(
-            warnMsg(
-              `  Chrome Pass failed (${chromeResult.error.message}) — per-page chrome will be unconstrained\n`,
-            ),
-          );
-        }
+  } else if (sharedMeta) {
+    const refPage = pages.find(p => p.id === sharedMeta.referencePageId);
+    if (refPage) {
+      output.write(infoMsg(`\n  Chrome Pass — ${sharedMeta.components.join(', ')} (ref: ${refPage.id})\n`));
+
+      const refViewport = resolveViewports({
+        cliWidth: options.width,
+        screenType: refPage.screen_type,
+        pageViewports: refPage.viewports,
+        designConfig,
+      })[0];
+
+      const refDescription = buildPageDescription(refPage, designTokens);
+      const refModuleId = `bookshelf-${refPage.id}`;
+      const refTaskId = `task_chrome_${refPage.id}_${Date.now()}`;
+      const refPageContext = buildPageContext(refPage, pages);
+
+      const chromeInput: PipelineInput = {
+        moduleId: refModuleId,
+        taskId: refTaskId,
+        projectRoot,
+        designTool,
+        providerString: resolveCLIModel(),
+        resume: !!options.designOnly,
+        telemetry: new CliStdoutSink(output),
+        chromePass: { mode: 'generate' },
+        agentContext: createPipelineContext(refTaskId, undefined, undefined, projectRoot, providerFactory),
+        prdRequirements: [refDescription],
+        pageContext: refPageContext,
+        designTokensSpec: structuredTokens,
+        designConfig,
+        description: refDescription,
+        viewportWidth: refViewport,
+        rendererTokens: rendererTokens as Record<string, unknown>,
+        catalogMap: catalogMapV2,
+        componentCatalogPrompt,
+      };
+
+      const chromeResult = await runDesignPipeline(chromeInput);
+
+      if (chromeResult.ok && chromeResult.value.design?.spec) {
+        sharedChromeSpec = chromeResult.value.design.spec as unknown as DesignSpecV2;
+        const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
+        const agentforgeDir = join(projectRoot, 'agentforge');
+        if (!existsSync(agentforgeDir)) mkdirSync(agentforgeDir, { recursive: true });
+        writeFileSync(join(agentforgeDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
+        output.write(successMsg(`    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`));
+      } else {
+        const errMsg = chromeResult.ok ? 'no design spec returned' : ((chromeResult.error as { message?: string }).message ?? 'unknown');
+        output.write(warnMsg(`  Chrome Pass failed (${errMsg}) — per-page chrome will be unconstrained\n`));
       }
     }
   }
 
-  // ── Stage 3: Design all pages in parallel (browser-only V2) ──
-
-  output.write(infoMsg('\n  Stage 3/4: Design (browser V2)\n'));
-
-  interface DesignPageResult { readonly id: string; readonly name: string }
-
-  const designResults = await runParallel<PageSpec, DesignPageResult>(
-    plannedPages,
-    async (page) => {
-      const moduleId = `bookshelf-${page.id}`;
-      const taskId = `task_design_${page.id}_${Date.now()}`;
-      const planningOutput = planningMap.get(page.id)!;
-      const description = buildPageDescription(page, designTokens);
-
-      const viewportWidth = resolveViewports({
-        cliWidth: options.width,
-        screenType: page.screen_type,
-        pageViewports: page.viewports,
-        designConfig,
-      })[0];
-
-      const provider = createClaudeProvider(resolveCLIModel(), providerConfig);
-
-      const pageContext = buildPageContext(page, pages);
-
-      const penpotInput: PenpotDesignInput = {
-        specRef: planningOutput.specRef, moduleId, taskId, planningOutput,
-        description,
-        viewportWidth,
-        useDesignSpecV2: true,
-        rendererTokens,
-        catalogMap: catalogMapV2,
-        pageContext,
-        ...(sharedDesignSystemPrompt ? { designSystemPrompt: sharedDesignSystemPrompt } : {}),
-        ...(componentCatalogPromptStr ? { componentCatalogPrompt: componentCatalogPromptStr } : {}),
-        ...(sharedChromeSpec
-          ? { frozenChromeSpec: sharedChromeSpec, frozenChromePageId: page.id }
-          : {}),
-      };
-
-      const designResult = await penpotDesignWork(penpotInput, provider);
-
-      if (designResult.ok) {
-        const outputDir = ensureOutputDir(moduleId);
-        saveArtifact(outputDir, 'penpot-design.json', designResult.value);
-      }
-
-      return designResult.ok
-        ? Ok({ id: page.id, name: page.name })
-        : designResult;
-    },
-    {
-      concurrency: Math.min(concurrency, 2),
-      onStart: (i) => output.write(infoMsg(`    [${i + 1}/${plannedPages.length}] ${plannedPages[i].name} — designing (${resolveViewports({ cliWidth: options.width, screenType: plannedPages[i].screen_type, pageViewports: plannedPages[i].viewports, designConfig })[0]}px)...\n`)),
-      onComplete: (i, _total, ok, ms) => output.write(
-        ok ? successMsg(`    [${i + 1}/${plannedPages.length}] ${plannedPages[i].name} — design done (${(ms / 1000).toFixed(1)}s)\n`)
-           : errorMsg(`    [${i + 1}/${plannedPages.length}] ${plannedPages[i].name} — design failed\n`),
-      ),
-    },
-  );
-
-  // ── Summary ──
+  // ── Sequential per-page pipeline (vision Layer 7: topological order) ──
 
   interface PageResult { id: string; name: string; status: 'ok' | 'failed'; durationMs: number; stage: string }
   const results: PageResult[] = [];
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
-    const research = researchResults[i];
-    if (!research.result.ok) {
-      results.push({ id: page.id, name: page.name, status: 'failed', durationMs: research.durationMs, stage: 'research' });
+    // Skip reference page if it was already designed during Chrome Pass
+    if (sharedMeta && page.id === sharedMeta.referencePageId && sharedChromeSpec && !options.designOnly) {
+      results.push({ id: page.id, name: page.name, status: 'ok', durationMs: 0, stage: 'complete (chrome pass)' });
       continue;
     }
 
-    const planIdx = researchedPages.indexOf(page);
-    if (planIdx < 0 || !planningResults[planIdx].result.ok) {
-      results.push({ id: page.id, name: page.name, status: 'failed', durationMs: (planIdx >= 0 ? planningResults[planIdx].durationMs : 0), stage: 'planning' });
-      continue;
-    }
+    const moduleId = `bookshelf-${page.id}`;
+    const taskId = `task_page_${page.id}_${Date.now()}`;
+    const description = buildPageDescription(page, designTokens);
+    const pageContext = buildPageContext(page, pages);
+    const viewportWidth = resolveViewports({
+      cliWidth: options.width,
+      screenType: page.screen_type,
+      pageViewports: page.viewports,
+      designConfig,
+    })[0];
 
-    const designIdx = plannedPages.indexOf(page);
-    if (designIdx < 0 || !designResults[designIdx].result.ok) {
-      results.push({ id: page.id, name: page.name, status: 'failed', durationMs: (designIdx >= 0 ? designResults[designIdx].durationMs : 0), stage: 'design' });
-      continue;
-    }
+    output.write(infoMsg(`\n  [${i + 1}/${pages.length}] ${page.name} (${viewportWidth}px)...\n`));
 
-    const totalMs = research.durationMs + planningResults[planIdx].durationMs + designResults[designIdx].durationMs;
-    results.push({ id: page.id, name: page.name, status: 'ok', durationMs: totalMs, stage: 'complete' });
+    const pageInput: PipelineInput = {
+      moduleId,
+      taskId,
+      projectRoot,
+      designTool,
+      providerString: resolveCLIModel(),
+      resume: !!options.designOnly,
+      ...(options.designOnly ? { stage: 'design' as const } : {}),
+      telemetry: new CliStdoutSink(output),
+      agentContext: createPipelineContext(taskId, undefined, undefined, projectRoot, providerFactory),
+      prdRequirements: [description],
+      pageContext,
+      designTokensSpec: structuredTokens,
+      designConfig,
+      description,
+      viewportWidth,
+      rendererTokens: rendererTokens as Record<string, unknown>,
+      catalogMap: catalogMapV2,
+      componentCatalogPrompt,
+      ...(sharedChromeSpec ? {
+        chromePass: { mode: 'consume' as const, spec: sharedChromeSpec, activePageId: page.id },
+      } : {}),
+    };
+
+    const t0 = Date.now();
+    const pageResult = await runDesignPipeline(pageInput);
+    const durationMs = Date.now() - t0;
+
+    if (pageResult.ok) {
+      const outputDir = ensureOutputDir(moduleId, projectRoot);
+      const pageSpec = pageResult.value.design?.spec as DesignSpecV2 | undefined;
+      const meta = pageResult.value.design?.designToolMetadata;
+
+      // Post-pipeline browser correction (batch is non-interactive by definition).
+      // Wrapped in try/catch so a Playwright failure on one page doesn't abort the loop.
+      let pageCorrectionResult: BrowserCorrectionResult | undefined;
+      if (designTool === 'browser' && pageSpec) {
+        const correctionOpts: BrowserCorrectionOptions = {
+          width: viewportWidth,
+          visionCorrection: true,
+          interactive: false,
+          outputDir: join(outputDir, PIPELINE_ARTIFACTS.corrections),
+          ...(pageResult.value.planning ? { planningOutput: pageResult.value.planning } : {}),
+        };
+        try {
+          const provider = providerFactory(resolveCLIModel());
+          pageCorrectionResult = await runBrowserCorrectionPipeline(
+            pageSpec,
+            rendererTokens,
+            catalogMapV2,
+            provider as unknown as LLMProvider,
+            correctionOpts,
+          );
+        } catch (correctionErr) {
+          output.write(warnMsg(`    Browser correction failed for ${page.id}: ${correctionErr instanceof Error ? correctionErr.message : String(correctionErr)}\n`));
+          output.write(warnMsg(`    Continuing without correction for this page.\n`));
+        }
+      }
+
+      const designOutput: PenpotDesignOutput = {
+        moduleId,
+        breakpoints: [],
+        ...(pageSpec ? { designSpec: pageSpec } : {}),
+        ...(meta?.script ? { script: meta.script } : {}),
+        ...(meta?.nodeIds ? { penpotNodeIds: meta.nodeIds } : {}),
+        ...(meta?.projectId ? { penpotProjectId: meta.projectId } : {}),
+        ...(pageCorrectionResult ? { browserCorrectionResult: pageCorrectionResult } : {}),
+      };
+      saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
+      output.write(successMsg(`  [${i + 1}/${pages.length}] ${page.name} — done (${(durationMs / 1000).toFixed(1)}s)\n`));
+      results.push({ id: page.id, name: page.name, status: 'ok', durationMs, stage: 'complete' });
+    } else {
+      const err = pageResult.error as { message?: string; stage?: string };
+      output.write(errorMsg(`  [${i + 1}/${pages.length}] ${page.name} — failed at ${err.stage ?? 'unknown'}\n`));
+      results.push({ id: page.id, name: page.name, status: 'failed', durationMs, stage: err.stage ?? 'unknown' });
+    }
   }
+
+  // ── Summary ──
 
   const succeeded = results.filter(r => r.status === 'ok');
   const failed = results.filter(r => r.status === 'failed');
-  const wallClockMs = Math.max(
-    ...researchResults.map(r => r.durationMs),
-    ...planningResults.map(r => r.durationMs),
-    ...designResults.map(r => r.durationMs),
-  );
+  const totalMs = results.reduce((sum, r) => sum + r.durationMs, 0);
 
   output.write('\n');
   output.write(infoMsg('='.repeat(60) + '\n'));
@@ -549,7 +466,7 @@ export async function designPageAllCommand(
     output.write(infoMsg(`  ${icon} ${r.name} (${detail})\n`));
   }
   output.write(infoMsg(`\n  ${succeeded.length}/${results.length} succeeded\n`));
-  output.write(infoMsg(`  Wall-clock: ~${(wallClockMs / 1000).toFixed(0)}s (parallel)\n`));
+  output.write(infoMsg(`  Total: ~${(totalMs / 1000).toFixed(0)}s (sequential)\n`));
   if (failed.length > 0) {
     output.write(warnMsg(`  ${failed.length} failed: ${failed.map(f => `${f.id} (${f.stage})`).join(', ')}\n`));
   }
@@ -570,8 +487,14 @@ export async function designPageAllCommand(
       if (!existsSync(specPath)) continue;
       try {
         const specContent = readFileSync(specPath, 'utf-8');
-        designedSpecs[r.id] = JSON.parse(specContent);
-        writeFileSync(join(designsDir, `${r.id}.json`), specContent);
+        const parsed = JSON.parse(specContent);
+        const normalized = normalizeDesignSpecShape(parsed);
+        if (!normalized) {
+          output.write(warnMsg(`    Invalid DesignSpec shape for ${r.id}, skipping\n`));
+          continue;
+        }
+        designedSpecs[r.id] = normalized;
+        writeFileSync(join(designsDir, `${r.id}.json`), JSON.stringify(normalized, null, 2));
       } catch {
         output.write(warnMsg(`    Could not read spec for ${r.id}, skipping\n`));
       }

@@ -23,6 +23,8 @@ export const DesignOutputSchema = z.object({
     nodeIds: z.record(z.string()).optional(),
     projectId: z.string().optional(),
     screenshotPaths: z.array(z.string()).optional(),
+    // Penpot-only: LLM-generated script for replay; populated when tool === 'penpot'
+    script: z.string().optional(),
   }).optional(),
 });
 export type DesignOutput = z.infer<typeof DesignOutputSchema>;

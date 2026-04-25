@@ -7,7 +7,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import type { MCPClient, PromptTrace, AgentContext } from '@agentforge/core';
+import type { MCPClient, PromptTrace, AgentContext, LLMProviderRef } from '@agentforge/core';
 import {
   Ok,
   Err,
@@ -26,12 +26,17 @@ import {
  *
  * Research and planning agents don't use MCP, so `mcpClient` is optional.
  * Governance is bypassed (CLI handles approval via interactive prompts).
+ *
+ * @param providerFactory When provided, enables `resolveProvider(model)` for
+ *   use with `runDesignPipeline`. CLI callers pass
+ *   `(model) => createClaudeProvider(model, providerConfig)`.
  */
 export function createPipelineContext(
   taskId: string,
   mcpClient?: MCPClient,
   promptTraces?: PromptTrace[],
   baseDir?: string,
+  providerFactory?: (model: string) => LLMProviderRef,
 ): AgentContext {
   if (!baseDir) {
     debugLog('createPipelineContext: baseDir not provided → default: process.cwd()');
@@ -43,7 +48,9 @@ export function createPipelineContext(
     fs: createRealFs(),
     mcpClient,
     runGovernance: async () => Ok({ status: 'proceed' as const }),
-    resolveProvider: () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'not used', recoverable: false }),
+    resolveProvider: providerFactory
+      ? (model: string) => Ok(providerFactory(model))
+      : () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'resolveProvider not wired — pass providerFactory to createPipelineContext', recoverable: false }),
     recordAudit: () => {},
     promptTraces,
   };

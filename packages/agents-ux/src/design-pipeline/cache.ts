@@ -14,6 +14,10 @@ import { UXPlanningOutputSchema } from '../schemas.js';
 
 type ArtifactName = keyof typeof PIPELINE_ARTIFACTS;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
 /** Resolve the cache directory for a module's pipeline artifacts. */
 export function artifactDir(projectRoot: string, moduleId: string): string {
   return join(projectRoot, PREVIEW_DIR_REL, moduleId);
@@ -56,6 +60,13 @@ export function loadCachedArtifact(
       const validated = UXPlanningOutputSchema.passthrough().safeParse(migrated);
       return validated.success ? validated.data : undefined;
     }
+    if (artifact === 'designSpecV2') {
+      // Canonical on-disk shape is raw DesignSpecV2.
+      // Backward compatibility: older runs may have cached DesignOutput ({ spec, designToolMetadata }).
+      if (isRecord(parsed) && isRecord(parsed.spec)) return parsed;
+      if (isRecord(parsed)) return { spec: parsed };
+      return undefined;
+    }
     return parsed;
   } catch {
     return undefined;
@@ -77,5 +88,9 @@ export function saveCachedArtifact(
   const pathParts = PIPELINE_ARTIFACTS[artifact].split('/');
   const parentDir = pathParts.length > 1 ? join(dir, ...pathParts.slice(0, -1)) : dir;
   fs.mkdir(parentDir);
-  fs.writeFile(path, JSON.stringify(data, null, 2));
+  const payload =
+    artifact === 'designSpecV2' && isRecord(data) && isRecord(data.spec)
+      ? data.spec
+      : data;
+  fs.writeFile(path, JSON.stringify(payload, null, 2));
 }

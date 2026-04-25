@@ -48,9 +48,6 @@ import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import type { LLMProvider } from '@agentforge/providers';
 import { createMockLLMProvider } from '../mock-llm-outputs/index.js';
 import {
-  uxResearchWork,
-  uxPlanningWork,
-  penpotDesignWork,
   exportDesignSpecToPenpot,
   buildDesignSystemContextFromSpec,
   buildComponentCatalogPrompt,
@@ -64,18 +61,16 @@ import {
   resolvePageEntry,
   buildPageContext,
   evaluateDesign,
+  runDesignPipeline,
+  runBrowserCorrectionPipeline,
 } from '@agentforge/agents-ux';
-import type { BrowserCorrectionOptions } from '@agentforge/agents-ux';
+import type { BrowserCorrectionOptions, PipelineInput } from '@agentforge/agents-ux';
 import type {
-  UXResearchInput,
-  UXResearchOutput,
-  UXPlanningInput,
-  UXPlanningOutput,
-  PenpotDesignInput,
   PenpotDesignOutput,
   UXImplementationInput,
   ImplementCallback,
 } from '@agentforge/agents-ux';
+import { CliStdoutSink } from '../telemetry/cli-sink.js';
 import type { RendererTokens } from '@agentforge/designspec-renderer';
 import { loadCatalogForRenderer, openBrowserSession, openInteractivePreview } from '@agentforge/designspec-renderer';
 
@@ -91,6 +86,8 @@ interface DesignPageOptions {
    * - 'connect': test connection only, load design from cache
    */
   readonly stage?: 'research' | 'planning' | 'design' | 'replay' | 'replay-browser' | 'connect';
+  /** Design tool backend: 'browser' (default) or 'penpot'. */
+  readonly tool?: 'browser' | 'penpot';
   /** Module ID for the design. Default: derived from description. */
   readonly module?: string;
   /** Target viewport width in pixels (default: 1440). */
@@ -133,6 +130,21 @@ interface DesignPageOptions {
 function toRendererTokens(spec: DesignTokensSpec): RendererTokens {
   const { version, created_by, ...tokens } = spec;
   return tokens;
+}
+
+function normalizeDesignSpecShape(raw: unknown): import('@agentforge/designspec-renderer').DesignSpecV2 | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  if (record.nodes && typeof record.nodes === 'object') {
+    return record as unknown as import('@agentforge/designspec-renderer').DesignSpecV2;
+  }
+  if (record.spec && typeof record.spec === 'object') {
+    const nested = record.spec as Record<string, unknown>;
+    if (nested.nodes && typeof nested.nodes === 'object') {
+      return nested as unknown as import('@agentforge/designspec-renderer').DesignSpecV2;
+    }
+  }
+  return null;
 }
 
 /** Build and save pipeline-trace.json summary. */
@@ -338,7 +350,7 @@ export async function designPageCommand(
 
   // -- Penpot connection --
   // Defer connection unless legacy correction or explicit Penpot export is requested
-  const needsPenpotEarly = !!(options.penpotCorrection || options.designspecV1);
+  const needsPenpotEarly = !!(options.penpotCorrection || options.designspecV1 || options.tool === 'penpot');
   let mcpClient: MCPClient;
   let disconnectFn: (() => void) | undefined;
 
@@ -357,116 +369,12 @@ export async function designPageCommand(
 
   try {
 
-  // -- Stage 1: Research --
-  let researchOutput: UXResearchOutput;
   const forceFresh = options.fresh ?? false;
+  const designTool = options.tool ?? 'browser';
 
-  if (skipToStage === 'planning' || skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXResearchOutput>(outputDir, PIPELINE_ARTIFACTS.researchBrief);
-    if (!cached) {
-      output.write(errorMsg(`No cached research output found at ${outputDir}/${PIPELINE_ARTIFACTS.researchBrief}\n`));
-      process.exitCode = 1;
-      return;
-    }
-    researchOutput = cached;
-    output.write(infoMsg('  [1/3] Research -- loaded from cache\n'));
-  } else {
-    // Auto-reuse cached research if available (unless --fresh)
-    const cachedResearch = !forceFresh ? loadArtifact<UXResearchOutput>(outputDir, PIPELINE_ARTIFACTS.researchBrief) : null;
-    if (cachedResearch) {
-      researchOutput = cachedResearch;
-      output.write(infoMsg('\n  [1/3] Research -- reusing cached results (use --fresh to redo)\n'));
-    } else {
-      output.write(infoMsg('\n  [1/3] Research -- analyzing requirements...\n'));
-      if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for research\n'));
-      const provider = makeProvider();
-      const context = createPipelineContext(taskId, undefined, promptTraces, baseDir);
+  // ── Special stages: connect, replay, replay-browser ──
+  // These bypass the unified pipeline entirely — they load from cache and return early.
 
-      const prdRequirements: string[] = [description];
-      if (prdContent) {
-        prdRequirements.push(prdContent);
-      }
-
-      const input: UXResearchInput = {
-        moduleId,
-        taskId,
-        prdRequirements,
-        ...(designTokens ? { designTokensSpec: designTokens } : {}),
-        ...(pageContext ? { pageContext } : {}),
-      };
-
-      const t0 = Date.now();
-      const result = await uxResearchWork(input, provider as unknown as LLMProviderRef, [], context);
-      const ms = Date.now() - t0;
-
-      if (!result.ok) {
-        output.write(errorMsg(`Research failed: ${result.error.message}\n`));
-        process.exitCode = 1;
-        return;
-      }
-
-      researchOutput = result.value;
-      saveArtifact(outputDir, PIPELINE_ARTIFACTS.researchBrief, researchOutput);
-      for (const trace of promptTraces) {
-        saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
-      }
-      output.write(successMsg(`  Research complete (${(ms / 1000).toFixed(1)}s)\n`));
-    }
-  }
-
-  // -- Stage 2: Planning --
-  let planningOutput: UXPlanningOutput;
-
-  if (skipToStage === 'design' || skipToStage === 'replay' || skipToStage === 'replay-browser' || skipToStage === 'connect') {
-    const cached = loadArtifact<UXPlanningOutput>(outputDir, PIPELINE_ARTIFACTS.planningSpec);
-    if (!cached) {
-      output.write(errorMsg(`No cached planning output found at ${outputDir}/${PIPELINE_ARTIFACTS.planningSpec}\n`));
-      process.exitCode = 1;
-      return;
-    }
-    planningOutput = cached;
-    output.write(infoMsg('  [2/3] Planning -- loaded from cache\n'));
-  } else {
-    // Auto-reuse cached planning if available (unless --fresh)
-    const cachedPlanning = !forceFresh ? loadArtifact<UXPlanningOutput>(outputDir, PIPELINE_ARTIFACTS.planningSpec) : null;
-    if (cachedPlanning) {
-      planningOutput = cachedPlanning;
-      output.write(infoMsg('\n  [2/3] Planning -- reusing cached results (use --fresh to redo)\n'));
-    } else {
-      output.write(infoMsg('\n  [2/3] Planning -- building component spec...\n'));
-      if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for planning\n'));
-      const provider = makeProvider();
-      const context = createPipelineContext(taskId, undefined, promptTraces, baseDir);
-
-      const input: UXPlanningInput = {
-        briefId: researchOutput.briefId,
-        moduleId,
-        taskId,
-        designBrief: researchOutput,
-        ...(designConfig ? { designConfig } : {}),
-        ...(pageContext ? { pageContext } : {}),
-      };
-
-      const t0 = Date.now();
-      const result = await uxPlanningWork(input, provider as unknown as LLMProviderRef, [], context);
-      const ms = Date.now() - t0;
-
-      if (!result.ok) {
-        output.write(errorMsg(`Planning failed: ${result.error.message}\n`));
-        process.exitCode = 1;
-        return;
-      }
-
-      planningOutput = result.value;
-      saveArtifact(outputDir, PIPELINE_ARTIFACTS.planningSpec, planningOutput);
-      for (const trace of promptTraces) {
-        saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
-      }
-      output.write(successMsg(`  Planning complete (${(ms / 1000).toFixed(1)}s)\n`));
-    }
-  }
-
-  // -- Stage: connect (test connection only) --
   if (skipToStage === 'connect') {
     const cached = loadArtifact<PenpotDesignOutput>(outputDir, PIPELINE_ARTIFACTS.penpotDesign);
     if (!cached) {
@@ -486,14 +394,10 @@ export async function designPageCommand(
     return;
   }
 
-  // -- Stage: replay (re-execute cached script — requires Penpot) --
   if (skipToStage === 'replay') {
     if (!needsPenpotEarly) {
-      // Need Penpot for replay
       const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
-      if (!connectionResult) {
-        return;
-      }
+      if (!connectionResult) { return; }
       mcpClient = connectionResult.mcpClient;
       disconnectFn = connectionResult.disconnectFn;
     }
@@ -505,63 +409,28 @@ export async function designPageCommand(
       disconnectFn?.();
       return;
     }
-
     output.write(infoMsg('\n  [3/3] Design -- replaying cached script into Penpot...\n'));
     const t0 = Date.now();
-
-    // Guard: penpot.createText("") returns undefined — patch it to use a space
-    const createTextGuard = `
-var _origCreateText = penpot.createText.bind(penpot);
-penpot.createText = function(content) {
-  return _origCreateText(String(content) || ' ');
-};
-`;
-    const wrappedScript = `
-try {
-  ${createTextGuard}
-  ${cached.script}
-} catch (e) {
-  return { __error: true, message: e.message || String(e), stack: e.stack };
-}
-`;
+    const createTextGuard = `var _origCreateText = penpot.createText.bind(penpot);\npenpot.createText = function(content) { return _origCreateText(String(content) || ' '); };`;
+    const wrappedScript = `try { ${createTextGuard}\n${cached.script} } catch (e) { return { __error: true, message: e.message || String(e), stack: e.stack }; }`;
     const toolResult = await mcpClient.callTool('penpot', 'execute_code', { code: wrappedScript });
     const ms = Date.now() - t0;
-
     if (!toolResult.ok) {
       output.write(errorMsg(`Replay failed: ${toolResult.error.message}\n`));
       process.exitCode = 1;
       return;
     }
-
-    // Parse result for node IDs
     const content = toolResult.value as { content?: Array<{ text?: string }> };
-    const text = Array.isArray(content.content)
-      ? content.content.map(c => c.text ?? '').join('')
-      : '';
+    const text = Array.isArray(content.content) ? content.content.map(c => c.text ?? '').join('') : '';
     let replayNodeIds: Record<string, string> = {};
-
     try {
       const parsed = JSON.parse(text) as { result?: Record<string, unknown> };
-      if (parsed.result?.__error) {
-        output.write(errorMsg(`Replay script error: ${String(parsed.result.message)}\n`));
-        process.exitCode = 1;
-        return;
-      }
+      if (parsed.result?.__error) { output.write(errorMsg(`Replay script error: ${String(parsed.result.message)}\n`)); process.exitCode = 1; return; }
       const nodeIds = parsed.result?.nodeIds as Record<string, string> | undefined;
-      if (nodeIds) {
-        replayNodeIds = nodeIds;
-      }
-    } catch {
-      // Non-JSON is acceptable for replay
-    }
-
-    // Save updated artifact
-    const updatedOutput: PenpotDesignOutput = {
-      ...cached,
-      penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : (cached.penpotNodeIds ?? {}),
-    };
-    const artifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, updatedOutput);
-
+      if (nodeIds) replayNodeIds = nodeIds;
+    } catch { /* Non-JSON is acceptable for replay */ }
+    const updatedOutput: PenpotDesignOutput = { ...cached, penpotNodeIds: Object.keys(replayNodeIds).length > 0 ? replayNodeIds : (cached.penpotNodeIds ?? {}) };
+    const replayArtifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, updatedOutput);
     output.write(successMsg(`  Replay complete (${(ms / 1000).toFixed(1)}s)\n`));
     output.write('\n');
     output.write(infoMsg('='.repeat(60) + '\n'));
@@ -569,12 +438,11 @@ try {
     output.write(infoMsg('='.repeat(60) + '\n'));
     output.write(infoMsg(`  Module: ${moduleId}\n`));
     output.write(infoMsg(`  Components: ${Object.keys(updatedOutput.penpotNodeIds ?? {}).length}\n`));
-    output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
+    output.write(infoMsg(`  Artifact: ${replayArtifactPath}\n`));
     output.write(infoMsg('='.repeat(60) + '\n'));
     return;
   }
 
-  // -- Stage: replay-browser (re-render cached designSpec in browser — no Penpot, no LLM) --
   if (skipToStage === 'replay-browser') {
     const specPath = join(outputDir, PIPELINE_ARTIFACTS.designSpecV2);
     if (!existsSync(specPath)) {
@@ -583,210 +451,220 @@ try {
       process.exitCode = 1;
       return;
     }
-
-    const designSpec = JSON.parse(readFileSync(specPath, 'utf-8')) as import('@agentforge/designspec-renderer').DesignSpecV2;
-    output.write(infoMsg(`  DesignSpec loaded from ${relPath(specPath)}\n`));
-
-    if (!designTokens) {
-      output.write(errorMsg('Design tokens required for browser replay. Run `agentforge init` first.\n'));
+    const parsedReplaySpec = JSON.parse(readFileSync(specPath, 'utf-8'));
+    const replaySpec = normalizeDesignSpecShape(parsedReplaySpec);
+    if (!replaySpec) {
+      output.write(errorMsg(`Cached DesignSpec has invalid shape at ${relPath(specPath)}\n`));
       process.exitCode = 1;
       return;
     }
-
+    output.write(infoMsg(`  DesignSpec loaded from ${relPath(specPath)}\n`));
+    if (!designTokens) { output.write(errorMsg('Design tokens required for browser replay. Run `agentforge init` first.\n')); process.exitCode = 1; return; }
     const replayRendererTokens = toRendererTokens(designTokens);
-    const replayCatalogMap = loadCatalogForRenderer(
-      componentCatalog as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined,
-      replayRendererTokens,
-    );
-
-    const replayViewportWidth = resolveViewports({
-      cliWidth: options.width,
-      designConfig,
-      pageViewports: resolvedPage?.viewports as number[] | undefined,
-    })[0];
-
-    const isInteractive = options.interactive === true ||
-      (options.interactive === undefined && 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY);
-
+    const replayCatalogMap = loadCatalogForRenderer(componentCatalog as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined, replayRendererTokens);
+    const replayViewportWidth = resolveViewports({ cliWidth: options.width, designConfig, pageViewports: resolvedPage?.viewports as number[] | undefined })[0];
+    const isInteractive = options.interactive === true || (options.interactive === undefined && 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY);
     if (isInteractive) {
       output.write(infoMsg('\n  [3/3] Design -- opening interactive browser preview...\n'));
       try {
-        const preview = await openInteractivePreview(designSpec, replayRendererTokens, replayCatalogMap);
+        const preview = await openInteractivePreview(replaySpec, replayRendererTokens, replayCatalogMap);
         output.write(infoMsg(`  Preview: http://localhost:${preview.port}/index.html\n`));
         output.write(infoMsg('  Click elements to tag feedback, then "Submit" or "Approve & Close".\n'));
-
         const feedback = await preview.waitForFeedback();
         await preview.close();
-
-        if (feedback.approved) {
-          output.write(successMsg('  Design approved.\n'));
-        } else {
-          output.write(infoMsg(`  Received ${feedback.tags.length} feedback tag(s).\n`));
-        }
+        output.write(feedback.approved ? successMsg('  Design approved.\n') : infoMsg(`  Received ${feedback.tags.length} feedback tag(s).\n`));
       } catch (err) {
         output.write(errorMsg(`Browser preview failed: ${err instanceof Error ? err.message : String(err)}\n`));
         output.write(errorMsg('Ensure Playwright is installed: npx playwright install chromium\n'));
         process.exitCode = 1;
-        return;
       }
     } else {
       output.write(infoMsg('\n  [3/3] Design -- replaying designSpec in browser...\n'));
       try {
         const t0 = Date.now();
-        const { session, initial } = await openBrowserSession(
-          designSpec,
-          replayRendererTokens,
-          replayCatalogMap,
-          { width: replayViewportWidth },
-        );
+        const { session, initial } = await openBrowserSession(replaySpec, replayRendererTokens, replayCatalogMap, { width: replayViewportWidth });
         const ms = Date.now() - t0;
-
         const screenshotDir = join(outputDir, 'screenshots', 'browser');
-        if (!existsSync(screenshotDir)) {
-          mkdirSync(screenshotDir, { recursive: true });
-        }
+        if (!existsSync(screenshotDir)) mkdirSync(screenshotDir, { recursive: true });
         const screenshotPath = join(screenshotDir, 'root.png');
         writeFileSync(screenshotPath, initial.screenshot);
-
-        const htmlPath = join(outputDir, 'replay-browser.html');
-        writeFileSync(htmlPath, initial.html);
-
+        writeFileSync(join(outputDir, 'replay-browser.html'), initial.html);
         await session.close();
-
         output.write(successMsg(`  Browser replay complete (${(ms / 1000).toFixed(1)}s)\n`));
         output.write('\n');
         output.write(infoMsg('='.repeat(60) + '\n'));
         output.write(infoMsg('  BROWSER REPLAY COMPLETE\n'));
         output.write(infoMsg('='.repeat(60) + '\n'));
         output.write(infoMsg(`  Module: ${moduleId}\n`));
-        output.write(infoMsg(`  Nodes: ${Object.keys(designSpec.nodes).length}\n`));
+        output.write(infoMsg(`  Nodes: ${Object.keys(replaySpec.nodes).length}\n`));
         output.write(infoMsg(`  Screenshot: ${relPath(screenshotPath)}\n`));
-        output.write(infoMsg(`  HTML: ${relPath(htmlPath)}\n`));
+        output.write(infoMsg(`  HTML: ${relPath(join(outputDir, 'replay-browser.html'))}\n`));
         output.write(infoMsg('='.repeat(60) + '\n'));
       } catch (err) {
         output.write(errorMsg(`Browser session failed: ${err instanceof Error ? err.message : String(err)}\n`));
         output.write(errorMsg('Ensure Playwright is installed: npx playwright install chromium\n'));
         process.exitCode = 1;
-        return;
       }
     }
     return;
   }
 
-  // -- Stage 3: Design (Penpot) --
-  output.write(infoMsg('\n  [3/3] Design -- creating Penpot components...\n'));
-  if (options.mock) output.write(infoMsg('  [mock] Using saved LLM output for design\n'));
+  // ── Main pipeline: Research → Planning → Design (LLM generation) ──
 
-  const provider = makeProvider();
-
-  // Build project-specific design system prompt from tokens + brand
+  // Design system prompt is NOT built here because buildDesignSystemContextFromSpec
+  // requires planningOutput (component tree + token bindings), which isn't available
+  // until after the pipeline runs. The designNode builds its own prompt internally
+  // from the tokens + brand passed via PipelineInput. Post-pipeline code (feedback
+  // loop) builds it with the now-available planningOutput.
   let projectDesignSystemPrompt: string | undefined;
-  if (designTokens && brandSpec) {
-    const dsCtx = buildDesignSystemContextFromSpec(designTokens, brandSpec, planningOutput);
-    projectDesignSystemPrompt = dsCtx.designSystemPrompt;
-  }
 
   const componentCatalogPrompt = buildComponentCatalogPrompt(componentCatalog);
 
-  // V2 renderer is the default; opt out with --designspec-v1
+  // V2 renderer tokens + catalog (required for browser path)
   const useV2 = options.designspecV1 !== true;
   let rendererTokens: RendererTokens | undefined;
   let catalogMapV2: import('@agentforge/designspec-renderer').CatalogMap | undefined;
 
-  if (useV2) {
-    if (designTokens) {
-      rendererTokens = toRendererTokens(designTokens);
-    } else {
-      output.write(errorMsg('V2 renderer requires design tokens. Run `agentforge init` first.\n'));
+  if (useV2 && designTool === 'browser') {
+    if (!designTokens) {
+      output.write(errorMsg('Browser design tool requires design tokens. Run `agentforge init` first.\n'));
       process.exitCode = 1;
       return;
     }
+    rendererTokens = toRendererTokens(designTokens);
     catalogMapV2 = loadCatalogForRenderer(
       componentCatalog as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined,
       rendererTokens,
     );
     output.write(infoMsg(`  Renderer tokens + catalog map loaded (${Object.keys(catalogMapV2).length} catalog entries)\n`));
-  } else {
-    output.write(infoMsg('  [v1] Using legacy LLM-based script generation (pass no flags for default V2 renderer)\n'));
+  } else if (useV2 && designTool === 'penpot') {
+    if (designTokens) {
+      rendererTokens = toRendererTokens(designTokens);
+      catalogMapV2 = loadCatalogForRenderer(
+        componentCatalog as import('@agentforge/designspec-renderer').RawCatalogSpec | undefined,
+        rendererTokens,
+      );
+    }
   }
 
-  // Use page viewports if available and no CLI override
   const effectiveViewportWidth = resolveViewports({
     cliWidth: options.width,
     designConfig,
     pageViewports: resolvedPage?.viewports as number[] | undefined,
   })[0];
 
-  // Build browser correction options
-  const browserCorrectionOpts: BrowserCorrectionOptions = {
-    width: effectiveViewportWidth,
-    visionCorrection: options.visionCorrection ?? false,
-    ...(options.interactive !== undefined ? { interactive: options.interactive } : {}),
-    outputDir: join(ensureOutputDir(moduleId, baseDir), PIPELINE_ARTIFACTS.corrections),
+  const prdRequirements: string[] = [description];
+  if (prdContent) prdRequirements.push(prdContent);
+
+  const providerFactory = (model: string): LLMProviderRef => {
+    if (options.mock) return createMockLLMProvider() as unknown as LLMProviderRef;
+    return createClaudeProvider(model, providerConfig!) as unknown as LLMProviderRef;
   };
 
-  const penpotInput: PenpotDesignInput = {
-    specRef: planningOutput.specRef,
+  const sink = new CliStdoutSink(output);
+  const pipelineInput: PipelineInput = {
     moduleId,
     taskId,
-    planningOutput,
+    projectRoot: baseDir,
+    designTool,
+    providerString: resolveCLIModel(),
+    stage: skipToStage as PipelineInput['stage'],
+    resume: !forceFresh,
+    telemetry: sink,
+    agentContext: createPipelineContext(taskId, mcpClient, promptTraces, baseDir, providerFactory),
+    prdRequirements,
+    pageContext,
+    designTokensSpec: designTokens,
+    designConfig,
     description,
-    ...(projectDesignSystemPrompt ? { designSystemPrompt: projectDesignSystemPrompt } : {}),
-    ...(componentCatalogPrompt ? { componentCatalogPrompt } : {}),
     viewportWidth: effectiveViewportWidth,
-    ...(useV2 ? {
-      useDesignSpecV2: true,
-      rendererTokens,
-      catalogMap: catalogMapV2,
-      // Pass raw catalog (with anatomy) for dynamic renderer generation
-      ...(componentCatalog ? { componentCatalogRaw: componentCatalog.components as Readonly<Record<string, import('@agentforge/designspec-renderer').DynamicCatalogSource>> } : {}),
-    } : {}),
-    ...(pageContext ? { pageContext } : {}),
-    browserCorrectionOptions: browserCorrectionOpts,
-    ...(options.penpotCorrection ? { legacyPenpotCorrection: true } : {}),
+    rendererTokens: rendererTokens as Record<string, unknown> | undefined,
+    catalogMap: catalogMapV2,
+    componentCatalogPrompt,
+    designSystemPrompt: projectDesignSystemPrompt,
   };
 
   const t0 = Date.now();
-  const result = await penpotDesignWork(penpotInput, provider, mcpClient, { promptTraces });
-  const ms = Date.now() - t0;
+  const pipelineResult = await runDesignPipeline(pipelineInput);
+  const pipelineMs = Date.now() - t0;
 
-  if (!result.ok) {
-    output.write(errorMsg(`Design failed: ${result.error.message}\n`));
+  if (!pipelineResult.ok) {
+    const err = pipelineResult.error as { message?: string; stage?: string };
+    output.write(errorMsg(`Pipeline failed at ${err.stage ?? 'unknown'}: ${err.message ?? 'unknown error'}\n`));
     process.exitCode = 1;
     return;
   }
 
-  const designOutput = result.value;
+  const pipelineState = pipelineResult.value;
+  const planningOutput = pipelineState.planning!;
+  const pipelineDesignSpec = pipelineState.design?.spec as import('@agentforge/designspec-renderer').DesignSpecV2 | undefined;
+
+  // ── Post-pipeline browser correction ──
+  let browserCorrectionResult: import('@agentforge/agents-ux').BrowserCorrectionResult | undefined;
+
+  if (designTool === 'browser' && pipelineDesignSpec && rendererTokens && catalogMapV2) {
+    const correctionOpts: BrowserCorrectionOptions = {
+      width: effectiveViewportWidth,
+      visionCorrection: options.visionCorrection ?? false,
+      ...(options.interactive !== undefined ? { interactive: options.interactive } : {}),
+      outputDir: join(ensureOutputDir(moduleId, baseDir), PIPELINE_ARTIFACTS.corrections),
+      planningOutput,
+    };
+
+    const provider = providerFactory(resolveCLIModel());
+    try {
+      browserCorrectionResult = await runBrowserCorrectionPipeline(
+        pipelineDesignSpec,
+        rendererTokens,
+        catalogMapV2,
+        provider as unknown as LLMProvider,
+        correctionOpts,
+      );
+    } catch (correctionErr) {
+      output.write(errorMsg(`  Browser correction failed: ${correctionErr instanceof Error ? correctionErr.message : String(correctionErr)}\n`));
+      output.write(warnMsg('  Continuing without correction. Design spec saved from LLM output.\n'));
+    }
+  }
+
+  // ── Construct PenpotDesignOutput envelope (backward compat for connect/replay) ──
+  const penpotMeta = pipelineState.design?.designToolMetadata;
+  const designOutput: PenpotDesignOutput = {
+    moduleId,
+    breakpoints: [],
+    ...(pipelineDesignSpec ? { designSpec: pipelineDesignSpec } : {}),
+    ...(penpotMeta?.script ? { script: penpotMeta.script } : {}),
+    ...(penpotMeta?.nodeIds ? { penpotNodeIds: penpotMeta.nodeIds } : {}),
+    ...(penpotMeta?.projectId ? { penpotProjectId: penpotMeta.projectId } : {}),
+    ...(browserCorrectionResult ? { browserCorrectionResult } : {}),
+  };
   const artifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
   for (const trace of promptTraces) {
     saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
   }
   savePipelineTrace(outputDir, moduleId, promptTraces);
 
-  output.write(successMsg(`  Design complete (${(ms / 1000).toFixed(1)}s)\n`));
+  // ── PIPELINE COMPLETE banner ──
   output.write('\n');
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg('  PIPELINE COMPLETE\n'));
   output.write(infoMsg('='.repeat(60) + '\n'));
   output.write(infoMsg(`  Module: ${moduleId}\n`));
+  output.write(infoMsg(`  Pipeline: ${(pipelineMs / 1000).toFixed(1)}s\n`));
 
-  // Show browser correction summary if available
-  if (designOutput.browserCorrectionResult) {
-    const bcr = designOutput.browserCorrectionResult;
-    output.write(infoMsg(`  Browser Correction: score=${bcr.finalScore}/100, iterations=${bcr.iterations}, threshold=${bcr.thresholdMet ? 'met' : 'not met'}\n`));
+  if (browserCorrectionResult) {
+    output.write(infoMsg(`  Browser Correction: score=${browserCorrectionResult.finalScore}/100, iterations=${browserCorrectionResult.iterations}, threshold=${browserCorrectionResult.thresholdMet ? 'met' : 'not met'}\n`));
   }
-
   if (designOutput.penpotNodeIds) {
     output.write(infoMsg(`  Penpot Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
   }
   output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
-
-  // Show cost summary if any traces have cost data
-  const totalCost = promptTraces.reduce((sum, t) => sum + (t.cost?.totalCostUsd ?? 0), 0);
-  if (totalCost > 0) {
-    output.write(infoMsg(`  Total LLM Cost: $${totalCost.toFixed(4)}\n`));
+  if (sink.getTotalCostUsd() > 0) {
+    output.write(infoMsg(`  Total LLM Cost: $${sink.getTotalCostUsd().toFixed(4)}\n`));
   }
   output.write(infoMsg('='.repeat(60) + '\n'));
+
+  // Provider for post-pipeline operations (evaluate, implement, feedback loop)
+  const provider = makeProvider();
 
   // ── "Export to Penpot?" prompt ──
   const shouldExportPenpot = await resolvePenpotExport(options.exportPenpot, output);
@@ -973,10 +851,46 @@ try {
     }
   }
 
-  // ── Interactive feedback loop (only when Penpot is connected) ──
+  // ── Interactive feedback loop ──
   const isTTY = 'isTTY' in process.stdin && (process.stdin as NodeJS.ReadStream).isTTY;
+
+  // Browser feedback loop (--tool=browser, default path)
+  if (!options.noWait && !options.implement && isTTY && designTool === 'browser' && pipelineDesignSpec) {
+    const { BrowserFeedbackAdapter, BrowserCollaborationSession, mapBrowserSpecToDesignOutput: mapSpec } = await import('@agentforge/agents-ux');
+    const browserAdapter = new BrowserFeedbackAdapter(
+      providerFactory(resolveCLIModel()) as unknown as import('@agentforge/core').LLMProviderRef,
+      rendererTokens,
+      catalogMapV2,
+    );
+    const browserSession = new BrowserCollaborationSession(browserAdapter, pipelineDesignSpec);
+    const implementFn = createImplementFn();
+
+    const loopResult = await runDesignFeedbackLoop({
+      session: browserSession,
+      initialDesign: mapSpec(pipelineDesignSpec),
+      input: process.stdin,
+      output,
+      implementFn,
+      designTool: 'Browser',
+    });
+
+    if (loopResult.changeCount > 0) {
+      const updatedSpec = browserSession.getCurrentSpec();
+      const updatedOutput: PenpotDesignOutput = { ...designOutput, designSpec: updatedSpec };
+      saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, updatedOutput);
+      output.write(infoMsg(`  Updated artifact with ${loopResult.changeCount} change(s).\n`));
+    }
+
+    if (loopResult.approved) {
+      output.write(successMsg('  Design approved.\n'));
+    } else {
+      output.write(warnMsg('  Design not approved.\n'));
+    }
+  }
+
+  // Penpot feedback loop (--tool=penpot)
   const hasPenpotConnection = needsPenpotEarly && mcpClient && !options.mock;
-  if (!options.noWait && !options.implement && isTTY && hasPenpotConnection && designOutput.penpotNodeIds) {
+  if (!options.noWait && !options.implement && isTTY && designTool === 'penpot' && hasPenpotConnection && designOutput.penpotNodeIds) {
     // Discover Penpot API docs for the collaboration session
     const apiDocs = await discoverPenpotAPI(mcpClient);
 

@@ -89,7 +89,9 @@ npm run figma:status
 npx tsx packages/agents-ux/src/scripts/figma-preflight.ts
 
 # 5. Run the design pipeline (no env vars needed — preflight handles connection)
-npx tsx packages/agents-ux/src/scripts/run-module-pipeline.ts --module cost-dashboard --stage design
+# Note: run-module-pipeline.ts was removed in Phase 2 (CLI Migration). Use the
+# unified CLI instead, which routes through @agentforge/agents-ux runDesignPipeline:
+agentforge design:page <pageId> --tool penpot --stage design
 ```
 
 ### Docker Commands

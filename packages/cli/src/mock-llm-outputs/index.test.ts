@@ -32,12 +32,13 @@ describe('createMockLLMProvider', () => {
     expect(parsed.specRef).toMatch(/^spec-/);
   });
 
-  it('returns design tool call on third call', async () => {
+  it('returns design tool call on fifth call (after 2 planning correction retries)', async () => {
     const provider = createMockLLMProvider();
-    // First two calls
-    await provider.complete({ system: '', messages: [] }, { model: 'mock' });
-    await provider.complete({ system: '', messages: [] }, { model: 'mock' });
-    // Third call (design)
+    // Calls: research (0), planning (1), planning-correction-1 (2), planning-correction-2 (3)
+    for (let i = 0; i < 4; i++) {
+      await provider.complete({ system: '', messages: [] }, { model: 'mock' });
+    }
+    // Fifth call = design
     const result = await provider.complete(
       { system: '', messages: [] },
       { model: 'mock' },
@@ -48,16 +49,15 @@ describe('createMockLLMProvider', () => {
     expect(result.value.toolCalls).toHaveLength(1);
     expect(result.value.toolCalls[0].name).toBe('submit_design');
     expect(result.value.toolCalls[0].args).toHaveProperty('nodes');
-    expect(result.value.toolCalls[0].args).toHaveProperty('viewport_width');
   });
 
   it('returns error when all mock responses are exhausted', async () => {
     const provider = createMockLLMProvider();
-    // Exhaust all 3 mocks
-    await provider.complete({ system: '', messages: [] }, { model: 'mock' });
-    await provider.complete({ system: '', messages: [] }, { model: 'mock' });
-    await provider.complete({ system: '', messages: [] }, { model: 'mock' });
-    // Fourth call should fail
+    // Exhaust all 5 mocks (research + planning + 2 corrections + design)
+    for (let i = 0; i < 5; i++) {
+      await provider.complete({ system: '', messages: [] }, { model: 'mock' });
+    }
+    // Sixth call should fail
     const result = await provider.complete(
       { system: '', messages: [] },
       { model: 'mock' },

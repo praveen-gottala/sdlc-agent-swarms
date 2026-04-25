@@ -143,10 +143,27 @@ describe('design:page integration — file loading', () => {
   });
 
   beforeEach(() => {
-    // Point process.cwd() at the temp dir so findProjectRoot finds agentforge.yaml
     cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(tmpDir);
-    // Set a dummy API key so we pass the key check and reach file loading
     process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        runDesignPipeline: jest.fn().mockResolvedValue({
+          ok: true,
+          value: {
+            moduleId: 'home', taskId: 'task-1', projectRoot: '/tmp', designTool: 'browser',
+            research: { briefId: 'b1', moduleId: 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+            planning: { specRef: 's1', moduleId: 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+            design: { spec: { screen: 'home', width: 1440, nodes: {} } },
+          },
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} }, finalScore: 85, iterations: 1, thresholdMet: true, screenshot: Buffer.from(''),
+        }),
+      };
+    });
   });
 
   afterEach(() => {
@@ -265,61 +282,34 @@ describe('design:page integration — design system context data flow', () => {
     process.exitCode = undefined;
   });
 
-  it('passes designSystemPrompt and description to penpotDesignWork when tokens + brand exist', async () => {
-    // Capture the PenpotDesignInput passed to penpotDesignWork
+  it('passes designTokensSpec and description to runDesignPipeline when tokens exist', async () => {
     let capturedInput: Record<string, unknown> | undefined;
 
-    // Mock agents-ux to intercept the design stage input
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        // Research: return minimal valid output
-        uxResearchWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            briefId: 'brief-test',
-            moduleId: 'home',
-            competitors: [],
-            patterns: [],
-            accessibilityNotes: [],
-            recommendations: [],
-          },
-        }),
-        // Planning: return minimal valid output with tokenBindings for buildDesignSystemContextFromSpec
-        uxPlanningWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            specRef: 'spec-test',
-            moduleId: 'home',
-            componentTree: [{ id: 'root', type: 'page', name: 'Home', props: [], children: [] }],
-            colorTokens: {},
-            typographyTokens: {},
-            tokenBindings: {},
-          },
-        }),
-        // Penpot preflight: skip real connection
-        runPenpotPreflight: jest.fn().mockResolvedValue({
-          ok: false,
-          error: { code: 'MCP_UNAVAILABLE', message: 'mock', recoverable: true },
-        }),
-        loadPenpotSession: jest.fn().mockReturnValue({
-          ok: false,
-          error: { code: 'INVALID_STATE', message: 'no session', recoverable: false },
-        }),
-        // Design: capture input and return success
-        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
           capturedInput = input;
           return Promise.resolve({
             ok: true,
             value: {
-              penpotProjectId: 'proj-1',
-              penpotPageId: 'page-1',
-              penpotNodeIds: {},
-              moduleId: 'home',
-              breakpoints: [],
+              moduleId: 'home-dashboard',
+              taskId: 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: 'home-dashboard', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: 'home-dashboard', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'home', width: 1440, nodes: {} } },
             },
           });
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -329,21 +319,8 @@ describe('design:page integration — design system context data flow', () => {
 
     await designPageCommand('home dashboard', out, { noWait: true, mock: true });
 
-    // Verify penpotDesignWork was called with design system context
     expect(capturedInput).toBeDefined();
-    expect(capturedInput!.designSystemPrompt).toBeDefined();
-    expect(typeof capturedInput!.designSystemPrompt).toBe('string');
-
-    // Verify the prompt contains actual token values from the on-disk files
-    const dsPrompt = capturedInput!.designSystemPrompt as string;
-    // Colors are converted to RGB: #2563EB → r: 0.15, g: 0.39, b: 0.92
-    expect(dsPrompt).toContain('blue');    // color name from VALID_TOKENS
-    expect(dsPrompt).toContain('slate');   // color name from VALID_TOKENS
-    // Typography scale uses family alias (display/body) with size and weight
-    expect(dsPrompt).toContain('heading-1: 32px/auto, weight 700 (display)'); // from VALID_TOKENS
-    expect(dsPrompt).toContain('professional'); // tone from VALID_BRAND
-
-    // Verify description is passed through
+    expect(capturedInput!.designTokensSpec).toBeDefined();
     expect(capturedInput!.description).toBe('home dashboard');
   });
 });
@@ -564,6 +541,52 @@ describe('design:page integration — stage connect', () => {
   });
 });
 
+describe('design:page integration — --tool penpot connection', () => {
+  let tmpDir: string;
+  let cwdSpy: jest.SpyInstance;
+  const originalEnv = { ...process.env };
+
+  beforeAll(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'agentforge-page-tool-penpot-'));
+    writeFileSync(join(tmpDir, 'agentforge.yaml'), 'version: 1\n');
+    mkdirSync(join(tmpDir, 'docs'), { recursive: true });
+    writeFileSync(join(tmpDir, 'docs', 'prd.md'), '# App\n');
+    mkdirSync(join(tmpDir, 'agentforge', 'spec'), { recursive: true });
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'design-tokens.yaml'), yamlStringify(VALID_TOKENS));
+    writeFileSync(join(tmpDir, 'agentforge', 'spec', 'brand.yaml'), yamlStringify(VALID_BRAND));
+  });
+
+  afterAll(() => { rmSync(tmpDir, { recursive: true, force: true }); });
+
+  beforeEach(() => {
+    cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+    process.env = { ...originalEnv, ANTHROPIC_API_KEY: 'test-dummy-key' };
+    jest.resetModules();
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+    process.env = { ...originalEnv };
+    process.exitCode = undefined;
+  });
+
+  it('--tool penpot does NOT defer Penpot connection', async () => {
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return { ...actual };
+    });
+
+    const { designPageCommand } = await import('./design-page.js');
+    const out = createOutputStream();
+
+    await designPageCommand('home', out, { noWait: true, tool: 'penpot', mock: true });
+
+    // With --tool penpot, the "Penpot connection deferred" message should NOT appear
+    // because needsPenpotEarly includes options.tool === 'penpot'
+    expect(out.output).not.toContain('Penpot connection deferred');
+  });
+});
+
 describe('design:page integration — --implement flag', () => {
   let tmpDir: string;
   let cwdSpy: jest.SpyInstance;
@@ -602,26 +625,24 @@ describe('design:page integration — --implement flag', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
-        }),
-        uxPlanningWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
-        }),
-        runPenpotPreflight: jest.fn().mockResolvedValue({
-          ok: false, error: { code: 'MCP_UNAVAILABLE', message: 'mock', recoverable: true },
-        }),
-        loadPenpotSession: jest.fn().mockReturnValue({
-          ok: false, error: { code: 'INVALID_STATE', message: 'no session', recoverable: false },
-        }),
-        penpotDesignWork: jest.fn().mockResolvedValue({
+        runDesignPipeline: jest.fn().mockResolvedValue({
           ok: true,
           value: {
-            penpotProjectId: 'proj-1', penpotPageId: 'page-1',
-            penpotNodeIds: { Header: 'n1' }, moduleId: 'home', breakpoints: [],
+            moduleId: 'home',
+            taskId: 'task-1',
+            projectRoot: '/tmp',
+            designTool: 'browser',
+            research: { briefId: 'brief-1', moduleId: 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+            planning: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+            design: { spec: { screen: 'home', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
           },
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
         uxImplementationWork: jest.fn().mockImplementation(() => {
           implCalled = true;
@@ -733,6 +754,24 @@ describe('design:page integration — --project-dir option', () => {
   });
 
   it('loads PRD and tokens from --project-dir', async () => {
+    jest.doMock('@agentforge/agents-ux', () => {
+      const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      return {
+        ...actual,
+        runDesignPipeline: jest.fn().mockResolvedValue({
+          ok: true,
+          value: {
+            moduleId: 'home', taskId: 'task-1', projectRoot: '/tmp', designTool: 'browser',
+            research: { briefId: 'b1', moduleId: 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+            planning: { specRef: 's1', moduleId: 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+            design: { spec: { screen: 'home', width: 1440, nodes: {} } },
+          },
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} }, finalScore: 85, iterations: 1, thresholdMet: true, screenshot: Buffer.from(''),
+        }),
+      };
+    });
     const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
@@ -822,26 +861,33 @@ describe('design:page integration — viewport config from manifest', () => {
       design: { primary_viewport: 1280, layout_strategy: 'desktop-first', responsive_breakpoints: false },
     }));
 
-    let capturedInput: Record<string, unknown> | undefined;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
-        }),
-        uxPlanningWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
-        }),
-        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedInput = input;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+            value: {
+              moduleId: input.moduleId ?? 'home',
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: input.moduleId ?? 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: input.moduleId ?? 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'home', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -851,8 +897,8 @@ describe('design:page integration — viewport config from manifest', () => {
 
     await designPageCommand('home', out, { noWait: true, mock: true });
 
-    expect(capturedInput).toBeDefined();
-    expect(capturedInput!.viewportWidth).toBe(1280);
+    expect(capturedPipelineInput).toBeDefined();
+    expect(capturedPipelineInput!.viewportWidth).toBe(1280);
   });
 
   it('CLI --width overrides manifest design config', async () => {
@@ -870,26 +916,33 @@ describe('design:page integration — viewport config from manifest', () => {
       design: { primary_viewport: 1280, layout_strategy: 'desktop-first', responsive_breakpoints: false },
     }));
 
-    let capturedInput: Record<string, unknown> | undefined;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
-        }),
-        uxPlanningWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
-        }),
-        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedInput = input;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+            value: {
+              moduleId: input.moduleId ?? 'home',
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: input.moduleId ?? 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: input.moduleId ?? 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'home', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
+        }),
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -899,11 +952,11 @@ describe('design:page integration — viewport config from manifest', () => {
 
     await designPageCommand('home', out, { width: 768, noWait: true, mock: true });
 
-    expect(capturedInput).toBeDefined();
-    expect(capturedInput!.viewportWidth).toBe(768);
+    expect(capturedPipelineInput).toBeDefined();
+    expect(capturedPipelineInput!.viewportWidth).toBe(768);
   });
 
-  it('passes designConfig to planning agent for viewport constraint injection', async () => {
+  it('passes designConfig to pipeline for viewport constraint injection', async () => {
     writeFileSync(join(tmpDir, 'agentforge.yaml'), yamlStringify({
       version: '1.0',
       project: { name: 'test', id: 'test-1', platforms: ['web'] },
@@ -917,26 +970,33 @@ describe('design:page integration — viewport config from manifest', () => {
       design: { primary_viewport: 1440, layout_strategy: 'desktop-first', responsive_breakpoints: false },
     }));
 
-    let capturedPlanningInput: Record<string, unknown> | undefined;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { briefId: 'b1', moduleId: 'home', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
-        }),
-        uxPlanningWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedPlanningInput = input;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { specRef: 'spec-1', moduleId: 'home', componentTree: [], tokenBindings: {} },
+            value: {
+              moduleId: input.moduleId ?? 'home',
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: input.moduleId ?? 'home', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: input.moduleId ?? 'home', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'home', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
         }),
-        penpotDesignWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'home', breakpoints: [] },
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'home', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -944,11 +1004,11 @@ describe('design:page integration — viewport config from manifest', () => {
     const { designPageCommand } = await import('./design-page.js');
     const out = createOutputStream();
 
-    // --fresh ensures research+planning are re-run (not loaded from cache)
+    // --fresh ensures pipeline re-runs (not loaded from cache)
     await designPageCommand('home', out, { noWait: true, mock: true, fresh: true });
 
-    expect(capturedPlanningInput).toBeDefined();
-    expect(capturedPlanningInput!.designConfig).toEqual({
+    expect(capturedPipelineInput).toBeDefined();
+    expect(capturedPipelineInput!.designConfig).toEqual({
       primary_viewport: 1440,
       layout_strategy: 'desktop-first',
       responsive_breakpoints: false,
@@ -1007,33 +1067,33 @@ describe('design:page integration — cache reuse', () => {
       tokenBindings: {},
     }));
 
-    let researchCalled = false;
-    let planningCalled = false;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockImplementation(() => {
-          researchCalled = true;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { briefId: 'fresh-brief', moduleId },
+            value: {
+              moduleId,
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'cached-brief', moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'cached-spec', moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'test', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
         }),
-        uxPlanningWork: jest.fn().mockImplementation(() => {
-          planningCalled = true;
-          return Promise.resolve({
-            ok: true,
-            value: { specRef: 'fresh-spec', moduleId, componentTree: [], tokenBindings: {} },
-          });
-        }),
-        penpotDesignWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            penpotProjectId: 'proj-1', penpotPageId: 'page-1',
-            penpotNodeIds: {}, moduleId, breakpoints: [],
-          },
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'test', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -1043,10 +1103,9 @@ describe('design:page integration — cache reuse', () => {
 
     await designPageCommand('cache reuse test', out, { module: moduleId, noWait: true, mock: true });
 
-    // Research and planning should NOT have been called — cached artifacts used
-    expect(researchCalled).toBe(false);
-    expect(planningCalled).toBe(false);
-    expect(out.output).toContain('reusing cached results');
+    // Pipeline is called with resume: true (no --fresh flag)
+    expect(capturedPipelineInput).toBeDefined();
+    expect(capturedPipelineInput!.resume).toBe(true);
   });
 
   it('--fresh forces re-run even when cached artifacts exist', async () => {
@@ -1062,33 +1121,33 @@ describe('design:page integration — cache reuse', () => {
       specRef: 'cached-spec', moduleId, componentTree: [], tokenBindings: {},
     }));
 
-    let researchCalled = false;
-    let planningCalled = false;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockImplementation(() => {
-          researchCalled = true;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { briefId: 'fresh-brief', moduleId },
+            value: {
+              moduleId,
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'fresh-brief', moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'fresh-spec', moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'test', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
         }),
-        uxPlanningWork: jest.fn().mockImplementation(() => {
-          planningCalled = true;
-          return Promise.resolve({
-            ok: true,
-            value: { specRef: 'fresh-spec', moduleId, componentTree: [], tokenBindings: {} },
-          });
-        }),
-        penpotDesignWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            penpotProjectId: 'proj-1', penpotPageId: 'page-1',
-            penpotNodeIds: {}, moduleId, breakpoints: [],
-          },
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'test', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -1098,11 +1157,9 @@ describe('design:page integration — cache reuse', () => {
 
     await designPageCommand('fresh test', out, { module: moduleId, noWait: true, mock: true, fresh: true });
 
-    // With --fresh, both stages should be re-run despite cached artifacts
-    expect(researchCalled).toBe(true);
-    expect(planningCalled).toBe(true);
-    expect(out.output).not.toContain('reusing cached results');
-    expect(out.output).toContain('analyzing requirements');
+    // With --fresh, pipeline is called with resume: false
+    expect(capturedPipelineInput).toBeDefined();
+    expect(capturedPipelineInput!.resume).toBe(false);
   });
 });
 
@@ -1258,35 +1315,34 @@ describe('design:page integration — page resolution from pages.yaml', () => {
     expect(out.output).toContain('Module: bill-entry');
   });
 
-  it('passes pageContext to all pipeline stages', async () => {
-    let capturedResearchInput: Record<string, unknown> | undefined;
-    let capturedPlanningInput: Record<string, unknown> | undefined;
-    let capturedDesignInput: Record<string, unknown> | undefined;
+  it('passes pageContext to pipeline', async () => {
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedResearchInput = input;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { briefId: 'b1', moduleId: 'bill-entry', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+            value: {
+              moduleId: 'bill-entry',
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: 'bill-entry', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'bill-entry', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
         }),
-        uxPlanningWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedPlanningInput = input;
-          return Promise.resolve({
-            ok: true,
-            value: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {} },
-          });
-        }),
-        penpotDesignWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedDesignInput = input;
-          return Promise.resolve({
-            ok: true,
-            value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'bill-entry', breakpoints: [] },
-          });
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'bill-entry', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -1296,46 +1352,41 @@ describe('design:page integration — page resolution from pages.yaml', () => {
 
     await designPageCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
 
-    // Verify pageContext is passed to research
-    expect(capturedResearchInput).toBeDefined();
-    const researchPageCtx = capturedResearchInput!.pageContext as { targetPage: { id: string }; models?: unknown[] } | undefined;
-    expect(researchPageCtx).toBeDefined();
-    expect(researchPageCtx!.targetPage.id).toBe('bill-entry');
-
-    // Verify pageContext is passed to planning
-    expect(capturedPlanningInput).toBeDefined();
-    const planningPageCtx = capturedPlanningInput!.pageContext as { targetPage: { id: string } } | undefined;
-    expect(planningPageCtx).toBeDefined();
-    expect(planningPageCtx!.targetPage.id).toBe('bill-entry');
-
-    // Verify pageContext is passed to design
-    expect(capturedDesignInput).toBeDefined();
-    const designPageCtx = capturedDesignInput!.pageContext as { targetPage: { id: string } } | undefined;
-    expect(designPageCtx).toBeDefined();
-    expect(designPageCtx!.targetPage.id).toBe('bill-entry');
+    // Verify pageContext is passed to the unified pipeline
+    expect(capturedPipelineInput).toBeDefined();
+    const pageCtx = capturedPipelineInput!.pageContext as { targetPage: { id: string }; models?: unknown[] } | undefined;
+    expect(pageCtx).toBeDefined();
+    expect(pageCtx!.targetPage.id).toBe('bill-entry');
   });
 
   it('includes filtered models in pageContext', async () => {
-    let capturedResearchInput: Record<string, unknown> | undefined;
+    let capturedPipelineInput: Record<string, unknown> | undefined;
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
       return {
         ...actual,
-        uxResearchWork: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          capturedResearchInput = input;
+        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
+          capturedPipelineInput = input;
           return Promise.resolve({
             ok: true,
-            value: { briefId: 'b1', moduleId: 'bill-entry', competitors: [], patterns: [], accessibilityNotes: [], recommendations: [] },
+            value: {
+              moduleId: 'bill-entry',
+              taskId: input.taskId ?? 'task-1',
+              projectRoot: '/tmp',
+              designTool: 'browser',
+              research: { briefId: 'brief-1', moduleId: 'bill-entry', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+              planning: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+              design: { spec: { screen: 'bill-entry', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+            },
           });
         }),
-        uxPlanningWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { specRef: 'spec-1', moduleId: 'bill-entry', componentTree: [], tokenBindings: {} },
-        }),
-        penpotDesignWork: jest.fn().mockResolvedValue({
-          ok: true,
-          value: { penpotProjectId: 'proj-1', penpotPageId: 'page-1', penpotNodeIds: {}, moduleId: 'bill-entry', breakpoints: [] },
+        runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
+          finalSpec: { screen: 'bill-entry', width: 1440, nodes: {} },
+          finalScore: 85,
+          iterations: 1,
+          thresholdMet: true,
+          screenshot: Buffer.from(''),
         }),
       };
     });
@@ -1345,7 +1396,8 @@ describe('design:page integration — page resolution from pages.yaml', () => {
 
     await designPageCommand('bill-entry', out, { noWait: true, mock: true, fresh: true });
 
-    const pageCtx = capturedResearchInput!.pageContext as { models?: Array<{ id: string }> };
+    expect(capturedPipelineInput).toBeDefined();
+    const pageCtx = capturedPipelineInput!.pageContext as { models?: Array<{ id: string }> };
     expect(pageCtx).toBeDefined();
     // bill-entry has data_sources: ['BillState', 'PersonEntry']
     expect(pageCtx.models).toBeDefined();

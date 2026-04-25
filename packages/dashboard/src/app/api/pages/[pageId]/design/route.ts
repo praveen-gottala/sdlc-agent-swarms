@@ -51,7 +51,16 @@ export async function GET(
     return NextResponse.json({ error: 'Page not found' }, { status: 404 });
   }
 
-  const specPath = `agentforge/designs/${pageId}.json`;
+  const canvasSpecPath = `agentforge/designs/${pageId}.json`;
+  const previewSpecPath = `.agentforge/previews/${pageId}/scripts/designspec-v2.json`;
+  const previewBookshelfSpecPath = `.agentforge/previews/bookshelf-${pageId}/scripts/designspec-v2.json`;
+  const specPath = fileExists(canvasSpecPath)
+    ? canvasSpecPath
+    : fileExists(previewSpecPath)
+      ? previewSpecPath
+      : fileExists(previewBookshelfSpecPath)
+        ? previewBookshelfSpecPath
+        : null;
   const screenshotPath = `agentforge/designs/${pageId}.png`;
 
   // Read mechanical issues from the stored issues file if it exists
@@ -67,7 +76,7 @@ export async function GET(
 
   return NextResponse.json({
     designStatus: page.designStatus ?? 'draft',
-    specPath: fileExists(specPath) ? specPath : null,
+    specPath,
     screenshotPath: fileExists(screenshotPath) ? screenshotPath : null,
     mechanicalIssues,
     correctionIteration: page.correctionIteration ?? 0,

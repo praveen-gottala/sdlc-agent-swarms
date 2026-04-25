@@ -127,9 +127,10 @@ describe('researchNode', () => {
 
   it('passes prdRequirements and designTokensSpec from state', async () => {
     mockedResearchWork.mockResolvedValue({ ok: true, value: FIXTURE_RESEARCH });
+    const tokens = { version: '1.0', created_by: 'test', colors: { primitive: { blue: '#2563EB' }, semantic: {} } };
     const state = createState({
       prdRequirements: ['Full PRD text here with lots of content for the research agent to analyze'],
-      designTokensSpec: { version: '1.0' } as unknown as DesignPhaseState['designTokensSpec'],
+      designTokensSpec: tokens as unknown as DesignPhaseState['designTokensSpec'],
     });
 
     await researchNode(state, createCtx());
@@ -137,6 +138,7 @@ describe('researchNode', () => {
     const input = mockedResearchWork.mock.calls[0][0];
     expect(input.prdRequirements).toEqual(['Full PRD text here with lots of content for the research agent to analyze']);
     expect(input.designTokensSpec).toBeDefined();
+    expect((input.designTokensSpec as unknown as Record<string, unknown>).colors).toBeDefined();
   });
 });
 
@@ -195,6 +197,23 @@ describe('designNode', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('passes designTokensSpec to browserDesignWork via state', async () => {
+    mockedBrowserDesignWork.mockResolvedValue({
+      ok: true,
+      value: { design: { spec: {}, designToolMetadata: { tool: 'browser' as const } } },
+    });
+    const tokens = { version: '1.0', created_by: 'test', colors: { primitive: { blue: '#2563EB', slate: '#334155' }, semantic: {} } };
+
+    await designNode(
+      createState({ designTool: 'browser', planning: FIXTURE_PLANNING, designTokensSpec: tokens as unknown as DesignPhaseState['designTokensSpec'] }),
+      createCtx(),
+    );
+
+    const [passedState] = mockedBrowserDesignWork.mock.calls[0];
+    expect(passedState.designTokensSpec).toBeDefined();
+    expect((passedState.designTokensSpec as unknown as Record<string, unknown>).colors).toBeDefined();
+  });
+
   it('dispatches to penpotDesignWork when designTool is penpot', async () => {
     mockedPenpotDesignWork.mockResolvedValue({
       ok: true,
@@ -244,6 +263,49 @@ describe('designNode', () => {
     const input = mockedPenpotDesignWork.mock.calls[0][0];
     expect(input.frozenChromeSpec).toBe(frozenSpec);
     expect(input.frozenChromePageId).toBe('dashboard');
+  });
+
+  it('populates designToolMetadata with script, nodeIds, projectId from penpotDesignWork', async () => {
+    mockedPenpotDesignWork.mockResolvedValue({
+      ok: true,
+      value: {
+        moduleId: 'test-page',
+        breakpoints: [],
+        designSpec: { screen: 'test', width: 1440, nodes: {} },
+        script: 'const root = penpot.createBoard();',
+        penpotNodeIds: { 'root': 'penpot-id-123' },
+        penpotProjectId: 'project-abc',
+      },
+    });
+
+    const result = await designNode(createState({ designTool: 'penpot', planning: FIXTURE_PLANNING }), createCtx());
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const meta = result.value.design?.designToolMetadata;
+      expect(meta?.tool).toBe('penpot');
+      expect(meta?.script).toBe('const root = penpot.createBoard();');
+      expect(meta?.nodeIds).toEqual({ 'root': 'penpot-id-123' });
+      expect(meta?.projectId).toBe('project-abc');
+    }
+  });
+
+  it('omits script/nodeIds/projectId from metadata when penpotDesignWork does not provide them', async () => {
+    mockedPenpotDesignWork.mockResolvedValue({
+      ok: true,
+      value: { moduleId: 'test-page', breakpoints: [], designSpec: { screen: 'test', width: 1440, nodes: {} } },
+    });
+
+    const result = await designNode(createState({ designTool: 'penpot', planning: FIXTURE_PLANNING }), createCtx());
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const meta = result.value.design?.designToolMetadata;
+      expect(meta?.tool).toBe('penpot');
+      expect(meta?.script).toBeUndefined();
+      expect(meta?.nodeIds).toBeUndefined();
+      expect(meta?.projectId).toBeUndefined();
+    }
   });
 
   it('returns Err when planning is missing for penpot path', async () => {

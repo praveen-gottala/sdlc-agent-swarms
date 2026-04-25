@@ -6,6 +6,17 @@ import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 
 export const dynamic = 'force-dynamic';
 
+function normalizeDesignSpecShape(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const record = raw as Record<string, unknown>;
+  if (record.nodes && typeof record.nodes === 'object') return record;
+  if (record.spec && typeof record.spec === 'object') {
+    const nested = record.spec as Record<string, unknown>;
+    if (nested.nodes && typeof nested.nodes === 'object') return nested;
+  }
+  return raw;
+}
+
 /**
  * GET /api/pages/[pageId]/design/spec
  * Reads the design spec JSON from {project}/agentforge/designs/{pageId}.json.
@@ -19,7 +30,10 @@ export async function GET(
   { params }: { params: Promise<{ pageId: string }> },
 ) {
   const { pageId } = await params;
-  const content = readTextFile(`agentforge/designs/${pageId}.json`);
+  const content =
+    readTextFile(`agentforge/designs/${pageId}.json`) ??
+    readTextFile(`.agentforge/previews/${pageId}/scripts/designspec-v2.json`) ??
+    readTextFile(`.agentforge/previews/bookshelf-${pageId}/scripts/designspec-v2.json`);
 
   if (content === null) {
     return NextResponse.json(
@@ -30,7 +44,7 @@ export async function GET(
 
   let parsed: any;
   try {
-    parsed = JSON.parse(content);
+    parsed = normalizeDesignSpecShape(JSON.parse(content));
   } catch {
     return new NextResponse(content, {
       status: 200,

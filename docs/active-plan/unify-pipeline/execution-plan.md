@@ -42,14 +42,14 @@ Update this checklist as each task completes. Commit convention: `[unify-pipelin
 ### Phase 1 — Layer B
 - [x] **1.0** Extract legacy-artifact migration helpers to core (2026-04-25)
 - [x] **1.1** `PipelineTelemetrySink` interface + `PipelineInput` (with `chromePass`) + ADR-044 + feature-plan §1.5 annotation (2026-04-25)
-- [ ] **1.1s** Spike: validate single-shot patch — **BLOCKER for Phase 2.5**
+- [x] **1.1s** Spike: validate single-shot patch — 3/3 passed (2026-04-25). Results: `docs/active-plan/unify-pipeline/spike-1.1s-results.md`
 - [x] **1.2** Stage node functions + `browserDesignWork` (superset of `callClaudeDesignAPI`); evaluator stubbed in Phase 1 — see ADR-045 (2026-04-25)
 - [x] **1.3** `runDesignPipeline` orchestrator + cache adapter + pipeline unit tests (2026-04-25)
 - [x] **1.4** Sink contract test harness (2026-04-25)
 
 ### Phase 2 — CLI Migration
-- [ ] **2.1** CLI telemetry sink + migration
-- [ ] **2.5** Browser feedback adapter
+- [x] **2.1** CLI telemetry sink + migration (2026-04-25). CliStdoutSink, --tool flag, resolveProvider wiring, design-page.ts + design-page-all.ts migrated to runDesignPipeline, DesignOutputSchema widened for Penpot metadata, cache reconciliation (dual penpot-design.json + designspec-v2.json write), run-module-pipeline.ts deleted.
+- [x] **2.5** Browser feedback adapter (2026-04-25). FeedbackAdapter interface (with showPreview), BrowserFeedbackAdapter (single-shot LLM patch), PenpotFeedbackAdapter, BrowserCollaborationSession bridge, wired into design-page.ts.
 
 ### Phase 3 — Dashboard Migration
 - [ ] **3.1** Dashboard telemetry sink + migration

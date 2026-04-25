@@ -12,6 +12,17 @@ import { PREVIEW_DIR_REL } from '@agentforge/core';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type { PrototypeManifest, PrototypeScreen, NavigationBinding } from '@agentforge/designspec-renderer';
 
+function normalizeDesignSpecShape(raw: unknown): DesignSpecV2 | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  if (record.nodes && typeof record.nodes === 'object') return record as unknown as DesignSpecV2;
+  if (record.spec && typeof record.spec === 'object') {
+    const nested = record.spec as Record<string, unknown>;
+    if (nested.nodes && typeof nested.nodes === 'object') return nested as unknown as DesignSpecV2;
+  }
+  return null;
+}
+
 /**
  * Scan the previews directory for all designed screens and build a manifest.
  * Matches each designspec-v2.json to pages.yaml entries for route/name metadata.
@@ -40,7 +51,10 @@ export function buildPrototypeManifest(
 
     let spec: DesignSpecV2;
     try {
-      spec = JSON.parse(readFileSync(specPath, 'utf-8')) as DesignSpecV2;
+      const parsed = JSON.parse(readFileSync(specPath, 'utf-8'));
+      const normalized = normalizeDesignSpecShape(parsed);
+      if (!normalized) continue;
+      spec = normalized;
     } catch {
       continue;
     }
