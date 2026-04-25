@@ -47,8 +47,14 @@ export { SPEC_SCHEMA_HEADERS } from './types/index.js';
 export { DesignToolSchema, DesignOutputSchema } from './types/index.js';
 export type { DesignTool, DesignOutput } from './types/index.js';
 
+export { ScaffoldProjectInputSchema } from './types/index.js';
+export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
+
+// Scaffolding
+export { scaffoldProject } from './scaffolding/index.js';
+
 // Constants
-export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, EVALUATOR_MODEL, ENV_MODEL_OVERRIDE, DEFAULT_SERVICE_URLS } from './constants.js';
+export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, EVALUATOR_MODEL, ENV_MODEL_OVERRIDE, ENV_VISION_LLM, isVisionLLMEnabled, DEFAULT_SERVICE_URLS } from './constants.js';
 export { PIPELINE_ARTIFACTS } from './pipeline-artifacts.js';
 
 export {
@@ -305,6 +311,9 @@ export {
 // Safe parse utility
 export { safeParse, extractJson } from './utils/safe-parse.js';
 
+// Test utilities (helpers for unit tests across packages — see CLAUDE.md §Test Quality Gates)
+export { withEnv } from './test-utils/index.js';
+
 // State: spec reader
 export type { SpecFiles } from './state/spec-reader.js';
 export { readSpecs, readSpecFile } from './state/spec-reader.js';
@@ -380,3 +389,19 @@ export {
   createPlaywrightTransportFromPage,
   PLAYWRIGHT_TOOLS,
 } from './mcp/index.js';
+
+// Design utilities (archetypes, tailwind/CSS generation, token defaults)
+export { buildDesignTokensSpec, buildBrandSpec } from './design/index.js';
+export type { DesignArchetype } from './design/index.js';
+export { generateTailwindConfig, generateGlobalCss, hexToHSLChannels } from './design/index.js';
+export {
+  DEFAULT_LAYOUT_TOKENS,
+  SHARED_LAYOUT,
+  DEFAULT_OPACITY,
+  DEFAULT_MOTION,
+  DEFAULT_STATE,
+  DEFAULT_ELEVATION,
+  DEFAULT_TYPOGRAPHY_SCALE,
+  DEFAULT_PREVIEW,
+} from './design/index.js';
+export type { PreviewData } from './design/index.js';

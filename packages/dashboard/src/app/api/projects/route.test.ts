@@ -1,5 +1,16 @@
 /**
  * @jest-environment node
+ *
+ * Scope (see CLAUDE.md §Test Quality Gates):
+ *   - Owns: route handler validation branches, error→cleanup wiring,
+ *     and the dashboard→core mapping contract (asserts that POST
+ *     forwards the right shape to `scaffoldProject`).
+ *   - Does NOT own: scaffold output correctness — that lives in
+ *     `packages/core/src/scaffolding/__tests__/scaffold-parity.test.ts`.
+ *     Do not re-assert created-file lists or YAML content here.
+ *
+ *   Heavy mock surface is acceptable until Phase 3 of unify-pipeline
+ *   converts this into an integration test against a tmp dir.
  */
 import { POST } from './route';
 
@@ -18,41 +29,34 @@ jest.mock('../_lib/project-reader', () => ({
 }));
 
 jest.mock('@agentforge/cli', () => ({
-  buildDesignTokensSpec: jest.fn(),
-  buildBrandSpec: jest.fn(),
   getComponentLibraryById: jest.fn(),
-  generateTailwindConfig: jest.fn(),
-  generateGlobalCss: jest.fn(),
   optionToTokens: jest.fn(),
   optionToBrand: jest.fn(),
 }));
 
 jest.mock('@agentforge/core', () => ({
+  buildDesignTokensSpec: jest.fn(),
+  buildBrandSpec: jest.fn(),
   createRealFs: jest.fn(),
-  generateProjectCatalog: jest.fn(),
-  saveComponentCatalog: jest.fn(),
   saveComponentLibrary: jest.fn(),
+  scaffoldProject: jest.fn(),
 }));
 
-import { existsSync, readFileSync, writeFileSync, rmSync } from 'fs';
+import { existsSync, readFileSync, rmSync } from 'fs';
 import { writePrefs } from '../_lib/project-reader';
 import * as core from '@agentforge/core';
 import * as cli from '@agentforge/cli';
 
 const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
-const mockWriteFileSync = writeFileSync as jest.MockedFunction<typeof writeFileSync>;
 const mockRmSync = rmSync as jest.MockedFunction<typeof rmSync>;
 const mockWritePrefs = writePrefs as jest.MockedFunction<typeof writePrefs>;
-const mockBuildDesignTokensSpec = cli.buildDesignTokensSpec as jest.MockedFunction<typeof cli.buildDesignTokensSpec>;
-const mockBuildBrandSpec = cli.buildBrandSpec as jest.MockedFunction<typeof cli.buildBrandSpec>;
-const mockGenerateTailwindConfig = cli.generateTailwindConfig as jest.MockedFunction<typeof cli.generateTailwindConfig>;
-const mockGenerateGlobalCss = cli.generateGlobalCss as jest.MockedFunction<typeof cli.generateGlobalCss>;
+const mockBuildDesignTokensSpec = core.buildDesignTokensSpec as jest.MockedFunction<typeof core.buildDesignTokensSpec>;
+const mockBuildBrandSpec = core.buildBrandSpec as jest.MockedFunction<typeof core.buildBrandSpec>;
 const mockGetComponentLibraryById = cli.getComponentLibraryById as jest.MockedFunction<typeof cli.getComponentLibraryById>;
 const mockCreateRealFs = core.createRealFs as jest.MockedFunction<typeof core.createRealFs>;
-const mockGenerateProjectCatalog = core.generateProjectCatalog as jest.MockedFunction<typeof core.generateProjectCatalog>;
 const mockSaveComponentLibrary = core.saveComponentLibrary as jest.MockedFunction<typeof core.saveComponentLibrary>;
-const mockSaveComponentCatalog = core.saveComponentCatalog as jest.MockedFunction<typeof core.saveComponentCatalog>;
+const mockScaffoldProject = core.scaffoldProject as jest.MockedFunction<typeof core.scaffoldProject>;
 
 function makeRequest(body: Record<string, unknown>) {
   return { json: async () => body } as Request;
@@ -63,14 +67,11 @@ function setupHappyPathMocks() {
   mockReadFileSync.mockReturnValue('version: "1.0"\ncomponents: {}\n');
   mockBuildDesignTokensSpec.mockReturnValue({
     touch_targets: { minimum_height: 44 },
-  } as ReturnType<typeof cli.buildDesignTokensSpec>);
-  mockBuildBrandSpec.mockReturnValue({} as ReturnType<typeof cli.buildBrandSpec>);
-  mockGenerateTailwindConfig.mockReturnValue('// tailwind');
-  mockGenerateGlobalCss.mockReturnValue('/* css */');
+  } as ReturnType<typeof core.buildDesignTokensSpec>);
+  mockBuildBrandSpec.mockReturnValue({} as ReturnType<typeof core.buildBrandSpec>);
   mockCreateRealFs.mockReturnValue({} as ReturnType<typeof core.createRealFs>);
-  mockGenerateProjectCatalog.mockReturnValue({ components: {} } as ReturnType<typeof core.generateProjectCatalog>);
   mockSaveComponentLibrary.mockReturnValue({ ok: true, value: undefined } as ReturnType<typeof core.saveComponentLibrary>);
-  mockSaveComponentCatalog.mockReturnValue({ ok: true, value: undefined } as ReturnType<typeof core.saveComponentCatalog>);
+  mockScaffoldProject.mockReturnValue({ ok: true, value: { createdFiles: [] } } as ReturnType<typeof core.scaffoldProject>);
   mockGetComponentLibraryById.mockReturnValue({
     id: 'mui',
     libraryName: 'MUI v5',
@@ -100,11 +101,11 @@ describe('POST /api/projects', () => {
     expect(data.projectId).toBe('music-showcase');
     expect(mockGetComponentLibraryById).toHaveBeenCalledWith('mui');
     expect(mockSaveComponentLibrary).toHaveBeenCalledTimes(1);
-    expect(mockGenerateProjectCatalog).toHaveBeenCalledTimes(1);
-    expect(mockSaveComponentCatalog).toHaveBeenCalledTimes(1);
-    expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/repo/apps/music-showcase/agentforge/spec/project.yaml',
-      expect.stringContaining('app:'),
+    expect(mockScaffoldProject).toHaveBeenCalledTimes(1);
+    expect(mockScaffoldProject).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Music Showcase', componentLibraryId: 'mui' }),
+      '/repo/apps/music-showcase',
+      expect.anything(),
     );
     expect(mockWritePrefs).toHaveBeenCalledWith({ activeProject: '/repo/apps/music-showcase' });
   });
@@ -126,7 +127,7 @@ describe('POST /api/projects', () => {
 
     expect(response.status).toBe(201);
     expect(mockGetComponentLibraryById).toHaveBeenCalledWith('shadcn');
-    expect(mockSaveComponentCatalog).toHaveBeenCalledTimes(1);
+    expect(mockScaffoldProject).toHaveBeenCalledTimes(1);
   });
 
   it('returns 400 when name is missing', async () => {
@@ -172,11 +173,10 @@ describe('POST /api/projects', () => {
   });
 
   it('cleans up project directory on component library save failure', async () => {
-    // existsSync calls: 1=apps/ dir (true), 2=project dir "already exists?" (false), 3+=cleanup (true)
     let callCount = 0;
     mockExistsSync.mockImplementation(() => {
       callCount++;
-      return callCount !== 2; // call 2 = project "already exists?" check → false, rest → true
+      return callCount !== 2;
     });
     mockSaveComponentLibrary.mockReturnValue({
       ok: false,
@@ -192,22 +192,22 @@ describe('POST /api/projects', () => {
     );
   });
 
-  it('cleans up project directory on catalog save failure', async () => {
+  it('cleans up project directory on scaffold failure', async () => {
     let callCount = 0;
     mockExistsSync.mockImplementation(() => {
       callCount++;
       return callCount !== 2;
     });
-    mockSaveComponentCatalog.mockReturnValue({
+    mockScaffoldProject.mockReturnValue({
       ok: false,
-      error: { message: 'Catalog save failed' },
-    } as ReturnType<typeof core.saveComponentCatalog>);
+      error: { code: 'INVALID_STATE' as const, message: 'Scaffold failed', recoverable: false },
+    } as ReturnType<typeof core.scaffoldProject>);
 
-    const response = await POST(makeRequest({ name: 'Catalog Fail' }) as never);
+    const response = await POST(makeRequest({ name: 'Scaffold Fail' }) as never);
 
     expect(response.status).toBe(500);
     expect(mockRmSync).toHaveBeenCalledWith(
-      '/repo/apps/catalog-fail',
+      '/repo/apps/scaffold-fail',
       { recursive: true, force: true },
     );
   });

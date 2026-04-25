@@ -90,7 +90,7 @@ export const TEMPLATE_MAP: Record<string, string> = {
   '.prettierrc.tmpl': '.prettierrc',
   'agentforge-ci.yml.tmpl': '.github/workflows/agentforge-ci.yml',
   'tailwind.config.ts.tmpl': 'tailwind.config.ts',
-  'global.css.tmpl': 'src/styles/global.css',
+  'global.css.tmpl': 'src/styles/globals.css',
   '.env.example.tmpl': '.env.example',
   'prisma-schema.prisma.tmpl': 'prisma/schema.prisma',
 };

@@ -6,7 +6,7 @@
  */
 
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
-import { Ok, Err, EVALUATOR_MODEL, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
 import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
@@ -154,6 +154,14 @@ export async function evaluateDesign(
   traceStage?: string,
   options?: EvaluateDesignOptions,
 ): Promise<Result<DesignEvaluation>> {
+  if (!isVisionLLMEnabled()) {
+    return Ok({
+      score: 0,
+      overallQuality: 'poor' as const,
+      issues: [],
+    });
+  }
+
   const imageBlock: ContentBlock = {
     type: 'image',
     source: {

@@ -25,10 +25,19 @@ Update this checklist as each task completes. Commit convention: `[unify-pipelin
 - [x] **0.4** Narrow dashboard shape fix (shallow wrapper) + unit test (2026-04-24)
 
 ### Phase 0.5 — Scaffolding
-- [ ] **0.5.1a** Move design utilities from CLI to core
-- [ ] **0.5.1b** Define `ScaffoldProjectInput` schema
-- [ ] **0.5.2** Extract `scaffoldProject` work function
-- [ ] **0.5.3** Scaffold parity test
+- [x] **0.5.1a** Move design utilities from CLI to core (2026-04-24)
+- [x] **0.5.1b** Define `ScaffoldProjectInput` schema (2026-04-24)
+- [x] **0.5.2** Extract `scaffoldProject` work function (2026-04-24)
+- [x] **0.5.3** Scaffold parity test (2026-04-24)
+
+> **Parity scope:** The parity guarantee is over the shared `scaffoldProject` logic given equal inputs — not over the full user-visible CLI vs dashboard project trees, which differ by design (CLI defers design system to `design:generate`; dashboard creates it inline during onboarding).
+
+### Phase 0.6 — Vision LLM Gate
+- [x] **0.6.1** `AGENTFORGE_ENABLE_VISION_LLM` env var + `isVisionLLMEnabled()` in core constants (2026-04-24)
+- [x] **0.6.2** Gate `evaluateDesign()` and `executeFixes()` with early return when disabled (2026-04-24)
+- [x] **0.6.3** Gate dashboard `/api/design/audit/vision` route (2026-04-24)
+- [x] **0.6.4** Gate integration test `vision-correction-effectiveness` (2026-04-24)
+- [x] **0.6.5** Unit tests for `isVisionLLMEnabled` + evaluator skip behavior (2026-04-24)
 
 ### Phase 1 — Layer B
 - [ ] **1.1** `PipelineTelemetrySink` interface + `PipelineInput` (with `chromePass`)

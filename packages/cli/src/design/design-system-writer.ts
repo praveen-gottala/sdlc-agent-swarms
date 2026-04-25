@@ -7,15 +7,14 @@
 
 import * as path from 'node:path';
 import type { DesignTokensSpec, BrandSpec, FileSystem } from '@agentforge/core';
-import { saveDesignTokens, saveBrandSpec } from '@agentforge/core';
-import { generateTailwindConfig, generateGlobalCss } from './tailwind-generator.js';
+import { saveDesignTokens, saveBrandSpec, generateTailwindConfig, generateGlobalCss } from '@agentforge/core';
 
 /**
  * Write all design system output files:
  * - agentforge/spec/design-tokens.yaml
  * - agentforge/spec/brand.yaml
  * - tailwind.config.ts
- * - src/styles/global.css
+ * - src/styles/globals.css
  */
 export function writeDesignSystemFiles(
   rootDir: string,
@@ -32,5 +31,5 @@ export function writeDesignSystemFiles(
   const stylesDir = path.join(rootDir, 'src', 'styles');
   fileSystem.mkdir(stylesDir);
   const cssContent = generateGlobalCss(tokens);
-  fileSystem.writeFile(path.join(stylesDir, 'global.css'), cssContent);
+  fileSystem.writeFile(path.join(stylesDir, 'globals.css'), cssContent);
 }

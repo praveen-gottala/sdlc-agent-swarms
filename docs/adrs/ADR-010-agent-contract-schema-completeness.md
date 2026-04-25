@@ -40,4 +40,7 @@ Updated `buildAgentsYaml()` in `packages/cli/src/commands/init.ts` to generate f
 
 Also added `on_complete` and `on_error` event hooks per PRD Section 10.1 example.
 
-Tests updated in `wave2-onboarding.test.ts` — all 7 sections verified per agent.
+Tests in `packages/cli/src/commands/agent-contract-schema-p12.test.ts` — all 7
+sections verified per agent (canonical home; the older `wave2-onboarding.test.ts`
+duplicate was deleted as part of the test-quality-gates cleanup, see
+`docs/lessons-learned.md` § Test Quality Gates — One Canonical Site Per Behavior).

@@ -7,7 +7,7 @@
  * them directly into the DesignSpec JSON.
  */
 import type { Result } from '@agentforge/core';
-import { Ok, Err, EVALUATOR_MODEL } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled } from '@agentforge/core';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { CorrectionAdapter, CorrectionFixResult } from './correction-loop.js';
 import type { DesignIssue, CorrectionHistory, FixAttemptRecord } from './design-evaluator.js';
@@ -470,6 +470,10 @@ export function createBrowserCorrectionAdapter(
       screenshotBase64: string,
       correctionHistory: readonly CorrectionHistory[],
     ): Promise<Result<CorrectionFixResult>> {
+      if (!isVisionLLMEnabled()) {
+        return Ok({ fixed: 0, failed: 0, fixAttempts: [] });
+      }
+
       // Re-extract DOM (layout may have changed)
       let currentDOM: DOMLayoutData;
       try {

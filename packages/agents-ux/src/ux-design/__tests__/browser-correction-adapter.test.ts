@@ -88,6 +88,13 @@ function makeSpec(): DesignSpecV2 {
 // ─── Tests ───────────────────────────────────────────────
 
 describe('createBrowserCorrectionAdapter', () => {
+  const originalVisionFlag = process.env['AGENTFORGE_ENABLE_VISION_LLM'];
+  beforeAll(() => { process.env['AGENTFORGE_ENABLE_VISION_LLM'] = 'true'; });
+  afterAll(() => {
+    if (originalVisionFlag === undefined) delete process.env['AGENTFORGE_ENABLE_VISION_LLM'];
+    else process.env['AGENTFORGE_ENABLE_VISION_LLM'] = originalVisionFlag;
+  });
+
   it('captureScreenshot returns base64 PNG', async () => {
     const session = makeMockSession();
     const spec = makeSpec();

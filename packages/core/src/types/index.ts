@@ -106,3 +106,6 @@ export type {
 
 export { DesignToolSchema, DesignOutputSchema } from './design-phase-state.js';
 export type { DesignTool, DesignOutput } from './design-phase-state.js';
+
+export { ScaffoldProjectInputSchema } from './scaffold.js';
+export type { ScaffoldProjectInput, ScaffoldResult } from './scaffold.js';

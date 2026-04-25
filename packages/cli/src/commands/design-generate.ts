@@ -574,7 +574,7 @@ export async function designGenerateCommand(
     output.write(successMsg('  agentforge/spec/design-tokens.yaml\n'));
     output.write(successMsg('  agentforge/spec/brand.yaml\n'));
     output.write(successMsg('  tailwind.config.ts\n'));
-    output.write(successMsg('  src/styles/global.css\n'));
+    output.write(successMsg('  src/styles/globals.css\n'));
 
     // Reload tokens and brand
     tokensResult = loadDesignTokens(rootDir, fileSystem);

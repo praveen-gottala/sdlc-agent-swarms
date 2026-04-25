@@ -28,7 +28,8 @@ Not started: spec/code/cicd/observe phases, V3 Dashboard
 Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. Python engine deprecated. See ADR-043.
 
 **Active plans:**
-1. Screen Types Plan B — B0-B2.7 complete, B3 (Layout-Aware Code Generation) next. See `docs/feature-plans/screen-types-plan-b.md`
+1. Unify Design Pipeline — Phase 0-0.5 COMPLETE, Phase 1 next. See `docs/active-plan/unify-pipeline/execution-plan.md`
+2. Screen Types Plan B — B0-B2.7 complete, B3 (Layout-Aware Code Generation) next. **Paused** — unify pipeline is higher priority. See `docs/feature-plans/screen-types-plan-b.md`
 
 **Completed plans:**
 - Screen Types Plan A — COMPLETE (all phases A1-A6 done, 2026-04-22). See `docs/feature-plans/screen-types-plan-a.md`
@@ -107,6 +108,28 @@ and test written in this project.
 ### Testing Integrity
 - Tests must exercise the real server/API codepath, not internal functions.
   Never work around a server bug by calling internal methods — flag as deviation.
+
+### Test Quality Gates
+Before adding ANY new test, verify all of:
+
+1. **Ownership.** Tests live in the package that owns the function under test.
+   When code moves between packages, the tests move with it.
+2. **One canonical assertion site per behavior.** Don't re-assert what another
+   test already covers. PRD-acceptance / criterion / wave-style suites are
+   organizational labels, not parallel suites.
+3. **No tautologies, no "did I call my mock" tests, no SLA-on-mocks.** A test
+   must be able to fail for a real reason.
+4. **Real codepath > mock pyramid.** Extends "Testing Integrity" above: prefer
+   one integration test against a tmp dir over six mock-heavy units. Mock-heavy
+   files MUST carry a top-of-file scope-header comment naming the canonical
+   home of any behavior they don't own.
+5. **Shared `withEnv` for `process.env`.** Inline `try/finally` env restoration
+   is forbidden — use `withEnv` from `@agentforge/core`.
+6. **~10s wall-time budget per `*.test.ts` file.** Collapse repeated end-to-end
+   runs of the same flow into one assertion-dense test.
+
+Detail, examples, and the bug story live in `docs/lessons-learned.md`
+§ Test Quality Gates — One Canonical Site Per Behavior.
 
 ### Event Registry Completeness
 - Every domain event referenced in the PRD (TaskStatusChanged, PhaseStarted,

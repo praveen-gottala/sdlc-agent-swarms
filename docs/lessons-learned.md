@@ -32,6 +32,7 @@
 - [Test Runner Scoping: Playwright vs Jest](#test-runner-scoping-playwright-spects-jest-testts) — RESOLVED
 - [Mock-Only Tests Hide Wiring Bugs](#mock-only-tests-hide-wiring-bugs) — RESOLVED
 - [Mocks Belong Only in Test Files](#mocks-belong-only-in-test-files-testts) — RULE
+- [Test Quality Gates — One Canonical Site Per Behavior](#test-quality-gates--one-canonical-site-per-behavior) — RULE
 - [Test Fixtures Must Be Generic](#test-fixtures-must-be-generic-not-app-specific) — RULE
 - [Fixture Token Values Must Match Source](#fixture-token-values-must-match-real-source-of-truth) — RULE
 - [Never Assume Coverage — Always Verify](#never-assume-coverage--always-verify-mechanically) — RULE
@@ -280,6 +281,50 @@ Agent contexts in CLI commands were created with `createMockFs()` — a fake fil
 2. **If an interface dependency isn't needed yet, make it optional** — don't fill it with a fake.
 3. **A stub that returns "not found" is worse than a crash** — crashes get fixed immediately, silent degradation gets shipped.
 4. **When creating contexts/configs, use real implementations** — `createRealFs()`, not `createMockFs()`.
+
+---
+
+## Test Quality Gates — One Canonical Site Per Behavior
+
+**Context:** Phase 0/0.5 of unify-pipeline (2026-04-24). The scaffold extraction
+moved code from `packages/cli/` to `packages/core/`, but the tests didn't
+follow the code. Result: three suites asserting the same scaffold output
+(`scaffold-parity.test.ts` + `init.test.ts:137-277` + the entire
+`wave2-onboarding.test.ts`), 127 lines of tailwind/CSS/token tests in
+`init.test.ts` exercising re-exports while `packages/core/src/design/` had
+zero direct tests, three near-identical end-to-end `initCommand` runs
+asserting one output line each, plus a "Criterion 8" SLA test that timed a
+mocked filesystem and a tautological "design is a valid phase" check that
+defined its own expected value.
+**Rule (codified in CLAUDE.md §Test Quality Gates):** before adding any
+unit test, verify all 8 gates: (1) ownership rule — tests live in the package
+that owns the function; (2) one canonical assertion site per behavior; (3) no
+"framing" duplicates (no parallel "criterion N" suites that re-run existing
+checks); (4) no tautologies, no "did I call my mock" tests, no SLA-on-mocks;
+(5) prefer one real-codepath integration test over six mock-heavy units;
+(6) shared `withEnv` helper for `process.env` mutation, never inline
+try/finally; (7) scope-header comment on any test file whose ownership
+boundary is non-obvious; (8) ~10s wall-time budget per `*.test.ts` file —
+collapse repeated end-to-end runs.
+
+### Cleanups applied:
+- Deleted `packages/cli/src/commands/wave2-onboarding.test.ts` — every
+  substantive assertion was already in `init.test.ts` or
+  `scaffold-parity.test.ts`.
+- Moved tailwind/CSS/token tests from `init.test.ts:410-536` to
+  `packages/core/src/design/__tests__/tailwind-generator.test.ts`.
+- Trimmed `init.test.ts` to CLI-extras-only assertions; collapsed three
+  end-to-end `initCommand` runs into one.
+- Added `packages/core/src/test-utils/with-env.ts` (exported as
+  `withEnv` from `@agentforge/core`); refactored
+  `constants.test.ts` and `design-evaluator.test.ts` to use it.
+- Added scope-header comments to `init.test.ts` and
+  `dashboard/src/app/api/projects/route.test.ts`.
+
+### Heuristic for catching this earlier:
+Any time you move or rename a function across packages, treat the test files
+as part of the move. If the receiving package has no tests for the function,
+the move isn't done.
 
 ---
 

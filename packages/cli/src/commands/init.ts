@@ -12,7 +12,7 @@ import { writeYaml, type FileSystem, realFs, loadDotEnv } from '../fs-utils.js';
 import { successMsg, infoMsg, errorMsg } from '../formatter.js';
 import { renderAllTemplates } from '../template-renderer.js';
 import { setupEngine, checkPrerequisites } from '../engine-setup.js';
-import { loadBaseCatalog, generateProjectCatalog, saveComponentCatalog, debugLog } from '@agentforge/core';
+import { loadBaseCatalog, generateProjectCatalog, saveComponentCatalog, debugLog, scaffoldProject as coreScaffoldProject } from '@agentforge/core';
 import { pickComponentLibrary } from './design-system.js';
 import { generateDesignOptions } from './generate-design-options.js';
 import type { DesignArchetype } from '../design/archetypes.js';
@@ -313,12 +313,13 @@ function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
 }
 
 /**
- * Scaffold the project directory structure.
- * Creates the minimal project layout without design system files.
- * Design system is generated later via `agentforge design:generate` after
- * the user provides a PRD via `agentforge describe`.
+ * Scaffold CLI-specific project files that are NOT part of the shared
+ * core scaffoldProject. Called after coreScaffoldProject completes.
+ *
+ * CLI-specific files: .agentforge/ dirs, trust-state, agent contracts,
+ * tasks file, app source dirs, scaffold templates.
  */
-export function scaffoldProject(
+export function scaffoldCliExtras(
   rootDir: string,
   manifest: ProjectManifest,
   fileSystem: FileSystem = realFs,
@@ -326,79 +327,34 @@ export function scaffoldProject(
 ): string[] {
   const created: string[] = [];
 
-  // Create spec directory (on-demand spec files like pages.yaml, api.yaml,
-  // models.yaml are NOT created here — they are written by the first agent
-  // that needs them, with schema comment headers for context)
-  const specDir = path.join(rootDir, 'agentforge', 'spec');
-  fileSystem.mkdir(specDir);
-
-  // Create learnings directory
-  const learningsDir = path.join(rootDir, '.agentforge', 'learnings');
-  fileSystem.mkdir(learningsDir);
+  // .agentforge internal directories
+  fileSystem.mkdir(path.join(rootDir, '.agentforge', 'learnings'));
   created.push('.agentforge/learnings/');
 
-  // Create audit directory
-  const auditDir = path.join(rootDir, '.agentforge', 'audit');
-  fileSystem.mkdir(auditDir);
+  fileSystem.mkdir(path.join(rootDir, '.agentforge', 'audit'));
   created.push('.agentforge/audit/');
 
-  // Create locks directory
-  const locksDir = path.join(rootDir, '.agentforge', 'locks');
-  fileSystem.mkdir(locksDir);
+  fileSystem.mkdir(path.join(rootDir, '.agentforge', 'locks'));
   created.push('.agentforge/locks/');
 
   // Write initial trust state
-  const trustStatePath = path.join(rootDir, '.agentforge', 'trust-state.yaml');
-  writeYaml(trustStatePath, { version: '1.0', trust: {} }, fileSystem);
+  writeYaml(path.join(rootDir, '.agentforge', 'trust-state.yaml'), { version: '1.0', trust: {} }, fileSystem);
   created.push('.agentforge/trust-state.yaml');
 
   // Create app directories
-  const appDirs = [
-    'src/components',
-    'src/pages',
-    'src/api',
-    'src/lib',
-    'prisma',
-  ];
+  const appDirs = ['src/components', 'src/pages', 'src/api', 'src/lib', 'prisma'];
   for (const dir of appDirs) {
     fileSystem.mkdir(path.join(rootDir, dir));
     created.push(`${dir}/`);
   }
 
-  // Write project manifest
-  const manifestPath = path.join(rootDir, 'agentforge.yaml');
-  writeYaml(manifestPath, manifest, fileSystem);
-  created.push('agentforge.yaml');
-
   // Write empty tasks file
-  const tasksPath = path.join(rootDir, 'agentforge.tasks.yaml');
-  writeYaml(tasksPath, { tasks: [] }, fileSystem);
+  writeYaml(path.join(rootDir, 'agentforge.tasks.yaml'), { tasks: [] }, fileSystem);
   created.push('agentforge.tasks.yaml');
 
   // DEVIATION: ADR-011
-  // PRD v2.0 Section 10.1 specifies: agent contracts "in the project manifest"
-  // Implementation: agent contracts stored in separate agentforge/agents.yaml
-  // Rationale: see ADR-011 — consistent with PRD's per-file pattern, keeps manifest focused
-  const agentsPath = path.join(rootDir, 'agentforge', 'agents.yaml');
-  writeYaml(agentsPath, buildAgentsYaml(manifest), fileSystem);
+  writeYaml(path.join(rootDir, 'agentforge', 'agents.yaml'), buildAgentsYaml(manifest), fileSystem);
   created.push('agentforge/agents.yaml');
-
-  // Write seed spec files
-  const projectSpec = {
-    version: '1.0',
-    app: {
-      name: manifest.project.name,
-      description: manifest.project.description || '',
-    },
-    adrs: [],
-  };
-  writeYaml(path.join(specDir, 'project.yaml'), projectSpec, fileSystem);
-  created.push('agentforge/spec/project.yaml');
-
-  // Create docs directory for PRD
-  const docsDir = path.join(rootDir, 'docs');
-  fileSystem.mkdir(docsDir);
-  created.push('docs/');
 
   // Render and write scaffold templates
   const vars = { PROJECT_NAME: manifest.project.name };
@@ -412,6 +368,35 @@ export function scaffoldProject(
   }
 
   return created;
+}
+
+/**
+ * Backward-compatible wrapper: calls core's scaffoldProject then
+ * scaffoldCliExtras. Existing tests that call scaffoldProject(rootDir,
+ * manifest, fs, templates) continue working without modification.
+ */
+export function scaffoldProject(
+  rootDir: string,
+  manifest: ProjectManifest,
+  fileSystem: FileSystem = realFs,
+  templateContents?: Map<string, string>,
+): string[] {
+  const coreResult = coreScaffoldProject(
+    {
+      name: manifest.project.name,
+      description: manifest.project.description,
+      projectConfig: manifest as unknown as Record<string, unknown>,
+    },
+    rootDir,
+    fileSystem,
+  );
+
+  if (!coreResult.ok) {
+    throw new Error(coreResult.error.message);
+  }
+
+  const cliFiles = scaffoldCliExtras(rootDir, manifest, fileSystem, templateContents);
+  return [...coreResult.value.createdFiles, ...cliFiles];
 }
 
 

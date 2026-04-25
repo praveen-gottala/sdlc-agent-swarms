@@ -5,7 +5,7 @@
  */
 
 import { evaluateDesign } from './design-evaluator.js';
-import { Ok, Err } from '@agentforge/core';
+import { Ok, Err, withEnv } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 
 // ============================================================================
@@ -43,6 +43,13 @@ const createFailingProvider = (): LLMProvider => ({
 // ============================================================================
 
 describe('evaluateDesign', () => {
+  const originalVisionFlag = process.env['AGENTFORGE_ENABLE_VISION_LLM'];
+  beforeAll(() => { process.env['AGENTFORGE_ENABLE_VISION_LLM'] = 'true'; });
+  afterAll(() => {
+    if (originalVisionFlag === undefined) delete process.env['AGENTFORGE_ENABLE_VISION_LLM'];
+    else process.env['AGENTFORGE_ENABLE_VISION_LLM'] = originalVisionFlag;
+  });
+
   it('returns good quality for score >= 80', async () => {
     const provider = createMockProvider(JSON.stringify({
       score: 85,
@@ -119,5 +126,18 @@ describe('evaluateDesign', () => {
     if (!result.ok) {
       expect(result.error.message).toContain('failed');
     }
+  });
+
+  it('returns skip result when AGENTFORGE_ENABLE_VISION_LLM is false', async () => {
+    await withEnv({ AGENTFORGE_ENABLE_VISION_LLM: 'false' }, async () => {
+      const provider = createMockProvider('should not be called');
+      const result = await evaluateDesign('base64data', 'Design spec', provider);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.score).toBe(0);
+        expect(result.value.overallQuality).toBe('poor');
+        expect(result.value.issues).toEqual([]);
+      }
+    });
   });
 });

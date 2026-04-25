@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
+import { isVisionLLMEnabled } from '@agentforge/core';
 import { runBrowserCorrectionPipeline } from '../src/ux-design/browser-correction-pipeline.js';
 import { openBrowserSession } from '@agentforge/designspec-renderer';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
@@ -113,7 +114,8 @@ function introduceWidthBug(spec: DesignSpecV2): DesignSpecV2 {
 // ── Test configuration ──
 
 const auth = resolveClaudeAuth();
-const describeIfAuth = auth ? describe : describe.skip;
+const visionEnabled = isVisionLLMEnabled();
+const describeIfAuth = (auth && visionEnabled) ? describe : describe.skip;
 
 const OUTPUT_DIR = join(__dirname, 'output/vision-correction');
 

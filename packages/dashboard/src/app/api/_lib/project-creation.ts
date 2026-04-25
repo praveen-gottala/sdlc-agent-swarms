@@ -1,26 +1,23 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
-import { parse, stringify } from 'yaml';
+import { parse } from 'yaml';
 import { Writable } from 'stream';
 import { z } from 'zod';
 import { MONOREPO_ROOT, writePrefs } from './project-reader';
 import {
-  buildDesignTokensSpec,
-  buildBrandSpec,
   getComponentLibraryById,
-  generateTailwindConfig,
-  generateGlobalCss,
   optionToTokens,
   optionToBrand,
-  type DesignArchetype,
   type ComponentLibraryId,
   type DesignOption,
 } from '@agentforge/cli';
 import {
+  buildDesignTokensSpec,
+  buildBrandSpec,
   createRealFs,
-  generateProjectCatalog,
-  saveComponentCatalog,
   saveComponentLibrary,
+  scaffoldProject,
+  type DesignArchetype,
   type ComponentCatalogSpec,
 } from '@agentforge/core';
 
@@ -142,61 +139,18 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
     throw new ProjectCreationError(`Project directory "${slug}" already exists`, 409);
   }
 
-  // Track whether we created the directory so we can clean up on failure
   let directoryCreated = false;
 
   try {
-    // Create project directories
     mkdirSync(projectDir, { recursive: true });
     directoryCreated = true;
-    mkdirSync(join(projectDir, 'agentforge', 'spec'), { recursive: true });
-    mkdirSync(join(projectDir, 'agentforge', 'designs'), { recursive: true });
-    mkdirSync(join(projectDir, 'docs'), { recursive: true });
 
-    // Write agentforge.yaml
-    const projectConfig = {
-      version: '1.0',
-      project: {
-        name,
-        description: description ?? '',
-        platforms: ['web'],
-      },
-      stack: {
-        frontend: 'react',
-        backend: 'node',
-        database: 'postgresql',
-        styling: 'tailwind',
-      },
-      budget: {
-        per_task_max_usd: 2.0,
-        per_phase_max_usd: 25.0,
-        monthly_max_usd: 200.0,
-      },
-    };
-    writeFileSync(join(projectDir, 'agentforge.yaml'), stringify(projectConfig));
-
-    // Write pages.yaml and project.yaml
-    writeFileSync(
-      join(projectDir, 'agentforge', 'spec', 'pages.yaml'),
-      stringify({ version: '1.0', pages: [] }),
-    );
-    writeFileSync(
-      join(projectDir, 'agentforge', 'spec', 'project.yaml'),
-      stringify({
-        version: '1.0',
-        app: { name, description: description ?? '' },
-        adrs: [],
-      }),
-    );
-
-    // Generate design system
+    // Resolve design system
     const audience = targetAudience ?? 'general users';
     let designTokens;
     let brandSpec;
 
     if (designOption) {
-      // Zod validates structure at runtime; cast bridges the Zod output type
-      // to the CLI's intersection type (Record<string,string> & {required keys}).
       const option = designOption as unknown as DesignOption;
       designTokens = optionToTokens(option, NULL_STREAM);
       brandSpec = optionToBrand(option, audience, NULL_STREAM);
@@ -206,16 +160,7 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
       brandSpec = buildBrandSpec(archetype, audience);
     }
 
-    writeFileSync(
-      join(projectDir, 'agentforge', 'spec', 'design-tokens.yaml'),
-      stringify(designTokens),
-    );
-    writeFileSync(
-      join(projectDir, 'agentforge', 'spec', 'brand.yaml'),
-      stringify(brandSpec),
-    );
-
-    // Component library and catalog setup
+    // Resolve component library (dashboard-specific: needs CLI's preset data)
     const realFs = createRealFs();
     const componentLibraryId = resolveComponentLibraryId(componentLibrary);
     const selectedLibrary = getComponentLibraryById(componentLibraryId);
@@ -240,33 +185,51 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
       throw new Error(saveLibraryResult.error.message);
     }
 
-    const baseCatalog = loadDashboardBaseCatalog();
-    const projectCatalog = generateProjectCatalog(baseCatalog, selectedLibrary.id, designTokens);
-    const saveCatalogResult = saveComponentCatalog(projectDir, projectCatalog, realFs);
+    // Shared scaffold: dirs, agentforge.yaml, spec files, tokens, brand, tailwind, catalog, PRD
+    const projectConfig = {
+      version: '1.0',
+      project: {
+        name,
+        description: description ?? '',
+        platforms: ['web'],
+      },
+      stack: {
+        frontend: 'react',
+        backend: 'node',
+        database: 'postgresql',
+        styling: 'tailwind',
+      },
+      budget: {
+        per_task_max_usd: 2.0,
+        per_phase_max_usd: 25.0,
+        monthly_max_usd: 200.0,
+      },
+    };
 
-    if (!saveCatalogResult.ok) {
-      throw new Error(saveCatalogResult.error.message);
+    const scaffoldResult = scaffoldProject(
+      {
+        name,
+        description: description ?? undefined,
+        projectConfig,
+        designTokens,
+        brandSpec,
+        componentLibraryId: selectedLibrary.id,
+        baseCatalog: loadDashboardBaseCatalog(),
+        prdContent,
+      },
+      projectDir,
+      realFs,
+    );
+
+    if (!scaffoldResult.ok) {
+      throw new ProjectCreationError(scaffoldResult.error.message, 500);
     }
 
-    // Generate Tailwind config and CSS
-    const tailwindConfig = generateTailwindConfig(designTokens);
-    writeFileSync(join(projectDir, 'tailwind.config.ts'), tailwindConfig);
-
-    const globalCss = generateGlobalCss(designTokens);
-    mkdirSync(join(projectDir, 'src', 'styles'), { recursive: true });
-    writeFileSync(join(projectDir, 'src', 'styles', 'globals.css'), globalCss);
-
-    // Write PRD if provided
-    if (prdContent?.trim()) {
-      writeFileSync(join(projectDir, 'docs', 'prd.md'), prdContent);
-    }
-
-    // Set as active project
+    // Dashboard-specific: set as active project
     writePrefs({ activeProject: projectDir });
 
     return { projectId: slug, path: projectDir };
   } catch (err) {
-    // Clean up partially created project directory on failure
     if (directoryCreated && existsSync(projectDir)) {
       try {
         rmSync(projectDir, { recursive: true, force: true });

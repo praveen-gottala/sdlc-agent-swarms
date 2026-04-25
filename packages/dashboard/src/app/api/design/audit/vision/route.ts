@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readTextFile, readYamlFile } from '../../../_lib/project-reader';
 import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
 import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
-import { EVALUATOR_MODEL } from '@agentforge/core';
+import { EVALUATOR_MODEL, isVisionLLMEnabled } from '@agentforge/core';
 import type { DesignTokensSpec } from '@agentforge/core';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
   const { pageId } = body;
   if (!pageId) {
     return NextResponse.json({ error: 'Missing pageId' }, { status: 400 });
+  }
+
+  if (!isVisionLLMEnabled()) {
+    return NextResponse.json({ error: 'Vision LLM is disabled (AGENTFORGE_ENABLE_VISION_LLM=false)' }, { status: 503 });
   }
 
   const providerResult = getClaudeProvider(EVALUATOR_MODEL);

@@ -13,6 +13,16 @@ export const EVALUATOR_MODEL = 'claude-opus-4-7';
 /** Environment variable name for global model override. */
 export const ENV_MODEL_OVERRIDE = 'AGENTFORGE_DEFAULT_MODEL';
 
+/** Environment variable name for enabling/disabling vision LLM calls (evaluation + correction). */
+export const ENV_VISION_LLM = 'AGENTFORGE_ENABLE_VISION_LLM';
+
+/** Whether vision LLM calls are enabled. Reads ENV_VISION_LLM at call time; defaults to true. */
+export function isVisionLLMEnabled(): boolean {
+  const val = process.env[ENV_VISION_LLM];
+  if (val === undefined || val === '') return true;
+  return val !== 'false' && val !== '0';
+}
+
 /**
  * Default service URLs used as fallbacks when no env var or explicit
  * config overrides the value. Production deploys should always override.

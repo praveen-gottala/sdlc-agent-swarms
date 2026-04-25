@@ -297,7 +297,7 @@ export function createProgram(): Command {
   return program;
 }
 
-export { initCommand, buildManifest, scaffoldProject } from './commands/init.js';
+export { initCommand, buildManifest, scaffoldProject, scaffoldCliExtras } from './commands/init.js';
 export { buildDesignTokensSpec, buildBrandSpec } from './design/archetypes.js';
 export { generateTailwindConfig, generateGlobalCss, hexToHSLChannels } from './design/tailwind-generator.js';
 export { startCommand } from './commands/start.js';
