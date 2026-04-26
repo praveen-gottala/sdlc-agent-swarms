@@ -103,6 +103,7 @@ function DesignStudioContent() {
   // Audit state
   const [mechanicalAudit, setMechanicalAudit] = useState<import('@/lib/design/audit-types').MechanicalAuditResult | null>(null);
   const [mechanicalAuditLoading, setMechanicalAuditLoading] = useState(false);
+  const [mechanicalFixLoading, setMechanicalFixLoading] = useState(false);
   const [visionAudit, setVisionAudit] = useState<import('@/lib/design/audit-types').VisionAuditResult | null>(null);
   const [visionAuditLoading, setVisionAuditLoading] = useState(false);
   const [visionAuditAvailable, setVisionAuditAvailable] = useState(false);
@@ -241,6 +242,53 @@ function DesignStudioContent() {
     }
   }, [designSpec]);
 
+  const handleFixMechanicalAudit = useCallback(async () => {
+    if (!selectedId || !mechanicalAudit || !bridgeRef.current) return;
+    const issueVerdicts = new Set(['FAIL', 'DROP']);
+    const failReports = mechanicalAudit.reports.filter(r =>
+      r.checks.some(c => issueVerdicts.has(c.verdict)),
+    );
+    if (failReports.length === 0) return;
+
+    const issueLines = failReports.flatMap(r =>
+      r.checks
+        .filter(c => issueVerdicts.has(c.verdict))
+        .map(c => c.verdict === 'DROP'
+          ? `- Node "${r.nodeId}" (${r.nodeType}): ${c.property} override is not applied by the renderer (DROP)`
+          : `- Node "${r.nodeId}" (${r.nodeType}): ${c.property} is ${c.computedValue} but spec says ${c.specValue}`),
+    );
+
+    setMechanicalFixLoading(true);
+    try {
+      const feedbackText = `Fix these ${issueLines.length} spec-vs-rendered mismatches:\n${issueLines.join('\n')}`;
+      const tags = failReports.map(r => ({
+        nodeId: r.nodeId,
+        feedback: r.checks
+          .filter(c => issueVerdicts.has(c.verdict))
+          .map(c => `${c.property}: expected ${c.specValue}, got ${c.computedValue}`)
+          .join('; '),
+      }));
+      const res = await fetch(`/api/pages/${selectedId}/design/correct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags, feedback: feedbackText }),
+      });
+      if (!res.ok) throw new Error(`Fix failed: ${res.status}`);
+
+      const specRes = await fetch(`/api/pages/${selectedId}/design/spec?bundle=true&t=${Date.now()}`, { cache: 'no-store' });
+      if (specRes.ok) {
+        const bundle = await specRes.json();
+        if (bundle?.data?.spec) setDesignSpec(bundle.data.spec);
+      }
+
+      await handleRunMechanicalAudit();
+    } catch (err) {
+      console.error('Mechanical fix failed:', err);
+    } finally {
+      setMechanicalFixLoading(false);
+    }
+  }, [selectedId, mechanicalAudit, handleRunMechanicalAudit]);
+
   const handleRunVisionAudit = useCallback(async () => {
     if (!selectedId) return;
     setVisionAuditLoading(true);
@@ -291,11 +339,12 @@ function DesignStudioContent() {
     pageId: string,
     issues: Array<{ severity: string; component: string; description: string; fix: string; issueId?: string }>,
     feedback?: string,
+    previousAttempt?: { scoreBefore: number; scoreAfter: number; patchesTried: Record<string, unknown> },
   ): Promise<boolean> => {
     const res = await fetch(`/api/pages/${pageId}/design/correct`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ issues, feedback }),
+      body: JSON.stringify({ issues, feedback, previousAttempt }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Fix failed' }));
@@ -347,11 +396,30 @@ function DesignStudioContent() {
       if (!audit1) { setFixPhase('idle'); setFixingIssueId(null); return; }
 
       const remainingAfterPass1 = audit1.issues ?? [];
+      const postFixScore = audit1.score as number | undefined;
+
+      if (preFixScore !== null && postFixScore !== undefined && postFixScore < preFixScore - 5) {
+        await fetch(`/api/pages/${selectedId}/design/revert`, { method: 'POST' });
+        const specRes = await fetch(`/api/pages/${selectedId}/design/spec?bundle=true&t=${Date.now()}`, { cache: 'no-store' });
+        if (specRes.ok) {
+          const data = await specRes.json();
+          if (data?.spec) setDesignSpec(data.spec);
+          else if (data) setDesignSpec(data);
+        }
+        setPreviousScore(preFixScore);
+        setVisionAudit({ ...audit1, error: `Fix made score worse (${preFixScore} → ${postFixScore}). Reverted to previous version.` });
+        setFixPhase('idle'); setFixingIssueId(null);
+        return;
+      }
 
       // Pass 2: Auto-retry if issues remain (max 1 retry)
       if (remainingAfterPass1.length > 0) {
         setFixPhase('retrying');
-        if (await applyFixAndReload(selectedId, remainingAfterPass1, feedback)) {
+        const pass1Patches = { note: 'pass1 patches caused regression', score: postFixScore };
+        const prevAttempt = (preFixScore !== null && postFixScore !== undefined && postFixScore <= preFixScore)
+          ? { scoreBefore: preFixScore, scoreAfter: postFixScore, patchesTried: pass1Patches }
+          : undefined;
+        if (await applyFixAndReload(selectedId, remainingAfterPass1, feedback, prevAttempt)) {
           setFixPhase('verifying');
           const audit2 = await runAudit(selectedId);
           if (audit2) {
@@ -1396,6 +1464,8 @@ function DesignStudioContent() {
           visionAuditAvailable={visionAuditAvailable}
           onFixIssue={handleFixSingleIssue}
           onFixAll={handleFixIssues}
+          onFixMechanical={handleFixMechanicalAudit}
+          mechanicalFixLoading={mechanicalFixLoading}
           fixPhase={fixPhase}
           fixingIssueId={fixingIssueId}
           previousScore={previousScore}

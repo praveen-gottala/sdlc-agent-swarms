@@ -8,6 +8,7 @@
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
 import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, recordPromptTrace, recordPromptTraceResponse, safeParse, debugLog } from '@agentforge/core';
 import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
+import { buildEvaluatorConstraintsPrompt } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
@@ -112,6 +113,8 @@ Text quality (critical — these indicate broken layout, not just poor design):
 - Deduct 5 points per text node that appears to overflow its parent container
 - If text labels show partial words (e.g., "Enter your bill de" instead of full text) → report as critical issue with issueId "text-truncation-{component}"
 - If a value and its label overlap (e.g., "$0.00" overlapping "Amount") → report as critical issue with issueId "text-overlap-{component}"
+
+${buildEvaluatorConstraintsPrompt()}
 
 IMPORTANT:
 - Give each issue a stable "issueId" (lowercase-kebab-case, e.g., "missing-header-title", "card-spacing-wrong").

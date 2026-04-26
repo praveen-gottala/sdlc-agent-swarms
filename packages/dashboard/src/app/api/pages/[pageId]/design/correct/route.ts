@@ -11,6 +11,7 @@ import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../../_lib/llm-pr
 import { BrowserFeedbackAdapter } from '@agentforge/agents-ux';
 import type { LLMProviderRef } from '@agentforge/core';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { normalizeSpecOverrides } from '@agentforge/designspec-renderer';
 
 interface PageEntry {
   id: string;
@@ -71,9 +72,14 @@ export async function POST(
 ) {
   const { pageId } = await params;
 
-  let body: { tags?: FeedbackTag[]; issues?: VisionIssue[]; feedback?: string };
+  let body: {
+    tags?: FeedbackTag[];
+    issues?: VisionIssue[];
+    feedback?: string;
+    previousAttempt?: { scoreBefore: number; scoreAfter: number; patchesTried: Record<string, unknown> };
+  };
   try {
-    body = (await request.json()) as { tags?: FeedbackTag[]; issues?: VisionIssue[]; feedback?: string };
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -147,10 +153,25 @@ export async function POST(
   pages[idx].designStatus = 'correction';
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
+  const projectRoot = getActiveProjectRoot();
+  const designsDir = join(projectRoot, 'agentforge', 'designs');
+  if (!existsSync(designsDir)) {
+    mkdirSync(designsDir, { recursive: true });
+  }
+  writeFileSync(join(designsDir, `${pageId}.backup.json`), specContent, 'utf-8');
+
   const specNodeIds = Object.keys(spec.nodes);
-  const feedbackMessage = issues
+  let feedbackMessage = issues
     ? formatVisionIssuesAsPrompt(issues, specNodeIds, body.feedback)
     : `Fix these issues:\n${(tags ?? []).map((t) => `[${t.nodeId}]: ${t.feedback}`).join('\n')}`;
+
+  if (body.previousAttempt) {
+    const { scoreBefore, scoreAfter, patchesTried } = body.previousAttempt;
+    feedbackMessage = `CRITICAL: The previous fix attempt FAILED — score dropped from ${scoreBefore} to ${scoreAfter}.\n` +
+      `The patches below made things WORSE. Analyze why and try a DIFFERENT approach.\n` +
+      `Previous patches that failed: ${JSON.stringify(patchesTried)}\n\n` +
+      feedbackMessage;
+  }
 
   try {
     const adapter = new BrowserFeedbackAdapter(claude.provider as unknown as LLMProviderRef);
@@ -192,14 +213,10 @@ export async function POST(
         }
       }
 
-      const projectRoot = getActiveProjectRoot();
-      const designsDir = join(projectRoot, 'agentforge', 'designs');
-      if (!existsSync(designsDir)) {
-        mkdirSync(designsDir, { recursive: true });
-      }
+      const normalizedSpec = normalizeSpecOverrides(updatedSpec);
       writeFileSync(
         join(designsDir, `${pageId}.json`),
-        JSON.stringify(updatedSpec, null, 2),
+        JSON.stringify(normalizedSpec, null, 2),
         'utf-8',
       );
     } else {

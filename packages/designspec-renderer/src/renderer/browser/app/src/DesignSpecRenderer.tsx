@@ -119,16 +119,16 @@ function resolveTokenColor(
 function getSpacingStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   if (!layout) return {};
   const s: React.CSSProperties = {};
-  if (layout.px) { s.paddingLeft = layout.px; s.paddingRight = layout.px; }
-  if (layout.py) { s.paddingTop = layout.py; s.paddingBottom = layout.py; }
-  if (layout.pt) s.paddingTop = layout.pt;
-  if (layout.pb) s.paddingBottom = layout.pb;
-  if (layout.mx) { s.marginLeft = layout.mx; s.marginRight = layout.mx; }
-  if (layout.my) { s.marginTop = layout.my; s.marginBottom = layout.my; }
-  if (layout.mt) s.marginTop = layout.mt;
-  if (layout.mb) s.marginBottom = layout.mb;
-  if (layout.ml) s.marginLeft = layout.ml;
-  if (layout.mr) s.marginRight = layout.mr;
+  if (layout.px !== undefined) { s.paddingLeft = layout.px; s.paddingRight = layout.px; }
+  if (layout.py !== undefined) { s.paddingTop = layout.py; s.paddingBottom = layout.py; }
+  if (layout.pt !== undefined) s.paddingTop = layout.pt;
+  if (layout.pb !== undefined) s.paddingBottom = layout.pb;
+  if (layout.mx !== undefined) { s.marginLeft = layout.mx; s.marginRight = layout.mx; }
+  if (layout.my !== undefined) { s.marginTop = layout.my; s.marginBottom = layout.my; }
+  if (layout.mt !== undefined) s.marginTop = layout.mt;
+  if (layout.mb !== undefined) s.marginBottom = layout.mb;
+  if (layout.ml !== undefined) s.marginLeft = layout.ml;
+  if (layout.mr !== undefined) s.marginRight = layout.mr;
   return s;
 }
 
@@ -254,22 +254,43 @@ function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefi
   return s;
 }
 
+function getLayoutAlignmentStyles(layout: LayoutSpec | undefined): React.CSSProperties {
+  if (!layout) return {};
+  const s: React.CSSProperties = {};
+  if (layout.justify === 'center') s.justifyContent = 'center';
+  else if (layout.justify === 'space-between' || layout.justify === 'between') s.justifyContent = 'space-between';
+  else if (layout.justify === 'end') s.justifyContent = 'flex-end';
+  if (layout.align === 'center') s.alignItems = 'center';
+  else if (layout.align === 'end') s.alignItems = 'flex-end';
+  else if (layout.align === 'stretch') s.alignItems = 'stretch';
+  else if (layout.align === 'start') s.alignItems = 'flex-start';
+  return s;
+}
+
 /**
  * Common styles applied to ALL nodes (including catalog components).
  * Ensures inspector-edited properties like margin, padding, size, radius,
- * and shadow are always reflected in the rendered output.
+ * shadow, and layout alignment are always reflected in the rendered output.
  */
 function getCommonNodeStyles(
   node: ResolvedNode,
   tokens: RendererTokens,
+  tokenMap?: TokenColorMap,
 ): React.CSSProperties {
-  return {
+  const s: React.CSSProperties = {
+    ...getLayoutAlignmentStyles(node.layout),
     ...getSpacingStyles(node.layout),
     ...getSizeStyles(node.width, node.height),
     ...getShadowStyle(node.shadow, tokens),
     ...getPositionStyles(node),
     ...getOverrideStyles(node.overrides),
   };
+  if (node.radius !== undefined) s.borderRadius = node.radius;
+  if (node.background && tokenMap) {
+    const bg = resolveTokenColor(node.background, tokenMap);
+    if (bg) s.backgroundColor = bg;
+  }
+  return s;
 }
 
 function getSizeStyles(
@@ -612,30 +633,33 @@ function renderAccelerator(
     }
 
     case 'divider': {
-      const borderColor = resolveTokenColor(node.color ?? 'border-default', tokenMap);
-      const isVertical = typeof node.width === 'number' && typeof node.height === 'number' && node.height > node.width;
-      if (isVertical) {
+      const dividerColor = resolveTokenColor(node.background ?? node.color ?? 'border-default', tokenMap);
+      const hasExplicitDimensions = typeof node.width === 'number' || typeof node.height === 'number';
+      if (hasExplicitDimensions) {
         return (
           <div
             key={node.id}
             data-node={node.id}
             style={{
-              width: node.width,
-              height: node.height,
-              backgroundColor: borderColor ?? '#333',
+              width: typeof node.width === 'number' ? node.width : '100%',
+              height: typeof node.height === 'number' ? node.height : 1,
+              backgroundColor: dividerColor ?? '#333',
               flexShrink: 0,
             }}
           />
         );
       }
+      const fillStyle: React.CSSProperties = node.width === 'fill'
+        ? { flex: '1 1 auto', width: '100%', minWidth: 0 }
+        : { width: '100%' };
       return (
         <hr
           key={node.id}
           data-node={node.id}
           style={{
             border: 'none',
-            borderTop: `1px solid ${borderColor ?? '#333'}`,
-            width: '100%',
+            borderTop: `1px solid ${dividerColor ?? '#333'}`,
+            ...fillStyle,
           }}
         />
       );
@@ -683,9 +707,9 @@ function renderCatalog(
 ): React.ReactNode {
   const catalogId = normalizeCatalogIdToKebab(node.catalogId ?? '');
 
-  // Compute common styles (spacing, size, shadow, position) that apply to ALL
-  // catalog nodes. Individual renderers may override specific properties.
-  const common = getCommonNodeStyles(node, tokens);
+  // Compute common styles (spacing, size, shadow, position, radius, background)
+  // that apply to ALL catalog nodes. Individual renderers may override specific properties.
+  const common = getCommonNodeStyles(node, tokens, tokenMap);
 
   // Button variants (both "button-primary" style and bare "Button" catalog)
   if (catalogId === 'button' || catalogId.startsWith('button-')) {
@@ -1032,7 +1056,8 @@ function renderAvatar(node: ResolvedNode, common: React.CSSProperties): React.Re
 
 function renderLink(node: ResolvedNode, tokenMap: TokenColorMap, common: React.CSSProperties): React.ReactNode {
   const href = typeof node.overrides?.href === 'string' ? node.overrides.href : '#';
-  const cta = resolveTokenColor('cta-primary', tokenMap) ?? '#0d9488';
+  const hasSpecColor = !!node.color;
+  const textColor = resolveTokenColor(node.color ?? 'cta-primary', tokenMap) ?? '#0d9488';
   const text = node.label ?? node.content ?? '';
   return (
     <a
@@ -1041,8 +1066,8 @@ function renderLink(node: ResolvedNode, tokenMap: TokenColorMap, common: React.C
       data-catalog="link"
       href={href}
       style={{
-        color: cta,
-        textDecoration: 'underline',
+        color: textColor,
+        textDecoration: hasSpecColor ? 'none' : 'underline',
         cursor: 'pointer',
         ...common,
       }}

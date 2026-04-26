@@ -21,6 +21,7 @@ import type { PagesFile } from '../../../../_lib/shared-types';
 import { BrowserFeedbackAdapter } from '@agentforge/agents-ux';
 import type { LLMProvider } from '@agentforge/providers';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { normalizeSpecOverrides } from '@agentforge/designspec-renderer';
 
 /**
  * POST /api/pages/[pageId]/design/chat
@@ -188,7 +189,8 @@ async function runChatAsync(
     }
     writeFileSync(join(artifactsDir, 'chat-message.txt'), chatMessage);
 
-    writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(updatedSpec, null, 2));
+    const normalizedSpec = normalizeSpecOverrides(updatedSpec);
+    writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(normalizedSpec, null, 2));
 
     const updatedPages = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
     if (updatedPages) {

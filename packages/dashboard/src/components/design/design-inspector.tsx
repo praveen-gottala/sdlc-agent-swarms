@@ -46,6 +46,8 @@ export interface DesignInspectorProps {
   visionAuditAvailable?: boolean;
   onFixIssue?: (issue: { severity: string; component: string; description: string; fix: string; issueId?: string }, feedback?: string) => Promise<void>;
   onFixAll?: (issues: { severity: string; component: string; description: string; fix: string; issueId?: string }[], feedback?: string) => Promise<void>;
+  onFixMechanical?: () => Promise<void>;
+  mechanicalFixLoading?: boolean;
   fixPhase?: 'idle' | 'fixing' | 'verifying' | 'retrying';
   fixingIssueId?: string | null;
   previousScore?: number | null;
@@ -583,6 +585,8 @@ export function DesignInspector({
   visionAuditAvailable,
   onFixIssue,
   onFixAll,
+  onFixMechanical,
+  mechanicalFixLoading,
   fixPhase,
   fixingIssueId,
   previousScore,
@@ -660,6 +664,8 @@ export function DesignInspector({
           visionAuditAvailable={visionAuditAvailable ?? false}
           onFixIssue={onFixIssue}
           onFixAll={onFixAll}
+          onFixMechanical={onFixMechanical}
+          mechanicalFixLoading={mechanicalFixLoading}
           fixPhase={fixPhase}
           fixingIssueId={fixingIssueId}
           previousScore={previousScore}

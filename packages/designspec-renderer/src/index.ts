@@ -89,6 +89,7 @@ export { resolveShadow } from './renderer/shadows.js';
 // ─── Validation ───────────────────────────────────────────
 export { validateDesignSpec } from './validation/validate.js';
 export { validateTokenReferences } from './validation/validate-token-refs.js';
+export { normalizeSpecOverrides } from './validation/normalize-overrides.js';
 
 // ─── Penpot Renderer ──────────────────────────────────────
 export { renderToScript, renderToScriptChunks } from './renderer/penpot/index.js';
@@ -119,6 +120,10 @@ export type { UserFeedbackTag, InteractivePreviewResult, InteractivePreviewSessi
 // ─── Render Verification ──────────────────────────────
 export { verifyNode, buildSimpleTokenMap } from './renderer/browser/verify-properties.js';
 export type { NodeReport, PropertyCheck, Verdict, DOMNodeInfo } from './renderer/browser/verify-properties.js';
+
+// ─── Renderer Constraints ────────────────────────────
+export { RENDERER_CONSTRAINTS, buildEvaluatorConstraintsPrompt } from './renderer/browser/renderer-constraints.js';
+export type { RendererConstraint } from './renderer/browser/renderer-constraints.js';
 
 // ─── DOM Extraction (browser-safe) ────────────────────
 export { extractDOMFromDocument } from './renderer/browser/dom-extraction-shared.js';

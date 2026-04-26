@@ -39,28 +39,26 @@ export interface DOMNodeInfo {
 // ─── Override key sets ──────────────────────────────────
 
 export const SAFE_OVERRIDE_KEYS = new Set([
-  'max_width', 'maxWidth', 'min_width', 'minWidth',
-  'max_height', 'maxHeight', 'min_height', 'minHeight',
+  'maxWidth', 'minWidth', 'maxHeight', 'minHeight',
   'height', 'flex',
-  'padding', 'margin_inline', 'marginInline',
-  'padding_top', 'paddingTop', 'padding_bottom', 'paddingBottom',
-  'padding_left', 'paddingLeft', 'padding_right', 'paddingRight',
-  'margin_top', 'marginTop', 'margin_bottom', 'marginBottom',
-  'margin_left', 'marginLeft', 'margin_right', 'marginRight',
+  'padding', 'marginInline',
+  'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
+  'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
   'gap',
-  'border', 'border_top', 'borderTop', 'border_bottom', 'borderBottom',
-  'border_left', 'borderLeft', 'border_right', 'borderRight',
-  'border_radius', 'borderRadius',
+  'border', 'borderTop', 'borderBottom', 'borderLeft', 'borderRight',
+  'borderRadius', 'borderRadiusTop',
+  'borderColor',
   'position', 'top', 'left', 'right', 'bottom',
-  'z_index', 'zIndex',
-  'flex_basis', 'flexBasis', 'flex_shrink', 'flexShrink', 'flex_grow', 'flexGrow',
-  'overflow', 'overflow_x', 'overflowX', 'overflow_y', 'overflowY',
-  'pointer_events', 'pointerEvents', 'cursor', 'opacity',
-  'white_space', 'whiteSpace',
-  'font_size', 'fontSize', 'font_family', 'fontFamily',
-  'display', 'align_items', 'alignItems', 'justify_content', 'justifyContent',
-  'flex_direction', 'flexDirection', 'flex_wrap', 'flexWrap',
-  'background', 'background_color', 'backgroundColor', 'color',
+  'zIndex',
+  'flexBasis', 'flexShrink', 'flexGrow',
+  'overflow', 'overflowX', 'overflowY',
+  'pointerEvents', 'cursor', 'opacity',
+  'whiteSpace',
+  'fontSize', 'fontFamily', 'fontWeight',
+  'display', 'alignItems', 'justifyContent',
+  'flexDirection', 'flexWrap',
+  'background', 'backgroundColor', 'color',
+  'hidden', 'visibility',
 ]);
 
 const ATTR_OVERRIDE_KEYS = new Set(['role', 'aria-label', 'href']);
@@ -70,6 +68,9 @@ const SKIP_OVERRIDE_KEYS = new Set([
   'columns', 'rows', 'variant', 'icon', 'iconPosition', 'size',
   'selected', 'checked', 'tabs', 'name', 'alt', 'direction',
   'positionX', 'positionY',
+  'progressRing', 'progressValue', 'strokeWidth', 'strokeColor',
+  'trackColor', 'ringStyle',
+  'hidePlaceholder', 'style', 'type',
 ]);
 
 // ─── Token resolution (simplified) ─────────────────────
@@ -83,7 +84,10 @@ export function buildSimpleTokenMap(tokens: RendererTokens): Record<string, stri
   const primitive = colors.primitive as Record<string, string> | undefined;
   if (primitive) {
     for (const [key, val] of Object.entries(primitive)) {
-      if (typeof val === 'string') primitiveMap[key] = val;
+      if (typeof val === 'string') {
+        primitiveMap[key] = val;
+        map[key] = val;
+      }
     }
   }
 

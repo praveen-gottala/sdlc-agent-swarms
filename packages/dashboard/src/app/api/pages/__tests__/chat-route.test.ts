@@ -13,6 +13,10 @@ import { NextRequest } from 'next/server';
 const mockReviewDesign = jest.fn();
 const mockApplyPatch = jest.fn();
 
+jest.mock('@agentforge/designspec-renderer', () => ({
+  normalizeSpecOverrides: jest.fn((spec: unknown) => spec),
+}));
+
 jest.mock('@agentforge/agents-ux', () => ({
   BrowserFeedbackAdapter: jest.fn().mockImplementation(() => ({
     reviewDesign: mockReviewDesign,

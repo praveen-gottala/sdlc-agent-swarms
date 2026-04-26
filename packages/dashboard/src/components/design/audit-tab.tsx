@@ -31,6 +31,8 @@ export interface AuditTabProps {
   visionAuditAvailable: boolean;
   onFixIssue?: (issue: VisionIssueAction, feedback?: string) => Promise<void>;
   onFixAll?: (issues: VisionIssueAction[], feedback?: string) => Promise<void>;
+  onFixMechanical?: () => Promise<void>;
+  mechanicalFixLoading?: boolean;
   fixPhase?: FixPhase;
   fixingIssueId?: string | null;
   /** Score before the last fix round — used to show improvement delta. */
@@ -173,6 +175,8 @@ export function AuditTab({
   visionAuditAvailable,
   onFixIssue,
   onFixAll,
+  onFixMechanical,
+  mechanicalFixLoading = false,
   fixPhase = 'idle',
   fixingIssueId,
   previousScore,
@@ -229,6 +233,17 @@ export function AuditTab({
             <p className="text-[11px] text-text-muted mb-2">
               {mechanicalAudit.summary.domNodeCount}/{mechanicalAudit.summary.specNodeCount} spec nodes found in DOM
             </p>
+
+            {/* Fix button for mechanical failures and drops */}
+            {onFixMechanical && (mechanicalAudit.summary.fail + mechanicalAudit.summary.drop) > 0 && (
+              <button
+                onClick={onFixMechanical}
+                disabled={mechanicalFixLoading}
+                className="w-full mb-2 px-3 py-1.5 rounded text-xs font-medium bg-accent-blue/15 text-accent-blue hover:bg-accent-blue/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {mechanicalFixLoading ? 'Fixing spec mismatches...' : `Fix Spec Mismatches (${mechanicalAudit.summary.fail + mechanicalAudit.summary.drop})`}
+              </button>
+            )}
 
             {/* Node list — failures first */}
             <div className="space-y-0.5">

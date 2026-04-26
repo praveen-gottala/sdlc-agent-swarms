@@ -81,8 +81,8 @@ export function HeaderBar({
           </span>
         </div>
 
-        {/* Clock */}
-        <span className="text-text-muted text-xs font-mono tabular-nums min-w-[60px] text-right">
+        {/* Clock — suppressHydrationWarning: server and client render different timestamps */}
+        <span className="text-text-muted text-xs font-mono tabular-nums min-w-[60px] text-right" suppressHydrationWarning>
           {clock}
         </span>
       </div>
