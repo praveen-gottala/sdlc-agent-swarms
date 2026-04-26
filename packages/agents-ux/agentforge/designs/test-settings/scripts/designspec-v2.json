@@ -1,0 +1,61 @@
+{
+  "screen": "test-settings",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      },
+      "background": "background-primary"
+    },
+    "header": {
+      "parent": "root",
+      "order": 0,
+      "type": "header",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "px": 32,
+        "py": 16
+      }
+    },
+    "header-title": {
+      "parent": "header",
+      "order": 0,
+      "type": "text",
+      "content": "Settings",
+      "typography": "heading-1",
+      "color": "text-primary"
+    },
+    "content": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 32,
+        "py": 24
+      },
+      "width": 600
+    },
+    "name-input": {
+      "parent": "content",
+      "order": 0,
+      "catalog": "input-text",
+      "label": "Full Name",
+      "placeholder": "Jane Cooper",
+      "width": "fill"
+    },
+    "save-btn": {
+      "parent": "content",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Save Changes"
+    }
+  }
+}

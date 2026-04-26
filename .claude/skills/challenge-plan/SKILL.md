@@ -59,6 +59,53 @@ For each major decision in the plan, check:
 8. **Scope creep?** Does the plan add abstractions, features, or flexibility that no current consumer needs?
 9. **Missing simpler alternative?** Is there a way to achieve the same goal with less code, fewer moving parts, or by reusing existing infrastructure?
 
+After evaluating, classify each challenge as one of:
+
+- **Clear violation** — the framework unambiguously prescribes one approach and the plan contradicts it. Examples: using event bus for coordination (vision mandates typed channels), repeating a rejected approach from lessons-learned, contradicting a locked vision decision. These go straight to the report with a single alternative.
+- **Trade-off decision** — multiple valid approaches exist with genuine pros and cons. Examples: whether to add a new spine stage vs. a specialist tool; whether scope is needed now vs. premature; whether to fix upstream vs. add a downstream guard when both are defensible; which layer should own a new responsibility when the boundary is genuinely ambiguous. These are presented interactively in Step 3.5.
+
+The classification is per-challenge-instance, not per-criterion. The same criterion (e.g., "layer violation") can be clear-cut in one case and a genuine trade-off in another.
+
+### Step 3.5: Present trade-offs
+
+If any challenges were classified as **trade-off decisions**, present them to the user as interactive choices using `AskUserQuestion` before producing the final report. If all challenges are clear violations, skip this step.
+
+For each trade-off decision, construct a question:
+
+- **Question text**: Frame the challenge — what the plan proposes, what the framework says, and why this is a genuine trade-off (not a clear violation). End with a question mark.
+- **Header**: Short category label, max 12 characters (e.g., `"Scope"`, `"Layer"`, `"Approach"`, `"Timing"`, `"Complexity"`).
+- **Options** (2–4 per question): Each option is a distinct approach. The label is a concise name (1–5 words). The description explains the trade-off — what you gain, what you give up, and when this approach makes sense.
+- **Recommended option**: If one approach better aligns with framework intent, make it the first option and append `"(Recommended)"` to its label. If approaches are equally valid, don't mark any as recommended.
+- **Batching**: `AskUserQuestion` supports 1–4 questions per call. Batch related trade-offs into a single call when they are independent of each other. If one trade-off's answer affects later ones, ask sequentially.
+
+Example:
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "The plan adds screen validation in the renderer (packages/designspec-renderer/), but vision Layer 8 places validation upstream in the implementer. Both locations are defensible here — renderer validation catches rendering-specific issues faster, but upstream validation keeps the renderer boundary clean (ADR-037). Where should this validation live?",
+    header: "Layer",
+    options: [
+      {
+        label: "Upstream in implementer (Recommended)",
+        description: "Keeps the renderer as a pure display boundary per ADR-037. Validation errors surface earlier in the pipeline. Trade-off: requires a round-trip if the renderer discovers new edge cases."
+      },
+      {
+        label: "In the renderer",
+        description: "Catches rendering-specific issues (e.g., unsupported CSS) at the point of failure. Trade-off: expands the renderer's responsibility beyond its documented boundary; needs an ADR to justify."
+      },
+      {
+        label: "Both, with clear ownership split",
+        description: "Upstream validates structure/semantics; renderer validates render-specific constraints only. Trade-off: two validation sites to maintain, but each has a narrow, well-defined scope."
+      }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+Record the user's choices — they feed into the challenge report in Step 4.
+
 ### Step 4: Produce the challenge report
 
 Output this structure:
@@ -74,17 +121,24 @@ Output this structure:
 
 ### Challenges
 
-#### <Challenge 1 title>
+#### <Clear violation title>
 **Plan says:** <what the plan proposes>
 **Framework says:** <what the docs/architecture say about this area>
 **Concern:** <specific concern — layer violation, wrong problem, etc.>
 **Alternative:** <what would better align with framework intent>
 
-#### <Challenge 2 title>
+#### <Trade-off title> (resolved)
+**Plan says:** <what the plan proposes>
+**Framework says:** <what the docs/architecture say about this area>
+**Trade-off:** <why multiple approaches are valid — what each gains and gives up>
+**Resolution:** <the approach the user chose in Step 3.5, with a brief note on the trade-off they accepted>
+
+#### <Challenge N title>
 ...
 
 ### Recommendation
-<1-2 sentences: proceed as-is, revise specific parts, or rethink approach>
+<1-2 sentences: proceed as-is, revise specific parts, or rethink approach.
+ For resolved trade-offs, note any ADRs that should be written to document the chosen approach.>
 ```
 
 ## Rules
@@ -98,3 +152,4 @@ Output this structure:
 - **Require an ADR for intentional deviations.** If the plan knowingly deviates from `vision.md` or an existing ADR, the challenge report should require a new ADR documenting the deviation rather than silent drift.
 - **Don't block good plans.** If the plan is well-aligned with minor concerns, say so and recommend proceeding with notes, not a full redesign.
 - **Framework intent over personal preference.** The framework's documented architecture wins over what you'd build from scratch. The framework is opinionated — respect its opinions.
+- **Don't assume one solution when multiple are valid.** If a challenge has genuinely competing approaches with real trade-offs, present them as interactive choices via `AskUserQuestion`. Only report a single alternative when the framework unambiguously prescribes one approach. When unsure whether a challenge is a clear violation or a trade-off, err toward asking — the user knows their context better than you do.

@@ -128,9 +128,24 @@ Before reporting "done" to the user, output this table with evidence:
 | Visual verification | yes/no | screenshot description or "not applicable" |
 | Full pipeline | yes/no/n/a | viewport widths, region check, or "no generation changes" |
 | Evaluator check | yes/no/n/a/BLOCKED | raw score + issue count, or "no evaluator changes". BLOCKED if score=0, score=100, or issues=[] |
+| CLAUDE.md active pointer | yes/no/n/a | section updated, or "no plan/session changes" |
 ```
 
 If any row is "no" or blank, you are NOT done. Fix it first.
+
+### Step 6: CLAUDE.md active pointer update
+
+**Gate:** All rows in the Step 5 verification table must be green before this step runs. If any verification check is failing, fix those first — do not update CLAUDE.md while the work itself is still broken.
+
+Read the `## Current State` section of `CLAUDE.md` (lines around "Active plans:", "Completed plans:", "Last session:") and check whether it reflects the work that was just completed:
+
+1. **Active plans** — If the task was part of an active plan, is its phase status current? (e.g., if Phase 3 was just completed, does the entry still say "Phase 2 complete, Phase 3 next"?) If a plan is fully done (all phases complete), it should move from "Active plans" to "Completed plans" with a completion date.
+2. **Completed plans** — If a plan just finished, is it listed here with the completion date?
+3. **Last session** — Is it updated with a one-line pointer to what was done? (e.g., `Phase 3 of Unify Design Pipeline complete. See docs/active-plan/unify-pipeline/execution-plan.md`)
+
+If the pointer is stale or missing, update `CLAUDE.md` before declaring done. This is a documentation gate — the next session reads this section to understand the project's current state.
+
+**"n/a" cases:** If the task is a standalone bug fix or small change that isn't part of any tracked plan and doesn't warrant a "Last session" update, mark this row as "n/a" with evidence "standalone fix, no plan/session changes."
 
 ## Anti-bleach rule
 
