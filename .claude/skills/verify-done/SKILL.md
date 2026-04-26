@@ -1,6 +1,6 @@
 ---
 name: verify-done
-description: Pre-completion gate for dashboard, prototype, and renderer work. Blocks "done" claims until the CLAUDE.md test triad (typecheck, test, lint) plus headed E2E, stale-Vite kill, Chrome DevTools visual verification, full LLM pipeline verification (when applicable), and evaluator/vision sanity-check (when applicable) are proven. Born from a session where 4 premature "done" calls cost ~4 hours.
+description: Pre-completion gate for dashboard, prototype, and renderer work. Blocks "done" claims until the CLAUDE.md test triad (typecheck, test, lint) plus headed E2E, stale-Vite kill, Chrome DevTools visual verification, full LLM pipeline verification (when applicable), evaluator/vision sanity-check (when applicable), and documentation verification via /verify-docs are proven. Born from a session where 4 premature "done" calls cost ~4 hours.
 context: inline
 agent: main
 ---
@@ -19,6 +19,8 @@ Fire this skill when ALL of these are true:
 - You are about to tell the user "done", "complete", "all tests pass", or similar
 
 Do NOT invoke for pure doc changes, config changes, or work that doesn't touch the prototype/renderer/dashboard surface.
+
+When invoked for code changes, the skill also verifies that required documentation updates were made per CLAUDE.md Section Documentation (lines 306-317) via `/verify-docs`.
 
 ## Protocol
 
@@ -113,7 +115,72 @@ Run a real design evaluation against a known fixture screen with a rendered desi
 
 **Origin:** Vision evaluator silently returned 0/100 for all evaluations (2026-04-22) because `EVALUATOR_MODEL = 'claude-opus-4-7'` was called with `temperature: 0` and the model family rejects sampling params. The entire self-correction loop produced no corrections while appearing to run successfully. See `docs/lessons-learned.md` §"Claude 4.7+ Models Reject Sampling Parameters".
 
-### Step 5: Produce the verification table
+### Step 5: Session retrospective
+
+This step captures what the session learned so future sessions don't repeat the same struggles. It runs active detection first, then fills gaps with self-analysis.
+
+**5a. Active struggle detection** — run these checks against the session's git history:
+
+```bash
+# How many commits in this session? (rough: commits in last 4 hours)
+git log --oneline --since="4 hours ago" | wc -l
+
+# Files touched by 3+ commits (debugging loop signal)
+git log --since="4 hours ago" --name-only --pretty=format: | sort | uniq -c | sort -rn | head -10
+
+# "Fix" commit chains (iterative troubleshooting signal)
+git log --oneline --since="4 hours ago" | grep -i "fix\|revert\|undo\|retry\|attempt"
+```
+
+**Struggle signals** (any of these = lessons-learned entry is MANDATORY):
+- A file was edited in 3+ separate commits this session → debugging loop
+- 2+ consecutive commits with "fix" in the message → iterative troubleshooting
+- Any reverted or undone commits → approach was tried and abandoned
+- Stale Vite was detected in Step 1 (and caused actual debugging time)
+- A test failed in headed mode (Step 2) that passed in headless → environment-specific issue
+
+**5b. Self-analysis** — even if no struggle signals are detected, answer honestly:
+- What was the hardest part of this task? Why?
+- Did any approach fail before the one that worked? What was wrong with it?
+- Is there anything a future agent would waste time on that this session now knows?
+
+**5c. Write the lessons-learned entry** — if any struggle signal fired OR the self-analysis identified a non-trivial learning:
+
+1. Grep `docs/lessons-learned.md` for keywords related to this learning — don't duplicate an existing entry.
+2. If no existing entry covers it, **write a new entry directly** to `docs/lessons-learned.md`. Use this format:
+   ```
+   ### <Short descriptive title> — **RESOLVED** (YYYY-MM-DD)
+   **Context:** <What was being done when this happened>
+   **Problem:** <What went wrong, with specifics — file paths, error messages, symptoms>
+   **Root cause:** <Why it happened — the actual reason, not the symptom>
+   **Fix:** <What solved it — be specific enough that a future agent can apply it directly>
+   **Rule:** <One-sentence rule to prevent recurrence>
+   ```
+3. Preserve specifics per the anti-bleach rule. "Port 4100 served stale Vite because the dashboard's auto-start silently failed when the previous process held the port" is useful. "Had build environment issues" is not.
+
+**This step auto-writes.** Unlike other doc checks that propose-then-confirm, lessons-learned entries must be written before the session ends — the debugging context cannot be recovered later.
+
+**5d. Auto-update CLAUDE.md pointers** — read `CLAUDE.md` `## Current State` and update:
+- **Active plans** — advance phase status if a plan phase was completed
+- **Completed plans** — move finished plans here with completion date
+- **Last session** — one-line pointer to what was done
+
+These are factual fields with low risk of error. Auto-update without asking.
+
+### Step 6: Documentation verification
+
+Run `/verify-docs` in task-scoped mode. At this point, lessons-learned and CLAUDE.md pointers are already updated (Step 5). This step checks the remaining doc areas:
+- Checks vision.md Layer N Current State accuracy if architecture changed (VISION-LAYER-N)
+- Validates domain specs reflect implemented behavior if a plan phase completed (SPEC-SYNC)
+- Checks CLI docs if CLI commands changed (CLI-DOCS)
+- Runs staleness greps on domain specs if locked decisions changed (SPEC-GREP)
+- Checks for new undocumented modules (FEATURE-DOCS)
+
+For VISION-LAYER-N, SPEC-SYNC, CLI-DOCS, and FEATURE-DOCS: if a gap is found, `/verify-docs` **proposes the fix with exact text** and asks for confirmation before writing. These docs are nuanced enough that auto-writing risks inaccuracy.
+
+If `/verify-docs` reports any FAILURE after proposed fixes are applied (or user declines a fix), the failure remains and blocks done.
+
+### Step 7: Produce the verification table
 
 Before reporting "done" to the user, output this table with evidence:
 
@@ -128,24 +195,12 @@ Before reporting "done" to the user, output this table with evidence:
 | Visual verification | yes/no | screenshot description or "not applicable" |
 | Full pipeline | yes/no/n/a | viewport widths, region check, or "no generation changes" |
 | Evaluator check | yes/no/n/a/BLOCKED | raw score + issue count, or "no evaluator changes". BLOCKED if score=0, score=100, or issues=[] |
-| CLAUDE.md active pointer | yes/no/n/a | section updated, or "no plan/session changes" |
+| Session retrospective | written/n/a | lessons-learned entry title, or "no struggles detected, no learnings" |
+| CLAUDE.md pointers | updated/n/a | fields updated, or "standalone fix, no plan changes" |
+| Doc verification | pass/fail/n/a | verify-docs report summary: N failures, M warnings. Key issues if any. |
 ```
 
-If any row is "no" or blank, you are NOT done. Fix it first.
-
-### Step 6: CLAUDE.md active pointer update
-
-**Gate:** All rows in the Step 5 verification table must be green before this step runs. If any verification check is failing, fix those first — do not update CLAUDE.md while the work itself is still broken.
-
-Read the `## Current State` section of `CLAUDE.md` (lines around "Active plans:", "Completed plans:", "Last session:") and check whether it reflects the work that was just completed:
-
-1. **Active plans** — If the task was part of an active plan, is its phase status current? (e.g., if Phase 3 was just completed, does the entry still say "Phase 2 complete, Phase 3 next"?) If a plan is fully done (all phases complete), it should move from "Active plans" to "Completed plans" with a completion date.
-2. **Completed plans** — If a plan just finished, is it listed here with the completion date?
-3. **Last session** — Is it updated with a one-line pointer to what was done? (e.g., `Phase 3 of Unify Design Pipeline complete. See docs/active-plan/unify-pipeline/execution-plan.md`)
-
-If the pointer is stale or missing, update `CLAUDE.md` before declaring done. This is a documentation gate — the next session reads this section to understand the project's current state.
-
-**"n/a" cases:** If the task is a standalone bug fix or small change that isn't part of any tracked plan and doesn't warrant a "Last session" update, mark this row as "n/a" with evidence "standalone fix, no plan/session changes."
+If any row is "no", "fail", or blank, you are NOT done. Fix it first.
 
 ## Anti-bleach rule
 
@@ -154,3 +209,5 @@ When writing the verification table or reporting results, preserve the specific 
 ## Bail-out
 
 If the change is truly renderer-internal (e.g., refactoring a style function with no behavioral change) and all existing E2E tests pass in headed mode, steps 3-4 may be skipped. But step 2 (headed E2E) is never skippable for code under `packages/designspec-renderer/src/renderer/browser/app/`.
+
+Step 5 (session retrospective) is never skippable — even renderer-internal refactors can surface environment gotchas worth capturing. Step 6 (doc verification via `/verify-docs`) may be skipped for renderer-internal refactors with no behavioral change.

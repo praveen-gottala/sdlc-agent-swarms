@@ -32,17 +32,37 @@ interface FeedbackTag {
   feedback: string;
 }
 
+interface VisionIssue {
+  severity: string;
+  component: string;
+  description: string;
+  fix: string;
+  issueId?: string;
+}
+
 const MAX_CORRECTION_ITERATIONS = 3;
+
+function formatVisionIssuesAsPrompt(issues: VisionIssue[], nodeIds: string[], feedback?: string): string {
+  const lines = issues.map((issue, i) =>
+    `Issue ${i + 1}. [${issue.severity.toUpperCase()}] ${issue.component}: ${issue.description}\n  Fix: ${issue.fix}`
+  );
+  let prompt = `Fix ALL ${issues.length} design issues below. Each issue MUST have a corresponding patch.\n\n`;
+  prompt += `Available node IDs: ${nodeIds.join(', ')}\n\n`;
+  prompt += lines.join('\n\n');
+  if (feedback) {
+    prompt += `\n\nAdditional user guidance: ${feedback}`;
+  }
+  return prompt;
+}
 
 /**
  * POST /api/pages/[pageId]/design/correct
  *
- * Accepts user feedback tags and applies LLM-driven corrections via
- * BrowserFeedbackAdapter. Tags are converted to a feedback message,
- * the adapter produces a structured patch, and the patch is applied
- * to the existing design spec.
+ * Accepts either user feedback tags OR vision audit issues, and applies
+ * LLM-driven corrections via BrowserFeedbackAdapter.
  *
- * Body: { tags: [{ nodeId: string, feedback: string }] }
+ * Body (option A — manual feedback): { tags: [{ nodeId, feedback }] }
+ * Body (option B — vision issues):   { issues: [{ severity, component, description, fix }], feedback?: string }
  * Returns: { iteration, patchesApplied, reasoning }
  */
 export async function POST(
@@ -51,27 +71,31 @@ export async function POST(
 ) {
   const { pageId } = await params;
 
-  let body: { tags?: FeedbackTag[] };
+  let body: { tags?: FeedbackTag[]; issues?: VisionIssue[]; feedback?: string };
   try {
-    body = (await request.json()) as { tags?: FeedbackTag[] };
+    body = (await request.json()) as { tags?: FeedbackTag[]; issues?: VisionIssue[]; feedback?: string };
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const tags = body.tags;
-  if (!Array.isArray(tags) || tags.length === 0) {
+  const issues = body.issues;
+
+  if ((!Array.isArray(tags) || tags.length === 0) && (!Array.isArray(issues) || issues.length === 0)) {
     return NextResponse.json(
-      { error: 'Body must include a non-empty "tags" array with { nodeId, feedback } objects' },
+      { error: 'Body must include either a non-empty "tags" array or a non-empty "issues" array' },
       { status: 400 },
     );
   }
 
-  for (const tag of tags) {
-    if (typeof tag.nodeId !== 'string' || typeof tag.feedback !== 'string') {
-      return NextResponse.json(
-        { error: 'Each tag must have "nodeId" (string) and "feedback" (string)' },
-        { status: 400 },
-      );
+  if (tags) {
+    for (const tag of tags) {
+      if (typeof tag.nodeId !== 'string' || typeof tag.feedback !== 'string') {
+        return NextResponse.json(
+          { error: 'Each tag must have "nodeId" (string) and "feedback" (string)' },
+          { status: 400 },
+        );
+      }
     }
   }
 
@@ -86,7 +110,8 @@ export async function POST(
   const page = pages[idx];
 
   const currentIteration = page.correctionIteration ?? 0;
-  if (currentIteration >= MAX_CORRECTION_ITERATIONS) {
+  const isVisionFix = Array.isArray(issues) && issues.length > 0;
+  if (!isVisionFix && currentIteration >= MAX_CORRECTION_ITERATIONS) {
     return NextResponse.json(
       {
         error: `Maximum correction iterations reached (${MAX_CORRECTION_ITERATIONS}). Approve the design or regenerate.`,
@@ -122,33 +147,48 @@ export async function POST(
   pages[idx].designStatus = 'correction';
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
-  const feedbackMessage = tags
-    .map((t) => `[${t.nodeId}]: ${t.feedback}`)
-    .join('\n');
+  const specNodeIds = Object.keys(spec.nodes);
+  const feedbackMessage = issues
+    ? formatVisionIssuesAsPrompt(issues, specNodeIds, body.feedback)
+    : `Fix these issues:\n${(tags ?? []).map((t) => `[${t.nodeId}]: ${t.feedback}`).join('\n')}`;
 
   try {
     const adapter = new BrowserFeedbackAdapter(claude.provider as unknown as LLMProviderRef);
-    const reviewResult = await adapter.reviewDesign(spec, `Fix these issues:\n${feedbackMessage}`);
+    const reviewResult = await adapter.reviewDesign(spec, feedbackMessage);
 
     let patchesApplied = 0;
     let reasoning = '';
 
     if (reviewResult.ok) {
       const updatedSpec = adapter.applyPatch(spec, reviewResult.value);
+      const hasRoot = Object.values(updatedSpec.nodes).some(n => n.parent === null);
+      if (!hasRoot || Object.keys(updatedSpec.nodes).length === 0) {
+        const newIteration = currentIteration + 1;
+        pages[idx].correctionIteration = newIteration;
+        pages[idx].designStatus = 'rendered';
+        writeYamlFile('agentforge/spec/pages.yaml', { pages });
+        return NextResponse.json({
+          iteration: newIteration, maxIterations: MAX_CORRECTION_ITERATIONS,
+          patchesApplied: 0, tagsReceived: tags?.length ?? 0,
+          error: 'Patch would break the design (no root node). Try fixing fewer issues at once.',
+        }, { status: 422 });
+      }
       patchesApplied = Object.keys(reviewResult.value.patches).length;
       reasoning = reviewResult.value.reasoning;
 
-      const nodes = updatedSpec.nodes as unknown as Record<string, Record<string, unknown>>;
-      for (const tag of tags) {
-        const node = nodes[tag.nodeId];
-        if (node) {
-          if (!node._userFeedback) {
-            node._userFeedback = [];
+      if (tags) {
+        const nodes = updatedSpec.nodes as unknown as Record<string, Record<string, unknown>>;
+        for (const tag of tags) {
+          const node = nodes[tag.nodeId];
+          if (node) {
+            if (!node._userFeedback) {
+              node._userFeedback = [];
+            }
+            (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
+              feedback: tag.feedback,
+              iteration: currentIteration + 1,
+            });
           }
-          (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
-            feedback: tag.feedback,
-            iteration: currentIteration + 1,
-          });
         }
       }
 
@@ -173,7 +213,7 @@ export async function POST(
         iteration: newIteration,
         maxIterations: MAX_CORRECTION_ITERATIONS,
         patchesApplied: 0,
-        tagsReceived: tags.length,
+        tagsReceived: tags?.length ?? 0,
         error: errMsg,
       }, { status: 502 });
     }
@@ -187,7 +227,7 @@ export async function POST(
       iteration: newIteration,
       maxIterations: MAX_CORRECTION_ITERATIONS,
       patchesApplied,
-      tagsReceived: tags.length,
+      tagsReceived: tags?.length ?? 0,
       reasoning,
     });
   } catch (err) {

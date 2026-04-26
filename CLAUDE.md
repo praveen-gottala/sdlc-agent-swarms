@@ -314,10 +314,11 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   in `docs/specs/` to reflect the implemented behavior.
 - When a `vision.md` locked decision changes, grep all domain specs for the
   affected pattern and update or annotate them.
-- Run `/review-spec-sync` before major releases to catch drift.
+- Run `/verify-docs --full-sweep` before major releases to catch drift.
 
 ## Skills Library
-Available Claude Code skills (invoke with /slash command):
+Available Claude Code skills (invoke with /slash command).
+See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership boundaries.
 - /session-start — Read key docs and produce a briefing before coding (use at every session start)
 - /analyze-codebase — Full gap analysis + prioritized task roadmap
 - /implement-feature [name] — PRD-traced implementation workflow
@@ -326,9 +327,10 @@ Available Claude Code skills (invoke with /slash command):
 - /write-adr [description] — Generate ADR for spec deviations
 - /demo-readiness — Fastest path to a working demo
 - /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity
-- /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof (use before declaring prototype/renderer work done)
+- /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof, documentation verification via /verify-docs (use before declaring prototype/renderer work done)
+- /verify-docs — Unified documentation verification: content accuracy, spec sync, vision layer currency, CLI docs, lessons-learned. Task-scoped (from verify-done) or full-sweep (pre-release). Absorbs former /review-spec-sync.
+- /mid-session-drift-check — Mid-session process compliance audit: mocks, tests, scope creep, honesty, rejected patterns, doc currency. Use before commits or when session feels long.
 - /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.
-- /review-spec-sync — Audit domain specs against vision.md and codebase for stale patterns, Figma references, wrong model IDs, and rejected architectural patterns.
 
 ## IMPORTANT
 - ALWAYS run `typecheck` after making changes across packages

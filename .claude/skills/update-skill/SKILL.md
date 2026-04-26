@@ -6,7 +6,7 @@ agent: main
 ---
 
 Example Usage: 
-- /update-skill SKILL_PATH is .claude/skills/check-drift/SKILL.md
+- /update-skill SKILL_PATH is .claude/skills/mid-session-drift-check/SKILL.md
 - /update-skill Update .claude/skills/verify-done/SKILL.md — general drift check
 
 # Update Skill

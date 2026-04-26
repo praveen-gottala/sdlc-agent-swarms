@@ -253,6 +253,12 @@ function DesignStudioContent() {
       });
       if (res.ok) {
         setVisionAudit(await res.json());
+      } else if (res.status === 429) {
+        console.error('Vision audit rate-limited. Your AI provider quota may be too low for this request size.');
+        setVisionAudit({ score: -1, overallQuality: 'poor', issues: [], error: 'Rate limited — your AI provider token quota may be too low. Try increasing your quota in GCP Console or set ANTHROPIC_API_KEY for direct API access.' });
+      } else if (res.status === 503) {
+        console.error('Vision audit: AI provider not configured or credentials expired.');
+        setVisionAudit({ score: -1, overallQuality: 'poor', issues: [], error: 'AI provider not configured or credentials expired. Check your API keys.' });
       } else {
         const err = await res.json().catch(() => ({ error: 'Vision audit failed' }));
         console.error('Vision audit error:', err.error);
@@ -274,6 +280,114 @@ function DesignStudioContent() {
       setVisionAuditAvailable(res.status !== 503);
     }).catch(() => setVisionAuditAvailable(false));
   }, []);
+
+  // ── Vision issue fix handlers ──
+  const [fixingIssueId, setFixingIssueId] = useState<string | null>(null);
+  const [fixPhase, setFixPhase] = useState<'idle' | 'fixing' | 'verifying' | 'retrying'>('idle');
+  const [previousScore, setPreviousScore] = useState<number | null>(null);
+  const [addressedIssues, setAddressedIssues] = useState<Array<{ severity: string; component: string; description: string; fix: string; issueId?: string }>>([]);
+
+  const applyFixAndReload = useCallback(async (
+    pageId: string,
+    issues: Array<{ severity: string; component: string; description: string; fix: string; issueId?: string }>,
+    feedback?: string,
+  ): Promise<boolean> => {
+    const res = await fetch(`/api/pages/${pageId}/design/correct`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ issues, feedback }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Fix failed' }));
+      console.error('Vision fix error:', err.error ?? err); // eslint-disable-line no-console
+      return false;
+    }
+    const result = await res.json();
+    console.log(`[vision-fix] Applied ${result.patchesApplied} patches (iteration ${result.iteration}): ${result.reasoning}`); // eslint-disable-line no-console
+
+    const specRes = await fetch(`/api/pages/${pageId}/design/spec?bundle=true&t=${Date.now()}`, { cache: 'no-store' });
+    if (specRes.ok) {
+      const data = await specRes.json();
+      if (data?.spec) setDesignSpec(data.spec);
+      else if (data) setDesignSpec(data);
+    }
+    return true;
+  }, []);
+
+  const runAudit = useCallback(async (pageId: string) => {
+    const res = await fetch('/api/design/audit/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pageId }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  }, []);
+
+  const handleFixIssues = useCallback(async (
+    issues: Array<{ severity: string; component: string; description: string; fix: string; issueId?: string }>,
+    feedback?: string,
+  ) => {
+    if (!selectedId || issues.length === 0) return;
+    const trackingId = issues.length === 1 ? (issues[0].issueId ?? issues[0].component) : '__all__';
+    setFixingIssueId(trackingId);
+    const preFixScore = visionAudit?.score ?? null;
+    const originalIssueCount = issues.length;
+
+    try {
+      // Pass 1: Fix
+      setFixPhase('fixing');
+      if (!await applyFixAndReload(selectedId, issues, feedback)) {
+        setFixPhase('idle'); setFixingIssueId(null); return;
+      }
+
+      // Pass 1: Verify
+      setFixPhase('verifying');
+      const audit1 = await runAudit(selectedId);
+      if (!audit1) { setFixPhase('idle'); setFixingIssueId(null); return; }
+
+      const remainingAfterPass1 = audit1.issues ?? [];
+
+      // Pass 2: Auto-retry if issues remain (max 1 retry)
+      if (remainingAfterPass1.length > 0) {
+        setFixPhase('retrying');
+        if (await applyFixAndReload(selectedId, remainingAfterPass1, feedback)) {
+          setFixPhase('verifying');
+          const audit2 = await runAudit(selectedId);
+          if (audit2) {
+            const totalAddressed = originalIssueCount - (audit2.issues ?? []).length;
+            setPreviousScore(preFixScore);
+            setAddressedIssues(
+              issues.slice(0, Math.max(0, totalAddressed)),
+            );
+            setVisionAudit(audit2);
+            setFixPhase('idle'); setFixingIssueId(null);
+            return;
+          }
+        }
+      }
+
+      // No retry needed or retry failed — show pass 1 results
+      const totalAddressed = originalIssueCount - remainingAfterPass1.length;
+      setPreviousScore(preFixScore);
+      setAddressedIssues(
+        issues.slice(0, Math.max(0, totalAddressed)),
+      );
+      setVisionAudit(audit1);
+    } catch (err) {
+      console.error('Vision fix request failed:', err); // eslint-disable-line no-console
+    } finally {
+      setFixPhase('idle');
+      setFixingIssueId(null);
+    }
+  }, [selectedId, visionAudit, applyFixAndReload, runAudit]);
+
+  const handleFixSingleIssue = useCallback(async (
+    issue: { severity: string; component: string; description: string; fix: string; issueId?: string },
+    feedback?: string,
+  ) => {
+    await handleFixIssues([issue], feedback);
+  }, [handleFixIssues]);
 
   // Fetch pages and project name on mount.
   // Also pre-warm the design renderer so it's ready by the time the user
@@ -1280,6 +1394,12 @@ function DesignStudioContent() {
           visionAuditLoading={visionAuditLoading}
           onRunVisionAudit={handleRunVisionAudit}
           visionAuditAvailable={visionAuditAvailable}
+          onFixIssue={handleFixSingleIssue}
+          onFixAll={handleFixIssues}
+          fixPhase={fixPhase}
+          fixingIssueId={fixingIssueId}
+          previousScore={previousScore}
+          addressedIssues={addressedIssues}
         />
       </div>
       )}

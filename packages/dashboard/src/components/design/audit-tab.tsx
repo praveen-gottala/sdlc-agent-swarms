@@ -12,6 +12,16 @@ import type {
 /*  Props                                                              */
 /* ------------------------------------------------------------------ */
 
+export interface VisionIssueAction {
+  severity: string;
+  component: string;
+  description: string;
+  fix: string;
+  issueId?: string;
+}
+
+export type FixPhase = 'idle' | 'fixing' | 'verifying' | 'retrying';
+
 export interface AuditTabProps {
   mechanicalAudit: MechanicalAuditResult | null;
   mechanicalAuditLoading: boolean;
@@ -19,6 +29,14 @@ export interface AuditTabProps {
   visionAuditLoading: boolean;
   onRunVisionAudit: () => void;
   visionAuditAvailable: boolean;
+  onFixIssue?: (issue: VisionIssueAction, feedback?: string) => Promise<void>;
+  onFixAll?: (issues: VisionIssueAction[], feedback?: string) => Promise<void>;
+  fixPhase?: FixPhase;
+  fixingIssueId?: string | null;
+  /** Score before the last fix round — used to show improvement delta. */
+  previousScore?: number | null;
+  /** Issues from the previous audit that are no longer in the current audit (addressed). */
+  addressedIssues?: VisionIssueAction[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,7 +120,9 @@ function NodeReportCard({ report }: { report: NodeReport }) {
   );
 }
 
-function ScoreDisplay({ score, quality }: { score: number; quality: string }) {
+function ScoreDisplay({ score, quality, previousScore, addressedCount }: {
+  score: number; quality: string; previousScore?: number | null; addressedCount?: number;
+}) {
   const color =
     score >= 90 ? 'text-green-400' :
     score >= 70 ? 'text-yellow-400' :
@@ -113,13 +133,29 @@ function ScoreDisplay({ score, quality }: { score: number; quality: string }) {
     quality === 'needs_fixes' ? 'bg-yellow-500/15 text-yellow-400' :
     'bg-red-500/15 text-red-400';
 
+  const delta = previousScore != null && previousScore >= 0 ? score - previousScore : null;
+
   return (
-    <div className="flex items-center gap-3 py-2">
-      <span className={`text-2xl font-bold ${color}`}>{score}</span>
-      <span className="text-text-muted text-sm">/100</span>
-      <span className={`px-2 py-0.5 rounded text-xs ${qualityBadge}`}>
-        {quality.replace('_', ' ')}
-      </span>
+    <div className="py-2">
+      <div className="flex items-center gap-3">
+        <span className={`text-2xl font-bold ${color}`}>{score}</span>
+        <span className="text-text-muted text-sm">/100</span>
+        <span className={`px-2 py-0.5 rounded text-xs ${qualityBadge}`}>
+          {quality.replace('_', ' ')}
+        </span>
+      </div>
+      {(delta !== null || (addressedCount != null && addressedCount > 0)) && (
+        <div className="flex items-center gap-2 mt-1 text-[11px]">
+          {delta !== null && (
+            <span className={delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-text-muted'}>
+              {delta > 0 ? '+' : ''}{delta} from {previousScore}
+            </span>
+          )}
+          {addressedCount != null && addressedCount > 0 && (
+            <span className="text-green-400">{addressedCount} issues addressed</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -135,7 +171,30 @@ export function AuditTab({
   visionAuditLoading,
   onRunVisionAudit,
   visionAuditAvailable,
+  onFixIssue,
+  onFixAll,
+  fixPhase = 'idle',
+  fixingIssueId,
+  previousScore,
+  addressedIssues = [],
 }: AuditTabProps) {
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
+  const [feedback, setFeedback] = useState('');
+  const [addressedExpanded, setAddressedExpanded] = useState(false);
+
+  const unresolvedIssues = (visionAudit?.issues ?? []).filter(
+    (issue) => !resolvedIds.has(issue.issueId ?? issue.component),
+  );
+
+  const toggleResolved = (issue: VisionIssueAction) => {
+    const id = issue.issueId ?? issue.component;
+    setResolvedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   return (
     <div className="flex flex-col h-full overflow-y-auto p-3 space-y-4 text-sm">
       {/* ── Mechanical Audit ──────────────────────────────── */}
@@ -230,32 +289,126 @@ export function AuditTab({
           </div>
         )}
 
-        {visionAuditLoading && (
+        {(visionAuditLoading || fixPhase !== 'idle') && (
           <div className="flex items-center gap-2 text-text-muted py-4">
             <div className="w-4 h-4 border-2 border-accent-purple/30 border-t-accent-purple rounded-full animate-spin" />
-            Vision analysis with claude-opus-4-7...
+            {fixPhase === 'fixing' ? 'Applying fixes...' :
+             fixPhase === 'retrying' ? 'Retrying remaining issues...' :
+             fixPhase === 'verifying' ? 'Verifying fixes...' :
+             'Vision analysis with claude-opus-4-7...'}
           </div>
         )}
 
-        {visionAudit && (
+        {visionAudit?.error && (
+          <div className="border border-yellow-500/30 bg-yellow-500/10 rounded p-2.5 text-xs text-yellow-300">
+            {visionAudit.error}
+          </div>
+        )}
+
+        {visionAudit && !visionAudit.error && fixPhase === 'idle' && (
           <>
-            <ScoreDisplay score={visionAudit.score} quality={visionAudit.overallQuality} />
+            <ScoreDisplay
+              score={visionAudit.score}
+              quality={visionAudit.overallQuality}
+              previousScore={previousScore}
+              addressedCount={addressedIssues.length}
+            />
+
+            {/* Addressed issues (green, collapsed) */}
+            {addressedIssues.length > 0 && (
+              <button
+                onClick={() => setAddressedExpanded(!addressedExpanded)}
+                className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs bg-green-500/10 border border-green-500/20 text-green-400 mb-2"
+              >
+                <span>Issues Addressed ({addressedIssues.length})</span>
+                <span>{addressedExpanded ? '▲' : '▼'}</span>
+              </button>
+            )}
+            {addressedExpanded && addressedIssues.map((issue, i) => (
+              <div
+                key={`addr-${i}`}
+                className="border border-green-500/20 bg-green-500/5 rounded p-2 text-xs text-green-400/70 mb-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-green-400">&#10003;</span>
+                  <span className="font-mono">{issue.component}</span>
+                </div>
+                <p className="line-through mt-0.5">{issue.description}</p>
+              </div>
+            ))}
 
             {visionAudit.issues.length > 0 && (
               <div className="space-y-1.5 mt-2">
-                {visionAudit.issues.map((issue, i) => (
-                  <div
-                    key={issue.issueId ?? i}
-                    className={`border rounded p-2 text-xs ${SEVERITY_STYLES[issue.severity] ?? ''}`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="uppercase text-[10px] font-semibold">{issue.severity}</span>
-                      <span className="text-text-secondary font-mono">{issue.component}</span>
+                {visionAudit.issues.map((issue, i) => {
+                  const id = issue.issueId ?? issue.component;
+                  const isResolved = resolvedIds.has(id);
+                  const isFixing = fixingIssueId === id;
+
+                  return (
+                    <div
+                      key={id + '-' + String(i)}
+                      className={`border rounded p-2 text-xs transition-opacity ${
+                        isResolved ? 'opacity-40 border-border' : (SEVERITY_STYLES[issue.severity] ?? '')
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <input
+                          type="checkbox"
+                          checked={isResolved}
+                          onChange={() => toggleResolved(issue)}
+                          className="w-3 h-3 rounded accent-green-500 cursor-pointer"
+                          title={isResolved ? 'Mark as unresolved' : 'Mark as resolved'}
+                        />
+                        <span className="uppercase text-[10px] font-semibold">{issue.severity}</span>
+                        <span className="text-text-secondary font-mono">{issue.component}</span>
+                        {!isResolved && onFixIssue && (
+                          <button
+                            onClick={() => onFixIssue(issue, feedback || undefined)}
+                            disabled={!!fixingIssueId}
+                            className="ml-auto px-2 py-0.5 rounded text-[10px] font-medium bg-accent-blue/15 text-accent-blue hover:bg-accent-blue/25 disabled:opacity-40 transition-colors"
+                          >
+                            {isFixing ? 'Fixing...' : 'Fix'}
+                          </button>
+                        )}
+                      </div>
+                      <p className={`mb-1 ${isResolved ? 'line-through text-text-muted' : 'text-text-primary'}`}>
+                        {issue.description}
+                      </p>
+                      {!isResolved && (
+                        <p className="text-text-muted italic">Fix: {issue.fix}</p>
+                      )}
                     </div>
-                    <p className="text-text-primary mb-1">{issue.description}</p>
-                    <p className="text-text-muted italic">Fix: {issue.fix}</p>
+                  );
+                })}
+
+                {/* Feedback input + action buttons */}
+                {onFixAll && unresolvedIssues.length > 0 && (
+                  <div className="mt-3 space-y-2 pt-2 border-t border-border">
+                    <textarea
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="Additional feedback for the fix (optional)..."
+                      className="w-full px-2 py-1.5 rounded text-xs bg-surface-secondary border border-border text-text-primary placeholder:text-text-muted resize-none"
+                      rows={2}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onFixAll(unresolvedIssues, feedback || undefined)}
+                        disabled={!!fixingIssueId}
+                        className="flex-1 px-3 py-1.5 rounded text-xs font-medium bg-accent-purple/15 text-accent-purple hover:bg-accent-purple/25 disabled:opacity-40 transition-colors"
+                      >
+                        {fixingIssueId ? 'Fixing...' : `Fix All (${unresolvedIssues.length})`}
+                      </button>
+                      <button
+                        onClick={onRunVisionAudit}
+                        disabled={visionAuditLoading}
+                        className="px-3 py-1.5 rounded text-xs font-medium bg-surface-secondary text-text-secondary hover:bg-surface-secondary/80 disabled:opacity-40 transition-colors"
+                      >
+                        Re-Audit
+                      </button>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
 

@@ -13,19 +13,26 @@ import { openBrowserSession } from '@agentforge/designspec-renderer';
 import type { FeedbackAdapter, DesignSpecPatch } from './types.js';
 import { DesignSpecPatchSchema } from './types.js';
 import { sanitizePatches } from '../ux-design/browser-correction-adapter.js';
+import { buildEvaluationContext } from '../ux-design/evaluation-context.js';
 
-const FEEDBACK_SYSTEM_PROMPT = `You are a design patch generator. Given a DesignSpec JSON and a user's change request,
-return a JSON object with exactly two fields: "patches" and "reasoning".
+const FEEDBACK_SYSTEM_PROMPT = `You are a design patch generator. Given a DesignSpec and a list of issues,
+return a JSON object with "patches", "reasoning", and optionally "skipped".
 
 RULES:
 - "patches" is an object map: { "<nodeId>": { /* partial NodeSpec fields */ } }
 - Each patch is shallow-merged into the existing NodeSpec for that node
 - ONLY include fields you want to CHANGE — omit fields you don't want to touch
-- Use exact node IDs from the spec — do NOT invent new ones
+- Use exact node IDs from the provided list — do NOT invent new ones
+- If the issue's component name doesn't match a node ID exactly, find the closest matching node ID
 - Dimensions: positive numbers or "fill" for width
 - Colors: use semantic token names (e.g., "cta-primary") not hex values
 - Layout changes: include "dir" field when setting layout
-- Include "reasoning" explaining your changes
+
+COVERAGE REQUIREMENT:
+- You MUST address EVERY issue listed in the request
+- For each issue, include patches for the node(s) that fix it
+- If you truly cannot fix an issue, add it to "skipped": [{ "component": "...", "reason": "..." }]
+- Do NOT silently skip issues — every issue must result in either a patch or a skipped entry
 
 NodeSpec fields you may use in patches:
   width: number | "fill", height: number, radius: number,
@@ -54,12 +61,13 @@ export class BrowserFeedbackAdapter implements FeedbackAdapter {
     }
 
     const nodeIds = Object.keys(spec.nodes);
-    const specJson = JSON.stringify(spec, null, 2);
-    const content = `Current DesignSpec (${nodeIds.length} nodes):\n\n${specJson}\n\nUser request: ${userMessage}`;
+    const compactTree = buildEvaluationContext(spec);
+    const nodeIdList = nodeIds.join(', ');
+    const content = `Current design (${nodeIds.length} nodes):\n\n${compactTree}\n\nValid node IDs: ${nodeIdList}\n\nUser request: ${userMessage}`;
 
     const result = await this.provider.complete(
       { system: FEEDBACK_SYSTEM_PROMPT, messages: [{ role: 'user', content }] },
-      { model: 'claude-sonnet-4-6', maxTokens: 4096, temperature: 0 },
+      { model: 'claude-sonnet-4-6', maxTokens: 16384, temperature: 0 },
     );
 
     if (!result.ok) {
@@ -94,12 +102,20 @@ export class BrowserFeedbackAdapter implements FeedbackAdapter {
       if (!nodes[nodeId]) continue;
 
       for (const [key, value] of Object.entries(fields)) {
+        if (key === 'parent' || key === 'order') continue;
         if (key === 'layout' && typeof value === 'object' && value !== null) {
           nodes[nodeId]['layout'] = { ...(nodes[nodeId]['layout'] as Record<string, unknown> ?? {}), ...value };
         } else {
           nodes[nodeId][key] = value;
         }
       }
+    }
+
+    const nodeCount = Object.keys(cloned.nodes).length;
+    if (nodeCount === 0) {
+      // eslint-disable-next-line no-console
+      console.error('[BrowserFeedbackAdapter] Patch resulted in 0 nodes — returning original spec');
+      return spec;
     }
 
     return cloned;

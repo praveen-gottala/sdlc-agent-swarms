@@ -48,6 +48,8 @@
 - [Viewport Config: Project-Level with CLI Override](#viewport-config-project-level-with-cli-override) — RESOLVED
 - [Pseudo-Screen Directories Must Be Filtered at Build Time](#pseudo-screen-directories-must-be-filtered-at-build-time) — RULE
 - [Plans Must Trace Data Flows and Verify Claims](#plans-must-trace-data-flows-and-verify-claims) — RULE
+- [Vision Evaluation Token Budget — Compact Context Over Raw JSON](#vision-evaluation-token-budget--compact-context-over-raw-json) — RULE
+- [Dashboard Design Spec Reload — Use the Bundle Endpoint](#dashboard-design-spec-reload--use-the-bundle-endpoint) — RULE
 
 **Renderer Lifecycle**
 - [Renderer Staleness: Kill-and-Restart](#renderer-staleness-kill-and-restart-not-just-port-check-superseded-2026-04-20) — SUPERSEDED
@@ -820,3 +822,21 @@ The design LLM receives this width as a hard constraint and lays out all content
 4. **Enumerate public API changes.** Any CLI flag added, removed, or made vestigial is a contract change needing explicit handling.
 5. **For each downstream consumer of changed code, verify compatibility.** If saying "special stages stay," list what they read/write and prove the new pipeline preserves those contracts.
 **How to apply:** Before every plan submission, run a mental (or actual) grep for each claim. If you can't point to the line of code that proves the claim, the claim is unverified and should be flagged, not asserted.
+
+---
+
+## Vision Evaluation Token Budget — Compact Context Over Raw JSON
+
+**Context:** `packages/agents-ux/src/ux-design/design-evaluator.ts`, `packages/dashboard/src/app/api/design/audit/vision/route.ts`
+**Rule:** Never send raw `JSON.stringify(spec)` to the vision evaluator. Use `buildEvaluationContext(spec)` which produces a compact tree representation (~300-600 tokens vs ~4,000-15,000). The vision LLM is looking at a screenshot — it can SEE layout, spacing, colors. The spec context only needs to convey WHAT was intended (component names, text content, catalog entries, navigateTo targets, token references).
+**Why:** A single vision evaluation request with raw spec JSON consumed ~6,000-18,000 tokens — enough to exceed Vertex AI basic TPM quota (4,000) on a SINGLE call, even with no prior requests in days. The 429/RATE_LIMITED error was misleading because it appeared to be a throughput issue, but was actually a payload size issue. Debugging insight: "one call in 2 days still rate-limited" = check request size, not request frequency.
+**How to apply:** When sending structured data alongside vision input to any LLM, ask: "can the model already SEE this in the image?" If yes, strip it. Send only what the image can't convey (intent, names, invisible metadata like navigateTo). For the vision evaluator specifically, `buildEvaluationContext()` in `evaluation-context.ts` handles this. Token/catalog compliance contexts are built separately and remain compact.
+
+---
+
+## Dashboard Design Spec Reload — Use the Bundle Endpoint
+
+**Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx` — reloading spec after correction patches
+**Rule:** When reloading the design spec after modifications (corrections, chat edits, saves), always use `/api/pages/${pageId}/design/spec?bundle=true&t=${Date.now()}` with `cache: 'no-store'`. Do NOT use `/api/pages/${pageId}/design` — that endpoint returns the spec in a different shape that the canvas renderer cannot parse, producing "Design Spec Error: no renderable nodes."
+**Why:** The canvas expects `data.spec` from the bundle endpoint (which includes tokens and catalog alongside the spec). The plain `/design` endpoint returns a raw object without the `spec` wrapper. After a correct/fix route patches the spec on disk, reloading from the wrong endpoint caused the canvas to show a "no renderable nodes" error even though the patched spec was valid.
+**How to apply:** Search for `setDesignSpec` in `page.tsx`. Every call site that fetches a spec after modification must use the bundle endpoint pattern: `fetch(\`/api/pages/\${id}/design/spec?bundle=true&t=\${Date.now()}\`, { cache: 'no-store' })`.

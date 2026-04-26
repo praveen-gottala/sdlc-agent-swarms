@@ -43,6 +43,24 @@ export function getClaudeProvider(model = 'claude-sonnet-4-6'): ClaudeProviderRe
   };
 }
 
+/**
+ * Get a Claude provider specifically for vision evaluation.
+ *
+ * If AGENTFORGE_VISION_API_KEY is set, uses direct Anthropic API (higher TPM limits).
+ * Otherwise falls back to the default provider (which may be Vertex AI).
+ */
+export function getVisionProvider(model = 'claude-opus-4-7'): ClaudeProviderResult | null {
+  const visionApiKey = process.env['AGENTFORGE_VISION_API_KEY'];
+  if (visionApiKey) {
+    debugLog('llm-provider: using dedicated vision API key (AGENTFORGE_VISION_API_KEY)');
+    return {
+      provider: createClaudeProvider(model, { apiKey: visionApiKey }),
+      authMethod: 'api_key',
+    };
+  }
+  return getClaudeProvider(model);
+}
+
 /** Standard 503 error message when no Claude auth is configured. */
 export const NO_CLAUDE_AUTH_ERROR =
   'Claude auth is required. Set ANTHROPIC_API_KEY or configure Vertex AI ' +

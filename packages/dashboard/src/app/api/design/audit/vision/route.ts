@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readTextFile, readYamlFile } from '../../../_lib/project-reader';
-import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
+import { getVisionProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
 import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
 import { EVALUATOR_MODEL, isVisionLLMEnabled } from '@agentforge/core';
 import type { DesignTokensSpec } from '@agentforge/core';
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Vision LLM is disabled (AGENTFORGE_ENABLE_VISION_LLM=false)' }, { status: 503 });
   }
 
-  const providerResult = getClaudeProvider(EVALUATOR_MODEL);
+  const providerResult = getVisionProvider(EVALUATOR_MODEL);
   if (!providerResult) {
     return NextResponse.json({ error: NO_CLAUDE_AUTH_ERROR }, { status: 503 });
   }
@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
     );
 
     const screenshotBase64 = initial.screenshot.toString('base64');
+    if (screenshotBase64.length > 500_000) {
+      console.warn(`[vision-audit] Large screenshot: ${(screenshotBase64.length / 1024).toFixed(0)}KB base64. Consider reducing viewport or page height.`);
+    }
     await session.close();
 
     const { evaluateDesign } = await import('@agentforge/agents-ux');
@@ -79,8 +82,21 @@ export async function POST(request: NextRequest) {
     );
 
     if (!result.ok) {
+      const msg = result.error.message;
+      if (msg.includes('RATE_LIMITED')) {
+        return NextResponse.json(
+          { error: 'Vision audit rate-limited by your AI provider. This usually means the request exceeds your tokens-per-minute quota. Options: (1) set AGENTFORGE_VISION_API_KEY with a direct Anthropic API key (higher limits), or (2) request a quota increase in GCP Console for claude-opus-4-7.' },
+          { status: 429, headers: { 'Retry-After': '60' } },
+        );
+      }
+      if (msg.includes('AUTH_FAILED')) {
+        return NextResponse.json(
+          { error: 'AI provider authentication failed. Check your ANTHROPIC_API_KEY or GCP credentials.' },
+          { status: 503 },
+        );
+      }
       return NextResponse.json(
-        { error: `Vision evaluation failed: ${result.error.message}` },
+        { error: `Vision evaluation failed: ${msg}` },
         { status: 500 },
       );
     }

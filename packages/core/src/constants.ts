@@ -16,6 +16,11 @@ export const ENV_MODEL_OVERRIDE = 'AGENTFORGE_DEFAULT_MODEL';
 /** Environment variable name for enabling/disabling vision LLM calls (evaluation + correction). */
 export const ENV_VISION_LLM = 'AGENTFORGE_ENABLE_VISION_LLM';
 
+/** Environment variable for a dedicated Anthropic API key for vision evaluation.
+ *  When set, vision calls use direct Anthropic API instead of the default provider (e.g. Vertex AI).
+ *  Useful when Vertex AI has low TPM quota for opus vision calls. */
+export const ENV_VISION_API_KEY = 'AGENTFORGE_VISION_API_KEY';
+
 /** Whether vision LLM calls are enabled. Reads ENV_VISION_LLM at call time; defaults to true. */
 export function isVisionLLMEnabled(): boolean {
   const val = process.env[ENV_VISION_LLM];

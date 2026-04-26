@@ -690,6 +690,8 @@ designNode(state, ctx)
 
 ## Stage 5: Visual Self-Correction (Design Evaluator)
 
+**Feature gate:** `AGENTFORGE_ENABLE_VISION_LLM` (defaults to enabled; set `=false` to disable).
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │                      DESIGN EVALUATOR                                │
@@ -700,11 +702,12 @@ designNode(state, ctx)
 │  ┌──────────────────────┐    ┌──────────────────────────────────┐    │
 │  │       INPUT           │    │        VISION LLM CALL           │    │
 │  │                       │    │                                  │    │
-│  │  screenshotBase64     │    │  Model:    claude-opus-4-6       │    │
-│  │  (PNG)                │───▶│  Tokens:   4096                  │    │
-│  │  designSpec (text)    │    │  Temp:     0                     │    │
-│  │  correctionHistory?   │    │  Schema:   EVALUATION_OUTPUT_SCHEMA│   │
-│  │  designTokens?        │    │  Input:    image + text          │    │
+│  │  screenshotBase64     │    │  Model:    claude-opus-4-7       │    │
+│  │  (PNG, base64)        │───▶│  Tokens:   4096 max output       │    │
+│  │  compact spec context │    │  Schema:   EVALUATION_OUTPUT_SCHEMA│   │
+│  │  correctionHistory?   │    │  Input:    image + compact tree  │    │
+│  │  designTokens?        │    │  Retry:    2x on RATE_LIMITED    │    │
+│  │  catalogMap?           │    │                                  │    │
 │  └──────────────────────┘    └──────────────┬───────────────────┘    │
 │                                              │                       │
 │  ┌───────────────────────────────────────────▼──────────────────┐    │
@@ -719,6 +722,41 @@ designNode(state, ctx)
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+### Input Context (compact, not raw JSON)
+
+The evaluator sends a **compact tree representation** of the DesignSpec, not the raw JSON. The vision LLM sees the screenshot — it already knows layout, spacing, and colors. The text context conveys only intent: component names, text content, catalog entries, `navigateTo` targets, and background token references.
+
+Built by `buildEvaluationContext()` in `evaluation-context.ts`. Reduces input from ~4,000-15,000 tokens (raw JSON) to ~300-600 tokens.
+
+### Token Budget
+
+| Component | Est. tokens | Notes |
+|-----------|-------------|-------|
+| System prompt | ~375 | Scoring dimensions + instructions |
+| Screenshot (1440px PNG) | ~1,400 | Claude vision charge for base64 image |
+| Compact spec context | ~300-600 | Component tree, text, navigateTo |
+| Token compliance | ~200 | Color palette, typography scale, spacing |
+| Catalog compliance | ~100-300 | Used catalog entries + their definitions |
+| **Total** | **~2,400-2,700** | Was ~6,000-18,000 with raw JSON |
+
+Vertex AI basic quota for claude-opus-4-7 can be as low as 4,000 TPM. The compact context keeps single-request cost under that threshold.
+
+### Downstream Consumers
+
+| Consumer | Connection | Status |
+|----------|-----------|--------|
+| Correction loop (`correction-loop.ts`) | Issues → patches → re-render → loop | Active |
+| Dashboard Deep Audit (`audit-tab.tsx`) | Displays score + issues | Active |
+| CLI exit status | Returns final score | Active |
+| Implementation agent | Could inject issues into code gen prompt | Future (ADR-045 stub) |
+| Cross-screen coherence (Roadmap Phase 4) | Multi-screen evaluation | Future |
+
+### Error Handling
+
+- **RATE_LIMITED (429):** Retries up to 2x with min(retryAfterMs, 30s) wait. Wall-time capped at 50s.
+- **AUTH_FAILED:** No retry. Returns 503.
+- **PROVIDER_DOWN:** No retry. Returns 502.
+
 ### Evaluation Dimensions & Scoring Deductions
 
 | Dimension | Checks | Deduction |
@@ -731,6 +769,7 @@ designNode(state, ctx)
 | Content density | No excessive dead space | -10 to -15 |
 | Typography | Scale compliance | -3 per node |
 | Text overlap | Text nodes overlapping | -10 |
+| navigateTo compliance | Planning vs spec binding count | -5 per missing |
 
 ---
 
@@ -1049,7 +1088,7 @@ ImplementationDraftReady
 | 4A | Design Script | claude-sonnet-4-6 | 32000 | 0 | complete |
 | 4B | DesignSpec v2 Gen | claude-sonnet-4-6 (configurable) | 64000 | 0.7 | tool_use (submit_design) |
 | 4C | Fix Generation | claude-sonnet-4-6 | 8000 | 0 | structured |
-| 5 | Evaluation | claude-opus-4-6 | 4096 | 0 | structured + vision |
+| 5 | Evaluation | claude-opus-4-7 | 4096 | — | structured + vision (compact context) |
 | 7 | Implementation | claude-sonnet-4-6 | 16000 | 0 | streaming |
 
 ---

@@ -102,6 +102,8 @@ apps/music-showcase-v2
 apps/music-showcase-v3
 apps/expensetracker
 apps/colbuddy
-
+apps/myfitnesspal
+apps/test-app
+apps/gamingzone
 # Untracked test fixtures
 fixtures/claim-filling-sample

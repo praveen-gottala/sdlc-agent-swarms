@@ -12,6 +12,7 @@ import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import { countPlanningNavigateTo, countSpecNavigateTo } from './validate-navigate-to.js';
+import { buildEvaluationContext } from './evaluation-context.js';
 
 /** JSON Schema for structured evaluation output. */
 const EVALUATION_OUTPUT_SCHEMA = {
@@ -241,10 +242,28 @@ export async function evaluateDesign(
     } catch { /* spec not parseable — skip catalog context */ }
   }
 
+  // Build compact spec context instead of raw JSON (80-90% token reduction).
+  // The vision LLM sees the screenshot — it already knows layout/spacing/colors.
+  // The context conveys only intent: component names, text, catalog, navigateTo.
+  let compactContext: string;
+  try {
+    const specObj = JSON.parse(designSpec) as DesignSpecV2;
+    compactContext = buildEvaluationContext(specObj);
+  } catch {
+    compactContext = designSpec;
+    debugLog('evaluateDesign: could not parse designSpec for compact context — using raw text');
+  }
+
   const textBlock: ContentBlock = {
     type: 'text',
-    text: `Design specification:\n${designSpec}\n\nEvaluate the screenshot above against this specification.${historyContext}${tokenComplianceContext}${catalogComplianceContext}`,
+    text: `Design specification:\n${compactContext}\n\nEvaluate the screenshot above against this specification.${historyContext}${tokenComplianceContext}${catalogComplianceContext}`,
   };
+
+  // Log payload sizes for debugging token budget issues
+  const imageBytes = screenshotBase64.length;
+  const contextChars = textBlock.text.length;
+  const estimatedTokens = Math.ceil(imageBytes / 750) + Math.ceil(contextChars / 4) + Math.ceil(EVALUATION_SYSTEM_PROMPT.length / 4);
+  debugLog(`evaluateDesign: payload — image=${imageBytes}B, context=${contextChars}chars, est.tokens=${estimatedTokens}`);
 
   // Record evaluation prompt trace
   const evalStageName = traceStage ?? 'evaluation';
@@ -254,83 +273,112 @@ export async function evaluateDesign(
       { model: EVALUATOR_MODEL, maxTokens: 4096 });
   }
 
-  const result = await provider.complete(
-    {
-      system: EVALUATION_SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: [imageBlock, textBlock] },
-      ],
-    },
-    {
-      model: EVALUATOR_MODEL,
-      maxTokens: 4096,
-      responseSchema: EVALUATION_OUTPUT_SCHEMA,
-    },
-  );
+  const MAX_RETRIES = 2;
+  const WALL_TIME_CAP_MS = 50_000;
+  const startTime = Date.now();
+  let lastError: unknown = null;
 
-  if (!result.ok) {
-    return Err({
-      code: 'LLM_MALFORMED_OUTPUT' as const,
-      message: `Evaluation LLM call failed: ${JSON.stringify(result.error)}`,
-      recoverable: true,
-    });
-  }
-
-  // Record evaluation response trace
-  if (traceCollector) {
-    recordPromptTraceResponse(traceCollector, evalStageName, {
-      content: result.value.content,
-      structured: result.value.structured,
-      usage: result.value.usage ? { inputTokens: result.value.usage.inputTokens, outputTokens: result.value.usage.outputTokens, cacheReadTokens: result.value.usage.cacheReadTokens, cacheWriteTokens: result.value.usage.cacheWriteTokens } : undefined,
-      cost: result.value.cost ? { inputCostUsd: result.value.cost.inputCostUsd, outputCostUsd: result.value.cost.outputCostUsd, totalCostUsd: result.value.cost.totalCostUsd } : undefined,
-      latencyMs: result.value.latencyMs,
-      finishReason: result.value.finishReason,
-      hasVisionInput: true,
-    });
-  }
-
-  // Prefer structured output, fall back to text parsing with validation
-  const structured = result.value.structured;
-  let evalData: { score: number; issues: DesignIssue[] };
-
-  if (structured) {
-    const structuredResult = DesignEvaluationOutputSchema.safeParse(structured);
-    evalData = structuredResult.success
-      ? structuredResult.data as { score: number; issues: DesignIssue[] }
-      : { score: 0, issues: [] };
-  } else {
-    const parseResult = safeParse(result.value.content, DesignEvaluationOutputSchema, 'Design Evaluation');
-    if (!parseResult.ok) return parseResult as Result<never>;
-    evalData = parseResult.value as { score: number; issues: DesignIssue[] };
-  }
-
-  let finalScore = typeof evalData.score === 'number' ? evalData.score : 0;
-  const issues: DesignIssue[] = Array.isArray(evalData.issues) ? [...evalData.issues] : [];
-
-  if (options?.structuralNavCheck) {
-    const { planning, getSpec } = options.structuralNavCheck;
-    const specObj = getSpec();
-    const exp = countPlanningNavigateTo(planning);
-    if (exp > 0) {
-      const act = countSpecNavigateTo(specObj);
-      if (act < exp) {
-        const gap = exp - act;
-        const deduct = Math.min(30, gap * 5);
-        finalScore = Math.max(0, finalScore - deduct);
-        const navIssue: DesignIssue = {
-          severity: 'major',
-          component: 'DesignSpec',
-          description: `Expected ${String(exp)} navigateTo binding(s) from planning; DesignSpec has ${String(act)} (missing ${String(gap)}).`,
-          fix: 'Map each componentTree node with navigateTo to a DesignSpec node with the same target.',
-          issueId: 'navigateTo-count-mismatch',
-        };
-        issues.push(navIssue);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const elapsed = Date.now() - startTime;
+      if (elapsed > WALL_TIME_CAP_MS) {
+        debugLog(`evaluateDesign: wall-time cap reached (${elapsed}ms) — skipping retry ${attempt}`);
+        break;
       }
     }
+
+    const result = await provider.complete(
+      {
+        system: EVALUATION_SYSTEM_PROMPT,
+        messages: [
+          { role: 'user', content: [imageBlock, textBlock] },
+        ],
+      },
+      {
+        model: EVALUATOR_MODEL,
+        maxTokens: 4096,
+        responseSchema: EVALUATION_OUTPUT_SCHEMA,
+      },
+    );
+
+    if (result.ok) {
+      lastError = null;
+
+      // Record evaluation response trace
+      if (traceCollector) {
+        recordPromptTraceResponse(traceCollector, evalStageName, {
+          content: result.value.content,
+          structured: result.value.structured,
+          usage: result.value.usage ? { inputTokens: result.value.usage.inputTokens, outputTokens: result.value.usage.outputTokens, cacheReadTokens: result.value.usage.cacheReadTokens, cacheWriteTokens: result.value.usage.cacheWriteTokens } : undefined,
+          cost: result.value.cost ? { inputCostUsd: result.value.cost.inputCostUsd, outputCostUsd: result.value.cost.outputCostUsd, totalCostUsd: result.value.cost.totalCostUsd } : undefined,
+          latencyMs: result.value.latencyMs,
+          finishReason: result.value.finishReason,
+          hasVisionInput: true,
+        });
+      }
+
+      // Prefer structured output, fall back to text parsing with validation
+      const structured = result.value.structured;
+      let evalData: { score: number; issues: DesignIssue[] };
+
+      if (structured) {
+        const structuredResult = DesignEvaluationOutputSchema.safeParse(structured);
+        evalData = structuredResult.success
+          ? structuredResult.data as { score: number; issues: DesignIssue[] }
+          : { score: 0, issues: [] };
+      } else {
+        const parseResult = safeParse(result.value.content, DesignEvaluationOutputSchema, 'Design Evaluation');
+        if (!parseResult.ok) return parseResult as Result<never>;
+        evalData = parseResult.value as { score: number; issues: DesignIssue[] };
+      }
+
+      let finalScore = typeof evalData.score === 'number' ? evalData.score : 0;
+      const issues: DesignIssue[] = Array.isArray(evalData.issues) ? [...evalData.issues] : [];
+
+      if (options?.structuralNavCheck) {
+        const { planning, getSpec } = options.structuralNavCheck;
+        const specObj = getSpec();
+        const exp = countPlanningNavigateTo(planning);
+        if (exp > 0) {
+          const act = countSpecNavigateTo(specObj);
+          if (act < exp) {
+            const gap = exp - act;
+            const deduct = Math.min(30, gap * 5);
+            finalScore = Math.max(0, finalScore - deduct);
+            const navIssue: DesignIssue = {
+              severity: 'major',
+              component: 'DesignSpec',
+              description: `Expected ${String(exp)} navigateTo binding(s) from planning; DesignSpec has ${String(act)} (missing ${String(gap)}).`,
+              fix: 'Map each componentTree node with navigateTo to a DesignSpec node with the same target.',
+              issueId: 'navigateTo-count-mismatch',
+            };
+            issues.push(navIssue);
+          }
+        }
+      }
+
+      const overallQuality: DesignEvaluation['overallQuality'] =
+        finalScore >= 80 ? 'good' : finalScore >= 50 ? 'needs_fixes' : 'poor';
+
+      return Ok({ score: finalScore, overallQuality, issues });
+    }
+
+    // Handle error — retry only on RATE_LIMITED
+    lastError = result.error;
+    const isRateLimited = 'code' in result.error && result.error.code === 'RATE_LIMITED';
+    if (!isRateLimited || attempt >= MAX_RETRIES) break;
+
+    const retryAfterMs = ('retryAfterMs' in result.error && typeof result.error.retryAfterMs === 'number')
+      ? result.error.retryAfterMs
+      : 60_000;
+    const waitMs = Math.min(retryAfterMs, 30_000);
+    debugLog(`evaluateDesign: RATE_LIMITED — retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 
-  const overallQuality: DesignEvaluation['overallQuality'] =
-    finalScore >= 80 ? 'good' : finalScore >= 50 ? 'needs_fixes' : 'poor';
-
-  return Ok({ score: finalScore, overallQuality, issues });
+  return Err({
+    code: 'LLM_MALFORMED_OUTPUT' as const,
+    message: `Evaluation LLM call failed: ${JSON.stringify(lastError)}`,
+    recoverable: true,
+  });
 }

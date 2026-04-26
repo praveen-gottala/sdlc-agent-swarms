@@ -55,4 +55,6 @@ export interface VisionAuditResult {
   score: number;
   overallQuality: 'good' | 'needs_fixes' | 'poor';
   issues: VisionIssue[];
+  /** Set when the audit failed with a user-actionable error (rate limit, auth). */
+  error?: string;
 }

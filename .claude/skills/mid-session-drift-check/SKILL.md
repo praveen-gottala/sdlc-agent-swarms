@@ -1,5 +1,5 @@
 ---
-name: check-drift
+name: mid-session-drift-check
 description: Mid-session audit — are we still following the rules we started with? Reads the canonical docs in CLAUDE.md's prescribed order (vision.md, lessons-learned.md, ADRs, CLAUDE.md + topical rules), inventories this session's changes, and reports concrete rule violations with file+line cites. Use before commits, before marking tasks "complete", or anytime the session has gone long enough that early-session instructions may have faded.
 context: inline
 agent: main
@@ -15,7 +15,7 @@ This is NOT a PRD-compliance review (use `review-prd-compliance` for that). This
 
 If this session has made <3 substantive changes (file edits, new files, refactors), there's nothing meaningful to audit. Tell the user:
 
-> "This session has made only <N> substantive changes. Drift audit is premature — the signal-to-noise won't be useful yet. Rerun `check-drift` after a few more changes, or before your next commit."
+> "This session has made only <N> substantive changes. Drift audit is premature — the signal-to-noise won't be useful yet. Rerun `mid-session-drift-check` after a few more changes, or before your next commit."
 
 Do not fabricate violations to justify running the skill.
 
@@ -92,6 +92,7 @@ For each rule that applies, produce one block:
 8. **Premature abstraction.** Did we add an abstraction layer without at least 2 concrete consumers? If so, VIOLATION of karpathy-guidelines (simplicity first).
 9. **Vision-rejected patterns.** Grep the session's production changes for patterns `CLAUDE.md` §"Rejected Patterns — Check Before Proposing" and `docs/vision.md` call out: event bus / `EventEmitter` used for coordination (not just telemetry) — vision Layer 2 / `CLAUDE.md` line 152; parallel frontend/backend/tests coders within one task — vision Layer 8 / `CLAUDE.md` line 153-154; new code extending `services/engine/` (Python orchestration) — ADR-043 / `CLAUDE.md` line 28; untyped inter-node payloads instead of typed LangGraph channels with Zod — vision Layer 2 / `CLAUDE.md` line 120-127; stub fallbacks on missing imports — `CLAUDE.md` line 313. Each hit is a VIOLATION unless an ADR authorizes it.
 10. **Superseded-pattern revival.** Cross-reference the session's changes against `docs/lessons-learned.md` SUPERSEDED entries and against ADRs whose `Status` reads "Superseded by ADR-NNN". If the session reintroduces a pattern explicitly marked SUPERSEDED (e.g. `docs/lessons-learned.md` §"Renderer Staleness: Kill-and-Restart" SUPERSEDED 2026-04-20, or new code modeled on ADR-022 now that ADR-043 supersedes it), that's a VIOLATION — cite the superseding entry.
+11. **Documentation currency.** If this session modified production code in more than 3 files, run `/verify-docs` in task-scoped mode. Any FAILURE in the doc report is a VIOLATION — documentation that describes pre-change state while the code has moved forward is stale by definition. Cite the verify-docs report line as evidence. See `CLAUDE.md` §Documentation (lines 306-317) for the rules being checked.
 
 ### 4. Balance — what's still clean
 

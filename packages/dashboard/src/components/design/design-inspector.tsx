@@ -44,6 +44,12 @@ export interface DesignInspectorProps {
   visionAuditLoading?: boolean;
   onRunVisionAudit?: () => void;
   visionAuditAvailable?: boolean;
+  onFixIssue?: (issue: { severity: string; component: string; description: string; fix: string; issueId?: string }, feedback?: string) => Promise<void>;
+  onFixAll?: (issues: { severity: string; component: string; description: string; fix: string; issueId?: string }[], feedback?: string) => Promise<void>;
+  fixPhase?: 'idle' | 'fixing' | 'verifying' | 'retrying';
+  fixingIssueId?: string | null;
+  previousScore?: number | null;
+  addressedIssues?: { severity: string; component: string; description: string; fix: string; issueId?: string }[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -575,6 +581,12 @@ export function DesignInspector({
   visionAuditLoading,
   onRunVisionAudit,
   visionAuditAvailable,
+  onFixIssue,
+  onFixAll,
+  fixPhase,
+  fixingIssueId,
+  previousScore,
+  addressedIssues,
 }: DesignInspectorProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('properties');
   const effectiveTab = activeTabOverride ?? activeTab;
@@ -646,6 +658,12 @@ export function DesignInspector({
           visionAuditLoading={visionAuditLoading ?? false}
           onRunVisionAudit={onRunVisionAudit ?? (() => {})}
           visionAuditAvailable={visionAuditAvailable ?? false}
+          onFixIssue={onFixIssue}
+          onFixAll={onFixAll}
+          fixPhase={fixPhase}
+          fixingIssueId={fixingIssueId}
+          previousScore={previousScore}
+          addressedIssues={addressedIssues}
         />
       )}
     </div>
