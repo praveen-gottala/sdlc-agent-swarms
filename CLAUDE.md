@@ -28,7 +28,7 @@ Not started: spec/code/cicd/observe phases, V3 Dashboard
 Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. Python engine deprecated. See ADR-043.
 
 **Active plans:**
-1. Unify Design Pipeline — Phase 0-0.5 COMPLETE, Phase 1 next. See `docs/active-plan/unify-pipeline/execution-plan.md`
+1. Unify Design Pipeline — Phase 0-4 COMPLETE, Phase 5 (docs/ADRs/cleanup) in progress. See `docs/active-plan/unify-pipeline/execution-plan.md`
 2. Screen Types Plan B — B0-B2.7 complete, B3 (Layout-Aware Code Generation) next. **Paused** — unify pipeline is higher priority. See `docs/feature-plans/screen-types-plan-b.md`
 
 **Completed plans:**
@@ -185,6 +185,8 @@ and rejected with rejection reasoning. Notable rejected patterns:
 - Approve-every-agent-action HITL (structural gates only — vision Layer 10)
 - Let-the-LLM-decide-when-done (deterministic gates own completion — vision Layer 8)
 - Autonomous security remediation (triage only — vision Layer 9)
+- Parallel dashboard pipeline reimplementing agent work functions (single
+  `runDesignPipeline` — Phases 0-4 execution plan)
 
 ### Self-Correction
 - Track failed approaches. Before retrying, verify the new attempt is

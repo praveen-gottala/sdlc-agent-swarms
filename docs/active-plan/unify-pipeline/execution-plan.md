@@ -52,17 +52,17 @@ Update this checklist as each task completes. Commit convention: `[unify-pipelin
 - [x] **2.5** Browser feedback adapter (2026-04-25). FeedbackAdapter interface (with showPreview), BrowserFeedbackAdapter (single-shot LLM patch), PenpotFeedbackAdapter, BrowserCollaborationSession bridge, wired into design-page.ts.
 
 ### Phase 3 — Dashboard Migration
-- [ ] **3.1** Dashboard telemetry sink + migration
-- [ ] **3.2** Delete `callPipelineStage` + `callClaudeDesignAPI`
-- [ ] **3.5** Chat route + correct route mechanism fix
-- [ ] **3.6** Dashboard pipeline E2E test
+- [x] **3.1** Dashboard telemetry sink + migration (2026-04-25). DashboardSseSink, pipeline-context, pipeline-input-builder, design route rewrite, sink contract test (12 tests).
+- [x] **3.2** Delete `callPipelineStage` + `callClaudeDesignAPI` (2026-04-25). Also deleted `buildDesignSpecSystemPrompt`, `shallow-wrappers.ts`, old equivalence pin test.
+- [x] **3.5** Chat route + correct route mechanism fix (2026-04-25). Chat: single LLM call via BrowserFeedbackAdapter (was 3-stage pipeline). Correct: wired to BrowserFeedbackAdapter (was stub). 14 unit tests.
+- [x] **3.6** Dashboard pipeline E2E test (2026-04-25). `e2e/unify-pipeline.spec.ts` with 8 tests (6 artifact structure, 1 prototype rendering, 1 fixme for chat).
 
 ### Phase 4 — Stage 1
-- [ ] **4.1** Unify `design:generate` and `spec/generate`
+- [x] **4.1** Unify `design:generate` and `spec/generate` (2026-04-26). Shared `generateAppSpec()` in `packages/agents-ux/src/app-spec/`. CLI and dashboard both call it. `autoApprove` refinement: status set by callers at write-time, not by shared function (cleaner separation). `parseAppSpecResponse` returns `Result` (not null). Field naming unified to `data_sources` (snake_case). Dashboard `SpecResult` and `buildSpecGenerationPrompt` deleted. 14 tests in agents-ux, CLI parse tests consolidated.
 
 ### Phase 5 — Docs
-- [ ] **5.1** Parity test green
-- [ ] **5.2** ADRs, dataflow doc, cleanup
+- [x] **5.1** Parity test green (2026-04-26). Activated Phase 3 parity tests: real fixture reads (research-brief.json, planning-spec.json) pass schemas without `_migrated`; source-file grep confirms both CLI and dashboard call `runDesignPipeline(` and neither contains `callPipelineStage(`.
+- [x] **5.2** ADRs, dataflow doc, cleanup (2026-04-26). ADR-046 (unified pipeline), ADR-047 (browser default), ADR-048 (feedback strategy), ADR-049 (Stage 7 deferral). Dataflow doc updated with Channels section, Stage 4 dispatch, CLI Orchestration rewrite. CLAUDE.md rejected pattern added. Divergence issue closed. `evaluateDesign` JSDoc tightened.
 
 ---
 
@@ -76,7 +76,6 @@ After each phase, the work should be demoable to a stakeholder. These are the ve
 | **Phase 0.5** | `agentforge init` and dashboard onboarding produce identical project files. | Run scaffold parity test: `nx test core --testPathPattern scaffold-parity`. |
 | **Phase 1** | `runDesignPipeline` with mock provider produces typed state through all nodes. | Run: `nx test agents-ux --testPathPattern design-pipeline`. Show node function tests + integration test green. |
 | **Phase 2** | CLI `design:page --tool=browser` runs full pipeline through Layer B. Compare output to pre-migration baseline. | Run CLI on PET fixture. Diff artifacts against saved baseline. `--tool=penpot` still works. Browser feedback loop functional. |
-| **Phase 3** | Dashboard full pipeline produces same artifacts as CLI. Chat route 1 LLM call. Correct route works. Prototype renders. | Run dashboard pipeline. Diff against CLI output. E2E test green: `npx playwright test e2e/unify-pipeline.spec.ts`. |
 | **Phase 5** | Parity test green. ADRs written. Issue doc closed. | `nx test agents-ux --testPathPattern parity`. ADR files exist. |
 
 ## Review Conclusions

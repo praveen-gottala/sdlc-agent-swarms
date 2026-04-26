@@ -1,0 +1,631 @@
+{
+  "specRef": "spec-bookshelf-add-expense-1718000000000",
+  "moduleId": "bookshelf-add-expense",
+  "componentTree": [
+    {
+      "name": "AddExpenseLayout",
+      "props": [
+        "maxWidth",
+        "padding",
+        "gap",
+        "backgroundColor"
+      ],
+      "defaultValues": {
+        "maxWidth": 1280,
+        "padding": 24,
+        "gap": 24
+      },
+      "children": [
+        "TopBar",
+        "QuickAddSuggestions",
+        "AmountHeroInput",
+        "CategorySection",
+        "DateSection",
+        "PaymentMethodSection",
+        "NoteSection",
+        "SaveExpenseButton",
+        "NavigationTabs",
+        "SettingsDialog"
+      ]
+    },
+    {
+      "name": "TopBar",
+      "props": [
+        "title",
+        "showBackArrow",
+        "ariaLabel",
+        "height"
+      ],
+      "defaultValues": {
+        "title": "Add Expense",
+        "showBackArrow": true,
+        "height": 64
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "QuickAddSuggestions",
+      "props": [
+        "suggestions",
+        "scrollable",
+        "gap",
+        "paddingY",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "gap": 12,
+        "paddingY": 16
+      },
+      "children": [
+        "QuickAddChip"
+      ]
+    },
+    {
+      "name": "QuickAddChip",
+      "props": [
+        "merchant",
+        "amount",
+        "emoji",
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "AmountHeroInput",
+      "props": [
+        "value",
+        "currencySymbol",
+        "ariaLabel",
+        "ariaDescribedBy",
+        "placeholder",
+        "paddingY",
+        "fontSize"
+      ],
+      "defaultValues": {
+        "paddingY": 32,
+        "fontSize": 48,
+        "placeholder": "0.00"
+      },
+      "children": []
+    },
+    {
+      "name": "CategorySection",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 16,
+        "borderRadius": 10
+      },
+      "children": [
+        "CategoryChipGrid",
+        "NewCategoryInlineForm"
+      ]
+    },
+    {
+      "name": "CategoryChipGrid",
+      "props": [
+        "categories",
+        "selectedCategoryId",
+        "ariaLabel",
+        "role",
+        "columnGap",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "columnGap": 8,
+        "rowGap": 8
+      },
+      "children": [
+        "CategoryChip",
+        "AddCategoryChip"
+      ]
+    },
+    {
+      "name": "CategoryChip",
+      "props": [
+        "categoryId",
+        "label",
+        "icon",
+        "isSelected",
+        "role",
+        "ariaChecked",
+        "minHeight",
+        "minWidth",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "minWidth": 44,
+        "borderRadius": 9999
+      },
+      "children": []
+    },
+    {
+      "name": "AddCategoryChip",
+      "props": [
+        "label",
+        "minHeight",
+        "minWidth",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "label": "+ New Category",
+        "minHeight": 44,
+        "minWidth": 44,
+        "borderRadius": 9999
+      },
+      "children": []
+    },
+    {
+      "name": "NewCategoryInlineForm",
+      "props": [
+        "isExpanded",
+        "ariaLive",
+        "gap",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "gap": 12,
+        "paddingY": 16
+      },
+      "children": [
+        "Input",
+        "ColorPickerRow",
+        "Button"
+      ]
+    },
+    {
+      "name": "ColorPickerRow",
+      "props": [
+        "colors",
+        "selectedColor",
+        "gap",
+        "swatchSize"
+      ],
+      "defaultValues": {
+        "gap": 8,
+        "swatchSize": 32
+      },
+      "children": []
+    },
+    {
+      "name": "DateSection",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 12,
+        "borderRadius": 10
+      },
+      "children": [
+        "DatePickerInput",
+        "MiniCalendarDropdown"
+      ]
+    },
+    {
+      "name": "DatePickerInput",
+      "props": [
+        "value",
+        "ariaLabel",
+        "ariaHasPopup",
+        "minHeight",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "borderRadius": 6
+      },
+      "children": []
+    },
+    {
+      "name": "MiniCalendarDropdown",
+      "props": [
+        "isOpen",
+        "selectedDate",
+        "role",
+        "zIndex",
+        "borderRadius",
+        "paddingX",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "zIndex": 1000,
+        "borderRadius": 10,
+        "paddingX": 16,
+        "paddingY": 16
+      },
+      "children": []
+    },
+    {
+      "name": "PaymentMethodSection",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 12,
+        "borderRadius": 10
+      },
+      "children": [
+        "PaymentMethodChipRow"
+      ]
+    },
+    {
+      "name": "PaymentMethodChipRow",
+      "props": [
+        "paymentMethods",
+        "selectedMethodId",
+        "ariaLabel",
+        "role",
+        "gap"
+      ],
+      "defaultValues": {
+        "gap": 8
+      },
+      "children": [
+        "PaymentMethodChip"
+      ]
+    },
+    {
+      "name": "PaymentMethodChip",
+      "props": [
+        "methodId",
+        "label",
+        "icon",
+        "lastFour",
+        "isSelected",
+        "role",
+        "ariaChecked",
+        "minHeight",
+        "minWidth",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "minWidth": 44,
+        "borderRadius": 9999
+      },
+      "children": []
+    },
+    {
+      "name": "NoteSection",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 8,
+        "borderRadius": 10
+      },
+      "children": [
+        "NoteInput",
+        "CharacterCounter"
+      ]
+    },
+    {
+      "name": "NoteInput",
+      "props": [
+        "value",
+        "placeholder",
+        "maxLength",
+        "ariaLabel",
+        "ariaDescribedBy",
+        "minHeight",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "maxLength": 200,
+        "minHeight": 80,
+        "borderRadius": 6
+      },
+      "children": []
+    },
+    {
+      "name": "CharacterCounter",
+      "props": [
+        "current",
+        "max",
+        "ariaLive"
+      ],
+      "defaultValues": {
+        "max": 200
+      },
+      "children": []
+    },
+    {
+      "name": "SaveExpenseButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "isDisabled",
+        "minHeight",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "label": "Save Expense",
+        "minHeight": 44,
+        "borderRadius": 10
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "NavigationTabs",
+      "props": [
+        "activeTab",
+        "role",
+        "height"
+      ],
+      "defaultValues": {
+        "height": 64
+      },
+      "children": [
+        "HomeTab",
+        "AddExpenseTab",
+        "InsightsTab"
+      ]
+    },
+    {
+      "name": "HomeTab",
+      "props": [
+        "label",
+        "icon",
+        "ariaLabel",
+        "role",
+        "ariaCurrent"
+      ],
+      "defaultValues": {
+        "label": "Home"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "AddExpenseTab",
+      "props": [
+        "label",
+        "icon",
+        "ariaLabel",
+        "role",
+        "ariaCurrent"
+      ],
+      "defaultValues": {
+        "label": "Add Expense"
+      },
+      "children": []
+    },
+    {
+      "name": "InsightsTab",
+      "props": [
+        "label",
+        "icon",
+        "ariaLabel",
+        "role",
+        "ariaCurrent"
+      ],
+      "defaultValues": {
+        "label": "Insights"
+      },
+      "navigateTo": "spending-insights",
+      "children": []
+    },
+    {
+      "name": "SettingsDialog",
+      "props": [
+        "isOpen",
+        "role",
+        "ariaModal",
+        "ariaLabelledBy",
+        "zIndex",
+        "borderRadius",
+        "paddingX",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "zIndex": 1200,
+        "borderRadius": 16,
+        "paddingX": 32,
+        "paddingY": 32
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "AddExpenseLayout.background": "background-primary",
+    "TopBar.background": "surface-primary",
+    "TopBar.borderBottom": "border-default",
+    "TopBar.titleTypography": "heading-2",
+    "TopBar.iconColor": "text-primary",
+    "QuickAddSuggestions.background": "surface-primary",
+    "QuickAddChip.background": "surface-elevated",
+    "QuickAddChip.border": "border-default",
+    "QuickAddChip.borderRadius": "pill",
+    "QuickAddChip.labelTypography": "label",
+    "QuickAddChip.labelColor": "text-primary",
+    "QuickAddChip.amountColor": "text-secondary",
+    "AmountHeroInput.background": "surface-primary",
+    "AmountHeroInput.inputTypography": "heading-1",
+    "AmountHeroInput.textColor": "text-primary",
+    "AmountHeroInput.currencyColor": "text-secondary",
+    "AmountHeroInput.borderBottom": "border-default",
+    "AmountHeroInput.focusBorder": "border-focus",
+    "AmountHeroInput.shadow": "elevation-1",
+    "CategorySection.background": "surface-primary",
+    "CategorySection.shadow": "elevation-1",
+    "CategorySection.borderRadius": "medium",
+    "CategorySection.border": "border-default",
+    "CategoryChipGrid.gap": "8",
+    "CategoryChip.background": "surface-elevated",
+    "CategoryChip.border": "border-default",
+    "CategoryChip.borderRadius": "pill",
+    "CategoryChip.labelTypography": "label",
+    "CategoryChip.labelColor": "text-primary",
+    "CategoryChip.selectedBorder": "cta-primary",
+    "CategoryChip.selectedBackground": "cta-primary",
+    "CategoryChip.focusRingColor": "focus-ring-color",
+    "AddCategoryChip.background": "surface-elevated",
+    "AddCategoryChip.border": "border-default",
+    "AddCategoryChip.borderRadius": "pill",
+    "AddCategoryChip.labelColor": "cta-primary",
+    "AddCategoryChip.labelTypography": "label",
+    "NewCategoryInlineForm.background": "surface-elevated",
+    "NewCategoryInlineForm.border": "border-default",
+    "NewCategoryInlineForm.borderRadius": "medium",
+    "NewCategoryInlineForm.labelTypography": "label",
+    "NewCategoryInlineForm.labelColor": "text-secondary",
+    "ColorPickerRow.labelTypography": "label",
+    "ColorPickerRow.labelColor": "text-secondary",
+    "DateSection.background": "surface-primary",
+    "DateSection.shadow": "elevation-1",
+    "DateSection.borderRadius": "medium",
+    "DateSection.border": "border-default",
+    "DatePickerInput.background": "surface-input",
+    "DatePickerInput.border": "border-default",
+    "DatePickerInput.focusBorder": "border-focus",
+    "DatePickerInput.borderRadius": "small",
+    "DatePickerInput.textTypography": "body",
+    "DatePickerInput.textColor": "text-primary",
+    "DatePickerInput.iconColor": "text-secondary",
+    "MiniCalendarDropdown.background": "surface-elevated",
+    "MiniCalendarDropdown.border": "border-default",
+    "MiniCalendarDropdown.borderRadius": "medium",
+    "MiniCalendarDropdown.shadow": "elevation-2",
+    "MiniCalendarDropdown.textTypography": "body",
+    "MiniCalendarDropdown.textColor": "text-primary",
+    "MiniCalendarDropdown.selectedDayBackground": "cta-primary",
+    "MiniCalendarDropdown.selectedDayColor": "text-on-cta",
+    "MiniCalendarDropdown.zIndex": "z-dropdown",
+    "PaymentMethodSection.background": "surface-primary",
+    "PaymentMethodSection.shadow": "elevation-1",
+    "PaymentMethodSection.borderRadius": "medium",
+    "PaymentMethodSection.border": "border-default",
+    "PaymentMethodChip.background": "surface-elevated",
+    "PaymentMethodChip.border": "border-default",
+    "PaymentMethodChip.borderRadius": "pill",
+    "PaymentMethodChip.labelTypography": "label",
+    "PaymentMethodChip.labelColor": "text-primary",
+    "PaymentMethodChip.selectedBorder": "cta-primary",
+    "PaymentMethodChip.selectedBackground": "cta-primary",
+    "PaymentMethodChip.focusRingColor": "focus-ring-color",
+    "NoteSection.background": "surface-primary",
+    "NoteSection.shadow": "elevation-1",
+    "NoteSection.borderRadius": "medium",
+    "NoteSection.border": "border-default",
+    "NoteInput.background": "surface-input",
+    "NoteInput.border": "border-default",
+    "NoteInput.focusBorder": "border-focus",
+    "NoteInput.borderRadius": "small",
+    "NoteInput.textTypography": "body",
+    "NoteInput.textColor": "text-primary",
+    "NoteInput.placeholderColor": "text-secondary",
+    "CharacterCounter.textTypography": "label",
+    "CharacterCounter.textColor": "text-secondary",
+    "SaveExpenseButton.background": "cta-primary",
+    "SaveExpenseButton.hoverBackground": "cta-hover",
+    "SaveExpenseButton.textColor": "text-on-cta",
+    "SaveExpenseButton.textTypography": "heading-2",
+    "SaveExpenseButton.borderRadius": "medium",
+    "SaveExpenseButton.disabledOpacity": "disabled-opacity",
+    "SaveExpenseButton.focusRingColor": "focus-ring-color",
+    "NavigationTabs.background": "surface-primary",
+    "NavigationTabs.borderTop": "border-default",
+    "NavigationTabs.shadow": "elevation-1",
+    "NavigationTabs.zIndex": "z-sticky",
+    "HomeTab.labelTypography": "label",
+    "HomeTab.labelColor": "text-secondary",
+    "HomeTab.activeColor": "cta-primary",
+    "AddExpenseTab.labelTypography": "label",
+    "AddExpenseTab.labelColor": "cta-primary",
+    "AddExpenseTab.activeColor": "cta-primary",
+    "InsightsTab.labelTypography": "label",
+    "InsightsTab.labelColor": "text-secondary",
+    "InsightsTab.activeColor": "cta-primary",
+    "SettingsDialog.background": "surface-elevated",
+    "SettingsDialog.overlay": "overlay",
+    "SettingsDialog.border": "border-default",
+    "SettingsDialog.borderRadius": "large",
+    "SettingsDialog.shadow": "elevation-3",
+    "SettingsDialog.titleTypography": "heading-1",
+    "SettingsDialog.titleColor": "text-primary",
+    "SettingsDialog.zIndex": "z-modal"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Single-column centered layout with 1280px max content width and 24px side margins. Hero amount input is visually prominent at top. Form sections stack vertically with 24px gap. QuickAdd strip is a horizontal scrollable row. NavigationTabs fixed at bottom.",
+      "layout": "single-column",
+      "changes": [
+        "Max content width 1280px centered with 24px margins",
+        "AmountHeroInput displayed at full column width with oversized 48px+ font",
+        "QuickAddSuggestions rendered as horizontal scrollable chip strip above hero input",
+        "CategoryChipGrid wraps horizontally across full column width",
+        "NewCategoryInlineForm expands inline below chip grid without modal interruption",
+        "MiniCalendarDropdown positioned below DatePickerInput trigger at elevation-2",
+        "PaymentMethodChipRow displayed as horizontal scrollable chip row",
+        "SaveExpenseButton spans full content column width at 44px min height",
+        "NavigationTabs fixed to bottom of viewport at 64px height",
+        "SettingsDialog rendered as centered modal overlay at elevation-3"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Add Expense",
+      "components": [
+        "AddExpenseLayout",
+        "TopBar",
+        "QuickAddSuggestions",
+        "QuickAddChip",
+        "AmountHeroInput",
+        "CategorySection",
+        "CategoryChipGrid",
+        "CategoryChip",
+        "AddCategoryChip",
+        "NewCategoryInlineForm",
+        "ColorPickerRow",
+        "DateSection",
+        "DatePickerInput",
+        "MiniCalendarDropdown",
+        "PaymentMethodSection",
+        "PaymentMethodChipRow",
+        "PaymentMethodChip",
+        "NoteSection",
+        "NoteInput",
+        "CharacterCounter",
+        "SaveExpenseButton",
+        "NavigationTabs",
+        "HomeTab",
+        "AddExpenseTab",
+        "InsightsTab",
+        "SettingsDialog"
+      ]
+    }
+  ]
+}

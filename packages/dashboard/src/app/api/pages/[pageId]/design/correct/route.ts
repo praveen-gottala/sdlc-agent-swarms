@@ -7,10 +7,10 @@ import {
   readTextFile,
   getActiveProjectRoot,
 } from '../../../../_lib/project-reader';
-
-/* ------------------------------------------------------------------ */
-/*  Shared types (matches other design routes)                         */
-/* ------------------------------------------------------------------ */
+import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../../_lib/llm-provider';
+import { BrowserFeedbackAdapter } from '@agentforge/agents-ux';
+import type { LLMProviderRef } from '@agentforge/core';
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 
 interface PageEntry {
   id: string;
@@ -37,12 +37,13 @@ const MAX_CORRECTION_ITERATIONS = 3;
 /**
  * POST /api/pages/[pageId]/design/correct
  *
- * Accepts user feedback tags and runs the vision correction pipeline.
- * If the full pipeline is unavailable (missing runtime dependencies such as
- * LLM provider, Playwright browser session, etc.), returns 503 with details.
+ * Accepts user feedback tags and applies LLM-driven corrections via
+ * BrowserFeedbackAdapter. Tags are converted to a feedback message,
+ * the adapter produces a structured patch, and the patch is applied
+ * to the existing design spec.
  *
  * Body: { tags: [{ nodeId: string, feedback: string }] }
- * Returns: { iteration, mechanicalIssues, patchesApplied }
+ * Returns: { iteration, patchesApplied, reasoning }
  */
 export async function POST(
   request: NextRequest,
@@ -50,7 +51,6 @@ export async function POST(
 ) {
   const { pageId } = await params;
 
-  // ── Parse body ──
   let body: { tags?: FeedbackTag[] };
   try {
     body = (await request.json()) as { tags?: FeedbackTag[] };
@@ -66,7 +66,6 @@ export async function POST(
     );
   }
 
-  // Validate tag structure
   for (const tag of tags) {
     if (typeof tag.nodeId !== 'string' || typeof tag.feedback !== 'string') {
       return NextResponse.json(
@@ -76,7 +75,6 @@ export async function POST(
     }
   }
 
-  // ── Look up the page ──
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
   const pages = pagesFile?.pages ?? [];
   const idx = pages.findIndex((p) => p.id === pageId);
@@ -87,7 +85,6 @@ export async function POST(
 
   const page = pages[idx];
 
-  // ── Check iteration limit ──
   const currentIteration = page.correctionIteration ?? 0;
   if (currentIteration >= MAX_CORRECTION_ITERATIONS) {
     return NextResponse.json(
@@ -99,7 +96,6 @@ export async function POST(
     );
   }
 
-  // ── Read existing design spec ──
   const specContent = readTextFile(`agentforge/designs/${pageId}.json`);
   if (specContent === null) {
     return NextResponse.json(
@@ -108,9 +104,9 @@ export async function POST(
     );
   }
 
-  let spec: Record<string, unknown>;
+  let spec: DesignSpecV2;
   try {
-    spec = JSON.parse(specContent);
+    spec = JSON.parse(specContent) as DesignSpecV2;
   } catch {
     return NextResponse.json(
       { error: 'Design spec is not valid JSON' },
@@ -118,108 +114,91 @@ export async function POST(
     );
   }
 
-  // ── Set designStatus to 'correction' ──
+  const claude = getClaudeProvider();
+  if (!claude) {
+    return NextResponse.json({ error: NO_CLAUDE_AUTH_ERROR }, { status: 503 });
+  }
+
   pages[idx].designStatus = 'correction';
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
-  // ── Try to run the correction pipeline ──
-  let pipelineAvailable = false;
-  let pipelineError: string | null = null;
-  let patchesApplied = 0;
-  let mechanicalIssues: string[] = [];
+  const feedbackMessage = tags
+    .map((t) => `[${t.nodeId}]: ${t.feedback}`)
+    .join('\n');
 
   try {
-    // Dynamic import that bypasses webpack static analysis so the dashboard
-    // can build even when @agentforge/agents-ux or its transitive deps are
-    // not fully resolved at compile time.
-    const moduleName = '@agentforge/agents-ux';
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    const agentsUx = await (new Function('m', 'return import(m)') as (m: string) => Promise<Record<string, unknown>>)(moduleName);
-    const { createBrowserCorrectionAdapter, runBrowserCorrectionPipeline } = agentsUx;
+    const adapter = new BrowserFeedbackAdapter(claude.provider as unknown as LLMProviderRef);
+    const reviewResult = await adapter.reviewDesign(spec, `Fix these issues:\n${feedbackMessage}`);
 
-    if (typeof createBrowserCorrectionAdapter !== 'function' || typeof runBrowserCorrectionPipeline !== 'function') {
-      pipelineError =
-        'Vision correction pipeline functions are not callable. ' +
-        'The @agentforge/agents-ux package may need to be rebuilt.';
-    } else {
-      pipelineAvailable = true;
-      // The full pipeline requires runtime dependencies:
-      // - LLMProvider instance (needs API keys)
-      // - BrowserSession from @agentforge/designspec-renderer (needs Playwright)
-      // - RendererTokens and CatalogMap
-      //
-      // In the dashboard context these are not yet wired. We apply the user
-      // feedback tags as simple spec patches (nodeId -> feedback as annotation)
-      // and increment the iteration counter so the UI can track progress.
-      //
-      // TODO: Wire LLM provider + browser session for full vision correction.
-      pipelineError =
-        'Full vision correction pipeline requires runtime dependencies not yet available in the dashboard: ' +
-        'LLMProvider (API key configuration), Playwright BrowserSession, RendererTokens, and CatalogMap. ' +
-        'Applying user tags as annotations instead.';
-    }
-  } catch {
-    pipelineError =
-      'Could not import @agentforge/agents-ux. The package may not be built or linked. ' +
-      'Applying user tags as annotations instead.';
-  }
+    let patchesApplied = 0;
+    let reasoning = '';
 
-  // ── Apply user tags as annotations on the spec ──
-  // Even without the full LLM pipeline, we record the tags on the spec nodes
-  // so the renderer can display them and they persist across sessions.
-  const nodes = spec.nodes as Record<string, Record<string, unknown>> | undefined;
-  if (nodes && typeof nodes === 'object') {
-    for (const tag of tags) {
-      const node = nodes[tag.nodeId];
-      if (node) {
-        // Store user feedback as annotation metadata
-        if (!node._userFeedback) {
-          node._userFeedback = [];
+    if (reviewResult.ok) {
+      const updatedSpec = adapter.applyPatch(spec, reviewResult.value);
+      patchesApplied = Object.keys(reviewResult.value.patches).length;
+      reasoning = reviewResult.value.reasoning;
+
+      const nodes = updatedSpec.nodes as unknown as Record<string, Record<string, unknown>>;
+      for (const tag of tags) {
+        const node = nodes[tag.nodeId];
+        if (node) {
+          if (!node._userFeedback) {
+            node._userFeedback = [];
+          }
+          (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
+            feedback: tag.feedback,
+            iteration: currentIteration + 1,
+          });
         }
-        (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
-          feedback: tag.feedback,
-          iteration: currentIteration + 1,
-        });
-        patchesApplied++;
       }
+
+      const projectRoot = getActiveProjectRoot();
+      const designsDir = join(projectRoot, 'agentforge', 'designs');
+      if (!existsSync(designsDir)) {
+        mkdirSync(designsDir, { recursive: true });
+      }
+      writeFileSync(
+        join(designsDir, `${pageId}.json`),
+        JSON.stringify(updatedSpec, null, 2),
+        'utf-8',
+      );
+    } else {
+      const errMsg = 'message' in reviewResult.error ? reviewResult.error.message : String(reviewResult.error);
+      const newIteration = currentIteration + 1;
+      pages[idx].correctionIteration = newIteration;
+      pages[idx].designStatus = 'rendered';
+      writeYamlFile('agentforge/spec/pages.yaml', { pages });
+
+      return NextResponse.json({
+        iteration: newIteration,
+        maxIterations: MAX_CORRECTION_ITERATIONS,
+        patchesApplied: 0,
+        tagsReceived: tags.length,
+        error: errMsg,
+      }, { status: 502 });
     }
+
+    const newIteration = currentIteration + 1;
+    pages[idx].correctionIteration = newIteration;
+    pages[idx].designStatus = 'rendered';
+    writeYamlFile('agentforge/spec/pages.yaml', { pages });
+
+    return NextResponse.json({
+      iteration: newIteration,
+      maxIterations: MAX_CORRECTION_ITERATIONS,
+      patchesApplied,
+      tagsReceived: tags.length,
+      reasoning,
+    });
+  } catch (err) {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    pages[idx].designStatus = 'rendered';
+    pages[idx].correctionIteration = (page.correctionIteration ?? 0) + 1;
+    writeYamlFile('agentforge/spec/pages.yaml', { pages });
+
+    return NextResponse.json(
+      { error: `Correction pipeline failed: ${errMessage}` },
+      { status: 500 },
+    );
   }
-
-  // ── Write updated spec ──
-  const projectRoot = getActiveProjectRoot();
-  const designsDir = join(projectRoot, 'agentforge', 'designs');
-  if (!existsSync(designsDir)) {
-    mkdirSync(designsDir, { recursive: true });
-  }
-  writeFileSync(
-    join(designsDir, `${pageId}.json`),
-    JSON.stringify(spec, null, 2),
-    'utf-8',
-  );
-
-  // ── Increment correction iteration ──
-  const newIteration = currentIteration + 1;
-  pages[idx].correctionIteration = newIteration;
-  pages[idx].designStatus = 'rendered';
-  writeYamlFile('agentforge/spec/pages.yaml', { pages });
-
-  // ── Response ──
-  const response: Record<string, unknown> = {
-    iteration: newIteration,
-    maxIterations: MAX_CORRECTION_ITERATIONS,
-    mechanicalIssues,
-    patchesApplied,
-    tagsReceived: tags.length,
-  };
-
-  if (pipelineError) {
-    response.pipelineNote = pipelineError;
-  }
-
-  if (!pipelineAvailable) {
-    // Pipeline not available but we still applied annotations — return 200
-    return NextResponse.json(response);
-  }
-
-  return NextResponse.json(response);
 }

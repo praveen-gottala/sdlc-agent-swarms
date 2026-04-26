@@ -177,8 +177,9 @@ describeIfLLM('Backfill navigates_to for stale apps', () => {
         if (!result.ok) return;
 
         const parsed = parseAppSpecResponse((result.value as { content: string }).content);
-        expect(parsed).not.toBeNull();
-        llmPages = parsed!.pages;
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        llmPages = parsed.value.pages;
 
         // Merge navigates_to into existing pages
         const llmPageMap = new Map(llmPages.map(p => [p.id, p]));

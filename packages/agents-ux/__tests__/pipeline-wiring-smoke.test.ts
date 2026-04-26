@@ -112,7 +112,7 @@ const BOOKSHELF_BRAND: BrandSpec = {
 
 const CANNED_RESEARCH = JSON.stringify({
   briefId: 'brief-smoke-001',
-  moduleId: 'bookshelf-home',
+  moduleId: 'home',
   requirementIds: ['req-1'],
   designConstraints: ['Must show book covers'],
   referencePatterns: ['Card grid for books'],
@@ -122,7 +122,7 @@ const CANNED_RESEARCH = JSON.stringify({
 
 const CANNED_PLANNING = JSON.stringify({
   specRef: 'spec-smoke-001',
-  moduleId: 'bookshelf-home',
+  moduleId: 'home',
   componentTree: [
     { name: 'BookGrid', props: ['books'], children: [{ name: 'BookCard', props: ['title', 'author'] }] },
   ],
@@ -193,7 +193,7 @@ describe('Pipeline wiring smoke test', () => {
     const context = createMockContext();
 
     const input: UXResearchInput = {
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
       designTokensSpec: BOOKSHELF_TOKENS,
@@ -213,7 +213,7 @@ describe('Pipeline wiring smoke test', () => {
     const context = createMockContext();
 
     const input: UXResearchInput = {
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       prdRequirements: ['home', BOOKSHELF_PRD],
       designTokensSpec: BOOKSHELF_TOKENS,
@@ -239,7 +239,7 @@ describe('Pipeline wiring smoke test', () => {
     const researchOutput = JSON.parse(CANNED_RESEARCH);
     const input: UXPlanningInput = {
       briefId: researchOutput.briefId,
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       designBrief: researchOutput,
     };
@@ -262,7 +262,7 @@ describe('Pipeline wiring smoke test', () => {
 
     const input: PenpotDesignInput = {
       specRef: planningOutput.specRef,
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       planningOutput,
       description: 'BookShelf home page',
@@ -287,7 +287,7 @@ describe('Pipeline wiring smoke test', () => {
 
     const input: PenpotDesignInput = {
       specRef: planningOutput.specRef,
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       planningOutput,
       description: 'BookShelf home page',
@@ -307,7 +307,7 @@ describe('Pipeline wiring smoke test', () => {
     const context = createMockContext();
 
     const input: UXResearchInput = {
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       prdRequirements: [],
     };
@@ -326,7 +326,7 @@ describe('Pipeline wiring smoke test', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const input: UXResearchInput = {
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       prdRequirements: ['home'],
       designTokensSpec: BOOKSHELF_TOKENS,
@@ -346,11 +346,11 @@ describe('Pipeline wiring smoke test', () => {
 
     const input: PenpotDesignInput = {
       specRef: 'spec-001',
-      moduleId: 'bookshelf-home',
+      moduleId: 'home',
       taskId: 'smoke-001',
       planningOutput: {
         specRef: 'spec-001',
-        moduleId: 'bookshelf-home',
+        moduleId: 'home',
         componentTree: [],
         tokenBindings: {},
         responsiveRules: [],

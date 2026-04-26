@@ -1,3 +1,8 @@
+// App Spec Generation (Stage 1 unification — Task 4.1)
+export type { GeneratedAppSpec, GeneratedPage, GeneratedModel, GeneratedEndpoint } from './app-spec/index.js';
+export type { GenerateAppSpecInput, AppSpecError, AppSpecProvider, AppSpecPromptContext } from './app-spec/index.js';
+export { generateAppSpec, parseAppSpecResponse, GeneratedAppSpecSchema, buildAppSpecSystemPrompt, buildAppSpecUserPrompt } from './app-spec/index.js';
+
 // Agent output Zod schemas
 export {
   UXResearchOutputSchema,

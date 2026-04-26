@@ -1,12 +1,12 @@
 /**
  * @module @agentforge/agents-ux/ux-design/design-evaluator
  *
- * Evaluates Figma design screenshots against specifications using vision LLM.
+ * Evaluates design screenshots against specifications using vision LLM.
  * Part of the visual self-correction loop.
  */
 
 import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
-import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, recordPromptTrace, recordPromptTraceResponse, safeParse } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, recordPromptTrace, recordPromptTraceResponse, safeParse, debugLog } from '@agentforge/core';
 import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
 import type { LLMProvider, ContentBlock } from '@agentforge/providers';
@@ -134,10 +134,14 @@ Respond ONLY with a JSON object:
 }`;
 
 /**
- * Evaluate a Figma design screenshot against a specification.
+ * Evaluate a design screenshot against a specification.
  *
  * @param screenshotBase64 - Base64-encoded PNG of the design
- * @param designSpec - Text description of what the design should contain
+ * @param designSpec - JSON-serialized design specification. Callers typically pass
+ *   `JSON.stringify(spec)` where `spec` is a `DesignSpecV2` object, or
+ *   `JSON.stringify(planning)` where `planning` is a `UXPlanningOutput` object.
+ *   The evaluator uses this as context for the vision LLM — it does not parse
+ *   the JSON structurally (except for navigateTo compliance checking).
  * @param provider - LLM provider with vision support
  * @param correctionHistory - Previous correction attempts (so evaluator can detect persistent issues)
  * @param designTokens - Optional project design tokens for token compliance validation
@@ -154,6 +158,10 @@ export async function evaluateDesign(
   traceStage?: string,
   options?: EvaluateDesignOptions,
 ): Promise<Result<DesignEvaluation>> {
+  if (designSpec && !designSpec.startsWith('{')) {
+    debugLog('evaluateDesign: designSpec does not appear to be JSON — evaluation context may be degraded');
+  }
+
   if (!isVisionLLMEnabled()) {
     return Ok({
       score: 0,

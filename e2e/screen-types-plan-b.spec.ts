@@ -56,9 +56,9 @@ async function waitForRendererReady(page: Page, timeoutMs = 90_000): Promise<voi
 }
 
 const PAGES_YAML_PATH = join(PET_ROOT, 'agentforge/spec/pages.yaml');
-const PREVIEWS_DIR = join(PET_ROOT, '.agentforge/previews');
+const DESIGNS_DIR = join(PET_ROOT, 'agentforge/designs');
 const AGENTFORGE_DIR = join(PET_ROOT, 'agentforge');
-const SHARED_CHROME_PATH = join(AGENTFORGE_DIR, 'shared-chrome.json');
+const SHARED_CHROME_PATH = join(DESIGNS_DIR, 'shared-chrome.json');
 
 interface PageEntry {
   id: string;
@@ -81,13 +81,13 @@ function readPrototypeManifest(): {
   screens: Array<{ screenId: string; name: string; specPath: string }>;
   navigation: Array<{ sourceScreenId: string; targetScreenId: string; sourceNodeId: string; mode?: string }>;
 } | null {
-  const p = join(AGENTFORGE_DIR, 'prototype.json');
+  const p = join(DESIGNS_DIR, 'prototype.json');
   if (!existsSync(p)) return null;
   return JSON.parse(readFileSync(p, 'utf-8'));
 }
 
 function readDesignSpec(pageId: string): { nodes: Record<string, { parent: string | null; catalog?: string; navigateTo?: string; order: number }> } | null {
-  const path = join(PREVIEWS_DIR, `bookshelf-${pageId}`, 'scripts', 'designspec-v2.json');
+  const path = join(DESIGNS_DIR, pageId, 'scripts', 'designspec-v2.json');
   if (!existsSync(path)) return null;
   return JSON.parse(readFileSync(path, 'utf-8'));
 }
@@ -100,11 +100,11 @@ function readSharedChromeForSpecs(): { regions: Record<string, string[]> } | nul
   return JSON.parse(readFileSync(p, 'utf-8')) as { regions: Record<string, string[]> };
 }
 
-function listBookshelfPageIds(): string[] {
-  if (!existsSync(PREVIEWS_DIR)) return [];
-  return readdirSync(PREVIEWS_DIR)
-    .filter((d) => d.startsWith('bookshelf-'))
-    .map((d) => d.slice('bookshelf-'.length));
+function listDesignedPageIds(): string[] {
+  if (!existsSync(DESIGNS_DIR)) return [];
+  return readdirSync(DESIGNS_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith('__') && !d.name.startsWith('.'))
+    .map((d) => d.name);
 }
 
 function compactNodeId(id: string): string {
@@ -209,7 +209,7 @@ test.describe('Plan B — Phase B0b: navigateTo propagation @b0b', () => {
     if (!spec) {
       testInfo.skip(
         true,
-        'Run agentforge design:page:all for personal-expense-tracker to generate .agentforge/previews (gitignored).',
+        'Run agentforge design:page:all for personal-expense-tracker to generate agentforge/designs artifacts.',
       );
       return;
     }
@@ -318,7 +318,7 @@ test.describe('Plan B — Phase B1: Chrome Pass @b1', () => {
     if (!dashSpec || !addSpec) {
       testInfo.skip(
         true,
-        'Missing bookshelf-*/scripts/designspec-v2.json under .agentforge/previews (run design:page:all).',
+        'Missing */scripts/designspec-v2.json under agentforge/designs (run design:page:all).',
       );
       return;
     }
@@ -569,9 +569,9 @@ test.describe('Plan B — Phase B2.5: spec invariants @b2.5-spec-invariants', ()
     {},
     testInfo,
   ) => {
-    const ids = listBookshelfPageIds();
+    const ids = listDesignedPageIds();
     if (ids.length === 0) {
-      testInfo.skip(true, 'Missing .agentforge/previews — run design:page:all for PET');
+      testInfo.skip(true, 'Missing agentforge/designs — run design:page:all for PET');
       return;
     }
     const { pages } = readPagesYaml();
@@ -606,9 +606,9 @@ test.describe('Plan B — Phase B2.5: spec invariants @b2.5-spec-invariants', ()
       testInfo.skip(true, 'No shared-chrome.json or shared-chrome.e2e.json for PET');
       return;
     }
-    const ids = listBookshelfPageIds();
+    const ids = listDesignedPageIds();
     if (ids.length === 0) {
-      testInfo.skip(true, 'Missing .agentforge/previews — run design:page:all for PET');
+      testInfo.skip(true, 'Missing agentforge/designs — run design:page:all for PET');
       return;
     }
     const chromeIds = [

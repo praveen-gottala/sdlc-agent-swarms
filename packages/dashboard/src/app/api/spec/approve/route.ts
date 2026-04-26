@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
           status: 'draft',
           designStatus: 'draft',
           components: p.components ?? [],
-          dataSources: p.dataSources ?? [],
+          data_sources: (p as Record<string, unknown>).data_sources ?? p.dataSources ?? [],
           screen_type: screenType,
         };
         if (Array.isArray(p.navigates_to) && p.navigates_to.length > 0) {

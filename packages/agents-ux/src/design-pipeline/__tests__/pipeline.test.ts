@@ -157,7 +157,7 @@ describe('runDesignPipeline', () => {
     const input = createInput({ resume: true });
 
     // Write cached research artifact
-    const cacheDir = join(input.projectRoot, '.agentforge/previews/test-page');
+    const cacheDir = join(input.projectRoot, 'agentforge/designs/test-page');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'research-brief.json'), JSON.stringify({
       briefId: 'cached',
@@ -184,7 +184,7 @@ describe('runDesignPipeline', () => {
     const input = createInput({ resume: true });
 
     // Write legacy research artifact
-    const cacheDir = join(input.projectRoot, '.agentforge/previews/test-page');
+    const cacheDir = join(input.projectRoot, 'agentforge/designs/test-page');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'research-brief.json'), JSON.stringify({ brief: 'some legacy research content' }));
 
@@ -207,7 +207,7 @@ describe('runDesignPipeline', () => {
 
     const input = createInput({ resume: true });
 
-    const cacheDir = join(input.projectRoot, '.agentforge/previews/test-page');
+    const cacheDir = join(input.projectRoot, 'agentforge/designs/test-page');
     mkdirSync(cacheDir, { recursive: true });
     // Write canonical research so research stage is skipped
     writeFileSync(join(cacheDir, 'research-brief.json'), JSON.stringify({ briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] }));
@@ -232,7 +232,7 @@ describe('runDesignPipeline', () => {
     const input = createInput({ stage: 'design' });
 
     // Write cached research + planning
-    const cacheDir = join(input.projectRoot, '.agentforge/previews/test-page');
+    const cacheDir = join(input.projectRoot, 'agentforge/designs/test-page');
     mkdirSync(cacheDir, { recursive: true });
     writeFileSync(join(cacheDir, 'research-brief.json'), JSON.stringify({ briefId: 'cached', moduleId: 'test-page', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] }));
     writeFileSync(join(cacheDir, 'planning-spec.json'), JSON.stringify({ specRef: 'cached', moduleId: 'test-page', componentTree: [], tokenBindings: {}, responsiveRules: [] }));
@@ -255,7 +255,7 @@ describe('runDesignPipeline', () => {
     const input = createInput();
     await runDesignPipeline(input);
 
-    const cachedResearch = JSON.parse(readFileSync(join(input.projectRoot, '.agentforge/previews/test-page/research-brief.json'), 'utf-8'));
+    const cachedResearch = JSON.parse(readFileSync(join(input.projectRoot, 'agentforge/designs/test-page/research-brief.json'), 'utf-8'));
     expect(cachedResearch.briefId).toBe('p');
   });
 });

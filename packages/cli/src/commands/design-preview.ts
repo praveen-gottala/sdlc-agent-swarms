@@ -60,15 +60,15 @@ export async function designPreviewCommand(
   }
 
   // Load spec files
-  const pagesResult = readYaml<{ pages?: readonly GeneratedAppSpec['pages'][number][] }>(
+  const pagesResult = readYaml<{ pages?: GeneratedAppSpec['pages'][number][] }>(
     path.join(rootDir, 'agentforge', 'spec', 'pages.yaml'),
     fileSystem,
   );
-  const modelsResult = readYaml<{ models?: readonly GeneratedAppSpec['models'][number][] }>(
+  const modelsResult = readYaml<{ models?: GeneratedAppSpec['models'][number][] }>(
     path.join(rootDir, 'agentforge', 'spec', 'models.yaml'),
     fileSystem,
   );
-  const apiResult = readYaml<{ endpoints?: readonly GeneratedAppSpec['endpoints'][number][] }>(
+  const apiResult = readYaml<{ endpoints?: GeneratedAppSpec['endpoints'][number][] }>(
     path.join(rootDir, 'agentforge', 'spec', 'api.yaml'),
     fileSystem,
   );

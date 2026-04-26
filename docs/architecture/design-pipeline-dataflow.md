@@ -21,10 +21,74 @@
                                                                   ▼
  ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────────┐
  │  Stage 7 │    │   Stage 6    │    │   Stage 5    │    │    Stage 4    │
- │  Output  │◀───│Implementation│◀───│  Feedback    │◀───│Design Agent   │
- │  Files   │    │    Agent     │    │    Loop      │    │  (Penpot)     │
+ │  Output  │◀───│Implementation│◀───│  Feedback    │◀───│ Design Agent  │
+ │  Files   │    │    Agent     │    │    Loop      │    │(browser|penpot)│
  └──────────┘    └──────────────┘    └──────────────┘    └───────────────┘
 ```
+
+**Orchestrated by `runDesignPipeline()`** in
+`packages/agents-ux/src/design-pipeline/pipeline.ts` — single entry point
+for both CLI and dashboard. Data flows left-to-right, top-to-bottom. Each
+stage produces artifacts consumed by downstream stages. See ADR-046.
+
+---
+
+## Channels and Callers (Three-Layer Architecture)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Layer C — Transport Callers                                 │
+│                                                              │
+│  CLI design:page.ts ──────┐                                  │
+│  CLI design-page-all.ts ──┤── PipelineInput ──┐              │
+│  Dashboard design/route.ts┘                   │              │
+│                                               ▼              │
+│  ┌────────────────────────────────────────────────────────┐   │
+│  │  Layer B — Orchestrator: runDesignPipeline()           │   │
+│  │                                                        │   │
+│  │  Sequential: research → planning → design → evaluator  │   │
+│  │  Caching: per-stage JSON artifacts for resume           │   │
+│  │  Telemetry: PipelineTelemetrySink callbacks             │   │
+│  │  Dispatch: designTool → browserDesignWork | penpotWork  │   │
+│  └────────────────────────────────────────────────────────┘   │
+│                         │                                     │
+│                         ▼                                     │
+│  ┌────────────────────────────────────────────────────────┐   │
+│  │  Layer A — Work Functions (pure agent logic)           │   │
+│  │                                                        │   │
+│  │  uxResearchWork()    — typed UXResearchOutput           │   │
+│  │  uxPlanningWork()    — typed UXPlanningOutput            │   │
+│  │  browserDesignWork() — DesignSpecV2 via submit_design    │   │
+│  │  penpotDesignWork()  — DesignSpecV2 via Penpot scripts   │   │
+│  │  evaluateDesign()    — vision LLM evaluation             │   │
+│  └────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Caller | Entry point | `designTool` | Sink |
+|--------|-------------|------------|------|
+| CLI `design:page` | `design-page.ts` | CLI flag `--tool` (default `browser`) | `CliStdoutSink` |
+| CLI `design:page:all` | `design-page-all.ts` | CLI flag (default `browser`) | `CliStdoutSink` |
+| Dashboard full pipeline | `design/route.ts` | Hardcoded `'browser'` | `DashboardSseSink` |
+
+Both paths call `runDesignPipeline(input: PipelineInput)` from
+`@agentforge/agents-ux`. Transport code never calls work functions directly.
+
+### Chrome Pass (`chromePass` field on `PipelineInput`)
+
+```typescript
+chromePass?: {
+  mode: 'generate' | 'consume';
+  spec?: DesignSpecV2;       // when mode='consume': frozen chrome to inject
+  activePageId?: string;     // when mode='consume': page ID for active tab state
+}
+```
+
+- `mode: 'generate'` — reference page produces shared chrome spec.
+- `mode: 'consume'` — subsequent pages receive frozen chrome to inject.
+- Used by `design-page-all.ts` for cross-screen chrome consistency.
+
+---
 
 **Data flows left-to-right, top-to-bottom.** Each stage produces artifacts
 consumed by downstream stages. The pipeline is orchestrated by the CLI
@@ -216,9 +280,10 @@ typography_scale:
 ┌──────────────────────────────────────────────────────────────────────┐
 │                     DESIGN:GENERATE COMMAND                          │
 │                                                                      │
-│  Source: packages/cli/src/commands/design-generate.ts                 │
-│  Preview: packages/cli/src/preview/app-spec-preview.ts               │
-│  Entry:  designGenerateCommand(rootDir, fileSystem, input, output)    │
+│  Shared:  packages/agents-ux/src/app-spec/generate-app-spec.ts        │
+│  CLI:     packages/cli/src/commands/design-generate.ts                │
+│  Dashboard: packages/dashboard/src/app/api/spec/generate/route.ts    │
+│  Entry:  generateAppSpec(input) → Result<GeneratedAppSpec>            │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
 │  │                     INPUT                                       │  │
@@ -233,7 +298,7 @@ typography_scale:
 │                    │   LLM Call  │                                    │
 │                    │ Sonnet 4.6  │                                    │
 │                    │ temp=0.7    │                                    │
-│                    │ 8192 tokens │                                    │
+│                    │ 16384 tokens│                                    │
 │                    └──────┬──────┘                                    │
 │                           │                                          │
 │              ┌────────────┼────────────┐                             │
@@ -459,7 +524,25 @@ The planning agent defines a 4-stage implementation plan:
 
 ---
 
-## Stage 4: Design Agent (Penpot) — 3-Phase Pipeline
+## Stage 4: Design Agent (browser | penpot)
+
+The design stage dispatches based on `designTool` in `PipelineInput`:
+
+```
+designNode(state, ctx)
+  │
+  ├── designTool === 'browser' → browserDesignWork()
+  │     Source: packages/agents-ux/src/design-pipeline/browser-design-work.ts
+  │     LLM → submit_design tool-use → DesignSpecV2 JSON
+  │     Handles: Chrome Pass injection, screen_type/viewport, navigateTo
+  │     Retry: empty-node retry on malformed LLM output
+  │
+  └── designTool === 'penpot' → penpotDesignWork()
+        Source: packages/agents-ux/src/ux-design/ux-penpot-design.ts
+        LLM → Penpot script → execute → screenshot → self-correct
+```
+
+### Penpot Path — 3-Phase Pipeline
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -800,47 +883,42 @@ shared utilities.
 │  Entry:  designPageCommand(pageId, output, options)                  │
 │                                                                      │
 │  Options:                                                            │
-│    --stage research|planning|design|replay|connect                   │
-│    --module <id>                                                     │
+│    --stage research|planning|design                                  │
+│    --tool  browser|penpot  (default: browser)                        │
 │    --width <px>  (default: 1440)                                     │
 │    --no-wait     (exit after design, skip feedback)                  │
 │    --implement   (skip feedback, generate code directly)             │
-│    --mock        (mock MCP + mock LLM: zero-cost instant replay)      │
 │    --project-dir (resolve paths against this dir, not cwd)           │
 │    --fresh       (force re-run all stages, ignore cache)             │
 │                                                                      │
 │  Execution Flow:                                                     │
 │                                                                      │
 │  1. Setup                                                            │
-│     ├─ Load .env (ANTHROPIC_API_KEY — skipped when --mock)           │
+│     ├─ Load .env (ANTHROPIC_API_KEY)                                 │
 │     ├─ Load pages.yaml → resolve pageId → build PageContext          │
 │     │  (filters models/api to page data_sources, sibling nav)        │
-│     ├─ Use page.id as moduleId (ignore --module when resolved)       │
+│     ├─ Use page.id as moduleId                                       │
 │     ├─ Load project manifest                                         │
 │     ├─ Load PRD (docs/prd.md)                                        │
 │     └─ Load design system (tokens, brand, catalog)                   │
 │                                                                      │
-│  2. Connection Preflight                                             │
-│     └─ ensureDesignToolConnection('penpot')                          │
-│        └─ Connect to Penpot MCP server, validate tools               │
+│  2. Build PipelineInput + resolve provider                           │
+│     └─ designTool from --tool flag (default: 'browser')              │
+│     └─ Connection preflight only when --tool=penpot                  │
 │                                                                      │
-│  3. Research (auto-reuse cache if exists, or run fresh)               │
-│     └─ uxResearchWork() → save research-brief.json                   │
-│     └─ --fresh bypasses cache and re-runs from scratch               │
+│  3. runDesignPipeline(pipelineInput)                                  │
+│     ├─ Research (auto-reuse cache or run fresh)                      │
+│     ├─ Planning (auto-reuse cache or run fresh)                      │
+│     ├─ Design (dispatches on designTool)                             │
+│     │  └─ browser: browserDesignWork() → designspec-v2.json          │
+│     │  └─ penpot:  penpotDesignWork()  → penpot-design.json          │
+│     └─ Evaluator (vision LLM, gated by AGENTFORGE_ENABLE_VISION_LLM)│
 │                                                                      │
-│  4. Planning (auto-reuse cache if exists, or run fresh)              │
-│     └─ uxPlanningWork() → save planning-spec.json                    │
-│     └─ --fresh bypasses cache and re-runs from scratch               │
-│                                                                      │
-│  5. Design (or replay/connect)                                       │
-│     └─ penpotDesignWork() → save penpot-design.json + scripts/       │
-│                                                                      │
-│  6. Post-Design                                                      │
+│  4. Post-Pipeline                                                    │
 │     ├─ --implement: uxImplementationWork() → generated files         │
-│     └─ interactive: runDesignFeedbackLoop()                          │
-│        ├─ createPenpotCollaborationSession()                         │
-│        ├─ createPenpotReviewCallback()                               │
-│        └─ user commands: approve/quit/review/implement/feedback      │
+│     └─ interactive: FeedbackAdapter loop                             │
+│        ├─ browser: BrowserFeedbackAdapter (single-shot LLM patch)    │
+│        └─ penpot:  PenpotFeedbackAdapter (collaboration session)     │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -964,7 +1042,7 @@ ImplementationDraftReady
 | Stage | Agent | Model | Max Tokens | Temp | Mode |
 |-------|-------|-------|-----------|------|------|
 | 0 | Design Options | claude-sonnet-4-6 | 8192 | 0.8 | complete |
-| 1 | App Spec | claude-sonnet-4-6 | 8192 | 0.7 | complete |
+| 1 | App Spec | claude-sonnet-4-6 | 16384 | 0.7 | complete |
 | 2 | Research | claude-sonnet-4-6 | 8000 | 0 | complete |
 | 3 | Planning | claude-sonnet-4-6 | 8000 | 0 | structured |
 | 3 | Token Correction | claude-sonnet-4-6 | 2000 | 0 | complete |

@@ -1,0 +1,148 @@
+{
+  "version": "1.0",
+  "projectName": "Personal Expense Tracker",
+  "screens": [
+    {
+      "screenId": "add-expense",
+      "name": "Add Expense",
+      "route": "/add",
+      "specPath": "agentforge/designs/add-expense/scripts/designspec-v2.json",
+      "isDefault": false
+    },
+    {
+      "screenId": "dashboard",
+      "name": "Dashboard",
+      "route": "/",
+      "specPath": "agentforge/designs/dashboard/scripts/designspec-v2.json",
+      "isDefault": true
+    },
+    {
+      "screenId": "spending-insights",
+      "name": "Spending Insights",
+      "route": "/insights",
+      "specPath": "agentforge/designs/spending-insights/scripts/designspec-v2.json",
+      "isDefault": false
+    }
+  ],
+  "navigation": [
+    {
+      "sourceScreenId": "add-expense",
+      "sourceNodeId": "top-bar-back-btn",
+      "targetScreenId": "dashboard",
+      "reason": "spec-driven: container navigates to dashboard",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "add-expense",
+      "sourceNodeId": "save-expense-btn",
+      "targetScreenId": "dashboard",
+      "reason": "spec-driven: container navigates to dashboard",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "add-expense",
+      "sourceNodeId": "home-tab",
+      "targetScreenId": "dashboard",
+      "reason": "spec-driven: container navigates to dashboard",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "add-expense",
+      "sourceNodeId": "add-expense-tab",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "add-expense",
+      "sourceNodeId": "insights-tab",
+      "targetScreenId": "spending-insights",
+      "reason": "spec-driven: container navigates to spending-insights",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "popover-edit-btn",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: button-secondary navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "home-tab",
+      "targetScreenId": "dashboard",
+      "reason": "spec-driven: container navigates to dashboard",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "add-expense-tab",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "insights-tab",
+      "targetScreenId": "spending-insights",
+      "reason": "spec-driven: container navigates to spending-insights",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-1",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-2",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-3",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-4",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-5",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "home-tab",
+      "targetScreenId": "dashboard",
+      "reason": "spec-driven: container navigates to dashboard",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "add-expense-tab",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: container navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "insights-tab",
+      "targetScreenId": "spending-insights",
+      "reason": "spec-driven: container navigates to spending-insights",
+      "mode": "navigate"
+    }
+  ]
+}

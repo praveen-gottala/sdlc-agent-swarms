@@ -2,7 +2,7 @@
  * @module @agentforge/cli/commands/design-list
  *
  * The `agentforge design:list` command.
- * Scans `.agentforge/previews/` for design artifacts and displays
+ * Scans `agentforge/designs/` for design artifacts and displays
  * a summary table with module ID, tool, stages completed, last modified,
  * and component count.
  */
@@ -194,7 +194,7 @@ function formatDesignTable(entries: readonly DesignEntry[]): string {
 
 /**
  * Execute the design:list command.
- * Scans .agentforge/previews/ and prints a summary table.
+ * Scans agentforge/designs/ and prints a summary table.
  */
 export async function designListCommand(
   output: NodeJS.WritableStream = process.stdout,

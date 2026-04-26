@@ -362,7 +362,7 @@ describe('design:page integration — stage replay', () => {
 
   it('--stage replay fails when no cached artifact has script field', async () => {
     const moduleId = 'test-app';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     // Write cached artifacts without script field
@@ -401,7 +401,7 @@ describe('design:page integration — stage replay', () => {
 
   it('--stage replay succeeds with cached script', async () => {
     const moduleId = 'replay-ok';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({ briefId: 'b1', moduleId }));
@@ -470,7 +470,7 @@ describe('design:page integration — stage connect', () => {
 
   it('--stage connect loads cached artifact and prints summary', async () => {
     const moduleId = 'connect-test';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({ briefId: 'b1', moduleId }));
@@ -509,7 +509,7 @@ describe('design:page integration — stage connect', () => {
 
   it('--stage connect fails when no cached artifact', async () => {
     const moduleId = 'connect-missing';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({ briefId: 'b1', moduleId }));
@@ -692,7 +692,7 @@ describe('design:page integration — --project-dir option', () => {
     writeFileSync(join(projectDir, 'agentforge', 'spec', 'brand.yaml'), yamlStringify(VALID_BRAND));
 
     // Pre-create cached artifacts so --stage replay works
-    const previewDir = join(projectDir, '.agentforge', 'previews', 'projdir-test');
+    const previewDir = join(projectDir, 'agentforge', 'designs', 'projdir-test');
     mkdirSync(previewDir, { recursive: true });
     writeFileSync(join(previewDir, 'research-brief.json'), JSON.stringify({ briefId: 'b1', moduleId: 'projdir-test' }));
     writeFileSync(join(previewDir, 'planning-spec.json'), JSON.stringify({
@@ -747,7 +747,7 @@ describe('design:page integration — --project-dir option', () => {
       projectDir: 'my-project',
     });
 
-    // Should find the cached artifacts in my-project/.agentforge/previews/
+    // Should find the cached artifacts in my-project/agentforge/designs/
     expect(out.output).toContain('replaying cached script');
     expect(out.output).toContain('REPLAY COMPLETE');
     expect(process.exitCode).toBeUndefined();
@@ -1053,7 +1053,7 @@ describe('design:page integration — cache reuse', () => {
 
   it('auto-reuses cached research and planning when artifacts exist', async () => {
     const moduleId = 'cache-reuse';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     // Write cached research and planning artifacts
@@ -1110,7 +1110,7 @@ describe('design:page integration — cache reuse', () => {
 
   it('--fresh forces re-run even when cached artifacts exist', async () => {
     const moduleId = 'fresh-test';
-    const previewDir = join(tmpDir, '.agentforge', 'previews', moduleId);
+    const previewDir = join(tmpDir, 'agentforge', 'designs', moduleId);
     mkdirSync(previewDir, { recursive: true });
 
     // Write cached research and planning artifacts

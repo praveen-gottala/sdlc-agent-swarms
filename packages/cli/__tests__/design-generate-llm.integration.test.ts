@@ -123,7 +123,9 @@ describeIfLLM('design:generate LLM integration (CRITICAL-1 validation)', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    spec = parseAppSpecResponse(result.value.content);
+    const parseResult = parseAppSpecResponse(result.value.content);
+    expect(parseResult.ok).toBe(true);
+    if (parseResult.ok) spec = parseResult.value;
   }, 120_000);
 
   it('produces a valid app spec with pages', () => {

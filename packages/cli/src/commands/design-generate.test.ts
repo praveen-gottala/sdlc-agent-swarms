@@ -1,3 +1,6 @@
+// Canonical parse/generate tests: packages/agents-ux/src/app-spec/generate-app-spec.test.ts
+// This file tests CLI-only concerns: preview HTML, designGenerateCommand flow.
+
 import {
   parseAppSpecResponse,
   generateAppSpecPreviewHtml,
@@ -65,6 +68,7 @@ const VALID_SPEC: GeneratedAppSpec = {
       components: ['HeroSection', 'BookGrid'],
       data_sources: ['Book'],
       viewports: [1440, 768],
+      screen_type: 'page',
     },
     {
       id: 'book-detail',
@@ -73,6 +77,7 @@ const VALID_SPEC: GeneratedAppSpec = {
       route: '/books/:id',
       components: ['BookInfo', 'ReviewList'],
       data_sources: ['Book', 'Review'],
+      screen_type: 'page',
     },
   ],
   models: [
@@ -169,69 +174,11 @@ const VALID_BRAND: BrandSpec = {
   accessibility: { wcag_level: 'AA' },
 };
 
-describe('parseAppSpecResponse', () => {
-  it('parses valid JSON spec', () => {
+describe('parseAppSpecResponse re-export', () => {
+  it('resolves and returns a Result', () => {
+    expect(typeof parseAppSpecResponse).toBe('function');
     const result = parseAppSpecResponse(JSON.stringify(VALID_SPEC));
-
-    expect(result).not.toBeNull();
-    expect(result!.pages).toHaveLength(2);
-    expect(result!.models).toHaveLength(1);
-    expect(result!.endpoints).toHaveLength(1);
-    expect(result!.pages[0].name).toBe('Home');
-  });
-
-  it('handles markdown code fences', () => {
-    const wrapped = '```json\n' + JSON.stringify(VALID_SPEC) + '\n```';
-    const result = parseAppSpecResponse(wrapped);
-
-    expect(result).not.toBeNull();
-    expect(result!.pages).toHaveLength(2);
-  });
-
-  it('returns null for empty pages', () => {
-    const spec = { ...VALID_SPEC, pages: [] };
-    const result = parseAppSpecResponse(JSON.stringify(spec));
-    expect(result).toBeNull();
-  });
-
-  it('returns null for invalid JSON', () => {
-    const result = parseAppSpecResponse('not json at all');
-    expect(result).toBeNull();
-  });
-
-  it('filters out pages missing required fields', () => {
-    const spec = {
-      ...VALID_SPEC,
-      pages: [
-        VALID_SPEC.pages[0],
-        { id: 'bad', name: '' } as never, // missing required fields
-      ],
-    };
-    const result = parseAppSpecResponse(JSON.stringify(spec));
-    expect(result).not.toBeNull();
-    expect(result!.pages).toHaveLength(1);
-  });
-
-  it('preserves viewports when present on pages', () => {
-    const result = parseAppSpecResponse(JSON.stringify(VALID_SPEC));
-    expect(result).not.toBeNull();
-    expect(result!.pages[0].viewports).toEqual([1440, 768]);
-  });
-
-  it('parses pages without viewports successfully', () => {
-    const result = parseAppSpecResponse(JSON.stringify(VALID_SPEC));
-    expect(result).not.toBeNull();
-    // Second page has no viewports
-    expect(result!.pages[1].viewports).toBeUndefined();
-  });
-
-  it('returns null when all models are invalid', () => {
-    const spec = {
-      ...VALID_SPEC,
-      models: [{ id: 'bad' } as never], // missing fields
-    };
-    const result = parseAppSpecResponse(JSON.stringify(spec));
-    expect(result).toBeNull();
+    expect(result.ok).toBe(true);
   });
 });
 
@@ -251,7 +198,7 @@ describe('generateAppSpecPreviewHtml', () => {
 
     expect(html).toContain('Nunito');
     expect(html).toContain('Open Sans');
-    expect(html).toContain('#0F6E56'); // deep-teal / cta
+    expect(html).toContain('#0F6E56');
   });
 
   it('includes all tabs', () => {
@@ -325,7 +272,6 @@ describe('designGenerateCommand', () => {
     let outputStr = '';
     output.on('data', (chunk: Buffer) => { outputStr += chunk.toString(); });
 
-    // Send '1' to select a fallback design option when prompted
     const input = new PassThrough();
     setTimeout(() => input.write('1\n'), 100);
 

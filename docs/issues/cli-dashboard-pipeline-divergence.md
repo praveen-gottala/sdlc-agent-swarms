@@ -2,11 +2,29 @@
 
 **Created:** 2026-04-24
 **Last updated:** 2026-04-24 (rev 2) — reconciled with spec-sync changes to `sdlc-agents.md`, `appendices.md`, `dashboard.md`, `governance-and-operations.md`, `platform-architecture.md`, and `PRD.md`. Key effects: (a) Figma is now formally removed across the specs (`sdlc-agents.md:249`, `appendices.md:250`, `governance-and-operations.md:137`); the shared-pipeline `designTool` enum is therefore `'browser' | 'penpot'` only. (b) Line citations into `sdlc-agents.md` updated for the doc's new length (Phase C: `:191-197` → `:221-227`; §11.1.4: `:213-217` → `:245-249`). (c) Browser-first framing is now the top-line language in §11.1.1 (`:67`) and explicit in `dashboard.md:400` ("source of truth for layout fidelity — not an optional tool"), which strengthens the Category-A reframing rather than weakening it.
-**Last updated (rev 1):** 2026-04-24 — reclassified each divergence as A/B/C/D after confirming browser-only is the PRD target and that the intended fix is a single shared pipeline parameterized by `designTool`. Stage 0 row corrected — dashboard does have an init entry point.
-**Status:** Open — affects active pipeline (design)
-**Severity:** Mixed — see the A/B/C/D classification below. Category B items are `CLAUDE.md` violations and block roadmap Phase 4 / ADR-043 Phase M-3. Category A items are intentional design choices missing a shared-layer extraction, not bugs.
+**Last updated:** 2026-04-26 (rev 3) — closed. All categories resolved via Unify Design Pipeline Phases 0-4.
+**Last updated (rev 2):** 2026-04-24 — reconciled with spec-sync.
+**Last updated (rev 1):** 2026-04-24 — reclassified each divergence as A/B/C/D.
+**Status:** Closed (2026-04-26)
+**Severity:** Resolved
 **Owner:** TBD
-**Related:** `docs/architecture/design-pipeline-dataflow.md`, `docs/issues/dashboard-pipeline-gap-analysis.md`, `docs/issues/design-pipeline-audit.md`, `docs/feature-plans/unify-design-pipeline.md` (proposed fix), `docs/adrs/ADR-043-typescript-only-orchestration.md`, `docs/specs/sdlc-agents.md` §11.1.1 + §11.1.2 Phase C + §11.1.4 (browser-only target), `docs/specs/dashboard.md` §4.10.4 (Browser Renderer card)
+**Related:** `docs/architecture/design-pipeline-dataflow.md`, `docs/issues/dashboard-pipeline-gap-analysis.md`, `docs/issues/design-pipeline-audit.md`, `docs/feature-plans/unify-design-pipeline.md`, `docs/adrs/ADR-043-typescript-only-orchestration.md`, ADR-046, ADR-047, ADR-048, ADR-049
+
+## Resolution (2026-04-26)
+
+All categories resolved via Unify Design Pipeline execution plan (Phases 0-4):
+
+- **Category A** (Stages 4, 6-channel, 7): Shared pipeline with `designTool: 'browser' | 'penpot'`
+  parameter. `BrowserFeedbackAdapter` for chat/correct. Stage 7 deferred (ADR-049).
+- **Category B** (Stages 1, 2, 3, 6-mechanism): Dashboard now calls `runDesignPipeline()`
+  and `generateAppSpec()`. `callPipelineStage` and `callClaudeDesignAPI` deleted.
+- **Category C** (Stage 0): `scaffoldProject` extracted to `packages/core/src/scaffolding/`.
+- **Category D** (Stage 5): `evaluateDesign` second-argument contract tightened (JSDoc).
+
+ADRs: ADR-046 (unified pipeline), ADR-047 (browser default), ADR-048 (feedback strategy),
+ADR-049 (Stage 7 deferral). Parity test: `packages/agents-ux/__tests__/artifact-shape-parity.test.ts`.
+
+---
 
 > **Framing note (new in rev 2):** per the revised agent taxonomy in `sdlc-agents.md:§10`, the Design pipeline is a **specialist tool** invoked by the Architect spine stage — not a top-level agent category. The stages this doc enumerates as "Stage 0" through "Stage 7" are the *internal* stages of that Design specialist. The CLI/dashboard divergence is therefore inside the Design specialist; the four-stage spine (Clarifier → Architect → Implementer → Reviewer) is unaffected by this analysis.
 

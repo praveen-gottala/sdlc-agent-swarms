@@ -15,13 +15,13 @@ The user will either (a) name the handoff-check doc directly, or (b) ask you to 
 
 ## Protocol — do these in order, do not skip
 
-### 1. Read the handoff-check doc — **Turn 1 and meta only (not the answer key yet)**
+### 1. Read the handoff-check questions file — **NOT the answer key**
 
-Read carefully: the preamble, **Turn 1** (the questions), **hard-fail / soft-fail triggers**, and **maintenance**. **Do not read the Turn 2 answer key block yet** — scroll past it or stop at the `## Turn 2` heading. If the file structure makes that awkward, open the file twice in spirit: first pass = everything before the embedded answer key.
+Read the handoff-check file (e.g. `docs/plans/<topic>-handoff-check.md`). This file contains Turn 1 questions, hard-fail/soft-fail triggers, and maintenance info. It does **not** contain the answer key.
 
-Why: the answer key exists to **grade** your answers in step 5, not to **supply** them in step 4. If you read Turn 2 before answering Turn 1, you are doing a closed-book exam with the cheat sheet visible — the self-audit becomes theater.
+The answer key lives in a separate file (`docs/plans/<topic>-handoff-key.md`). **Do not read the key file until step 5.** The key exists to grade your answers, not to supply them. Reading it before answering makes the self-audit theater.
 
-After step 5, read the rest of the handoff-check (Turn 2 key in full, anything you skipped) so you understand maintenance expectations.
+**Legacy single-file format:** If the handoff-check file contains both Turn 1 and Turn 2 (answer key embedded in the same file), disclose this immediately: "The answer key is embedded in the questions file. I have seen it. All answers in step 4 are potentially contaminated." Then proceed with the protocol, but in step 5 add `Inference risk: Q1–Qn possibly contaminated by pre-loaded Turn 2` to every question. This is a soft signal, not a blocker — but the handoff-check should be split into two files for future use.
 
 ### 2. Read the canonical docs, in a sensible order
 
@@ -60,6 +60,8 @@ Q<n>. <one-line answer>. Cite: <file> → <smallest anchor>.
 Do not look at the Turn 2 answer key yet — that's for self-audit in the next step. If you cannot answer a question without looking at the key, say "I could not answer this from the canonical docs alone" and name which doc you expected to cover it.
 
 ### 5. Self-audit against the Turn 2 answer key
+
+**Now** read the answer key file (`docs/plans/<topic>-handoff-key.md`). If the handoff used the legacy single-file format, re-read the Turn 2 section you already saw.
 
 For each question, grade honestly using the rubric in the handoff-check doc (PASS / PARTIAL / FAIL). For each non-PASS, classify:
 
@@ -139,7 +141,7 @@ If the user's first instruction after READY is unrelated to the handoff ("also, 
 ## Anti-theater guards
 
 - **No blind memory test on the incoming side.** The outgoing side already validated the docs via a blind subagent (if `prepare-handoff` was run correctly). Your job is comprehension, not recall. The Proof-of-read + Inference-risks sections are what catch skim-and-claim — they cannot be faked without actually reading.
-- **If you already "know" the answers** (because the handoff-check or canonical docs appear in your pre-loaded context via open editor tabs or auto-attached files): say so explicitly before step 3. "I appear to have these files pre-loaded; I will still produce verbatim quotes but note this may not be a clean blind." Then proceed. Hiding context leakage poisons the signal.
-- **If the full handoff-check (including Turn 2) is pre-loaded** — you cannot literally un-read the key. Disclose at the start. Still do Proof-of-read from canonical docs only. In step 5, grade honestly: if your step-4 answers likely matched the key because you saw it early, add `Inference risk: Q1–Qn possibly contaminated by pre-loaded Turn 2` and treat that as a soft signal, not a PASS parade.
+- **If you already "know" the answers** (because canonical docs appear in your pre-loaded context via open editor tabs or auto-attached files): say so explicitly before step 3. "I appear to have these files pre-loaded; I will still produce verbatim quotes but note this may not be a clean blind." Then proceed. Hiding context leakage poisons the signal.
+- **If the answer key file was pre-loaded or accidentally read early** — disclose at the start. Still do Proof-of-read from canonical docs only. In step 5, add `Inference risk: Q1–Qn possibly contaminated by pre-loaded answer key` and treat that as a soft signal, not a PASS parade. With the two-file format this should not happen unless the user or editor tabs pulled in both files.
 - **Do not edit any docs during this skill.** If you find errors in the handoff-check or canonical docs, include them in the NOT-READY list or under "minor issues to flag" in the READY block. Edits belong to a later turn after the user acknowledges.
 - **If the user says "go" before you complete the protocol**: explicitly re-confirm. "I haven't finished the READY gate yet — steps remaining: <list>. Proceed anyway, or should I complete the gate first?" Do not silently skip the gate.

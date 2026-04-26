@@ -36,14 +36,14 @@ describe('designListCommand', () => {
   });
 
   it('shows warning when previews directory is empty', async () => {
-    mkdirSync(join(tmpDir, '.agentforge', 'previews'), { recursive: true });
+    mkdirSync(join(tmpDir, 'agentforge', 'designs'), { recursive: true });
     const { stream, text } = createCapture();
     await designListCommand(stream, { projectRoot: tmpDir });
     expect(text()).toContain('No designs found');
   });
 
   it('lists a module with all three stages complete (figma)', async () => {
-    const previewsDir = join(tmpDir, '.agentforge', 'previews', 'cost-dashboard');
+    const previewsDir = join(tmpDir, 'agentforge', 'designs', 'cost-dashboard');
     mkdirSync(previewsDir, { recursive: true });
 
     // Stage 1: research
@@ -81,7 +81,7 @@ describe('designListCommand', () => {
   });
 
   it('lists a module with partial stages (penpot, planning only)', async () => {
-    const previewsDir = join(tmpDir, '.agentforge', 'previews', 'bookshelf');
+    const previewsDir = join(tmpDir, 'agentforge', 'designs', 'bookshelf');
     mkdirSync(previewsDir, { recursive: true });
 
     writeFileSync(
@@ -104,7 +104,7 @@ describe('designListCommand', () => {
   });
 
   it('lists multiple modules', async () => {
-    const previews = join(tmpDir, '.agentforge', 'previews');
+    const previews = join(tmpDir, 'agentforge', 'designs');
 
     const dirA = join(previews, 'module-a');
     mkdirSync(dirA, { recursive: true });
@@ -125,7 +125,7 @@ describe('designListCommand', () => {
   });
 
   it('detects penpot designs', async () => {
-    const previewsDir = join(tmpDir, '.agentforge', 'previews', 'penpot-mod');
+    const previewsDir = join(tmpDir, 'agentforge', 'designs', 'penpot-mod');
     mkdirSync(previewsDir, { recursive: true });
 
     writeFileSync(join(previewsDir, 'research-brief.json'), '{}');

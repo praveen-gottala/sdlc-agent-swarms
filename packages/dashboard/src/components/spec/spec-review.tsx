@@ -8,7 +8,7 @@ interface PageSpec {
   route: string;
   description: string;
   components: string[];
-  dataSources: string[];
+  data_sources: string[];
 }
 
 interface ModelSpec {
@@ -92,11 +92,11 @@ export function SpecReview({ spec, onApprove, onRegenerate, approving = false }:
                   </div>
                 </div>
               )}
-              {page.dataSources.length > 0 && (
+              {page.data_sources.length > 0 && (
                 <div>
                   <span className="text-[10px] text-text-muted font-medium">Data sources:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {page.dataSources.map((d) => (
+                    {page.data_sources.map((d) => (
                       <span key={d} className="text-[10px] bg-accent-green/10 text-accent-green px-2 py-0.5 rounded">
                         {d}
                       </span>

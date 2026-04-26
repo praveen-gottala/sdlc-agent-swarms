@@ -385,7 +385,7 @@ export interface UXModuleDeployed extends BaseDomainEventFields {
 export interface PipelineRunProgress extends BaseDomainEventFields {
   readonly type: 'PipelineRunProgress';
   readonly runId: string;
-  readonly pipeline: 'init' | 'design-generate' | 'design-penpot' | 'design-chat-iterate';
+  readonly pipeline: 'init' | 'design-generate' | 'design-penpot' | 'design-browser' | 'design-chat-iterate';
   readonly stage: string;
   readonly stageIndex: number;
   readonly totalStages: number;

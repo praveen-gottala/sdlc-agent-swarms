@@ -1,0 +1,68 @@
+{
+  "briefId": "brief-bookshelf-add-expense-1718000000000",
+  "moduleId": "bookshelf-add-expense",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Single-column focused layout with max content width of 1280px, centered with 24px margins on desktop",
+    "8px grid system for all spacing — use scale values: 4, 8, 12, 16, 24, 32, 48, 64px",
+    "Background: deep-navy (#0F172A) as page background, navy-surface (#1E293B) for card/form surfaces, navy-raised (#293548) for elevated interactive elements",
+    "Hero amount input must use heading-1 typography scale (DM Sans, 24px, weight 700) at minimum, scaled up for visual prominence",
+    "Category chips and payment method chips must use pill border-radius (9999px) with navy-raised background and slate-border (#334155) default border",
+    "Active/selected chip state: gold-amber (#F59E0B) border and subtle gold-amber background tint (opacity subtle: 0.1)",
+    "SaveExpenseButton must be full-width, gold-amber (#F59E0B) background, deep-navy (#0F172A) text (text-on-cta), minimum 44px height per touch target spec",
+    "Focus ring: 2px solid gold-amber (#F59E0B) with 2px offset on all interactive elements",
+    "Disabled state opacity: 0.38 for inactive controls",
+    "Elevation level 1 (0 1px 4px rgba(0,0,0,0.3)) for form section cards; elevation level 2 (0 4px 16px rgba(0,0,0,0.4)) for MiniCalendarDropdown and SettingsDialog overlays",
+    "Z-index: dropdown=1000 for MiniCalendarDropdown, modal=1200 for SettingsDialog",
+    "Motion: fast (150ms) for chip selection state transitions, normal (300ms) for calendar dropdown open/close, using default easing cubic-bezier(0.4,0,0.2,1)",
+    "Maximum 3 levels of visual hierarchy: (1) Hero amount input, (2) Form section groupings (category, date, payment, note), (3) Supporting controls (QuickAdd chips, CharacterCounter, labels)",
+    "All interactive touch targets minimum 44px height × 44px width",
+    "ColorPickerRow within NewCategoryInlineForm must display color swatches using category color tokens from the Category data model",
+    "QuickAddSuggestions chip row displayed above or below the hero input as a horizontal scrollable strip on desktop",
+    "NoteInput with CharacterCounter: input surface uses surface-input (deep-navy), border slate-border, focus border gold-amber; counter uses label typography (DM Mono, 12px)",
+    "Desktop-first layout at 1440px viewport; tablet breakpoint at 768px collapses to tighter margins (16px) but retains single-column structure"
+  ],
+  "referencePatterns": [
+    "Hero numeric input pattern: oversized centered amount display with large DM Sans font, cursor-blinking input on dark surface — consistent with premium fintech dashboard identity",
+    "Chip grid selection pattern: horizontally wrapping grid of pill-shaped chips with icon+label, single-select with gold-amber active state — mirrors CategoryChipGrid and PaymentMethodChipRow patterns from existing add-expense page spec",
+    "Inline form expansion pattern: NewCategoryInlineForm expands inline within the CategoryChipGrid section with ColorPickerRow, avoiding modal interruption",
+    "Mini calendar dropdown pattern: DatePickerInput triggers a MiniCalendarDropdown at elevation level 2, z-index 1000, positioned below the trigger input",
+    "Quick Add suggestion strip: horizontal scrollable row of QuickAddChip components with merchant emoji, name, and amount — auto-fill pattern that pre-populates all form fields on tap",
+    "Full-width CTA button pattern: SaveExpenseButton spans full content column width, gold-amber fill, deep-navy label text — consistent with primary CTA pattern across dashboard and insights pages",
+    "Pre-fill edit pattern: all form fields hydrate from existing Expense record when navigated via Edit action from ExpenseDetailPopover on dashboard",
+    "TopBar with back navigation: back arrow returns to dashboard, consistent with existing TopBar pattern across all pages",
+    "NavigationTabs sticky bottom bar: Home, Add Expense, Insights tabs — consistent across all three pages",
+    "Settings dialog overlay: SettingsDialog at elevation level 3, z-index 1200, overlay rgba(0,0,0,0.65)"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text — silver-text (#CBD5E1) on deep-navy (#0F172A) achieves ~11:1; gold-amber (#F59E0B) on deep-navy achieves ~8.5:1 for CTA label (deep-navy on gold-amber)",
+    "AmountHeroInput must have a visible label (visually hidden acceptable) with aria-label='Expense amount' and aria-describedby linking to currency indicator",
+    "CategoryChipGrid must be implemented as a radiogroup with role='radiogroup' and aria-label='Select category'; each chip uses role='radio' with aria-checked state",
+    "PaymentMethodChipRow must use role='radiogroup' with aria-label='Select payment method'; each chip uses role='radio' with aria-checked state",
+    "NewCategoryInlineForm expansion must be announced via aria-live='polite' region so screen readers announce the inline form appearance",
+    "ColorPickerRow swatches must have aria-label describing the color name (e.g., 'Select coral red color') and aria-pressed for selected state",
+    "DatePickerInput must have aria-label='Expense date' and aria-haspopup='dialog' to indicate calendar dropdown; MiniCalendarDropdown must trap focus when open and support Escape key to close",
+    "MiniCalendarDropdown calendar grid must use role='grid' with role='gridcell' for each day, aria-selected for selected date, and aria-label with full date string (e.g., 'June 15, 2024')",
+    "NoteInput must have an associated visible or screen-reader label; CharacterCounter must use aria-live='polite' to announce remaining character count on change",
+    "SaveExpenseButton must have descriptive aria-label that reflects context: 'Save expense' for new entries, 'Update expense' for edits",
+    "QuickAddChip components must have aria-label describing the suggestion (e.g., 'Quick add: Starbucks, $5.50') and be keyboard activatable via Enter and Space",
+    "QuickAddSuggestions strip must be navigable via keyboard arrow keys when focused within the strip",
+    "All form validation errors must be announced via aria-live='assertive' and associated with the relevant input via aria-describedby",
+    "Focus management: when navigating from dashboard Edit action, focus must be placed on AmountHeroInput after pre-fill completes",
+    "TopBar back arrow button must have aria-label='Go back to dashboard' with minimum 44×44px touch target",
+    "NavigationTabs must use role='tablist' with role='tab' for each tab and aria-current='page' for the active tab",
+    "SettingsDialog must use role='dialog' with aria-modal='true', aria-labelledby pointing to dialog title, and focus trap while open",
+    "Ensure no content relies solely on color to convey state — selected chips must also show a visible border change or checkmark icon in addition to color",
+    "Page must be fully operable via keyboard: Tab, Shift+Tab for focus traversal; Enter/Space for activation; Escape for dismissing dropdowns and dialogs",
+    "Respect prefers-reduced-motion: suppress chip selection animations and calendar open/close transitions when user has reduced motion preference enabled"
+  ],
+  "dataModelDependencies": [
+    "Expense entity — fields: id, amount, merchant, category_id, date, payment_method_id, note, currency; used for pre-filling edit form and submitting new/updated expense via POST /api/expenses or PUT /api/expenses/:id",
+    "Category entity — fields: id, name, color_token, color_hex, icon, is_default, sort_order; used by CategoryChipGrid to render category chips and by NewCategoryInlineForm to create new categories via POST /api/categories",
+    "PaymentMethod entity — fields: id, name, type, icon, last_four, is_default; used by PaymentMethodChipRow to render payment method chips via GET /api/payment-methods",
+    "QuickAddSuggestion entity — fields: id, merchant, amount, category_id, payment_method_id, emoji, frequency, last_used_at; used by QuickAddSuggestions strip to render QuickAddChip components via GET /api/suggestions?limit=4",
+    "UserSettings entity — fields: currency, default_monthly_budget, locale; used by AmountHeroInput to display correct currency symbol and by SettingsDialog for settings management via GET /api/settings and PUT /api/settings"
+  ]
+}

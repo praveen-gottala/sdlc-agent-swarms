@@ -196,7 +196,7 @@ describe('pipeline wiring smoke test', () => {
     expect(designPrompt).toContain('user engagement');
 
     // ── Artifacts landed on disk ──
-    const previewDir = join(tmpDir, '.agentforge/previews/smoke-page');
+    const previewDir = join(tmpDir, 'agentforge/designs/smoke-page');
     expect(existsSync(join(previewDir, 'research-brief.json'))).toBe(true);
     expect(existsSync(join(previewDir, 'planning-spec.json'))).toBe(true);
     expect(existsSync(join(previewDir, 'scripts/designspec-v2.json'))).toBe(true);

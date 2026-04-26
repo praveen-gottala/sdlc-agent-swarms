@@ -8,31 +8,8 @@ import { startRun, updateRunStatus, completeRun, failRun } from '../../_lib/run-
 import { emitStageEvent } from '../../_lib/event-writer';
 import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../_lib/llm-provider';
 import { debugLog } from '@agentforge/core';
-
-interface SpecResult {
-  pages: Array<{
-    id: string;
-    name: string;
-    route: string;
-    description: string;
-    components: string[];
-    dataSources: string[];
-    screen_type?: 'page' | 'modal' | 'drawer' | 'sheet';
-    navigates_to?: Array<{ target: string; trigger: string }>;
-  }>;
-  models: Array<{
-    id: string;
-    name: string;
-    fields: Array<{ name: string; type: string; required?: boolean }>;
-  }>;
-  endpoints: Array<{
-    method: string;
-    path: string;
-    description: string;
-    request?: string;
-    response?: string;
-  }>;
-}
+import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
+import { generateAppSpec } from '@agentforge/agents-ux';
 
 export interface LogEntry {
   ts: number;
@@ -127,11 +104,7 @@ export async function POST() {
 
     emitStageEvent(runId, 'design-generate', 'Reading context', 0, 3, 'completed');
 
-    // Build prompt and log its size
-    const systemPrompt = buildSpecGenerationPrompt(projectConfig, prdContent, designTokens, brandSpec);
-    log('info', `System prompt built (${systemPrompt.length} chars)`);
-
-    // Call LLM for spec generation
+    // Generate app spec via shared function
     updateRunStatus(runId, {
       stage: 'Generating spec via LLM',
       progress: { current: 2, total: 3, label: 'LLM generation' },
@@ -139,44 +112,30 @@ export async function POST() {
     });
 
     emitStageEvent(runId, 'design-generate', 'LLM generation', 1, 3, 'started', 'spec_writer');
-    log('info', `Calling Claude API (model: claude-sonnet-4-6, auth: ${claude.authMethod}, max_tokens: 16384)`);
 
-    const llmResult = await claude.provider.complete(
-      {
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: 'Generate the complete application specification based on the project context provided. Return a JSON object with pages, models, and endpoints arrays.',
-          },
-        ],
-      },
-      { model: 'claude-sonnet-4-6', maxTokens: 16384 },
-    );
+    const projectName = (projectConfig as { project?: { name?: string } })?.project?.name;
+    log('info', `Calling generateAppSpec (model: claude-sonnet-4-6, auth: ${claude.authMethod})`);
 
-    if (!llmResult.ok) {
-      const error = llmResult.error;
-      const detail = 'message' in error ? error.message : JSON.stringify(error);
-      log('error', `Claude API error (${error.code}): ${detail}`);
-      throw new Error(`Claude API error (${error.code}): ${detail}`);
+    const specResult = await generateAppSpec({
+      appName: projectName ?? 'App',
+      prdContent: prdContent ?? undefined,
+      designTokens: (designTokens ?? undefined) as DesignTokensSpec | undefined,
+      brandSpec: (brandSpec ?? undefined) as BrandSpec | undefined,
+      projectConfig: projectConfig ?? undefined,
+      provider: claude.provider,
+      model: 'claude-sonnet-4-6',
+      maxTokens: 16384,
+      maxRetries: 0,
+    });
+
+    if (!specResult.ok) {
+      log('error', `Spec generation failed: ${specResult.error.message}`);
+      throw new Error(specResult.error.message);
     }
 
-    debugLog(`spec-generate: LLM call succeeded (auth=${claude.authMethod}, tokens=${llmResult.value.usage.inputTokens}+${llmResult.value.usage.outputTokens})`);
-    log('info', `Claude API responded OK (${llmResult.value.usage.inputTokens}+${llmResult.value.usage.outputTokens} tokens, ${llmResult.value.latencyMs}ms)`);
-
-    const responseText = llmResult.value.content;
-    if (!responseText) {
-      log('error', 'No text content in LLM response');
-      throw new Error('No text content in LLM response');
-    }
-
-    log('info', `LLM response received (${responseText.length} chars)`);
-
-    // Parse the JSON from the response
-    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/) ?? [null, responseText];
-    const spec = JSON.parse(jsonMatch[1]?.trim() ?? responseText) as SpecResult;
-
-    log('info', `Parsed spec: ${spec.pages?.length ?? 0} pages, ${spec.models?.length ?? 0} models, ${spec.endpoints?.length ?? 0} endpoints`);
+    const spec = specResult.value;
+    debugLog(`spec-generate: generateAppSpec succeeded (auth=${claude.authMethod})`);
+    log('info', `Parsed spec: ${spec.pages.length} pages, ${spec.models.length} models, ${spec.endpoints.length} endpoints`);
 
     emitStageEvent(runId, 'design-generate', 'LLM generation', 1, 3, 'completed', 'spec_writer');
 
@@ -200,58 +159,3 @@ export async function POST() {
   }
 }
 
-function buildSpecGenerationPrompt(
-  projectConfig: Record<string, unknown> | null,
-  prdContent: string | null,
-  designTokens: Record<string, unknown> | null,
-  brandSpec: Record<string, unknown> | null,
-): string {
-  const sections: string[] = [];
-
-  sections.push(
-    'You are a software architect that generates application specifications.',
-    'Given a project context and PRD, produce a JSON specification with:',
-    '1. pages: Array of page definitions with id, name, route, description, components, dataSources, screen_type, navigates_to',
-    '2. models: Array of data model definitions with id, name, fields (name, type, required)',
-    '3. endpoints: Array of API endpoint definitions with method, path, description',
-    '',
-    'Each page MUST include:',
-    '- screen_type: "page" | "modal" | "drawer" | "sheet"',
-    '  - "page" (default) — full-screen views (dashboard, list, detail, form)',
-    '  - "modal" — centered dialog overlays for confirmations, focused forms, or detail views',
-    '  - "drawer" — side panels for auxiliary content (notifications, filters, settings)',
-    '  - "sheet" — bottom-anchored panels for mobile content (share menu, action picker)',
-    '  Most screens should be "page". Use modal/drawer/sheet when the screen is clearly auxiliary.',
-    '- navigates_to: Array of { target: "other-page-id", trigger: "Click button label" }',
-    '  Capture how users flow between pages. Navigation bars and tabs on multiple pages should have consistent targets.',
-    '',
-    'Output ONLY valid JSON wrapped in ```json``` code fences.',
-    '',
-  );
-
-  if (projectConfig) {
-    sections.push('## Project Configuration');
-    sections.push(JSON.stringify(projectConfig, null, 2));
-    sections.push('');
-  }
-
-  if (prdContent) {
-    sections.push('## Product Requirements Document');
-    sections.push(prdContent);
-    sections.push('');
-  }
-
-  if (designTokens) {
-    sections.push('## Design Tokens');
-    sections.push(JSON.stringify(designTokens, null, 2));
-    sections.push('');
-  }
-
-  if (brandSpec) {
-    sections.push('## Brand Specification');
-    sections.push(JSON.stringify(brandSpec, null, 2));
-    sections.push('');
-  }
-
-  return sections.join('\n');
-}

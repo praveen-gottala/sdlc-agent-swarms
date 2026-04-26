@@ -66,7 +66,7 @@ describe('design-pipeline cache helpers', () => {
 
     // Write directly to emulate old on-disk shape.
     const path = artifactPath(projectRoot, moduleId, 'designSpecV2');
-    mkdirSync(join(projectRoot, '.agentforge/previews', moduleId, 'scripts'), { recursive: true });
+    mkdirSync(join(projectRoot, 'agentforge/designs', moduleId, 'scripts'), { recursive: true });
     writeFileSync(path, JSON.stringify(legacyWrapped, null, 2));
 
     const loaded = loadCachedArtifact(fs, projectRoot, moduleId, 'designSpecV2') as Record<string, unknown>;

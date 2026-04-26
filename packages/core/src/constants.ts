@@ -1,8 +1,8 @@
 /** Default max age for cached sessions (30 minutes). */
 export const DEFAULT_MAX_AGE_MS = 30 * 60 * 1000;
 
-/** Relative path segments for the previews output directory. */
-export const PREVIEW_DIR_REL = '.agentforge/previews';
+/** Relative path for pipeline artifact storage (design specs, research, planning, screenshots). */
+export const PREVIEW_DIR_REL = 'agentforge/designs';
 
 /** Default LLM model used when no override is configured. */
 export const DEFAULT_MODEL = 'claude-sonnet-4-6';

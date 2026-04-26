@@ -45,6 +45,7 @@ export function buildPrototypeManifest(
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith('__')) continue;
 
     const specPath = join(previewsDir, entry.name, 'scripts', 'designspec-v2.json');
     if (!existsSync(specPath)) continue;
@@ -59,7 +60,7 @@ export function buildPrototypeManifest(
       continue;
     }
 
-    const pageId = entry.name.replace(/^bookshelf-/, '');
+    const pageId = entry.name;
     const page = pageMap.get(pageId);
 
     const screenType = page?.screen_type ?? spec.screenType ?? 'page';

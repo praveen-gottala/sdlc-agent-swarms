@@ -273,7 +273,7 @@ describe('design:page:all integration — sequential migration smoke', () => {
 
       await designPageAllCommand(out, { tool: 'browser', projectRoot: tmpDir });
 
-      const envelopePath = join(tmpDir, '.agentforge', 'previews', 'bookshelf-about', 'penpot-design.json');
+      const envelopePath = join(tmpDir, 'agentforge', 'designs', 'about', 'penpot-design.json');
       expect(existsSync(envelopePath)).toBe(true);
       const envelope = JSON.parse(readFileSync(envelopePath, 'utf-8'));
       expect(envelope.designSpec).toBeDefined();
@@ -281,7 +281,7 @@ describe('design:page:all integration — sequential migration smoke', () => {
       expect(envelope.browserCorrectionResult.finalScore).toBe(88);
 
       // Envelope must NOT exist under cwd.
-      const wrongPath = join(elsewhere, '.agentforge', 'previews', 'bookshelf-about', 'penpot-design.json');
+      const wrongPath = join(elsewhere, 'agentforge', 'designs', 'about', 'penpot-design.json');
       expect(existsSync(wrongPath)).toBe(false);
     } finally {
       rmSync(elsewhere, { recursive: true, force: true });
@@ -323,7 +323,7 @@ describe('design:page:all integration — sequential migration smoke', () => {
 
     await designPageAllCommand(out, { tool: 'penpot', projectRoot: tmpDir });
 
-    const envelopePath = join(tmpDir, '.agentforge', 'previews', 'bookshelf-about', 'penpot-design.json');
+    const envelopePath = join(tmpDir, 'agentforge', 'designs', 'about', 'penpot-design.json');
     expect(existsSync(envelopePath)).toBe(true);
     const envelope = JSON.parse(readFileSync(envelopePath, 'utf-8'));
     expect(envelope.designSpec).toBeDefined();

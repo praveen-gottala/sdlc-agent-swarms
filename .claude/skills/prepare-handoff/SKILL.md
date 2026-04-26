@@ -41,17 +41,25 @@ Each item above maps to exactly one canonical location:
 
 Each update must be a single focused edit. Do not rewrite existing docs.
 
-### 3. Create or update the handoff-check doc
+### 3. Create or update the handoff-check docs (two files)
 
-Location: `docs/plans/<phase-or-topic>-handoff-check.md`.
+The handoff-check is split into **two files** so the receiving agent can read questions without seeing answers. This is not optional — a single file defeats the self-audit protocol because the Read tool loads the entire file at once.
 
-Structure (match `docs/plans/screen-types-plan-b-handoff-check.md` as a reference):
+**File 1 — Questions:** `docs/plans/<phase-or-topic>-handoff-check.md`
 
+Contains:
 - **Turn 1 block** — 10–15 questions targeting the gotchas from step 1. Include one "trap" question where the intuitive answer is wrong (e.g. "should you follow <superseded lesson>?"), and one "coverage probe" that forces the agent to name all three critical docs in order.
-- **Turn 2 block** — authoritative answer key with **bolded keywords** (keywords are what grading diffs against; prose is irrelevant). Each answer cites the exact file + section anchor.
 - **Turn 3 block** — instruction to copy the `## Doc gaps to report upstream` section back.
 - **Hard-fail / soft-fail triggers** — named failure patterns that mean "abort the handoff."
 - **Maintenance section** — when source docs change, the answer key must change too.
+- **Answer key pointer** — a line at the bottom: `Answer key: docs/plans/<phase-or-topic>-handoff-key.md` (read only after answering all questions).
+
+**File 2 — Answer key:** `docs/plans/<phase-or-topic>-handoff-key.md`
+
+Contains:
+- **Turn 2 block** — authoritative answer key with **bolded keywords** (keywords are what grading diffs against; prose is irrelevant). Each answer cites the exact file + section anchor.
+
+The receiving agent reads File 1 first, answers from canonical docs, then reads File 2 to self-grade. Keeping them separate makes the protocol mechanically enforceable — not just an honor system.
 
 ### 4. Blind subagent validation (this is the real test)
 

@@ -60,8 +60,8 @@ export interface CaptureDesignSnapshotConfig {
  * Capture a design snapshot — screenshots + properties for all components.
  *
  * Saves screenshots as PNG files to:
- *   .agentforge/previews/<moduleId>/screenshots/<tool>/root.png
- *   .agentforge/previews/<moduleId>/screenshots/<tool>/<ComponentName>.png
+ *   agentforge/designs/<moduleId>/screenshots/<tool>/root.png
+ *   agentforge/designs/<moduleId>/screenshots/<tool>/<ComponentName>.png
  *
  * Returns snapshot metadata (paths + properties) for inclusion in the
  * design output JSON.

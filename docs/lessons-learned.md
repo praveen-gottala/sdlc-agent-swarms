@@ -46,6 +46,7 @@
 - [No Shortcuts — Ever](#no-shortcuts--ever) — RULE
 - [Prompt Injection Order Matters](#prompt-injection-order-matters-tokens-before-examples) — RESOLVED
 - [Viewport Config: Project-Level with CLI Override](#viewport-config-project-level-with-cli-override) — RESOLVED
+- [Pseudo-Screen Directories Must Be Filtered at Build Time](#pseudo-screen-directories-must-be-filtered-at-build-time) — RULE
 - [Plans Must Trace Data Flows and Verify Claims](#plans-must-trace-data-flows-and-verify-claims) — RULE
 
 **Renderer Lifecycle**
@@ -797,6 +798,15 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Context:** Phase 1 Layer B (2026-04-25). `@agentforge/core` re-exported new symbols from `packages/core/src/migrations/index.ts` (the legacy-artifact migration helpers). The dashboard's `next.config.js` listed `@agentforge/core` under `experimental.optimizePackageImports`, and Next's barrel optimizer can fail to pick up newly added named exports — the dashboard then crashes at runtime with `"X is not exported from @agentforge/core"` even though `tsc` is green.
 **Rule:** Whenever a new symbol is added to a `@agentforge/core` barrel (`packages/core/src/index.ts` or any nested `index.ts`), check that no consumer's `next.config.js` lists `@agentforge/core` under `optimizePackageImports`. If it does, either remove core from that list (preferred — the optimization gain is small relative to the foot-gun) or add an explicit named-export sub-path import on the consumer side.
 **How to apply:** `rg "optimizePackageImports" -A 10 packages/` after editing any core barrel. The dashboard already has a comment block at `packages/dashboard/next.config.js` documenting why `@agentforge/core` and `@agentforge/agents-ux` are excluded — extend that comment if a future consumer hits the same issue.
+
+---
+
+## Pseudo-Screen Directories Must Be Filtered at Build Time
+
+**Context:** Phase 3 Task 3.6 (2026-04-25). After Task 3.0 consolidated artifacts to `agentforge/designs/`, the `__shared-chrome__` directory was scanned by `buildPrototypeManifest` as a regular screen because it contained `scripts/designspec-v2.json`. The resulting `prototype.json` included `screenId: "__shared-chrome__"`. The prototype API route (`/api/prototype`) had a runtime filter for `__` prefixes, but the static manifest fixture was polluted — E2E tests caught it.
+**Rule:** `buildPrototypeManifest` (and any future directory scanner over `agentforge/designs/`) must skip entries starting with `__` at scan time, not rely on downstream runtime filtering. Static fixtures committed to git must reflect the filtered output.
+**Why:** Runtime filters are defense-in-depth, not primary. If the manifest is written to disk with pseudo-screens, any consumer that reads the file directly (CLI, E2E tests, future tools) sees the pseudo-screen. The prototype API's runtime filter masked the bug for months.
+**How to apply:** `build-manifest.ts` line 50: `if (entry.name.startsWith('__')) continue;`. When updating `prototype.json` fixtures after pipeline changes, verify no `screenId` starts with `__`.
 
 ---
 

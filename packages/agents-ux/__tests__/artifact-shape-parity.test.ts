@@ -4,14 +4,20 @@
  * Artifact Shape Parity Test
  *
  * Validates that typed agent outputs round-trip through Zod schemas,
- * and that old dashboard shapes ({ brief: string }, { spec: string })
- * are rejected by the canonical schemas.
- *
- * The parity-against-dashboard portion is test.skip until Phase 3
- * completes the dashboard migration to shared pipeline.
+ * that old dashboard shapes ({ brief: string }, { spec: string })
+ * are rejected by the canonical schemas, and that both CLI and dashboard
+ * callers use the shared runDesignPipeline entry point.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { UXResearchOutputSchema, UXPlanningOutputSchema } from '../src/schemas';
+
+const MONOREPO_ROOT = join(__dirname, '..', '..', '..');
+const FIXTURE_DESIGNS = join(
+  MONOREPO_ROOT,
+  'fixtures/personal-expense-tracker/agentforge/designs',
+);
 
 describe('artifact shape parity', () => {
   describe('UXResearchOutput round-trip', () => {
@@ -106,20 +112,54 @@ describe('artifact shape parity', () => {
     });
   });
 
-  // eslint-disable-next-line jest/no-disabled-tests
-  describe.skip('[Phase 3] dashboard produces same artifact shape as CLI', () => {
-    it('dashboard research.json parses against UXResearchOutputSchema without _migrated', () => {
-      // Phase 3: load a dashboard-produced research.json fixture and assert it parses
-      // without the _migrated marker (meaning it was produced by the shared pipeline).
-      expect(true).toBe(false);
+  describe('[Phase 3+] pipeline produces canonical artifact shapes', () => {
+    it('research fixture parses against UXResearchOutputSchema without _migrated', () => {
+      const raw = readFileSync(
+        join(FIXTURE_DESIGNS, 'add-expense/research-brief.json'),
+        'utf-8',
+      );
+      const data = JSON.parse(raw);
+      const result = UXResearchOutputSchema.safeParse(data);
+
+      expect(result.success).toBe(true);
+      expect(data).not.toHaveProperty('_migrated');
+      expect(data).not.toHaveProperty('_rawMarkdown');
+      expect(data).toHaveProperty('briefId');
     });
 
-    it('dashboard planning.json parses against UXPlanningOutputSchema without _migrated', () => {
-      expect(true).toBe(false);
+    it('planning fixture parses against UXPlanningOutputSchema without _migrated', () => {
+      const raw = readFileSync(
+        join(FIXTURE_DESIGNS, 'add-expense/planning-spec.json'),
+        'utf-8',
+      );
+      const data = JSON.parse(raw);
+      const result = UXPlanningOutputSchema.safeParse(data);
+
+      expect(result.success).toBe(true);
+      expect(data).not.toHaveProperty('_migrated');
+      expect(data).not.toHaveProperty('_rawMarkdown');
+      expect(data).toHaveProperty('specRef');
     });
 
-    it('CLI and dashboard produce byte-identical artifacts for browser designTool', () => {
-      expect(true).toBe(false);
+    it('CLI and dashboard both use runDesignPipeline, not parallel paths', () => {
+      const cliSource = readFileSync(
+        join(MONOREPO_ROOT, 'packages/cli/src/commands/design-page.ts'),
+        'utf-8',
+      );
+      const dashboardSource = readFileSync(
+        join(
+          MONOREPO_ROOT,
+          'packages/dashboard/src/app/api/pages/[pageId]/design/route.ts',
+        ),
+        'utf-8',
+      );
+
+      expect(cliSource).toContain('runDesignPipeline(');
+      expect(dashboardSource).toContain('runDesignPipeline(');
+
+      expect(cliSource).not.toContain('callPipelineStage(');
+      expect(dashboardSource).not.toContain('callPipelineStage(');
+      expect(dashboardSource).not.toContain('callClaudeDesignAPI(');
     });
   });
 });

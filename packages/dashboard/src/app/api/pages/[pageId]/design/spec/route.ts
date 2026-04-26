@@ -30,10 +30,7 @@ export async function GET(
   { params }: { params: Promise<{ pageId: string }> },
 ) {
   const { pageId } = await params;
-  const content =
-    readTextFile(`agentforge/designs/${pageId}.json`) ??
-    readTextFile(`.agentforge/previews/${pageId}/scripts/designspec-v2.json`) ??
-    readTextFile(`.agentforge/previews/bookshelf-${pageId}/scripts/designspec-v2.json`);
+  const content = readTextFile(`agentforge/designs/${pageId}.json`);
 
   if (content === null) {
     return NextResponse.json(

@@ -281,7 +281,7 @@ export async function designPageAllCommand(
   const sharedMeta = resolveSharedComponents(pages);
 
   if (options.designOnly) {
-    const chromePath = join(projectRoot, 'agentforge', 'shared-chrome.json');
+    const chromePath = join(projectRoot, 'agentforge', 'designs', 'shared-chrome.json');
     if (existsSync(chromePath)) {
       try {
         const raw = JSON.parse(readFileSync(chromePath, 'utf-8')) as Record<string, unknown>;
@@ -305,7 +305,7 @@ export async function designPageAllCommand(
       })[0];
 
       const refDescription = buildPageDescription(refPage, designTokens);
-      const refModuleId = `bookshelf-${refPage.id}`;
+      const refModuleId = refPage.id;
       const refTaskId = `task_chrome_${refPage.id}_${Date.now()}`;
       const refPageContext = buildPageContext(refPage, pages);
 
@@ -335,9 +335,9 @@ export async function designPageAllCommand(
       if (chromeResult.ok && chromeResult.value.design?.spec) {
         sharedChromeSpec = chromeResult.value.design.spec as unknown as DesignSpecV2;
         const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
-        const agentforgeDir = join(projectRoot, 'agentforge');
-        if (!existsSync(agentforgeDir)) mkdirSync(agentforgeDir, { recursive: true });
-        writeFileSync(join(agentforgeDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
+        const designsDir = join(projectRoot, 'agentforge', 'designs');
+        if (!existsSync(designsDir)) mkdirSync(designsDir, { recursive: true });
+        writeFileSync(join(designsDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
         output.write(successMsg(`    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`));
       } else {
         const errMsg = chromeResult.ok ? 'no design spec returned' : ((chromeResult.error as { message?: string }).message ?? 'unknown');
@@ -359,7 +359,7 @@ export async function designPageAllCommand(
       continue;
     }
 
-    const moduleId = `bookshelf-${page.id}`;
+    const moduleId = page.id;
     const taskId = `task_page_${page.id}_${Date.now()}`;
     const description = buildPageDescription(page, designTokens);
     const pageContext = buildPageContext(page, pages);
@@ -477,13 +477,11 @@ export async function designPageAllCommand(
   if (succeeded.length >= 2) {
     output.write(infoMsg('\n  Building prototype manifest...\n'));
 
-    // Load designed specs for navigation extraction + sync to agentforge/designs/
+    // Load designed specs for navigation extraction
     const designedSpecs: Record<string, import('@agentforge/designspec-renderer').DesignSpecV2> = {};
-    const designsDir = join(projectRoot, 'agentforge', 'designs');
-    if (!existsSync(designsDir)) mkdirSync(designsDir, { recursive: true });
 
     for (const r of succeeded) {
-      const specPath = join(projectRoot, PREVIEW_DIR_REL, `bookshelf-${r.id}`, 'scripts', 'designspec-v2.json');
+      const specPath = join(projectRoot, PREVIEW_DIR_REL, r.id, 'scripts', 'designspec-v2.json');
       if (!existsSync(specPath)) continue;
       try {
         const specContent = readFileSync(specPath, 'utf-8');
@@ -494,20 +492,15 @@ export async function designPageAllCommand(
           continue;
         }
         designedSpecs[r.id] = normalized;
-        writeFileSync(join(designsDir, `${r.id}.json`), JSON.stringify(normalized, null, 2));
       } catch {
         output.write(warnMsg(`    Could not read spec for ${r.id}, skipping\n`));
       }
     }
 
-    if (Object.keys(designedSpecs).length > 0) {
-      output.write(successMsg(`    Synced ${Object.keys(designedSpecs).length} specs to agentforge/designs/\n`));
-    }
-
     // Re-derive chrome regions and propagate navigation to chrome tabs
     if (sharedChromeSpec && sharedMeta) {
       const refPageSpec = designedSpecs[sharedMeta.referencePageId];
-      const chromePath = join(projectRoot, 'agentforge', 'shared-chrome.json');
+      const chromePath = join(projectRoot, 'agentforge', 'designs', 'shared-chrome.json');
       let chromeUpdated = false;
       let updatedChromeSpec = sharedChromeSpec;
 
@@ -582,9 +575,9 @@ export async function designPageAllCommand(
     // Rebuild manifest with navigation
     const finalManifest = buildPrototypeManifest(projectRoot, protoProjectName, pages, navigation);
 
-    const agentforgeDir = join(projectRoot, 'agentforge');
-    if (!existsSync(agentforgeDir)) mkdirSync(agentforgeDir, { recursive: true });
-    const manifestPath = join(agentforgeDir, 'prototype.json');
+    const designsDirForManifest = join(projectRoot, 'agentforge', 'designs');
+    if (!existsSync(designsDirForManifest)) mkdirSync(designsDirForManifest, { recursive: true });
+    const manifestPath = join(designsDirForManifest, 'prototype.json');
     writeFileSync(manifestPath, JSON.stringify(finalManifest, null, 2));
 
     output.write(successMsg(`  Prototype manifest saved (${finalManifest.screens.length} screens, ${navigation.length} nav bindings)\n`));

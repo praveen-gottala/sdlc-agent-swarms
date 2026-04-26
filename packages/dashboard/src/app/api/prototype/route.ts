@@ -12,7 +12,7 @@ import {
 } from '@agentforge/designspec-renderer';
 import { extractNavigationFromChromeSpec } from '@agentforge/agents-ux';
 
-const PREVIEW_DIR = '.agentforge/previews';
+const PREVIEW_DIR = 'agentforge/designs';
 
 interface PageEntry {
   id: string;
@@ -82,7 +82,7 @@ export async function GET() {
   const pageMap = new Map(pages.map(p => [p.id, p]));
 
   // Read prototype.json (from CLI pipeline)
-  const savedManifestPath = join(agentforgeDir, 'prototype.json');
+  const savedManifestPath = join(designsDir, 'prototype.json');
   let manifest: PrototypeManifest | null = null;
 
   if (existsSync(savedManifestPath)) {
@@ -134,15 +134,15 @@ export async function GET() {
   if (!manifest) {
     const screens: PrototypeScreen[] = [];
 
-    // Source 1: CLI pipeline outputs (.agentforge/previews/*/scripts/designspec-v2.json)
+    // Source 1: Pipeline outputs (agentforge/designs/*/scripts/designspec-v2.json)
     if (existsSync(previewsDir)) {
       const entries = readdirSync(previewsDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
+        if (!entry.isDirectory() || entry.name.startsWith('__')) continue;
         const specPath = join(previewsDir, entry.name, 'scripts', 'designspec-v2.json');
         if (!existsSync(specPath)) continue;
 
-        const pageId = entry.name.replace(/^bookshelf-/, '');
+        const pageId = entry.name;
         const page = pageMap.get(pageId);
 
         const screenType = page?.screen_type;
@@ -158,15 +158,16 @@ export async function GET() {
     }
 
     // Source 2: Dashboard-generated designs (agentforge/designs/{pageId}.json)
-    const designsDir = join(projectRoot, 'agentforge', 'designs');
-    if (existsSync(designsDir)) {
+    const designsDir2 = join(projectRoot, 'agentforge', 'designs');
+    if (existsSync(designsDir2)) {
+      const NON_PAGE_FILES_SRC2 = new Set(['prototype.json', 'shared-chrome.json']);
       const designedIds = new Set(screens.map(s => s.screenId));
-      const designFiles = readdirSync(designsDir).filter(f => f.endsWith('.json') && !f.includes('.issues.'));
+      const designFiles = readdirSync(designsDir2).filter(f => f.endsWith('.json') && !f.includes('.issues.') && !NON_PAGE_FILES_SRC2.has(f));
       for (const file of designFiles) {
         const pageId = file.replace(/\.json$/, '');
         if (designedIds.has(pageId)) continue;
 
-        const specPath = join(designsDir, file);
+        const specPath = join(designsDir2, file);
         try {
           const content = JSON.parse(readFileSync(specPath, 'utf-8'));
           if (!content.nodes || typeof content.nodes !== 'object') continue;
@@ -200,9 +201,10 @@ export async function GET() {
   // Augment manifest with screens from agentforge/designs/ not already present.
   // A user may create new pages in the dashboard after the CLI pipeline ran.
   {
+    const NON_PAGE_FILES = new Set(['prototype.json', 'shared-chrome.json']);
     const existingIds = new Set(manifest.screens.map(s => s.screenId));
     if (existsSync(designsDir)) {
-      const designFiles = readdirSync(designsDir).filter(f => f.endsWith('.json') && !f.includes('.issues.'));
+      const designFiles = readdirSync(designsDir).filter(f => f.endsWith('.json') && !f.includes('.issues.') && !NON_PAGE_FILES.has(f));
       for (const file of designFiles) {
         const pageId = file.replace(/\.json$/, '');
         if (existingIds.has(pageId)) continue;
@@ -233,8 +235,7 @@ export async function GET() {
     }
   }
 
-  // Prefer agentforge/designs/ specs (design canvas source of truth) over
-  // .agentforge/previews/ specs so the prototype always matches the design canvas.
+  // Prefer top-level agentforge/designs/{id}.json over nested scripts/designspec-v2.json.
   for (const screen of manifest.screens) {
     const designPath = join('agentforge', 'designs', `${screen.screenId}.json`);
     const absDesignPath = join(projectRoot, designPath);
@@ -318,7 +319,7 @@ export async function GET() {
 
   /** Pipeline output first; committed fallback (`shared-chrome.e2e.json`) for E2E without a local generate step. */
   const chromeSpec =
-    tryReadSharedChrome(join(agentforgeDir, 'shared-chrome.json'))
+    tryReadSharedChrome(join(designsDir, 'shared-chrome.json'))
     ?? tryReadSharedChrome(join(projectRoot, 'shared-chrome.e2e.json'));
 
   // Extract chrome navigation bindings (bell icon, logo, etc.) — apply on ALL pages
