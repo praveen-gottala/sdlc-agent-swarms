@@ -19,6 +19,7 @@ import type { ProviderConfig } from '@agentforge/providers';
 import { generateAppSpec as generateAppSpecShared } from '@agentforge/agents-ux';
 import type { GeneratedAppSpec } from '@agentforge/agents-ux';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { initLangfuseTracing, shutdownTracing, createTracedProvider, isLangfuseConfigured } from '@agentforge/telemetry';
 import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import { infoMsg, warnMsg, errorMsg, successMsg } from '../formatter.js';
 import type { FileSystem } from '../fs-utils.js';
@@ -158,7 +159,7 @@ async function tryLLMGeneration(
 ): Promise<GeneratedAppSpec | null> {
   let provider;
   try {
-    provider = createClaudeProvider(resolveCLIModel(), providerConfig);
+    provider = createTracedProvider(createClaudeProvider(resolveCLIModel(), providerConfig));
   } catch {
     output.write(warnMsg('Failed to create LLM provider.\n'));
     return null;
@@ -283,6 +284,7 @@ export async function designGenerateCommand(
 ): Promise<DesignGenerateResult | null> {
   // Load .env file so ANTHROPIC_API_KEY is available
   loadDotEnv(rootDir);
+  initLangfuseTracing();
 
   const promptTraces: PromptTrace[] = [];
   const previewDir = path.join(rootDir, PREVIEW_DIR_REL, 'design-generate');
@@ -473,6 +475,11 @@ export async function designGenerateCommand(
   output.write(infoMsg('  2. Re-run to update:         agentforge design:generate\n'));
   output.write(infoMsg('  3. Start full design phase:   agentforge start design\n'));
   output.write('\n');
+
+  if (isLangfuseConfigured()) {
+    await shutdownTracing();
+    output.write(infoMsg(`  Langfuse traces: ${process.env.LANGFUSE_BASE_URL ?? 'http://localhost:3001'}\n`));
+  }
 
   return { spec, source: 'llm' };
 }

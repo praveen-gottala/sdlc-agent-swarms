@@ -15,6 +15,7 @@ import { validateDesignTokens, validateBrandSpec, recordPromptTrace, loadPRD, de
 import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { LLMProvider, ProviderConfig } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
+import { createTracedProvider } from '@agentforge/telemetry';
 import { infoMsg, warnMsg, successMsg } from '../formatter.js';
 import { promptOnce } from '../utils/prompt-once.js';
 import { openInBrowser } from '../utils/open-in-browser.js';
@@ -754,7 +755,7 @@ async function tryLLMGeneration(
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
   try {
-    provider = createClaudeProvider(resolveCLIModel(), providerConfig);
+    provider = createTracedProvider(createClaudeProvider(resolveCLIModel(), providerConfig));
   } catch (err) {
     output.write(warnMsg(`Failed to create LLM provider: ${err instanceof Error ? err.message : String(err)}\n`));
     return null;

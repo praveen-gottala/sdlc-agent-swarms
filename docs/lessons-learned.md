@@ -860,3 +860,12 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Root cause:** Line 88 of the prompt said "Do **not** simulate borders with `overrides` like `border-bottom` unless there is no other way" — this directly contradicted the Outlined (`overrides.border`) and Separated (`overrides.borderBottom`) container treatments added later in the same prompt. The LLM followed the earlier "don't use borders" instruction and ignored the later "use borders for variety" instruction.
 **Fix:** Replaced line 88 with: "For **separators between list rows**, use `type: "divider"`. For **container treatments** (Outlined, Inset, Separated), border overrides on the section itself are the correct pattern." Bumped prompt version to v2.2.0.
 **Rule:** After adding new prompt instructions that use a technique, grep the entire prompt for instructions that forbid that technique. Contradictions earlier in the prompt take precedence in LLM behavior.
+
+---
+
+## Blind Subagent Test for Documentation — RULE
+
+**Context:** Langfuse observability integration (2026-04-27). After documenting the setup in `docs/guides/langfuse-setup.md` and pointing from CLAUDE.md, a blind Explore subagent was spawned with zero conversation context and asked to verify Langfuse. It found everything via the documentation chain (CLAUDE.md → guide → ADR → source) with no gaps.
+**Rule:** After documenting any new system, feature, or setup procedure, spawn a blind Explore subagent with NO context from the current conversation and ask it to accomplish a task using only the project's own files. If it can't find what it needs, the docs have gaps — fix them before declaring done.
+**Why:** Documentation written by someone who just built the thing is biased — they fill gaps from memory without realizing it. A blind agent has no memory, so it exposes every missing link. Memory files are not reliable (session-scoped, can get stale). Canonical docs in the codebase with CLAUDE.md pointers are the durable path.
+**How to apply:** After writing or updating docs, use: `Agent({ subagent_type: 'Explore', prompt: 'You have NO prior context. Using only project files starting from CLAUDE.md, <task description>.' })`. Grade: if the agent completes the task, docs pass. If not, fix the gaps it identified.

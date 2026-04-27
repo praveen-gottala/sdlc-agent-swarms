@@ -191,7 +191,27 @@ Common causes:
 - `ENCRYPTION_KEY` too short → must be 64 hex chars, generate with `openssl rand -hex 32`
 - `LANGFUSE_S3_EVENT_UPLOAD_BUCKET` missing → Langfuse v3 requires S3 bucket configs for events and media
 
-**No traces appearing:** Verify env vars are set before running the pipeline. Check that `LANGFUSE_SECRET_KEY` is not empty.
+**No traces appearing:** Verify env vars are set before running the pipeline. Check that `LANGFUSE_SECRET_KEY` is not empty. Also ensure the process ran to completion — `shutdownTracing()` flushes spans on exit. If the process was killed or interrupted before shutdown, spans are lost.
+
+**Verify traces programmatically:**
+```bash
+npx langfuse-cli api traces list --limit 5 --server http://localhost:3001 --json \
+  | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); \
+    console.log('Traces:', d.body.meta.totalItems); \
+    d.body.data.forEach(t => console.log(' ', t.name, '|', t.timestamp, \
+      '| input:', Object.keys(t.input||{}).join(',') || 'none', \
+      '| output:', Object.keys(t.output||{}).join(',') || 'none'));"
+```
+
+## Traced Commands
+
+| Command | Traced | Notes |
+|---------|--------|-------|
+| `design:page` | Yes | All 3 stages (research, planning, design) |
+| `design:page:all` | Yes | All pages + Chrome Pass |
+| `design:generate` | Yes | App spec generation from PRD |
+| `generate-design-options` | Yes | Design theme generation |
+| Dashboard design route | Yes | Same pipeline via API |
 
 **Port 3001 in use:** The AgentForge dashboard uses port 3000, so Langfuse is mapped to 3001. Adjust the port mapping in `docker-compose.langfuse.yml` if needed.
 

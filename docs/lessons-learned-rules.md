@@ -413,3 +413,11 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When reloading the design spec after modifications (corrections, chat edits, saves), always use `/api/pages/${pageId}/design/spec?bundle=true&t=${Date.now()}` with `cache: 'no-store'`. Do NOT use `/api/pages/${pageId}/design` — that endpoint returns the spec in a different shape that the canvas renderer cannot parse, producing "Design Spec Error: no renderable nodes."
 **Why:** The canvas expects `data.spec` from the bundle endpoint (which includes tokens and catalog alongside the spec). The plain `/design` endpoint returns a raw object without the `spec` wrapper. After a correct/fix route patches the spec on disk, reloading from the wrong endpoint caused the canvas to show a "no renderable nodes" error even though the patched spec was valid.
 **How to apply:** Search for `setDesignSpec` in `page.tsx`. Every call site that fetches a spec after modification must use the bundle endpoint pattern: `fetch(\`/api/pages/\${id}/design/spec?bundle=true&t=\${Date.now()}\`, { cache: 'no-store' })`.
+
+---
+
+## Blind Subagent Test for Documentation
+
+**Rule:** After documenting any new system, feature, or setup procedure, spawn a blind Explore subagent with NO context from the current conversation and ask it to accomplish a task using only the project's own files (starting from CLAUDE.md). If it can't find what it needs, the docs have gaps — fix them before declaring done.
+**Why:** Documentation written by the builder is biased — gaps get filled from memory without realizing it. A blind agent has no memory and exposes every missing link. Memory files are not reliable for this (session-scoped, can get stale). Canonical docs in the codebase with CLAUDE.md pointers are the durable path.
+**How to apply:** `Agent({ subagent_type: 'Explore', prompt: 'You have NO prior context. Using only project files starting from CLAUDE.md, <task>.' })`. Pass if the agent completes the task; fail if it can't find what it needs.

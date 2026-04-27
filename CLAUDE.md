@@ -31,10 +31,11 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 1. Visual Diversity — Phase 1 COMPLETE, Phase 2 COMPLETE (2026-04-27). Found and fixed prompt conflict (v2.2.0). LLM compliance requires Phase 4 evaluator. Next: Phase 3 (catalog variants) or Phase 4 (evaluator diversity scoring). See `docs/active-plan/visual-diversity/execution-plan.md`
 
 **Paused plans (do NOT read during session-start — note status only):**
+- Observability — Phase 1-2 COMPLETE, Phase 2.4 next (cleanup promptTraces). See `docs/active-plan/observability/execution-plan.md`
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/feature-plans/screen-types-plan-b.md`
 
 **Completed plans (do NOT read during session-start):**
-- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). Phase 7 (Langfuse observability) pulled forward and COMPLETE (2026-04-27, ADR-046). See `docs/active-plan/unify-pipeline/execution-plan.md`
+- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/active-plan/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/feature-plans/screen-types-plan-a.md`
 
 **Last session:** Visual Diversity Phase 2.6-2.7 complete. Prompt v2.2.0 (border conflict fix), `buildPageDescription` crash fix, container-variety E2E test. See `docs/active-plan/visual-diversity/execution-plan.md`.
@@ -229,7 +230,8 @@ and rejected with rejection reasoning. Notable rejected patterns:
   (ADR-046). `TracedProvider` wraps LLM calls with OTel spans; `LangfuseSink`
   adds pipeline lifecycle spans. Graceful no-op when `LANGFUSE_SECRET_KEY` unset.
   Self-hosted: `docker compose -f docker/docker-compose.langfuse.yml up -d`
-  (UI at http://localhost:3001). Prompt versioning not yet implemented.
+  (UI at http://localhost:3001). Setup, verification, and troubleshooting:
+  `docs/guides/langfuse-setup.md`. Prompt versioning not yet implemented.
 - Testing: Jest + ts-jest for all packages
 - Linting: ESLint + Prettier (config in root)
 
@@ -316,6 +318,15 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - When adding a new feature, module, or public API, ensure documentation exists.
 - When making an architectural change that touches vision Layer N, update
   `docs/vision.md` Layer N's Current State section.
+
+### Blind Subagent Test (MANDATORY for new documentation)
+After documenting any new system, feature, or setup procedure, run a **blind
+subagent test** to verify the docs are self-sufficient. Spawn an Explore agent
+with NO context from the current conversation and ask it to accomplish a task
+using only what it can find in the project's own files (starting from CLAUDE.md).
+If the agent can't find what it needs or gets confused, the documentation has
+gaps — fix them before declaring done. Do NOT skip this step. A doc that only
+works when you already know the answer is not documentation.
 
 ### Spec Sync on Feature Completion
 - When completing a feature plan phase, update the relevant domain spec section
