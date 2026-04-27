@@ -9,7 +9,7 @@
  */
 
 import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
-import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
+import type { Result, DesignTokensSpec } from '@agentforge/core';
 import { logDefaults } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import { evaluateDesign } from './design-evaluator.js';
@@ -63,8 +63,6 @@ export interface CorrectionLoopOptions {
   readonly designTokens?: DesignTokensSpec;
   /** Catalog map for catalog compliance evaluation. */
   readonly catalogMap?: CatalogMap;
-  /** Trace collector for recording LLM call inputs/outputs. */
-  readonly traceCollector?: { promptTraces?: PromptTrace[] };
   /**
    * When set, the evaluator compares planning navigateTo count vs the live DesignSpec
    * (no vision) and may dock the score. Skipped if omitted.
@@ -146,8 +144,6 @@ export async function runCorrectionLoop(
       correctionHistory.length > 0 ? correctionHistory : undefined,
       options.designTokens,
       options.catalogMap,
-      options.traceCollector,
-      `evaluation-${iterations}`,
       options.structuralNavCheck
         ? { structuralNavCheck: options.structuralNavCheck }
         : undefined,

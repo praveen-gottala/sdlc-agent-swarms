@@ -28,6 +28,11 @@ const nextConfig = {
     ],
   },
   webpack: (config) => {
+    // Monorepo packages expose `./src/*.ts` under the `@agentforge/source` export
+    // condition and `./dist/*.js` under `default`. Prefer source so stale prebuilt
+    // dist (e.g. after removing exports like recordPromptTrace) cannot break the app.
+    const prev = config.resolve.conditionNames ?? ['import', 'require', 'default'];
+    config.resolve.conditionNames = ['@agentforge/source', ...prev];
     config.resolve.extensionAlias = {
       '.js': ['.ts', '.tsx', '.js'],
       '.mjs': ['.mts', '.mjs'],

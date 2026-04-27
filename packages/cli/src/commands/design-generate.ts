@@ -11,7 +11,7 @@ import * as readline from 'node:readline';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import type { DesignTokensSpec, BrandSpec, PromptTrace } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
 import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS, PREVIEW_DIR_REL } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { ProviderConfig } from '@agentforge/providers';
@@ -107,39 +107,6 @@ function promptOnce(
 }
 
 // ============================================================================
-// Prompt Tracing
-// ============================================================================
-
-/** Save a text artifact (e.g. markdown prompt traces). */
-const saveTextArtifact = (dir: string, filename: string, text: string): string => {
-  const filePath = path.join(dir, filename);
-  fs.writeFileSync(filePath, text);
-  return filePath;
-};
-
-/** Format a prompt trace as a markdown document. */
-function formatPromptTrace(trace: PromptTrace): string {
-  return [
-    `# Prompt: ${trace.stage}`,
-    ``,
-    `**Timestamp**: ${trace.timestamp}  `,
-    `**Model**: ${trace.model}  `,
-    `**Max Tokens**: ${trace.maxTokens}`,
-    ``,
-    `---`,
-    ``,
-    `## System Prompt`,
-    ``,
-    trace.system,
-    ``,
-    `---`,
-    ``,
-    `## User Message`,
-    ``,
-    trace.userMessage,
-  ].join('\n');
-}
-
 // ============================================================================
 // LLM Generation
 // ============================================================================
@@ -155,7 +122,6 @@ async function tryLLMGeneration(
     readonly prdContent?: string;
   },
   output: NodeJS.WritableStream,
-  promptTraces?: PromptTrace[],
 ): Promise<GeneratedAppSpec | null> {
   let provider;
   try {
@@ -176,7 +142,6 @@ async function tryLLMGeneration(
     maxTokens: 16384,
     temperature: 0.7,
     maxRetries: 1,
-    promptTraces,
   });
 
   if (!result.ok) {
@@ -286,7 +251,6 @@ export async function designGenerateCommand(
   loadDotEnv(rootDir);
   initLangfuseTracing();
 
-  const promptTraces: PromptTrace[] = [];
   const previewDir = path.join(rootDir, PREVIEW_DIR_REL, 'design-generate');
 
   // Read project context via proper YAML parsing
@@ -339,7 +303,6 @@ export async function designGenerateCommand(
       input,
       output,
       config?.designOptionsConfig,
-      promptTraces,
     );
 
     // Save design system files
@@ -374,7 +337,6 @@ export async function designGenerateCommand(
     providerConfig,
     { appName, description, tokens, brand, prdContent },
     output,
-    promptTraces,
   );
   if (!spec) {
     output.write(errorMsg('Failed to generate app spec. Please try again.\n'));
@@ -411,7 +373,6 @@ export async function designGenerateCommand(
         providerConfig,
         { appName, description, tokens, brand, prdContent },
         output,
-        promptTraces,
       );
       if (newSpec) {
         spec = newSpec;
@@ -421,14 +382,6 @@ export async function designGenerateCommand(
     } else {
       output.write(infoMsg('Cancelled.\n'));
       return null;
-    }
-  }
-
-  // Save prompt traces
-  if (promptTraces.length > 0) {
-    fs.mkdirSync(previewDir, { recursive: true });
-    for (const trace of promptTraces) {
-      saveTextArtifact(previewDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
     }
   }
 

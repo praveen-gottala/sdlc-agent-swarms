@@ -138,10 +138,8 @@ export type {
   AgentWorkFn,
   AgentRunResult,
   ErrorStrategy,
-  PromptTrace,
-  PromptTraceResponse,
 } from './agent-runtime/index.js';
-export { runAgent, parseErrorStrategy, formatLearningsForPrompt, recordPromptTrace, recordPromptTraceResponse } from './agent-runtime/index.js';
+export { runAgent, parseErrorStrategy, formatLearningsForPrompt } from './agent-runtime/index.js';
 
 // Filesystem
 export type { FileSystem } from './fs/index.js';

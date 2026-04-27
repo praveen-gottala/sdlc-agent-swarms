@@ -21,8 +21,6 @@ import {
   Err,
   runAgent,
   readSpecs,
-  recordPromptTrace,
-  recordPromptTraceResponse,
   safeParse,
 } from '@agentforge/core';
 import { UXResearchOutputSchema } from '../schemas.js';
@@ -172,12 +170,6 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
     }],
   };
 
-  // 2b. Record prompt trace
-  recordPromptTrace(context, 'research', prompt, {
-    model: UX_RESEARCH_CONTRACT.provider,
-    maxTokens: 8000,
-  });
-
   // 3. Call LLM
   const completionResult = await provider.complete(prompt, {
     model: context.resolvedModel ?? UX_RESEARCH_CONTRACT.provider,
@@ -189,16 +181,6 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
   }
 
   const llmOutput = (completionResult.value as { content: string }).content;
-
-  // Record response trace
-  const completionValue = completionResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-  recordPromptTraceResponse(context, 'research', {
-    content: completionValue.content,
-    usage: completionValue.usage,
-    cost: completionValue.cost,
-    latencyMs: completionValue.latencyMs,
-    finishReason: completionValue.finishReason,
-  });
 
   // 4. Parse output
   const parseResult = parseResearchOutput(llmOutput);

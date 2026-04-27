@@ -8,10 +8,10 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import type { DesignTokensSpec, BrandSpec, PromptTrace, FileSystem, OpacitySpec, MotionSpec, StateTokensSpec, TypographyScaleEntry, SpacingSpec, BorderSpec, TouchTargetSpec, LayoutSpec, ZIndexSpec, BorderWidthSpec, TextExtrasSpec } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec, FileSystem, OpacitySpec, MotionSpec, StateTokensSpec, TypographyScaleEntry, SpacingSpec, BorderSpec, TouchTargetSpec, LayoutSpec, ZIndexSpec, BorderWidthSpec, TextExtrasSpec } from '@agentforge/core';
 import { DEFAULT_LAYOUT_TOKENS, DEFAULT_OPACITY, DEFAULT_MOTION, DEFAULT_STATE, DEFAULT_ELEVATION, DEFAULT_TYPOGRAPHY_SCALE } from '../design/design-tokens-defaults.js';
 import type { PreviewData } from '../design/design-tokens-defaults.js';
-import { validateDesignTokens, validateBrandSpec, recordPromptTrace, loadPRD, debugLog, logDefaults } from '@agentforge/core';
+import { validateDesignTokens, validateBrandSpec, loadPRD, debugLog, logDefaults } from '@agentforge/core';
 import { createClaudeProvider, resolveClaudeAuth, authResultToProviderConfig } from '@agentforge/providers';
 import type { LLMProvider, ProviderConfig } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
@@ -652,7 +652,6 @@ export async function generateDesignOptions(
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream,
   config?: GenerateDesignOptionsConfig,
-  promptTraces?: PromptTrace[],
 ): Promise<GenerateDesignResult> {
   const out = output ?? process.stdout;
   const inp = input ?? process.stdin;
@@ -669,7 +668,7 @@ export async function generateDesignOptions(
     options = buildFallbackOptions();
   } else if (llmProviderConfig) {
     out.write(infoMsg('\nCalling Claude Sonnet to generate design themes...\n'));
-    const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out, promptTraces);
+    const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out);
     if (llmOptions) {
       options = llmOptions;
       source = 'llm';
@@ -706,7 +705,7 @@ export async function generateDesignOptions(
 
     if (answer === 'r' && llmProviderConfig && !config?.mock) {
       out.write(infoMsg('Regenerating via LLM...\n'));
-      const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out, promptTraces);
+      const llmOptions = await tryLLMGeneration(llmProviderConfig, effectiveContext, out);
       if (llmOptions) {
         options = llmOptions;
         source = 'llm';
@@ -751,7 +750,6 @@ async function tryLLMGeneration(
   providerConfig: ProviderConfig,
   context: { appName: string; description: string; targetAudience: string; prdContent?: string },
   output: NodeJS.WritableStream,
-  promptTraces?: PromptTrace[],
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
   try {
@@ -776,13 +774,6 @@ async function tryLLMGeneration(
         temperature: 0.8,
         responseSchema: { schema: DESIGN_OPTIONS_SCHEMA },
       };
-
-      recordPromptTrace(
-        { promptTraces },
-        'design-system-generation',
-        prompt,
-        opts,
-      );
 
       const result = await provider.complete(prompt, opts);
       if (!result.ok) {

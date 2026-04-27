@@ -62,91 +62,6 @@ export type RecordAuditFn = (entry: unknown) => void;
 // Agent context and execution types
 // ============================================================================
 
-/** A captured prompt sent to an LLM provider for tracing. */
-export interface PromptTrace {
-  readonly stage: string;
-  readonly timestamp: string;
-  readonly system: string;
-  readonly userMessage: string;
-  readonly model: string;
-  readonly maxTokens: number;
-  // ── Response fields (populated after LLM call completes) ──
-  readonly responseContent?: string;
-  readonly responseStructured?: Record<string, unknown>;
-  readonly responseToolCalls?: readonly { readonly name: string; readonly args: Record<string, unknown> }[];
-  readonly usage?: { readonly inputTokens: number; readonly outputTokens: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number };
-  readonly cost?: { readonly inputCostUsd: number; readonly outputCostUsd: number; readonly totalCostUsd: number };
-  readonly latencyMs?: number;
-  readonly finishReason?: string;
-  readonly hasVisionInput?: boolean;
-}
-
-/** Data for recording a prompt trace response. */
-export interface PromptTraceResponse {
-  readonly content?: string;
-  readonly structured?: Record<string, unknown>;
-  readonly toolCalls?: readonly { readonly name: string; readonly args: Record<string, unknown> }[];
-  readonly usage?: { readonly inputTokens: number; readonly outputTokens: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number };
-  readonly cost?: { readonly inputCostUsd: number; readonly outputCostUsd: number; readonly totalCostUsd: number };
-  readonly latencyMs?: number;
-  readonly finishReason?: string;
-  readonly hasVisionInput?: boolean;
-}
-
-/** Record a prompt trace if the context has a trace collector. */
-export function recordPromptTrace(
-  context: { promptTraces?: PromptTrace[] },
-  stage: string,
-  prompt: { system: string | readonly { text: string }[]; messages: { role: string; content: string | readonly { text?: string }[] }[] },
-  opts: { model: string; maxTokens: number },
-): void {
-  if (!context.promptTraces) return;
-  const systemText = typeof prompt.system === 'string'
-    ? prompt.system
-    : prompt.system.map(b => b.text).join('\n');
-  const userMessage = prompt.messages.map(m => {
-    if (typeof m.content === 'string') return m.content;
-    return m.content.map(b => ('text' in b && b.text) ? b.text : '').join('\n');
-  }).join('\n');
-  context.promptTraces.push({
-    stage,
-    timestamp: new Date().toISOString(),
-    system: systemText,
-    userMessage,
-    model: opts.model,
-    maxTokens: opts.maxTokens,
-  });
-}
-
-/**
- * Record LLM response data on the last trace matching the given stage.
- * Finds the most recent trace with the matching stage name and replaces it
- * with a merged copy that includes the response fields.
- */
-export function recordPromptTraceResponse(
-  context: { promptTraces?: PromptTrace[] },
-  stage: string,
-  response: PromptTraceResponse,
-): void {
-  if (!context.promptTraces) return;
-  for (let i = context.promptTraces.length - 1; i >= 0; i--) {
-    if (context.promptTraces[i].stage === stage) {
-      context.promptTraces[i] = {
-        ...context.promptTraces[i],
-        responseContent: response.content,
-        responseStructured: response.structured,
-        responseToolCalls: response.toolCalls,
-        usage: response.usage,
-        cost: response.cost,
-        latencyMs: response.latencyMs,
-        finishReason: response.finishReason,
-        hasVisionInput: response.hasVisionInput,
-      };
-      return;
-    }
-  }
-}
-
 /** Everything an agent needs to execute, passed as a single object. */
 export interface AgentContext {
   readonly taskId: string;
@@ -159,7 +74,6 @@ export interface AgentContext {
   readonly resolveProvider: ResolveProviderFn;
   readonly recordAudit: RecordAuditFn;
   readonly abortSignal?: AbortSignal;
-  readonly promptTraces?: PromptTrace[];
   /** Project manifest for data-driven model resolution. Optional for backward compatibility. */
   readonly manifest?: Pick<ProjectManifest, 'agents'>;
   /** Model resolved via resolveModelForRole(). Set by runAgent, consumed by work functions. */

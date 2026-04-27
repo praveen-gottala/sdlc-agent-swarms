@@ -21,8 +21,6 @@ import {
   Err,
   runAgent,
   readSpecs,
-  recordPromptTrace,
-  recordPromptTraceResponse,
   safeParse,
 } from '@agentforge/core';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
@@ -304,12 +302,6 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
     messages: [{ role: 'user' as const, content: userMessageParts.join('\n') }],
   };
 
-  // Record implementation prompt trace
-  recordPromptTrace(context, 'implementation', prompt, {
-    model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
-    maxTokens: 16000,
-  });
-
   // 3. Call LLM via streaming
   const stream = provider.stream(prompt, {
     model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
@@ -322,15 +314,6 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
     return collectResult as Result<never>;
   }
 
-  // Record implementation response trace
-  recordPromptTraceResponse(context, 'implementation', {
-    content: collectResult.value.content,
-    cost: collectResult.value.cost ? {
-      inputCostUsd: collectResult.value.cost.inputCostUsd,
-      outputCostUsd: collectResult.value.cost.outputCostUsd,
-      totalCostUsd: collectResult.value.cost.totalCostUsd,
-    } : undefined,
-  });
 
   // 4. Parse output
   const parseResult = parseImplementationOutput(collectResult.value.content);

@@ -15,7 +15,7 @@
 import { resolve, join, relative } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
-import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact, saveTextArtifact, formatPromptTrace, deriveModuleId } from '../utils/pipeline-context.js';
+import { createPipelineContext, ensureOutputDir, saveArtifact, loadArtifact, deriveModuleId } from '../utils/pipeline-context.js';
 import { successMsg, errorMsg, infoMsg, warnMsg } from '../formatter.js';
 import { findProjectRoot, loadDotEnv } from '../fs-utils.js';
 import { verifyImplementation } from './impl-verify.js';
@@ -39,7 +39,6 @@ import type {
   DesignTokensSpec,
   BrandSpec,
   DesignConfig,
-  PromptTrace,
   PageContext,
   PageEntry,
 } from '@agentforge/core';
@@ -155,39 +154,6 @@ function normalizeDesignSpecShape(raw: unknown): import('@agentforge/designspec-
   return null;
 }
 
-/** Build and save pipeline-trace.json summary. */
-function savePipelineTrace(
-  outputDir: string,
-  moduleId: string,
-  traces: readonly PromptTrace[],
-): void {
-  const stages = traces.map(t => ({
-    stage: t.stage,
-    model: t.model,
-    ...(t.latencyMs !== undefined ? { latencyMs: t.latencyMs } : {}),
-    ...(t.usage ? { usage: t.usage } : {}),
-    ...(t.cost ? { cost: { totalCostUsd: t.cost.totalCostUsd } } : {}),
-    ...(t.finishReason ? { finishReason: t.finishReason } : {}),
-    ...(t.hasVisionInput ? { hasVisionInput: true } : {}),
-  }));
-
-  const totalCost = traces.reduce((sum, t) => sum + (t.cost?.totalCostUsd ?? 0), 0);
-  const totalInputTokens = traces.reduce((sum, t) => sum + (t.usage?.inputTokens ?? 0), 0);
-  const totalOutputTokens = traces.reduce((sum, t) => sum + (t.usage?.outputTokens ?? 0), 0);
-
-  const summary = {
-    moduleId,
-    timestamp: new Date().toISOString(),
-    stages,
-    totalCost,
-    totalInputTokens,
-    totalOutputTokens,
-  };
-
-  const filePath = join(outputDir, 'pipeline-trace.json');
-  writeFileSync(filePath, JSON.stringify(summary, null, 2), 'utf-8');
-}
-
 /**
  * Resolve whether to export to Penpot.
  * - true/false from CLI flag → use directly
@@ -248,8 +214,6 @@ export async function designPageCommand(
   logDefaults('designPageCommand', {
     projectDir: [options.projectDir, 'process.cwd()'],
   });
-  const promptTraces: PromptTrace[] = [];
-
   // Load .env file so ANTHROPIC_API_KEY is available
   const projectRoot = findProjectRoot(baseDir);
   loadDotEnv(projectRoot);
@@ -584,7 +548,7 @@ export async function designPageCommand(
     stage: skipToStage as PipelineInput['stage'],
     resume: !forceFresh,
     telemetry: sink,
-    agentContext: createPipelineContext(taskId, mcpClient, promptTraces, baseDir, providerFactory),
+    agentContext: createPipelineContext(taskId, mcpClient, baseDir, providerFactory),
     prdRequirements,
     pageContext,
     designTokensSpec: designTokens,
@@ -651,10 +615,6 @@ export async function designPageCommand(
     ...(browserCorrectionResult ? { browserCorrectionResult } : {}),
   };
   const artifactPath = saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
-  for (const trace of promptTraces) {
-    saveTextArtifact(outputDir, `${trace.stage}-prompt.md`, formatPromptTrace(trace));
-  }
-  savePipelineTrace(outputDir, moduleId, promptTraces);
 
   // ── PIPELINE COMPLETE banner ──
   output.write('\n');

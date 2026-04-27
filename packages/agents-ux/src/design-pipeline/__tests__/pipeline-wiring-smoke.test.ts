@@ -148,7 +148,6 @@ describe('pipeline wiring smoke test', () => {
         resolveProvider: jest.fn().mockReturnValue({ ok: true, value: provider }),
         recordAudit: jest.fn(),
         resolvedModel: 'claude-sonnet-4-6',
-        promptTraces: [],
       },
     };
 
@@ -230,7 +229,6 @@ describe('pipeline wiring smoke test', () => {
         resolveProvider: jest.fn().mockReturnValue({ ok: true, value: provider }),
         recordAudit: jest.fn(),
         resolvedModel: 'claude-sonnet-4-6',
-        promptTraces: [],
       },
     };
 

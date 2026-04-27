@@ -34,7 +34,7 @@ Vision Layer 11 prescribes OpenTelemetry + Langfuse self-hosted for LLM observab
 - [x] **2.1** CLI `design:generate` wired (2026-04-27)
 - [x] **2.2** CLI `generate-design-options` wired (2026-04-27)
 - [x] **2.3** Verified: design:generate trace lands in Langfuse (trace #9, programmatic check)
-- [ ] **2.4** Cleanup `promptTraces` — remove redundant in-memory trace mechanism
+- [x] **2.4** Cleanup `promptTraces` — remove redundant in-memory trace mechanism (2026-04-27)
 
 ### Phase 3 — Prompt Versioning (NOT STARTED)
 - [ ] **3.1** Add `version: X.Y.Z` frontmatter parser for `.md` prompt files

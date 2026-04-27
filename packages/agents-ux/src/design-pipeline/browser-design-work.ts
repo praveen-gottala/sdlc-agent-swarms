@@ -15,7 +15,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Err, Ok } from '@agentforge/core';
 import type { Result } from '@agentforge/core';
-import { recordPromptTrace, recordPromptTraceResponse } from '@agentforge/core';
 import { debugLog } from '@agentforge/core';
 import { SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
 import { extractDesignSpecFromToolCall } from '../ux-design/penpot-script-executor.js';
@@ -154,12 +153,6 @@ export async function browserDesignWork(
   for (let retry = 0; retry <= MAX_EMPTY_NODES_RETRIES; retry++) {
     const attemptStart = Date.now();
 
-    if (ctx.promptTraces) {
-      recordPromptTrace({ promptTraces: ctx.promptTraces }, 'browser-design',
-        { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
-        { model, maxTokens });
-    }
-
     const result = await ctx.provider.complete(
       {
         system: systemPrompt,
@@ -202,17 +195,6 @@ export async function browserDesignWork(
       `outputTokens=${completion.usage.outputTokens}/${maxTokens}, ` +
       `cost=$${completion.cost.totalCostUsd.toFixed(4)}`,
     );
-
-    if (ctx.promptTraces) {
-      recordPromptTraceResponse({ promptTraces: ctx.promptTraces }, 'browser-design', {
-        content: completion.content,
-        toolCalls: completion.toolCalls?.map(tc => ({ name: tc.name, args: tc.args })),
-        usage: completion.usage,
-        cost: completion.cost,
-        latencyMs: completion.latencyMs,
-        finishReason: completion.finishReason,
-      });
-    }
 
     ctx.telemetry?.onLlmCall('design', {
       model,

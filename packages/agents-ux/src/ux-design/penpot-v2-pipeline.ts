@@ -18,13 +18,10 @@ import { fileURLToPath } from 'node:url';
 import type {
   Result,
   MCPClient,
-  PromptTrace,
 } from '@agentforge/core';
 import {
   Ok,
   Err,
-  recordPromptTrace,
-  recordPromptTraceResponse,
   PREVIEW_DIR_REL,
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
@@ -253,7 +250,6 @@ async function runV2CorrectionLoop(
   planningOutput: UXPlanningOutput,
   effectiveModel: string,
   systemPrompt: string,
-  traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<{ finalSpec: DesignSpecV2; fixScripts: string[]; updatedNodeIds?: Record<string, string> }> {
   const MAX_CORRECTIONS = 3;
   const QUALITY_THRESHOLD = 80;
@@ -287,8 +283,6 @@ async function runV2CorrectionLoop(
       undefined,
       undefined,
       undefined,
-      traceCollector,
-      `evaluation-v2-${correction + 1}`,
       {
         structuralNavCheck: { planning: planningOutput, getSpec: () => spec },
       },
@@ -362,20 +356,6 @@ async function runV2CorrectionLoop(
       break;
     }
 
-    // Record correction response trace
-    if (traceCollector) {
-      const stageName = `correction-v2-${correction + 1}`;
-      recordPromptTrace(traceCollector, stageName, correctionPrompt, { model: effectiveModel, maxTokens: 8000 });
-      const corrVal = correctionResult.value as { content: string; toolCalls?: { name: string; args: Record<string, unknown> }[]; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-      recordPromptTraceResponse(traceCollector, stageName, {
-        content: corrVal.content,
-        toolCalls: corrVal.toolCalls?.map(tc => ({ name: tc.name, args: tc.args })),
-        usage: corrVal.usage,
-        cost: corrVal.cost,
-        latencyMs: corrVal.latencyMs,
-        finishReason: corrVal.finishReason,
-      });
-    }
 
     const extractResult = extractDesignSpecFromToolCall(correctionResult.value);
     if (!extractResult.ok) {
@@ -480,7 +460,6 @@ export async function penpotDesignWorkV2(
   llm: LLMProvider,
   mcpClient: MCPClient | undefined,
   evalProvider: EvalLLMProvider,
-  traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
   const {
     moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt,
@@ -609,11 +588,6 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
 
   const userMessage = userMessageParts.join('\n');
 
-  if (traceCollector) {
-    recordPromptTrace(traceCollector, 'design-penpot-v2',
-      { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
-      { model: effectiveModel, maxTokens: 16000 });
-  }
   // Here the design tokens are lost - due to inconsistencies in how we are defining schema less in "design:generate" command until here when we load the design
   const completionResult = await llm.complete(
     {
@@ -644,20 +618,6 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
   }
 
   const completion = completionResult.value;
-
-  // Record V2 design response trace
-  if (traceCollector) {
-    const v2Completion = completionResult.value as { content: string; structured?: Record<string, unknown>; toolCalls?: { name: string; args: Record<string, unknown> }[]; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-    recordPromptTraceResponse(traceCollector, 'design-penpot-v2', {
-      content: v2Completion.content,
-      structured: v2Completion.structured,
-      toolCalls: v2Completion.toolCalls?.map((tc: { name: string; args: Record<string, unknown> }) => ({ name: tc.name, args: tc.args })),
-      usage: v2Completion.usage ? { inputTokens: v2Completion.usage.inputTokens, outputTokens: v2Completion.usage.outputTokens, cacheReadTokens: v2Completion.usage.cacheReadTokens, cacheWriteTokens: v2Completion.usage.cacheWriteTokens } : undefined,
-      cost: v2Completion.cost ? { inputCostUsd: v2Completion.cost.inputCostUsd, outputCostUsd: v2Completion.cost.outputCostUsd, totalCostUsd: v2Completion.cost.totalCostUsd } : undefined,
-      latencyMs: v2Completion.latencyMs,
-      finishReason: v2Completion.finishReason,
-    });
-  }
 
   if (completion.finishReason === 'max_tokens') {
     // eslint-disable-next-line no-console
@@ -774,7 +734,7 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
     }
     return penpotDesignWorkV2Legacy(
       designSpec, rendererTokens, catalogMap, moduleId, planningOutput,
-      effectiveModel, systemPrompt, llm, mcpClient, evalProvider, traceCollector,
+      effectiveModel, systemPrompt, llm, mcpClient, evalProvider,
     );
   }
 
@@ -852,7 +812,6 @@ export async function penpotDesignWorkV2Legacy(
   llm: LLMProvider,
   mcpClient: MCPClient,
   evalProvider: EvalLLMProvider,
-  traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
   const chunkedResult = renderToScriptChunks(designSpec, rendererTokens, catalogMap);
   if (chunkedResult.warnings.length > 0) {
@@ -897,7 +856,7 @@ export async function penpotDesignWorkV2Legacy(
     const correctionResult = await runV2CorrectionLoop(
       designSpec, rootShapeId, llm, mcpClient, evalProvider,
       rendererTokens, catalogMap, planningOutput, effectiveModel,
-      systemPrompt, traceCollector,
+      systemPrompt,
     );
     finalSpec = correctionResult.finalSpec;
     fixScripts.push(...correctionResult.fixScripts);

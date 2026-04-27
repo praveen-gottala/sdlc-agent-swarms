@@ -22,8 +22,6 @@ import {
   Err,
   runAgent,
   readSpecs,
-  recordPromptTrace,
-  recordPromptTraceResponse,
   debugLog,
   logDefaults,
   extractJson,
@@ -397,12 +395,6 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
     }],
   };
 
-  // 3a. Record prompt trace
-  recordPromptTrace(context, 'planning', prompt, {
-    model: UX_PLANNING_CONTRACT.provider,
-    maxTokens: 8000,
-  });
-
   // 3. Call LLM with structured output schema
   if (!context.resolvedModel) {
     debugLog(`[planning] resolvedModel not set, falling back to contract default: ${UX_PLANNING_CONTRACT.provider}`);
@@ -419,17 +411,6 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
   }
 
   const llmOutput = (completionResult.value as { content: string }).content;
-
-  // Record response trace
-  const planningCompletion = completionResult.value as { content: string; structured?: Record<string, unknown>; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-  recordPromptTraceResponse(context, 'planning', {
-    content: planningCompletion.content,
-    structured: planningCompletion.structured,
-    usage: planningCompletion.usage,
-    cost: planningCompletion.cost,
-    latencyMs: planningCompletion.latencyMs,
-    finishReason: planningCompletion.finishReason,
-  });
 
   // 4. Parse output — prefer structured output, fall back to text parsing
   const structured = (completionResult.value as { structured?: Record<string, unknown> }).structured;
@@ -497,11 +478,6 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
         ],
       };
 
-      recordPromptTrace(context, 'planning-token-correction', retryPrompt, {
-        model: UX_PLANNING_CONTRACT.provider,
-        maxTokens: 2000,
-      });
-
       const retryResult = await provider.complete(retryPrompt, {
         model: context.resolvedModel ?? UX_PLANNING_CONTRACT.provider,
         maxTokens: 2000,
@@ -515,16 +491,6 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
       }
 
       const retryContent = (retryResult.value as { content: string }).content;
-
-      // Record correction response trace
-      const correctionCompletion = retryResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-      recordPromptTraceResponse(context, 'planning-token-correction', {
-        content: correctionCompletion.content,
-        usage: correctionCompletion.usage,
-        cost: correctionCompletion.cost,
-        latencyMs: correctionCompletion.latencyMs,
-        finishReason: correctionCompletion.finishReason,
-      });
 
       const correctedBindings = parseTokenBindingsCorrection(retryContent);
 

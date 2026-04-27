@@ -105,8 +105,7 @@ export async function designNode(
     frozenChromePageId: state.chromePass?.mode === 'consume' ? state.chromePass.activePageId : undefined,
   };
 
-  const traceCollector = ctx.promptTraces ? { promptTraces: ctx.promptTraces } : undefined;
-  const result = await penpotDesignWork(input, ctx.provider, ctx.agentContext.mcpClient, traceCollector);
+  const result = await penpotDesignWork(input, ctx.provider, ctx.agentContext.mcpClient);
   if (!result.ok) {
     const err = result.error as { message?: string };
     return Err(pipelineStageError('design', err.message ?? 'Penpot design stage failed'));

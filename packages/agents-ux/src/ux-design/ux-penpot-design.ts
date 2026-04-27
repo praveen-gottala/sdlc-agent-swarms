@@ -22,7 +22,6 @@ import type {
   AgentContract,
   Result,
   MCPClient,
-  PromptTrace,
   PageContext,
   DesignTokensSpec,
 } from '@agentforge/core';
@@ -30,8 +29,6 @@ import type { BrowserCorrectionResult, BrowserCorrectionOptions } from './browse
 import {
   Ok,
   Err,
-  recordPromptTrace,
-  recordPromptTraceResponse,
   PREVIEW_DIR_REL,
   debugLog,
   logDefaults,
@@ -393,7 +390,6 @@ export async function penpotDesignWork(
   input: PenpotDesignInput,
   provider: unknown,
   mcpClient?: MCPClient,
-  traceCollector?: { promptTraces?: PromptTrace[] },
 ): Promise<Result<PenpotDesignOutput>> {
   const { moduleId, planningOutput, designSystemPrompt, componentCatalogPrompt, description, viewportWidth, resolvedModel } = input;
   const llm = provider as unknown as LLMProvider;
@@ -405,7 +401,7 @@ export async function penpotDesignWork(
 
   // ── V2 DesignSpec path ──
   if (input.useDesignSpecV2) {
-    return penpotDesignWorkV2(input, llm, mcpClient ?? undefined, provider as unknown as EvalLLMProvider, traceCollector);
+    return penpotDesignWorkV2(input, llm, mcpClient ?? undefined, provider as unknown as EvalLLMProvider);
   }
 
   // ── Legacy V1 path requires mcpClient ──
@@ -466,12 +462,6 @@ export async function penpotDesignWork(
 
   const userMessage = userMessageParts.join('\n');
 
-  if (traceCollector) {
-    recordPromptTrace(traceCollector, 'design-penpot',
-      { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
-      { model: PENPOT_DESIGN_CONTRACT.provider, maxTokens: 32000 });
-  }
-
   const completionResult = await llm.complete(
     {
       system: systemPrompt,
@@ -502,18 +492,6 @@ export async function penpotDesignWork(
   }
 
   const completion = completionResult.value as { content: string; finishReason?: string };
-
-  // Record V1 design response trace
-  if (traceCollector) {
-    const v1Completion = completionResult.value as { content: string; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-    recordPromptTraceResponse(traceCollector, 'design-penpot', {
-      content: v1Completion.content,
-      usage: v1Completion.usage,
-      cost: v1Completion.cost,
-      latencyMs: v1Completion.latencyMs,
-      finishReason: v1Completion.finishReason,
-    });
-  }
 
   if (completion.finishReason === 'max_tokens') {
     // eslint-disable-next-line no-console
@@ -660,11 +638,6 @@ try {
         screenshotBase64,
         JSON.stringify(planningOutput, null, 2),
         evalProvider,
-        undefined,
-        undefined,
-        undefined,
-        traceCollector,
-        `evaluation-v1-${correction + 1}`,
       );
 
       if (!evalResult.ok) {
@@ -750,21 +723,6 @@ Return ONLY a JSON object: { "fixes": [{ "code": "...", "description": "..." }] 
         // eslint-disable-next-line no-console
         console.warn(`        [correction ${correction + 1}] Fix generation failed`);
         break;
-      }
-
-      // Record V1 correction response trace
-      if (traceCollector) {
-        const fixStageName = `fix-v1-${correction + 1}`;
-        recordPromptTrace(traceCollector, fixStageName, fixPrompt, { model: effectiveModel, maxTokens: 8000 });
-        const fixVal = fixResult.value as { content: string; structured?: Record<string, unknown>; usage?: { inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }; cost?: { inputCostUsd: number; outputCostUsd: number; totalCostUsd: number }; latencyMs?: number; finishReason?: string };
-        recordPromptTraceResponse(traceCollector, fixStageName, {
-          content: fixVal.content,
-          structured: fixVal.structured,
-          usage: fixVal.usage,
-          cost: fixVal.cost,
-          latencyMs: fixVal.latencyMs,
-          finishReason: fixVal.finishReason,
-        });
       }
 
       // Parse fix steps — prefer structured output, fall back to text parsing

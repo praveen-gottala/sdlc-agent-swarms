@@ -5,8 +5,8 @@
  * Callers handle file writing, status assignment, and approval flow.
  */
 
-import type { DesignTokensSpec, BrandSpec, PromptTrace, Result } from '@agentforge/core';
-import { Ok, Err, recordPromptTrace } from '@agentforge/core';
+import type { DesignTokensSpec, BrandSpec, Result } from '@agentforge/core';
+import { Ok, Err } from '@agentforge/core';
 import { GeneratedAppSpecSchema } from './app-spec-schemas.js';
 import type { GeneratedAppSpec } from './app-spec-schemas.js';
 import { buildAppSpecSystemPrompt, buildAppSpecUserPrompt } from './app-spec-prompts.js';
@@ -30,7 +30,6 @@ export interface GenerateAppSpecInput {
   readonly maxTokens?: number;
   readonly temperature?: number;
   readonly maxRetries?: number;
-  readonly promptTraces?: PromptTrace[];
 }
 
 export interface AppSpecError {
@@ -103,8 +102,6 @@ export async function generateAppSpec(
 
     const prompt = { system: systemPrompt, messages };
     const opts = { model, maxTokens, temperature };
-
-    recordPromptTrace({ promptTraces: input.promptTraces }, 'app-spec-generation', prompt, opts);
 
     const llmResult = await input.provider.complete(prompt, opts);
     if (!llmResult.ok) {

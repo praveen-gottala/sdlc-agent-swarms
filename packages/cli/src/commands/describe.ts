@@ -11,8 +11,7 @@ import * as readline from 'node:readline';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as nodeFs from 'node:fs';
-import { prdExists, recordPromptTrace } from '@agentforge/core';
-import type { PromptTrace } from '@agentforge/core';
+import { prdExists } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { LLMProvider } from '@agentforge/providers';
 import { resolveCLIModel } from '../utils/resolve-cli-model.js';
@@ -68,7 +67,6 @@ Technical constraints: ${answers.technicalConstraints || 'None specified'}`;
 export async function generatePRD(
   answers: DescribeAnswers,
   output: NodeJS.WritableStream,
-  promptTraces?: PromptTrace[],
 ): Promise<string | null> {
   const providerConfig = requireClaudeAuth(output);
   if (!providerConfig) return null;
@@ -88,13 +86,6 @@ export async function generatePRD(
       messages: [{ role: 'user' as const, content: buildPRDUserPrompt(answers) }],
     };
     const opts = { model, maxTokens: 8192, temperature: 0.7 };
-
-    recordPromptTrace(
-      { promptTraces },
-      'prd-generation',
-      prompt,
-      opts,
-    );
 
     const result = await provider.complete(prompt, opts);
 

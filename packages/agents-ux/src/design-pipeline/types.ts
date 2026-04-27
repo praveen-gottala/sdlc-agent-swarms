@@ -8,7 +8,7 @@
  * OTel mapping deferred to roadmap Phase 7 / Langfuse.
  */
 
-import type { AgentContext, LLMProviderRef, PromptTrace } from '@agentforge/core';
+import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import type { DesignTool, DesignOutput } from '@agentforge/core';
 import type { DesignTokensSpec, DesignConfig, PageContext } from '@agentforge/core';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
@@ -128,9 +128,6 @@ export interface DesignPhaseState {
   readonly catalogMap?: CatalogMap;
   readonly componentCatalogPrompt?: string;
   readonly designSystemPrompt?: string;
-
-  /** Prompt traces collected during pipeline execution (populated after completion). */
-  readonly _promptTraces?: PromptTrace[];
 }
 
 // ============================================================================
@@ -143,7 +140,6 @@ export interface NodeContext {
   readonly provider: LLMProviderRef;
   readonly agentContext: AgentContext;
   readonly telemetry?: PipelineTelemetrySink;
-  readonly promptTraces?: PromptTrace[];
 }
 
 // ============================================================================

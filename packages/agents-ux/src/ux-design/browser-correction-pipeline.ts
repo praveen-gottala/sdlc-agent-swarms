@@ -349,8 +349,6 @@ async function runInteractiveCorrectionLoop(
         undefined,
         tokens as unknown as DesignTokensSpec,
         catalog,
-        undefined,
-        undefined,
         planningOutput
           ? { structuralNavCheck: { planning: planningOutput, getSpec: () => specRef.value } }
           : undefined,

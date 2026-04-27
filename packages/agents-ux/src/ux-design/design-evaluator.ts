@@ -5,8 +5,8 @@
  * Part of the visual self-correction loop.
  */
 
-import type { Result, DesignTokensSpec, PromptTrace } from '@agentforge/core';
-import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, recordPromptTrace, recordPromptTraceResponse, safeParse, debugLog } from '@agentforge/core';
+import type { Result, DesignTokensSpec } from '@agentforge/core';
+import { Ok, Err, EVALUATOR_MODEL, isVisionLLMEnabled, safeParse, debugLog } from '@agentforge/core';
 import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
 import { buildEvaluatorConstraintsPrompt } from '@agentforge/designspec-renderer';
 import { DesignEvaluationOutputSchema } from '../schemas.js';
@@ -158,8 +158,6 @@ export async function evaluateDesign(
   correctionHistory?: readonly CorrectionHistory[],
   designTokens?: DesignTokensSpec,
   catalogMap?: CatalogMap,
-  traceCollector?: { promptTraces?: PromptTrace[] },
-  traceStage?: string,
   options?: EvaluateDesignOptions,
 ): Promise<Result<DesignEvaluation>> {
   if (designSpec && !designSpec.startsWith('{')) {
@@ -268,14 +266,6 @@ export async function evaluateDesign(
   const estimatedTokens = Math.ceil(imageBytes / 750) + Math.ceil(contextChars / 4) + Math.ceil(EVALUATION_SYSTEM_PROMPT.length / 4);
   debugLog(`evaluateDesign: payload — image=${imageBytes}B, context=${contextChars}chars, est.tokens=${estimatedTokens}`);
 
-  // Record evaluation prompt trace
-  const evalStageName = traceStage ?? 'evaluation';
-  if (traceCollector) {
-    recordPromptTrace(traceCollector, evalStageName,
-      { system: EVALUATION_SYSTEM_PROMPT, messages: [{ role: 'user', content: textBlock.text }] },
-      { model: EVALUATOR_MODEL, maxTokens: 4096 });
-  }
-
   const MAX_RETRIES = 2;
   const WALL_TIME_CAP_MS = 50_000;
   const startTime = Date.now();
@@ -306,19 +296,6 @@ export async function evaluateDesign(
 
     if (result.ok) {
       lastError = null;
-
-      // Record evaluation response trace
-      if (traceCollector) {
-        recordPromptTraceResponse(traceCollector, evalStageName, {
-          content: result.value.content,
-          structured: result.value.structured,
-          usage: result.value.usage ? { inputTokens: result.value.usage.inputTokens, outputTokens: result.value.usage.outputTokens, cacheReadTokens: result.value.usage.cacheReadTokens, cacheWriteTokens: result.value.usage.cacheWriteTokens } : undefined,
-          cost: result.value.cost ? { inputCostUsd: result.value.cost.inputCostUsd, outputCostUsd: result.value.cost.outputCostUsd, totalCostUsd: result.value.cost.totalCostUsd } : undefined,
-          latencyMs: result.value.latencyMs,
-          finishReason: result.value.finishReason,
-          hasVisionInput: true,
-        });
-      }
 
       // Prefer structured output, fall back to text parsing with validation
       const structured = result.value.structured;

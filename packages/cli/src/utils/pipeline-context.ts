@@ -7,7 +7,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import type { MCPClient, PromptTrace, AgentContext, LLMProviderRef } from '@agentforge/core';
+import type { MCPClient, AgentContext, LLMProviderRef } from '@agentforge/core';
 import {
   Ok,
   Err,
@@ -34,7 +34,6 @@ import {
 export function createPipelineContext(
   taskId: string,
   mcpClient?: MCPClient,
-  promptTraces?: PromptTrace[],
   baseDir?: string,
   providerFactory?: (model: string) => LLMProviderRef,
 ): AgentContext {
@@ -52,7 +51,6 @@ export function createPipelineContext(
       ? (model: string) => Ok(providerFactory(model))
       : () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'resolveProvider not wired — pass providerFactory to createPipelineContext', recoverable: false }),
     recordAudit: () => {},
-    promptTraces,
   };
 }
 
@@ -92,54 +90,6 @@ export function saveTextArtifact(dir: string, filename: string, text: string): s
   const filePath = join(dir, filename);
   writeFileSync(filePath, text);
   return filePath;
-}
-
-/** Format a prompt trace as a markdown document. */
-export function formatPromptTrace(trace: PromptTrace): string {
-  const lines = [
-    `# Prompt: ${trace.stage}`,
-    ``,
-    `**Timestamp**: ${trace.timestamp}  `,
-    `**Model**: ${trace.model}  `,
-    `**Max Tokens**: ${trace.maxTokens}`,
-  ];
-
-  if (trace.latencyMs !== undefined) {
-    lines.push(`**Latency**: ${(trace.latencyMs / 1000).toFixed(1)}s`);
-  }
-  if (trace.finishReason) {
-    lines.push(`**Finish Reason**: ${trace.finishReason}`);
-  }
-  if (trace.usage) {
-    lines.push(`**Input Tokens**: ${trace.usage.inputTokens}  `);
-    lines.push(`**Output Tokens**: ${trace.usage.outputTokens}`);
-    if (trace.usage.cacheReadTokens) {
-      lines.push(`**Cache Read Tokens**: ${trace.usage.cacheReadTokens}`);
-    }
-    if (trace.usage.cacheWriteTokens) {
-      lines.push(`**Cache Write Tokens**: ${trace.usage.cacheWriteTokens}`);
-    }
-  }
-  if (trace.cost) {
-    lines.push(`**Cost**: $${trace.cost.totalCostUsd.toFixed(4)} (input: $${trace.cost.inputCostUsd.toFixed(4)}, output: $${trace.cost.outputCostUsd.toFixed(4)})`);
-  }
-  if (trace.hasVisionInput) {
-    lines.push(`**Vision Input**: yes`);
-  }
-
-  lines.push(``, `---`, ``, `## System Prompt`, ``, trace.system, ``, `---`, ``, `## User Message`, ``, trace.userMessage);
-
-  if (trace.responseContent) {
-    lines.push(``, `---`, ``, `## LLM Response`, ``, trace.responseContent);
-  }
-  if (trace.responseToolCalls && trace.responseToolCalls.length > 0) {
-    lines.push(``, `---`, ``, `## Tool Calls`, ``);
-    for (const tc of trace.responseToolCalls) {
-      lines.push(`### ${tc.name}`, ``, '```json', JSON.stringify(tc.args, null, 2), '```', ``);
-    }
-  }
-
-  return lines.join('\n');
 }
 
 /** Derive a kebab-case module ID from a description string. */
