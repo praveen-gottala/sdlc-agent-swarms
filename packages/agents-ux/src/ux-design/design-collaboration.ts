@@ -14,7 +14,6 @@ export type {
 export {
   buildDesignSystemContext,
   buildDesignSystemContextFromSpec,
-  loadDesignSystemPrompt,
   buildComponentCatalogPrompt,
   matchColorToFamily,
   buildDesignSystemPromptSection,

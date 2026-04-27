@@ -91,7 +91,7 @@ export { extractScreenSubtree, inferSingleScreen, flattenTree, groupMissingByScr
 
 // Design System Context (shared across design tools)
 export type { DesignCollaborationSession, DesignSystemContext, DesignChangeRecord } from './ux-design/design-system-context.js';
-export { buildDesignSystemContext, buildDesignSystemContextFromSpec, loadDesignSystemPrompt, buildComponentCatalogPrompt, matchColorToFamily, buildDesignSystemPromptSection } from './ux-design/design-system-context.js';
+export { buildDesignSystemContext, buildDesignSystemContextFromSpec, buildComponentCatalogPrompt, matchColorToFamily, buildDesignSystemPromptSection } from './ux-design/design-system-context.js';
 
 // Design Evaluator
 export type { DesignIssue, DesignEvaluation, CorrectionHistory, FixAttemptRecord } from './ux-design/design-evaluator.js';

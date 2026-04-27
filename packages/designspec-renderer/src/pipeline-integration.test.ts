@@ -44,7 +44,7 @@ const DEEP_NEST_SPEC: DesignSpecV2 = {
   width: 1440,
   nodes: {
     root: { parent: null, order: 0, type: 'page', layout: { dir: 'column' } },
-    sec: { parent: 'root', order: 0, type: 'section', title: 'Level 1', layout: { dir: 'column' } },
+    sec: { parent: 'root', order: 0, type: 'section', overrides: { title: 'Level 1' }, layout: { dir: 'column' } },
     ctr1: { parent: 'sec', order: 0, type: 'container', layout: { dir: 'column' } },
     ctr2: { parent: 'ctr1', order: 0, type: 'container', layout: { dir: 'column' } },
     ctr3: { parent: 'ctr2', order: 0, type: 'container', layout: { dir: 'row' } },

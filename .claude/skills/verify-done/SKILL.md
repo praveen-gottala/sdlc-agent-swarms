@@ -157,6 +157,7 @@ git log --oneline --since="4 hours ago" | grep -i "fix\|revert\|undo\|retry\|att
    **Rule:** <One-sentence rule to prevent recurrence>
    ```
 3. Preserve specifics per the anti-bleach rule. "Port 4100 served stale Vite because the dashboard's auto-start silently failed when the previous process held the port" is useful. "Had build environment issues" is not.
+4. **If the entry's status is RULE or SUPERSEDED**, also add it to `docs/lessons-learned-rules.md` (the compact rules file read by session-start). Keep both files in sync — the rules file is the session-start fast path.
 
 **This step auto-writes.** Unlike other doc checks that propose-then-confirm, lessons-learned entries must be written before the session ends — the debugging context cannot be recovered later.
 

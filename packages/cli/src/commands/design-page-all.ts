@@ -61,6 +61,14 @@ import type {
 } from '@agentforge/agents-ux';
 import type { LLMProvider } from '@agentforge/providers';
 import { CliStdoutSink } from '../telemetry/cli-sink.js';
+import {
+  initLangfuseTracing,
+  shutdownTracing,
+  createTracedProvider,
+  createLangfuseSink,
+  CompositeSink,
+  isLangfuseConfigured,
+} from '@agentforge/telemetry';
 
 // ============================================================================
 // Types
@@ -110,8 +118,9 @@ function normalizeDesignSpecShape(raw: unknown): DesignSpecV2 | null {
 
 /** Build a rich description from page spec + design tokens for the LLM. */
 function buildPageDescription(page: PageSpec, designTokens: string): string {
-  const components = page.components.join(', ');
-  return `${page.name} page (route: ${page.route}): ${page.description}. Components: ${components}. ${designTokens}`;
+  const components = page.components?.join(', ') ?? '';
+  const componentsSuffix = components ? ` Components: ${components}.` : '';
+  return `${page.name} page (route: ${page.route}): ${page.description}.${componentsSuffix} ${designTokens}`;
 }
 
 /** Load design tokens as a condensed string for prompts. */
@@ -267,13 +276,26 @@ export async function designPageAllCommand(
   }
   output.write('\n');
 
+  // ── Telemetry: Langfuse + OTel (graceful no-op when unconfigured) ──
+
+  initLangfuseTracing();
+
   // ── Provider factory for runDesignPipeline ──
 
   const designTool = options.tool ?? 'browser';
-  const providerFactory = (model: string): LLMProviderRef =>
-    createClaudeProvider(model, providerConfig) as unknown as LLMProviderRef;
+  const providerFactory = (model: string): LLMProviderRef => {
+    const provider = createClaudeProvider(model, providerConfig);
+    const traced = createTracedProvider(provider);
+    return traced as unknown as LLMProviderRef;
+  };
 
   const componentCatalogPrompt = componentCatalogPromptStr;
+
+  const createSink = (runId: string): import('@agentforge/agents-ux').PipelineTelemetrySink => {
+    const cliSink = new CliStdoutSink(output);
+    const langfuseSink = createLangfuseSink(runId, { projectName: projectRoot.split('/').pop() });
+    return langfuseSink ? new CompositeSink([cliSink, langfuseSink]) : cliSink;
+  };
 
   // ── Chrome Pass (shared shell, reference page first) ──
 
@@ -316,7 +338,7 @@ export async function designPageAllCommand(
         designTool,
         providerString: resolveCLIModel(),
         resume: !!options.designOnly,
-        telemetry: new CliStdoutSink(output),
+        telemetry: createSink(refTaskId),
         chromePass: { mode: 'generate' },
         agentContext: createPipelineContext(refTaskId, undefined, undefined, projectRoot, providerFactory),
         prdRequirements: [refDescription],
@@ -380,7 +402,7 @@ export async function designPageAllCommand(
       providerString: resolveCLIModel(),
       resume: !!options.designOnly,
       ...(options.designOnly ? { stage: 'design' as const } : {}),
-      telemetry: new CliStdoutSink(output),
+      telemetry: createSink(taskId),
       agentContext: createPipelineContext(taskId, undefined, undefined, projectRoot, providerFactory),
       prdRequirements: [description],
       pageContext,
@@ -582,5 +604,13 @@ export async function designPageAllCommand(
 
     output.write(successMsg(`  Prototype manifest saved (${finalManifest.screens.length} screens, ${navigation.length} nav bindings)\n`));
     output.write(infoMsg(`  View in dashboard: Design Studio → Prototype\n`));
+  }
+
+  // ── Flush Langfuse spans ──
+
+  if (isLangfuseConfigured()) {
+    await shutdownTracing();
+    const baseUrl = process.env.LANGFUSE_BASE_URL ?? 'http://localhost:3000';
+    output.write(infoMsg(`\n  Langfuse traces: ${baseUrl}\n`));
   }
 }

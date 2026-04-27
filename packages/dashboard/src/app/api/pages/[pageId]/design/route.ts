@@ -25,6 +25,12 @@ import { createDashboardPipelineContext } from '../../../_lib/pipeline-context';
 import { buildDashboardPipelineInput } from '../../../_lib/pipeline-input-builder';
 import { resolveClaudeAuth, authResultToProviderConfig, createClaudeProvider } from '@agentforge/providers';
 import { runDesignPipeline } from '@agentforge/agents-ux';
+import {
+  initLangfuseTracing,
+  createTracedProvider,
+  createLangfuseSink,
+  CompositeSink,
+} from '@agentforge/telemetry';
 import type { PagesFile } from '../../../_lib/shared-types';
 
 /* ------------------------------------------------------------------ */
@@ -139,9 +145,13 @@ export async function POST(
   pages[idx].correctionIteration = 0;
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
+  initLangfuseTracing();
+
   const authConfig = authResultToProviderConfig(auth);
-  const providerFactory = (model: string): LLMProviderRef =>
-    createClaudeProvider(model, authConfig) as unknown as LLMProviderRef;
+  const providerFactory = (model: string): LLMProviderRef => {
+    const provider = createClaudeProvider(model, authConfig);
+    return createTracedProvider(provider) as unknown as LLMProviderRef;
+  };
 
   runPipelineAsync(runId, pageId, taskId, providerFactory).catch(() => {
     failRun(runId, 'Unexpected pipeline error');
@@ -160,7 +170,9 @@ async function runPipelineAsync(
 
   transitionTaskStatus(taskId, 'in_progress');
 
-  const sink = new DashboardSseSink(runId, 'design-browser', taskId);
+  const dashSink = new DashboardSseSink(runId, 'design-browser', taskId);
+  const langfuseSink = createLangfuseSink(runId, { projectName: projectRoot.split('/').pop() });
+  const sink = langfuseSink ? new CompositeSink([dashSink, langfuseSink]) : dashSink;
   const agentContext = createDashboardPipelineContext(taskId, projectRoot, providerFactory);
   const pipelineInput = buildDashboardPipelineInput(pageId, taskId, sink, agentContext);
 
@@ -207,8 +219,8 @@ async function runPipelineAsync(
 
     transitionTaskStatus(taskId, 'completed');
     completeRun(runId, {
-      totalCostUsd: sink.getTotalCostUsd(),
-      tokensUsed: sink.getTotalTokens(),
+      totalCostUsd: dashSink.getTotalCostUsd(),
+      tokensUsed: dashSink.getTotalTokens(),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

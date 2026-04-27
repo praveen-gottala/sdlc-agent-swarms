@@ -6,9 +6,6 @@
  * to decouple from any specific design tool.
  */
 
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { DesignTokensSpec, BrandSpec, ComponentCatalogSpec } from '@agentforge/core';
 import { debugLog } from '@agentforge/core';
 import type { UXDesignOutput } from '../types.js';
@@ -209,17 +206,13 @@ export const matchColorToFamily = (
 };
 
 // ============================================================================
-// Design system prompt loader
+// Design system prompt loader — REMOVED
 // ============================================================================
+// loadDesignSystemPrompt (loading ux-design-system.md, the Figma prompt) was
+// dead code: browser-design-work.ts defines its own local function that loads
+// ux-penpot-designspec-v2.md instead. Removed in Phase 2.5 of the visual
+// diversity plan.
 
-/**
- * Load the design system prompt from disk.
- */
-export const loadDesignSystemPrompt = (): string => {
-  const promptPath = join(dirname(fileURLToPath(import.meta.url)),
-    '..', 'prompts', 'ux-design-system.md');
-  return readFileSync(promptPath, 'utf-8');
-};
 
 // ============================================================================
 // Sizing constraints

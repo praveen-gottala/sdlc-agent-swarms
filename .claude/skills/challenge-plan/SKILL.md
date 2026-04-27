@@ -30,7 +30,7 @@ Read these in the order `CLAUDE.md` prescribes. When sources conflict, the hiera
 
 1. **`CLAUDE.md`** — development discipline, current state, active/paused plans, tech stack, and the reading-order hierarchy itself. Note which plans are active so you don't challenge a plan that's already been superseded.
 2. **`docs/vision.md`** — **authoritative for architecture**. 15 layers with locked vs open decisions, current-vs-target explicit per layer. When vision and PRD conflict on an architectural pattern, vision wins. Focus on the layers the plan actually touches (orchestration runtime, coordination substrate, agent taxonomy, state persistence, clarifier, RAG, implementer, review, HITL, observability, sandboxing, etc.).
-3. **`docs/lessons-learned.md`** — Do Not Repeat list. Pay special attention to entries marked `SUPERSEDED` or `Resolved` — these are traps where the intuitive approach is known to be wrong. Check whether the plan is re-proposing something already rejected.
+3. **`docs/lessons-learned-rules.md`** — Active rules + SUPERSEDED entries only. Check whether the plan re-proposes something already rejected. For RESOLVED context on a specific topic, grep `docs/lessons-learned.md` by keyword.
 4. **`docs/adrs/`** — read every ADR the plan cites by name, plus any ADR clearly governing the plan's area (e.g. `ADR-043` for orchestration runtime, `ADR-038` for PRD-vs-code authority, `ADR-037` for standalone renderer boundary, `ADR-023` for UX squad architecture). ADRs override the PRD for the specific deviations they document. You do not need to read every ADR — only those the plan touches.
 5. **`docs/specs/PRD.md`** — product spec. Source of truth for product scope, interfaces, API contracts, enum values, field lists. Do NOT treat as authoritative on architectural *patterns* — those are in `vision.md`.
 6. **`docs/architecture/architecture.md`** — layer diagram, package boundaries, communication patterns.
@@ -51,7 +51,7 @@ For each major decision in the plan, check:
 
 1. **Vision conflict?** Does the plan violate a **locked** decision in a `vision.md` layer it touches? (e.g., adding a second orchestration runtime alongside LangGraph; using the event bus as the coordination substrate instead of typed channels; parallel implementers where Layer 8 mandates single-threaded.) If the plan deviates from the vision, the minimum ask is a new ADR documenting the deviation.
 2. **ADR conflict?** Does the plan contradict or silently reverse an existing ADR without superseding it?
-3. **Repeating a failed approach?** Is the plan re-proposing something marked `SUPERSEDED` or rejected in `docs/lessons-learned.md`? Cite the entry.
+3. **Repeating a failed approach?** Is the plan re-proposing something marked `SUPERSEDED` or rejected in `docs/lessons-learned-rules.md`? Cite the entry.
 4. **Layer violation?** Does the plan put logic in the wrong layer? (e.g., renderer doing spec correction when corrections belong upstream; CLI doing orchestration that belongs in agents; dashboard doing agent work.)
 5. **Phase boundary crossing?** Does the plan blur the boundary between design and code generation, or between preview and production, or between telemetry plane and coordination plane?
 6. **Fighting the architecture?** Does the plan work around the framework's patterns instead of using them? (e.g., hardcoded config where the framework is YAML-driven; direct agent-to-agent calls instead of the prescribed substrate; imperative `runAgent()` path instead of the LangGraph graph.)

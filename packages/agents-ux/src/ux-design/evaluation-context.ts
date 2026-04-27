@@ -56,7 +56,7 @@ function formatNodeLine(id: string, node: NodeSpec, specWidth: number): string {
   const typeOrCatalog = node.catalog ?? node.type;
   if (typeOrCatalog) parts.push(`[${typeOrCatalog}]`);
 
-  const text = node.label ?? node.content ?? node.title;
+  const text = node.label ?? node.content ?? (node.overrides?.title as string | undefined);
   if (text) parts.push(`"${truncateText(text)}"`);
 
   if (node.placeholder) parts.push(`placeholder:"${truncateText(node.placeholder)}"`);
@@ -65,7 +65,7 @@ function formatNodeLine(id: string, node: NodeSpec, specWidth: number): string {
   if (node.color) parts.push(`text:${node.color}`);
 
   if (node.navigateTo) parts.push(`→ ${node.navigateTo}`);
-  if (node.active) parts.push('(active)');
+  if (node.overrides?.active) parts.push('(active)');
 
   if (typeof node.width === 'number' && node.width < specWidth) {
     parts.push(`(${node.width}px)`);

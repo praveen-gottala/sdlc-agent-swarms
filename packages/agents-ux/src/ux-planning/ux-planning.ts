@@ -134,8 +134,16 @@ const PLANNING_OUTPUT_SCHEMA = {
             props: { type: 'array', items: { type: 'string' } },
             children: { type: 'array', items: { type: 'string' } },
             defaultValues: {
-              type: 'object',
-              additionalProperties: { oneOf: [{ type: 'number' }, { type: 'string' }] },
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  key: { type: 'string' },
+                  value: { oneOf: [{ type: 'number' }, { type: 'string' }] },
+                },
+                required: ['key', 'value'],
+                additionalProperties: false,
+              },
             },
             navigateTo: { type: 'string' },
           },
@@ -209,6 +217,28 @@ const normalizeTokenBindings = (raw: unknown): Record<string, string> => {
 };
 
 /**
+ * Normalize defaultValues on componentTree nodes from either a map (text fallback)
+ * or an array of {key, value} pairs (structured output schema).
+ */
+const normalizeComponentTree = (raw: unknown): ComponentTreeNode[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((node: unknown) => {
+    const n = node as Record<string, unknown>;
+    if (!n.defaultValues) return n as unknown as ComponentTreeNode;
+    if (Array.isArray(n.defaultValues)) {
+      const map: Record<string, number | string> = {};
+      for (const entry of n.defaultValues as Array<{ key: string; value: number | string }>) {
+        if (entry && typeof entry === 'object' && 'key' in entry && 'value' in entry) {
+          map[entry.key] = entry.value;
+        }
+      }
+      return { ...n, defaultValues: map } as unknown as ComponentTreeNode;
+    }
+    return n as unknown as ComponentTreeNode;
+  });
+};
+
+/**
  * Extract a UXPlanningOutput from a parsed JSON object.
  * Used by both the structured output path and the text-fallback parser.
  */
@@ -223,7 +253,7 @@ const extractPlanningFields = (parsed: Record<string, unknown>): UXPlanningOutpu
   return {
     specRef: (parsed.specRef as string) ?? '',
     moduleId: (parsed.moduleId as string) ?? '',
-    componentTree: (parsed.componentTree as ComponentTreeNode[]) ?? [],
+    componentTree: normalizeComponentTree(parsed.componentTree),
     tokenBindings: normalizeTokenBindings(parsed.tokenBindings),
     responsiveRules: (parsed.responsiveRules as ResponsiveRule[]) ?? [],
     screens: (parsed.screens as ScreenDefinition[] | undefined),

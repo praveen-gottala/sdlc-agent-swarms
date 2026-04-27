@@ -9,307 +9,160 @@
       "width": 1440,
       "layout": {
         "dir": "column",
-        "gap": 0
+        "gap": 0,
+        "align": "stretch"
       },
       "background": "background-primary"
-    },
-    "settings-dialog-overlay": {
-      "parent": "root",
-      "order": 2,
-      "type": "container",
-      "width": 1440,
-      "height": 664,
-      "background": "overlay",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "overrides": {
-        "position": "absolute",
-        "top": 0,
-        "left": 0,
-        "z-index": 100
-      }
-    },
-    "settings-dialog": {
-      "parent": "settings-dialog-overlay",
-      "order": 0,
-      "type": "container",
-      "width": 480,
-      "background": "surface-elevated",
-      "shadow": "lg",
-      "radius": 16,
-      "layout": {
-        "dir": "column",
-        "gap": 24,
-        "px": 32,
-        "py": 32
-      }
-    },
-    "settings-dialog-header": {
-      "parent": "settings-dialog",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between"
-      },
-      "width": "fill"
-    },
-    "settings-dialog-title": {
-      "parent": "settings-dialog-header",
-      "order": 0,
-      "type": "text",
-      "content": "Settings",
-      "typography": "heading-1",
-      "color": "text-primary",
-      "weight": 700
-    },
-    "settings-dialog-close-btn": {
-      "parent": "settings-dialog-header",
-      "order": 1,
-      "type": "container",
-      "width": 36,
-      "height": 36,
-      "radius": 8,
-      "background": "surface-primary",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      }
-    },
-    "settings-dialog-close-icon": {
-      "parent": "settings-dialog-close-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "close"
-      },
-      "color": "text-secondary"
-    },
-    "settings-dialog-divider": {
-      "parent": "settings-dialog",
-      "order": 1,
-      "type": "divider",
-      "width": "fill"
-    },
-    "settings-section-budget": {
-      "parent": "settings-dialog",
-      "order": 3,
-      "type": "container",
-      "layout": {
-        "dir": "column",
-        "gap": 8
-      },
-      "width": "fill"
-    },
-    "settings-budget-label": {
-      "parent": "settings-section-budget",
-      "order": 0,
-      "type": "text",
-      "content": "Monthly Budget",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
-    },
-    "settings-budget-input": {
-      "parent": "settings-section-budget",
-      "order": 1,
-      "catalog": "input-currency",
-      "label": "Budget Amount",
-      "placeholder": "5,000.00",
-      "value": "5000",
-      "width": "fill"
-    },
-    "settings-section-currency": {
-      "parent": "settings-dialog",
-      "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "column",
-        "gap": 8
-      },
-      "width": "fill"
-    },
-    "settings-currency-label": {
-      "parent": "settings-section-currency",
-      "order": 0,
-      "type": "text",
-      "content": "Default Currency",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
-    },
-    "settings-currency-select": {
-      "parent": "settings-section-currency",
-      "order": 1,
-      "catalog": "select",
-      "label": "Currency",
-      "value": "USD — US Dollar",
-      "width": "fill"
-    },
-    "settings-section-notifications": {
-      "parent": "settings-dialog",
-      "order": 4,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between"
-      },
-      "width": "fill"
-    },
-    "settings-notifications-title": {
-      "parent": "settings-notifications-label",
-      "order": 0,
-      "type": "text",
-      "content": "Budget Alerts",
-      "typography": "body",
-      "color": "text-primary",
-      "weight": 500
-    },
-    "settings-notifications-label": {
-      "parent": "settings-section-notifications",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "column",
-        "gap": 2
-      }
-    },
-    "settings-notifications-desc": {
-      "parent": "settings-notifications-label",
-      "order": 1,
-      "type": "text",
-      "content": "Notify when spending exceeds 80% of budget",
-      "typography": "small",
-      "color": "text-secondary"
-    },
-    "settings-notifications-switch": {
-      "parent": "settings-section-notifications",
-      "order": 1,
-      "catalog": "switch",
-      "value": "on"
-    },
-    "settings-dialog-footer": {
-      "parent": "settings-dialog",
-      "order": 5,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "end",
-        "gap": 12
-      },
-      "width": "fill"
-    },
-    "settings-cancel-btn": {
-      "parent": "settings-dialog-footer",
-      "order": 0,
-      "catalog": "button-secondary",
-      "label": "Cancel"
-    },
-    "settings-save-btn": {
-      "parent": "settings-dialog-footer",
-      "order": 1,
-      "catalog": "button-primary",
-      "label": "Save Changes"
     },
     "top-bar": {
       "parent": "root",
       "order": 0,
       "type": "header",
-      "width": 1440,
-      "height": 64,
-      "background": "surface-primary",
-      "shadow": "sm",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "px": 24,
+        "px": 32,
         "py": 0
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "height": 64,
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
       }
     },
-    "top-bar-left-spacer": {
+    "top-bar-left": {
       "parent": "top-bar",
       "order": 0,
       "type": "container",
-      "width": 160,
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 0
-      }
-    },
-    "top-bar-title": {
-      "parent": "top-bar-left-spacer",
-      "order": 0,
-      "type": "text",
-      "content": "Spending Insights",
-      "typography": "heading-1",
-      "color": "text-primary"
-    },
-    "top-bar-actions": {
-      "parent": "top-bar",
-      "order": 2,
-      "type": "container",
-      "width": 160,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "end",
         "gap": 12
       }
     },
-    "settings-btn": {
-      "parent": "top-bar-actions",
+    "logo-button": {
+      "parent": "top-bar-left",
       "order": 0,
       "type": "container",
-      "width": 40,
-      "height": 40,
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "center"
+        "gap": 8
+      },
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "settings-icon": {
-      "parent": "settings-btn",
+    "logo-icon": {
+      "parent": "logo-button",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "settings"
+        "name": "wallet"
       },
-      "color": "text-primary"
+      "color": "cta-primary",
+      "width": 28,
+      "height": 28
     },
-    "month-selector": {
+    "top-bar-title": {
+      "parent": "top-bar-left",
+      "order": 1,
+      "type": "text",
+      "content": "Spending Insights",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "top-bar-add-btn": {
       "parent": "top-bar",
       "order": 1,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 8
+      },
+      "overrides": {
+        "cursor": "pointer"
+      }
+    },
+    "top-bar-settings-icon": {
+      "parent": "top-bar-add-btn",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "settings"
+      },
+      "color": "text-secondary",
+      "width": 24,
+      "height": 24
+    },
+    "page-content": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "align": "stretch"
+      },
+      "overrides": {
+        "flex": "1 1 auto",
+        "overflowY": "auto"
+      }
+    },
+    "content-wrapper": {
+      "parent": "page-content",
+      "order": 0,
+      "type": "container",
+      "width": 1280,
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 0,
+        "pt": 24,
+        "pb": 32
+      },
+      "overrides": {
+        "margin": "0 auto"
+      }
+    },
+    "month-selector": {
+      "parent": "content-wrapper",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "gap": 16
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "height": 56,
+      "overrides": {
+        "border": "1px solid var(--border-default)"
       }
     },
     "month-prev-btn": {
       "parent": "month-selector",
       "order": 0,
       "type": "container",
-      "width": 36,
-      "height": 36,
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "width": 44,
+      "height": 44,
+      "overrides": {
+        "cursor": "pointer",
+        "borderRadius": "6px"
       }
     },
     "month-prev-icon": {
@@ -319,29 +172,37 @@
       "overrides": {
         "name": "chevron-left"
       },
-      "color": "text-primary"
+      "color": "text-secondary",
+      "width": 20,
+      "height": 20
     },
     "month-label": {
       "parent": "month-selector",
       "order": 1,
       "type": "text",
-      "content": "June 2025",
-      "typography": "heading-2",
+      "content": "January 2024",
+      "typography": "heading-3",
       "color": "text-primary",
-      "weight": 600
+      "weight": 700,
+      "width": 180,
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "month-next-btn": {
       "parent": "month-selector",
       "order": 2,
       "type": "container",
-      "width": 36,
-      "height": 36,
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "width": 44,
+      "height": 44,
+      "overrides": {
+        "cursor": "pointer",
+        "borderRadius": "6px"
       }
     },
     "month-next-icon": {
@@ -351,39 +212,37 @@
       "overrides": {
         "name": "chevron-right"
       },
-      "color": "text-primary"
-    },
-    "page-body-spacer": {
-      "parent": "root",
-      "order": 1,
-      "type": "spacer",
-      "height": 600
+      "color": "text-secondary",
+      "width": 20,
+      "height": 20
     },
     "period-summary-header": {
-      "parent": "page-body-spacer",
-      "order": 0,
+      "parent": "content-wrapper",
+      "order": 1,
       "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
       "layout": {
         "dir": "row",
         "align": "stretch",
-        "gap": 0
-      }
+        "justify": "space-between",
+        "gap": 24,
+        "px": 32,
+        "py": 24
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 16
     },
     "stat-total-spent": {
       "parent": "period-summary-header",
       "order": 0,
       "type": "container",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8,
-        "px": 24,
-        "py": 24
-      }
+        "gap": 6,
+        "align": "start"
+      },
+      "width": "fill"
     },
     "stat-total-label": {
       "parent": "stat-total-spent",
@@ -391,15 +250,17 @@
       "type": "text",
       "content": "Total Spent",
       "typography": "label",
-      "color": "text-secondary"
+      "color": "text-secondary",
+      "weight": 500
     },
     "stat-total-value": {
       "parent": "stat-total-spent",
       "order": 1,
       "type": "text",
-      "content": "$2,847.50",
+      "content": "$3,847.50",
       "typography": "heading-1",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "stat-total-trend": {
       "parent": "stat-total-spent",
@@ -409,6 +270,16 @@
         "dir": "row",
         "align": "center",
         "gap": 4
+      },
+      "background": "error",
+      "radius": 9999,
+      "overrides": {
+        "paddingLeft": "8px",
+        "paddingRight": "8px",
+        "paddingTop": "2px",
+        "paddingBottom": "2px",
+        "opacity": 0.15,
+        "display": "inline-flex"
       }
     },
     "stat-total-trend-icon": {
@@ -418,37 +289,39 @@
       "overrides": {
         "name": "trending-up"
       },
-      "color": "error"
+      "color": "error",
+      "width": 14,
+      "height": 14
     },
     "stat-total-trend-text": {
       "parent": "stat-total-trend",
       "order": 1,
       "type": "text",
-      "content": "+12.4% vs last month",
+      "content": "+12.4% vs Dec",
       "typography": "label",
-      "color": "error"
+      "color": "error",
+      "weight": 600
     },
     "stat-divider-1": {
       "parent": "period-summary-header",
       "order": 1,
-      "type": "container",
+      "type": "divider",
       "width": 1,
-      "background": "border-default",
-      "layout": {
-        "dir": "column"
+      "overrides": {
+        "alignSelf": "stretch",
+        "background": "var(--border-default)"
       }
     },
     "stat-daily-avg": {
       "parent": "period-summary-header",
       "order": 2,
       "type": "container",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8,
-        "px": 24,
-        "py": 24
-      }
+        "gap": 6,
+        "align": "start"
+      },
+      "width": "fill"
     },
     "stat-daily-label": {
       "parent": "stat-daily-avg",
@@ -456,15 +329,17 @@
       "type": "text",
       "content": "Daily Average",
       "typography": "label",
-      "color": "text-secondary"
+      "color": "text-secondary",
+      "weight": 500
     },
     "stat-daily-value": {
       "parent": "stat-daily-avg",
       "order": 1,
       "type": "text",
-      "content": "$94.92",
+      "content": "$124.11",
       "typography": "heading-1",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "stat-daily-trend": {
       "parent": "stat-daily-avg",
@@ -474,6 +349,16 @@
         "dir": "row",
         "align": "center",
         "gap": 4
+      },
+      "background": "error",
+      "radius": 9999,
+      "overrides": {
+        "paddingLeft": "8px",
+        "paddingRight": "8px",
+        "paddingTop": "2px",
+        "paddingBottom": "2px",
+        "opacity": 0.15,
+        "display": "inline-flex"
       }
     },
     "stat-daily-trend-icon": {
@@ -481,39 +366,41 @@
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "trending-up"
+        "name": "arrow-up"
       },
-      "color": "error"
+      "color": "error",
+      "width": 14,
+      "height": 14
     },
     "stat-daily-trend-text": {
       "parent": "stat-daily-trend",
       "order": 1,
       "type": "text",
-      "content": "+8.1% vs last month",
+      "content": "+8.2% vs Dec",
       "typography": "label",
-      "color": "error"
+      "color": "error",
+      "weight": 600
     },
     "stat-divider-2": {
       "parent": "period-summary-header",
       "order": 3,
-      "type": "container",
+      "type": "divider",
       "width": 1,
-      "background": "border-default",
-      "layout": {
-        "dir": "column"
+      "overrides": {
+        "alignSelf": "stretch",
+        "background": "var(--border-default)"
       }
     },
     "stat-transactions": {
       "parent": "period-summary-header",
       "order": 4,
       "type": "container",
-      "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8,
-        "px": 24,
-        "py": 24
-      }
+        "gap": 6,
+        "align": "start"
+      },
+      "width": "fill"
     },
     "stat-tx-label": {
       "parent": "stat-transactions",
@@ -521,7 +408,8 @@
       "type": "text",
       "content": "Transactions",
       "typography": "label",
-      "color": "text-secondary"
+      "color": "text-secondary",
+      "weight": 500
     },
     "stat-tx-value": {
       "parent": "stat-transactions",
@@ -529,7 +417,8 @@
       "type": "text",
       "content": "47",
       "typography": "heading-1",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "stat-tx-trend": {
       "parent": "stat-transactions",
@@ -539,6 +428,16 @@
         "dir": "row",
         "align": "center",
         "gap": 4
+      },
+      "background": "success",
+      "radius": 9999,
+      "overrides": {
+        "paddingLeft": "8px",
+        "paddingRight": "8px",
+        "paddingTop": "2px",
+        "paddingBottom": "2px",
+        "opacity": 0.15,
+        "display": "inline-flex"
       }
     },
     "stat-tx-trend-icon": {
@@ -548,121 +447,156 @@
       "overrides": {
         "name": "trending-down"
       },
-      "color": "success"
+      "color": "success",
+      "width": 14,
+      "height": 14
     },
     "stat-tx-trend-text": {
       "parent": "stat-tx-trend",
       "order": 1,
       "type": "text",
-      "content": "−3 vs last month",
+      "content": "-3 vs Dec",
       "typography": "label",
-      "color": "success"
+      "color": "success",
+      "weight": 600
     },
-    "daily-spending-chart": {
-      "parent": "page-body-spacer",
-      "order": 1,
+    "daily-spending-card": {
+      "parent": "content-wrapper",
+      "order": 2,
       "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
       "layout": {
         "dir": "column",
-        "gap": 16,
+        "gap": 20,
         "px": 24,
         "py": 24
-      }
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 16
     },
-    "chart-header-row": {
-      "parent": "daily-spending-chart",
+    "daily-spending-card-header": {
+      "parent": "daily-spending-card",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between"
       }
     },
-    "chart-title": {
-      "parent": "chart-header-row",
+    "daily-spending-title": {
+      "parent": "daily-spending-card-header",
       "order": 0,
       "type": "text",
       "content": "Daily Spending",
       "typography": "heading-2",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "chart-type-toggle": {
-      "parent": "chart-header-row",
+      "parent": "daily-spending-card-header",
       "order": 1,
       "type": "container",
-      "radius": 6,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 2,
+        "gap": 4,
         "px": 4,
         "py": 4
-      }
+      },
+      "background": "surface-secondary",
+      "radius": 9999
     },
-    "chart-toggle-bar": {
+    "toggle-bar-btn": {
       "parent": "chart-type-toggle",
       "order": 0,
       "type": "container",
-      "height": 36,
-      "radius": 6,
-      "background": "cta-primary",
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "center",
-        "px": 16
+        "gap": 6,
+        "px": 14,
+        "py": 6
+      },
+      "background": "cta-primary",
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "chart-toggle-bar-label": {
-      "parent": "chart-toggle-bar",
+    "toggle-bar-icon": {
+      "parent": "toggle-bar-btn",
       "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "bar-chart"
+      },
+      "color": "text-on-cta",
+      "width": 14,
+      "height": 14
+    },
+    "toggle-bar-label": {
+      "parent": "toggle-bar-btn",
+      "order": 1,
       "type": "text",
       "content": "Bar",
       "typography": "label",
       "color": "text-on-cta",
       "weight": 600
     },
-    "chart-toggle-line": {
+    "toggle-line-btn": {
       "parent": "chart-type-toggle",
       "order": 1,
       "type": "container",
-      "height": 36,
-      "radius": 6,
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "center",
-        "px": 16
+        "gap": 6,
+        "px": 14,
+        "py": 6
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "chart-toggle-line-label": {
-      "parent": "chart-toggle-line",
+    "toggle-line-icon": {
+      "parent": "toggle-line-btn",
       "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "trending-up"
+      },
+      "color": "text-secondary",
+      "width": 14,
+      "height": 14
+    },
+    "toggle-line-label": {
+      "parent": "toggle-line-btn",
+      "order": 1,
       "type": "text",
       "content": "Line",
       "typography": "label",
-      "color": "text-secondary"
+      "color": "text-secondary",
+      "weight": 500
     },
     "chart-area": {
-      "parent": "daily-spending-chart",
+      "parent": "daily-spending-card",
       "order": 1,
       "type": "container",
       "width": "fill",
-      "height": 280,
-      "background": "surface-elevated",
-      "radius": 8,
+      "height": 240,
       "layout": {
         "dir": "column",
-        "align": "center",
-        "justify": "end",
-        "px": 16,
-        "py": 16
+        "gap": 0
+      },
+      "background": "surface-secondary",
+      "radius": 10,
+      "overrides": {
+        "position": "relative",
+        "overflow": "hidden"
       }
     },
     "chart-bars-row": {
@@ -670,259 +604,352 @@
       "order": 0,
       "type": "container",
       "width": "fill",
-      "height": 200,
       "layout": {
         "dir": "row",
         "align": "end",
         "justify": "space-between",
-        "gap": 4
+        "px": 16,
+        "pb": 24,
+        "pt": 16
+      },
+      "overrides": {
+        "flex": "1 1 auto"
       }
     },
     "bar-1": {
       "parent": "chart-bars-row",
       "order": 0,
       "type": "container",
-      "width": "fill",
+      "width": 24,
       "height": 60,
-      "radius": 4,
-      "background": "cta-primary",
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-2": {
       "parent": "chart-bars-row",
       "order": 1,
       "type": "container",
-      "width": "fill",
-      "height": 90,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 100,
       "layout": {
         "dir": "column"
-      }
+      },
+      "background": "cta-primary",
+      "radius": 4
     },
     "bar-3": {
       "parent": "chart-bars-row",
       "order": 2,
       "type": "container",
-      "width": "fill",
+      "width": 24,
       "height": 45,
-      "radius": 4,
-      "background": "cta-primary",
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-4": {
       "parent": "chart-bars-row",
       "order": 3,
       "type": "container",
-      "width": "fill",
+      "width": 24,
       "height": 130,
-      "radius": 4,
-      "background": "cta-primary",
       "layout": {
         "dir": "column"
-      }
+      },
+      "background": "cta-primary",
+      "radius": 4
     },
     "bar-5": {
       "parent": "chart-bars-row",
       "order": 4,
       "type": "container",
-      "width": "fill",
-      "height": 75,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 80,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-6": {
       "parent": "chart-bars-row",
       "order": 5,
       "type": "container",
-      "width": "fill",
-      "height": 110,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 55,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-7": {
       "parent": "chart-bars-row",
       "order": 6,
       "type": "container",
-      "width": "fill",
-      "height": 55,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 170,
       "layout": {
         "dir": "column"
-      }
+      },
+      "background": "cta-primary",
+      "radius": 4
     },
     "bar-8": {
       "parent": "chart-bars-row",
       "order": 7,
       "type": "container",
-      "width": "fill",
-      "height": 160,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 90,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-9": {
       "parent": "chart-bars-row",
       "order": 8,
       "type": "container",
-      "width": "fill",
-      "height": 80,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 40,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-10": {
       "parent": "chart-bars-row",
       "order": 9,
       "type": "container",
-      "width": "fill",
-      "height": 95,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 115,
       "layout": {
         "dir": "column"
-      }
+      },
+      "background": "cta-primary",
+      "radius": 4
     },
     "bar-11": {
       "parent": "chart-bars-row",
       "order": 10,
       "type": "container",
-      "width": "fill",
-      "height": 40,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 75,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-12": {
       "parent": "chart-bars-row",
       "order": 11,
       "type": "container",
-      "width": "fill",
-      "height": 120,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 50,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-13": {
       "parent": "chart-bars-row",
       "order": 12,
       "type": "container",
-      "width": "fill",
-      "height": 70,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 140,
       "layout": {
         "dir": "column"
-      }
+      },
+      "background": "cta-primary",
+      "radius": 4
     },
     "bar-14": {
       "parent": "chart-bars-row",
       "order": 13,
       "type": "container",
-      "width": "fill",
-      "height": 85,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 65,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
     "bar-15": {
       "parent": "chart-bars-row",
       "order": 14,
       "type": "container",
-      "width": "fill",
-      "height": 50,
-      "radius": 4,
-      "background": "cta-primary",
+      "width": 24,
+      "height": 95,
       "layout": {
         "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 4,
+      "overrides": {
+        "opacity": 0.7
       }
     },
-    "chart-avg-label": {
+    "chart-avg-line-container": {
       "parent": "chart-area",
       "order": 1,
       "type": "container",
       "width": "fill",
+      "height": 1,
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "end",
-        "gap": 6,
-        "pt": 8
+        "px": 16
+      },
+      "overrides": {
+        "borderTop": "2px dashed var(--warning)",
+        "position": "absolute",
+        "top": "55%",
+        "left": 0,
+        "right": 0
       }
     },
-    "chart-avg-dash": {
-      "parent": "chart-avg-label",
+    "chart-avg-label": {
+      "parent": "chart-avg-line-container",
       "order": 0,
-      "type": "container",
-      "width": 24,
-      "height": 2,
-      "background": "text-secondary",
-      "layout": {
-        "dir": "row"
-      }
-    },
-    "chart-avg-text": {
-      "parent": "chart-avg-label",
-      "order": 1,
       "type": "text",
-      "content": "Avg $94.92/day",
+      "content": "Avg $124",
       "typography": "small",
-      "color": "text-secondary"
+      "color": "warning",
+      "weight": 600
     },
-    "mid-row": {
-      "parent": "page-body-spacer",
+    "chart-x-axis": {
+      "parent": "chart-area",
       "order": 2,
       "type": "container",
       "width": "fill",
+      "height": 24,
       "layout": {
         "dir": "row",
-        "align": "start",
-        "gap": 24
+        "align": "center",
+        "justify": "space-between",
+        "px": 16
+      },
+      "overrides": {
+        "borderTop": "1px solid var(--border-default)"
       }
+    },
+    "x-label-1": {
+      "parent": "chart-x-axis",
+      "order": 0,
+      "type": "text",
+      "content": "1",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-5": {
+      "parent": "chart-x-axis",
+      "order": 1,
+      "type": "text",
+      "content": "5",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-10": {
+      "parent": "chart-x-axis",
+      "order": 2,
+      "type": "text",
+      "content": "10",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-15": {
+      "parent": "chart-x-axis",
+      "order": 3,
+      "type": "text",
+      "content": "15",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-20": {
+      "parent": "chart-x-axis",
+      "order": 4,
+      "type": "text",
+      "content": "20",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-25": {
+      "parent": "chart-x-axis",
+      "order": 5,
+      "type": "text",
+      "content": "25",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "x-label-31": {
+      "parent": "chart-x-axis",
+      "order": 6,
+      "type": "text",
+      "content": "31",
+      "typography": "small",
+      "color": "text-secondary"
     },
     "top-categories-card": {
-      "parent": "mid-row",
-      "order": 0,
+      "parent": "content-wrapper",
+      "order": 3,
       "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
       "layout": {
         "dir": "column",
-        "gap": 16,
+        "gap": 20,
         "px": 24,
         "py": 24
+      },
+      "radius": 16,
+      "overrides": {
+        "border": "1px solid var(--border-default)"
       }
     },
-    "top-cat-title": {
+    "top-categories-header": {
       "parent": "top-categories-card",
       "order": 0,
       "type": "text",
       "content": "Top Categories",
       "typography": "heading-2",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "stacked-category-bar": {
       "parent": "top-categories-card",
@@ -930,25 +957,26 @@
       "type": "container",
       "width": "fill",
       "height": 12,
-      "radius": 6,
       "layout": {
         "dir": "row",
         "align": "stretch",
         "gap": 2
+      },
+      "radius": 6,
+      "overrides": {
+        "overflow": "hidden"
       }
     },
     "cat-bar-food": {
       "parent": "stacked-category-bar",
       "order": 0,
       "type": "container",
-      "width": "fill",
-      "height": 12,
-      "radius": 6,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
+      "width": "fill",
+      "background": "cta-primary",
       "overrides": {
-        "background-color": "#F59E0B",
         "flex": "0 0 32%"
       }
     },
@@ -956,12 +984,11 @@
       "parent": "stacked-category-bar",
       "order": 1,
       "type": "container",
-      "height": 12,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
+      "background": "success",
       "overrides": {
-        "background-color": "#14B8A6",
         "flex": "0 0 22%"
       }
     },
@@ -969,12 +996,11 @@
       "parent": "stacked-category-bar",
       "order": 2,
       "type": "container",
-      "height": 12,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
+      "background": "warning",
       "overrides": {
-        "background-color": "#38BDF8",
         "flex": "0 0 18%"
       }
     },
@@ -982,12 +1008,11 @@
       "parent": "stacked-category-bar",
       "order": 3,
       "type": "container",
-      "height": 12,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
+      "background": "error",
       "overrides": {
-        "background-color": "#F87171",
         "flex": "0 0 14%"
       }
     },
@@ -995,31 +1020,43 @@
       "parent": "stacked-category-bar",
       "order": 4,
       "type": "container",
-      "height": 12,
-      "radius": 6,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
+      "background": "surface-secondary",
       "overrides": {
-        "background-color": "#64748B",
         "flex": "0 0 14%"
       }
     },
-    "cat-row-food": {
+    "category-detail-list": {
       "parent": "top-categories-card",
       "order": 2,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 6,
-        "py": 8
+        "gap": 12
       }
+    },
+    "cat-row-food": {
+      "parent": "category-detail-list",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 6,
+        "px": 16,
+        "py": 12
+      },
+      "background": "surface-primary",
+      "radius": 10
     },
     "cat-row-food-top": {
       "parent": "cat-row-food",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
@@ -1033,7 +1070,7 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 8
+        "gap": 10
       }
     },
     "cat-dot-food": {
@@ -1042,13 +1079,11 @@
       "type": "container",
       "width": 10,
       "height": 10,
-      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
-      "overrides": {
-        "background-color": "#F59E0B"
-      }
+      "background": "cta-primary",
+      "radius": 9999
     },
     "cat-name-food": {
       "parent": "cat-row-food-left",
@@ -1056,7 +1091,8 @@
       "type": "text",
       "content": "Food & Dining",
       "typography": "body",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 500
     },
     "cat-row-food-right": {
       "parent": "cat-row-food-top",
@@ -1076,11 +1112,11 @@
       "typography": "label",
       "color": "text-secondary"
     },
-    "cat-amt-food": {
+    "cat-amount-food": {
       "parent": "cat-row-food-right",
       "order": 1,
       "type": "text",
-      "content": "$911.20",
+      "content": "$1,231.20",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
@@ -1088,25 +1124,51 @@
     "cat-progress-food": {
       "parent": "cat-row-food",
       "order": 1,
-      "catalog": "progress-bar-active",
-      "value": 32,
-      "width": "fill"
+      "type": "container",
+      "width": "fill",
+      "height": 6,
+      "layout": {
+        "dir": "row"
+      },
+      "background": "surface-secondary",
+      "radius": 9999,
+      "overrides": {
+        "overflow": "hidden"
+      }
+    },
+    "cat-progress-food-fill": {
+      "parent": "cat-progress-food",
+      "order": 0,
+      "type": "container",
+      "height": 6,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 9999,
+      "overrides": {
+        "width": "32%"
+      }
     },
     "cat-row-transport": {
-      "parent": "top-categories-card",
-      "order": 3,
+      "parent": "category-detail-list",
+      "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
         "gap": 6,
-        "py": 8
-      }
+        "px": 16,
+        "py": 12
+      },
+      "background": "surface-primary",
+      "radius": 10
     },
     "cat-row-transport-top": {
       "parent": "cat-row-transport",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
@@ -1120,7 +1182,7 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 8
+        "gap": 10
       }
     },
     "cat-dot-transport": {
@@ -1129,21 +1191,20 @@
       "type": "container",
       "width": 10,
       "height": 10,
-      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
-      "overrides": {
-        "background-color": "#14B8A6"
-      }
+      "background": "success",
+      "radius": 9999
     },
     "cat-name-transport": {
       "parent": "cat-row-transport-left",
       "order": 1,
       "type": "text",
-      "content": "Transport",
+      "content": "Transportation",
       "typography": "body",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 500
     },
     "cat-row-transport-right": {
       "parent": "cat-row-transport-top",
@@ -1163,11 +1224,11 @@
       "typography": "label",
       "color": "text-secondary"
     },
-    "cat-amt-transport": {
+    "cat-amount-transport": {
       "parent": "cat-row-transport-right",
       "order": 1,
       "type": "text",
-      "content": "$626.45",
+      "content": "$846.45",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
@@ -1175,25 +1236,51 @@
     "cat-progress-transport": {
       "parent": "cat-row-transport",
       "order": 1,
-      "catalog": "progress-bar-active",
-      "value": 22,
-      "width": "fill"
+      "type": "container",
+      "width": "fill",
+      "height": 6,
+      "layout": {
+        "dir": "row"
+      },
+      "background": "surface-secondary",
+      "radius": 9999,
+      "overrides": {
+        "overflow": "hidden"
+      }
+    },
+    "cat-progress-transport-fill": {
+      "parent": "cat-progress-transport",
+      "order": 0,
+      "type": "container",
+      "height": 6,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "success",
+      "radius": 9999,
+      "overrides": {
+        "width": "22%"
+      }
     },
     "cat-row-housing": {
-      "parent": "top-categories-card",
-      "order": 4,
+      "parent": "category-detail-list",
+      "order": 2,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
         "gap": 6,
-        "py": 8
-      }
+        "px": 16,
+        "py": 12
+      },
+      "background": "surface-primary",
+      "radius": 10
     },
     "cat-row-housing-top": {
       "parent": "cat-row-housing",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
@@ -1207,7 +1294,7 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 8
+        "gap": 10
       }
     },
     "cat-dot-housing": {
@@ -1216,21 +1303,20 @@
       "type": "container",
       "width": 10,
       "height": 10,
-      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
-      "overrides": {
-        "background-color": "#38BDF8"
-      }
+      "background": "warning",
+      "radius": 9999
     },
     "cat-name-housing": {
       "parent": "cat-row-housing-left",
       "order": 1,
       "type": "text",
-      "content": "Housing",
+      "content": "Housing & Utilities",
       "typography": "body",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 500
     },
     "cat-row-housing-right": {
       "parent": "cat-row-housing-top",
@@ -1250,11 +1336,11 @@
       "typography": "label",
       "color": "text-secondary"
     },
-    "cat-amt-housing": {
+    "cat-amount-housing": {
       "parent": "cat-row-housing-right",
       "order": 1,
       "type": "text",
-      "content": "$512.55",
+      "content": "$692.55",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
@@ -1262,25 +1348,51 @@
     "cat-progress-housing": {
       "parent": "cat-row-housing",
       "order": 1,
-      "catalog": "progress-bar-active",
-      "value": 18,
-      "width": "fill"
+      "type": "container",
+      "width": "fill",
+      "height": 6,
+      "layout": {
+        "dir": "row"
+      },
+      "background": "surface-secondary",
+      "radius": 9999,
+      "overrides": {
+        "overflow": "hidden"
+      }
+    },
+    "cat-progress-housing-fill": {
+      "parent": "cat-progress-housing",
+      "order": 0,
+      "type": "container",
+      "height": 6,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "warning",
+      "radius": 9999,
+      "overrides": {
+        "width": "18%"
+      }
     },
     "cat-row-health": {
-      "parent": "top-categories-card",
-      "order": 5,
+      "parent": "category-detail-list",
+      "order": 3,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
         "gap": 6,
-        "py": 8
-      }
+        "px": 16,
+        "py": 12
+      },
+      "background": "surface-primary",
+      "radius": 10
     },
     "cat-row-health-top": {
       "parent": "cat-row-health",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
@@ -1294,7 +1406,7 @@
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 8
+        "gap": 10
       }
     },
     "cat-dot-health": {
@@ -1303,21 +1415,20 @@
       "type": "container",
       "width": 10,
       "height": 10,
-      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "column"
       },
-      "overrides": {
-        "background-color": "#F87171"
-      }
+      "background": "error",
+      "radius": 9999
     },
     "cat-name-health": {
       "parent": "cat-row-health-left",
       "order": 1,
       "type": "text",
-      "content": "Health & Wellness",
+      "content": "Health & Fitness",
       "typography": "body",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 500
     },
     "cat-row-health-right": {
       "parent": "cat-row-health-top",
@@ -1337,11 +1448,11 @@
       "typography": "label",
       "color": "text-secondary"
     },
-    "cat-amt-health": {
+    "cat-amount-health": {
       "parent": "cat-row-health-right",
       "order": 1,
       "type": "text",
-      "content": "$398.65",
+      "content": "$538.65",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
@@ -1349,166 +1460,128 @@
     "cat-progress-health": {
       "parent": "cat-row-health",
       "order": 1,
-      "catalog": "progress-bar-error",
-      "value": 14,
-      "width": "fill"
-    },
-    "cat-row-other": {
-      "parent": "top-categories-card",
-      "order": 6,
       "type": "container",
       "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 6,
-        "py": 8
-      }
-    },
-    "cat-row-other-top": {
-      "parent": "cat-row-other",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between"
-      }
-    },
-    "cat-row-other-left": {
-      "parent": "cat-row-other-top",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 8
-      }
-    },
-    "cat-dot-other": {
-      "parent": "cat-row-other-left",
-      "order": 0,
-      "type": "container",
-      "width": 10,
-      "height": 10,
-      "radius": 9999,
+      "height": 6,
       "layout": {
         "dir": "row"
       },
+      "background": "surface-secondary",
+      "radius": 9999,
       "overrides": {
-        "background-color": "#64748B"
+        "overflow": "hidden"
       }
     },
-    "cat-name-other": {
-      "parent": "cat-row-other-left",
-      "order": 1,
-      "type": "text",
-      "content": "Other",
-      "typography": "body",
-      "color": "text-primary"
-    },
-    "cat-row-other-right": {
-      "parent": "cat-row-other-top",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 12
-      }
-    },
-    "cat-pct-other": {
-      "parent": "cat-row-other-right",
+    "cat-progress-health-fill": {
+      "parent": "cat-progress-health",
       "order": 0,
-      "type": "text",
-      "content": "14%",
-      "typography": "label",
-      "color": "text-secondary"
-    },
-    "cat-amt-other": {
-      "parent": "cat-row-other-right",
-      "order": 1,
-      "type": "text",
-      "content": "$398.65",
-      "typography": "body",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "cat-progress-other": {
-      "parent": "cat-row-other",
-      "order": 1,
-      "catalog": "progress-bar",
-      "value": 14,
-      "width": "fill"
+      "type": "container",
+      "height": 6,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "error",
+      "radius": 9999,
+      "overrides": {
+        "width": "14%"
+      }
     },
     "biggest-expenses-card": {
-      "parent": "mid-row",
-      "order": 1,
+      "parent": "content-wrapper",
+      "order": 4,
       "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
       "layout": {
         "dir": "column",
-        "gap": 12,
+        "gap": 16,
         "px": 24,
         "py": 24
-      }
+      },
+      "background": "surface-secondary",
+      "radius": 16,
+      "shadow": "sm"
     },
-    "biggest-exp-title": {
+    "biggest-expenses-header": {
       "parent": "biggest-expenses-card",
       "order": 0,
       "type": "text",
       "content": "Biggest Expenses",
       "typography": "heading-2",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
-    "ranked-row-1": {
+    "ranked-expense-list": {
       "parent": "biggest-expenses-card",
       "order": 1,
       "type": "container",
       "width": "fill",
-      "radius": 8,
-      "background": "surface-elevated",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "expense-row-1": {
+      "parent": "ranked-expense-list",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 16,
-        "py": 12
+        "py": 14
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "overrides": {
+        "cursor": "pointer"
       },
       "navigateTo": "add-expense"
     },
-    "ranked-row-1-left": {
-      "parent": "ranked-row-1",
+    "expense-row-1-left": {
+      "parent": "expense-row-1",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 14
       }
     },
-    "rank-num-1": {
-      "parent": "ranked-row-1-left",
+    "expense-rank-1": {
+      "parent": "expense-row-1-left",
       "order": 0,
       "type": "text",
       "content": "#1",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 700,
+      "width": 24
     },
-    "rank-info-1": {
-      "parent": "ranked-row-1-left",
+    "expense-cat-dot-1": {
+      "parent": "expense-row-1-left",
       "order": 1,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 9999
+    },
+    "expense-info-1": {
+      "parent": "expense-row-1-left",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "column",
-        "gap": 4
+        "gap": 2
       }
     },
-    "rank-merchant-1": {
-      "parent": "rank-info-1",
+    "expense-merchant-1": {
+      "parent": "expense-info-1",
       "order": 0,
       "type": "text",
       "content": "Whole Foods Market",
@@ -1516,203 +1589,257 @@
       "color": "text-primary",
       "weight": 600
     },
-    "rank-badge-1": {
-      "parent": "rank-info-1",
-      "order": 1,
-      "catalog": "badge",
-      "label": "Food & Dining"
-    },
-    "rank-amount-1": {
-      "parent": "ranked-row-1",
+    "expense-cat-1": {
+      "parent": "expense-info-1",
       "order": 1,
       "type": "text",
-      "content": "$284.50",
+      "content": "Food & Dining · Jan 14",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "expense-row-1-right": {
+      "parent": "expense-row-1",
+      "order": 1,
+      "type": "text",
+      "content": "$312.80",
       "typography": "body",
       "color": "text-primary",
       "weight": 700
     },
-    "ranked-row-2": {
-      "parent": "biggest-expenses-card",
-      "order": 2,
+    "expense-row-2": {
+      "parent": "ranked-expense-list",
+      "order": 1,
       "type": "container",
       "width": "fill",
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 16,
-        "py": 12
+        "py": 14
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "overrides": {
+        "cursor": "pointer"
       },
       "navigateTo": "add-expense"
     },
-    "ranked-row-2-left": {
-      "parent": "ranked-row-2",
+    "expense-row-2-left": {
+      "parent": "expense-row-2",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 14
       }
     },
-    "rank-num-2": {
-      "parent": "ranked-row-2-left",
+    "expense-rank-2": {
+      "parent": "expense-row-2-left",
       "order": 0,
       "type": "text",
       "content": "#2",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 700,
+      "width": 24
     },
-    "rank-info-2": {
-      "parent": "ranked-row-2-left",
+    "expense-cat-dot-2": {
+      "parent": "expense-row-2-left",
       "order": 1,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "warning",
+      "radius": 9999
+    },
+    "expense-info-2": {
+      "parent": "expense-row-2-left",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "column",
-        "gap": 4
+        "gap": 2
       }
     },
-    "rank-merchant-2": {
-      "parent": "rank-info-2",
+    "expense-merchant-2": {
+      "parent": "expense-info-2",
       "order": 0,
       "type": "text",
-      "content": "Monthly Rent",
+      "content": "Rent Payment",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
     },
-    "rank-badge-2": {
-      "parent": "rank-info-2",
-      "order": 1,
-      "catalog": "badge",
-      "label": "Housing"
-    },
-    "rank-amount-2": {
-      "parent": "ranked-row-2",
+    "expense-cat-2": {
+      "parent": "expense-info-2",
       "order": 1,
       "type": "text",
-      "content": "$250.00",
+      "content": "Housing & Utilities · Jan 1",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "expense-row-2-right": {
+      "parent": "expense-row-2",
+      "order": 1,
+      "type": "text",
+      "content": "$295.00",
       "typography": "body",
       "color": "text-primary",
       "weight": 700
     },
-    "ranked-row-3": {
-      "parent": "biggest-expenses-card",
-      "order": 3,
+    "expense-row-3": {
+      "parent": "ranked-expense-list",
+      "order": 2,
       "type": "container",
       "width": "fill",
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 16,
-        "py": 12
+        "py": 14
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "overrides": {
+        "cursor": "pointer"
       },
       "navigateTo": "add-expense"
     },
-    "ranked-row-3-left": {
-      "parent": "ranked-row-3",
+    "expense-row-3-left": {
+      "parent": "expense-row-3",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 14
       }
     },
-    "rank-num-3": {
-      "parent": "ranked-row-3-left",
+    "expense-rank-3": {
+      "parent": "expense-row-3-left",
       "order": 0,
       "type": "text",
       "content": "#3",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 700,
+      "width": 24
     },
-    "rank-info-3": {
-      "parent": "ranked-row-3-left",
+    "expense-cat-dot-3": {
+      "parent": "expense-row-3-left",
       "order": 1,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "success",
+      "radius": 9999
+    },
+    "expense-info-3": {
+      "parent": "expense-row-3-left",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "column",
-        "gap": 4
+        "gap": 2
       }
     },
-    "rank-merchant-3": {
-      "parent": "rank-info-3",
+    "expense-merchant-3": {
+      "parent": "expense-info-3",
       "order": 0,
       "type": "text",
-      "content": "Uber",
+      "content": "Uber / Lyft Rides",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
     },
-    "rank-badge-3": {
-      "parent": "rank-info-3",
-      "order": 1,
-      "catalog": "badge",
-      "label": "Transport"
-    },
-    "rank-amount-3": {
-      "parent": "ranked-row-3",
+    "expense-cat-3": {
+      "parent": "expense-info-3",
       "order": 1,
       "type": "text",
-      "content": "$198.75",
+      "content": "Transportation · Jan 22",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "expense-row-3-right": {
+      "parent": "expense-row-3",
+      "order": 1,
+      "type": "text",
+      "content": "$187.50",
       "typography": "body",
       "color": "text-primary",
       "weight": 700
     },
-    "ranked-row-4": {
-      "parent": "biggest-expenses-card",
-      "order": 4,
+    "expense-row-4": {
+      "parent": "ranked-expense-list",
+      "order": 3,
       "type": "container",
       "width": "fill",
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 16,
-        "py": 12
+        "py": 14
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "overrides": {
+        "cursor": "pointer"
       },
       "navigateTo": "add-expense"
     },
-    "ranked-row-4-left": {
-      "parent": "ranked-row-4",
+    "expense-row-4-left": {
+      "parent": "expense-row-4",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 14
       }
     },
-    "rank-num-4": {
-      "parent": "ranked-row-4-left",
+    "expense-rank-4": {
+      "parent": "expense-row-4-left",
       "order": 0,
       "type": "text",
       "content": "#4",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 700,
+      "width": 24
     },
-    "rank-info-4": {
-      "parent": "ranked-row-4-left",
+    "expense-cat-dot-4": {
+      "parent": "expense-row-4-left",
       "order": 1,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "error",
+      "radius": 9999
+    },
+    "expense-info-4": {
+      "parent": "expense-row-4-left",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "column",
-        "gap": 4
+        "gap": 2
       }
     },
-    "rank-merchant-4": {
-      "parent": "rank-info-4",
+    "expense-merchant-4": {
+      "parent": "expense-info-4",
       "order": 0,
       "type": "text",
       "content": "Equinox Gym",
@@ -1720,134 +1847,161 @@
       "color": "text-primary",
       "weight": 600
     },
-    "rank-badge-4": {
-      "parent": "rank-info-4",
-      "order": 1,
-      "catalog": "badge",
-      "label": "Health & Wellness"
-    },
-    "rank-amount-4": {
-      "parent": "ranked-row-4",
+    "expense-cat-4": {
+      "parent": "expense-info-4",
       "order": 1,
       "type": "text",
-      "content": "$185.00",
+      "content": "Health & Fitness · Jan 5",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "expense-row-4-right": {
+      "parent": "expense-row-4",
+      "order": 1,
+      "type": "text",
+      "content": "$165.00",
       "typography": "body",
       "color": "text-primary",
       "weight": 700
     },
-    "ranked-row-5": {
-      "parent": "biggest-expenses-card",
-      "order": 5,
+    "expense-row-5": {
+      "parent": "ranked-expense-list",
+      "order": 4,
       "type": "container",
       "width": "fill",
-      "radius": 8,
-      "background": "surface-elevated",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 16,
-        "py": 12
+        "py": 14
+      },
+      "background": "surface-primary",
+      "radius": 10,
+      "overrides": {
+        "cursor": "pointer"
       },
       "navigateTo": "add-expense"
     },
-    "ranked-row-5-left": {
-      "parent": "ranked-row-5",
+    "expense-row-5-left": {
+      "parent": "expense-row-5",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12
+        "gap": 14
       }
     },
-    "rank-num-5": {
-      "parent": "ranked-row-5-left",
+    "expense-rank-5": {
+      "parent": "expense-row-5-left",
       "order": 0,
       "type": "text",
       "content": "#5",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 700,
+      "width": 24
     },
-    "rank-info-5": {
-      "parent": "ranked-row-5-left",
+    "expense-cat-dot-5": {
+      "parent": "expense-row-5-left",
       "order": 1,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "cta-primary",
+      "radius": 9999
+    },
+    "expense-info-5": {
+      "parent": "expense-row-5-left",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "column",
-        "gap": 4
+        "gap": 2
       }
     },
-    "rank-merchant-5": {
-      "parent": "rank-info-5",
+    "expense-merchant-5": {
+      "parent": "expense-info-5",
       "order": 0,
       "type": "text",
-      "content": "Netflix",
+      "content": "Nobu Restaurant",
       "typography": "body",
       "color": "text-primary",
       "weight": 600
     },
-    "rank-badge-5": {
-      "parent": "rank-info-5",
-      "order": 1,
-      "catalog": "badge",
-      "label": "Entertainment"
-    },
-    "rank-amount-5": {
-      "parent": "ranked-row-5",
+    "expense-cat-5": {
+      "parent": "expense-info-5",
       "order": 1,
       "type": "text",
-      "content": "$22.99",
+      "content": "Food & Dining · Jan 19",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "expense-row-5-right": {
+      "parent": "expense-row-5",
+      "order": 1,
+      "type": "text",
+      "content": "$142.30",
       "typography": "body",
       "color": "text-primary",
       "weight": 700
     },
     "month-comparison-card": {
-      "parent": "page-body-spacer",
-      "order": 3,
+      "parent": "content-wrapper",
+      "order": 5,
       "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
       "layout": {
         "dir": "column",
-        "gap": 16,
+        "gap": 20,
         "px": 24,
         "py": 24
+      },
+      "background": "surface-primary",
+      "radius": 16,
+      "overrides": {
+        "border": "1px solid var(--border-default)"
       }
     },
-    "month-comp-header": {
+    "month-comparison-header-row": {
       "parent": "month-comparison-card",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between"
       }
     },
-    "month-comp-title": {
-      "parent": "month-comp-header",
+    "month-comparison-title": {
+      "parent": "month-comparison-header-row",
       "order": 0,
       "type": "text",
-      "content": "Month-over-Month",
+      "content": "Month Comparison",
       "typography": "heading-2",
-      "color": "text-primary"
+      "color": "text-primary",
+      "weight": 700
     },
     "spending-diff-badge": {
-      "parent": "month-comp-header",
+      "parent": "month-comparison-header-row",
       "order": 1,
       "type": "container",
-      "radius": 9999,
-      "background": "error",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 4,
+        "gap": 6,
         "px": 12,
-        "py": 4
+        "py": 6
+      },
+      "background": "error",
+      "radius": 9999,
+      "overrides": {
+        "opacity": 0.85
       }
     },
     "spending-diff-icon": {
@@ -1855,31 +2009,33 @@
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "trending-up"
+        "name": "arrow-up"
       },
-      "color": "text-on-cta"
+      "color": "text-on-cta",
+      "width": 14,
+      "height": 14
     },
     "spending-diff-text": {
       "parent": "spending-diff-badge",
       "order": 1,
       "type": "text",
-      "content": "+12.4% vs May",
+      "content": "+$421 vs December",
       "typography": "label",
       "color": "text-on-cta",
-      "weight": 600
+      "weight": 700
     },
-    "comparison-bars": {
+    "comparison-bars-container": {
       "parent": "month-comparison-card",
       "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 12
+        "gap": 16
       }
     },
-    "comp-bar-current-row": {
-      "parent": "comparison-bars",
+    "comparison-bar-jan": {
+      "parent": "comparison-bars-container",
       "order": 0,
       "type": "container",
       "width": "fill",
@@ -1888,62 +2044,65 @@
         "gap": 6
       }
     },
-    "comp-bar-current-labels": {
-      "parent": "comp-bar-current-row",
+    "comparison-bar-jan-label-row": {
+      "parent": "comparison-bar-jan",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between"
       }
     },
-    "comp-bar-current-label": {
-      "parent": "comp-bar-current-labels",
+    "comparison-bar-jan-label": {
+      "parent": "comparison-bar-jan-label-row",
       "order": 0,
       "type": "text",
-      "content": "June 2024",
+      "content": "January 2024",
       "typography": "label",
       "color": "text-secondary"
     },
-    "comp-bar-current-value": {
-      "parent": "comp-bar-current-labels",
+    "comparison-bar-jan-amount": {
+      "parent": "comparison-bar-jan-label-row",
       "order": 1,
       "type": "text",
-      "content": "$2,847.50",
-      "typography": "body",
+      "content": "$3,847.50",
+      "typography": "label",
       "color": "text-primary",
-      "weight": 600
+      "weight": 700
     },
-    "comp-bar-current-track": {
-      "parent": "comp-bar-current-row",
+    "comparison-bar-jan-track": {
+      "parent": "comparison-bar-jan",
       "order": 1,
       "type": "container",
       "width": "fill",
-      "height": 12,
-      "radius": 6,
-      "background": "surface-elevated",
+      "height": 14,
       "layout": {
-        "dir": "row",
-        "align": "stretch"
+        "dir": "row"
+      },
+      "background": "surface-secondary",
+      "radius": 9999,
+      "overrides": {
+        "overflow": "hidden"
       }
     },
-    "comp-bar-current-fill": {
-      "parent": "comp-bar-current-track",
+    "comparison-bar-jan-fill": {
+      "parent": "comparison-bar-jan-track",
       "order": 0,
       "type": "container",
-      "height": 12,
-      "radius": 6,
+      "height": 14,
+      "layout": {
+        "dir": "column"
+      },
       "background": "cta-primary",
-      "layout": {
-        "dir": "row"
-      },
+      "radius": 9999,
       "overrides": {
-        "flex": "0 0 88%"
+        "width": "88%"
       }
     },
-    "comp-bar-prev-row": {
-      "parent": "comparison-bars",
+    "comparison-bar-dec": {
+      "parent": "comparison-bars-container",
       "order": 1,
       "type": "container",
       "width": "fill",
@@ -1952,63 +2111,67 @@
         "gap": 6
       }
     },
-    "comp-bar-prev-labels": {
-      "parent": "comp-bar-prev-row",
+    "comparison-bar-dec-label-row": {
+      "parent": "comparison-bar-dec",
       "order": 0,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between"
       }
     },
-    "comp-bar-prev-label": {
-      "parent": "comp-bar-prev-labels",
+    "comparison-bar-dec-label": {
+      "parent": "comparison-bar-dec-label-row",
       "order": 0,
       "type": "text",
-      "content": "May 2024",
+      "content": "December 2023",
       "typography": "label",
       "color": "text-secondary"
     },
-    "comp-bar-prev-value": {
-      "parent": "comp-bar-prev-labels",
+    "comparison-bar-dec-amount": {
+      "parent": "comparison-bar-dec-label-row",
       "order": 1,
       "type": "text",
-      "content": "$2,533.80",
-      "typography": "body",
+      "content": "$3,426.50",
+      "typography": "label",
       "color": "text-primary",
-      "weight": 600
+      "weight": 700
     },
-    "comp-bar-prev-track": {
-      "parent": "comp-bar-prev-row",
+    "comparison-bar-dec-track": {
+      "parent": "comparison-bar-dec",
       "order": 1,
       "type": "container",
       "width": "fill",
-      "height": 12,
-      "radius": 6,
-      "background": "surface-elevated",
-      "layout": {
-        "dir": "row",
-        "align": "stretch"
-      }
-    },
-    "comp-bar-prev-fill": {
-      "parent": "comp-bar-prev-track",
-      "order": 0,
-      "type": "container",
-      "height": 12,
-      "radius": 6,
-      "background": "text-secondary",
+      "height": 14,
       "layout": {
         "dir": "row"
       },
+      "background": "surface-secondary",
+      "radius": 9999,
       "overrides": {
-        "flex": "0 0 78%"
+        "overflow": "hidden"
       }
     },
-    "export-row": {
-      "parent": "page-body-spacer",
-      "order": 4,
+    "comparison-bar-dec-fill": {
+      "parent": "comparison-bar-dec-track",
+      "order": 0,
+      "type": "container",
+      "height": 14,
+      "layout": {
+        "dir": "column"
+      },
+      "background": "surface-secondary",
+      "radius": 9999,
+      "overrides": {
+        "width": "78%",
+        "background": "var(--border-default)"
+      }
+    },
+    "export-csv-row": {
+      "parent": "content-wrapper",
+      "order": 6,
       "type": "container",
       "width": "fill",
       "layout": {
@@ -2018,153 +2181,166 @@
       }
     },
     "export-csv-btn": {
-      "parent": "export-row",
+      "parent": "export-csv-row",
       "order": 0,
-      "catalog": "button-secondary",
-      "label": "Export CSV",
-      "overrides": {
-        "icon": "download"
-      }
-    },
-    "nav-tabs": {
-      "parent": "root",
-      "order": 3,
       "type": "container",
-      "width": 1440,
-      "height": 64,
-      "background": "surface-elevated",
-      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "center",
-        "px": 24,
-        "gap": 0
+        "gap": 8,
+        "px": 20,
+        "py": 10
+      },
+      "radius": 10,
+      "overrides": {
+        "border": "1px solid var(--border-default)",
+        "cursor": "pointer"
       }
     },
-    "nav-tabs-inner": {
-      "parent": "nav-tabs",
+    "export-csv-icon": {
+      "parent": "export-csv-btn",
       "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "download"
+      },
+      "color": "text-primary",
+      "width": 16,
+      "height": 16
+    },
+    "export-csv-label": {
+      "parent": "export-csv-btn",
+      "order": 1,
+      "type": "text",
+      "content": "Export CSV",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 2,
       "type": "container",
-      "width": 480,
+      "width": "fill",
       "height": 64,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "gap": 0
+        "px": 0
+      },
+      "background": "surface-primary",
+      "overrides": {
+        "borderTop": "1px solid var(--border-default)"
       }
     },
-    "home-tab": {
-      "parent": "nav-tabs-inner",
+    "nav-tab-home": {
+      "parent": "nav-tabs",
       "order": 0,
       "type": "container",
-      "height": 64,
       "layout": {
         "dir": "column",
         "align": "center",
         "justify": "center",
         "gap": 4,
-        "px": 24
+        "py": 8
       },
-      "navigateTo": "dashboard",
-      "active": false
+      "width": "fill",
+      "overrides": {
+        "cursor": "pointer"
+      },
+      "navigateTo": "dashboard"
     },
-    "home-tab-icon": {
-      "parent": "home-tab",
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
       "order": 0,
       "catalog": "icon",
       "overrides": {
         "name": "home"
       },
-      "color": "cta-primary"
+      "color": "text-secondary",
+      "width": 22,
+      "height": 22
     },
-    "home-tab-label": {
-      "parent": "home-tab",
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
       "order": 1,
       "type": "text",
       "content": "Home",
       "typography": "label",
-      "color": "cta-primary",
-      "weight": 600
+      "color": "text-secondary"
     },
-    "home-tab-indicator": {
-      "parent": "home-tab",
-      "order": 2,
-      "type": "container",
-      "width": 24,
-      "height": 2,
-      "background": "cta-primary",
-      "radius": 2,
-      "layout": {
-        "dir": "row"
-      }
-    },
-    "add-expense-tab": {
-      "parent": "nav-tabs-inner",
+    "nav-tab-add": {
+      "parent": "nav-tabs",
       "order": 1,
       "type": "container",
-      "height": 64,
       "layout": {
         "dir": "column",
         "align": "center",
         "justify": "center",
         "gap": 4,
-        "px": 24
+        "py": 8
       },
-      "navigateTo": "add-expense",
-      "active": false
+      "width": "fill",
+      "overrides": {
+        "cursor": "pointer"
+      },
+      "navigateTo": "add-expense"
     },
-    "add-expense-tab-icon": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add",
       "order": 0,
       "catalog": "icon",
       "overrides": {
         "name": "plus"
       },
-      "color": "text-secondary"
+      "color": "text-secondary",
+      "width": 22,
+      "height": 22
     },
-    "add-expense-tab-label": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add",
       "order": 1,
       "type": "text",
       "content": "Add Expense",
       "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
+      "color": "text-secondary"
     },
-    "insights-tab": {
-      "parent": "nav-tabs-inner",
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
       "order": 2,
       "type": "container",
-      "height": 64,
       "layout": {
         "dir": "column",
         "align": "center",
         "justify": "center",
         "gap": 4,
-        "px": 24
+        "py": 8
       },
-      "navigateTo": "spending-insights",
-      "active": true
+      "width": "fill",
+      "overrides": {
+        "cursor": "pointer"
+      }
     },
-    "insights-tab-icon": {
-      "parent": "insights-tab",
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
       "order": 0,
       "catalog": "icon",
       "overrides": {
         "name": "bar-chart"
       },
-      "color": "text-secondary"
+      "color": "cta-primary",
+      "width": 22,
+      "height": 22
     },
-    "insights-tab-label": {
-      "parent": "insights-tab",
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
       "order": 1,
       "type": "text",
       "content": "Insights",
       "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
+      "color": "cta-primary",
+      "weight": 600
     }
   }
 }

@@ -215,7 +215,7 @@ spec.nodes (flat adjacency list)
 |----------|----------------|
 | `getSizeStyles(width, height)` | `fill` → `flex:'1 1 auto'; width:'100%'; minWidth:0`. Number → `width:Npx; flex:'none'` |
 | `getLayoutStyles(layout)` | `dir/gap/align/justify/px/py` → flex or grid CSS |
-| `getOverrideStyles(overrides)` | Allowlisted keys via `SAFE_OVERRIDE_KEYS` → inline CSS. Color keys validated by `looksLikeCssPaintValue()` |
+| `getOverrideStyles(overrides)` | Allowlisted keys via `SAFE_OVERRIDE_KEYS` → inline CSS. Color keys validated by `looksLikeCssPaintValue()`. Includes `border`, `borderTop`, etc. for container treatments. `textAlign`, `helper`, `title` also flow via overrides (migrated from NodeSpec in Phase 1). |
 | `getTypographyStyles(role, tokens)` | Token name → `fontFamily/fontSize/lineHeight/fontWeight` |
 | `getShadowStyle(shadow, tokens)` | Token name → `boxShadow` CSS value |
 | `getCommonNodeStyles(node, tokens)` | Combines spacing + size + shadow + position + overrides |

@@ -676,3 +676,4 @@ With two parallel engineers: ~10 days.
 | `packages/dashboard/src/app/api/pages/[pageId]/design/correct/route.ts` | Correction route | Phase 3 (Task 3.5) |
 | `packages/dashboard/src/app/api/_lib/pipeline-helpers.ts` | Dashboard helpers | Phase 3 (Task 3.2 — delete both functions) |
 | `e2e/unify-pipeline.spec.ts` | E2E regression guard | Phase 3 (Task 3.6) |
+| `packages/telemetry/` | OTel + Langfuse observability | Phase 7 (ADR-046, pulled forward 2026-04-27) |

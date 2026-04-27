@@ -156,6 +156,28 @@ They activate when specific trigger conditions are met.
 
 ---
 
+## Claude Code Marketplace Skills — Phase-Gated Installation
+
+Skills from the [official Anthropic marketplace](https://github.com/anthropics/claude-plugins-official) to install at stable checkpoints.
+Currently installed: `playwright`, `chrome-devtools-mcp`.
+Removed (re-enable when needed): `frontend-design`, `figma`.
+
+| Skill | Install at | Vision Layer | Why |
+|-------|-----------|-------------|-----|
+| `context7` | Phase 0 exit | Layer 6 (RAG) | Up-to-date dependency docs (LangGraph, Zod, Next.js) prevent hallucinating stale API patterns during all subsequent phases |
+| `claude-md-management` | Any stable checkpoint | Process | Automated CLAUDE.md quality auditing reduces manual doc maintenance |
+| `greptile` | Phase 2 entry | Layer 6 (RAG) | Natural language codebase search as quick-start before building custom Qdrant pipeline |
+| `frontend-design` | Phase 5 entry | Layer 8 (Implementation) | Higher-quality React/CSS output when the implementer writes frontend code (re-enable) |
+| `coderabbit` | Phase 5 exit | Layer 9 (Review) | 40+ static analyzers complement the reviewer; install after there's code to review |
+| `aikido` | Phase 5 exit | Layer 13 (Security) | SAST/secrets/IaC scanning aligns with vision's "Semgrep + LLM triage" security model |
+| `code-review` | Phase 6 entry | Layer 9 (Review) | Specialized PR review agents inform the reviewer package design |
+| `datadog` | Phase 7 entry | Layer 11 (Observability) | Query logs/metrics/traces; complements OpenTelemetry + Langfuse |
+| `linear` or `atlassian` | Phase 3 entry | Layer 15 (Integrations) | Issue tracking integration for change classification routing |
+
+**Installation:** `claude plugin install <skill>` when the phase checkpoint is reached and tests are green.
+
+---
+
 ## Cross-phase rules
 
 - **Integration spike first.** Every phase's first task verifies imports, tool availability, real function signatures. Failures stop the phase, not fall back to stubs.

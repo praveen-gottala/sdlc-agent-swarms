@@ -20,6 +20,7 @@ module.exports = {
     '^@agentforge/agents-cicd$': '<rootDir>/../agents-cicd/src/index.ts',
     '^@agentforge/agents-ux$': '<rootDir>/../agents-ux/src/index.ts',
     '^@agentforge/designspec-renderer$': '<rootDir>/../designspec-renderer/src/index.ts',
+    '^@agentforge/telemetry$': '<rootDir>/../telemetry/src/index.ts',
     '^@agentforge/cli$': '<rootDir>/../cli/src/index.ts',
     '^@agentforge/cli/commands/(.*)$': '<rootDir>/../cli/src/commands/$1.ts',
     '^(\\..*)\\.js$': '$1',

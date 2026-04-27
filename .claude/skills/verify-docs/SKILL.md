@@ -234,6 +234,8 @@ For each pair, read both sections and flag contradictions:
    **Rule:** <One-sentence rule to prevent recurrence>
    ```
 
+5. **If the entry's status is RULE or SUPERSEDED**, also add it to `docs/lessons-learned-rules.md` (the compact rules file read by session-start). Keep both files in sync.
+
 **This check auto-writes.** Lessons-learned entries must be written before the session ends — the debugging context cannot be recovered later. This is an exception to the "surface and stop" rule that applies to other doc checks.
 
 **Pass:** Entry was written, or agent confirms "no material learnings this session" after active detection found no struggle signals.

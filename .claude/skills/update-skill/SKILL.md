@@ -32,7 +32,7 @@ Read these in this order. The order is set by `CLAUDE.md` §"Reading order (IMPO
 
 1. **`CLAUDE.md`** — development discipline, current state, the reading-order hierarchy, §"Rejected Patterns — Check Before Proposing".
 2. **`docs/vision.md`** — architecture authority; wins over PRD on patterns. Focus on the layers the target skill actually touches.
-3. **`docs/lessons-learned.md`** — Do Not Repeat list. Check the line-3 status-marker key (`RESOLVED` / `RULE` / `SUPERSEDED` / `REFERENCE`) and watch for `SUPERSEDED` entries that contradict the skill's examples.
+3. **`docs/lessons-learned-rules.md`** — Active rules + SUPERSEDED entries only (~400 lines). Check for `SUPERSEDED` entries that contradict the skill's examples. For RESOLVED context on a specific topic, grep `docs/lessons-learned.md` by keyword.
 4. **`docs/adrs/`** — read ADRs the skill cites by name AND any ADR clearly governing the skill's area. Check each ADR's `Status` / `Supersedes` / `Superseded by` headers. ADRs override the PRD for the deviations they document. You do not need to read every ADR — only the ones the skill touches.
 5. **`docs/specs/PRD.md`** — product truth, not pattern truth. Only relevant if the skill's scope touches product scope, interfaces, API contracts, enums, or field lists.
 6. **`docs/architecture/architecture.md`** — layer diagram and package boundaries.

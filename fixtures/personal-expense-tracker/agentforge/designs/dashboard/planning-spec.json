@@ -1,6 +1,6 @@
 {
-  "specRef": "spec-bookshelf-dashboard-1748908800000",
-  "moduleId": "bookshelf-dashboard",
+  "specRef": "spec-dashboard-1743292800000",
+  "moduleId": "dashboard",
   "componentTree": [
     {
       "name": "DashboardLayout",
@@ -8,110 +8,189 @@
         "maxWidth",
         "padding",
         "gap",
-        "columns"
+        "background"
       ],
       "defaultValues": {
         "maxWidth": 1280,
-        "padding": 24,
-        "gap": 24,
-        "columns": 12
+        "padding": 32,
+        "gap": 24
       },
       "children": [
         "TopBar",
-        "MainContentArea",
-        "NavigationTabs"
+        "NavigationTabs",
+        "MonthSelector",
+        "DashboardBody",
+        "SettingsDialog"
       ]
     },
     {
       "name": "TopBar",
       "props": [
         "height",
-        "paddingX",
-        "settingsAriaLabel"
+        "sticky",
+        "zIndex",
+        "logoSrc",
+        "settingsIcon",
+        "borderBottom"
       ],
       "defaultValues": {
-        "height": 64,
-        "paddingX": 24
+        "height": 64
       },
       "children": [
-        "MonthSelector",
-        "SettingsDialog"
+        "TopBarLogo",
+        "TopBarAddButton"
       ]
+    },
+    {
+      "name": "TopBarLogo",
+      "props": [
+        "label",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Personal Expense Tracker"
+      },
+      "navigateTo": "settings",
+      "children": []
+    },
+    {
+      "name": "TopBarAddButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Add Expense",
+        "variant": "default"
+      },
+      "navigateTo": "add-expense",
+      "children": []
+    },
+    {
+      "name": "NavigationTabs",
+      "props": [
+        "activeTab",
+        "tabs",
+        "ariaLabel",
+        "indicatorDuration"
+      ],
+      "defaultValues": {
+        "activeTab": "dashboard",
+        "indicatorDuration": 300
+      },
+      "children": [
+        "NavTabDashboard",
+        "NavTabAddExpense",
+        "NavTabInsights"
+      ]
+    },
+    {
+      "name": "NavTabDashboard",
+      "props": [
+        "label",
+        "ariaSelected",
+        "ariaControls"
+      ],
+      "defaultValues": {
+        "label": "Dashboard",
+        "ariaSelected": "true"
+      },
+      "children": []
+    },
+    {
+      "name": "NavTabAddExpense",
+      "props": [
+        "label",
+        "ariaSelected",
+        "ariaControls"
+      ],
+      "defaultValues": {
+        "label": "Add Expense",
+        "ariaSelected": "false"
+      },
+      "navigateTo": "add-expense",
+      "children": []
+    },
+    {
+      "name": "NavTabInsights",
+      "props": [
+        "label",
+        "ariaSelected",
+        "ariaControls"
+      ],
+      "defaultValues": {
+        "label": "Insights",
+        "ariaSelected": "false"
+      },
+      "navigateTo": "spending-insights",
+      "children": []
     },
     {
       "name": "MonthSelector",
       "props": [
         "currentMonth",
         "currentYear",
-        "prevAriaLabel",
-        "nextAriaLabel"
+        "onPrevious",
+        "onNext",
+        "ariaLabelPrev",
+        "ariaLabelNext"
       ],
       "defaultValues": {
-        "prevAriaLabel": "Previous month",
-        "nextAriaLabel": "Next month"
+        "ariaLabelPrev": "Previous month",
+        "ariaLabelNext": "Next month"
       },
       "children": []
     },
     {
-      "name": "SettingsDialog",
+      "name": "DashboardBody",
       "props": [
-        "isOpen",
-        "ariaModal",
-        "ariaLabelledBy",
-        "elevation",
-        "zIndex"
-      ],
-      "defaultValues": {
-        "ariaModal": true,
-        "elevation": 3
-      },
-      "children": []
-    },
-    {
-      "name": "MainContentArea",
-      "props": [
+        "columns",
         "gap",
-        "paddingY",
-        "columns"
+        "paddingY"
       ],
       "defaultValues": {
+        "columns": 2,
         "gap": 24,
-        "paddingY": 32,
-        "columns": 12
+        "paddingY": 32
       },
       "children": [
-        "LeftColumn",
-        "RightColumn"
+        "LeftSummaryColumn",
+        "RightExpenseColumn"
       ]
     },
     {
-      "name": "LeftColumn",
+      "name": "LeftSummaryColumn",
       "props": [
-        "gap",
-        "columnSpan"
+        "width",
+        "gap"
       ],
       "defaultValues": {
-        "gap": 24,
-        "columnSpan": 5
+        "width": 360,
+        "gap": 24
       },
       "children": [
         "BudgetSummaryCard",
-        "CategoryDonutChart"
+        "CategoryDonutChart",
+        "CategoryLegend"
       ]
     },
     {
       "name": "BudgetSummaryCard",
       "props": [
+        "totalSpent",
+        "budgetAmount",
+        "currency",
         "paddingX",
         "paddingY",
         "borderRadius",
-        "elevation"
+        "ariaLive"
       ],
       "defaultValues": {
         "paddingX": 24,
         "paddingY": 24,
         "borderRadius": 16,
-        "elevation": 1
+        "ariaLive": "polite"
       },
       "children": [
         "BudgetStatusBadge",
@@ -126,6 +205,8 @@
         "borderRadius"
       ],
       "defaultValues": {
+        "status": "on-track",
+        "label": "On Track",
         "borderRadius": 9999
       },
       "children": []
@@ -134,112 +215,108 @@
       "name": "ProgressBar",
       "props": [
         "value",
-        "min",
         "max",
+        "height",
+        "borderRadius",
         "ariaLabel",
         "ariaValueNow",
         "ariaValueMin",
-        "ariaValueMax"
+        "ariaValueMax",
+        "animationDuration"
       ],
       "defaultValues": {
-        "min": 0,
-        "max": 100
+        "height": 8,
+        "borderRadius": 9999,
+        "ariaLabel": "Monthly budget progress",
+        "ariaValueMin": 0,
+        "animationDuration": 600
       },
       "children": []
     },
     {
       "name": "CategoryDonutChart",
       "props": [
+        "diameter",
+        "strokeWidth",
         "segments",
+        "centerCount",
+        "centerLabel",
         "ariaLabel",
-        "role",
-        "size"
+        "role"
       ],
       "defaultValues": {
-        "role": "img",
-        "size": 220
-      },
-      "children": [
-        "CategoryLegend"
-      ]
-    },
-    {
-      "name": "CategoryLegend",
-      "props": [
-        "items",
-        "gap",
-        "paddingX"
-      ],
-      "defaultValues": {
-        "gap": 12,
-        "paddingX": 16
+        "diameter": 160,
+        "strokeWidth": 24,
+        "role": "img"
       },
       "children": []
     },
     {
-      "name": "RightColumn",
+      "name": "CategoryLegend",
       "props": [
+        "categories",
+        "maxRows",
         "gap",
-        "columnSpan"
-      ],
-      "defaultValues": {
-        "gap": 24,
-        "columnSpan": 7
-      },
-      "children": [
-        "ExpenseListHeader",
-        "RecentExpensesList"
-      ]
-    },
-    {
-      "name": "ExpenseListHeader",
-      "props": [
-        "gap",
+        "paddingX",
         "paddingY"
       ],
       "defaultValues": {
+        "maxRows": 6,
+        "gap": 8,
+        "paddingX": 24,
+        "paddingY": 16
+      },
+      "children": []
+    },
+    {
+      "name": "RightExpenseColumn",
+      "props": [
+        "gap",
+        "flex"
+      ],
+      "defaultValues": {
         "gap": 16,
-        "paddingY": 8
+        "flex": 1
       },
       "children": [
-        "CategoryFilterDropdown"
+        "CategoryFilterDropdown",
+        "RecentExpensesList",
+        "EmptyState"
       ]
     },
     {
       "name": "CategoryFilterDropdown",
       "props": [
+        "selectedCategory",
         "options",
-        "selectedCategoryId",
+        "ariaLabel",
         "ariaExpanded",
         "ariaHasPopup",
-        "ariaActiveDescendant",
-        "zIndex",
-        "elevation"
+        "borderRadius",
+        "zIndex"
       ],
       "defaultValues": {
-        "zIndex": 1000,
-        "elevation": 2
+        "ariaLabel": "Filter by category",
+        "ariaExpanded": "false",
+        "ariaHasPopup": "listbox",
+        "borderRadius": 9999
       },
       "children": []
     },
     {
       "name": "RecentExpensesList",
       "props": [
-        "ariaLabel",
-        "maxHeight",
-        "overflowY",
+        "expenses",
         "gap",
-        "ariaLive"
+        "paddingY"
       ],
       "defaultValues": {
-        "maxHeight": 520,
-        "overflowY": "auto",
         "gap": 8,
-        "ariaLive": "polite"
+        "paddingY": 0
       },
       "children": [
         "ExpenseRow",
-        "EmptyState"
+        "ExpenseDetailPopover"
       ]
     },
     {
@@ -250,270 +327,256 @@
         "amount",
         "currency",
         "categoryName",
-        "categoryColor",
+        "categoryColorHex",
+        "categoryIcon",
         "date",
+        "paymentMethod",
         "paddingX",
         "paddingY",
         "borderRadius",
-        "hoverOpacity"
+        "leftBorderWidth",
+        "ariaLabel",
+        "role"
       ],
       "defaultValues": {
         "paddingX": 16,
-        "paddingY": 12,
+        "paddingY": 16,
         "borderRadius": 10,
-        "hoverOpacity": 0.08
+        "leftBorderWidth": 3,
+        "role": "button"
       },
-      "children": [
-        "ExpenseDetailPopover"
-      ]
+      "children": []
     },
     {
       "name": "ExpenseDetailPopover",
       "props": [
         "expenseId",
-        "isOpen",
-        "elevation",
+        "merchant",
+        "amount",
+        "currency",
+        "categoryName",
+        "date",
+        "paymentMethod",
+        "note",
+        "width",
+        "borderRadius",
         "zIndex",
         "ariaLabel",
-        "backdropColor"
+        "deleteConfirmText",
+        "deleteAutoRevertMs"
       ],
       "defaultValues": {
-        "elevation": 2,
-        "zIndex": 1000
+        "width": 320,
+        "borderRadius": 10,
+        "deleteConfirmText": "Confirm delete?",
+        "deleteAutoRevertMs": 3000
+      },
+      "children": [
+        "EditExpenseButton",
+        "DeleteExpenseButton"
+      ]
+    },
+    {
+      "name": "EditExpenseButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Edit",
+        "variant": "ghost"
+      },
+      "navigateTo": "add-expense",
+      "children": []
+    },
+    {
+      "name": "DeleteExpenseButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Delete",
+        "variant": "ghost"
       },
       "children": []
     },
     {
       "name": "EmptyState",
       "props": [
-        "title",
+        "iconSize",
+        "heading",
         "description",
+        "ctaLabel",
+        "ctaAriaLabel",
         "paddingY"
       ],
       "defaultValues": {
+        "iconSize": 64,
+        "heading": "No expenses yet",
+        "description": "Start tracking your spending by adding your first expense.",
+        "ctaLabel": "Add Expense",
+        "ctaAriaLabel": "Add your first expense",
         "paddingY": 48
       },
       "children": [
-        "AddExpenseCTAButton"
+        "EmptyStateAddButton"
       ]
     },
     {
-      "name": "AddExpenseCTAButton",
+      "name": "EmptyStateAddButton",
       "props": [
         "label",
-        "ariaLabel",
-        "minHeight",
-        "minWidth"
-      ],
-      "defaultValues": {
-        "label": "Add your first expense",
-        "ariaLabel": "Add your first expense",
-        "minHeight": 44,
-        "minWidth": 44
-      },
-      "navigateTo": "add-expense",
-      "children": []
-    },
-    {
-      "name": "NavigationTabs",
-      "props": [
-        "tabs",
-        "activeTab",
-        "height",
-        "paddingX",
-        "zIndex",
-        "position"
-      ],
-      "defaultValues": {
-        "height": 64,
-        "paddingX": 24,
-        "zIndex": 1100,
-        "position": "sticky"
-      },
-      "children": [
-        "HomeTabItem",
-        "AddExpenseTabItem",
-        "InsightsTabItem"
-      ]
-    },
-    {
-      "name": "HomeTabItem",
-      "props": [
-        "label",
-        "icon",
-        "ariaSelected",
-        "minHeight",
-        "minWidth"
-      ],
-      "defaultValues": {
-        "label": "Home",
-        "ariaSelected": true,
-        "minHeight": 44,
-        "minWidth": 44
-      },
-      "children": []
-    },
-    {
-      "name": "AddExpenseTabItem",
-      "props": [
-        "label",
-        "icon",
-        "ariaSelected",
-        "minHeight",
-        "minWidth"
+        "variant",
+        "ariaLabel"
       ],
       "defaultValues": {
         "label": "Add Expense",
-        "ariaSelected": false,
-        "minHeight": 44,
-        "minWidth": 44
+        "variant": "default",
+        "ariaLabel": "Add your first expense"
       },
       "navigateTo": "add-expense",
       "children": []
     },
     {
-      "name": "InsightsTabItem",
+      "name": "SettingsDialog",
       "props": [
-        "label",
-        "icon",
-        "ariaSelected",
-        "minHeight",
-        "minWidth"
+        "open",
+        "role",
+        "ariaModal",
+        "ariaLabelledBy",
+        "zIndex",
+        "overlayBackground"
       ],
       "defaultValues": {
-        "label": "Insights",
-        "ariaSelected": false,
-        "minHeight": 44,
-        "minWidth": 44
+        "open": "false",
+        "role": "dialog",
+        "ariaModal": "true"
       },
-      "navigateTo": "spending-insights",
+      "children": [
+        "SettingsCloseButton"
+      ]
+    },
+    {
+      "name": "SettingsCloseButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Close",
+        "variant": "ghost",
+        "ariaLabel": "Close settings"
+      },
+      "navigateTo": "settings",
       "children": []
     }
   ],
   "tokenBindings": {
     "DashboardLayout.background": "background-primary",
-    "DashboardLayout.maxWidth": "content-max-width",
-    "DashboardLayout.gap": "24",
-    "DashboardLayout.padding": "24",
     "TopBar.background": "surface-primary",
     "TopBar.borderBottom": "border-default",
+    "TopBar.zIndex": "z-sticky",
+    "TopBarLogo.color": "text-primary",
+    "TopBarAddButton.background": "cta-primary",
+    "TopBarAddButton.color": "text-on-cta",
+    "TopBarAddButton.borderRadius": "medium",
+    "NavigationTabs.background": "surface-primary",
+    "NavigationTabs.borderBottom": "border-default",
+    "NavTabDashboard.activeIndicatorColor": "cta-primary",
+    "NavTabDashboard.color": "text-primary",
+    "NavTabAddExpense.color": "text-secondary",
+    "NavTabAddExpense.activeIndicatorColor": "cta-primary",
+    "NavTabInsights.color": "text-secondary",
+    "NavTabInsights.activeIndicatorColor": "cta-primary",
+    "MonthSelector.background": "surface-elevated",
     "MonthSelector.color": "text-primary",
-    "MonthSelector.typography": "heading-2",
-    "MonthSelector.buttonFocusRing": "focus-ring-color",
-    "SettingsDialog.background": "surface-elevated",
-    "SettingsDialog.shadow": "elevation-3",
-    "SettingsDialog.overlay": "overlay",
-    "SettingsDialog.border": "border-default",
-    "SettingsDialog.borderRadius": "large",
-    "SettingsDialog.zIndex": "z-modal",
-    "MainContentArea.gap": "24",
-    "MainContentArea.paddingY": "32",
+    "MonthSelector.borderRadius": "pill",
+    "MonthSelector.iconColor": "text-secondary",
     "BudgetSummaryCard.background": "surface-primary",
     "BudgetSummaryCard.shadow": "elevation-1",
     "BudgetSummaryCard.borderRadius": "large",
-    "BudgetSummaryCard.border": "border-default",
-    "BudgetSummaryCard.titleColor": "text-primary",
-    "BudgetSummaryCard.titleTypography": "heading-2",
-    "BudgetSummaryCard.valueTypography": "heading-1",
-    "BudgetSummaryCard.subtitleColor": "text-secondary",
-    "BudgetSummaryCard.subtitleTypography": "label",
+    "BudgetSummaryCard.amountTypography": "heading-1",
+    "BudgetSummaryCard.labelTypography": "body",
+    "BudgetSummaryCard.color": "text-primary",
     "BudgetStatusBadge.borderRadius": "pill",
-    "BudgetStatusBadge.onTrackBackground": "success",
-    "BudgetStatusBadge.warningBackground": "warning",
-    "BudgetStatusBadge.overBudgetBackground": "error",
-    "BudgetStatusBadge.textColor": "text-on-cta",
     "BudgetStatusBadge.typography": "label",
-    "ProgressBar.trackBackground": "border-default",
-    "ProgressBar.fillOnTrack": "success",
-    "ProgressBar.fillWarning": "warning",
-    "ProgressBar.fillOverBudget": "error",
+    "ProgressBar.trackBackground": "surface-elevated",
     "ProgressBar.borderRadius": "pill",
     "CategoryDonutChart.background": "surface-primary",
     "CategoryDonutChart.shadow": "elevation-1",
     "CategoryDonutChart.borderRadius": "large",
-    "CategoryDonutChart.border": "border-default",
-    "CategoryLegend.textColor": "text-primary",
-    "CategoryLegend.typography": "body",
-    "CategoryLegend.percentageColor": "text-secondary",
-    "CategoryLegend.percentageTypography": "label",
-    "CategoryLegend.gap": "12",
-    "ExpenseListHeader.gap": "16",
+    "CategoryDonutChart.centerCountTypography": "heading-2",
+    "CategoryDonutChart.centerLabelTypography": "small",
+    "CategoryDonutChart.centerLabelColor": "text-secondary",
+    "CategoryLegend.background": "surface-primary",
+    "CategoryLegend.shadow": "elevation-1",
+    "CategoryLegend.borderRadius": "large",
+    "CategoryLegend.nameTypography": "body",
+    "CategoryLegend.amountTypography": "label",
+    "CategoryLegend.nameColor": "text-primary",
+    "CategoryLegend.amountColor": "text-secondary",
     "CategoryFilterDropdown.background": "surface-elevated",
+    "CategoryFilterDropdown.color": "text-primary",
+    "CategoryFilterDropdown.borderRadius": "pill",
     "CategoryFilterDropdown.border": "border-default",
-    "CategoryFilterDropdown.borderFocus": "border-focus",
-    "CategoryFilterDropdown.borderRadius": "medium",
-    "CategoryFilterDropdown.shadow": "elevation-2",
-    "CategoryFilterDropdown.textColor": "text-primary",
-    "CategoryFilterDropdown.typography": "body",
     "CategoryFilterDropdown.zIndex": "z-dropdown",
-    "CategoryFilterDropdown.activeChipBorder": "cta-primary",
+    "CategoryFilterDropdown.typography": "body",
     "RecentExpensesList.background": "background-primary",
-    "RecentExpensesList.gap": "8",
     "ExpenseRow.background": "surface-primary",
+    "ExpenseRow.hoverBackground": "surface-elevated",
+    "ExpenseRow.shadow": "elevation-1",
     "ExpenseRow.borderRadius": "medium",
-    "ExpenseRow.border": "border-default",
-    "ExpenseRow.merchantTypography": "body",
+    "ExpenseRow.merchantTypography": "heading-3",
+    "ExpenseRow.amountTypography": "heading-2",
+    "ExpenseRow.metaTypography": "label",
     "ExpenseRow.merchantColor": "text-primary",
-    "ExpenseRow.amountTypography": "heading-3",
-    "ExpenseRow.amountColor": "text-primary",
-    "ExpenseRow.dateTypography": "label",
-    "ExpenseRow.dateColor": "text-secondary",
-    "ExpenseRow.hoverOverlay": "surface-elevated",
-    "ExpenseRow.focusRing": "focus-ring-color",
-    "ExpenseRow.paddingX": "16",
-    "ExpenseRow.paddingY": "12",
+    "ExpenseRow.metaColor": "text-secondary",
+    "ExpenseRow.hoverTransitionDuration": "duration-fast",
     "ExpenseDetailPopover.background": "surface-elevated",
     "ExpenseDetailPopover.shadow": "elevation-2",
-    "ExpenseDetailPopover.borderRadius": "large",
-    "ExpenseDetailPopover.border": "border-default",
-    "ExpenseDetailPopover.overlay": "overlay",
+    "ExpenseDetailPopover.borderRadius": "medium",
     "ExpenseDetailPopover.zIndex": "z-dropdown",
-    "ExpenseDetailPopover.titleTypography": "heading-2",
-    "ExpenseDetailPopover.titleColor": "text-primary",
-    "ExpenseDetailPopover.bodyTypography": "body",
-    "ExpenseDetailPopover.bodyColor": "text-secondary",
-    "ExpenseDetailPopover.deleteColor": "error",
-    "EmptyState.textColor": "text-secondary",
-    "EmptyState.typography": "body",
-    "EmptyState.titleTypography": "heading-2",
-    "EmptyState.titleColor": "text-primary",
-    "AddExpenseCTAButton.background": "cta-primary",
-    "AddExpenseCTAButton.backgroundHover": "cta-hover",
-    "AddExpenseCTAButton.textColor": "text-on-cta",
-    "AddExpenseCTAButton.typography": "label",
-    "AddExpenseCTAButton.borderRadius": "medium",
-    "AddExpenseCTAButton.focusRing": "focus-ring-color",
-    "NavigationTabs.background": "surface-primary",
-    "NavigationTabs.borderTop": "border-default",
-    "NavigationTabs.zIndex": "z-sticky",
-    "HomeTabItem.activeColor": "cta-primary",
-    "HomeTabItem.inactiveColor": "text-secondary",
-    "HomeTabItem.typography": "label",
-    "HomeTabItem.focusRing": "focus-ring-color",
-    "AddExpenseTabItem.activeColor": "cta-primary",
-    "AddExpenseTabItem.inactiveColor": "text-secondary",
-    "AddExpenseTabItem.typography": "label",
-    "AddExpenseTabItem.focusRing": "focus-ring-color",
-    "InsightsTabItem.activeColor": "cta-primary",
-    "InsightsTabItem.inactiveColor": "text-secondary",
-    "InsightsTabItem.typography": "label",
-    "InsightsTabItem.focusRing": "focus-ring-color"
+    "ExpenseDetailPopover.labelTypography": "label",
+    "ExpenseDetailPopover.valueTypography": "body",
+    "ExpenseDetailPopover.labelColor": "text-secondary",
+    "ExpenseDetailPopover.valueColor": "text-primary",
+    "ExpenseDetailPopover.border": "border-default",
+    "EditExpenseButton.color": "cta-primary",
+    "DeleteExpenseButton.color": "error",
+    "EmptyState.iconColor": "text-secondary",
+    "EmptyState.headingTypography": "heading-2",
+    "EmptyState.descriptionTypography": "body",
+    "EmptyState.headingColor": "text-primary",
+    "EmptyState.descriptionColor": "text-secondary",
+    "EmptyStateAddButton.background": "cta-primary",
+    "EmptyStateAddButton.color": "text-on-cta",
+    "EmptyStateAddButton.borderRadius": "medium",
+    "SettingsDialog.overlayBackground": "overlay",
+    "SettingsDialog.background": "surface-elevated",
+    "SettingsDialog.shadow": "elevation-3",
+    "SettingsDialog.borderRadius": "large",
+    "SettingsDialog.zIndex": "z-modal",
+    "SettingsCloseButton.color": "text-secondary"
   },
   "responsiveRules": [
     {
       "breakpoint": "desktop",
       "width": 1440,
-      "behavior": "Two-column layout with 24px gutter, max-width 1280px centered with 24px margin. Left column (5/12) holds BudgetSummaryCard and CategoryDonutChart stacked vertically. Right column (7/12) holds filter bar and scrollable RecentExpensesList. TopBar and NavigationTabs span full width.",
+      "behavior": "Two-column layout: fixed 360px left summary column + flexible right expense column, 24px gap, 32px outer padding, max-width 1280px centered",
       "layout": "two-column",
       "changes": [
-        "Full-width TopBar with MonthSelector centered and settings icon right-aligned",
-        "Left column (5 of 12 grid columns) for budget summary and donut chart",
-        "Right column (7 of 12 grid columns) for expense list with filter dropdown",
-        "RecentExpensesList fixed height 520px with internal scroll",
-        "NavigationTabs sticky at bottom with 64px height and z-index sticky",
-        "CategoryDonutChart rendered at 220px diameter with adjacent CategoryLegend",
-        "ExpenseDetailPopover rendered as floating overlay at elevation-2",
-        "SettingsDialog rendered as centered modal at elevation-3 with overlay backdrop"
+        "TopBar sticky at 64px height with full logo and Add Expense button",
+        "NavigationTabs full-width with three tabs and sliding amber underline indicator",
+        "MonthSelector pill centered below TopBar",
+        "Left column fixed at 360px: BudgetSummaryCard, CategoryDonutChart (160px), CategoryLegend stacked vertically with 24px gap",
+        "Right column flexible: CategoryFilterDropdown chip at top, RecentExpensesList scrollable below with 8px row gap",
+        "ExpenseDetailPopover anchored right of clicked ExpenseRow at 320px width",
+        "EmptyState centered in right column when no expenses",
+        "SettingsDialog as overlay modal at z-index 1200"
       ]
     }
   ],
@@ -523,27 +586,31 @@
       "components": [
         "DashboardLayout",
         "TopBar",
+        "TopBarLogo",
+        "TopBarAddButton",
+        "NavigationTabs",
+        "NavTabDashboard",
+        "NavTabAddExpense",
+        "NavTabInsights",
         "MonthSelector",
-        "SettingsDialog",
-        "MainContentArea",
-        "LeftColumn",
+        "DashboardBody",
+        "LeftSummaryColumn",
         "BudgetSummaryCard",
         "BudgetStatusBadge",
         "ProgressBar",
         "CategoryDonutChart",
         "CategoryLegend",
-        "RightColumn",
-        "ExpenseListHeader",
+        "RightExpenseColumn",
         "CategoryFilterDropdown",
         "RecentExpensesList",
         "ExpenseRow",
         "ExpenseDetailPopover",
+        "EditExpenseButton",
+        "DeleteExpenseButton",
         "EmptyState",
-        "AddExpenseCTAButton",
-        "NavigationTabs",
-        "HomeTabItem",
-        "AddExpenseTabItem",
-        "InsightsTabItem"
+        "EmptyStateAddButton",
+        "SettingsDialog",
+        "SettingsCloseButton"
       ]
     }
   ]

@@ -71,6 +71,14 @@ import type {
   ImplementCallback,
 } from '@agentforge/agents-ux';
 import { CliStdoutSink } from '../telemetry/cli-sink.js';
+import {
+  initLangfuseTracing,
+  shutdownTracing,
+  createTracedProvider,
+  createLangfuseSink,
+  CompositeSink,
+  isLangfuseConfigured,
+} from '@agentforge/telemetry';
 import type { RendererTokens } from '@agentforge/designspec-renderer';
 import { loadCatalogForRenderer, openBrowserSession, openInteractivePreview } from '@agentforge/designspec-renderer';
 
@@ -556,12 +564,17 @@ export async function designPageCommand(
   const prdRequirements: string[] = [description];
   if (prdContent) prdRequirements.push(prdContent);
 
+  initLangfuseTracing();
+
   const providerFactory = (model: string): LLMProviderRef => {
     if (options.mock) return createMockLLMProvider() as unknown as LLMProviderRef;
-    return createClaudeProvider(model, providerConfig!) as unknown as LLMProviderRef;
+    const provider = createClaudeProvider(model, providerConfig!);
+    return createTracedProvider(provider) as unknown as LLMProviderRef;
   };
 
-  const sink = new CliStdoutSink(output);
+  const cliSink = new CliStdoutSink(output);
+  const langfuseSink = createLangfuseSink(taskId, { projectName: baseDir.split('/').pop() });
+  const sink = langfuseSink ? new CompositeSink([cliSink, langfuseSink]) : cliSink;
   const pipelineInput: PipelineInput = {
     moduleId,
     taskId,
@@ -658,8 +671,8 @@ export async function designPageCommand(
     output.write(infoMsg(`  Penpot Components: ${Object.keys(designOutput.penpotNodeIds).length}\n`));
   }
   output.write(infoMsg(`  Artifact: ${artifactPath}\n`));
-  if (sink.getTotalCostUsd() > 0) {
-    output.write(infoMsg(`  Total LLM Cost: $${sink.getTotalCostUsd().toFixed(4)}\n`));
+  if (cliSink.getTotalCostUsd() > 0) {
+    output.write(infoMsg(`  Total LLM Cost: $${cliSink.getTotalCostUsd().toFixed(4)}\n`));
   }
   output.write(infoMsg('='.repeat(60) + '\n'));
 
@@ -952,5 +965,10 @@ export async function designPageCommand(
 
   } finally {
     disconnectFn?.();
+    if (isLangfuseConfigured()) {
+      await shutdownTracing();
+      const baseUrl = process.env.LANGFUSE_BASE_URL ?? 'http://localhost:3000';
+      output.write(infoMsg(`\n  Langfuse traces: ${baseUrl}\n`));
+    }
   }
 }

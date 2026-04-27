@@ -536,6 +536,9 @@ designNode(state, ctx)
   │     LLM → submit_design tool-use → DesignSpecV2 JSON
   │     Handles: Chrome Pass injection, screen_type/viewport, navigateTo
   │     Retry: empty-node retry on malformed LLM output
+  │     NodeSpec budget: 19/24 optional fields (5 slots headroom)
+  │     Container treatments: elevated/outlined/flat/inset/separated
+  │       (prompt requires 2+ treatments per page with 3+ sections)
   │
   └── designTool === 'penpot' → penpotDesignWork()
         Source: packages/agents-ux/src/ux-design/ux-penpot-design.ts

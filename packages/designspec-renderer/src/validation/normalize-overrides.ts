@@ -1,9 +1,11 @@
 /**
- * Normalizes override keys in a DesignSpec to camelCase.
+ * Normalizes override keys in a DesignSpec to camelCase and promotes
+ * known NodeSpec properties out of overrides into their first-class fields.
  *
  * LLMs generate override keys inconsistently: font_size, font-size, fontSize.
- * This function normalizes all to camelCase at write time so the verifier
- * and renderer don't need to handle multiple variants.
+ * They also sometimes put first-class properties (textAlign, background,
+ * radius) inside overrides instead of on the node directly. Both are fixed
+ * at write time so the verifier and renderer don't need to handle variants.
  */
 import type { DesignSpecV2, NodeSpec } from '../types/design-spec-v2.js';
 
@@ -12,6 +14,10 @@ function toCamelCase(key: string): string {
     .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
     .replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 }
+
+const PROMOTABLE_TO_NODE: ReadonlySet<string> = new Set([
+  'textAlign', 'typography', 'weight',
+]);
 
 export function normalizeSpecOverrides(spec: DesignSpecV2): DesignSpecV2 {
   const nodes: Record<string, NodeSpec> = {};
@@ -23,14 +29,20 @@ export function normalizeSpecOverrides(spec: DesignSpecV2): DesignSpecV2 {
     }
     const normalized: Record<string, unknown> = {};
     let nodeChanged = false;
+    const promoted: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(node.overrides)) {
       const camel = toCamelCase(key);
       if (camel !== key) nodeChanged = true;
-      normalized[camel] = value;
+      if (PROMOTABLE_TO_NODE.has(camel) && (node as unknown as Record<string, unknown>)[camel] === undefined) {
+        promoted[camel] = value;
+        nodeChanged = true;
+      } else {
+        normalized[camel] = value;
+      }
     }
     if (nodeChanged) {
       changed = true;
-      nodes[id] = { ...node, overrides: normalized };
+      nodes[id] = { ...node, ...promoted, overrides: normalized };
     } else {
       nodes[id] = node;
     }

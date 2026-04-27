@@ -1,0 +1,56 @@
+{
+  "briefId": "brief-confirm-delete-1710000000000",
+  "moduleId": "confirm-delete",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Modal overlay panel only — no full-page navigation, NavigationTabs, TopBar, or sidebar included",
+    "Must follow 8px spacing grid system (scale: 4, 8, 12, 16, 24, 32, 48, 64px)",
+    "Overlay background uses rgba(0,0,0,0.65) per overlay semantic token to dim the dashboard beneath",
+    "Modal panel background uses navy-raised (#293548) at elevation level 3 (0 12px 32px rgba(0,0,0,0.5))",
+    "Border radius large (16px) applied to modal panel container",
+    "Z-index 1200 (modal layer) to sit above sticky elements and dropdowns",
+    "Maximum modal width constrained to ~400px centered in viewport for focused destructive confirmation pattern",
+    "Single visual hierarchy level: title, supporting body text, then two action buttons — no nested cards or sub-sections",
+    "Destructive action (Confirm Delete) uses coral-error (#F87171) as primary button color, NOT gold-amber CTA, to signal danger",
+    "Cancel action uses surface-elevated (navy-raised) background with slate-border (#334155) border as a ghost/secondary button",
+    "Close/dismiss X button required in top-right corner of modal panel per overlay design rules",
+    "Minimum touch target 44x44px for all interactive elements (X button, Cancel, Confirm Delete)",
+    "Typography: heading-2 (DM Sans, 16px, weight 600) for modal title; body (DM Mono, 14px, weight 400) for supporting description text",
+    "Content max-width 1280px with 24px margin; modal is centered within this layout grid",
+    "Motion: modal entrance uses normal duration (300ms) with default easing cubic-bezier(0.4,0,0.2,1); fade transition for overlay"
+  ],
+  "referencePatterns": [
+    "Destructive confirmation dialog pattern — two-button layout with danger primary and neutral secondary",
+    "Overlay modal panel pattern consistent with ExpenseDetailPopover elevation and shadow treatment from dashboard",
+    "Icon + title + body copy layout for contextual warning messaging (trash/warning icon above heading)",
+    "Ghost/outline secondary button pattern matching existing chip and border-default token usage across add-expense and dashboard screens",
+    "Focus trap pattern within modal — keyboard focus cycles only between X button, Cancel, and Confirm Delete",
+    "Dismiss-on-backdrop-click pattern consistent with SettingsDialog drawer dismiss behavior"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text — silver-text (#CBD5E1) on navy-raised (#293548) meets this requirement",
+    "coral-error (#F87171) used as button background must pair with deep-navy (#0F172A) text to achieve sufficient contrast ratio",
+    "Modal must use role='dialog' with aria-modal='true' and aria-labelledby referencing the modal title element",
+    "Modal title must have a unique id referenced by aria-labelledby on the dialog element",
+    "Supporting description text must be referenced via aria-describedby on the dialog element",
+    "Focus must be trapped within the modal while open; focus returns to the triggering element (delete action in ExpenseDetailPopover) on close",
+    "Initial focus on open must land on the Cancel button (safe default) to prevent accidental destructive action",
+    "Escape key must dismiss the modal and return to dashboard, equivalent to clicking Cancel",
+    "X close button must have aria-label='Close confirmation dialog' for screen reader clarity",
+    "Confirm Delete button must have aria-label='Confirm delete expense' to provide full context beyond visual label",
+    "Cancel button must have aria-label='Cancel delete and return to dashboard'",
+    "Destructive action must not be the default focused element to prevent accidental keyboard activation",
+    "Overlay backdrop must have aria-hidden='true' so screen readers do not announce the dimmed background content",
+    "All interactive elements meet minimum 44x44px touch target size per design token touch_targets specification",
+    "Focus ring uses gold-amber (#F59E0B) with 2px width and 2px offset per state.focus_ring token for visibility on dark surfaces"
+  ],
+  "dataModelDependencies": [
+    "Expense entity — id field required to identify which expense record is being deleted via DELETE /api/expenses/:id endpoint",
+    "Expense entity — merchant and amount fields used to display contextual expense details within the confirmation message (e.g., 'Delete $42.00 at Starbucks?')",
+    "Expense entity — date field optionally surfaced in confirmation body copy for additional context",
+    "CategoryAggregate entity — indirectly affected post-deletion as DELETE /api/expenses/:id recalculates category aggregates for the month",
+    "DailyAggregate entity — indirectly affected post-deletion as daily aggregates are recalculated upon expense deletion"
+  ]
+}

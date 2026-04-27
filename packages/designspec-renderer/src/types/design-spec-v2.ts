@@ -45,7 +45,9 @@ export interface SegmentedOption {
 /**
  * A single node in the design spec.
  *
- * STRICT MODE BUDGET: 22 of 24 optional fields used.
+ * STRICT MODE BUDGET: 19 of 24 optional fields used (tool schema + type).
+ * Phase 1 migrated textAlign, helper, title to overrides; active uses
+ * local type intersection in spec-split.ts. 5 slots of headroom remain.
  * Do NOT add fields without checking Anthropic's 24-optional-field limit.
  * Move new properties to catalog defaults or overrides instead.
  */
@@ -70,10 +72,6 @@ export interface NodeSpec {
   readonly value?: string | number;
   /** Placeholder text (for inputs). */
   readonly placeholder?: string;
-  /** Helper text displayed below the node. */
-  readonly helper?: string;
-  /** Title text for the node. */
-  readonly title?: string;
   /** Options for segmented controls. */
   readonly options?: readonly SegmentedOption[];
 
@@ -98,8 +96,6 @@ export interface NodeSpec {
   readonly shadow?: string;
   /** Border radius in pixels. */
   readonly radius?: number;
-  /** Text alignment ('left', 'center', 'right'). */
-  readonly textAlign?: 'left' | 'center' | 'right';
 
   // Catalog overrides
   /** Arbitrary overrides applied on top of catalog defaults. */
@@ -108,9 +104,6 @@ export interface NodeSpec {
   // Navigation
   /** Target page ID for navigation. When set, this node acts as a navigation trigger. */
   readonly navigateTo?: string;
-  /** Selected state for tabs/segmented items (prototype + Chrome Pass). */
-  readonly active?: boolean;
-
   // Data (for list components)
   /** Data items for list/repeater components. */
   readonly items?: readonly Readonly<Record<string, unknown>>[];

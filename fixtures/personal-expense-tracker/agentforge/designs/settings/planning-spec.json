@@ -1,0 +1,534 @@
+{
+  "specRef": "spec-settings-1710000000000",
+  "moduleId": "settings",
+  "componentTree": [
+    {
+      "name": "SettingsDrawerOverlay",
+      "props": [
+        "isOpen",
+        "onClose",
+        "ariaHidden"
+      ],
+      "defaultValues": {
+        "ariaHidden": "true"
+      },
+      "children": [
+        "SettingsDrawerPanel"
+      ]
+    },
+    {
+      "name": "SettingsDrawerPanel",
+      "props": [
+        "width",
+        "role",
+        "ariaModal",
+        "ariaLabel",
+        "zIndex",
+        "animationDuration"
+      ],
+      "defaultValues": {
+        "width": 400,
+        "role": "dialog",
+        "ariaModal": "true",
+        "ariaLabel": "User Settings",
+        "animationDuration": 300
+      },
+      "children": [
+        "SettingsDrawerHeader",
+        "SettingsDrawerContent",
+        "SettingsDrawerFooter"
+      ]
+    },
+    {
+      "name": "SettingsDrawerHeader",
+      "props": [
+        "title",
+        "paddingX",
+        "paddingY",
+        "height"
+      ],
+      "defaultValues": {
+        "title": "Settings",
+        "paddingX": 24,
+        "paddingY": 20,
+        "height": 64
+      },
+      "children": [
+        "SettingsDrawerTitle",
+        "SettingsCloseButton"
+      ]
+    },
+    {
+      "name": "SettingsDrawerTitle",
+      "props": [
+        "label",
+        "typography"
+      ],
+      "defaultValues": {
+        "label": "Settings",
+        "typography": "heading-1"
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsCloseButton",
+      "props": [
+        "ariaLabel",
+        "minWidth",
+        "minHeight",
+        "iconSize"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Close settings",
+        "minWidth": 44,
+        "minHeight": 44,
+        "iconSize": 20
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "SettingsDrawerContent",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 24
+      },
+      "children": [
+        "CurrencySection",
+        "BudgetSection",
+        "PreferencesSection",
+        "DangerZoneSection"
+      ]
+    },
+    {
+      "name": "CurrencySection",
+      "props": [
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingY": 16,
+        "gap": 12
+      },
+      "children": [
+        "CurrencySectionHeader",
+        "CurrencySelector"
+      ]
+    },
+    {
+      "name": "CurrencySectionHeader",
+      "props": [
+        "title",
+        "description"
+      ],
+      "defaultValues": {
+        "title": "Currency",
+        "description": "Select your preferred display currency"
+      },
+      "children": []
+    },
+    {
+      "name": "CurrencySelector",
+      "props": [
+        "value",
+        "options",
+        "ariaLabel",
+        "ariaExpanded",
+        "ariaHasPopup",
+        "inputMode",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Select currency",
+        "ariaExpanded": "false",
+        "ariaHasPopup": "listbox",
+        "minHeight": 44
+      },
+      "children": []
+    },
+    {
+      "name": "SectionDivider",
+      "props": [
+        "marginY"
+      ],
+      "defaultValues": {
+        "marginY": 4
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetSection",
+      "props": [
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingY": 16,
+        "gap": 12
+      },
+      "children": [
+        "BudgetSectionHeader",
+        "BudgetInputRow"
+      ]
+    },
+    {
+      "name": "BudgetSectionHeader",
+      "props": [
+        "title",
+        "description"
+      ],
+      "defaultValues": {
+        "title": "Monthly Budget",
+        "description": "Set your default monthly spending limit"
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetInputRow",
+      "props": [
+        "label",
+        "inputMode",
+        "ariaLabel",
+        "minHeight",
+        "gap"
+      ],
+      "defaultValues": {
+        "label": "Default Budget",
+        "inputMode": "decimal",
+        "ariaLabel": "Default monthly budget amount",
+        "minHeight": 44,
+        "gap": 8
+      },
+      "children": [
+        "BudgetCurrencyPrefix",
+        "BudgetAmountInput"
+      ]
+    },
+    {
+      "name": "BudgetCurrencyPrefix",
+      "props": [
+        "symbol"
+      ],
+      "defaultValues": {
+        "symbol": "$"
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetAmountInput",
+      "props": [
+        "value",
+        "placeholder",
+        "inputMode",
+        "ariaLabel",
+        "ariaInvalid",
+        "ariaDescribedBy",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "placeholder": "0.00",
+        "inputMode": "decimal",
+        "ariaLabel": "Monthly budget amount",
+        "ariaInvalid": "false",
+        "minHeight": 44
+      },
+      "children": []
+    },
+    {
+      "name": "PreferencesSection",
+      "props": [
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingY": 16,
+        "gap": 12
+      },
+      "children": [
+        "PreferencesSectionHeader",
+        "LocaleToggleRow"
+      ]
+    },
+    {
+      "name": "PreferencesSectionHeader",
+      "props": [
+        "title",
+        "description"
+      ],
+      "defaultValues": {
+        "title": "Preferences",
+        "description": "Customize your app experience"
+      },
+      "children": []
+    },
+    {
+      "name": "LocaleToggleRow",
+      "props": [
+        "label",
+        "description",
+        "checked",
+        "role",
+        "ariaChecked",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "label": "Use system locale",
+        "description": "Format numbers and dates using your device locale",
+        "role": "switch",
+        "ariaChecked": "false",
+        "minHeight": 44
+      },
+      "children": [
+        "LocaleToggleLabel",
+        "Toggle"
+      ]
+    },
+    {
+      "name": "LocaleToggleLabel",
+      "props": [
+        "label",
+        "description"
+      ],
+      "defaultValues": {
+        "label": "Use system locale",
+        "description": "Format numbers and dates using your device locale"
+      },
+      "children": []
+    },
+    {
+      "name": "Toggle",
+      "props": [
+        "checked",
+        "role",
+        "ariaChecked",
+        "ariaLabel",
+        "minWidth",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "role": "switch",
+        "ariaChecked": "false",
+        "ariaLabel": "Toggle system locale",
+        "minWidth": 44,
+        "minHeight": 44
+      },
+      "children": []
+    },
+    {
+      "name": "DangerZoneSection",
+      "props": [
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingY": 16,
+        "gap": 12
+      },
+      "children": [
+        "DangerZoneSectionHeader",
+        "ResetBudgetButton"
+      ]
+    },
+    {
+      "name": "DangerZoneSectionHeader",
+      "props": [
+        "title",
+        "description"
+      ],
+      "defaultValues": {
+        "title": "Danger Zone",
+        "description": "Irreversible actions — proceed with caution"
+      },
+      "children": []
+    },
+    {
+      "name": "ResetBudgetButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "variant"
+      ],
+      "defaultValues": {
+        "label": "Reset All Budgets",
+        "ariaLabel": "Reset all budgets to default",
+        "minHeight": 44,
+        "variant": "ghost"
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsDrawerFooter",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "gap": 12
+      },
+      "children": [
+        "SettingsSaveButton",
+        "SettingsStatusRegion"
+      ]
+    },
+    {
+      "name": "SettingsSaveButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "borderRadius",
+        "variant"
+      ],
+      "defaultValues": {
+        "label": "Save Settings",
+        "ariaLabel": "Save settings",
+        "minHeight": 44,
+        "borderRadius": 16,
+        "variant": "default"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "SettingsStatusRegion",
+      "props": [
+        "ariaLive",
+        "message"
+      ],
+      "defaultValues": {
+        "ariaLive": "polite",
+        "message": ""
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "SettingsDrawerOverlay.background": "overlay",
+    "SettingsDrawerPanel.background": "surface-elevated",
+    "SettingsDrawerPanel.shadow": "elevation-3",
+    "SettingsDrawerPanel.zIndex": "z-modal",
+    "SettingsDrawerPanel.animationDuration": "duration-normal",
+    "SettingsDrawerPanel.animationEasing": "easing-default",
+    "SettingsDrawerHeader.background": "surface-elevated",
+    "SettingsDrawerHeader.borderBottom": "border-default",
+    "SettingsDrawerTitle.color": "text-primary",
+    "SettingsDrawerTitle.typography": "heading-1",
+    "SettingsCloseButton.color": "text-primary",
+    "SettingsCloseButton.focusRingColor": "focus-ring-color",
+    "SettingsDrawerContent.background": "surface-elevated",
+    "CurrencySectionHeader.titleColor": "text-primary",
+    "CurrencySectionHeader.titleTypography": "heading-2",
+    "CurrencySectionHeader.descriptionColor": "text-secondary",
+    "CurrencySectionHeader.descriptionTypography": "label",
+    "CurrencySelector.background": "surface-input",
+    "CurrencySelector.border": "border-default",
+    "CurrencySelector.borderFocus": "border-focus",
+    "CurrencySelector.color": "text-primary",
+    "CurrencySelector.borderRadius": "medium",
+    "CurrencySelector.typography": "body",
+    "SectionDivider.color": "border-default",
+    "BudgetSectionHeader.titleColor": "text-primary",
+    "BudgetSectionHeader.titleTypography": "heading-2",
+    "BudgetSectionHeader.descriptionColor": "text-secondary",
+    "BudgetSectionHeader.descriptionTypography": "label",
+    "BudgetCurrencyPrefix.color": "text-secondary",
+    "BudgetCurrencyPrefix.typography": "body",
+    "BudgetAmountInput.background": "surface-input",
+    "BudgetAmountInput.border": "border-default",
+    "BudgetAmountInput.borderFocus": "border-focus",
+    "BudgetAmountInput.borderError": "border-error",
+    "BudgetAmountInput.color": "text-primary",
+    "BudgetAmountInput.borderRadius": "medium",
+    "BudgetAmountInput.typography": "body",
+    "PreferencesSectionHeader.titleColor": "text-primary",
+    "PreferencesSectionHeader.titleTypography": "heading-2",
+    "PreferencesSectionHeader.descriptionColor": "text-secondary",
+    "PreferencesSectionHeader.descriptionTypography": "label",
+    "LocaleToggleLabel.labelColor": "text-primary",
+    "LocaleToggleLabel.labelTypography": "body",
+    "LocaleToggleLabel.descriptionColor": "text-secondary",
+    "LocaleToggleLabel.descriptionTypography": "label",
+    "Toggle.activeColor": "cta-primary",
+    "Toggle.inactiveColor": "border-default",
+    "Toggle.focusRingColor": "focus-ring-color",
+    "DangerZoneSectionHeader.titleColor": "error",
+    "DangerZoneSectionHeader.titleTypography": "heading-2",
+    "DangerZoneSectionHeader.descriptionColor": "text-secondary",
+    "DangerZoneSectionHeader.descriptionTypography": "label",
+    "ResetBudgetButton.color": "error",
+    "ResetBudgetButton.border": "border-default",
+    "ResetBudgetButton.borderRadius": "medium",
+    "ResetBudgetButton.typography": "label",
+    "ResetBudgetButton.disabledOpacity": "opacity-disabled",
+    "SettingsDrawerFooter.background": "surface-elevated",
+    "SettingsDrawerFooter.borderTop": "border-default",
+    "SettingsSaveButton.background": "cta-primary",
+    "SettingsSaveButton.color": "text-on-cta",
+    "SettingsSaveButton.borderRadius": "large",
+    "SettingsSaveButton.typography": "heading-3",
+    "SettingsSaveButton.focusRingColor": "focus-ring-color",
+    "SettingsSaveButton.disabledOpacity": "opacity-disabled"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Fixed-width drawer panel (400px) slides in from the right with dimmed overlay backdrop. All sections stacked vertically with 24px gap. Full-width Save CTA in footer.",
+      "layout": "single-column",
+      "changes": [
+        "Drawer panel fixed at 400px width, full viewport height",
+        "Overlay covers full viewport behind drawer",
+        "Header: title left-aligned, close button right-aligned at 64px height",
+        "Content sections stacked vertically with 24px gap and 24px horizontal padding",
+        "Inline label+control rows for toggle (label left, control right)",
+        "Currency selector full-width within panel",
+        "Budget input full-width with currency prefix inline",
+        "Save button full-width in footer with 44px min height",
+        "Section dividers between all major groups"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Settings Drawer",
+      "components": [
+        "SettingsDrawerOverlay",
+        "SettingsDrawerPanel",
+        "SettingsDrawerHeader",
+        "SettingsDrawerTitle",
+        "SettingsCloseButton",
+        "SettingsDrawerContent",
+        "CurrencySection",
+        "CurrencySectionHeader",
+        "CurrencySelector",
+        "SectionDivider",
+        "BudgetSection",
+        "BudgetSectionHeader",
+        "BudgetInputRow",
+        "BudgetCurrencyPrefix",
+        "BudgetAmountInput",
+        "PreferencesSection",
+        "PreferencesSectionHeader",
+        "LocaleToggleRow",
+        "LocaleToggleLabel",
+        "Toggle",
+        "DangerZoneSection",
+        "DangerZoneSectionHeader",
+        "ResetBudgetButton",
+        "SettingsDrawerFooter",
+        "SettingsSaveButton",
+        "SettingsStatusRegion"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, NodeSpec } from '@agentforge/designspec-renderer';
 import { applyFrozenChromeToPageSpec } from '../merge-frozen-chrome.js';
 
 /**
@@ -53,13 +53,15 @@ describe('chrome consistency (frozen merge)', () => {
     const merged = applyFrozenChromeToPageSpec(page, frozen, 'dashboard');
     function canonical(n: (typeof page.nodes)[string]) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { active, order, ...rest } = n as unknown as Record<string, unknown>;
+      const { active, order, ...rest } = n as NodeSpec & { active?: boolean; order: number };
       return rest;
     }
     expect(merged.nodes['top-bar']?.height).toBe(56);
     expect(merged.nodes['main']).toEqual(page.nodes['main']);
-    expect(merged.nodes['tab-a']?.active).toBe(true);
-    expect(merged.nodes['tab-b']?.active).toBe(false);
+    const tabA = merged.nodes['tab-a'] as NodeSpec & { active?: boolean };
+    const tabB = merged.nodes['tab-b'] as NodeSpec & { active?: boolean };
+    expect(tabA?.active).toBe(true);
+    expect(tabB?.active).toBe(false);
     expect(canonical(merged.nodes['top-bar']!)).toEqual(canonical(frozen.nodes['top-bar']!));
   });
 });

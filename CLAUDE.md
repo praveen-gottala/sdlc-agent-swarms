@@ -14,7 +14,7 @@ Before making any architectural decision, read in this order:
 1. **`docs/vision.md`** — the architectural vision. Covers 15 layers with locked and open decisions, current-vs-target explicit for every layer. **When this document and the current codebase disagree, the vision wins.** When this document and `docs/specs/PRD.md` disagree on architecture, the vision wins.
 2. **`docs/specs/PRD.md`** — the product spec. Source of truth for product scope, interfaces, API contracts, enum values, field lists. Do NOT treat the PRD as authoritative on architectural *patterns* — those are in the vision.
 3. **This file (`CLAUDE.md`)** — the development discipline rules. Always in force.
-4. **`docs/lessons-learned.md`** — Do Not Repeat list. Check before any new approach.
+4. **`docs/lessons-learned-rules.md`** — Active rules only (~400 lines). For historical RESOLVED entries, see `docs/lessons-learned.md`.
 5. **`docs/adrs/`** — decision records that may amend or supersede sections of the PRD.
 
 If these sources conflict, the hierarchy is: `CLAUDE.md` security/test rules → `vision.md` (architecture) → ADRs (specific deviations) → `PRD.md` (product) → codebase state (legacy).
@@ -27,14 +27,17 @@ Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)
 Not started: spec/code/cicd/observe phases, V3 Dashboard
 Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. Python engine deprecated. See ADR-043.
 
-**Active plans:**
-1. Unify Design Pipeline — Phase 0-4 COMPLETE, Phase 5 (docs/ADRs/cleanup) in progress. See `docs/active-plan/unify-pipeline/execution-plan.md`
-2. Screen Types Plan B — B0-B2.7 complete, B3 (Layout-Aware Code Generation) next. **Paused** — unify pipeline is higher priority. See `docs/feature-plans/screen-types-plan-b.md`
+**Active plans (read these during session-start):**
+1. Visual Diversity — Phase 1 COMPLETE, Phase 2 COMPLETE (2026-04-27). Found and fixed prompt conflict (v2.2.0). LLM compliance requires Phase 4 evaluator. Next: Phase 3 (catalog variants) or Phase 4 (evaluator diversity scoring). See `docs/active-plan/visual-diversity/execution-plan.md`
 
-**Completed plans:**
-- Screen Types Plan A — COMPLETE (all phases A1-A6 done, 2026-04-22). See `docs/feature-plans/screen-types-plan-a.md`
+**Paused plans (do NOT read during session-start — note status only):**
+- Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/feature-plans/screen-types-plan-b.md`
 
-**Last session:** _(update with one-line pointer to active handoff doc when applicable)_
+**Completed plans (do NOT read during session-start):**
+- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). Phase 7 (Langfuse observability) pulled forward and COMPLETE (2026-04-27, ADR-046). See `docs/active-plan/unify-pipeline/execution-plan.md`
+- Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/feature-plans/screen-types-plan-a.md`
+
+**Last session:** Visual Diversity Phase 2.6-2.7 complete. Prompt v2.2.0 (border conflict fix), `buildPageDescription` crash fix, container-variety E2E test. See `docs/active-plan/visual-diversity/execution-plan.md`.
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -202,7 +205,7 @@ and rejected with rejection reasoning. Notable rejected patterns:
   pass), project rules win.
 
 ### Session Continuity
-- **At session start, ALWAYS read `docs/lessons-learned.md`** before writing code.
+- **At session start, ALWAYS read `docs/lessons-learned-rules.md`** before writing code. Read the full `docs/lessons-learned.md` only when you need historical RESOLVED context for a specific topic.
 - Persist learnings to `docs/lessons-learned.md`. Keep entries short and actionable.
 - Auto memory (`~/.claude/projects/.../memory/MEMORY.md`) is used for cross-session
   context. It is auto-loaded every session — check it for active plans and pointers.
@@ -222,7 +225,11 @@ and rejected with rejection reasoning. Notable rejected patterns:
   checkpointer** for run state (vision Layer 4).
 - Retrieval (planned): Tree-sitter + voyage-code-3 + Qdrant + Cohere Rerank 3.5
   for code; LlamaIndex + voyage-3-large for docs (vision Layer 6).
-- Observability (planned): OpenTelemetry + Langfuse self-hosted (vision Layer 11).
+- Observability: OpenTelemetry + Langfuse self-hosted via `packages/telemetry/`
+  (ADR-046). `TracedProvider` wraps LLM calls with OTel spans; `LangfuseSink`
+  adds pipeline lifecycle spans. Graceful no-op when `LANGFUSE_SECRET_KEY` unset.
+  Self-hosted: `docker compose -f docker/docker-compose.langfuse.yml up -d`
+  (UI at http://localhost:3001). Prompt versioning not yet implemented.
 - Testing: Jest + ts-jest for all packages
 - Linting: ESLint + Prettier (config in root)
 
@@ -275,8 +282,9 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `governance` depends on: `core`
 - `providers` depends on: `core`
 - `channels` depends on: `core`
-- `cli` depends on: `core`, `governance`, `providers`, `channels`
+- `cli` depends on: `core`, `governance`, `providers`, `channels`, `telemetry`
 - `agents-*` depend on: `core`, `governance`, `providers`
+- `telemetry` depends on: `core`; peers: `agents-ux`, `providers` (ADR-046)
 - `designspec-renderer` depends on: `core` (type-only devDependency, zero runtime deps)
 - `retrieval` (planned) depends on: `core`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`

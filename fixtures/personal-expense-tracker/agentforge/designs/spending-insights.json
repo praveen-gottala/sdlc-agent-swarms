@@ -950,7 +950,9 @@
       "typography": "label",
       "color": "text-secondary",
       "weight": 400,
-      "textAlign": "center"
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "top-categories-card": {
       "parent": "card-stack",
@@ -1136,8 +1138,10 @@
       "content": "$380.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-food": {
       "parent": "cat-row-food",
@@ -1146,9 +1150,11 @@
       "content": "30%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-row-shopping": {
       "parent": "category-row-list",
@@ -1213,8 +1219,10 @@
       "content": "$274.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-shopping": {
       "parent": "cat-row-shopping",
@@ -1223,9 +1231,11 @@
       "content": "22%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-row-transport": {
       "parent": "category-row-list",
@@ -1290,8 +1300,10 @@
       "content": "$224.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-transport": {
       "parent": "cat-row-transport",
@@ -1300,9 +1312,11 @@
       "content": "18%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-row-bills": {
       "parent": "category-row-list",
@@ -1367,8 +1381,10 @@
       "content": "$162.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-bills": {
       "parent": "cat-row-bills",
@@ -1377,9 +1393,11 @@
       "content": "13%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-row-entertainment": {
       "parent": "category-row-list",
@@ -1444,8 +1462,10 @@
       "content": "$125.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-entertainment": {
       "parent": "cat-row-entertainment",
@@ -1454,9 +1474,11 @@
       "content": "10%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-row-health": {
       "parent": "category-row-list",
@@ -1521,8 +1543,10 @@
       "content": "$82.50",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right",
-      "width": 64
+      "width": 64,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "cat-pct-health": {
       "parent": "cat-row-health",
@@ -1531,9 +1555,11 @@
       "content": "7%",
       "typography": "label",
       "color": "text-secondary",
-      "textAlign": "right",
       "weight": 500,
-      "width": 36
+      "width": 36,
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "biggest-expenses-card": {
       "parent": "card-stack",
@@ -1641,7 +1667,9 @@
       "content": "$850.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "expense-row-2": {
       "parent": "expense-ranked-list",
@@ -1719,7 +1747,9 @@
       "content": "$350.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "expense-row-3": {
       "parent": "expense-ranked-list",
@@ -1797,7 +1827,9 @@
       "content": "$124.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "expense-row-4": {
       "parent": "expense-ranked-list",
@@ -1875,7 +1907,9 @@
       "content": "$89.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "expense-row-5": {
       "parent": "expense-ranked-list",
@@ -1950,7 +1984,9 @@
       "content": "$67.00",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "month-comparison-card": {
       "parent": "card-stack",
@@ -2022,7 +2058,9 @@
       "typography": "label",
       "color": "text-secondary",
       "weight": 500,
-      "textAlign": "center"
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "comparison-amount-label-last": {
       "parent": "comparison-col-last",
@@ -2031,7 +2069,9 @@
       "content": "$1,389.50",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "center"
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "comparison-col-current": {
       "parent": "comparison-bar-group",
@@ -2066,7 +2106,9 @@
       "typography": "label",
       "color": "text-secondary",
       "weight": 500,
-      "textAlign": "center"
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "comparison-amount-label-current": {
       "parent": "comparison-col-current",
@@ -2075,7 +2117,9 @@
       "content": "$1,247.50",
       "typography": "body",
       "color": "text-primary",
-      "textAlign": "center"
+      "overrides": {
+        "textAlign": "center"
+      }
     },
     "comparison-summary-badge": {
       "parent": "month-comparison-card",

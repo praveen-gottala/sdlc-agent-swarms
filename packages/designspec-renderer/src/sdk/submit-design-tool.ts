@@ -6,8 +6,9 @@
  * the LLM to produce a valid DesignSpecV2 via Anthropic's tool use mechanism.
  *
  * STRICT MODE BUDGET:
- * - NodeSpec uses 21 of 24 optional fields (safe headroom)
- * - layout sub-object: 1 required + 13 optional (dir + display/columns/wrap/gap/align/justify/px/py/pt/pb)
+ * - NodeSpec uses 19 of 24 optional fields (5 slots of headroom)
+ * - Phase 1 migrated textAlign, helper, title to overrides
+ * - layout sub-object: 1 required + 10 optional (dir + display/columns/wrap/gap/align/justify/px/py/pt/pb)
  * - 2 union types: AcceleratorType (7 members), width (number | 'fill') — well under 16 limit
  * - Zero recursion
  */
@@ -107,14 +108,6 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
               type: 'string',
               description: 'Placeholder text for inputs.',
             },
-            helper: {
-              type: 'string',
-              description: 'Helper text displayed below the node.',
-            },
-            title: {
-              type: 'string',
-              description: 'Title text for the node.',
-            },
             options: {
               type: 'array',
               description: 'Options for segmented controls.',
@@ -198,11 +191,6 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
             radius: {
               type: 'number',
               description: 'Border radius in px.',
-            },
-            textAlign: {
-              type: 'string',
-              enum: ['left', 'center', 'right'],
-              description: 'Text alignment.',
             },
             navigateTo: {
               type: 'string',

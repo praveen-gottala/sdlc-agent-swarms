@@ -15,9 +15,9 @@ You are beginning a new session on this codebase. Before writing any code, you m
 
 Read each file fully. Do not skim.
 
-1. **`docs/lessons-learned.md`** — every entry. The file's own status-marker key is at line 3: `RESOLVED`, `RULE`, `SUPERSEDED`, `REFERENCE`. Pay special attention to `SUPERSEDED` and `RESOLVED` entries — these contain traps where the intuitive approach is wrong. `RULE` entries are ongoing principles that apply to every session; pull them verbatim into "Top gotchas" when relevant.
-2. **Active plans** — find the `**Active plans:**` block in `CLAUDE.md` (under `## Current State`). Read every referenced plan doc. Plans live in `docs/feature-plans/<plan>.md` (e.g. `docs/feature-plans/screen-types-plan-b.md`) or `docs/active-plan/<plan>/*.md` (e.g. `docs/active-plan/unify-pipeline/execution-plan.md`). Also scan the adjacent `**Completed plans:**` block — a plan listed there must not be treated as active. Also check the memory file at `~/.claude/projects/.../memory/MEMORY.md` for any `Active Work` pointers to other plans.
-3. **Rules** — read all files under `.claude/rules/`. These are non-negotiable.
+1. **`docs/lessons-learned-rules.md`** — the compact rules file (~400 lines). Contains only RULE and SUPERSEDED entries. These are the actionable principles. Do NOT read the full `docs/lessons-learned.md` (850+ lines) — it contains RESOLVED entries that are historical context only. If you need RESOLVED context for a specific topic mid-session, read the full file then.
+2. **Active plans only** — find the `**Active plans:**` block in `CLAUDE.md` (under `## Current State`). Read ONLY plans explicitly marked as active. Do NOT read completed plans or paused plans — their status is visible from the one-line pointer in CLAUDE.md. Also check the memory file at `~/.claude/projects/.../memory/MEMORY.md` for any `Active Work` pointers. For paused plans, note the pause reason from CLAUDE.md but do not read the full plan doc.
+3. **Rules** — `.claude/rules/` files are auto-loaded into system context. Do NOT re-read them. Just list their filenames in the briefing to confirm they are loaded.
 
 ### 2. Produce the acknowledgment
 

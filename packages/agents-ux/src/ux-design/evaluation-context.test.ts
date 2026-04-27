@@ -34,7 +34,7 @@ describe('buildEvaluationContext', () => {
       width: 1440,
       nodes: {
         'root': { parent: null, order: 0, type: 'page' },
-        'tab-home': { parent: 'root', order: 0, catalog: 'tab', label: 'Home', navigateTo: 'dashboard', active: true },
+        'tab-home': { parent: 'root', order: 0, catalog: 'tab', label: 'Home', navigateTo: 'dashboard', overrides: { active: true } },
         'tab-expense': { parent: 'root', order: 1, catalog: 'tab', label: 'Expenses', navigateTo: 'add-expense' },
         'tab-insights': { parent: 'root', order: 2, catalog: 'tab', label: 'Insights', navigateTo: 'spending-insights' },
       },

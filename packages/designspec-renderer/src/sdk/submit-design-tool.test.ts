@@ -52,8 +52,6 @@ describe('SUBMIT_DESIGN_TOOL', () => {
       'content',
       'value',
       'placeholder',
-      'helper',
-      'title',
       'options',
       'layout',
       'width',
@@ -64,7 +62,6 @@ describe('SUBMIT_DESIGN_TOOL', () => {
       'background',
       'shadow',
       'radius',
-      'textAlign',
       'overrides',
       'items',
     ];

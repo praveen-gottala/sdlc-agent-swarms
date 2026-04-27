@@ -273,7 +273,11 @@ function DesignStudioContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tags, feedback: feedbackText }),
       });
-      if (!res.ok) throw new Error(`Fix failed: ${res.status}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `Fix failed: ${res.status}` }));
+        console.error('Mechanical fix error:', err.error ?? err); // eslint-disable-line no-console
+        return;
+      }
 
       const specRes = await fetch(`/api/pages/${selectedId}/design/spec?bundle=true&t=${Date.now()}`, { cache: 'no-store' });
       if (specRes.ok) {

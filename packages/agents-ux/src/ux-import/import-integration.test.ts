@@ -134,7 +134,7 @@ describeWithApi('Import Integration — Real Claude API', () => {
     // ── Text content preserved ──
     // The dashboard has specific text: "Dashboard", "$45,231", "Revenue Overview"
     const allContent = nodes
-      .map(n => [n.content, n.label, n.title].filter(Boolean).join(' '))
+      .map(n => [n.content, n.label, n.overrides?.title as string | undefined].filter(Boolean).join(' '))
       .join(' ');
     expect(allContent).toContain('Dashboard');
 
@@ -207,7 +207,7 @@ describeWithApi('Import Integration — Real Claude API', () => {
     expect(hasFormComponents).toBe(true);
 
     // ── Text content ──
-    const allContent = nodes.map(n => [n.content, n.label, n.title].filter(Boolean).join(' ')).join(' ');
+    const allContent = nodes.map(n => [n.content, n.label, n.overrides?.title as string | undefined].filter(Boolean).join(' ')).join(' ');
     expect(allContent).toContain('Settings');
     // Should have notification toggle labels
     expect(allContent).toMatch(/[Ee]mail|[Nn]otification/);
@@ -258,7 +258,7 @@ describeWithApi('Import Integration — Real Claude API', () => {
     expect(hasButton).toBe(true);
 
     // ── Text content — user names from the source data ──
-    const allContent = nodes.map(n => [n.content, n.label, n.title].filter(Boolean).join(' ')).join(' ');
+    const allContent = nodes.map(n => [n.content, n.label, n.overrides?.title as string | undefined].filter(Boolean).join(' ')).join(' ');
     expect(allContent).toContain('Users');
   });
 

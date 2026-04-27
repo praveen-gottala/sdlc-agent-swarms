@@ -59,6 +59,7 @@ export const SAFE_OVERRIDE_KEYS = new Set([
   'flexDirection', 'flexWrap',
   'background', 'backgroundColor', 'color',
   'hidden', 'visibility',
+  'textAlign',
 ]);
 
 const ATTR_OVERRIDE_KEYS = new Set(['role', 'aria-label', 'href']);

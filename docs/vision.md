@@ -80,7 +80,7 @@ AgentForge is an autonomous multi-agent SDLC framework that takes a product idea
 | 8 | Implementation | PRD Section 24.2 specifies parallel frontend+backend+tests coders | Single-threaded tool-loop implementer with sequential write order |
 | 9 | Review | Not implemented | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
 | 10 | HITL | One approval gate after design | Three gates: clarification, design/API, code merge |
-| 11 | Observability | Ad-hoc logging | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
+| 11 | Observability | Langfuse self-hosted + OTel spans via packages/telemetry (ADR-046). Prompt versioning not yet implemented. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
 | 12 | Evaluation | None | Golden test sets with CI-integrated regression detection |
 | 13 | Sandboxing | Runs on dev machine | Ephemeral containers, egress allowlist, zero-secret agent design |
 
@@ -495,12 +495,14 @@ Single-gate HITL means errors that occur earlier (clarification) or later (imple
 
 ## Layer 11: Observability
 
-### Current state
-- Ad-hoc logging.
-- No distributed tracing.
-- No prompt versioning.
-- No cost tracking.
-- Debugging a multi-minute agent run is effectively impossible.
+### Current state (updated 2026-04-27, ADR-046)
+- **Langfuse self-hosted** via `docker/docker-compose.langfuse.yml` (Postgres, ClickHouse, Redis, MinIO).
+- **OTel spans** via `packages/telemetry/` — `TracedProvider` wraps `provider.complete()` to auto-capture LLM call I/O (system prompt, user message, response, tokens, cost, latency).
+- **`LangfuseSink`** implements `PipelineTelemetrySink` for pipeline lifecycle spans (stage start/complete/fail).
+- **`CompositeSink`** combines transport sinks (CLI stdout, dashboard SSE) with LangfuseSink.
+- **Graceful degradation** — when `LANGFUSE_SECRET_KEY` is not set, all telemetry code is no-op.
+- No prompt versioning (git frontmatter + pre-commit hook not yet implemented).
+- Cost tracking exists in governance layer + telemetry sinks; not yet aggregated in Langfuse cost dashboard.
 
 ### Target vision
 **OpenTelemetry is the tracing spine.** Every LLM call, tool call, and state transition emits an OTel span with typed attributes:

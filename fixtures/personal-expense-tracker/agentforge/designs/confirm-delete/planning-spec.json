@@ -1,0 +1,212 @@
+{
+  "specRef": "spec-confirm-delete-1710000000000",
+  "moduleId": "confirm-delete",
+  "componentTree": [
+    {
+      "name": "ModalOverlay",
+      "props": [
+        "ariaHidden",
+        "onClick"
+      ],
+      "defaultValues": {
+        "ariaHidden": "true"
+      },
+      "children": [
+        "ConfirmDeleteModal"
+      ]
+    },
+    {
+      "name": "ConfirmDeleteModal",
+      "props": [
+        "role",
+        "ariaModal",
+        "ariaLabelledby",
+        "ariaDescribedby",
+        "maxWidth",
+        "borderRadius",
+        "zIndex",
+        "padding"
+      ],
+      "defaultValues": {
+        "maxWidth": 400,
+        "borderRadius": 16,
+        "zIndex": 1200,
+        "padding": 32
+      },
+      "children": [
+        "ModalCloseButton",
+        "ModalWarningIcon",
+        "ModalTitle",
+        "ModalDescription",
+        "ModalActionRow"
+      ]
+    },
+    {
+      "name": "ModalCloseButton",
+      "props": [
+        "ariaLabel",
+        "minWidth",
+        "minHeight",
+        "icon"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Close confirmation dialog",
+        "minWidth": 44,
+        "minHeight": 44,
+        "icon": "X"
+      },
+      "children": []
+    },
+    {
+      "name": "ModalWarningIcon",
+      "props": [
+        "icon",
+        "size",
+        "color"
+      ],
+      "defaultValues": {
+        "icon": "trash",
+        "size": 32
+      },
+      "children": []
+    },
+    {
+      "name": "ModalTitle",
+      "props": [
+        "id",
+        "text"
+      ],
+      "defaultValues": {
+        "id": "confirm-delete-title",
+        "text": "Delete Expense?"
+      },
+      "children": []
+    },
+    {
+      "name": "ModalDescription",
+      "props": [
+        "id",
+        "text"
+      ],
+      "defaultValues": {
+        "id": "confirm-delete-description",
+        "text": "This will permanently delete this expense. This action cannot be undone."
+      },
+      "children": []
+    },
+    {
+      "name": "ModalActionRow",
+      "props": [
+        "gap",
+        "direction"
+      ],
+      "defaultValues": {
+        "gap": 12,
+        "direction": "row"
+      },
+      "children": [
+        "CancelButton",
+        "ConfirmDeleteButton"
+      ]
+    },
+    {
+      "name": "CancelButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "variant",
+        "minWidth",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "label": "Cancel",
+        "ariaLabel": "Cancel delete and return to dashboard",
+        "variant": "outline",
+        "minWidth": 44,
+        "minHeight": 44
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "ConfirmDeleteButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "variant",
+        "minWidth",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "label": "Confirm Delete",
+        "ariaLabel": "Confirm delete expense",
+        "variant": "destructive",
+        "minWidth": 44,
+        "minHeight": 44
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "ModalOverlay.background": "overlay",
+    "ConfirmDeleteModal.background": "surface-elevated",
+    "ConfirmDeleteModal.shadow": "elevation-3",
+    "ConfirmDeleteModal.borderRadius": "large",
+    "ConfirmDeleteModal.zIndex": "z-modal",
+    "ModalCloseButton.color": "text-secondary",
+    "ModalCloseButton.focusRingColor": "focus-ring-color",
+    "ModalCloseButton.minHeight": "touch-min-height",
+    "ModalCloseButton.minWidth": "touch-min-width",
+    "ModalWarningIcon.color": "error",
+    "ModalTitle.typography": "heading-2",
+    "ModalTitle.color": "text-primary",
+    "ModalDescription.typography": "body",
+    "ModalDescription.color": "text-secondary",
+    "ModalActionRow.gap": "12",
+    "CancelButton.background": "surface-elevated",
+    "CancelButton.border": "border-default",
+    "CancelButton.color": "text-primary",
+    "CancelButton.borderRadius": "medium",
+    "CancelButton.focusRingColor": "focus-ring-color",
+    "CancelButton.minHeight": "touch-min-height",
+    "CancelButton.minWidth": "touch-min-width",
+    "ConfirmDeleteButton.background": "error",
+    "ConfirmDeleteButton.color": "text-on-cta",
+    "ConfirmDeleteButton.borderRadius": "medium",
+    "ConfirmDeleteButton.focusRingColor": "focus-ring-color",
+    "ConfirmDeleteButton.minHeight": "touch-min-height",
+    "ConfirmDeleteButton.minWidth": "touch-min-width"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Centered modal panel at max-width 400px with overlay dimming the full viewport",
+      "layout": "centered-modal",
+      "changes": [
+        "Modal panel fixed at 400px max-width, centered horizontally and vertically in viewport",
+        "Overlay covers full 1440px viewport at z-index 1200",
+        "Action buttons displayed side-by-side in a row with 12px gap",
+        "32px internal padding on all sides of modal panel",
+        "Close X button anchored to top-right corner of modal panel"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Confirm Delete Modal",
+      "components": [
+        "ModalOverlay",
+        "ConfirmDeleteModal",
+        "ModalCloseButton",
+        "ModalWarningIcon",
+        "ModalTitle",
+        "ModalDescription",
+        "ModalActionRow",
+        "CancelButton",
+        "ConfirmDeleteButton"
+      ]
+    }
+  ]
+}

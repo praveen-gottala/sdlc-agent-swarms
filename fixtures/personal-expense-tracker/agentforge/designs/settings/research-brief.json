@@ -1,0 +1,63 @@
+{
+  "briefId": "brief-settings-1710000000000",
+  "moduleId": "settings",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Drawer panel design only — no full-page navigation, no NavigationTabs, no TopBar, no footer",
+    "Must include a close/dismiss affordance (X button) in the top-right corner of the drawer header",
+    "Drawer slides in from the right side of the viewport, consistent with the dashboard's 'Open settings drawer' trigger from topbar-logo",
+    "Background overlay uses semantic token 'overlay' (rgba(0,0,0,0.65)) behind the drawer panel",
+    "Drawer panel background uses surface-elevated token (navy-raised: #293548) to lift above the page surface",
+    "Panel width should be fixed (e.g., 360–400px) on desktop, full-width on mobile breakpoint (≤640px)",
+    "Must follow 8px grid system for all internal spacing (spacing scale: 4, 8, 12, 16, 24, 32, 48, 64)",
+    "Maximum 3 levels of visual hierarchy within the drawer content",
+    "All interactive controls must meet minimum touch target size of 44×44px",
+    "Border radius: inputs use medium (10px), cards/sections use large (16px), pill elements use pill (9999px)",
+    "Elevation level 3 (0 12px 32px rgba(0,0,0,0.5)) applied to the drawer panel as it is an overlay element",
+    "Z-index must be at modal level (1200) to appear above sticky elements and dropdowns",
+    "Content max-width constraint of 1280px does not apply inside the drawer; drawer has its own fixed width",
+    "Typography: headings use DM Sans (display), body/labels use DM Mono (body) per font family tokens",
+    "CTA buttons use gold-amber (#F59E0B) background with deep-navy (#0F172A) text (text-on-cta token)",
+    "Focus ring: 2px solid gold-amber with 2px offset on all interactive elements",
+    "Disabled state opacity: 0.38 per opacity.scale.disabled token",
+    "Motion: drawer open/close animation uses normal duration (300ms) with default easing cubic-bezier(0.4,0,0.2,1)"
+  ],
+  "referencePatterns": [
+    "Drawer/sheet overlay pattern with dimmed backdrop and slide-in animation from right",
+    "Settings form layout: vertically stacked labeled sections with dividers between groups",
+    "Inline label + control row pattern (label left-aligned, control right-aligned) for toggle and select inputs",
+    "Section header pattern using heading-2 (16px/600/DM Sans) with muted-text secondary description below",
+    "Input field pattern: surface-input (deep-navy) background, slate-border default border, gold-amber focus border",
+    "Save/Apply CTA button: full-width, gold-amber background, deep-navy text, large border radius (16px), 44px min height",
+    "Destructive action pattern: coral-error (#F87171) text color for dangerous settings actions",
+    "Currency selector using chip or dropdown pattern consistent with CategoryChipGrid and PaymentMethodChipRow on add-expense page",
+    "SettingsDialog component referenced across dashboard, add-expense, and spending-insights pages — drawer content should be consistent with that shared component's visual language",
+    "Close button: icon-only X button in top-right of drawer header, minimum 44×44px touch target, silver-text color with hover state"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text against backgrounds (silver-text #CBD5E1 on navy-raised #293548 passes; muted-text #64748B on navy-raised must be used only for non-essential decorative text)",
+    "Drawer must trap focus when open — keyboard focus must not escape to the underlying page content",
+    "Close button must be the first focusable element in the drawer for efficient keyboard dismissal",
+    "Pressing Escape key must close the drawer and return focus to the triggering element (topbar-logo/settings icon)",
+    "All form inputs must have visible, programmatically associated labels (not placeholder-only labels)",
+    "All interactive controls must be keyboard navigable via Tab/Shift+Tab in logical reading order",
+    "Focus ring must be visible on all interactive elements: 2px solid gold-amber (#F59E0B) with 2px offset",
+    "Drawer panel must have role='dialog' and aria-modal='true' with a descriptive aria-label (e.g., 'User Settings')",
+    "Select/dropdown inputs must use native <select> or ARIA combobox pattern with aria-expanded and aria-haspopup attributes",
+    "Toggle switches must use role='switch' with aria-checked state announced to screen readers",
+    "Error states on form fields must use aria-invalid='true' and aria-describedby pointing to the error message element",
+    "Success confirmation (e.g., after saving settings) must be announced via an aria-live='polite' region",
+    "Backdrop overlay must have aria-hidden='true' so screen readers do not read the dimmed background content",
+    "Minimum touch target of 44×44px for all interactive elements including the close button and form controls",
+    "Currency and budget input fields must include appropriate inputmode attributes (e.g., inputmode='decimal' for numeric fields) for mobile keyboard optimization"
+  ],
+  "dataModelDependencies": [
+    "UserSettings entity (id, currency, default_monthly_budget, locale, created_at, updated_at) from user_settings table — primary data model for this drawer",
+    "GET /api/settings endpoint to fetch current user settings on drawer open",
+    "PUT /api/settings endpoint to persist updated currency preference and default monthly budget",
+    "Budget entity (amount, currency, month, year) — indirectly affected when default_monthly_budget is updated in UserSettings",
+    "Expense entity (currency field) — currency token from UserSettings propagates to expense display formatting across all pages"
+  ]
+}

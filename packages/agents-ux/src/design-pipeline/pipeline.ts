@@ -50,11 +50,12 @@ export async function runDesignPipeline(
   }
 
   let state = initState(input);
+  const promptTraces: import('@agentforge/core').PromptTrace[] = [];
   const ctx: NodeContext = {
     provider: providerResult.value,
-    agentContext: input.agentContext,
+    agentContext: { ...input.agentContext, promptTraces },
     telemetry: input.telemetry,
-    promptTraces: [],
+    promptTraces,
   };
 
   const sink = input.telemetry;
@@ -103,5 +104,5 @@ export async function runDesignPipeline(
     sink?.onStageComplete(stage.name, {});
   }
 
-  return Ok(state);
+  return Ok({ ...state, _promptTraces: promptTraces });
 }

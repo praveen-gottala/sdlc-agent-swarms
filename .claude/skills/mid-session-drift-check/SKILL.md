@@ -48,7 +48,7 @@ Read these files completely (not skim — complete), in this order. This order i
 
 1. `CLAUDE.md` (primary rules — reading order, conflict hierarchy, non-negotiables)
 2. `docs/vision.md` (architectural authority; wins over PRD on patterns — Layers 1-3 and 8 are the highest-drift surface)
-3. `docs/lessons-learned.md` (Do Not Repeat list; watch SUPERSEDED and RESOLVED markers)
+3. `docs/lessons-learned-rules.md` (RULE + SUPERSEDED entries only; for RESOLVED context, grep `docs/lessons-learned.md` by keyword)
 4. `docs/adrs/` (read ADRs this session's changes plausibly touch; check the `Status` / `Supersedes` / `Superseded by` headers — e.g. ADR-043 supersedes ADR-022)
 5. `docs/specs/PRD.md` (product truth, not pattern truth — only if this session touched product scope, interfaces, API contracts, enums, or field lists)
 6. `.claude/rules/honesty.md`
@@ -91,7 +91,7 @@ For each rule that applies, produce one block:
 7. **Commented-out code in production files.** Any new commented-out code is a VIOLATION unless the comment explains why.
 8. **Premature abstraction.** Did we add an abstraction layer without at least 2 concrete consumers? If so, VIOLATION of karpathy-guidelines (simplicity first).
 9. **Vision-rejected patterns.** Grep the session's production changes for patterns `CLAUDE.md` §"Rejected Patterns — Check Before Proposing" and `docs/vision.md` call out: event bus / `EventEmitter` used for coordination (not just telemetry) — vision Layer 2 / `CLAUDE.md` line 152; parallel frontend/backend/tests coders within one task — vision Layer 8 / `CLAUDE.md` line 153-154; new code extending `services/engine/` (Python orchestration) — ADR-043 / `CLAUDE.md` line 28; untyped inter-node payloads instead of typed LangGraph channels with Zod — vision Layer 2 / `CLAUDE.md` line 120-127; stub fallbacks on missing imports — `CLAUDE.md` line 313. Each hit is a VIOLATION unless an ADR authorizes it.
-10. **Superseded-pattern revival.** Cross-reference the session's changes against `docs/lessons-learned.md` SUPERSEDED entries and against ADRs whose `Status` reads "Superseded by ADR-NNN". If the session reintroduces a pattern explicitly marked SUPERSEDED (e.g. `docs/lessons-learned.md` §"Renderer Staleness: Kill-and-Restart" SUPERSEDED 2026-04-20, or new code modeled on ADR-022 now that ADR-043 supersedes it), that's a VIOLATION — cite the superseding entry.
+10. **Superseded-pattern revival.** Cross-reference the session's changes against `docs/lessons-learned-rules.md` SUPERSEDED entries and against ADRs whose `Status` reads "Superseded by ADR-NNN". If the session reintroduces a pattern explicitly marked SUPERSEDED (e.g. `docs/lessons-learned-rules.md` §"Renderer Staleness: Kill-and-Restart" SUPERSEDED 2026-04-20, or new code modeled on ADR-022 now that ADR-043 supersedes it), that's a VIOLATION — cite the superseding entry.
 11. **Documentation currency.** If this session modified production code in more than 3 files, run `/verify-docs` in task-scoped mode. Any FAILURE in the doc report is a VIOLATION — documentation that describes pre-change state while the code has moved forward is stale by definition. Cite the verify-docs report line as evidence. See `CLAUDE.md` §Documentation (lines 306-317) for the rules being checked.
 
 ### 4. Balance — what's still clean

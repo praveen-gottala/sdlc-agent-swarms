@@ -128,6 +128,9 @@ export interface DesignPhaseState {
   readonly catalogMap?: CatalogMap;
   readonly componentCatalogPrompt?: string;
   readonly designSystemPrompt?: string;
+
+  /** Prompt traces collected during pipeline execution (populated after completion). */
+  readonly _promptTraces?: PromptTrace[];
 }
 
 // ============================================================================

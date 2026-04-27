@@ -15,6 +15,7 @@ module.exports = {
     '^@agentforge/agents-design$': '<rootDir>/../agents-design/src/index.ts',
     '^@agentforge/agents-ux$': '<rootDir>/../agents-ux/src/index.ts',
     '^@agentforge/agents-ux/(.*)$': '<rootDir>/../agents-ux/src/$1',
+    '^@agentforge/telemetry$': '<rootDir>/../telemetry/src/index.ts',
     '^@agentforge/designspec-renderer$': '<rootDir>/../designspec-renderer/src/index.ts',
     '^(\\..*)\\.js$': '$1',
   },

@@ -21,6 +21,7 @@
 - [Catalog YAML: renderer_defaults and token_bindings](#catalog-yaml-renderer_defaults-and-token_bindings-both-apply) — RESOLVED
 - [DesignSpec JSON → CSS Conversion Pipeline](#designspec-json--css-conversion-pipeline) — RESOLVED
 - [DesignSpec v2: Separate WHAT from HOW](#designspec-v2-separate-what-from-how) — RULE
+- [NodeSpec Field Budget: Internal Fields Use Type Intersections](#nodespec-field-budget-internal-fields-use-type-intersections) — RULE
 - [CSS flex: 1 vs width: 100%](#css-flex-1-vs-width-100-for-fill-behavior) — RESOLVED
 - [Nested height: 100vh in Flex Containers](#nested-height-100vh-in-flex-containers-breaks-layout) — RESOLVED
 
@@ -559,6 +560,15 @@ return { base64: btoa(binary) };
 
 ---
 
+## NodeSpec Field Budget: Internal Fields Use Type Intersections
+
+**Context:** `packages/designspec-renderer/src/types/design-spec-v2.ts` — NodeSpec field budget management
+**Rule:** Internal-only fields (set programmatically at runtime, never produced by the LLM) must NOT consume NodeSpec optional field slots. Use local type intersections (`NodeSpec & { fieldName?: Type }`) in the file that sets them.
+**Why:** Anthropic's structured output grammar compiler has a hard 24-optional-field limit per schema. NodeSpec's `submit_design` tool schema is the LLM-facing contract. The `active` field was on NodeSpec (consuming a slot) despite being set only by `spec-split.ts:applyChromeActiveForPage` and never by the LLM. `spec-split.ts` already had `type MutableNode = NodeSpec & { active?: boolean }` — the NodeSpec field was redundant. Removing it freed a slot with zero behavioral change.
+**How to apply:** Before adding a field to NodeSpec, check: does the LLM produce this field via `submit_design`? If no — if it's set programmatically by pipeline code — use a local type intersection in the file that writes it. The renderer reads these fields from untyped item arrays or the node object at runtime regardless of the TypeScript type. See `spec-split.ts:204` for the canonical pattern.
+
+---
+
 ## Prompt Injection Order Matters: Tokens Before Examples
 
 **Context:** `packages/agents-ux/src/prompts/ux-penpot-design-system.md` — design system prompt
@@ -840,3 +850,13 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When reloading the design spec after modifications (corrections, chat edits, saves), always use `/api/pages/${pageId}/design/spec?bundle=true&t=${Date.now()}` with `cache: 'no-store'`. Do NOT use `/api/pages/${pageId}/design` — that endpoint returns the spec in a different shape that the canvas renderer cannot parse, producing "Design Spec Error: no renderable nodes."
 **Why:** The canvas expects `data.spec` from the bundle endpoint (which includes tokens and catalog alongside the spec). The plain `/design` endpoint returns a raw object without the `spec` wrapper. After a correct/fix route patches the spec on disk, reloading from the wrong endpoint caused the canvas to show a "no renderable nodes" error even though the patched spec was valid.
 **How to apply:** Search for `setDesignSpec` in `page.tsx`. Every call site that fetches a spec after modification must use the bundle endpoint pattern: `fetch(\`/api/pages/\${id}/design/spec?bundle=true&t=\${Date.now()}\`, { cache: 'no-store' })`.
+
+
+---
+
+### Prompt Instructions Must Not Contradict Each Other — **RESOLVED** (2026-04-27)
+**Context:** `packages/agents-ux/src/prompts/ux-penpot-designspec-v2.md` — Phase 2 visual diversity prompt changes
+**Problem:** After adding Container Treatment Patterns (Elevated, Outlined, Flat, Inset, Separated) in Phase 2.1, the LLM still generated monotonous designs — all sections used identical Elevated treatment. Visual verification via `design:page:all` on 3 pages showed 0/3 passing the variety rule.
+**Root cause:** Line 88 of the prompt said "Do **not** simulate borders with `overrides` like `border-bottom` unless there is no other way" — this directly contradicted the Outlined (`overrides.border`) and Separated (`overrides.borderBottom`) container treatments added later in the same prompt. The LLM followed the earlier "don't use borders" instruction and ignored the later "use borders for variety" instruction.
+**Fix:** Replaced line 88 with: "For **separators between list rows**, use `type: "divider"`. For **container treatments** (Outlined, Inset, Separated), border overrides on the section itself are the correct pattern." Bumped prompt version to v2.2.0.
+**Rule:** After adding new prompt instructions that use a technique, grep the entire prompt for instructions that forbid that technique. Contradictions earlier in the prompt take precedence in LLM behavior.

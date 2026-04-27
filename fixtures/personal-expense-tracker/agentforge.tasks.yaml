@@ -14,3 +14,48 @@ tasks:
     max_attempts: 3
     hitl_status: none
     hitl_channel: null
+  - id: task-design-add-expense-1777269722381
+    title: "Design page: Add Expense"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/add-expense.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null
+  - id: task-design-settings-1777269760150
+    title: "Design page: Settings"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/settings.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null
+  - id: task-design-confirm-delete-1777269951825
+    title: "Design page: Confirm Delete"
+    phase: design
+    agent: ux_research
+    status: completed
+    depends_on: []
+    spec_ref: agentforge/designs/confirm-delete.json
+    branch: null
+    pr_number: null
+    cost_usd: 0
+    tokens_used: 0
+    attempts: 0
+    max_attempts: 3
+    hitl_status: none
+    hitl_channel: null

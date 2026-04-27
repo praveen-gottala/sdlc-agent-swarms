@@ -1078,7 +1078,9 @@
       "typography": "label",
       "color": "text-secondary",
       "width": 100,
-      "textAlign": "right"
+      "overrides": {
+        "textAlign": "right"
+      }
     },
     "th-actions": {
       "parent": "expenses-table-header",

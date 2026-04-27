@@ -200,6 +200,8 @@ const SAFE_OVERRIDE_KEYS = new Set([
   'flex_direction', 'flexDirection', 'flex_wrap', 'flexWrap',
   // Colors (hex/rgba pass through; token names won't resolve but hex values will)
   'background', 'background_color', 'backgroundColor', 'color',
+  // Text
+  'text_align', 'textAlign',
 ]);
 
 const COLOR_OVERRIDE_KEYS = new Set([
@@ -257,6 +259,8 @@ function getOverrideStyles(overrides: Readonly<Record<string, unknown>> | undefi
 function getLayoutAlignmentStyles(layout: LayoutSpec | undefined): React.CSSProperties {
   if (!layout) return {};
   const s: React.CSSProperties = {};
+  if (layout.dir) s.flexDirection = layout.dir === 'row' ? 'row' : 'column';
+  if (layout.gap !== undefined) s.gap = layout.gap;
   if (layout.justify === 'center') s.justifyContent = 'center';
   else if (layout.justify === 'space-between' || layout.justify === 'between') s.justifyContent = 'space-between';
   else if (layout.justify === 'end') s.justifyContent = 'flex-end';
