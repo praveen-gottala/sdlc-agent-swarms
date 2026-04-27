@@ -421,3 +421,11 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** After documenting any new system, feature, or setup procedure, spawn a blind Explore subagent with NO context from the current conversation and ask it to accomplish a task using only the project's own files (starting from CLAUDE.md). If it can't find what it needs, the docs have gaps — fix them before declaring done.
 **Why:** Documentation written by the builder is biased — gaps get filled from memory without realizing it. A blind agent has no memory and exposes every missing link. Memory files are not reliable for this (session-scoped, can get stale). Canonical docs in the codebase with CLAUDE.md pointers are the durable path.
 **How to apply:** `Agent({ subagent_type: 'Explore', prompt: 'You have NO prior context. Using only project files starting from CLAUDE.md, <task>.' })`. Pass if the agent completes the task; fail if it can't find what it needs.
+
+---
+
+## Claude API Rejects `additionalProperties: object` in Structured Output
+
+**Rule:** Never use `additionalProperties` as a type schema (map pattern) in Claude API structured output. Use `Array<{ key: string; value: T }>` instead, with a normalizer to convert back to a map after parsing.
+**Why:** Claude API returns 400 for `additionalProperties: { oneOf: [...] }`. Only `additionalProperties: false` is supported.
+**How to apply:** Before adding a structured output schema, grep for `additionalProperties` — every instance must be `false` or absent.

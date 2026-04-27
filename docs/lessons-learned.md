@@ -869,3 +869,22 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** After documenting any new system, feature, or setup procedure, spawn a blind Explore subagent with NO context from the current conversation and ask it to accomplish a task using only the project's own files. If it can't find what it needs, the docs have gaps — fix them before declaring done.
 **Why:** Documentation written by someone who just built the thing is biased — they fill gaps from memory without realizing it. A blind agent has no memory, so it exposes every missing link. Memory files are not reliable (session-scoped, can get stale). Canonical docs in the codebase with CLAUDE.md pointers are the durable path.
 **How to apply:** After writing or updating docs, use: `Agent({ subagent_type: 'Explore', prompt: 'You have NO prior context. Using only project files starting from CLAUDE.md, <task description>.' })`. Grade: if the agent completes the task, docs pass. If not, fix the gaps it identified.
+
+---
+
+## Claude API Rejects `additionalProperties: object` in Structured Output — RESOLVED
+
+**Context:** Planning stage (`packages/agents-ux/src/ux-planning/ux-planning.ts`) during Langfuse observability testing (2026-04-27). The `defaultValues` field on componentTree nodes used `additionalProperties: { oneOf: [{ type: 'number' }, { type: 'string' }] }` to represent a `Record<string, number | string>` map.
+**Problem:** Claude API returns 400: `"For 'object' type, 'additionalProperties: object' is not supported. Please set 'additionalProperties' to false."` Anthropic's structured output only allows `additionalProperties: false` — no map/dictionary types via `additionalProperties`.
+**Fix:** Convert map schemas to `Array<{ key: string; value: T }>` in the JSON Schema, then normalize back to a map after parsing via `normalizeComponentTree()`.
+**Rule:** When defining structured output schemas for Claude API, never use `additionalProperties` as a type schema (map pattern). Use an array of `{key, value}` pairs instead. This also applies to `patternProperties`.
+**How to apply:** Before adding a new structured output schema, grep for `additionalProperties` and verify every instance is either `false` or absent. The `oneOf`/`anyOf` inside `additionalProperties` is the specific pattern that triggers the 400.
+
+---
+
+## Nx Build Cache Can Serve Stale Dist — RULE
+
+**Context:** Planning stage schema fix (2026-04-27). After fixing `additionalProperties` in source TypeScript, `npx nx build agents-ux` reported success but the compiled `.js` in `dist/` still had the old code. The pipeline failed with the same error until `--skip-nx-cache` was used.
+**Rule:** When debugging a runtime error that persists after a source fix, check whether the build cache is serving stale output. Use `npx nx build <package> --skip-nx-cache` to force a clean rebuild.
+**Why:** Nx caches build outputs keyed on input file hashes. If the `.tsbuildinfo` file or hash computation has a race condition, a stale build artifact can survive a source change. This is rare but wastes significant debug time when it happens.
+**How to apply:** If a fix "should work" but the runtime error is identical, the first check is `--skip-nx-cache`. If that fixes it, the cache was stale.
