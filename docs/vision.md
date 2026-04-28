@@ -197,7 +197,7 @@ The ten-agent taxonomy is org-chart thinking: it maps the system onto how a huma
 - YAML files in `agentforge/spec/` as the living spec (project.yaml, pages.yaml, api.yaml, models.yaml, components/).
 - In-memory dict for pipeline state during a run.
 - YAML in `agentforge.tasks.yaml` for task tracker.
-- No durable checkpointing. Process death loses runs.
+- Checkpointer factory in `packages/core/src/checkpointer/`: `MemorySaver` for dev, `PostgresSaver` via `@langchain/langgraph-checkpoint-postgres` when `DATABASE_URL` is set. Docker Compose at `docker/docker-compose.agentforge.yml` (Postgres 16, port 5433). Not yet wired into any pipeline — waiting for LangGraph StateGraph adoption (ADR-043 Phase M-2+).
 
 ### Target vision
 Three tiers of persistence, each with the right substrate:
@@ -215,7 +215,7 @@ Three tiers of persistence, each with the right substrate:
 - **Human-edited YAML always wins over agent-edited YAML.** File locking prevents concurrent corruption. Content hashing detects human edits mid-agent-write.
 
 ### Open decisions
-- **Whether to use Prisma for checkpointer schema management or `@langchain/langgraph-checkpoint-postgres`'s built-in migration.** Built-in is simpler; Prisma gives us consistent schema management. Likely Prisma for consistency with the dashboard's existing Prisma usage, if any.
+- ~~Whether to use Prisma for checkpointer schema management~~ **Resolved:** using `@langchain/langgraph-checkpoint-postgres`'s built-in migration via `.setup()`. Simpler than Prisma for a library-managed schema.
 - **Retention policy for checkpoints.** Keep indefinitely during POC; add TTL for production.
 - **Whether to support SQLite for single-user local development.** LangGraph has a SQLite checkpointer. Could ease local setup.
 
