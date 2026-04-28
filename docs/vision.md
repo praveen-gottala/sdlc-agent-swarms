@@ -264,9 +264,15 @@ A text-box input without clarification is the most common root cause of autonomo
 ## Layer 6: RAG / context engineering
 
 ### Current state
-- No retrieval layer. Agents operate without access to the existing codebase or documentation.
-- Design generation works because Planning and Design agents receive the PRD + component catalog as inline prompt context.
-- No way for agents to ask "how did we handle X in the past?"
+- `packages/retrieval/` implements the full RAG layer (Phase 2 complete, 2026-04-28).
+- Three retrieval pipelines operational: code (`searchCode`), documents (`searchDocs`), designs (`searchDesigns`), plus `getRepoMap` and `findSimilarPatterns`.
+- Code: AST-aware chunking, BM25 sparse + Voyage dense hybrid search with RRF fusion, Cohere rerank. Merkle-tree incremental indexing.
+- Docs: header-aware Markdown/YAML splitting, same hybrid search pipeline.
+- Designs: DesignSpec JSON chunked by node, component catalog by entry. Same hybrid search pipeline. `__`-prefix dirs filtered at scan time.
+- Qdrant vector store (3 collections: `agentforge_code`, `agentforge_docs`, `agentforge_designs`). Docker Compose at `docker/docker-compose.agentforge.yml`.
+- 5 MCP-compatible tool definitions in `createRetrievalTools()` factory.
+- Golden query evaluation framework with precision@5 gate.
+- Not yet wired into LangGraph spine stages (Phase 1 — Clarifier — will be first consumer).
 
 ### Target vision
 Three retrieval pipelines feeding a single `RetrievedContext` artifact:
@@ -287,7 +293,7 @@ Three retrieval pipelines feeding a single `RetrievedContext` artifact:
 - Voyage-3-large embeddings.
 - Same Qdrant instance, separate collection, same Rerank pass.
 
-All three exposed as LangGraph tools: `searchCodeTool`, `searchDocsTool`, `getRepoMapTool`, `findSimilarPatternsTool`.
+All five exposed as LangGraph tools: `searchCodeTool`, `searchDocsTool`, `searchDesignsTool`, `getRepoMapTool`, `findSimilarPatternsTool`.
 
 ### Locked decisions
 - **Hybrid retrieval (deterministic structure first, semantic search second).**

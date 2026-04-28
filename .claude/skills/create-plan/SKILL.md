@@ -181,3 +181,11 @@ this plan automatically.
 - **Tasks must be file-level.** "Implement auth" is not a task.
   "Create `packages/auth/src/jwt-provider.ts` with `createToken()` and
   `verifyToken()`" is a task.
+- **Canonical location only.** The plan MUST be written to
+  `docs/plans/active/<name>/execution-plan.md` — never to
+  `~/.claude/plans/`. Claude Code's plan-mode auto-creates files in
+  `~/.claude/plans/` as scratch space; those files are ephemeral and
+  not part of the project's planning system. If plan-mode was used
+  during this skill, copy the final plan content into the canonical
+  location and treat `~/.claude/plans/` as disposable. See
+  `docs/guides/planning-docs.md` for the planning convention.

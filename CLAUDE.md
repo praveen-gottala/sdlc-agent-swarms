@@ -41,7 +41,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 - Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session:** Clarifier Initiative Phase 2 COMPLETE — RAG layer. `packages/retrieval/` scaffolded with 79 tests: 3 SDK clients (Voyage embeddings, Cohere reranking, Qdrant vector store), regex-based parser + symbol graph + PageRank repo map, BM25 sparse vectors, Merkle-tree incremental indexing, hybrid dense+sparse search with RRF fusion, code/doc/design chunkers, 5 MCP-compatible tool definitions, RetrievedContext Zod schema, golden query evaluation framework. Qdrant added to docker-compose. Native tree-sitter failed (Node 25.8.1 node-gyp) — switched to web-tree-sitter WASM.
+**Last session:** Phase 1.0 Clarifier package scaffold. Created `packages/agents-clarifier/` with LangGraph StateGraph (interrupt_before on storyWriter), ClarifierStateAnnotation with 11 typed channels, 6 node stubs, internal Zod schemas. Full new-agent checklist: RequirementsClarified domain event, init.ts clarifier role, governance clarify phase. Fixed pre-existing vision-correction test (node ID topbar→top-bar). 7 new tests, 391 monorepo tests green.
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -292,6 +292,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `telemetry` depends on: `core`; peers: `agents-ux`, `providers` (ADR-046)
 - `designspec-renderer` depends on: `core` (type-only devDependency, zero runtime deps)
 - `retrieval` depends on: `core`, `voyageai`, `cohere-ai`, `@qdrant/js-client-rest`, `web-tree-sitter`
+- `agents-clarifier` depends on: `core`, `providers`, `retrieval`, `telemetry`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
 
 ## Commands

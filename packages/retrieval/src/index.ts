@@ -83,6 +83,8 @@ export { indexCodebase } from './indexing/code-indexer.js';
 export type { CodeIndexerOptions } from './indexing/code-indexer.js';
 export { indexDocuments } from './indexing/doc-indexer.js';
 export type { DocIndexerOptions } from './indexing/doc-indexer.js';
+export { indexDesigns } from './indexing/design-indexer.js';
+export type { DesignIndexerOptions } from './indexing/design-indexer.js';
 export { buildMerkleTree, diffMerkleTrees, loadMerkleTree, saveMerkleTree } from './indexing/merkle-tree.js';
 export type { MerkleTree, MerkleNode, FileChange } from './indexing/merkle-tree.js';
 
@@ -91,6 +93,8 @@ export { searchCode } from './search/code-search.js';
 export type { CodeSearchDeps } from './search/code-search.js';
 export { searchDocs } from './search/doc-search.js';
 export type { DocSearchDeps } from './search/doc-search.js';
+export { searchDesigns } from './search/design-search.js';
+export type { DesignSearchDeps } from './search/design-search.js';
 
 // Tools
 export { createRetrievalTools, createRetrievalToolsFromEnv } from './tools/tool-factory.js';

@@ -14,18 +14,20 @@ import { createQdrantClient } from '../clients/qdrant-client.js';
 import { generateRepoMap } from '../repo-map/repo-map.js';
 import { searchCode } from '../search/code-search.js';
 import { searchDocs } from '../search/doc-search.js';
+import { searchDesigns } from '../search/design-search.js';
 import { searchCodeToolDefinition } from './search-code-tool.js';
 import { searchDocsToolDefinition } from './search-docs-tool.js';
 import { searchDesignsToolDefinition } from './search-designs-tool.js';
 import { getRepoMapToolDefinition } from './get-repo-map-tool.js';
 import { findSimilarPatternsToolDefinition } from './find-similar-patterns-tool.js';
-import type { CodeSearchOptions, DocSearchOptions, CodeSearchResult, DocSearchResult, RetrievalError, RetrievalConfig } from '../types.js';
+import type { CodeSearchOptions, DocSearchOptions, DesignSearchOptions, CodeSearchResult, DocSearchResult, DesignSearchResult, RetrievalError, RetrievalConfig } from '../types.js';
 import type { GetRepoMapToolInput } from './get-repo-map-tool.js';
 import type { FindSimilarPatternsToolInput } from './find-similar-patterns-tool.js';
 
 export interface RetrievalTools {
   readonly searchCode: (options: CodeSearchOptions) => Promise<Result<CodeSearchResult, RetrievalError>>;
   readonly searchDocs: (options: DocSearchOptions) => Promise<Result<DocSearchResult, RetrievalError>>;
+  readonly searchDesigns: (options: DesignSearchOptions) => Promise<Result<DesignSearchResult, RetrievalError>>;
   readonly getRepoMap: (input: GetRepoMapToolInput) => Promise<Result<string, RetrievalError>>;
   readonly findSimilarPatterns: (input: FindSimilarPatternsToolInput) => Promise<Result<CodeSearchResult, RetrievalError>>;
   readonly definitions: readonly Record<string, unknown>[];
@@ -57,10 +59,20 @@ export function createRetrievalTools(
     docsCollection: config.qdrant.docsCollection,
   };
 
+  const designDeps = {
+    voyageClient,
+    voyageConfig: config.voyage,
+    cohere,
+    qdrant,
+    designsCollection: config.qdrant.designsCollection,
+  };
+
   return {
     searchCode: (options) => searchCode(options, codeDeps),
 
     searchDocs: (options) => searchDocs(options, docDeps),
+
+    searchDesigns: (options) => searchDesigns(options, designDeps),
 
     getRepoMap: (input) => generateRepoMap({
       rootDir,

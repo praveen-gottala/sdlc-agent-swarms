@@ -21,6 +21,27 @@ Do not fabricate tribal knowledge to justify running the skill. Wasting a handof
 
 ## Protocol
 
+### 0. Plan location check (run first)
+
+Check whether any session plan files in `~/.claude/plans/*.md` contain
+plan content that is NOT in the canonical location
+(`docs/plans/active/<initiative>/execution-plan.md`).
+
+**How to check:**
+1. List `~/.claude/plans/*.md` files modified in this session.
+2. For each, check if a corresponding `docs/plans/active/` execution
+   plan exists with the same task-level detail (not just a checklist —
+   the full task breakdowns, file lists, patterns, etc.).
+3. If content exists only in `~/.claude/plans/` and not in
+   `docs/plans/active/`, **copy it into the canonical execution plan**
+   before proceeding. The `~/.claude/plans/` files are Claude Code
+   plan-mode scratch space and will not survive to the next session.
+
+**If no `~/.claude/plans/` files exist or all content is already
+canonical:** proceed to Step 1.
+
+See `docs/guides/planning-docs.md` for the planning convention.
+
 ### 1. Tribal knowledge audit
 
 Produce a bulleted list under three headings. Be ruthless — if something isn't real, drop it.
