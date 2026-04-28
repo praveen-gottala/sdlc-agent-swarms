@@ -5,7 +5,9 @@
 - **Vision:** `docs/vision.md` Layer 5 (Clarifier), Layer 7 (Design pipeline)
 - **ADR-035:** `docs/adrs/ADR-035-catalog-first-component-model.md` — catalog-first principle (visual quality in catalog, not per-node LLM fields)
 - **ADR-037:** `docs/adrs/ADR-037-standalone-renderer-package.md` — renderer package boundary
-- **Roadmap:** `docs/future-roadmap.md` Phase 1 (Clarifier), Phase 4 (cross-screen coherence)
+- **Roadmap:** `docs/roadmap.md` Phase 1 (Clarifier), Phase 4 (cross-screen coherence)
+- **Quality vision:** `docs/plans/active/visual-diversity/design-quality-vision.md` — strategic evolution (Tiers 1-5)
+- **Design decisions:** `docs/design-decisions.md` Section 9 — research-backed rationale
 - **Pipeline dataflow:** `docs/architecture/design-pipeline-dataflow.md`
 - **Lessons learned:** `docs/lessons-learned.md` §"NodeSpec Field Budget: Internal Fields Use Type Intersections"
 
@@ -62,8 +64,8 @@ Update this checklist as each task completes.
 - [ ] **3.4** E2E test: `e2e/catalog-variants.spec.ts`.
 
 ### Phase 4 — Evaluator Diversity Scoring
-- [ ] **4.1** Add container diversity deduction rules to `EVALUATION_SYSTEM_PROMPT` in `design-evaluator.ts`.
-- [ ] **4.2** Verify evaluator flags `container-treatment-monotony` on monotonous screenshots.
+- [x] **4.1** Add container diversity deduction rules to `EVALUATION_SYSTEM_PROMPT` in `design-evaluator.ts` (2026-04-27). Added `classifyContainerTreatment` and `assessContainerDiversity` in new `assess-container-diversity.ts` module. Structural post-processing wired after navigateTo check. Deducts 10 points if 3+ top-level sections all use one treatment. Vision prompt updated with diversity guidance.
+- [x] **4.2** Unit tests verify structural check flags monotonous specs (2026-04-27). `assess-container-diversity.test.ts` (13 tests: 7 classification, 6 diversity assessment). Integration test in `design-evaluator.test.ts` confirms 10-point deduction on monotonous DesignSpecV2 input.
 
 ### Phase 5 — Domain + Effects Foundation (Clarifier Interface)
 - [ ] **5.1** Add `domain`, `domainPatterns`, `referenceImages`, `selectedEffects` to `PipelineInput`.

@@ -9,12 +9,12 @@ Code prompt.
 Skills map to specific points in the development lifecycle:
 
 ```
-Session start          Mid-session           End of task          Pre-release
-     |                     |                     |                    |
-/session-start   /mid-session-drift-check   /verify-done         /verify-docs
-                                            |                      --full-sweep
-                                            +-> /verify-docs
-                                                (task-scoped)
+New initiative    Session start     Mid-session          End of task       Pre-release
+     |                 |                |                     |                |
+/create-plan     /session-start  /mid-session-drift-check /verify-done    /verify-docs
+     |                                                    |                 --full-sweep
+     +-> /challenge-plan (auto)                           +-> /verify-docs
+                                                              (task-scoped)
 ```
 
 ## Skills Reference
@@ -37,7 +37,8 @@ Session start          Mid-session           End of task          Pre-release
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| `/analyze-codebase` | Deep gap analysis + prioritized task roadmap | When planning what to build next |
+| `/create-plan` | Create an execution plan for any initiative — roadmap phase, feature, or ad-hoc task. Explores codebase, scaffolds plan folder, auto-runs `/challenge-plan`. | Starting any new body of work |
+| `/analyze-codebase` | Deep gap analysis + prioritized task roadmap | When assessing project health or finding priorities |
 | `/sprint-plan` | Time-boxed sprint planning from task backlog | Planning sprints with daily goals |
 | `/challenge-plan` | Challenge a plan against framework intent (vision, PRD, ADRs) | Before approving any plan — get a second opinion |
 | `/implement-feature` | PRD-traced implementation workflow with testing and ADR gates | Building new capabilities or modules |
@@ -100,6 +101,7 @@ one of them is doing it wrong.
 
 | Concern | Owned by |
 |---------|----------|
+| Creating execution plans for initiatives | `/create-plan` |
 | Documentation content is accurate | `/verify-docs` |
 | Code passes tests, lint, typecheck | `/verify-done` (Steps 0-2) |
 | Browser behavior works correctly | `/verify-done` (Steps 3-4) |

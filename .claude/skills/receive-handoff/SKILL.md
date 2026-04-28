@@ -27,7 +27,7 @@ The answer key lives in a separate file (`docs/plans/<topic>-handoff-key.md`). *
 
 Do **not** open the Turn 2 answer key to discover file names — that leaks the answers.
 
-Instead: start with `AGENTS.md` (the map), then read the active plan doc the handoff is for (e.g. `docs/active-plan/visual-diversity/execution-plan.md`), especially any **Context for … implementers** or Guardrails section. Turn 1 question 13 (coverage probe) often names the three critical docs — use that order when present. Also read any ADR the plan cites by path (e.g. `docs/adrs/ADR-035-…md`).
+Instead: start with `AGENTS.md` (the map), then read the active plan doc the handoff is for (e.g. `docs/plans/active/visual-diversity/execution-plan.md`), especially any **Context for … implementers** or Guardrails section. Turn 1 question 13 (coverage probe) often names the three critical docs — use that order when present. Also read any ADR the plan cites by path (e.g. `docs/adrs/ADR-035-…md`).
 
 **Context optimization:** If `/session-start` has already run in this session, the following docs are already loaded — do NOT re-read them:
 - `docs/lessons-learned-rules.md` (already read by session-start)

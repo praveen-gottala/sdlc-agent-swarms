@@ -344,6 +344,80 @@
 
 ---
 
+## 9. UX Design Quality & Diversity
+
+> Research survey date: 2026-04-27. Sources include AAAI 2025, arXiv, ScienceDirect, and Springer.
+> Strategic vision: `docs/plans/active/visual-diversity/design-quality-vision.md`.
+
+### 9.1 Dual evaluation: structural post-processing + vision LLM
+
+**Decision:** Container diversity is assessed by both a deterministic structural check (counting treatment types in the DesignSpecV2 node tree) and vision LLM guidance (prompting the evaluator to flag visual monotony in screenshots). The structural check provides a reliable floor; the vision LLM catches issues the structural check misses.
+
+**Reasoning:**
+- The [Agentic Design Review System (AAAI 2025)](https://arxiv.org/html/2508.10745) demonstrates that multimodal LLMs possess "novice-level awareness of design characteristics" and need enhancement via structural grounding. Their system uses graph-matching exemplar selection (GRAD) and Structured Design Descriptions (SDD) to anchor LLM responses in spatial detail.
+- The [MLLM-as-a-Judge benchmark](https://mllm-judge.github.io/) shows GPT-4V achieves 0.557 similarity to human scoring — useful but not reliable alone. Biases, hallucinations, and inconsistent judgments are documented hurdles.
+- Our Phase 2.6 testing confirmed this empirically: the design LLM ignored diversity rules in prompts. If the design LLM can't reliably follow rules, the evaluation LLM also needs structural backing.
+
+**Alternatives considered:**
+- **Vision LLM only (no structural check):** simpler but unreliable. LLM compliance with scoring rules is inconsistent per MLLM-as-a-Judge findings.
+- **Structural only (no vision guidance):** deterministic but can't detect visual issues like treatments that are technically different but look identical (e.g., a "flat" section with a background color so close to the page background that it's indistinguishable from "separated").
+- **Dedicated evaluation model (fine-tuned):** would require training data we don't have yet. Viable for Tier 5 of the roadmap.
+
+**Revisit when:** Tier 3 (exemplar-based evaluation) is implemented. Exemplar calibration may reduce the need for structural scoring if the vision LLM becomes sufficiently reliable with good/bad design examples.
+
+### 9.2 Treatment count threshold over embedding-based diversity metrics
+
+**Decision:** Within-page diversity is measured by counting distinct container treatment types (elevated, outlined, flat, inset, separated). A page with 3+ content sections that uses only 1 treatment type is flagged. This simple count is preferred over embedding-based diversity metrics.
+
+**Reasoning:**
+- [LiveIdeaBench](https://www.emergentmind.com/topics/liveideabench) uses high-dimensional embedding spaces (3072-d via TE3), UMAP/DBSCAN clustering, and PCA eigenvalue analysis for diversity scoring. This is designed for comparing diversity *across multiple generated outputs* (idea generation), not *within a single output* (section variety on one page).
+- [Generation Diversity (GD)](https://arxiv.org/html/2412.20071v3) uses perceptual hashing to measure pairwise distances between different UI designs. Again, this is *cross-design* diversity (comparing page A vs page B), not *within-page* section variety.
+- Our problem is simpler: "does this single page use at least 2 different container treatments?" This is a binary question answerable by counting, not a continuous distribution requiring embedding analysis.
+- Embedding-based metrics add ~300ms latency per evaluation (embedding computation) and require maintaining a vector index. The count check is <1ms and requires no infrastructure.
+
+**Alternatives considered:**
+- **Perceptual hash diversity (GD metric):** designed for cross-design comparison. Could be adapted for within-page section comparison by hashing individual sections, but the treatment classification is more direct and interpretable.
+- **Embedding cosine similarity between sections:** would catch subtle visual similarity that treatment labels miss. Overkill for the current "at least 2 treatments" requirement.
+- **Shannon entropy of treatment distribution:** more nuanced than a count threshold (penalizes 80/10/10 distributions more than 40/30/30). Worth considering when the treatment vocabulary expands beyond 5.
+
+**Revisit when:** cross-page diversity scoring is needed (Tier 4 of the roadmap). At that scale, perceptual hashing or embedding-based metrics become appropriate. Also revisit if the treatment vocabulary grows beyond 7-8 types, where simple count thresholds lose discriminative power.
+
+### 9.3 Five canonical treatments, not arbitrary CSS
+
+**Decision:** Container visual variety is achieved through five named treatments (elevated, outlined, flat, inset, separated), each with a defined CSS signature. The design LLM selects from these named patterns rather than inventing arbitrary CSS.
+
+**Reasoning:**
+- ADR-035 (catalog-first component model) establishes that visual quality belongs in the catalog, not in per-node LLM fields. Named treatments are catalog entries, not freeform styling.
+- LLM compliance is measurably higher with constrained choices than open-ended instructions. Named treatments reduce the output space from infinite CSS combinations to 5 discrete options.
+- The renderer can deterministically produce correct CSS for each treatment name. Arbitrary CSS from the LLM risks invalid values, vendor-specific properties, and visual bugs.
+- Five treatments cover the common UI patterns: cards (elevated), settings panels (outlined), stat groups (flat), code blocks (inset), and list items (separated).
+
+**Alternatives considered:**
+- **Arbitrary CSS overrides:** maximum flexibility but high hallucination rate. LLMs generate invalid CSS ~15-20% of the time in our testing.
+- **3 treatments (just shadow/border/plain):** too few to create meaningful variety on complex pages.
+- **Token-based treatment system (e.g., `treatment: "elevation.lg"`):** more flexible but adds a new token dimension to the design system. Deferred to a future design system maturity phase.
+
+**Revisit when:** the 5 treatments feel limiting for specific domains (e.g., a data visualization app needs "glass morphism" or "neumorphic" treatments). Add new named treatments to the catalog rather than opening arbitrary CSS.
+
+### 9.4 Evaluator-as-enforcer, not prompt-as-guarantor
+
+**Decision:** Design diversity is enforced through the evaluator's correction loop (score deduction + issue reporting + fix instructions), not through the design prompt alone. The design prompt establishes rules; the evaluator enforces compliance.
+
+**Reasoning:**
+- Phase 2.6 testing (2026-04-27) demonstrated empirically that the design LLM ignores diversity rules in prompts. Five pages were generated with the "3+ sections MUST use 2+ treatments" rule active; all produced monotonous treatments (all elevated or all flat).
+- This matches the broader research finding from [MLLM-as-a-Judge](https://mllm-judge.github.io/): LLMs are better at *evaluating* design quality than *producing* it. Scoring evaluation achieved 0.557 similarity to human ratings — imperfect but actionable for a correction loop.
+- The correction loop pattern (generate → evaluate → fix → re-evaluate) is iterative refinement, which converges where single-shot generation fails. This is established practice in image generation (DALL-E prompt refinement) and code generation (test-driven development).
+- The evaluator's structural check (DD 9.1) provides deterministic enforcement even when the vision LLM is unreliable. The correction loop will keep iterating until the structural check passes.
+
+**Alternatives considered:**
+- **Stronger prompting only (few-shot examples, chain-of-thought, explicit rubric):** would improve compliance but can't guarantee it. LLM compliance is stochastic by nature.
+- **Template-based generation (fill-in-the-blanks, not freeform):** would guarantee structure but eliminates the creative flexibility that makes LLM-generated designs valuable.
+- **Rejection sampling (generate N candidates, pick the most diverse):** effective but expensive (N × generation cost). Could be combined with the evaluator in a future tier.
+
+**Revisit when:** model capability improves to the point where single-shot compliance with diversity rules exceeds 90%. Until then, the evaluator loop is the enforcement mechanism.
+
+---
+
 ## Appendix: Rejected alternatives catalog
 
 Patterns evaluated and explicitly rejected. If proposing something similar, explain how

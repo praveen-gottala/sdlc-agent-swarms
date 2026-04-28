@@ -9,7 +9,7 @@ Start with [CLAUDE.md](../CLAUDE.md) for the reading order and development rules
 | [vision.md](vision.md) | Architectural authority. 15 layers with locked/open decisions, current vs target state. |
 | [research-report.md](research-report.md) | Evidence base. Deep-dive research supporting vision decisions. |
 | [design-decisions.md](design-decisions.md) | Decisions by topic with reasoning, alternatives considered, and revisit criteria. |
-| [future-roadmap.md](future-roadmap.md) | Eight-phase rollout plan (Phase 0-8) with demoable outcomes per phase. |
+| [roadmap.md](roadmap.md) | Eight-phase dependency-ordered rollout with demoable outcomes per phase. |
 | [lessons-learned.md](lessons-learned.md) | Do Not Repeat list. Append-only record of what worked and what didn't. |
 
 ## Subfolders
@@ -17,8 +17,8 @@ Start with [CLAUDE.md](../CLAUDE.md) for the reading order and development rules
 | Folder | What's in it | When to read |
 |---|---|---|
 | [specs/](specs/) | Product requirements. PRD as index + domain specs (platform, agents, governance, dashboard). | Understanding what we're building. |
-| [feature-plans/](feature-plans/) | Per-feature implementation plans with phases, acceptance criteria, and status. | Planning or resuming feature work. |
-| [plans/](plans/) | Infrastructure and migration plans (SDK upgrades, structured output migration). | System-level improvements. |
+| [plans/](plans/) | All plans organized by lifecycle: `active/`, `backlog/`, `completed/`. Each initiative has an execution plan + optional capability vision. | Planning or resuming work on any initiative. |
+| [research/](research/) | Investigation reports and methodology analysis with verified sources. | Understanding why decisions were made. |
 | [adrs/](adrs/) | Architecture Decision Records (ADR-002 through ADR-043). Amend or supersede specs. | Before making architectural choices. |
 | [architecture/](architecture/) | System design diagrams, dataflows, contracts, error handling, provider abstraction. | Understanding how components connect. |
 | [cli/](cli/) | CLI command reference (init, design, orchestration, setup). | Using or modifying CLI commands. |

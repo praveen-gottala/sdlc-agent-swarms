@@ -44,7 +44,7 @@ _(List any questions where the canonical docs were silent, contradictory, or req
 
 ## Hard-fail triggers
 
-- Agent cannot locate `docs/active-plan/observability/execution-plan.md` → ABORT (plan file missing).
+- Agent cannot locate `docs/plans/active/observability/execution-plan.md` → ABORT (plan file missing).
 - Agent answers Q9 with "yes" (use additionalProperties as map) → ABORT (would reintroduce the API rejection bug).
 - Agent cannot name the programmatic verification command for Q6 → ABORT (critical operational knowledge).
 
@@ -57,7 +57,7 @@ _(List any questions where the canonical docs were silent, contradictory, or req
 
 When any of these source files change, update the corresponding answer in the key:
 - `packages/telemetry/src/` → Q2, Q3
-- `docs/active-plan/observability/execution-plan.md` → Q1, Q10
+- `docs/plans/active/observability/execution-plan.md` → Q1, Q10
 - `docs/guides/langfuse-setup.md` → Q5, Q6, Q7
 - `docs/lessons-learned-rules.md` → Q8, Q9, Q11
 - `packages/agents-ux/src/ux-planning/ux-planning.ts` → Q8

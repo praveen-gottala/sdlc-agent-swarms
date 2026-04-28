@@ -151,8 +151,18 @@ They activate when specific trigger conditions are met.
 
 | Item | Trigger | Best before | Plan |
 |------|---------|-------------|------|
-| Progressive Vision Evaluation | Rate limits during correction loops, or Phase 4 planning begins | Phase 4 | [`docs/backlog-plans/progressive-vision-evaluation.md`](backlog-plans/progressive-vision-evaluation.md) |
-| Skill Drift Automation | Drift frequency warrants CI enforcement | Any time | [`docs/backlog-plans/skill-drift-automation.md`](backlog-plans/skill-drift-automation.md) |
+| Progressive Vision Evaluation | Rate limits during correction loops, or Phase 4 planning begins | Phase 4 | [`docs/plans/backlog/progressive-vision-evaluation.md`](plans/backlog/progressive-vision-evaluation.md) |
+| Skill Drift Automation | Drift frequency warrants CI enforcement | Any time | [`docs/plans/backlog/skill-drift-automation.md`](plans/backlog/skill-drift-automation.md) |
+
+---
+
+## Capability Visions
+
+Strategic vision documents for cross-cutting quality initiatives that span multiple phases.
+
+| Capability | Status | Vision |
+|------------|--------|--------|
+| UX Design Quality & Diversity | Tier 1 in progress | [`docs/plans/active/visual-diversity/design-quality-vision.md`](plans/active/visual-diversity/design-quality-vision.md) |
 
 ---
 

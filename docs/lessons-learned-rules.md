@@ -315,7 +315,7 @@ the move isn't done.
 
 > **⚠️ SUPERSEDED.** The auto-restart-on-stale and source-mtime tracking described below were **removed** during Plan B Phase B2 because they caused OOM death spirals during Playwright E2E runs (Vite restart compiled ~1.4k modules concurrent with headed Chromium, killing Next). `getRendererStatus()` in `packages/dashboard/src/app/api/_lib/renderer-manager.ts` now returns `'ready'` whenever the HTTP health check passes, regardless of who spawned the process or whether source changed. The orphan-detection and manual "Kill & Restart" UI paths remain available, but they are no longer triggered automatically.
 >
-> **If you hit a stale renderer today:** restart Vite manually (kill the port, re-run `nx serve browser` from `packages/designspec-renderer`). Do NOT reintroduce mtime-based staleness without a plan for the OOM failure mode — see `docs/adrs/ADR-040-prototype-runtime-scrubbing.md` and the "Context for B2.5 Implementers" block in `docs/feature-plans/screen-types-plan-b.md`.
+> **If you hit a stale renderer today:** restart Vite manually (kill the port, re-run `nx serve browser` from `packages/designspec-renderer`). Do NOT reintroduce mtime-based staleness without a plan for the OOM failure mode — see `docs/adrs/ADR-040-prototype-runtime-scrubbing.md` and the "Context for B2.5 Implementers" block in `docs/plans/backlog/screen-types-plan-b.md`.
 >
 > The rest of this entry is kept for historical context only.
 

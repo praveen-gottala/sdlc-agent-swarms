@@ -277,7 +277,7 @@ LLM inference dominates by 10–50×. The RAG layer itself is not where cost liv
 
 **Weeks 5–6 — spine integration.** Clarifier → Architect → Implementer → Reviewer spine in LangGraph with typed channels, checkpointers, and interrupt-based HITL at phase boundaries. Git worktree isolation for parallel tasks. Reviewer subagent pattern. Test/type/lint gates. ~10 days.
 
-**Sequencing:** See `future-roadmap.md` for the phased rollout plan with exit criteria and decision gates per phase.
+**Sequencing:** See `roadmap.md` for the phased rollout plan with exit criteria and decision gates per phase.
 
 ### Upgrade paths from POC to production
 
@@ -480,7 +480,7 @@ The ordering below prioritizes demonstrable value per week and front-loads the d
 5. **RAG: deterministic structure first (Aider repo map), semantic search second (voyage-code-3 + Qdrant + Cohere rerank), GraphRAG skipped.** Measured justification: Cursor's 2.6% code-retention gain on large repos validates semantic search; no benchmark validates GraphRAG on code.
 6. **EARS + INVEST + explicit assumption ledger are the spec-artifact backbone.** Kiro's structural rigor, AI-DLC's audit trail, and ClarifyGPT's consistency ambiguity detection are all incorporated. This is how the framework differentiates against Kiro/Spec Kit/Devin.
 7. **Sandboxed execution with egress controls from day one.** GitHub Copilot's security architecture is the reference. Don't retrofit; design in.
-8. **Budget explicitly for 40% cancellation risk per Gartner.** Set measurable gates per phase; be willing to kill branches that don't hit them. See `future-roadmap.md` decision gates.
+8. **Budget explicitly for 40% cancellation risk per Gartner.** Set measurable gates per phase; be willing to kill branches that don't hit them. See `roadmap.md` decision gates.
 
 ---
 

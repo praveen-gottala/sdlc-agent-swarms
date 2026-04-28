@@ -761,7 +761,7 @@ export async function designPageCommand(
   const createImplementFn = (): ImplementCallback => {
     return async (design) => {
       const implProvider = makeProvider();
-      const implContext = createPipelineContext(`${taskId}_impl`, mcpClient, undefined, baseDir);
+      const implContext = createPipelineContext(`${taskId}_impl`, mcpClient, baseDir, providerFactory);
 
       const implInput: UXImplementationInput = {
         specRef: planningOutput.specRef,

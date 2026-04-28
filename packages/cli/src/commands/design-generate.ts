@@ -12,7 +12,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import type { DesignTokensSpec, BrandSpec } from '@agentforge/core';
-import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS, PREVIEW_DIR_REL } from '@agentforge/core';
+import { loadDesignTokens, loadBrandSpec, loadPRD, SPEC_SCHEMA_HEADERS } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import type { ProviderConfig } from '@agentforge/providers';
 // GeneratedAppSpec type is imported via @agentforge/agents-ux, re-exported below for backward compat
@@ -250,8 +250,6 @@ export async function designGenerateCommand(
   // Load .env file so ANTHROPIC_API_KEY is available
   loadDotEnv(rootDir);
   initLangfuseTracing();
-
-  const previewDir = path.join(rootDir, PREVIEW_DIR_REL, 'design-generate');
 
   // Read project context via proper YAML parsing
   let appName = '';

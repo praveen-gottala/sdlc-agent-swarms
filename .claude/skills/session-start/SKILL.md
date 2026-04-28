@@ -54,5 +54,5 @@ Do **not** start coding, reading additional files, or proposing plans until the 
 
 - **Do not guess.** Every line in the briefing must cite a specific document you read. If you can't find the active plan, say so — don't fabricate one.
 - **Do not editorialize.** The "Top gotchas" section states rules verbatim from the docs. Do not rephrase, soften, or add your own interpretation.
-- **Flag staleness.** If any entry under `CLAUDE.md`'s `**Active plans:**` block points to a plan with all phases checked off, or duplicated under the adjacent `**Completed plans:**` block, flag it in "Open questions" — the pointer needs updating. Likewise, if `docs/active-plan/` contains a plan directory not referenced under `**Active plans:**`, surface it as possible drift.
+- **Flag staleness.** If any entry under `CLAUDE.md`'s `**Active plans:**` block points to a plan with all phases checked off, or duplicated under the adjacent `**Completed plans:**` block, flag it in "Open questions" — the pointer needs updating. Likewise, if `docs/plans/active/` contains a plan directory not referenced under `**Active plans:**`, surface it as possible drift.
 - **Be fast.** This should take under 60 seconds. Read efficiently — you're proving comprehension, not writing a book report.

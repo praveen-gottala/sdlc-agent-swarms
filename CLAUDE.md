@@ -27,18 +27,20 @@ Paused: Pipeline Plan 1 (bridge design→impl), Pipeline Plan 2 (unify runner)
 Not started: spec/code/cicd/observe phases, V3 Dashboard
 Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. Python engine deprecated. See ADR-043.
 
-**Active plans (read these during session-start):**
-1. Visual Diversity — Phase 1 COMPLETE, Phase 2 COMPLETE (2026-04-27). Found and fixed prompt conflict (v2.2.0). LLM compliance requires Phase 4 evaluator. Next: Phase 3 (catalog variants) or Phase 4 (evaluator diversity scoring). See `docs/active-plan/visual-diversity/execution-plan.md`
+**Plans:** `docs/plans/active/` (active), `docs/plans/backlog/` (paused/backlog), `docs/plans/completed/` (done)
 
-**Paused plans (do NOT read during session-start — note status only):**
-- Observability — Phase 1-2 COMPLETE, Phase 2.4 next (cleanup promptTraces). See `docs/active-plan/observability/execution-plan.md`
-- Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/feature-plans/screen-types-plan-b.md`
+**Active plans (read these during session-start):**
+1. Visual Diversity — Phase 1-2, 4 COMPLETE. Phase 3 next (catalog variants). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
+2. Observability — Phase 1-2 COMPLETE (incl. 2.4 promptTraces cleanup), Phase 3 next (prompt versioning). See `docs/plans/active/observability/execution-plan.md`
+
+**Backlog plans (do NOT read during session-start — note status only):**
+- Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
 
 **Completed plans (do NOT read during session-start):**
-- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/active-plan/unify-pipeline/execution-plan.md`
-- Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/feature-plans/screen-types-plan-a.md`
+- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
+- Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session:** Visual Diversity Phase 2.6-2.7 complete. Prompt v2.2.0 (border conflict fix), `buildPageDescription` crash fix, container-variety E2E test. See `docs/active-plan/visual-diversity/execution-plan.md`.
+**Last session:** Visual Diversity Phase 4 complete (evaluator diversity scoring: structural check + vision prompt). Pre-existing CLI typecheck fixes (design-generate.ts, design-page.ts).
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -339,6 +341,7 @@ works when you already know the answer is not documentation.
 Available Claude Code skills (invoke with /slash command).
 See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership boundaries.
 - /session-start — Read key docs and produce a briefing before coding (use at every session start)
+- /create-plan [description] — Create an execution plan for any initiative (roadmap phase, feature, ad-hoc task). Explores codebase, scaffolds plan folder, auto-runs /challenge-plan.
 - /analyze-codebase — Full gap analysis + prioritized task roadmap
 - /implement-feature [name] — PRD-traced implementation workflow
 - /sprint-plan [duration] — Sprint planning from task backlog

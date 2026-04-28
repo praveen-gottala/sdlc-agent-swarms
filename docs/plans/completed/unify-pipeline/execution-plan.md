@@ -3,7 +3,7 @@
 ## Related Documents
 
 - **Issue doc:** [`docs/issues/cli-dashboard-pipeline-divergence.md`](../../issues/cli-dashboard-pipeline-divergence.md) (rev 2) — divergence inventory with A/B/C/D classification
-- **Original plan:** [`docs/feature-plans/unify-design-pipeline.md`](../../feature-plans/unify-design-pipeline.md) (rev 2) — three-layer architecture, phased execution
+- **Original plan:** [`docs/plans/completed/unify-design-pipeline.md`](../unify-design-pipeline.md) (rev 2) — three-layer architecture, phased execution
 - **Review notes:** [`docs/guides/design-pipeline-unification-review-notes.md`](../../guides/design-pipeline-unification-review-notes.md) — spec-sync facts, structural principles, resolved review questions
 - **Architecture:** [`docs/architecture/design-pipeline-dataflow.md`](../../architecture/design-pipeline-dataflow.md) — current CLI-only pipeline trace (to be updated in Phase 5)
 - **ADR-043:** [`docs/adrs/ADR-043-typescript-only-orchestration.md`](../../adrs/ADR-043-typescript-only-orchestration.md) — Phase M-3 is the LangGraph port this plan unblocks
@@ -42,7 +42,7 @@ Update this checklist as each task completes. Commit convention: `[unify-pipelin
 ### Phase 1 — Layer B
 - [x] **1.0** Extract legacy-artifact migration helpers to core (2026-04-25)
 - [x] **1.1** `PipelineTelemetrySink` interface + `PipelineInput` (with `chromePass`) + ADR-044 + feature-plan §1.5 annotation (2026-04-25)
-- [x] **1.1s** Spike: validate single-shot patch — 3/3 passed (2026-04-25). Results: `docs/active-plan/unify-pipeline/spike-1.1s-results.md`
+- [x] **1.1s** Spike: validate single-shot patch — 3/3 passed (2026-04-25). Results: `docs/plans/completed/unify-pipeline/spike-1.1s-results.md`
 - [x] **1.2** Stage node functions + `browserDesignWork` (superset of `callClaudeDesignAPI`); evaluator stubbed in Phase 1 — see ADR-045 (2026-04-25)
 - [x] **1.3** `runDesignPipeline` orchestrator + cache adapter + pipeline unit tests (2026-04-25)
 - [x] **1.4** Sink contract test harness (2026-04-25)

@@ -15,7 +15,7 @@ target-vision, and locked-vs-open decisions explicit.
 For other reading modes:
 - Evidence behind these decisions → `research-report.md`
 - Why we rejected alternatives → `design-decisions.md` (appendix)
-- How decisions are sequenced into work → `future-roadmap.md`
+- How decisions are sequenced into work → `roadmap.md`
 
 When the codebase and this document conflict, this document wins. See Section 17.
 
@@ -750,7 +750,7 @@ The discipline already in `CLAUDE.md` (no stub fallbacks, ADR every PRD deviatio
 ## 18. What this document is not
 
 - It is not a PRD. PRD-v2.md is the PRD. This document is the architectural vision.
-- It is not an implementation plan. The plan is `future-roadmap.md`.
+- It is not an implementation plan. The plan is `roadmap.md`.
 - It is not a research report. The research report (`research-report.md`) contains the evidence; this document states the decisions derived from it.
 - It is not immutable. Every "locked decision" has a revisit trigger. Every "open decision" is explicitly open. New evidence changes the document.
 

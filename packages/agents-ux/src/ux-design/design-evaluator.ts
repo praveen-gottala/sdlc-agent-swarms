@@ -14,6 +14,7 @@ import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import { countPlanningNavigateTo, countSpecNavigateTo } from './validate-navigate-to.js';
 import { buildEvaluationContext } from './evaluation-context.js';
+import { assessContainerDiversity } from './assess-container-diversity.js';
 
 /** JSON Schema for structured evaluation output. */
 const EVALUATION_OUTPUT_SCHEMA = {
@@ -113,6 +114,11 @@ Text quality (critical — these indicate broken layout, not just poor design):
 - Deduct 5 points per text node that appears to overflow its parent container
 - If text labels show partial words (e.g., "Enter your bill de" instead of full text) → report as critical issue with issueId "text-truncation-{component}"
 - If a value and its label overlap (e.g., "$0.00" overlapping "Amount") → report as critical issue with issueId "text-overlap-{component}"
+
+Container treatment diversity:
+- Deduct 10 points if 3+ content sections all use the same visual treatment (all elevated cards, all flat panels, etc.)
+- A well-designed page mixes treatments: Elevated (shadow), Outlined (border), Flat (colored background), Separated (bottom border)
+- Report as issue with issueId "container-treatment-monotony"
 
 ${buildEvaluatorConstraintsPrompt()}
 
@@ -247,9 +253,11 @@ export async function evaluateDesign(
   // The vision LLM sees the screenshot — it already knows layout/spacing/colors.
   // The context conveys only intent: component names, text, catalog, navigateTo.
   let compactContext: string;
+  let parsedSpec: DesignSpecV2 | null = null;
   try {
-    const specObj = JSON.parse(designSpec) as DesignSpecV2;
-    compactContext = buildEvaluationContext(specObj);
+    const parsed = JSON.parse(designSpec) as DesignSpecV2;
+    if (parsed.nodes) parsedSpec = parsed;
+    compactContext = buildEvaluationContext(parsed);
   } catch {
     compactContext = designSpec;
     debugLog('evaluateDesign: could not parse designSpec for compact context — using raw text');
@@ -334,6 +342,20 @@ export async function evaluateDesign(
             };
             issues.push(navIssue);
           }
+        }
+      }
+
+      if (parsedSpec) {
+        const diversity = assessContainerDiversity(parsedSpec);
+        if (diversity.isMonotonous && diversity.dominantTreatment) {
+          finalScore = Math.max(0, finalScore - 10);
+          issues.push({
+            severity: 'major',
+            component: 'DesignSpec',
+            description: `All ${String(diversity.treatments.length)} top-level sections use "${diversity.dominantTreatment}" treatment. Design should mix treatments (elevated, outlined, flat, inset, separated).`,
+            fix: 'Vary container treatments: use Elevated (shadow) for primary content, Outlined (border) for secondary, Flat (background) for info panels.',
+            issueId: 'container-treatment-monotony',
+          });
         }
       }
 

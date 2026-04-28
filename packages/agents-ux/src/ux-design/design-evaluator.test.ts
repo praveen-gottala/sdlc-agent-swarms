@@ -140,4 +140,31 @@ describe('evaluateDesign', () => {
       }
     });
   });
+
+  it('deducts 10 points for monotonous container treatments', async () => {
+    const monotonousSpec = {
+      screen: 'test-page',
+      width: 1440,
+      nodes: {
+        root: { parent: null, order: 0, type: 'page' },
+        section1: { parent: 'root', order: 0, type: 'section', shadow: 'sm', radius: 12 },
+        section2: { parent: 'root', order: 1, type: 'section', shadow: 'sm', radius: 12 },
+        section3: { parent: 'root', order: 2, type: 'section', shadow: 'sm', radius: 12 },
+        section4: { parent: 'root', order: 3, type: 'section', shadow: 'sm', radius: 12 },
+      },
+    };
+
+    const provider = createMockProvider(JSON.stringify({ score: 85, issues: [] }));
+    const result = await evaluateDesign('base64data', JSON.stringify(monotonousSpec), provider);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.score).toBe(75);
+      const diversityIssue = result.value.issues.find((i) => i.issueId === 'container-treatment-monotony');
+      expect(diversityIssue).toBeDefined();
+      expect(diversityIssue?.severity).toBe('major');
+      expect(diversityIssue?.description).toContain('elevated');
+      expect(diversityIssue?.description).toContain('4');
+    }
+  });
 });

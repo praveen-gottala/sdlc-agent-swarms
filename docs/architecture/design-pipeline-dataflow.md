@@ -773,6 +773,7 @@ Vertex AI basic quota for claude-opus-4-7 can be as low as 4,000 TPM. The compac
 | Typography | Scale compliance | -3 per node |
 | Text overlap | Text nodes overlapping | -10 |
 | navigateTo compliance | Planning vs spec binding count | -5 per missing |
+| Container diversity | 3+ sections same treatment | -10 |
 
 ---
 

@@ -121,7 +121,7 @@ Run each triggered check following its content-verification protocol below.
 1. Determine if a feature plan phase was completed. Detection heuristics:
    - CLAUDE.md `## Current State` "Active plans" was updated to advance a phase
    - The user explicitly stated a plan phase is done
-   - The session's work corresponds to a phase in `docs/feature-plans/` or `docs/active-plan/`
+   - The session's work corresponds to a phase in `docs/plans/active/` or `docs/plans/backlog/`
 2. Identify the relevant domain spec: map the plan's topic to `docs/specs/` files:
    - Platform/orchestration/coordination → `platform-architecture.md`
    - Agent behavior/pipeline stages → `sdlc-agents.md`

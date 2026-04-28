@@ -48,6 +48,6 @@ After self-grading, copy the `## Doc gaps to report upstream` section from your 
 ## Maintenance
 
 If the execution plan changes, update the answer key at:
-`docs/active-plan/visual-diversity/handoff-key.md`
+`docs/plans/active/visual-diversity/handoff-key.md`
 
-Answer key: `docs/active-plan/visual-diversity/handoff-key.md`
+Answer key: `docs/plans/active/visual-diversity/handoff-key.md`

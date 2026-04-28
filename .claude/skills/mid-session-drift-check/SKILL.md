@@ -54,7 +54,7 @@ Read these files completely (not skim — complete), in this order. This order i
 6. `.claude/rules/honesty.md`
 7. `.claude/rules/karpathy-guidelines.md`
 8. Any `.claude/rules/<topic>.md` that matches the files touched in step 1 (e.g. `testing.md` if tests were edited, `typescript.md` if `.ts` files were edited, `prd-compliance.md` if behaviour changed).
-9. If the session is working inside an active plan, read that plan's Guardrails section too. Plans live in `docs/active-plan/<plan>/*.md` (e.g. `docs/active-plan/unify-pipeline/execution-plan.md`) or `docs/feature-plans/<plan>.md` (e.g. `docs/feature-plans/screen-types-plan-b.md` has `## Agent Guardrails — READ FIRST`).
+9. If the session is working inside an active plan, read that plan's Guardrails section too. Plans live in `docs/plans/active/<plan>/execution-plan.md` (e.g. `docs/plans/active/visual-diversity/execution-plan.md`). Backlog plans are in `docs/plans/backlog/` (e.g. `docs/plans/backlog/screen-types-plan-b.md` has `## Agent Guardrails — READ FIRST`).
 10. `AGENTS.md` last — it's a navigation map, not an authority; use it to confirm you haven't missed a canonical doc.
 
 After reading, output a short block naming the rules you read. If you skipped any that look relevant, say why.
