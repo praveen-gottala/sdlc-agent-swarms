@@ -30,8 +30,9 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Plans:** `docs/plans/active/` (active), `docs/plans/backlog/` (paused/backlog), `docs/plans/completed/` (done)
 
 **Active plans (read these during session-start):**
-1. Visual Diversity — Phase 1-2, 4 COMPLETE. Phase 3 next (catalog variants). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
+1. Visual Diversity — Phase 1-2, 4 COMPLETE. Prerequisite next (renderer gap closure P.1-P.8: 16 catalog components need dedicated renderers). Then Phase 3 (catalog variants). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
 2. Observability — Phase 1-2 COMPLETE (incl. 2.4 promptTraces cleanup), Phase 3 next (prompt versioning). See `docs/plans/active/observability/execution-plan.md`
+3. Clarifier Initiative — Resequenced: Phase 0 (foundation) -> Phase 2 (RAG) -> Phase 1 (Clarifier). Phase 0.2 (typed schemas) in progress. See `docs/plans/active/clarifier-initiative/execution-plan.md`
 
 **Backlog plans (do NOT read during session-start — note status only):**
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
@@ -40,7 +41,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 - Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session:** Visual Diversity Phase 4 complete (evaluator diversity scoring: structural check + vision prompt). Pre-existing CLI typecheck fixes (design-generate.ts, design-page.ts).
+**Last session:** Renderer component gap closure — adding 16 dedicated catalog renderers to DesignSpecRenderer.tsx (prerequisite P.1-P.8).
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
