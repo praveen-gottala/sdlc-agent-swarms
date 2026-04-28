@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
+import { writeDesignSpec } from '@agentforge/core';
 import { join } from 'path';
 import {
   readYamlFile,
@@ -190,7 +191,7 @@ async function runChatAsync(
     writeFileSync(join(artifactsDir, 'chat-message.txt'), chatMessage);
 
     const normalizedSpec = normalizeSpecOverrides(updatedSpec);
-    writeFileSync(join(designsDir, `${pageId}.json`), JSON.stringify(normalizedSpec, null, 2));
+    writeDesignSpec(projectRoot, pageId, normalizedSpec);
 
     const updatedPages = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
     if (updatedPages) {

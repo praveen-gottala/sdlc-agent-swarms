@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readTextFile, readYamlFile } from '../../_lib/project-reader';
+import { readDesignSpecText } from '@agentforge/core';
+import { readYamlFile, getActiveProjectRoot } from '../../_lib/project-reader';
 import {
   verifyNode,
   buildSimpleTokenMap,
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing pageId or domData' }, { status: 400 });
   }
 
-  const specText = readTextFile(`agentforge/designs/${pageId}.json`);
+  const specText = readDesignSpecText(getActiveProjectRoot(), pageId);
   if (!specText) {
     return NextResponse.json({ error: `Design spec not found for page: ${pageId}` }, { status: 404 });
   }

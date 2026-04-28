@@ -93,6 +93,8 @@ export interface CompletionOptions {
    * to call the named tool (guaranteed structured JSON output).
    */
   readonly toolChoice?: { readonly type: 'auto' | 'any' | 'tool'; readonly name?: string };
+  /** Prompt template version (semver). Recorded in OTel span metadata for tracking. Not sent to the LLM. */
+  readonly promptVersion?: string;
 }
 
 /** Token usage from a completion. */

@@ -55,17 +55,20 @@ LayoutShell, or PrototypeApp.
 
 ## 2. Spec Sources & Precedence
 
-Two directories store DesignSpec v2 JSON:
+**Single canonical path:** `agentforge/designs/{pageId}.json`
 
-| Directory | Writer | Purpose |
-|-----------|--------|---------|
-| `agentforge/designs/{pageId}.json` | Dashboard (Save button, dashboard generator) | Design canvas source of truth |
-| `.agentforge/previews/{moduleId}/scripts/designspec-v2.json` | CLI pipeline (`design:page`, `design:page:all`) | Pipeline working output |
+Both CLI pipeline and dashboard write to this path via `DesignSpecStore`
+(`@agentforge/core/design-spec-store`). The pipeline also writes a cache
+copy to the nested path for replay/skip purposes.
 
-**Precedence rule:** `agentforge/designs/` wins. The prototype API overrides
-each screen's `specPath` to point to `agentforge/designs/{screenId}.json`
-when that file exists. If it doesn't (page generated via CLI but never saved
-in the dashboard), the preview spec is used as fallback.
+| Path | Writer | Purpose |
+|------|--------|---------|
+| `agentforge/designs/{pageId}.json` | CLI pipeline + Dashboard (via `DesignSpecStore`) | **Canonical source of truth** for both design canvas and prototype |
+| `agentforge/designs/{pageId}/scripts/designspec-v2.json` | CLI pipeline (`saveCachedArtifact`) | Pipeline cache for stage replay/skip — NOT the read source |
+
+**Precedence rule:** The flat `agentforge/designs/{pageId}.json` is always
+the source of truth. The nested `scripts/designspec-v2.json` is a pipeline
+cache artifact. The prototype API prefers the flat path when both exist.
 
 **Other files loaded by the prototype API:**
 

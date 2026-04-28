@@ -120,6 +120,29 @@ packages/telemetry/
 │   └── index.ts             # Barrel exports + re-exports propagateAttributes
 ```
 
+## Prompt Versioning
+
+Every `.md` prompt file in `packages/agents-ux/src/prompts/` carries YAML frontmatter:
+
+```yaml
+---
+version: 2.1.0
+purpose: System prompt for the UX planning agent...
+---
+```
+
+The frontmatter is stripped before sending the prompt to the LLM. The `version` field is:
+- Passed to `provider.complete()` via `CompletionOptions.promptVersion`
+- Recorded in Langfuse generation spans as `metadata.promptVersion`
+- Enforced by a pre-commit hook (`npm run check:prompts`) that fails if content changed without a version bump
+
+**Parser:** `parsePromptFrontmatter()` from `@agentforge/core` (in `packages/core/src/prompts/`).
+
+**Pre-commit hook setup:**
+```bash
+bash scripts/install-hooks.sh
+```
+
 ## Best Practices (per langfuse/skills)
 
 These practices are enforced in the implementation:
@@ -134,6 +157,7 @@ These practices are enforced in the implementation:
 | Descriptive names | `llm:claude-sonnet-4-6` — not `trace-1` |
 | Graceful no-op | Returns unwrapped provider when env vars missing |
 | Flush before exit | `shutdownTracing()` called in CLI `finally` blocks |
+| Prompt version tracked | `metadata.promptVersion` set from frontmatter on `CompletionOptions.promptVersion` |
 
 To add trace-level metadata (userId, sessionId, tags), use `propagateAttributes`:
 ```typescript

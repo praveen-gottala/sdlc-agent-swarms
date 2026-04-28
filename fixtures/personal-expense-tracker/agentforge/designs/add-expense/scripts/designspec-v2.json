@@ -12,7 +12,10 @@
         "gap": 0,
         "align": "stretch"
       },
-      "background": "background-primary"
+      "background": "background-primary",
+      "overrides": {
+        "backgroundColor": "#0F172A"
+      }
     },
     "top-bar": {
       "parent": "root",
@@ -21,16 +24,16 @@
       "width": "fill",
       "height": 64,
       "background": "surface-primary",
-      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 24,
-        "py": 0
+        "gap": 16
       },
       "overrides": {
-        "borderBottom": "1px solid var(--border-default)"
+        "borderBottom": "1px solid #334155",
+        "backgroundColor": "#1E293B"
       }
     },
     "top-bar-left": {
@@ -43,7 +46,7 @@
         "gap": 12
       }
     },
-    "logo-button": {
+    "app-logo": {
       "parent": "top-bar-left",
       "order": 0,
       "type": "container",
@@ -51,40 +54,148 @@
         "dir": "row",
         "align": "center",
         "gap": 8
-      },
-      "navigateTo": "dashboard"
+      }
     },
-    "logo-icon": {
-      "parent": "logo-button",
+    "app-logo-icon": {
+      "parent": "app-logo",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "arrow-left"
-      },
-      "color": "text-primary"
+        "name": "wallet",
+        "color": "#F59E0B",
+        "size": 24
+      }
     },
-    "top-bar-title": {
-      "parent": "top-bar-left",
+    "app-logo-text": {
+      "parent": "app-logo",
       "order": 1,
       "type": "text",
-      "content": "Add Expense",
-      "typography": "heading-2",
+      "content": "Spendly",
+      "typography": "heading-3",
       "color": "text-primary",
-      "weight": 700
+      "weight": 700,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1"
+      }
     },
-    "top-bar-add-btn": {
+    "back-btn": {
+      "parent": "top-bar-left",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      },
+      "navigateTo": "dashboard",
+      "overrides": {
+        "cursor": "pointer"
+      }
+    },
+    "back-btn-icon": {
+      "parent": "back-btn",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "arrow-left",
+        "color": "#CBD5E1",
+        "size": 20
+      }
+    },
+    "back-btn-label": {
+      "parent": "back-btn",
+      "order": 1,
+      "type": "text",
+      "content": "Dashboard",
+      "typography": "label",
+      "color": "text-secondary",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B"
+      }
+    },
+    "month-selector": {
       "parent": "top-bar",
       "order": 1,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 16
+        "gap": 8
+      },
+      "height": 44
+    },
+    "prev-month-btn": {
+      "parent": "month-selector",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "width": 32,
+      "height": 32,
+      "radius": 6,
+      "overrides": {
+        "cursor": "pointer",
+        "backgroundColor": "#293548"
       }
     },
-    "month-selector": {
-      "parent": "top-bar-add-btn",
+    "prev-month-icon": {
+      "parent": "prev-month-btn",
       "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-left",
+        "color": "#CBD5E1",
+        "size": 16
+      }
+    },
+    "month-year-label": {
+      "parent": "month-selector",
+      "order": 1,
+      "type": "text",
+      "content": "January 2025",
+      "typography": "heading-3",
+      "color": "text-primary",
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1"
+      }
+    },
+    "next-month-btn": {
+      "parent": "month-selector",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "width": 32,
+      "height": 32,
+      "radius": 6,
+      "overrides": {
+        "cursor": "pointer",
+        "backgroundColor": "#293548"
+      }
+    },
+    "next-month-icon": {
+      "parent": "next-month-btn",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-right",
+        "color": "#CBD5E1",
+        "size": 16
+      }
+    },
+    "top-bar-actions": {
+      "parent": "top-bar",
+      "order": 2,
       "type": "container",
       "layout": {
         "dir": "row",
@@ -92,71 +203,35 @@
         "gap": 8
       }
     },
-    "month-prev-btn": {
-      "parent": "month-selector",
+    "settings-icon-btn": {
+      "parent": "top-bar-actions",
       "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
-        "align": "center"
+        "align": "center",
+        "justify": "center"
+      },
+      "width": 36,
+      "height": 36,
+      "radius": 6,
+      "navigateTo": "settings",
+      "overrides": {
+        "cursor": "pointer",
+        "backgroundColor": "#293548"
       }
     },
-    "month-prev-icon": {
-      "parent": "month-prev-btn",
+    "settings-icon": {
+      "parent": "settings-icon-btn",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "chevron-left"
-      },
-      "color": "text-secondary"
-    },
-    "month-label": {
-      "parent": "month-selector",
-      "order": 1,
-      "type": "text",
-      "content": "January 2025",
-      "typography": "label",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "month-next-btn": {
-      "parent": "month-selector",
-      "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center"
+        "name": "settings",
+        "color": "#64748B",
+        "size": 18
       }
     },
-    "month-next-icon": {
-      "parent": "month-next-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-right"
-      },
-      "color": "text-secondary"
-    },
-    "top-bar-settings-btn": {
-      "parent": "top-bar-add-btn",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center"
-      },
-      "navigateTo": "settings"
-    },
-    "top-bar-settings-icon": {
-      "parent": "top-bar-settings-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "settings"
-      },
-      "color": "text-secondary"
-    },
-    "page-scroll": {
+    "page-content": {
       "parent": "root",
       "order": 1,
       "type": "container",
@@ -167,28 +242,32 @@
         "gap": 0,
         "py": 0
       },
-      "background": "background-primary"
+      "overrides": {
+        "flex": "1",
+        "overflowY": "auto"
+      }
     },
-    "content-col": {
-      "parent": "page-scroll",
+    "inner-layout": {
+      "parent": "page-content",
       "order": 0,
       "type": "container",
-      "width": 800,
+      "width": 1280,
       "layout": {
         "dir": "column",
         "gap": 20,
-        "py": 24,
-        "px": 0
+        "px": 24,
+        "py": 20
       }
     },
     "quick-add-section": {
-      "parent": "content-col",
+      "parent": "inner-layout",
       "order": 0,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8
+        "gap": 8,
+        "py": 4
       }
     },
     "quick-add-label": {
@@ -198,7 +277,13 @@
       "content": "Quick Add",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 600
+      "weight": 500,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
+      }
     },
     "quick-add-chips-row": {
       "parent": "quick-add-section",
@@ -207,12 +292,12 @@
       "width": "fill",
       "layout": {
         "dir": "row",
-        "gap": 10,
+        "gap": 8,
         "align": "center",
         "wrap": true
       }
     },
-    "quick-chip-1": {
+    "qac-1": {
       "parent": "quick-add-chips-row",
       "order": 0,
       "type": "container",
@@ -221,32 +306,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
-      "shadow": "sm",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "quick-chip-1-emoji": {
-      "parent": "quick-chip-1",
+    "qac-1-emoji": {
+      "parent": "qac-1",
       "order": 0,
       "type": "text",
       "content": "☕",
-      "typography": "body"
+      "typography": "body",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "quick-chip-1-text": {
-      "parent": "quick-chip-1",
+    "qac-1-text": {
+      "parent": "qac-1",
       "order": 1,
       "type": "text",
       "content": "Starbucks · $6.50",
       "typography": "label",
-      "color": "text-primary"
+      "color": "text-primary",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "quick-chip-2": {
+    "qac-2": {
       "parent": "quick-add-chips-row",
       "order": 1,
       "type": "container",
@@ -255,32 +347,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
-      "shadow": "sm",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "quick-chip-2-emoji": {
-      "parent": "quick-chip-2",
+    "qac-2-emoji": {
+      "parent": "qac-2",
       "order": 0,
       "type": "text",
       "content": "🚇",
-      "typography": "body"
+      "typography": "body",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "quick-chip-2-text": {
-      "parent": "quick-chip-2",
+    "qac-2-text": {
+      "parent": "qac-2",
       "order": 1,
       "type": "text",
-      "content": "Metro · $3.20",
+      "content": "Metro · $2.90",
       "typography": "label",
-      "color": "text-primary"
+      "color": "text-primary",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "quick-chip-3": {
+    "qac-3": {
       "parent": "quick-add-chips-row",
       "order": 2,
       "type": "container",
@@ -289,32 +388,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
-      "shadow": "sm",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "quick-chip-3-emoji": {
-      "parent": "quick-chip-3",
+    "qac-3-emoji": {
+      "parent": "qac-3",
       "order": 0,
       "type": "text",
-      "content": "🛒",
-      "typography": "body"
+      "content": "🍜",
+      "typography": "body",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "quick-chip-3-text": {
-      "parent": "quick-chip-3",
+    "qac-3-text": {
+      "parent": "qac-3",
       "order": 1,
       "type": "text",
-      "content": "Whole Foods · $54.30",
+      "content": "Ramen House · $14.00",
       "typography": "label",
-      "color": "text-primary"
+      "color": "text-primary",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "quick-chip-4": {
+    "qac-4": {
       "parent": "quick-add-chips-row",
       "order": 3,
       "type": "container",
@@ -323,32 +429,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
-      "shadow": "sm",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "quick-chip-4-emoji": {
-      "parent": "quick-chip-4",
+    "qac-4-emoji": {
+      "parent": "qac-4",
       "order": 0,
       "type": "text",
-      "content": "🍕",
-      "typography": "body"
+      "content": "🛒",
+      "typography": "body",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "quick-chip-4-text": {
-      "parent": "quick-chip-4",
+    "qac-4-text": {
+      "parent": "qac-4",
       "order": 1,
       "type": "text",
-      "content": "Domino's · $22.00",
+      "content": "Whole Foods · $38.20",
       "typography": "label",
-      "color": "text-primary"
+      "color": "text-primary",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "quick-chip-5": {
+    "qac-5": {
       "parent": "quick-add-chips-row",
       "order": 4,
       "type": "container",
@@ -357,69 +470,138 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
-      "shadow": "sm",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "quick-chip-5-emoji": {
-      "parent": "quick-chip-5",
+    "qac-5-emoji": {
+      "parent": "qac-5",
       "order": 0,
       "type": "text",
       "content": "⛽",
-      "typography": "body"
+      "typography": "body",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "quick-chip-5-text": {
-      "parent": "quick-chip-5",
+    "qac-5-text": {
+      "parent": "qac-5",
       "order": 1,
       "type": "text",
-      "content": "Shell · $48.75",
+      "content": "Shell Gas · $52.00",
       "typography": "label",
-      "color": "text-primary"
+      "color": "text-primary",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "amount-hero-section": {
-      "parent": "content-col",
+    "expense-form-card": {
+      "parent": "inner-layout",
       "order": 1,
       "type": "section",
       "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 16,
       "layout": {
         "dir": "column",
-        "gap": 8,
+        "gap": 24,
         "px": 32,
-        "py": 32,
-        "align": "center"
+        "py": 32
+      },
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 16,
+      "overrides": {
+        "backgroundColor": "#1E293B"
       }
     },
-    "amount-hero-label": {
-      "parent": "amount-hero-section",
+    "form-title-row": {
+      "parent": "expense-form-card",
       "order": 0,
-      "type": "text",
-      "content": "Expense Amount",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500
-    },
-    "amount-hero-input-row": {
-      "parent": "amount-hero-section",
-      "order": 1,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "center",
-        "gap": 4
+        "justify": "space-between"
+      }
+    },
+    "form-title": {
+      "parent": "form-title-row",
+      "order": 0,
+      "type": "text",
+      "content": "New Expense",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1"
+      }
+    },
+    "form-subtitle": {
+      "parent": "form-title-row",
+      "order": 1,
+      "type": "text",
+      "content": "Fill in the details below",
+      "typography": "body",
+      "color": "text-secondary",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B"
+      }
+    },
+    "amount-hero-section": {
+      "parent": "expense-form-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 6
+      }
+    },
+    "amount-label": {
+      "parent": "amount-hero-section",
+      "order": 0,
+      "type": "text",
+      "content": "Amount",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
+      }
+    },
+    "amount-input-wrapper": {
+      "parent": "amount-hero-section",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "height": 88,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8,
+        "px": 24,
+        "py": 20
+      },
+      "radius": 10,
+      "overrides": {
+        "backgroundColor": "#293548",
+        "border": "2px solid #334155"
       }
     },
     "amount-currency-symbol": {
-      "parent": "amount-hero-input-row",
+      "parent": "amount-input-wrapper",
       "order": 0,
       "type": "text",
       "content": "$",
@@ -427,11 +609,13 @@
       "color": "text-secondary",
       "weight": 700,
       "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#64748B",
         "fontSize": "40px"
       }
     },
     "amount-value": {
-      "parent": "amount-hero-input-row",
+      "parent": "amount-input-wrapper",
       "order": 1,
       "type": "text",
       "content": "0.00",
@@ -439,45 +623,38 @@
       "color": "text-primary",
       "weight": 700,
       "overrides": {
-        "fontSize": "56px",
-        "letterSpacing": "-1px"
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "48px",
+        "opacity": "0.4"
       }
-    },
-    "amount-hint": {
-      "parent": "amount-hero-section",
-      "order": 2,
-      "type": "text",
-      "content": "Tap to enter amount",
-      "typography": "small",
-      "color": "text-secondary"
     },
     "category-section": {
-      "parent": "content-col",
+      "parent": "expense-form-card",
       "order": 2,
-      "type": "section",
+      "type": "container",
       "width": "fill",
-      "background": "surface-primary",
-      "radius": 10,
       "layout": {
         "dir": "column",
-        "gap": 14,
-        "px": 24,
-        "py": 24
-      },
-      "overrides": {
-        "border": "1px solid var(--border-default)"
+        "gap": 10
       }
     },
-    "category-section-title": {
+    "category-label": {
       "parent": "category-section",
       "order": 0,
       "type": "text",
       "content": "Category",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 600
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
+      }
     },
-    "category-chip-grid": {
+    "category-chips-grid": {
       "parent": "category-section",
       "order": 1,
       "type": "container",
@@ -485,12 +662,12 @@
       "layout": {
         "dir": "row",
         "gap": 8,
-        "wrap": true,
-        "align": "center"
+        "align": "center",
+        "wrap": true
       }
     },
-    "cat-chip-food": {
-      "parent": "category-chip-grid",
+    "cat-food": {
+      "parent": "category-chips-grid",
       "order": 0,
       "type": "container",
       "layout": {
@@ -498,33 +675,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "cta-primary",
       "radius": 9999,
       "overrides": {
-        "border": "2px solid var(--cta-primary)",
+        "backgroundColor": "#F59E0B",
+        "border": "2px solid #F59E0B",
         "cursor": "pointer"
       }
     },
-    "cat-chip-food-emoji": {
-      "parent": "cat-chip-food",
+    "cat-food-emoji": {
+      "parent": "cat-food",
       "order": 0,
       "type": "text",
       "content": "🍔",
-      "typography": "label"
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-food-label": {
-      "parent": "cat-chip-food",
+    "cat-food-label": {
+      "parent": "cat-food",
       "order": 1,
       "type": "text",
       "content": "Food & Dining",
       "typography": "label",
-      "color": "text-on-cta",
-      "weight": 600
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#0F172A",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-transport": {
-      "parent": "category-chip-grid",
+    "cat-transport": {
+      "parent": "category-chips-grid",
       "order": 1,
       "type": "container",
       "layout": {
@@ -532,32 +715,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-transport-emoji": {
-      "parent": "cat-chip-transport",
+    "cat-transport-emoji": {
+      "parent": "cat-transport",
       "order": 0,
       "type": "text",
       "content": "🚗",
-      "typography": "label"
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-transport-label": {
-      "parent": "cat-chip-transport",
+    "cat-transport-label": {
+      "parent": "cat-transport",
       "order": 1,
       "type": "text",
       "content": "Transport",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-groceries": {
-      "parent": "category-chip-grid",
+    "cat-shopping": {
+      "parent": "category-chips-grid",
       "order": 2,
       "type": "container",
       "layout": {
@@ -565,32 +754,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-groceries-emoji": {
-      "parent": "cat-chip-groceries",
+    "cat-shopping-emoji": {
+      "parent": "cat-shopping",
       "order": 0,
       "type": "text",
-      "content": "🛒",
-      "typography": "label"
+      "content": "🛍️",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-groceries-label": {
-      "parent": "cat-chip-groceries",
+    "cat-shopping-label": {
+      "parent": "cat-shopping",
       "order": 1,
       "type": "text",
-      "content": "Groceries",
+      "content": "Shopping",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-health": {
-      "parent": "category-chip-grid",
+    "cat-health": {
+      "parent": "category-chips-grid",
       "order": 3,
       "type": "container",
       "layout": {
@@ -598,32 +793,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-health-emoji": {
-      "parent": "cat-chip-health",
+    "cat-health-emoji": {
+      "parent": "cat-health",
       "order": 0,
       "type": "text",
       "content": "💊",
-      "typography": "label"
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-health-label": {
-      "parent": "cat-chip-health",
+    "cat-health-label": {
+      "parent": "cat-health",
       "order": 1,
       "type": "text",
       "content": "Health",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-entertainment": {
-      "parent": "category-chip-grid",
+    "cat-entertainment": {
+      "parent": "category-chips-grid",
       "order": 4,
       "type": "container",
       "layout": {
@@ -631,32 +832,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-entertainment-emoji": {
-      "parent": "cat-chip-entertainment",
+    "cat-entertainment-emoji": {
+      "parent": "cat-entertainment",
       "order": 0,
       "type": "text",
       "content": "🎬",
-      "typography": "label"
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-entertainment-label": {
-      "parent": "cat-chip-entertainment",
+    "cat-entertainment-label": {
+      "parent": "cat-entertainment",
       "order": 1,
       "type": "text",
       "content": "Entertainment",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-utilities": {
-      "parent": "category-chip-grid",
+    "cat-utilities": {
+      "parent": "category-chips-grid",
       "order": 5,
       "type": "container",
       "layout": {
@@ -664,32 +871,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-utilities-emoji": {
-      "parent": "cat-chip-utilities",
+    "cat-utilities-emoji": {
+      "parent": "cat-utilities",
       "order": 0,
       "type": "text",
       "content": "💡",
-      "typography": "label"
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-utilities-label": {
-      "parent": "cat-chip-utilities",
+    "cat-utilities-label": {
+      "parent": "cat-utilities",
       "order": 1,
       "type": "text",
       "content": "Utilities",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-shopping": {
-      "parent": "category-chip-grid",
+    "cat-travel": {
+      "parent": "category-chips-grid",
       "order": 6,
       "type": "container",
       "layout": {
@@ -697,32 +910,38 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-shopping-emoji": {
-      "parent": "cat-chip-shopping",
+    "cat-travel-emoji": {
+      "parent": "cat-travel",
       "order": 0,
       "type": "text",
-      "content": "🛍️",
-      "typography": "label"
+      "content": "✈️",
+      "overrides": {
+        "fontSize": "14px"
+      }
     },
-    "cat-chip-shopping-label": {
-      "parent": "cat-chip-shopping",
+    "cat-travel-label": {
+      "parent": "cat-travel",
       "order": 1,
       "type": "text",
-      "content": "Shopping",
+      "content": "Travel",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "cat-chip-add-new": {
-      "parent": "category-chip-grid",
+    "cat-new": {
+      "parent": "category-chips-grid",
       "order": 7,
       "type": "container",
       "layout": {
@@ -730,86 +949,142 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px dashed var(--border-default)",
+        "backgroundColor": "transparent",
+        "border": "1px dashed #334155",
         "cursor": "pointer"
       }
     },
-    "cat-chip-add-new-icon": {
-      "parent": "cat-chip-add-new",
+    "cat-new-icon": {
+      "parent": "cat-new",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "plus"
-      },
-      "color": "text-secondary"
+        "name": "plus",
+        "color": "#64748B",
+        "size": 14
+      }
     },
-    "cat-chip-add-new-label": {
-      "parent": "cat-chip-add-new",
+    "cat-new-label": {
+      "parent": "cat-new",
       "order": 1,
       "type": "text",
       "content": "New Category",
       "typography": "label",
-      "color": "text-secondary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "12px"
+      }
     },
-    "new-category-inline-form": {
-      "parent": "category-section",
-      "order": 2,
+    "new-category-form": {
+      "parent": "expense-form-card",
+      "order": 3,
       "type": "container",
       "width": "fill",
-      "background": "surface-secondary",
-      "radius": 10,
       "layout": {
         "dir": "column",
         "gap": 12,
         "px": 16,
         "py": 16
       },
+      "radius": 10,
       "overrides": {
-        "border": "1px solid var(--border-default)"
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155"
       }
     },
     "new-cat-form-title": {
-      "parent": "new-category-inline-form",
+      "parent": "new-category-form",
       "order": 0,
       "type": "text",
       "content": "Create New Category",
       "typography": "label",
-      "color": "text-secondary",
-      "weight": 600
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1"
+      }
+    },
+    "new-cat-name-row": {
+      "parent": "new-category-form",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "new-cat-emoji-input": {
+      "parent": "new-cat-name-row",
+      "order": 0,
+      "type": "container",
+      "width": 44,
+      "height": 44,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 6,
+      "overrides": {
+        "backgroundColor": "#1E293B",
+        "border": "1px solid #334155",
+        "fontSize": "20px"
+      }
+    },
+    "new-cat-emoji-placeholder": {
+      "parent": "new-cat-emoji-input",
+      "order": 0,
+      "type": "text",
+      "content": "😀",
+      "overrides": {
+        "fontSize": "20px"
+      }
     },
     "new-cat-name-input": {
-      "parent": "new-category-inline-form",
+      "parent": "new-cat-name-row",
       "order": 1,
       "catalog": "input-text",
-      "label": "Category Name",
-      "placeholder": "e.g. Subscriptions",
-      "width": "fill"
+      "label": "",
+      "placeholder": "Category name (e.g. Gym, Pets)",
+      "width": "fill",
+      "overrides": {
+        "backgroundColor": "#1E293B",
+        "borderColor": "#334155",
+        "color": "#CBD5E1",
+        "fontFamily": "DM Sans"
+      }
     },
-    "color-picker-row": {
-      "parent": "new-category-inline-form",
+    "color-picker-row-container": {
+      "parent": "new-category-form",
       "order": 2,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8
+        "gap": 6
       }
     },
     "color-picker-label": {
-      "parent": "color-picker-row",
+      "parent": "color-picker-row-container",
       "order": 0,
       "type": "text",
-      "content": "Color",
+      "content": "Pick a color",
       "typography": "label",
-      "color": "text-secondary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px"
+      }
     },
-    "color-swatches-row": {
-      "parent": "color-picker-row",
+    "color-swatches": {
+      "parent": "color-picker-row-container",
       "order": 1,
       "type": "container",
       "layout": {
@@ -819,172 +1094,224 @@
       }
     },
     "swatch-amber": {
-      "parent": "color-swatches-row",
+      "parent": "color-swatches",
       "order": 0,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "warning",
       "overrides": {
-        "border": "3px solid var(--cta-primary)",
+        "backgroundColor": "#F59E0B",
+        "border": "3px solid #CBD5E1",
         "cursor": "pointer"
       }
     },
     "swatch-teal": {
-      "parent": "color-swatches-row",
+      "parent": "color-swatches",
       "order": 1,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "success",
       "overrides": {
+        "backgroundColor": "#14B8A6",
         "cursor": "pointer"
       }
     },
     "swatch-coral": {
-      "parent": "color-swatches-row",
+      "parent": "color-swatches",
       "order": 2,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "error",
       "overrides": {
+        "backgroundColor": "#F87171",
         "cursor": "pointer"
       }
     },
     "swatch-blue": {
-      "parent": "color-swatches-row",
+      "parent": "color-swatches",
       "order": 3,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "info",
       "overrides": {
+        "backgroundColor": "#60A5FA",
         "cursor": "pointer"
       }
     },
     "swatch-purple": {
-      "parent": "color-swatches-row",
+      "parent": "color-swatches",
       "order": 4,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "cta-secondary",
       "overrides": {
+        "backgroundColor": "#A78BFA",
         "cursor": "pointer"
       }
     },
-    "swatch-slate": {
-      "parent": "color-swatches-row",
+    "swatch-green": {
+      "parent": "color-swatches",
       "order": 5,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "background": "surface-secondary",
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#4ADE80",
+        "cursor": "pointer"
+      }
+    },
+    "swatch-pink": {
+      "parent": "color-swatches",
+      "order": 6,
+      "type": "container",
+      "width": 32,
+      "height": 32,
+      "radius": 9999,
+      "overrides": {
+        "backgroundColor": "#F472B6",
         "cursor": "pointer"
       }
     },
     "new-cat-save-btn": {
-      "parent": "new-category-inline-form",
+      "parent": "new-category-form",
       "order": 3,
-      "catalog": "button-primary",
-      "label": "Save Category",
-      "width": "fill"
-    },
-    "date-section": {
-      "parent": "content-col",
-      "order": 3,
-      "type": "section",
-      "width": "fill",
-      "background": "surface-primary",
-      "shadow": "sm",
-      "radius": 10,
+      "type": "container",
       "layout": {
-        "dir": "column",
-        "gap": 14,
-        "px": 24,
-        "py": 24
+        "dir": "row",
+        "align": "center",
+        "justify": "end",
+        "gap": 8
       }
     },
-    "date-section-title": {
+    "new-cat-cancel": {
+      "parent": "new-cat-save-btn",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "Cancel",
+      "overrides": {
+        "color": "#64748B"
+      }
+    },
+    "new-cat-create": {
+      "parent": "new-cat-save-btn",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Create Category",
+      "overrides": {
+        "backgroundColor": "#F59E0B",
+        "color": "#0F172A",
+        "fontFamily": "DM Sans",
+        "fontWeight": "600"
+      }
+    },
+    "date-section": {
+      "parent": "expense-form-card",
+      "order": 4,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "date-label": {
       "parent": "date-section",
       "order": 0,
       "type": "text",
       "content": "Date",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 600
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
+      }
     },
-    "date-picker-input-row": {
+    "date-picker-trigger": {
       "parent": "date-section",
       "order": 1,
       "type": "container",
       "width": "fill",
+      "height": 44,
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 12,
-        "px": 14,
-        "py": 12
+        "justify": "space-between",
+        "px": 16
       },
-      "background": "surface-secondary",
-      "radius": 6,
+      "radius": 10,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
+    "date-picker-left": {
+      "parent": "date-picker-trigger",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
     "date-picker-icon": {
-      "parent": "date-picker-input-row",
+      "parent": "date-picker-left",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "calendar"
-      },
-      "color": "text-secondary"
+        "name": "calendar",
+        "color": "#64748B",
+        "size": 16
+      }
     },
     "date-picker-value": {
-      "parent": "date-picker-input-row",
+      "parent": "date-picker-left",
       "order": 1,
       "type": "text",
-      "content": "January 15, 2025",
+      "content": "Wednesday, January 15, 2025",
       "typography": "body",
-      "color": "text-primary",
-      "width": "fill"
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "14px"
+      }
     },
     "date-picker-chevron": {
-      "parent": "date-picker-input-row",
-      "order": 2,
+      "parent": "date-picker-trigger",
+      "order": 1,
       "catalog": "icon",
       "overrides": {
-        "name": "chevron-down"
-      },
-      "color": "text-secondary"
+        "name": "chevron-down",
+        "color": "#64748B",
+        "size": 16
+      }
     },
     "mini-calendar-dropdown": {
       "parent": "date-section",
       "order": 2,
       "type": "container",
       "width": "fill",
-      "background": "surface-secondary",
-      "radius": 10,
-      "shadow": "md",
       "layout": {
         "dir": "column",
         "gap": 12,
-        "px": 16,
+        "px": 20,
         "py": 16
       },
+      "radius": 16,
+      "shadow": "lg",
       "overrides": {
-        "border": "1px solid var(--border-default)"
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155"
       }
     },
     "mini-cal-header": {
@@ -1001,29 +1328,68 @@
     "mini-cal-prev": {
       "parent": "mini-cal-header",
       "order": 0,
+      "type": "container",
+      "width": 28,
+      "height": 28,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 6,
+      "overrides": {
+        "backgroundColor": "#1E293B",
+        "cursor": "pointer"
+      }
+    },
+    "mini-cal-prev-icon": {
+      "parent": "mini-cal-prev",
+      "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "chevron-left"
-      },
-      "color": "text-secondary"
+        "name": "chevron-left",
+        "color": "#CBD5E1",
+        "size": 14
+      }
     },
     "mini-cal-month-label": {
       "parent": "mini-cal-header",
       "order": 1,
       "type": "text",
       "content": "January 2025",
-      "typography": "label",
-      "color": "text-primary",
-      "weight": 700
+      "typography": "heading-3",
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1"
+      }
     },
     "mini-cal-next": {
       "parent": "mini-cal-header",
       "order": 2,
+      "type": "container",
+      "width": 28,
+      "height": 28,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 6,
+      "overrides": {
+        "backgroundColor": "#1E293B",
+        "cursor": "pointer"
+      }
+    },
+    "mini-cal-next-icon": {
+      "parent": "mini-cal-next",
+      "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "chevron-right"
-      },
-      "color": "text-secondary"
+        "name": "chevron-right",
+        "color": "#CBD5E1",
+        "size": 14
+      }
     },
     "mini-cal-weekdays": {
       "parent": "mini-calendar-dropdown",
@@ -1031,75 +1397,104 @@
       "type": "container",
       "width": "fill",
       "layout": {
+        "display": "grid",
         "dir": "row",
-        "justify": "space-between",
-        "align": "center"
+        "columns": 7,
+        "gap": 4
       }
     },
-    "cal-day-su": {
+    "wd-sun": {
       "parent": "mini-cal-weekdays",
       "order": 0,
       "type": "text",
       "content": "Su",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-mo": {
+    "wd-mon": {
       "parent": "mini-cal-weekdays",
       "order": 1,
       "type": "text",
       "content": "Mo",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-tu": {
+    "wd-tue": {
       "parent": "mini-cal-weekdays",
       "order": 2,
       "type": "text",
       "content": "Tu",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-we": {
+    "wd-wed": {
       "parent": "mini-cal-weekdays",
       "order": 3,
       "type": "text",
       "content": "We",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-th": {
+    "wd-thu": {
       "parent": "mini-cal-weekdays",
       "order": 4,
       "type": "text",
       "content": "Th",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-fr": {
+    "wd-fri": {
       "parent": "mini-cal-weekdays",
       "order": 5,
       "type": "text",
       "content": "Fr",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "cal-day-sa": {
+    "wd-sat": {
       "parent": "mini-cal-weekdays",
       "order": 6,
       "type": "text",
       "content": "Sa",
-      "typography": "small",
-      "color": "text-secondary",
-      "weight": 600
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px",
+        "textAlign": "center"
+      }
     },
-    "mini-cal-grid": {
+    "mini-cal-days": {
       "parent": "mini-calendar-dropdown",
       "order": 2,
       "type": "container",
@@ -1111,672 +1506,933 @@
         "gap": 4
       }
     },
-    "cal-d1": {
-      "parent": "mini-cal-grid",
+    "day-empty-1": {
+      "parent": "mini-cal-days",
       "order": 0,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "overrides": {
-        "opacity": "0.3"
-      },
-      "children": []
+        "dir": "row"
+      }
     },
-    "cal-d2": {
-      "parent": "mini-cal-grid",
+    "day-empty-2": {
+      "parent": "mini-cal-days",
       "order": 1,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "overrides": {
-        "opacity": "0.3"
+        "dir": "row"
       }
     },
-    "cal-d3": {
-      "parent": "mini-cal-grid",
+    "day-empty-3": {
+      "parent": "mini-cal-days",
       "order": 2,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "overrides": {
-        "opacity": "0.3"
+        "dir": "row"
       }
     },
-    "cal-d4": {
-      "parent": "mini-cal-grid",
+    "day-1": {
+      "parent": "mini-cal-days",
       "order": 3,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      }
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
+      },
+      "children": []
     },
-    "cal-d4-text": {
-      "parent": "cal-d4",
+    "day-1-text": {
+      "parent": "day-1",
       "order": 0,
       "type": "text",
       "content": "1",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d5": {
-      "parent": "mini-cal-grid",
+    "day-2": {
+      "parent": "mini-cal-days",
       "order": 4,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d5-text": {
-      "parent": "cal-d5",
+    "day-2-text": {
+      "parent": "day-2",
       "order": 0,
       "type": "text",
       "content": "2",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d6": {
-      "parent": "mini-cal-grid",
+    "day-3": {
+      "parent": "mini-cal-days",
       "order": 5,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d6-text": {
-      "parent": "cal-d6",
+    "day-3-text": {
+      "parent": "day-3",
       "order": 0,
       "type": "text",
       "content": "3",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d7": {
-      "parent": "mini-cal-grid",
+    "day-4": {
+      "parent": "mini-cal-days",
       "order": 6,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d7-text": {
-      "parent": "cal-d7",
+    "day-4-text": {
+      "parent": "day-4",
       "order": 0,
       "type": "text",
       "content": "4",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d8": {
-      "parent": "mini-cal-grid",
+    "day-5": {
+      "parent": "mini-cal-days",
       "order": 7,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d8-text": {
-      "parent": "cal-d8",
+    "day-5-text": {
+      "parent": "day-5",
       "order": 0,
       "type": "text",
       "content": "5",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d9": {
-      "parent": "mini-cal-grid",
+    "day-6": {
+      "parent": "mini-cal-days",
       "order": 8,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d9-text": {
-      "parent": "cal-d9",
+    "day-6-text": {
+      "parent": "day-6",
       "order": 0,
       "type": "text",
       "content": "6",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d10": {
-      "parent": "mini-cal-grid",
+    "day-7": {
+      "parent": "mini-cal-days",
       "order": 9,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d10-text": {
-      "parent": "cal-d10",
+    "day-7-text": {
+      "parent": "day-7",
       "order": 0,
       "type": "text",
       "content": "7",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d11": {
-      "parent": "mini-cal-grid",
+    "day-8": {
+      "parent": "mini-cal-days",
       "order": 10,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d11-text": {
-      "parent": "cal-d11",
+    "day-8-text": {
+      "parent": "day-8",
       "order": 0,
       "type": "text",
       "content": "8",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d12": {
-      "parent": "mini-cal-grid",
+    "day-9": {
+      "parent": "mini-cal-days",
       "order": 11,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d12-text": {
-      "parent": "cal-d12",
+    "day-9-text": {
+      "parent": "day-9",
       "order": 0,
       "type": "text",
       "content": "9",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d13": {
-      "parent": "mini-cal-grid",
+    "day-10": {
+      "parent": "mini-cal-days",
       "order": 12,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d13-text": {
-      "parent": "cal-d13",
+    "day-10-text": {
+      "parent": "day-10",
       "order": 0,
       "type": "text",
       "content": "10",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d14": {
-      "parent": "mini-cal-grid",
+    "day-11": {
+      "parent": "mini-cal-days",
       "order": 13,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d14-text": {
-      "parent": "cal-d14",
+    "day-11-text": {
+      "parent": "day-11",
       "order": 0,
       "type": "text",
       "content": "11",
-      "typography": "small",
-      "color": "text-primary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d15": {
-      "parent": "mini-cal-grid",
+    "day-12": {
+      "parent": "mini-cal-days",
       "order": 14,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
-      "background": "cta-primary",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d15-text": {
-      "parent": "cal-d15",
+    "day-12-text": {
+      "parent": "day-12",
       "order": 0,
       "type": "text",
-      "content": "15",
-      "typography": "small",
-      "color": "text-on-cta",
-      "weight": 700
+      "content": "12",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d16": {
-      "parent": "mini-cal-grid",
+    "day-13": {
+      "parent": "mini-cal-days",
       "order": 15,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d16-text": {
-      "parent": "cal-d16",
+    "day-13-text": {
+      "parent": "day-13",
       "order": 0,
       "type": "text",
-      "content": "16",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "13",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d17": {
-      "parent": "mini-cal-grid",
+    "day-14": {
+      "parent": "mini-cal-days",
       "order": 16,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d17-text": {
-      "parent": "cal-d17",
+    "day-14-text": {
+      "parent": "day-14",
       "order": 0,
       "type": "text",
-      "content": "17",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "14",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d18": {
-      "parent": "mini-cal-grid",
+    "day-15-selected": {
+      "parent": "mini-cal-days",
       "order": 17,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "backgroundColor": "#F59E0B",
+        "cursor": "pointer"
       }
     },
-    "cal-d18-text": {
-      "parent": "cal-d18",
+    "day-15-text": {
+      "parent": "day-15-selected",
       "order": 0,
       "type": "text",
-      "content": "18",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "15",
+      "typography": "label",
+      "weight": 700,
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#0F172A",
+        "fontSize": "13px"
+      }
     },
-    "cal-d19": {
-      "parent": "mini-cal-grid",
+    "day-16": {
+      "parent": "mini-cal-days",
       "order": 18,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d19-text": {
-      "parent": "cal-d19",
+    "day-16-text": {
+      "parent": "day-16",
       "order": 0,
       "type": "text",
-      "content": "19",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "16",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d20": {
-      "parent": "mini-cal-grid",
+    "day-17": {
+      "parent": "mini-cal-days",
       "order": 19,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d20-text": {
-      "parent": "cal-d20",
+    "day-17-text": {
+      "parent": "day-17",
       "order": 0,
       "type": "text",
-      "content": "20",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "17",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d21": {
-      "parent": "mini-cal-grid",
+    "day-18": {
+      "parent": "mini-cal-days",
       "order": 20,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d21-text": {
-      "parent": "cal-d21",
+    "day-18-text": {
+      "parent": "day-18",
       "order": 0,
       "type": "text",
-      "content": "21",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "18",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d22": {
-      "parent": "mini-cal-grid",
+    "day-19": {
+      "parent": "mini-cal-days",
       "order": 21,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d22-text": {
-      "parent": "cal-d22",
+    "day-19-text": {
+      "parent": "day-19",
       "order": 0,
       "type": "text",
-      "content": "22",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "19",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d23": {
-      "parent": "mini-cal-grid",
+    "day-20": {
+      "parent": "mini-cal-days",
       "order": 22,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d23-text": {
-      "parent": "cal-d23",
+    "day-20-text": {
+      "parent": "day-20",
       "order": 0,
       "type": "text",
-      "content": "23",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "20",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d24": {
-      "parent": "mini-cal-grid",
+    "day-21": {
+      "parent": "mini-cal-days",
       "order": 23,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d24-text": {
-      "parent": "cal-d24",
+    "day-21-text": {
+      "parent": "day-21",
       "order": 0,
       "type": "text",
-      "content": "24",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "21",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d25": {
-      "parent": "mini-cal-grid",
+    "day-22": {
+      "parent": "mini-cal-days",
       "order": 24,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d25-text": {
-      "parent": "cal-d25",
+    "day-22-text": {
+      "parent": "day-22",
       "order": 0,
       "type": "text",
-      "content": "25",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "22",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d26": {
-      "parent": "mini-cal-grid",
+    "day-23": {
+      "parent": "mini-cal-days",
       "order": 25,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d26-text": {
-      "parent": "cal-d26",
+    "day-23-text": {
+      "parent": "day-23",
       "order": 0,
       "type": "text",
-      "content": "26",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "23",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d27": {
-      "parent": "mini-cal-grid",
+    "day-24": {
+      "parent": "mini-cal-days",
       "order": 26,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d27-text": {
-      "parent": "cal-d27",
+    "day-24-text": {
+      "parent": "day-24",
       "order": 0,
       "type": "text",
-      "content": "27",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "24",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d28": {
-      "parent": "mini-cal-grid",
+    "day-25": {
+      "parent": "mini-cal-days",
       "order": 27,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d28-text": {
-      "parent": "cal-d28",
+    "day-25-text": {
+      "parent": "day-25",
       "order": 0,
       "type": "text",
-      "content": "28",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "25",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d29": {
-      "parent": "mini-cal-grid",
+    "day-26": {
+      "parent": "mini-cal-days",
       "order": 28,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d29-text": {
-      "parent": "cal-d29",
+    "day-26-text": {
+      "parent": "day-26",
       "order": 0,
       "type": "text",
-      "content": "29",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "26",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d30": {
-      "parent": "mini-cal-grid",
+    "day-27": {
+      "parent": "mini-cal-days",
       "order": 29,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d30-text": {
-      "parent": "cal-d30",
+    "day-27-text": {
+      "parent": "day-27",
       "order": 0,
       "type": "text",
-      "content": "30",
-      "typography": "small",
-      "color": "text-primary"
+      "content": "27",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
     },
-    "cal-d31": {
-      "parent": "mini-cal-grid",
+    "day-28": {
+      "parent": "mini-cal-days",
       "order": 30,
       "type": "container",
       "width": 36,
       "height": 36,
-      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
       }
     },
-    "cal-d31-text": {
-      "parent": "cal-d31",
+    "day-28-text": {
+      "parent": "day-28",
+      "order": 0,
+      "type": "text",
+      "content": "28",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
+    },
+    "day-29": {
+      "parent": "mini-cal-days",
+      "order": 31,
+      "type": "container",
+      "width": 36,
+      "height": 36,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
+      }
+    },
+    "day-29-text": {
+      "parent": "day-29",
+      "order": 0,
+      "type": "text",
+      "content": "29",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
+    },
+    "day-30": {
+      "parent": "mini-cal-days",
+      "order": 32,
+      "type": "container",
+      "width": 36,
+      "height": 36,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
+      }
+    },
+    "day-30-text": {
+      "parent": "day-30",
+      "order": 0,
+      "type": "text",
+      "content": "30",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
+      }
+    },
+    "day-31": {
+      "parent": "mini-cal-days",
+      "order": 33,
+      "type": "container",
+      "width": 36,
+      "height": 36,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "radius": 9999,
+      "overrides": {
+        "cursor": "pointer"
+      }
+    },
+    "day-31-text": {
+      "parent": "day-31",
       "order": 0,
       "type": "text",
       "content": "31",
-      "typography": "small",
-      "color": "text-primary"
-    },
-    "payment-section": {
-      "parent": "content-col",
-      "order": 4,
-      "type": "section",
-      "width": "fill",
-      "background": "surface-primary",
-      "radius": 10,
-      "layout": {
-        "dir": "column",
-        "gap": 14,
-        "px": 24,
-        "py": 24
-      },
+      "typography": "label",
       "overrides": {
-        "border": "1px solid var(--border-default)"
+        "fontFamily": "DM Mono",
+        "color": "#CBD5E1",
+        "fontSize": "13px"
       }
     },
-    "payment-section-title": {
+    "payment-section": {
+      "parent": "expense-form-card",
+      "order": 5,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "payment-label": {
       "parent": "payment-section",
       "order": 0,
       "type": "text",
       "content": "Payment Method",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 600
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
+      }
     },
-    "payment-chip-row": {
+    "payment-chips-row": {
       "parent": "payment-section",
       "order": 1,
       "type": "container",
@@ -1784,12 +2440,12 @@
       "layout": {
         "dir": "row",
         "gap": 8,
-        "wrap": true,
-        "align": "center"
+        "align": "center",
+        "wrap": true
       }
     },
-    "pay-chip-visa": {
-      "parent": "payment-chip-row",
+    "pm-card": {
+      "parent": "payment-chips-row",
       "order": 0,
       "type": "container",
       "layout": {
@@ -1797,35 +2453,40 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "cta-primary",
       "radius": 9999,
       "overrides": {
-        "border": "2px solid var(--cta-primary)",
+        "backgroundColor": "#F59E0B",
+        "border": "2px solid #F59E0B",
         "cursor": "pointer"
       }
     },
-    "pay-chip-visa-icon": {
-      "parent": "pay-chip-visa",
+    "pm-card-icon": {
+      "parent": "pm-card",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "credit-card"
-      },
-      "color": "text-on-cta"
+        "name": "credit-card",
+        "color": "#0F172A",
+        "size": 14
+      }
     },
-    "pay-chip-visa-label": {
-      "parent": "pay-chip-visa",
+    "pm-card-label": {
+      "parent": "pm-card",
       "order": 1,
       "type": "text",
-      "content": "Visa ···· 4242",
+      "content": "Credit Card",
       "typography": "label",
-      "color": "text-on-cta",
-      "weight": 600
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#0F172A",
+        "fontSize": "12px"
+      }
     },
-    "pay-chip-mastercard": {
-      "parent": "payment-chip-row",
+    "pm-debit": {
+      "parent": "payment-chips-row",
       "order": 1,
       "type": "container",
       "layout": {
@@ -1833,34 +2494,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "pay-chip-mastercard-icon": {
-      "parent": "pay-chip-mastercard",
+    "pm-debit-icon": {
+      "parent": "pm-debit",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "credit-card"
-      },
-      "color": "text-secondary"
+        "name": "credit-card",
+        "color": "#64748B",
+        "size": 14
+      }
     },
-    "pay-chip-mastercard-label": {
-      "parent": "pay-chip-mastercard",
+    "pm-debit-label": {
+      "parent": "pm-debit",
       "order": 1,
       "type": "text",
-      "content": "Mastercard ···· 8891",
+      "content": "Debit Card",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "pay-chip-cash": {
-      "parent": "payment-chip-row",
+    "pm-cash": {
+      "parent": "payment-chips-row",
       "order": 2,
       "type": "container",
       "layout": {
@@ -1868,34 +2534,39 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "pay-chip-cash-icon": {
-      "parent": "pay-chip-cash",
+    "pm-cash-icon": {
+      "parent": "pm-cash",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "dollar-sign"
-      },
-      "color": "text-secondary"
+        "name": "dollar-sign",
+        "color": "#64748B",
+        "size": 14
+      }
     },
-    "pay-chip-cash-label": {
-      "parent": "pay-chip-cash",
+    "pm-cash-label": {
+      "parent": "pm-cash",
       "order": 1,
       "type": "text",
       "content": "Cash",
       "typography": "label",
-      "color": "text-primary"
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
     },
-    "pay-chip-paypal": {
-      "parent": "payment-chip-row",
+    "pm-wallet": {
+      "parent": "payment-chips-row",
       "order": 3,
       "type": "container",
       "layout": {
@@ -1903,128 +2574,203 @@
         "align": "center",
         "gap": 6,
         "px": 14,
-        "py": 10
+        "py": 8
       },
-      "background": "surface-primary",
       "radius": 9999,
       "overrides": {
-        "border": "1px solid var(--border-default)",
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
         "cursor": "pointer"
       }
     },
-    "pay-chip-paypal-icon": {
-      "parent": "pay-chip-paypal",
+    "pm-wallet-icon": {
+      "parent": "pm-wallet",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "wallet"
-      },
-      "color": "text-secondary"
-    },
-    "pay-chip-paypal-label": {
-      "parent": "pay-chip-paypal",
-      "order": 1,
-      "type": "text",
-      "content": "PayPal",
-      "typography": "label",
-      "color": "text-primary"
-    },
-    "note-section": {
-      "parent": "content-col",
-      "order": 5,
-      "type": "section",
-      "width": "fill",
-      "background": "surface-secondary",
-      "radius": 10,
-      "layout": {
-        "dir": "column",
-        "gap": 10,
-        "px": 24,
-        "py": 24
+        "name": "wallet",
+        "color": "#64748B",
+        "size": 14
       }
     },
-    "note-section-title": {
+    "pm-wallet-label": {
+      "parent": "pm-wallet",
+      "order": 1,
+      "type": "text",
+      "content": "Digital Wallet",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
+    },
+    "pm-bank": {
+      "parent": "payment-chips-row",
+      "order": 4,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6,
+        "px": 14,
+        "py": 8
+      },
+      "radius": 9999,
+      "overrides": {
+        "backgroundColor": "#293548",
+        "border": "1px solid #334155",
+        "cursor": "pointer"
+      }
+    },
+    "pm-bank-icon": {
+      "parent": "pm-bank",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "hash",
+        "color": "#64748B",
+        "size": 14
+      }
+    },
+    "pm-bank-label": {
+      "parent": "pm-bank",
+      "order": 1,
+      "type": "text",
+      "content": "Bank Transfer",
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#CBD5E1",
+        "fontSize": "12px"
+      }
+    },
+    "note-section": {
+      "parent": "expense-form-card",
+      "order": 6,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 6
+      }
+    },
+    "note-label": {
       "parent": "note-section",
       "order": 0,
       "type": "text",
-      "content": "Note (optional)",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 600
-    },
-    "note-input-field": {
-      "parent": "note-section",
-      "order": 1,
-      "catalog": "text-area",
-      "placeholder": "Add a note… e.g. Business lunch with client",
-      "width": "fill",
-      "height": 88,
+      "content": "Note",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500,
       "overrides": {
-        "borderRadius": "6px"
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em"
       }
     },
-    "note-footer-row": {
+    "note-textarea-wrapper": {
       "parent": "note-section",
-      "order": 2,
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "note-textarea": {
+      "parent": "note-textarea-wrapper",
+      "order": 0,
+      "catalog": "text-area",
+      "placeholder": "Add a note (optional) — e.g. business lunch with client",
+      "width": "fill",
+      "height": 80,
+      "overrides": {
+        "backgroundColor": "#293548",
+        "borderColor": "#334155",
+        "color": "#CBD5E1",
+        "fontFamily": "DM Mono",
+        "fontSize": "14px",
+        "borderRadius": "10px"
+      }
+    },
+    "note-counter-row": {
+      "parent": "note-textarea-wrapper",
+      "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "row",
         "justify": "end",
-        "align": "center"
+        "align": "center",
+        "pt": 4
       }
     },
-    "char-counter": {
-      "parent": "note-footer-row",
+    "note-counter": {
+      "parent": "note-counter-row",
       "order": 0,
       "type": "text",
       "content": "0 / 140",
-      "typography": "small",
-      "color": "text-secondary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Mono",
+        "color": "#64748B",
+        "fontSize": "11px"
+      }
+    },
+    "save-btn-wrapper": {
+      "parent": "expense-form-card",
+      "order": 7,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
     },
     "save-expense-btn": {
-      "parent": "content-col",
-      "order": 6,
+      "parent": "save-btn-wrapper",
+      "order": 0,
       "type": "container",
       "width": "fill",
       "height": 52,
-      "background": "cta-primary",
-      "radius": 10,
-      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center",
-        "gap": 8
+        "gap": 10
       },
+      "radius": 10,
       "navigateTo": "dashboard",
       "overrides": {
+        "backgroundColor": "#F59E0B",
         "cursor": "pointer"
       }
     },
-    "save-expense-icon": {
+    "save-btn-icon": {
       "parent": "save-expense-btn",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "check"
-      },
-      "color": "text-on-cta"
+        "name": "check-circle",
+        "color": "#0F172A",
+        "size": 20
+      }
     },
-    "save-expense-label": {
+    "save-btn-label": {
       "parent": "save-expense-btn",
       "order": 1,
       "type": "text",
       "content": "Save Expense",
       "typography": "heading-3",
-      "color": "text-on-cta",
-      "weight": 700
-    },
-    "bottom-spacer": {
-      "parent": "content-col",
-      "order": 7,
-      "type": "spacer",
-      "height": 80
+      "weight": 700,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#0F172A",
+        "fontSize": "16px"
+      }
     },
     "nav-tabs": {
       "parent": "root",
@@ -2032,20 +2778,19 @@
       "type": "container",
       "width": "fill",
       "height": 64,
-      "background": "surface-primary",
-      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "px": 0,
-        "py": 0
+        "px": 0
       },
+      "background": "surface-primary",
       "overrides": {
-        "borderTop": "1px solid var(--border-default)"
+        "borderTop": "1px solid #334155",
+        "backgroundColor": "#1E293B"
       }
     },
-    "nav-tab-home": {
+    "home-tab": {
       "parent": "nav-tabs",
       "order": 0,
       "type": "container",
@@ -2062,24 +2807,29 @@
         "cursor": "pointer"
       }
     },
-    "nav-tab-home-icon": {
-      "parent": "nav-tab-home",
+    "home-tab-icon": {
+      "parent": "home-tab",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "home"
-      },
-      "color": "text-secondary"
+        "name": "home",
+        "color": "#64748B",
+        "size": 20
+      }
     },
-    "nav-tab-home-label": {
-      "parent": "nav-tab-home",
+    "home-tab-label": {
+      "parent": "home-tab",
       "order": 1,
       "type": "text",
       "content": "Home",
-      "typography": "small",
-      "color": "text-secondary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px"
+      }
     },
-    "nav-tab-add": {
+    "add-expense-tab": {
       "parent": "nav-tabs",
       "order": 1,
       "type": "container",
@@ -2092,28 +2842,34 @@
         "gap": 4
       },
       "overrides": {
-        "cursor": "pointer"
+        "cursor": "pointer",
+        "borderTop": "2px solid #F59E0B"
       }
     },
-    "nav-tab-add-icon": {
-      "parent": "nav-tab-add",
+    "add-expense-tab-icon": {
+      "parent": "add-expense-tab",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "plus"
-      },
-      "color": "cta-primary"
+        "name": "plus",
+        "color": "#F59E0B",
+        "size": 20
+      }
     },
-    "nav-tab-add-label": {
-      "parent": "nav-tab-add",
+    "add-expense-tab-label": {
+      "parent": "add-expense-tab",
       "order": 1,
       "type": "text",
       "content": "Add Expense",
-      "typography": "small",
-      "color": "cta-primary",
-      "weight": 600
+      "typography": "label",
+      "weight": 600,
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#F59E0B",
+        "fontSize": "11px"
+      }
     },
-    "nav-tab-insights": {
+    "insights-tab": {
       "parent": "nav-tabs",
       "order": 2,
       "type": "container",
@@ -2130,22 +2886,27 @@
         "cursor": "pointer"
       }
     },
-    "nav-tab-insights-icon": {
-      "parent": "nav-tab-insights",
+    "insights-tab-icon": {
+      "parent": "insights-tab",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "bar-chart"
-      },
-      "color": "text-secondary"
+        "name": "bar-chart",
+        "color": "#64748B",
+        "size": 20
+      }
     },
-    "nav-tab-insights-label": {
-      "parent": "nav-tab-insights",
+    "insights-tab-label": {
+      "parent": "insights-tab",
       "order": 1,
       "type": "text",
       "content": "Insights",
-      "typography": "small",
-      "color": "text-secondary"
+      "typography": "label",
+      "overrides": {
+        "fontFamily": "DM Sans",
+        "color": "#64748B",
+        "fontSize": "11px"
+      }
     }
   }
 }

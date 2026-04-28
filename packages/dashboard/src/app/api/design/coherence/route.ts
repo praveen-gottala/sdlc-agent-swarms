@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { readYamlFile, readTextFile } from '../../_lib/project-reader';
+import { readDesignSpecText } from '@agentforge/core';
+import { readYamlFile, getActiveProjectRoot } from '../../_lib/project-reader';
 import { checkCoherence, type CoherenceResult, type PageInfo } from '../../../../lib/design/coherence-check';
 
 interface PageEntry {
@@ -71,7 +72,7 @@ export async function GET() {
   const results: CoherenceResult[] = [];
 
   for (const page of designedPages) {
-    const designText = readTextFile(`agentforge/designs/${page.id}.json`);
+    const designText = readDesignSpecText(getActiveProjectRoot(), page.id);
     if (!designText) {
       warnings.push(`Design file missing for page "${page.name}" (${page.id}).`);
       continue;

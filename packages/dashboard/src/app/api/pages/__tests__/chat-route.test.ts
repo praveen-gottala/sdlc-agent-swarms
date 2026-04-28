@@ -66,11 +66,15 @@ jest.mock('../../_lib/pipeline-helpers', () => ({
   transitionTaskStatus: jest.fn(),
 }));
 
+const mockWriteDesignSpec = jest.fn();
+
 jest.mock('@agentforge/core', () => ({
   addTask: jest.fn(() => ({ ok: true, value: { tasks: [] } })),
   saveTasks: jest.fn(),
   loadTasks: jest.fn(() => ({ ok: true, value: { tasks: [] } })),
   createRealFs: jest.fn(() => ({})),
+  readDesignSpecText: jest.fn(() => JSON.stringify({ screen: 'dashboard', width: 1440, nodes: { root: { parent: null, type: 'page', order: 0 } } })),
+  writeDesignSpec: (...args: unknown[]) => mockWriteDesignSpec(...args),
 }));
 
 jest.mock('fs', () => ({
@@ -189,10 +193,7 @@ describe('POST /api/pages/[pageId]/design/chat', () => {
 
     expect(mockApplyPatch).toHaveBeenCalledTimes(1);
 
-    const specWriteCalls = (writeFileSync as jest.Mock).mock.calls.filter(
-      (c: unknown[]) => typeof c[0] === 'string' && (c[0] as string).endsWith('dashboard.json'),
-    );
-    expect(specWriteCalls.length).toBeGreaterThanOrEqual(1);
+    expect(mockWriteDesignSpec).toHaveBeenCalledWith('/test-project', 'dashboard', expect.anything());
   });
 
   it('writes chat message artifact', async () => {

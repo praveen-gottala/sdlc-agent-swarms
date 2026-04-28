@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readYamlFile, writeYamlFile, fileExists } from '../_lib/project-reader';
+import { designSpecExists } from '@agentforge/core';
+import { readYamlFile, writeYamlFile, getActiveProjectRoot } from '../_lib/project-reader';
 
 interface PageEntry {
   id: string;
@@ -29,7 +30,7 @@ export async function GET() {
     status: p.status ?? 'draft',
     designStatus: (() => {
       const raw = p.designStatus ?? 'draft';
-      if (raw !== 'draft' && !fileExists(`agentforge/designs/${p.id}.json`)) return 'draft';
+      if (raw !== 'draft' && !designSpecExists(getActiveProjectRoot(), p.id)) return 'draft';
       return raw;
     })(),
     components: p.components ?? [],

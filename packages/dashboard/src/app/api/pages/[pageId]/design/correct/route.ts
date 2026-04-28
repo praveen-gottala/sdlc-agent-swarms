@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import { readDesignSpecText, writeDesignSpec, backupDesignSpec } from '@agentforge/core';
 import { join } from 'path';
 import {
   readYamlFile,
   writeYamlFile,
-  readTextFile,
   getActiveProjectRoot,
 } from '../../../../_lib/project-reader';
 import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../../_lib/llm-provider';
@@ -127,7 +127,8 @@ export async function POST(
     );
   }
 
-  const specContent = readTextFile(`agentforge/designs/${pageId}.json`);
+  const projectRoot = getActiveProjectRoot();
+  const specContent = readDesignSpecText(projectRoot, pageId);
   if (specContent === null) {
     return NextResponse.json(
       { error: 'Design spec not found. Generate a design first.' },
@@ -153,12 +154,11 @@ export async function POST(
   pages[idx].designStatus = 'correction';
   writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
-  const projectRoot = getActiveProjectRoot();
   const designsDir = join(projectRoot, 'agentforge', 'designs');
   if (!existsSync(designsDir)) {
     mkdirSync(designsDir, { recursive: true });
   }
-  writeFileSync(join(designsDir, `${pageId}.backup.json`), specContent, 'utf-8');
+  backupDesignSpec(projectRoot, pageId);
 
   const specNodeIds = Object.keys(spec.nodes);
   let feedbackMessage = issues
@@ -214,11 +214,7 @@ export async function POST(
       }
 
       const normalizedSpec = normalizeSpecOverrides(updatedSpec);
-      writeFileSync(
-        join(designsDir, `${pageId}.json`),
-        JSON.stringify(normalizedSpec, null, 2),
-        'utf-8',
-      );
+      writeDesignSpec(projectRoot, pageId, normalizedSpec);
     } else {
       const errMsg = 'message' in reviewResult.error ? reviewResult.error.message : String(reviewResult.error);
       const newIteration = currentIteration + 1;

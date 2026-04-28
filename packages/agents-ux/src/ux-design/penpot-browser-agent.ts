@@ -29,6 +29,7 @@ import {
   DEFAULT_SERVICE_URLS,
   debugLog,
   logDefaults,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
@@ -113,7 +114,9 @@ let systemPromptCache: string | undefined;
 const loadPenpotSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-penpot-design-system.md');
-  systemPromptCache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  const parsed = parsePromptFrontmatter(raw);
+  systemPromptCache = parsed.body;
   return systemPromptCache;
 };
 

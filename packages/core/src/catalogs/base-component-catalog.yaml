@@ -16,6 +16,24 @@ components:
       - name: footer
         contents: "action buttons (Button[]), metadata (label)"
         optional: true
+    variants:
+      elevated:
+        bg: surface-primary
+        text: text-primary
+        shadow: shadow-sm
+      flat:
+        bg: surface-secondary
+        text: text-primary
+      outlined:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+        border_width: 1
+      inset:
+        bg: surface-secondary
+        text: text-primary
+        border: border-default
+        border_width: 1
     states:
       default:
         bg: surface-primary
@@ -76,6 +94,20 @@ components:
         typography_role: heading-2
       - name: body
         contents: "Section content — cards, lists, tables"
+    variants:
+      flat:
+        bg: surface-secondary
+        text: text-primary
+      bordered:
+        bg: surface-primary
+        text: text-primary
+        border: border-default
+        border_width: 1
+      inset:
+        bg: surface-secondary
+        text: text-primary
+        border: border-default
+        border_width: 1
     states:
       default:
         bg: surface-primary

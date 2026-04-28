@@ -80,7 +80,7 @@ AgentForge is an autonomous multi-agent SDLC framework that takes a product idea
 | 8 | Implementation | PRD Section 24.2 specifies parallel frontend+backend+tests coders | Single-threaded tool-loop implementer with sequential write order |
 | 9 | Review | Not implemented | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
 | 10 | HITL | One approval gate after design | Three gates: clarification, design/API, code merge |
-| 11 | Observability | Langfuse self-hosted + OTel spans via packages/telemetry (ADR-046). Prompt versioning not yet implemented. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
+| 11 | Observability | Langfuse self-hosted + OTel spans via packages/telemetry (ADR-046). Prompt versioning implemented (frontmatter parser + TracedProvider metadata + pre-commit hook). Cost tracking not yet implemented. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
 | 12 | Evaluation | None | Golden test sets with CI-integrated regression detection |
 | 13 | Sandboxing | Runs on dev machine | Ephemeral containers, egress allowlist, zero-secret agent design |
 
@@ -501,7 +501,7 @@ Single-gate HITL means errors that occur earlier (clarification) or later (imple
 - **`LangfuseSink`** implements `PipelineTelemetrySink` for pipeline lifecycle spans (stage start/complete/fail).
 - **`CompositeSink`** combines transport sinks (CLI stdout, dashboard SSE) with LangfuseSink.
 - **Graceful degradation** — when `LANGFUSE_SECRET_KEY` is not set, all telemetry code is no-op.
-- No prompt versioning (git frontmatter + pre-commit hook not yet implemented).
+- **Prompt versioning** — `parsePromptFrontmatter()` strips YAML frontmatter from `.md` prompts; version recorded in `metadata.promptVersion` on Langfuse generation spans via `CompletionOptions.promptVersion`. Pre-commit hook (`scripts/check-prompt-versions.ts`) enforces version bumps.
 - Cost tracking exists in governance layer + telemetry sinks; not yet aggregated in Langfuse cost dashboard.
 
 ### Target vision

@@ -59,6 +59,7 @@ export function createTracedProvider(provider: LLMProvider): LLMProvider {
               system: systemPromptText(prompt.system),
               user: userMessageText(prompt.messages),
             },
+            ...(options.promptVersion ? { metadata: { promptVersion: options.promptVersion } } : {}),
           });
 
           const result = await provider.complete(prompt, options);

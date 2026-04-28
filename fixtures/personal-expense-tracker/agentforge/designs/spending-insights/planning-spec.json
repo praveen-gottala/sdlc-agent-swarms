@@ -1,5 +1,5 @@
 {
-  "specRef": "spec-spending-insights-1710000000000",
+  "specRef": "spec-spending-insights-1748390400000",
   "moduleId": "spending-insights",
   "componentTree": [
     {
@@ -7,23 +7,22 @@
       "props": [
         "maxWidth",
         "paddingX",
+        "paddingY",
         "gap"
       ],
       "defaultValues": {
         "maxWidth": 1280,
         "paddingX": 24,
+        "paddingY": 32,
         "gap": 24
       },
       "children": [
         "TopBar",
         "MonthSelector",
         "PeriodSummaryHeader",
-        "DailySpendingCard",
-        "TopCategoriesCard",
-        "BiggestExpensesCard",
-        "MonthComparisonCard",
+        "DailySpendingChartCard",
+        "AnalyticsBottomRow",
         "ExportCSVButton",
-        "NoDataEmptyState",
         "NavigationTabs",
         "SettingsDialog"
       ]
@@ -32,13 +31,41 @@
       "name": "TopBar",
       "props": [
         "title",
-        "showBackArrow",
-        "showSettingsIcon"
+        "showSettingsTrigger",
+        "height"
       ],
       "defaultValues": {
         "title": "Spending Insights",
-        "showBackArrow": false,
-        "showSettingsIcon": true
+        "showSettingsTrigger": 1,
+        "height": 64
+      },
+      "children": [
+        "SettingsDialogTrigger"
+      ]
+    },
+    {
+      "name": "SettingsDialogTrigger",
+      "props": [
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Open settings"
+      },
+      "navigateTo": "settings",
+      "children": []
+    },
+    {
+      "name": "SettingsDialog",
+      "props": [
+        "open",
+        "onClose",
+        "role",
+        "ariaModal"
+      ],
+      "defaultValues": {
+        "open": 0,
+        "role": "dialog",
+        "ariaModal": 1
       },
       "children": []
     },
@@ -47,111 +74,81 @@
       "props": [
         "currentMonth",
         "currentYear",
-        "onPrevious",
-        "onNext"
+        "ariaLiveRegion",
+        "height"
       ],
-      "defaultValues": {},
+      "defaultValues": {
+        "height": 48,
+        "ariaLiveRegion": "polite"
+      },
       "children": [
-        "PreviousMonthButton",
-        "MonthYearLabel",
+        "PrevMonthButton",
+        "MonthLabel",
         "NextMonthButton"
       ]
     },
     {
-      "name": "PreviousMonthButton",
+      "name": "PrevMonthButton",
       "props": [
-        "ariaLabel",
-        "minWidth",
-        "minHeight"
+        "ariaLabel"
       ],
       "defaultValues": {
-        "ariaLabel": "Previous month",
-        "minWidth": 44,
-        "minHeight": 44
+        "ariaLabel": "Previous month"
       },
       "children": []
     },
     {
-      "name": "MonthYearLabel",
+      "name": "MonthLabel",
       "props": [
         "label"
       ],
       "defaultValues": {
-        "label": "January 2024"
+        "label": "May 2025"
       },
       "children": []
     },
     {
       "name": "NextMonthButton",
       "props": [
-        "ariaLabel",
-        "minWidth",
-        "minHeight"
+        "ariaLabel"
       ],
       "defaultValues": {
-        "ariaLabel": "Next month",
-        "minWidth": 44,
-        "minHeight": 44
+        "ariaLabel": "Next month"
       },
       "children": []
     },
     {
       "name": "PeriodSummaryHeader",
       "props": [
-        "ariaLabel",
+        "paddingX",
+        "paddingY",
         "columnGap",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "columnGap": 24,
+        "borderRadius": 16
+      },
+      "children": [
+        "StatCell",
+        "StatCell",
+        "StatCell"
+      ]
+    },
+    {
+      "name": "StatCell",
+      "props": [
+        "label",
+        "value",
+        "ariaLabel",
+        "paddingX",
         "paddingY"
       ],
       "defaultValues": {
-        "ariaLabel": "Period summary",
-        "columnGap": 24,
-        "paddingY": 24
-      },
-      "children": [
-        "TotalSpentStatCell",
-        "DailyAverageStatCell",
-        "TransactionCountStatCell"
-      ]
-    },
-    {
-      "name": "TotalSpentStatCell",
-      "props": [
-        "label",
-        "value",
-        "currency"
-      ],
-      "defaultValues": {
-        "label": "Total Spent",
-        "value": "$0.00"
-      },
-      "children": [
-        "TrendIndicator"
-      ]
-    },
-    {
-      "name": "DailyAverageStatCell",
-      "props": [
-        "label",
-        "value",
-        "currency"
-      ],
-      "defaultValues": {
-        "label": "Daily Average",
-        "value": "$0.00"
-      },
-      "children": [
-        "TrendIndicator"
-      ]
-    },
-    {
-      "name": "TransactionCountStatCell",
-      "props": [
-        "label",
-        "value"
-      ],
-      "defaultValues": {
-        "label": "Transactions",
-        "value": "0"
+        "paddingX": 16,
+        "paddingY": 16
       },
       "children": [
         "TrendIndicator"
@@ -161,44 +158,46 @@
       "name": "TrendIndicator",
       "props": [
         "direction",
-        "magnitude",
+        "value",
+        "label",
         "ariaLabel"
       ],
       "defaultValues": {
         "direction": "up",
-        "magnitude": "0%",
-        "ariaLabel": "No change from last month"
+        "value": "+12%",
+        "label": "vs last month"
       },
       "children": []
     },
     {
-      "name": "DailySpendingCard",
+      "name": "DailySpendingChartCard",
       "props": [
         "paddingX",
         "paddingY",
         "borderRadius",
-        "ariaLabel"
+        "gap"
       ],
       "defaultValues": {
         "paddingX": 24,
         "paddingY": 24,
         "borderRadius": 16,
-        "ariaLabel": "Daily spending chart"
+        "gap": 16
       },
       "children": [
-        "DailySpendingCardHeader",
+        "ChartCardHeader",
         "DailySpendingChart",
-        "AverageDashedLine",
-        "ChartTooltip"
+        "NoDataEmptyState"
       ]
     },
     {
-      "name": "DailySpendingCardHeader",
+      "name": "ChartCardHeader",
       "props": [
-        "title"
+        "title",
+        "gap"
       ],
       "defaultValues": {
-        "title": "Daily Spending"
+        "title": "Daily Spending",
+        "gap": 12
       },
       "children": [
         "ChartTypeToggle"
@@ -208,13 +207,13 @@
       "name": "ChartTypeToggle",
       "props": [
         "activeType",
-        "role",
-        "ariaLabel"
+        "ariaLabel",
+        "height"
       ],
       "defaultValues": {
         "activeType": "bar",
-        "role": "radiogroup",
-        "ariaLabel": "Chart type"
+        "ariaLabel": "Chart type",
+        "height": 36
       },
       "children": []
     },
@@ -222,43 +221,79 @@
       "name": "DailySpendingChart",
       "props": [
         "chartType",
-        "data",
         "height",
+        "borderRadius",
         "ariaLabel"
       ],
       "defaultValues": {
         "chartType": "bar",
         "height": 240,
-        "ariaLabel": "Daily spending bar chart"
+        "borderRadius": 10,
+        "ariaLabel": "Daily spending chart"
       },
-      "children": []
+      "children": [
+        "AverageDashedLine",
+        "ChartTooltip"
+      ]
     },
     {
       "name": "AverageDashedLine",
       "props": [
         "averageValue",
-        "color",
-        "strokeDasharray"
+        "ariaLabel"
       ],
       "defaultValues": {
-        "strokeDasharray": "6 3"
+        "ariaLabel": "Daily average spending line"
       },
       "children": []
     },
     {
       "name": "ChartTooltip",
       "props": [
+        "visible",
         "date",
         "amount",
-        "currency",
-        "visible",
-        "ariaLive"
+        "zIndex"
       ],
       "defaultValues": {
-        "visible": false,
-        "ariaLive": "polite"
+        "visible": 0,
+        "zIndex": 1400
       },
       "children": []
+    },
+    {
+      "name": "NoDataEmptyState",
+      "props": [
+        "heading",
+        "body",
+        "role",
+        "ariaLive",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "heading": "No data for this month",
+        "body": "Add expenses to see your spending insights.",
+        "role": "status",
+        "ariaLive": "polite",
+        "paddingY": 48
+      },
+      "children": []
+    },
+    {
+      "name": "AnalyticsBottomRow",
+      "props": [
+        "columnGap",
+        "columns"
+      ],
+      "defaultValues": {
+        "columnGap": 24,
+        "columns": 3
+      },
+      "children": [
+        "TopCategoriesCard",
+        "BiggestExpensesCard",
+        "MonthComparisonCard"
+      ]
     },
     {
       "name": "TopCategoriesCard",
@@ -266,34 +301,24 @@
         "paddingX",
         "paddingY",
         "borderRadius",
-        "ariaLabel"
+        "gap",
+        "title"
       ],
       "defaultValues": {
         "paddingX": 24,
         "paddingY": 24,
         "borderRadius": 16,
-        "ariaLabel": "Top spending categories"
-      },
-      "children": [
-        "TopCategoriesCardHeader",
-        "StackedCategoryBar",
-        "CategoryDetailRowList"
-      ]
-    },
-    {
-      "name": "TopCategoriesCardHeader",
-      "props": [
-        "title"
-      ],
-      "defaultValues": {
+        "gap": 16,
         "title": "Top Categories"
       },
-      "children": []
+      "children": [
+        "StackedCategoryBar",
+        "CategoryDetailRow"
+      ]
     },
     {
       "name": "StackedCategoryBar",
       "props": [
-        "segments",
         "height",
         "borderRadius",
         "ariaLabel"
@@ -301,50 +326,23 @@
       "defaultValues": {
         "height": 12,
         "borderRadius": 6,
-        "ariaLabel": "Category spending breakdown bar"
+        "ariaLabel": "Category spending breakdown"
       },
       "children": []
-    },
-    {
-      "name": "CategoryDetailRowList",
-      "props": [
-        "rowGap"
-      ],
-      "defaultValues": {
-        "rowGap": 12
-      },
-      "children": [
-        "CategoryDetailRow"
-      ]
     },
     {
       "name": "CategoryDetailRow",
       "props": [
         "categoryName",
-        "colorHex",
+        "colorToken",
         "amount",
         "percentage",
+        "rowGap",
         "ariaLabel"
       ],
       "defaultValues": {
-        "ariaLabel": "Category spending detail"
-      },
-      "children": [
-        "CategoryProgressBar"
-      ]
-    },
-    {
-      "name": "CategoryProgressBar",
-      "props": [
-        "value",
-        "ariaValueNow",
-        "ariaValueMin",
-        "ariaValueMax",
-        "ariaLabel"
-      ],
-      "defaultValues": {
-        "ariaValueMin": 0,
-        "ariaValueMax": 100
+        "rowGap": 8,
+        "ariaLabel": "Category spending row"
       },
       "children": []
     },
@@ -354,36 +352,15 @@
         "paddingX",
         "paddingY",
         "borderRadius",
-        "ariaLabel"
+        "gap",
+        "title"
       ],
       "defaultValues": {
         "paddingX": 24,
         "paddingY": 24,
         "borderRadius": 16,
-        "ariaLabel": "Biggest expenses this month"
-      },
-      "children": [
-        "BiggestExpensesCardHeader",
-        "RankedExpenseRowList"
-      ]
-    },
-    {
-      "name": "BiggestExpensesCardHeader",
-      "props": [
-        "title"
-      ],
-      "defaultValues": {
+        "gap": 12,
         "title": "Biggest Expenses"
-      },
-      "children": []
-    },
-    {
-      "name": "RankedExpenseRowList",
-      "props": [
-        "rowGap"
-      ],
-      "defaultValues": {
-        "rowGap": 8
       },
       "children": [
         "RankedExpenseRow"
@@ -395,14 +372,13 @@
         "rank",
         "merchant",
         "categoryName",
-        "categoryColorHex",
         "amount",
-        "date",
-        "currency",
-        "role",
-        "ariaLabel"
+        "minHeight",
+        "ariaLabel",
+        "role"
       ],
       "defaultValues": {
+        "minHeight": 44,
         "role": "button",
         "ariaLabel": "Edit expense"
       },
@@ -415,53 +391,46 @@
         "paddingX",
         "paddingY",
         "borderRadius",
-        "ariaLabel"
+        "gap",
+        "title"
       ],
       "defaultValues": {
         "paddingX": 24,
         "paddingY": 24,
         "borderRadius": 16,
-        "ariaLabel": "Month over month comparison"
+        "gap": 16,
+        "title": "Month Comparison"
       },
       "children": [
-        "MonthComparisonCardHeader",
         "ComparisonBars",
         "SpendingDiffBadge"
       ]
     },
     {
-      "name": "MonthComparisonCardHeader",
-      "props": [
-        "title"
-      ],
-      "defaultValues": {
-        "title": "Month Comparison"
-      },
-      "children": []
-    },
-    {
       "name": "ComparisonBars",
       "props": [
-        "currentMonthAmount",
-        "previousMonthAmount",
-        "currentMonthLabel",
-        "previousMonthLabel",
+        "currentAmount",
+        "previousAmount",
+        "height",
+        "gap",
         "ariaLabel"
       ],
       "defaultValues": {
-        "ariaLabel": "Spending comparison bars"
+        "height": 120,
+        "gap": 16,
+        "ariaLabel": "Month over month spending comparison"
       },
       "children": []
     },
     {
       "name": "SpendingDiffBadge",
       "props": [
-        "delta",
-        "direction",
+        "diffValue",
+        "diffDirection",
         "ariaLabel"
       ],
       "defaultValues": {
-        "ariaLabel": "Spending difference from last month"
+        "ariaLabel": "Spending difference badge"
       },
       "children": []
     },
@@ -470,32 +439,14 @@
       "props": [
         "label",
         "ariaLabel",
-        "disabled",
-        "minWidth",
-        "minHeight"
+        "alignSelf",
+        "height"
       ],
       "defaultValues": {
         "label": "Export CSV",
-        "ariaLabel": "Export expenses for selected month as CSV",
-        "disabled": false,
-        "minWidth": 44,
-        "minHeight": 44
-      },
-      "children": []
-    },
-    {
-      "name": "NoDataEmptyState",
-      "props": [
-        "heading",
-        "body",
-        "ariaLive",
-        "visible"
-      ],
-      "defaultValues": {
-        "heading": "No data for this month",
-        "body": "Add expenses to see your spending insights.",
-        "ariaLive": "polite",
-        "visible": false
+        "ariaLabel": "Export expenses for this month as CSV",
+        "alignSelf": "flex-end",
+        "height": 44
       },
       "children": []
     },
@@ -503,82 +454,53 @@
       "name": "NavigationTabs",
       "props": [
         "activeTab",
-        "role"
+        "height"
       ],
       "defaultValues": {
         "activeTab": "insights",
-        "role": "tablist"
+        "height": 64
       },
       "children": [
-        "HomeTab",
-        "AddExpenseTab",
-        "InsightsTab"
+        "HomeTabButton",
+        "AddExpenseTabButton",
+        "InsightsTabButton"
       ]
     },
     {
-      "name": "HomeTab",
+      "name": "HomeTabButton",
       "props": [
         "label",
-        "role",
-        "ariaSelected",
-        "minWidth",
-        "minHeight"
+        "ariaLabel"
       ],
       "defaultValues": {
         "label": "Home",
-        "role": "tab",
-        "ariaSelected": false,
-        "minWidth": 44,
-        "minHeight": 44
+        "ariaLabel": "Go to Home"
       },
       "navigateTo": "dashboard",
       "children": []
     },
     {
-      "name": "AddExpenseTab",
+      "name": "AddExpenseTabButton",
       "props": [
         "label",
-        "role",
-        "ariaSelected",
-        "minWidth",
-        "minHeight"
+        "ariaLabel"
       ],
       "defaultValues": {
         "label": "Add Expense",
-        "role": "tab",
-        "ariaSelected": false,
-        "minWidth": 44,
-        "minHeight": 44
+        "ariaLabel": "Go to Add Expense"
       },
       "navigateTo": "add-expense",
       "children": []
     },
     {
-      "name": "InsightsTab",
+      "name": "InsightsTabButton",
       "props": [
         "label",
-        "role",
-        "ariaSelected",
-        "minWidth",
-        "minHeight"
+        "ariaLabel"
       ],
       "defaultValues": {
         "label": "Insights",
-        "role": "tab",
-        "ariaSelected": true,
-        "minWidth": 44,
-        "minHeight": 44
-      },
-      "children": []
-    },
-    {
-      "name": "SettingsDialog",
-      "props": [
-        "open",
-        "onClose"
-      ],
-      "defaultValues": {
-        "open": false
+        "ariaLabel": "Spending Insights (current page)"
       },
       "children": []
     }
@@ -587,118 +509,108 @@
     "InsightsPageLayout.background": "background-primary",
     "TopBar.background": "surface-primary",
     "TopBar.borderBottom": "border-default",
-    "TopBar.color": "text-primary",
-    "MonthSelector.color": "text-primary",
+    "TopBar.titleTypography": "heading-2",
+    "TopBar.shadow": "elevation-1",
     "MonthSelector.background": "surface-primary",
-    "PreviousMonthButton.color": "text-secondary",
-    "PreviousMonthButton.focusRingColor": "border-focus",
-    "NextMonthButton.color": "text-secondary",
-    "NextMonthButton.focusRingColor": "border-focus",
-    "MonthYearLabel.typography": "heading-2",
-    "MonthYearLabel.color": "text-primary",
+    "MonthSelector.labelTypography": "heading-2",
+    "MonthSelector.controlColor": "text-secondary",
+    "PrevMonthButton.focusRingColor": "focus-ring-color",
+    "NextMonthButton.focusRingColor": "focus-ring-color",
     "PeriodSummaryHeader.background": "surface-primary",
-    "PeriodSummaryHeader.borderRadius": "large",
     "PeriodSummaryHeader.shadow": "elevation-1",
-    "TotalSpentStatCell.labelTypography": "label",
-    "TotalSpentStatCell.labelColor": "text-secondary",
-    "TotalSpentStatCell.valueTypography": "heading-1",
-    "TotalSpentStatCell.valueColor": "text-primary",
-    "DailyAverageStatCell.labelTypography": "label",
-    "DailyAverageStatCell.labelColor": "text-secondary",
-    "DailyAverageStatCell.valueTypography": "heading-1",
-    "DailyAverageStatCell.valueColor": "text-primary",
-    "TransactionCountStatCell.labelTypography": "label",
-    "TransactionCountStatCell.labelColor": "text-secondary",
-    "TransactionCountStatCell.valueTypography": "heading-1",
-    "TransactionCountStatCell.valueColor": "text-primary",
+    "PeriodSummaryHeader.borderRadius": "large",
+    "PeriodSummaryHeader.border": "border-default",
+    "StatCell.labelTypography": "label",
+    "StatCell.labelColor": "text-secondary",
+    "StatCell.valueTypography": "heading-1",
+    "StatCell.valueColor": "text-primary",
     "TrendIndicator.positiveColor": "success",
     "TrendIndicator.negativeColor": "error",
     "TrendIndicator.typography": "label",
-    "TrendIndicator.borderRadius": "pill",
-    "DailySpendingCard.background": "surface-primary",
-    "DailySpendingCard.borderRadius": "large",
-    "DailySpendingCard.shadow": "elevation-1",
-    "DailySpendingCardHeader.typography": "heading-2",
-    "DailySpendingCardHeader.color": "text-primary",
+    "DailySpendingChartCard.background": "surface-primary",
+    "DailySpendingChartCard.shadow": "elevation-1",
+    "DailySpendingChartCard.borderRadius": "large",
+    "ChartCardHeader.titleTypography": "heading-2",
+    "ChartCardHeader.titleColor": "text-primary",
     "ChartTypeToggle.background": "surface-elevated",
     "ChartTypeToggle.activeBackground": "cta-primary",
-    "ChartTypeToggle.activeColor": "text-on-cta",
-    "ChartTypeToggle.inactiveColor": "text-secondary",
+    "ChartTypeToggle.activeTextColor": "text-on-cta",
+    "ChartTypeToggle.inactiveTextColor": "text-secondary",
     "ChartTypeToggle.borderRadius": "pill",
-    "ChartTypeToggle.focusRingColor": "border-focus",
-    "DailySpendingChart.barColor": "cta-primary",
-    "DailySpendingChart.axisColor": "text-secondary",
-    "DailySpendingChart.gridColor": "border-default",
-    "AverageDashedLine.color": "warning",
+    "ChartTypeToggle.typography": "label",
+    "ChartTypeToggle.focusRingColor": "focus-ring-color",
+    "DailySpendingChart.background": "surface-elevated",
+    "DailySpendingChart.borderRadius": "medium",
+    "AverageDashedLine.strokeColor": "warning",
+    "AverageDashedLine.labelTypography": "small",
+    "AverageDashedLine.labelColor": "text-secondary",
     "ChartTooltip.background": "surface-elevated",
-    "ChartTooltip.color": "text-primary",
+    "ChartTooltip.border": "border-default",
     "ChartTooltip.shadow": "elevation-2",
     "ChartTooltip.borderRadius": "medium",
-    "ChartTooltip.typography": "body",
-    "TopCategoriesCard.background": "surface-primary",
-    "TopCategoriesCard.borderRadius": "large",
-    "TopCategoriesCard.shadow": "elevation-1",
-    "TopCategoriesCardHeader.typography": "heading-2",
-    "TopCategoriesCardHeader.color": "text-primary",
-    "StackedCategoryBar.background": "border-default",
-    "CategoryDetailRow.background": "surface-primary",
-    "CategoryDetailRow.borderRadius": "medium",
-    "CategoryDetailRow.nameTypography": "body",
-    "CategoryDetailRow.nameColor": "text-primary",
-    "CategoryDetailRow.amountTypography": "body",
-    "CategoryDetailRow.amountColor": "text-primary",
-    "CategoryDetailRow.percentageTypography": "label",
-    "CategoryDetailRow.percentageColor": "text-secondary",
-    "CategoryProgressBar.trackBackground": "surface-elevated",
-    "CategoryProgressBar.borderRadius": "pill",
-    "BiggestExpensesCard.background": "surface-elevated",
-    "BiggestExpensesCard.borderRadius": "large",
-    "BiggestExpensesCard.shadow": "elevation-1",
-    "BiggestExpensesCardHeader.typography": "heading-2",
-    "BiggestExpensesCardHeader.color": "text-primary",
-    "RankedExpenseRow.background": "surface-primary",
-    "RankedExpenseRow.borderRadius": "medium",
-    "RankedExpenseRow.rankTypography": "label",
-    "RankedExpenseRow.rankColor": "text-secondary",
-    "RankedExpenseRow.merchantTypography": "body",
-    "RankedExpenseRow.merchantColor": "text-primary",
-    "RankedExpenseRow.amountTypography": "body",
-    "RankedExpenseRow.amountColor": "text-primary",
-    "RankedExpenseRow.dateTypography": "small",
-    "RankedExpenseRow.dateColor": "text-secondary",
-    "RankedExpenseRow.focusRingColor": "border-focus",
-    "MonthComparisonCard.background": "surface-primary",
-    "MonthComparisonCard.borderRadius": "large",
-    "MonthComparisonCard.shadow": "elevation-1",
-    "MonthComparisonCardHeader.typography": "heading-2",
-    "MonthComparisonCardHeader.color": "text-primary",
-    "ComparisonBars.currentBarColor": "cta-primary",
-    "ComparisonBars.previousBarColor": "border-default",
-    "ComparisonBars.labelTypography": "label",
-    "ComparisonBars.labelColor": "text-secondary",
-    "ComparisonBars.borderRadius": "pill",
-    "SpendingDiffBadge.positiveBackground": "success",
-    "SpendingDiffBadge.negativeBackground": "error",
-    "SpendingDiffBadge.typography": "label",
-    "SpendingDiffBadge.borderRadius": "pill",
-    "ExportCSVButton.color": "text-primary",
-    "ExportCSVButton.border": "border-default",
-    "ExportCSVButton.borderRadius": "medium",
-    "ExportCSVButton.typography": "label",
-    "ExportCSVButton.focusRingColor": "border-focus",
-    "ExportCSVButton.disabledOpacity": "opacity-disabled",
-    "NoDataEmptyState.background": "background-primary",
+    "ChartTooltip.typography": "label",
+    "ChartTooltip.textColor": "text-primary",
+    "NoDataEmptyState.background": "surface-elevated",
+    "NoDataEmptyState.borderRadius": "medium",
     "NoDataEmptyState.headingTypography": "heading-2",
     "NoDataEmptyState.headingColor": "text-primary",
     "NoDataEmptyState.bodyTypography": "body",
     "NoDataEmptyState.bodyColor": "text-secondary",
+    "TopCategoriesCard.background": "surface-primary",
+    "TopCategoriesCard.shadow": "elevation-1",
+    "TopCategoriesCard.borderRadius": "large",
+    "TopCategoriesCard.titleTypography": "heading-2",
+    "TopCategoriesCard.titleColor": "text-primary",
+    "StackedCategoryBar.background": "surface-elevated",
+    "StackedCategoryBar.borderRadius": "small",
+    "CategoryDetailRow.labelTypography": "body",
+    "CategoryDetailRow.labelColor": "text-primary",
+    "CategoryDetailRow.amountTypography": "label",
+    "CategoryDetailRow.amountColor": "text-secondary",
+    "CategoryDetailRow.progressTrackBackground": "surface-elevated",
+    "CategoryDetailRow.progressBorderRadius": "pill",
+    "BiggestExpensesCard.background": "surface-primary",
+    "BiggestExpensesCard.shadow": "elevation-1",
+    "BiggestExpensesCard.borderRadius": "large",
+    "BiggestExpensesCard.titleTypography": "heading-2",
+    "BiggestExpensesCard.titleColor": "text-primary",
+    "RankedExpenseRow.rankTypography": "label",
+    "RankedExpenseRow.rankColor": "text-secondary",
+    "RankedExpenseRow.merchantTypography": "body",
+    "RankedExpenseRow.merchantColor": "text-primary",
+    "RankedExpenseRow.amountTypography": "heading-3",
+    "RankedExpenseRow.amountColor": "text-primary",
+    "RankedExpenseRow.categoryBadgeBorderRadius": "pill",
+    "RankedExpenseRow.hoverBackground": "surface-elevated",
+    "RankedExpenseRow.focusRingColor": "focus-ring-color",
+    "RankedExpenseRow.border": "border-default",
+    "MonthComparisonCard.background": "surface-primary",
+    "MonthComparisonCard.shadow": "elevation-1",
+    "MonthComparisonCard.borderRadius": "large",
+    "MonthComparisonCard.titleTypography": "heading-2",
+    "MonthComparisonCard.titleColor": "text-primary",
+    "ComparisonBars.background": "surface-elevated",
+    "ComparisonBars.borderRadius": "medium",
+    "ComparisonBars.currentBarColor": "cta-primary",
+    "ComparisonBars.previousBarColor": "text-secondary",
+    "ComparisonBars.labelTypography": "label",
+    "ComparisonBars.labelColor": "text-secondary",
+    "SpendingDiffBadge.underBudgetColor": "success",
+    "SpendingDiffBadge.overBudgetColor": "error",
+    "SpendingDiffBadge.warningColor": "warning",
+    "SpendingDiffBadge.borderRadius": "pill",
+    "SpendingDiffBadge.typography": "label",
+    "ExportCSVButton.background": "cta-primary",
+    "ExportCSVButton.textColor": "text-on-cta",
+    "ExportCSVButton.borderRadius": "medium",
+    "ExportCSVButton.typography": "label",
+    "ExportCSVButton.focusRingColor": "focus-ring-color",
     "NavigationTabs.background": "surface-primary",
     "NavigationTabs.borderTop": "border-default",
     "NavigationTabs.activeColor": "cta-primary",
     "NavigationTabs.inactiveColor": "text-secondary",
     "NavigationTabs.typography": "label",
-    "InsightsTab.activeColor": "cta-primary",
-    "SettingsDialog.background": "surface-elevated",
+    "SettingsDialog.background": "surface-primary",
     "SettingsDialog.shadow": "elevation-3",
     "SettingsDialog.borderRadius": "large",
     "SettingsDialog.overlay": "overlay"
@@ -707,18 +619,19 @@
     {
       "breakpoint": "desktop",
       "width": 1440,
-      "behavior": "Full-width analytical layout with 1280px content max-width, 24px margins, 24px gutters on 12-column grid. PeriodSummaryHeader displays three StatCells in a horizontal row. DailySpendingChart, TopCategoriesCard, BiggestExpensesCard, and MonthComparisonCard stack vertically as full-width cards. ChartTypeToggle anchored top-right of DailySpendingCard header. ExportCSVButton right-aligned below all cards.",
-      "layout": "single-column-centered",
+      "behavior": "Full 12-column grid layout at 1280px max content width with 24px gutters and 24px margins. Three-column bottom analytics row. TopBar and NavigationTabs span full width.",
+      "layout": "multi-column",
       "changes": [
-        "Content max-width 1280px centered with 24px side margins",
-        "PeriodSummaryHeader: three StatCells in horizontal row with 24px column gap",
-        "DailySpendingCard: full-width with ChartTypeToggle inline in card header top-right",
-        "TopCategoriesCard: full-width with StackedCategoryBar above CategoryDetailRowList",
-        "BiggestExpensesCard: full-width ranked list",
-        "MonthComparisonCard: full-width with ComparisonBars and SpendingDiffBadge",
-        "ExportCSVButton: right-aligned flush to content right boundary",
-        "NavigationTabs: fixed bottom bar with three tabs",
-        "NoDataEmptyState: centered in full content area below MonthSelector when visible"
+        "InsightsPageLayout max-width 1280px centered with 24px horizontal margins",
+        "PeriodSummaryHeader renders as horizontal 3-column equal-width StatCell row with 24px column gap",
+        "DailySpendingChartCard spans full content width below PeriodSummaryHeader",
+        "AnalyticsBottomRow renders as 3-column equal-width grid with 24px column gap: TopCategoriesCard, BiggestExpensesCard, MonthComparisonCard",
+        "ExportCSVButton right-aligned below AnalyticsBottomRow",
+        "ChartTypeToggle displayed inline right-aligned in ChartCardHeader",
+        "NavigationTabs fixed at bottom spanning full viewport width",
+        "TopBar fixed at top spanning full viewport width at 64px height",
+        "SettingsDialog rendered as modal overlay with z-index 1200",
+        "ChartTooltip rendered with z-index 1400"
       ]
     }
   ],
@@ -728,42 +641,36 @@
       "components": [
         "InsightsPageLayout",
         "TopBar",
+        "SettingsDialogTrigger",
+        "SettingsDialog",
         "MonthSelector",
-        "PreviousMonthButton",
-        "MonthYearLabel",
+        "PrevMonthButton",
+        "MonthLabel",
         "NextMonthButton",
         "PeriodSummaryHeader",
-        "TotalSpentStatCell",
-        "DailyAverageStatCell",
-        "TransactionCountStatCell",
+        "StatCell",
         "TrendIndicator",
-        "DailySpendingCard",
-        "DailySpendingCardHeader",
+        "DailySpendingChartCard",
+        "ChartCardHeader",
         "ChartTypeToggle",
         "DailySpendingChart",
         "AverageDashedLine",
         "ChartTooltip",
+        "NoDataEmptyState",
+        "AnalyticsBottomRow",
         "TopCategoriesCard",
-        "TopCategoriesCardHeader",
         "StackedCategoryBar",
-        "CategoryDetailRowList",
         "CategoryDetailRow",
-        "CategoryProgressBar",
         "BiggestExpensesCard",
-        "BiggestExpensesCardHeader",
-        "RankedExpenseRowList",
         "RankedExpenseRow",
         "MonthComparisonCard",
-        "MonthComparisonCardHeader",
         "ComparisonBars",
         "SpendingDiffBadge",
         "ExportCSVButton",
-        "NoDataEmptyState",
         "NavigationTabs",
-        "HomeTab",
-        "AddExpenseTab",
-        "InsightsTab",
-        "SettingsDialog"
+        "HomeTabButton",
+        "AddExpenseTabButton",
+        "InsightsTabButton"
       ]
     }
   ]

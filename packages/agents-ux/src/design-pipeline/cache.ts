@@ -6,7 +6,7 @@
  */
 
 import { join } from 'node:path';
-import { PREVIEW_DIR_REL, PIPELINE_ARTIFACTS } from '@agentforge/core';
+import { PREVIEW_DIR_REL, PIPELINE_ARTIFACTS, writeDesignSpec } from '@agentforge/core';
 import { migrateResearchArtifact, migratePlanningArtifact } from '@agentforge/core';
 import type { FileSystem } from '@agentforge/core';
 import { UXResearchOutputSchema } from '../schemas.js';
@@ -93,4 +93,8 @@ export function saveCachedArtifact(
       ? data.spec
       : data;
   fs.writeFile(path, JSON.stringify(payload, null, 2));
+
+  if (artifact === 'designSpecV2') {
+    writeDesignSpec(projectRoot, moduleId, payload);
+  }
 }

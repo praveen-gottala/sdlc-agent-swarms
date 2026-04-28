@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "test": "jest",
     "test:e2e": "playwright test",
+    "check:prompts": "npx tsx scripts/check-prompt-versions.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "dev:dashboard": "npx concurrently \"cd packages/dashboard && npx next dev\" \"cd packages/designspec-renderer/src/renderer/browser/app && npx vite --port 4100\""

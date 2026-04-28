@@ -46,8 +46,17 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
 }));
 
+const mockWriteDesignSpec = jest.fn();
+const mockReadDesignSpecText = jest.fn();
+const mockBackupDesignSpec = jest.fn();
+
+jest.mock('@agentforge/core', () => ({
+  readDesignSpecText: (...args: unknown[]) => mockReadDesignSpecText(...args),
+  writeDesignSpec: (...args: unknown[]) => mockWriteDesignSpec(...args),
+  backupDesignSpec: (...args: unknown[]) => mockBackupDesignSpec(...args),
+}));
+
 import { readYamlFile, writeYamlFile, readTextFile } from '../../_lib/project-reader';
-import { writeFileSync } from 'fs';
 import { BrowserFeedbackAdapter } from '@agentforge/agents-ux';
 
 const mockReadYaml = readYamlFile as jest.MockedFunction<typeof readYamlFile>;
@@ -99,6 +108,8 @@ describe('POST /api/pages/[pageId]/design/correct', () => {
         pages = (data as { pages: Array<Record<string, unknown>> }).pages;
       }
     });
+
+    mockReadDesignSpecText.mockReturnValue(JSON.stringify(SAMPLE_SPEC));
 
     mockReadText.mockImplementation((path: string) => {
       if (path === 'agentforge/designs/dashboard.json') {
@@ -184,10 +195,7 @@ describe('POST /api/pages/[pageId]/design/correct', () => {
 
     expect(mockApplyPatch).toHaveBeenCalledTimes(1);
 
-    const specWriteCalls = (writeFileSync as jest.Mock).mock.calls.filter(
-      (c: unknown[]) => typeof c[0] === 'string' && (c[0] as string).endsWith('dashboard.json'),
-    );
-    expect(specWriteCalls.length).toBe(1);
+    expect(mockWriteDesignSpec).toHaveBeenCalledWith('/test-project', 'dashboard', expect.anything());
   });
 
   it('increments correctionIteration', async () => {

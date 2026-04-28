@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeDesignSpec } from '@agentforge/core';
 import {
   readYamlFile,
   writeYamlFile,
@@ -192,18 +191,8 @@ async function runPipelineAsync(
 
     const state = result.value;
 
-    // Write design spec to the canonical location
-    const designsDir = join(projectRoot, 'agentforge', 'designs');
-    if (!existsSync(designsDir)) {
-      mkdirSync(designsDir, { recursive: true });
-    }
-
     if (state.design?.spec) {
-      writeFileSync(
-        join(designsDir, `${pageId}.json`),
-        JSON.stringify(state.design.spec, null, 2),
-        'utf-8',
-      );
+      writeDesignSpec(projectRoot, pageId, state.design.spec);
     }
 
     // Update page status

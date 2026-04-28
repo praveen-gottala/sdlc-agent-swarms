@@ -22,6 +22,7 @@ import {
   runAgent,
   loadDesignTokens,
   safeParse,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import { z } from 'zod';
 import { UXReviewOutputSchema, ReviewIssueSchema } from '../schemas.js';
@@ -80,7 +81,8 @@ let systemPromptCache: string | undefined;
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-review-system.md');
-  systemPromptCache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  systemPromptCache = parsePromptFrontmatter(raw).body;
   return systemPromptCache;
 };
 

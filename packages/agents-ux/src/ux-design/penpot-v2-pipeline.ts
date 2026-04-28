@@ -23,6 +23,7 @@ import {
   Ok,
   Err,
   PREVIEW_DIR_REL,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import { evaluateDesign } from './design-evaluator.js';
 import type { LLMProvider as EvalLLMProvider } from '@agentforge/providers';
@@ -84,12 +85,9 @@ let systemPromptV2Cache: string | undefined;
 
 const loadPenpotV2SystemPrompt = (): string => {
   if (systemPromptV2Cache) return systemPromptV2Cache;
-  // Compute the prompt path relative to this file's location
-  // This file is at: packages/agents-ux/src/ux-design/penpot-v2-pipeline.ts
-  // Prompt is at:   packages/agents-ux/src/prompts/ux-penpot-designspec-v2.md
-  // At runtime (from dist/), the relative path is the same: ../prompts/
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-penpot-designspec-v2.md');
-  systemPromptV2Cache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  systemPromptV2Cache = parsePromptFrontmatter(raw).body;
   return systemPromptV2Cache;
 };
 

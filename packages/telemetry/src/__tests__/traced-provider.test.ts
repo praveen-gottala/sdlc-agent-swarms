@@ -64,6 +64,20 @@ describe('createTracedProvider', () => {
     expect(mock.completeCalls).toHaveLength(1);
   });
 
+  it('passes promptVersion through to the underlying provider in options', async () => {
+    delete process.env.LANGFUSE_SECRET_KEY;
+    const mock = createMockProvider();
+    const traced = createTracedProvider(mock);
+
+    await traced.complete(
+      { system: 'sys', messages: [{ role: 'user', content: 'hi' }] },
+      { model: 'test-model', promptVersion: '2.1.0' },
+    );
+
+    expect(mock.completeCalls).toHaveLength(1);
+    expect(mock.completeCalls[0].options.promptVersion).toBe('2.1.0');
+  });
+
   it('delegates isAvailable() and estimateCost()', async () => {
     delete process.env.LANGFUSE_SECRET_KEY;
     const mock = createMockProvider();

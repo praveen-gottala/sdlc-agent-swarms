@@ -22,6 +22,7 @@ import {
   runAgent,
   readSpecs,
   safeParse,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import { UXResearchOutputSchema } from '../schemas.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
@@ -80,11 +81,15 @@ export const UX_RESEARCH_CONTRACT: AgentContract = {
 // ============================================================================
 
 let systemPromptCache: string | undefined;
+let promptVersionCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-research-system.md');
-  systemPromptCache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  const parsed = parsePromptFrontmatter(raw);
+  systemPromptCache = parsed.body;
+  promptVersionCache = parsed.frontmatter.version;
   return systemPromptCache;
 };
 
@@ -175,6 +180,7 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
     model: context.resolvedModel ?? UX_RESEARCH_CONTRACT.provider,
     maxTokens: 8000,
     temperature: 0,
+    promptVersion: promptVersionCache,
   });
   if (!completionResult.ok) {
     return completionResult as Result<never>;

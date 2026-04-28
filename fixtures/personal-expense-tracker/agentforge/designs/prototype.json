@@ -11,7 +11,7 @@
     },
     {
       "screenId": "confirm-delete",
-      "name": "Confirm Delete",
+      "name": "confirm-delete",
       "route": "/confirm-delete",
       "specPath": "agentforge/designs/confirm-delete/scripts/designspec-v2.json",
       "isDefault": false,
@@ -26,7 +26,7 @@
     },
     {
       "screenId": "settings",
-      "name": "Settings",
+      "name": "settings",
       "route": "/settings",
       "specPath": "agentforge/designs/settings/scripts/designspec-v2.json",
       "isDefault": false,
@@ -43,14 +43,14 @@
   "navigation": [
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "logo-button",
+      "sourceNodeId": "back-btn",
       "targetScreenId": "dashboard",
       "reason": "spec-driven: container navigates to dashboard",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "top-bar-settings-btn",
+      "sourceNodeId": "settings-icon-btn",
       "targetScreenId": "settings",
       "reason": "spec-driven: container navigates to settings",
       "mode": "overlay"
@@ -64,182 +64,126 @@
     },
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "nav-tab-home",
+      "sourceNodeId": "home-tab",
       "targetScreenId": "dashboard",
       "reason": "spec-driven: container navigates to dashboard",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "nav-tab-insights",
+      "sourceNodeId": "insights-tab",
       "targetScreenId": "spending-insights",
       "reason": "spec-driven: container navigates to spending-insights",
       "mode": "navigate"
     },
     {
-      "sourceScreenId": "confirm-delete",
-      "sourceNodeId": "cancel-btn",
-      "targetScreenId": "dashboard",
-      "reason": "spec-driven: button-secondary navigates to dashboard",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "confirm-delete",
-      "sourceNodeId": "confirm-delete-btn",
-      "targetScreenId": "dashboard",
-      "reason": "spec-driven: button-destructive navigates to dashboard",
-      "mode": "navigate"
-    },
-    {
       "sourceScreenId": "dashboard",
-      "sourceNodeId": "logo-button",
+      "sourceNodeId": "settings-icon-btn",
       "targetScreenId": "settings",
       "reason": "spec-driven: container navigates to settings",
       "mode": "overlay"
     },
     {
       "sourceScreenId": "dashboard",
-      "sourceNodeId": "top-bar-add-btn",
-      "targetScreenId": "add-expense",
-      "reason": "spec-driven: button-primary navigates to add-expense",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "dashboard",
-      "sourceNodeId": "nav-tab-add",
+      "sourceNodeId": "add-expense-tab",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "dashboard",
-      "sourceNodeId": "nav-tab-insights",
-      "targetScreenId": "spending-insights",
-      "reason": "spec-driven: container navigates to spending-insights",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "settings",
-      "sourceNodeId": "close-button",
-      "targetScreenId": "dashboard",
-      "reason": "spec-driven: container navigates to dashboard",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "settings",
-      "sourceNodeId": "save-settings-btn",
-      "targetScreenId": "dashboard",
-      "reason": "spec-driven: button-primary navigates to dashboard",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "settings",
-      "sourceNodeId": "nav-tab-home",
-      "targetScreenId": "dashboard",
-      "reason": "spec-driven: container navigates to dashboard",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "settings",
-      "sourceNodeId": "nav-tab-add",
-      "targetScreenId": "add-expense",
-      "reason": "spec-driven: container navigates to add-expense",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "settings",
-      "sourceNodeId": "nav-tab-insights",
+      "sourceNodeId": "insights-tab",
       "targetScreenId": "spending-insights",
       "reason": "spec-driven: container navigates to spending-insights",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "expense-row-1",
+      "sourceNodeId": "settings-icon-btn",
+      "targetScreenId": "settings",
+      "reason": "spec-driven: container navigates to settings",
+      "mode": "overlay"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "ranked-row-1",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "expense-row-2",
+      "sourceNodeId": "ranked-row-2",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "expense-row-3",
+      "sourceNodeId": "ranked-row-3",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "expense-row-4",
+      "sourceNodeId": "ranked-row-4",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "expense-row-5",
+      "sourceNodeId": "ranked-row-5",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "nav-tab-home",
+      "sourceNodeId": "home-tab",
       "targetScreenId": "dashboard",
       "reason": "spec-driven: container navigates to dashboard",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "nav-tab-add",
+      "sourceNodeId": "add-expense-tab",
       "targetScreenId": "add-expense",
       "reason": "spec-driven: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "logo-button",
+      "sourceNodeId": "settings-icon-btn",
       "targetScreenId": "settings",
       "reason": "chrome: container navigates to settings",
       "mode": "overlay"
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "top-bar-add-btn",
-      "targetScreenId": "add-expense",
-      "reason": "chrome: button-primary navigates to add-expense",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "__chrome__",
-      "sourceNodeId": "nav-tab-add",
+      "sourceNodeId": "add-expense-tab",
       "targetScreenId": "add-expense",
       "reason": "chrome: container navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "nav-tab-add-label",
+      "sourceNodeId": "add-expense-tab-label",
       "targetScreenId": "add-expense",
       "reason": "chrome: text navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "nav-tab-insights",
+      "sourceNodeId": "insights-tab",
       "targetScreenId": "spending-insights",
       "reason": "chrome: container navigates to spending-insights",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "nav-tab-insights-label",
+      "sourceNodeId": "insights-tab-label",
       "targetScreenId": "spending-insights",
       "reason": "chrome: text navigates to spending-insights",
       "mode": "navigate"

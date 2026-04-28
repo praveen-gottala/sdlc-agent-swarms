@@ -423,3 +423,7 @@ export {
   DEFAULT_PREVIEW,
 } from './design/index.js';
 export type { PreviewData } from './design/index.js';
+
+// Prompt utilities (frontmatter parsing)
+export type { PromptFrontmatter, ParsedPrompt, VersionCheckResult } from './prompts/index.js';
+export { parsePromptFrontmatter, checkVersionBump } from './prompts/index.js';

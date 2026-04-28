@@ -22,6 +22,7 @@ import {
   runAgent,
   readSpecs,
   safeParse,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import type { ImplementationStage, DesignSnapshotData } from '../types.js';
@@ -134,11 +135,15 @@ export const UX_IMPLEMENTATION_CONTRACT: AgentContract = {
 // ============================================================================
 
 let systemPromptCache: string | undefined;
+let promptVersionCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-implementation-system.md');
-  systemPromptCache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  const parsed = parsePromptFrontmatter(raw);
+  systemPromptCache = parsed.body;
+  promptVersionCache = parsed.frontmatter.version;
   return systemPromptCache;
 };
 
@@ -307,6 +312,7 @@ export const uxImplementationWork: AgentWorkFn<UXImplementationInput, UXImplemen
     model: context.resolvedModel ?? UX_IMPLEMENTATION_CONTRACT.provider,
     maxTokens: 16000,
     temperature: 0,
+    promptVersion: promptVersionCache,
   });
 
   const collectResult = await collectStreamOutput(stream);

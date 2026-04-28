@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import { SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
 import type { RouteInfo, CSSVariable, ComponentLibraryId, StylingApproach } from '@agentforge/designspec-renderer';
+import { parsePromptFrontmatter } from '@agentforge/core';
 import {
   buildComponentMappingSection,
   buildStylingMappingSection,
@@ -66,7 +67,9 @@ function loadPromptTemplate(): string {
 
   for (const p of candidates) {
     if (existsSync(p)) {
-      cachedPromptTemplate = readFileSync(p, 'utf-8');
+      const raw = readFileSync(p, 'utf-8');
+      const parsed = parsePromptFrontmatter(raw);
+      cachedPromptTemplate = parsed.body;
       return cachedPromptTemplate;
     }
   }

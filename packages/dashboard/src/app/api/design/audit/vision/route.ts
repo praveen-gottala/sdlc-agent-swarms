@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readTextFile, readYamlFile } from '../../../_lib/project-reader';
+import { readDesignSpecText } from '@agentforge/core';
+import { readYamlFile, getActiveProjectRoot } from '../../../_lib/project-reader';
 import { getVisionProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
 import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
 import { EVALUATOR_MODEL, isVisionLLMEnabled } from '@agentforge/core';
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: NO_CLAUDE_AUTH_ERROR }, { status: 503 });
   }
 
-  const specText = readTextFile(`agentforge/designs/${pageId}.json`);
+  const specText = readDesignSpecText(getActiveProjectRoot(), pageId);
   if (!specText) {
     return NextResponse.json({ error: `Design spec not found for page: ${pageId}` }, { status: 404 });
   }

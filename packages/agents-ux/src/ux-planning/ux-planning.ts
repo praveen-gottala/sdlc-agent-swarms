@@ -25,6 +25,7 @@ import {
   debugLog,
   logDefaults,
   extractJson,
+  parsePromptFrontmatter,
 } from '@agentforge/core';
 import type { UXResearchOutput } from '../ux-research/ux-research.js';
 import type { ComponentTreeNode, ResponsiveRule, ScreenDefinition } from '../types.js';
@@ -103,11 +104,15 @@ export const UX_PLANNING_CONTRACT: AgentContract = {
 // ============================================================================
 
 let systemPromptCache: string | undefined;
+let promptVersionCache: string | undefined;
 
 const loadSystemPrompt = (): string => {
   if (systemPromptCache) return systemPromptCache;
   const promptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts', 'ux-planning-system.md');
-  systemPromptCache = readFileSync(promptPath, 'utf-8');
+  const raw = readFileSync(promptPath, 'utf-8');
+  const parsed = parsePromptFrontmatter(raw);
+  systemPromptCache = parsed.body;
+  promptVersionCache = parsed.frontmatter.version;
   return systemPromptCache;
 };
 
@@ -405,6 +410,7 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
     maxTokens: 8000,
     temperature: 0,
     responseSchema: PLANNING_OUTPUT_SCHEMA,
+    promptVersion: promptVersionCache,
   });
   if (!completionResult.ok) {
     return completionResult as Result<never>;
@@ -482,6 +488,7 @@ export const uxPlanningWork: AgentWorkFn<UXPlanningInput, UXPlanningOutput> = as
         model: context.resolvedModel ?? UX_PLANNING_CONTRACT.provider,
         maxTokens: 2000,
         temperature: 0,
+        promptVersion: promptVersionCache,
       });
 
       if (!retryResult.ok) {

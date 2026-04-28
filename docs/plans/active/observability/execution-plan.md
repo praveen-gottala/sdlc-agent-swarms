@@ -36,10 +36,10 @@ Vision Layer 11 prescribes OpenTelemetry + Langfuse self-hosted for LLM observab
 - [x] **2.3** Verified: design:generate trace lands in Langfuse (trace #9, programmatic check)
 - [x] **2.4** Cleanup `promptTraces` — remove redundant in-memory trace mechanism (2026-04-27)
 
-### Phase 3 — Prompt Versioning (NOT STARTED)
-- [ ] **3.1** Add `version: X.Y.Z` frontmatter parser for `.md` prompt files
-- [ ] **3.2** LLM wrapper records prompt version per call (in OTel span metadata)
-- [ ] **3.3** Pre-commit hook fails if prompt content changed without version bump
+### Phase 3 — Prompt Versioning (COMPLETE, 2026-04-28)
+- [x] **3.1** Add `version: X.Y.Z` frontmatter parser for `.md` prompt files (2026-04-28). `parsePromptFrontmatter()` in `packages/core/src/prompts/`. Strips frontmatter from LLM prompt, extracts version. All 8 prompt files now have frontmatter; all 8 loaders strip it. 15 unit tests.
+- [x] **3.2** LLM wrapper records prompt version per call (in OTel span metadata) (2026-04-28). `promptVersion?: string` added to `CompletionOptions`. `TracedProvider` records it in Langfuse `metadata.promptVersion`. Threaded in 4 standard agents (planning, research, implementation via `provider.complete()`/`stream()`). 3 agents with local LLM interfaces (review, penpot-v2, browser-agent) strip frontmatter but can't thread version until migrated to standard provider.
+- [x] **3.3** Pre-commit hook fails if prompt content changed without version bump (2026-04-28). `checkVersionBump()` in `packages/core/src/prompts/`. Script at `scripts/check-prompt-versions.ts`. `npm run check:prompts`. Install via `scripts/install-hooks.sh`. 6 unit tests.
 
 ### Phase 4 — Extended Tracing (NOT STARTED)
 - [ ] **4.1** MCP tool call tracing (vision: "every tool call emits an OTel span")

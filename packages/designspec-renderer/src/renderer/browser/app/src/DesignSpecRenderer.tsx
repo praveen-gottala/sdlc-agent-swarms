@@ -21,6 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -897,6 +899,47 @@ function renderCatalog(
         </nav>
       );
     }
+    // ── Layout ──
+    case 'section':
+      return renderSection(node, children, tokens, tokenMap);
+    case 'page-header':
+      return renderPageHeader(node, children, tokens, tokenMap);
+    case 'footer':
+      return renderFooter(node, children, tokens, tokenMap);
+    case 'sidebar':
+      return renderSidebar(node, children, tokens, tokenMap);
+    // ── Input ──
+    case 'radio':
+      return renderRadio(node, tokenMap, common);
+    case 'text-area':
+    case 'textarea':
+      return renderTextArea(node, tokens, tokenMap, common);
+    case 'date-picker':
+      return renderDatePicker(node, tokens, tokenMap, common);
+    // ── Feedback ──
+    case 'modal':
+    case 'dialog':
+      return renderModal(node, children, tokens, tokenMap);
+    case 'loading-spinner':
+    case 'loader':
+      return renderLoadingSpinner(node, tokenMap, common);
+    case 'skeleton':
+      return renderSkeleton(node, common);
+    // ── Navigation ──
+    case 'breadcrumb':
+      return renderBreadcrumb(node, tokenMap, common);
+    case 'step-indicator':
+      return renderStepIndicator(node, tokenMap, common);
+    // ── Composite ──
+    case 'form':
+      return renderForm(node, children, tokens, tokenMap);
+    case 'selection-grid':
+      return renderSelectionGrid(node, children, tokens, tokenMap);
+    case 'filter-bar':
+      return renderFilterBar(node, children, common);
+    // ── Data Display ──
+    case 'empty-state':
+      return renderEmptyState(node, children, tokens, tokenMap);
     case 'tooltip':
       return (
         <div key={node.id} data-node={node.id} data-catalog={catalogId} style={Object.keys(common).length ? common : undefined}>
@@ -1719,5 +1762,472 @@ function renderPagination(node: ResolvedNode, common: React.CSSProperties): Reac
         </PaginationItem>
       </PaginationContent>
     </Pagination>
+  );
+}
+
+// ─── Layout Catalog Renderers ──────────────────────────
+
+function renderSection(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
+  const titleText = node.label ?? (node.overrides?.title as string | undefined);
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: node.layout?.gap ?? 16,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getShadowStyle(node.shadow, tokens),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    ...getOverrideStyles(node.overrides),
+  };
+  if (node.radius) style.borderRadius = node.radius;
+  const titleId = titleText ? `${node.id}-title` : undefined;
+  return (
+    <section key={node.id} data-node={node.id} data-catalog="section" role="region" aria-labelledby={titleId} style={style}>
+      {titleText && (
+        <h2 id={titleId} style={{ ...getTypographyStyles('heading-2', tokens), color: textColor, margin: 0 }}>{titleText}</h2>
+      )}
+      {node.content && (
+        <p style={{ ...getTypographyStyles('body', tokens), color: textColor, margin: 0, opacity: 0.7 }}>{node.content}</p>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function renderPageHeader(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
+  const secondaryColor = resolveTokenColor('text-secondary', tokenMap);
+  const titleText = node.label ?? (node.overrides?.title as string | undefined);
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: node.layout?.gap ?? 8,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    ...getOverrideStyles(node.overrides),
+  };
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="page-header" role="banner" style={style}>
+      {titleText && (
+        <h1 style={{ ...getTypographyStyles('heading-1', tokens), color: textColor, margin: 0 }}>{titleText}</h1>
+      )}
+      {node.content && (
+        <p style={{ ...getTypographyStyles('body', tokens), color: secondaryColor, margin: 0 }}>{node.content}</p>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function renderFooter(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-secondary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-secondary', tokenMap);
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: node.layout?.gap ?? 24,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    color: textColor,
+    ...getOverrideStyles(node.overrides),
+  };
+  return (
+    <footer key={node.id} data-node={node.id} data-catalog="footer" role="contentinfo" style={style}>
+      {children}
+      {node.content && (
+        <small style={{ opacity: 0.7 }}>{node.content}</small>
+      )}
+    </footer>
+  );
+}
+
+function renderSidebar(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-secondary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
+  const isCollapsed = !!(node.overrides?.collapsed);
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: node.layout?.gap ?? 8,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    color: textColor,
+    height: '100%',
+    ...getOverrideStyles(node.overrides),
+  };
+  if (isCollapsed) {
+    style.width = 64;
+    style.overflow = 'hidden';
+  }
+  return (
+    <aside key={node.id} data-node={node.id} data-catalog="sidebar" style={style}>
+      <nav role="navigation" aria-label="Sidebar navigation" style={{ display: 'flex', flexDirection: 'column', gap: node.layout?.gap ?? 8, flex: 1 }}>
+        {children}
+      </nav>
+    </aside>
+  );
+}
+
+// ─── Input Catalog Renderers ───────────────────────────
+
+function renderRadio(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const isSelected = !!(node.overrides?.selected ?? node.overrides?.checked);
+  const isDisabled = !!(node.overrides?.disabled);
+  const borderColor = resolveTokenColor(isSelected ? 'cta-primary' : 'border-default', tokenMap) ?? '#888';
+  const fillColor = resolveTokenColor('cta-primary', tokenMap) ?? '#f59e0b';
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="radio"
+      style={{ display: 'flex', alignItems: 'center', gap: 8, width: 'fit-content', opacity: isDisabled ? 0.5 : undefined, ...common }}>
+      <div style={{
+        width: 16, height: 16, borderRadius: '50%',
+        border: `2px solid ${borderColor}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: fillColor }} />}
+      </div>
+      {node.label && <span>{node.label}</span>}
+    </div>
+  );
+}
+
+function renderTextArea(
+  node: ResolvedNode,
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const labelColor = resolveTokenColor('text-secondary', tokenMap);
+  const labelStyle = getTypographyStyles('label', tokens);
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="text-area" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
+      {node.label && (
+        <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
+      )}
+      <Textarea placeholder={node.placeholder ?? ''} rows={4} />
+      {node.helper && (
+        <p style={{ fontSize: 11, color: labelColor, opacity: 0.7, margin: 0 }}>{node.helper}</p>
+      )}
+    </div>
+  );
+}
+
+function renderDatePicker(
+  node: ResolvedNode,
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const labelColor = resolveTokenColor('text-secondary', tokenMap);
+  const labelStyle = getTypographyStyles('label', tokens);
+  const CalendarIcon = getLucideIconComponent('calendar');
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="date-picker" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
+      {node.label && (
+        <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
+      )}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <Input placeholder={node.placeholder ?? 'Select date...'} style={{ paddingRight: 36 }} />
+        {CalendarIcon && (
+          <CalendarIcon size={16} strokeWidth={1.75} style={{ position: 'absolute', right: 12, opacity: 0.5, pointerEvents: 'none' }} />
+        )}
+      </div>
+      {node.helper && (
+        <p style={{ fontSize: 11, color: labelColor, opacity: 0.7, margin: 0 }}>{node.helper}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Feedback Catalog Renderers ────────────────────────
+
+function renderModal(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
+  const titleText = node.label ?? (node.overrides?.title as string | undefined);
+  const dialogWidth = typeof node.width === 'number' ? node.width : 560;
+  const CloseIcon = getLucideIconComponent('x');
+  const titleId = titleText ? `${node.id}-title` : undefined;
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="modal"
+      style={{ position: 'relative', width: '100%', padding: '48px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 'inherit' }} />
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId}
+        style={{
+          position: 'relative', backgroundColor: bg, color: textColor,
+          borderRadius: node.radius ?? 16, padding: 24,
+          width: dialogWidth, maxWidth: '90%',
+          ...getShadowStyle(node.shadow ?? 'lg', tokens),
+          display: 'flex', flexDirection: 'column', gap: 16,
+          ...getOverrideStyles(node.overrides),
+        }}>
+        {(titleText || CloseIcon) && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {titleText && <h2 id={titleId} style={{ ...getTypographyStyles('heading-2', tokens), margin: 0 }}>{titleText}</h2>}
+            {CloseIcon && <CloseIcon size={20} strokeWidth={1.75} style={{ opacity: 0.5, cursor: 'pointer' }} />}
+          </div>
+        )}
+        {node.content && <p style={{ ...getTypographyStyles('body', tokens), margin: 0 }}>{node.content}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function renderLoadingSpinner(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const textColor = resolveTokenColor(node.color ?? 'text-secondary', tokenMap) ?? '#888';
+  const Loader2 = getLucideIconComponent('loader-2');
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="loading-spinner" role="status" aria-label="Loading"
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: textColor, ...common }}>
+      {Loader2 ? (
+        <Loader2 size={24} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+      ) : (
+        <div style={{ width: 24, height: 24, border: `2px solid ${textColor}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      )}
+      {node.label && <span style={{ fontSize: 13 }}>{node.label}</span>}
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
+}
+
+function renderSkeleton(
+  node: ResolvedNode,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const w = typeof node.width === 'number' ? node.width : '100%';
+  const h = typeof node.height === 'number' ? node.height : 20;
+  return (
+    <Skeleton key={node.id} data-node={node.id} data-catalog="skeleton"
+      style={{ width: w, height: h, borderRadius: node.radius ?? 8, ...common }} />
+  );
+}
+
+// ─── Navigation Catalog Renderers ──────────────────────
+
+function renderBreadcrumb(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const items = (node.items ?? []) as ReadonlyArray<Readonly<Record<string, unknown>>>;
+  const textColor = resolveTokenColor('text-secondary', tokenMap) ?? '#888';
+  const activeColor = resolveTokenColor('text-primary', tokenMap) ?? '#fff';
+  const ChevronRight = getLucideIconComponent('chevron-right');
+  return (
+    <nav key={node.id} data-node={node.id} data-catalog="breadcrumb" role="navigation" aria-label="Breadcrumb"
+      style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, ...common }}>
+      {items.map((item, i) => {
+        const isLast = i === items.length - 1;
+        return (
+          <React.Fragment key={i}>
+            <span style={{ color: isLast ? activeColor : textColor, fontWeight: isLast ? 600 : 400 }}>
+              {String(item.label ?? '')}
+            </span>
+            {!isLast && (ChevronRight
+              ? <ChevronRight size={14} strokeWidth={1.5} style={{ color: textColor, opacity: 0.5 }} />
+              : <span style={{ color: textColor, opacity: 0.5 }}>/</span>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </nav>
+  );
+}
+
+function renderStepIndicator(
+  node: ResolvedNode,
+  tokenMap: TokenColorMap,
+  common: React.CSSProperties,
+): React.ReactNode {
+  const items = (node.items ?? []) as ReadonlyArray<Readonly<Record<string, unknown>>>;
+  const activeBg = resolveTokenColor('cta-primary', tokenMap) ?? '#f59e0b';
+  const activeText = resolveTokenColor('text-on-cta', tokenMap) ?? '#fff';
+  const completedBg = resolveTokenColor('success', tokenMap) ?? '#22c55e';
+  const borderColor = resolveTokenColor('border-default', tokenMap) ?? '#555';
+  const textColor = resolveTokenColor('text-secondary', tokenMap) ?? '#888';
+  const CheckIcon = getLucideIconComponent('check');
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="step-indicator" role="group" aria-label="Progress"
+      style={{ display: 'flex', alignItems: 'center', gap: 0, ...common }}>
+      {items.map((step, i) => {
+        const state = (step.state ?? step.status ?? 'default') as string;
+        const isActive = state === 'active';
+        const isCompleted = state === 'completed';
+        const circleBg = isCompleted ? completedBg : isActive ? activeBg : 'transparent';
+        const circleBorder = isCompleted || isActive ? 'transparent' : borderColor;
+        const circleText = isCompleted || isActive ? activeText : textColor;
+        return (
+          <React.Fragment key={i}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                border: `2px solid ${circleBorder}`, backgroundColor: circleBg, color: circleText,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600,
+              }}>
+                {isCompleted && CheckIcon ? <CheckIcon size={14} strokeWidth={2.5} /> : (i + 1)}
+              </div>
+              {step.label && <span style={{ fontSize: 11, color: isActive ? activeBg : textColor, whiteSpace: 'nowrap' }}>{String(step.label)}</span>}
+            </div>
+            {i < items.length - 1 && (
+              <div style={{ flex: 1, height: 2, backgroundColor: isCompleted ? completedBg : borderColor, minWidth: 24, marginTop: step.label ? -16 : 0 }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Composite Catalog Renderers ───────────────────────
+
+function renderForm(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: node.layout?.gap ?? 16,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    ...getOverrideStyles(node.overrides),
+  };
+  return (
+    <form key={node.id} data-node={node.id} data-catalog="form" role="form"
+      aria-label={node.label ?? 'Form'} onSubmit={e => e.preventDefault()} style={style}>
+      {children}
+    </form>
+  );
+}
+
+function renderSelectionGrid(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background, tokenMap);
+  const style: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: node.layout?.gap ?? 16,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    ...getOverrideStyles(node.overrides),
+  };
+  if (bg) style.backgroundColor = bg;
+  if (node.layout?.dir === 'row' || node.layout?.dir === 'column') {
+    style.display = 'flex';
+    style.flexDirection = node.layout.dir;
+    style.flexWrap = 'wrap';
+    delete style.gridTemplateColumns;
+  }
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="selection-grid" role="group"
+      aria-label={node.label ?? 'Selection grid'} style={style}>
+      {children}
+    </div>
+  );
+}
+
+function renderFilterBar(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  common: React.CSSProperties,
+): React.ReactNode {
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="filter-bar" role="search"
+      aria-label="Filter controls"
+      style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap', ...common }}>
+      {children}
+    </div>
+  );
+}
+
+// ─── Data Display Catalog Renderers ────────────────────
+
+function renderEmptyState(
+  node: ResolvedNode,
+  children: React.ReactNode[],
+  tokens: RendererTokens,
+  tokenMap: TokenColorMap,
+): React.ReactNode {
+  const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
+  const textColor = resolveTokenColor(node.color ?? 'text-secondary', tokenMap);
+  const titleText = node.label ?? (node.overrides?.title as string | undefined);
+  const iconName = node.overrides?.icon as string | undefined;
+  const IconComponent = iconName ? getLucideIconComponent(iconName) : null;
+  const style: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    gap: node.layout?.gap ?? 12,
+    padding: 32,
+    ...getSpacingStyles(node.layout),
+    ...getSizeStyles(node.width, node.height),
+    ...getPositionStyles(node),
+    backgroundColor: bg,
+    color: textColor,
+    ...getOverrideStyles(node.overrides),
+  };
+  return (
+    <div key={node.id} data-node={node.id} data-catalog="empty-state" style={style}>
+      {IconComponent && <IconComponent size={48} strokeWidth={1.25} style={{ opacity: 0.4 }} />}
+      {titleText && <h3 style={{ ...getTypographyStyles('heading-3', tokens), margin: 0 }}>{titleText}</h3>}
+      {node.content && <p style={{ ...getTypographyStyles('body', tokens), margin: 0, opacity: 0.7 }}>{node.content}</p>}
+      {children}
+    </div>
   );
 }

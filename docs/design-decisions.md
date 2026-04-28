@@ -416,6 +416,199 @@
 
 **Revisit when:** model capability improves to the point where single-shot compliance with diversity rules exceeds 90%. Until then, the evaluator loop is the enforcement mechanism.
 
+### 9.5 Domain-adaptive bundles, not universal presets
+
+> Research basis: `docs/research/visual-diversity-investigation.md` §5 (cross-domain UI generation) and §8.1 (demo sequencing).
+
+**Decision:** The 5 canonical treatments (§9.3) become one domain's palette — the `saas-dashboard` bundle — subsumed into a domain bundle system. A domain bundle is the union of treatment palette + component catalog subset + layout primitives + content scaffolds + iconography. Bundles are YAML data; no code changes to support new domains.
+
+**Why bundles, not themes:** Treatment-only variation produces "same skeleton, different paint" — the most common complaint about every AI design tool (research §1.3). Gaming UIs need HUDs and neon palettes; fintech needs 36pt balance numbers and data-dense tables; e-commerce needs 3:4 product cards and sticky add-to-cart. These are structural, not cosmetic. 1D-Bench (Alibaba 2025) exists precisely because generic web benchmarks can't measure domain-specific layout diversity.
+
+**Domain bundle shape (varies all 5 dimensions):**
+- **Tokens:** color seeds, radius scale, density spacing, type scale.
+- **Components:** domain-specific catalog subset (gaming "ability card" ≠ finance "metric card"). Loaded from `base-component-catalog.yaml` filtered by bundle + bundle-specific additions.
+- **Layouts:** available composite section types and their default arrangements.
+- **Content scaffolds:** placeholder data archetypes. Gaming: XP, level, guild. Fintech: balance, transactions, portfolio. E-commerce: product name, price, rating.
+- **Iconography:** icon library and weight/fill style (lucide for SaaS, game-icons for gaming, etc.).
+
+**Domain classification:** The Clarifier (vision Layer 5) classifies the domain from PRD text. Classification returns `{ primary_domain: string, secondary_domain?: string, confidence: number }`. When confidence is low (below 0.7), the system falls back to the `base` bundle. When the user disagrees, they can override — creating a blended bundle by inheriting from the closest domain and applying manual overrides.
+
+**Bundle inheritance:** Bundles use single-parent inheritance: `fintech-consumer` extends `fintech` extends `base`. Override semantics match the catalog's existing pattern: child entries replace parent entries by key, new entries are additive. This mirrors the `registryDependencies` composition model from shadcn.
+
+**Migration note:** Existing treatments map to the `saas-dashboard` bundle. Existing generated designs are grandfathered without re-classification; re-running the pipeline with a domain classifier will assign the appropriate bundle at generation time.
+
+**Demo milestone (research §8.1):** "Same PRD, five domains, watch the output change." Quality gates for the demo:
+- Pairwise color distance (CIEDE2000) between any two domain outputs must exceed a threshold (ΔE > 15 for primary palette).
+- Component selection Jaccard similarity between domain outputs must be below a threshold (J < 0.6 — at least 40% of components differ).
+- Density tier of the rendered DOM must match the bundle specification when measured via computed styles (e.g., `gap` values, `padding` ranges).
+
+**Alternatives rejected:**
+- **Named presets ("Corporate", "Playful"):** too coarse. "Corporate" spans law firms to consulting — vastly different visual languages. Research §1.3: no AI design tool has made presets feel differentiated.
+- **Hard-coded domain taxonomy:** domains aren't enumerable. The LLM infers personality and audience from PRD content, maps to the closest bundle, and the user confirms. Unsupported domains get a blended bundle via inheritance from the nearest match.
+- **Theme-only variation (daisyUI model):** daisyUI's 35 themes change CSS variables but not components, layouts, or content scaffolds. Themes produce "same skeleton, different paint." Bundles vary structure.
+
+**Revisit when:** bundle count exceeds 15, at which point a composition system (base + domain overlay + project-specific patch) may be needed.
+
+### 9.6 Style intelligence: four channels, sequenced independently
+
+> Research basis: `docs/research/visual-diversity-investigation.md` §2 (style inference), §4 (direct manipulation), §6 (style profile representation), §7 (competitor analysis).
+
+**Decision:** Style preferences are derived through four input channels, each shipping independently. Sequencing: Channel 1 (PRD seed) → Channel 3 (effect packs) → Channel 4 (direct editing) → Channel 2 (competitor analysis). All feed a unified `StyleProfile` artifact.
+
+**Channel 1: PRD-Derived Seed (automatic, always runs, ships first)**
+
+The Clarifier reads the PRD and extracts with high reliability (research §2.1):
+- Domain label and target audience (trivial classification, cheap model).
+- Density signal: data-dense vs marketing-light — inferred from feature lists ("transaction history" → dense, "share your story" → sparse).
+- Tone descriptors: playful, premium, trustworthy, edgy, clinical (usable as soft signals).
+- Brand/competitor mentions as named entities.
+- **Banned patterns** (negative constraints populated from PRD analysis and Gap/Conflict Detector output).
+
+Produces a **seed** StyleProfile (one effect pack pick + 1-2 color seeds + density tier + banned patterns), not a full one. User confirms before generation.
+
+What the LLM **cannot** reliably derive from PRD text (research §2.1): specific color palette, specific typography scale, specific component density without explicit cues. Don't try — map to named descriptors that resolve to effect packs.
+
+**Banned pattern enforcement (three layers):**
+1. **Prompt layer:** banned patterns are injected as negative instructions in the design system prompt ("NEVER use Inter for body text", "NEVER wrap every section in an elevated card").
+2. **Renderer layer:** font-family and color allowlists in the design tokens reject values outside the project's token palette. If the LLM outputs `fontFamily: "Inter"` and Inter is banned, the renderer falls back to the bundle's default.
+3. **Post-generation validator:** after the LLM produces a DesignSpec, a validator checks for banned pattern violations. Violations trigger targeted regeneration of the offending section with the ban reinforced in the prompt, using the existing correction loop (§9.4) as the enforcement mechanism.
+
+**Channel 2: Constrained Competitor Analysis (user-initiated, ships last)**
+
+The honest version (research §7.2-7.4, FontBench findings):
+1. User provides URLs explicitly. Never auto-crawl — legal/ethical risk (research §7.1: *Bright Data v. Meta* ruling allows public page access, but ToS enforcement and GDPR apply).
+2. Playwright screenshots public-facing pages only.
+3. **Algorithmic color extraction** (k-means in CIE LAB → Material 3 HCT → palette), NOT vision-LLM for hex codes. Vision LLMs hallucinate colors; k-means is deterministic and precise.
+4. Vision LLM picks from a **fixed taxonomy** only: density tertile, vibe label (from a closed set), layout pattern, dominant treatment. Never free-form description.
+5. Pull CSS computed styles where possible — `font-family`, `font-size`, `line-height`, spacing values are far more reliable from the DOM than from screenshots (research §2.2: FontBench 2026 shows typography detection "universally poor" across 15 SOTA VLMs).
+6. Surfaces as "detected vibe + suggested seed colors + density" — user accepts/edits before applying. Never auto-applies.
+7. Screenshots transient in storage — store extracted descriptors, not images.
+
+What this channel **cannot** do (research §2.2): extract specific font families via vision, extract specific spacing values via vision, extract animation/motion language, or extract the competitor's design intent. No shipping tool does full design language extraction from screenshots (research §7.3).
+
+**Channel 3: Effect Pack Upload (power user, ships with §9.7)**
+
+Adopt shadcn `registry-item.json` schema with `registry:style` and `registry:theme` types (research §3.1). The renderer already uses real shadcn components (`DesignSpecRenderer.tsx` imports from `@/components/ui/button`, `badge`, `avatar`, `card`, `input`, `progress`, `checkbox`, `pagination`), and the catalog YAML has `library_mapping.shadcn` entries for all 34 components — making shadcn registry format a natural extension of the existing infrastructure. Format details:
+- `cssVars.theme` / `cssVars.light` / `cssVars.dark` for token assignments per mode.
+- `css` for arbitrary `@layer` rules (glassmorphism, gradient-accent, etc.).
+- `registryDependencies` for pack composition.
+- YAML as syntactic sugar over the JSON schema.
+- Namespace support (`@agentforge/...`, `@user/...`).
+
+**Channel 4: Direct Visual Editing (ALREADY BUILT — extend for effect packs)**
+
+The Properties Free panel (`packages/dashboard/src/components/design/design-inspector.tsx`) already implements zero-token direct manipulation:
+- 23-property whitelist in `property-registry.ts` (layout: 14, dimensions: 2, typography: 5, appearance: 2).
+- `handlePropertyChange()` → in-memory DesignSpec mutation → live `updateNodeStyle()` via iframe bridge.
+- Per-node `handleRevertNode()` via saved spec snapshot (`savedDesignSpecRef`).
+- Explicit save via `PUT /api/pages/{pageId}/design/spec`.
+- "Properties Free" badge distinguishes from "AI Edits LLM" tab.
+
+**Extensions needed for effect pack integration:**
+- Expand property whitelist to include effect-pack-specific properties (gradient backgrounds, blur values).
+- Add `boxShadow` and `backdropFilter` to renderer's `SAFE_OVERRIDE_KEYS` (`DesignSpecRenderer.tsx`).
+- Treatment application: "apply treatment X to this section" as a single action in the Properties panel.
+- Effect pack browser: show available treatments from loaded effect packs.
+
+**Verification requirement before extending:** confirm all 23 existing properties work correctly via an end-to-end test that mutates each property and confirms the iframe bridge applies the change. The existing property-registry must be solid before adding effect-pack properties.
+
+Why not vision-LLM as the default refinement path (research §4.4): Lovable's engineering blog: "Despite decreasing AI costs, they remain a significant factor — especially when providing context on an entire application for small changes." UXPin reports Claude Design users burning weekly token caps in 2-6 hours. The Properties panel is the right default. Vision-LLM critique is a secondary affordance for when the user can't articulate the problem — it outputs a regen request targeting §9.7's pipeline, not "suggested adjustments."
+
+**StyleProfile artifact shape (research §6.4):**
+
+```yaml
+style_profile:
+  domain: fintech
+  audience: { segment: B2C, sophistication: medium }
+  density: comfortable
+  tone: [trustworthy, premium]
+  seeds:
+    primary: "#1E3A8A"
+    accent: "#10B981"
+  palette: { source: material3_hct, contrast_target: AA }
+  typography_tier: clean_geometric
+  shape_language: { radius: medium, shadow: layered }
+  effect_packs:
+    - { id: "@agentforge/glassmorphism", weight: 0.6, scope: hero }
+    - { id: "@agentforge/data-dense-tables", weight: 1.0, scope: tables }
+  exemplars:
+    - { url: "https://stripe.com", role: reference }
+  banned_patterns: [inter, generic_blue, card_wrapping_everything]
+```
+
+**Framework cross-references (update when implementing):**
+- `vision.md` Layer 5: add `StyleProfile` to Clarifier artifact list (currently lists `EnrichedRequirement` + `AssumptionLedger` only). StyleProfile is a last-write-wins channel (vision Layer 2 line 133), not a concatenation channel.
+- `banned_patterns` is an output of the Clarifier's Gap/Conflict Detector (stage 3, vision Layer 5 line 239) — not a parallel system. It fits naturally in the deterministic checklist pass.
+- W3C DTCG 2025.10: documented as the future direction for `design-tokens.yaml` format migration. Current custom flat YAML works, is comprehensively validated (semantic-references-primitive, spacing-sorted, elevation-sequential), and has no interop pain. Migrate when a concrete integration (Figma plugin, Tokens Studio, external tool) demands it.
+- Write an ADR documenting StyleProfile as a new first-class Clarifier artifact when implementation begins.
+
+**Alternatives rejected:**
+- All four channels as a single shipping unit: too ambitious — each has different reliability and complexity profiles.
+- Vision-LLM as default refinement: unsustainable token cost. v0, Lovable, Subframe all converged on direct manipulation.
+- Parallel YAML format for effect packs: reinvents shadcn registry for no benefit when shadcn is already a runtime dependency.
+- Auto-discovered competitors from PRD mentions: legal/ethical risk, path to ToS violations and IP bans.
+- Named presets for style selection: "Corporate" and "Playful" have huge internal variance; the LLM should infer from PRD content, not slot into coarse buckets.
+
+**Revisit when:** StyleProfile needs motion/animation preferences (requires a state system not yet in the architecture); or when Channel 2 reliability improves enough to warrant auto-discovery.
+
+### 9.7 Plug-and-play effect packs with targeted regeneration
+
+> Research basis: `docs/research/visual-diversity-investigation.md` §3 (design system patterns), §4.3 (targeted regeneration), §8 (incremental architecture).
+> Cross-reference: effect-pack-rendered outputs are subject to §9.1 (dual structural + vision evaluation) and §9.4 (evaluator-as-enforcer). The diversity scoring from §9.2 applies to regenerated sections.
+
+**Decision:** Effect packs are shadcn-registry-shaped catalog extensions that add visual treatments without code changes. Users target specific sections for regeneration with different treatments. Branch/diff/revert UX per application.
+
+**Architecture (extends ADR-035 catalog-first + shadcn registry):**
+
+1. **Define:** Effect pack = shadcn `registry:style` item in `agentforge/spec/effects/` (project-level) or `packages/core/src/catalogs/effects/` (built-in). JSON schema with optional YAML syntactic sugar.
+2. **Discover:** `buildComponentCatalogPrompt()` in `design-system-context.ts` already iterates `catalog.components` entries and is fully data-driven. Effect pack entries merged into the `ComponentCatalogSpec` object at catalog load time would appear in the LLM prompt automatically — no prompt builder modification needed. The catalog-loading path (`loadBaseCatalog()` in `packages/core/src/catalogs/index.ts`) needs modification to merge effect pack entries alongside base entries.
+3. **Select:** LLM picks treatment by name (same as `catalog: "card"` today). Per-section selection — Midjourney's `--sref` ecosystem lesson (research §2.3): style transfers well to single components, poorly to complex page layouts.
+4. **Render:** Renderer applies CSS via overrides. No renderer code changes for CSS-expressible effects (gradients, borders, opacity, radius are already in `SAFE_OVERRIDE_KEYS`).
+5. **Regenerate:** User selects section in dashboard → picks effect pack → targeted regen → diff preview → apply or revert.
+
+**Strength slider semantics:** Effect pack weight (0.0-1.0, default 1.0) controls **which subset of pack overrides are applied**: at weight 1.0, all overrides apply; at lower weights, only the highest-priority overrides apply (shadow first, then background, then border, then radius — ordered by visual impact). This is a discrete subset model, not an opacity blend, because opacity blending produces semantically meaningless intermediate states (e.g., 50% of a gradient is not "half a gradient"). The trade-off: less smooth than a continuous slider, but every intermediate state is a coherent design. A `weight: 0.3` on a glassmorphism pack applies only the backdrop-filter blur, not the border or background transparency.
+
+**Governance (research §3.5):**
+- Effect packs can only override role token VALUES, not introduce new role NAMES without an explicit extension hook. Otherwise: "this glassmorphism pack works on the marketing template but breaks the dashboard template."
+- Validation at ingest time rejects malformed packs (missing required roles, invalid CSS, unsupported properties). Follows Style Dictionary / Terrazzo preprocessor pattern.
+- Each application = a named branch with diff preview and one-click revert (Lovable pattern, research §4.3).
+- Blast radius communicated: "this will affect N components."
+
+**What's expressible without renderer changes (existing `SAFE_OVERRIDE_KEYS`):**
+- Gradients (linear, radial, conic) via `overrides.background` (validated by `looksLikeCssPaintValue()`).
+- Complex borders (per-side, colored) via `overrides.border*`.
+- Opacity/transparency via `overrides.opacity`.
+- Custom radius via `radius` field or `overrides.borderRadius`.
+
+**What needs `SAFE_OVERRIDE_KEYS` additions (small renderer change):**
+- `boxShadow` (multiple/colored shadows, glow effects).
+- `backdropFilter` (glassmorphism).
+
+**What needs architecture work (future tiers):**
+- Hover state transitions — needs a state system.
+- Animations — needs keyframe/transition support.
+- Motion language — needs duration/easing tokens in the StyleProfile.
+
+**Standards adopted:**
+- shadcn `registry-item.json` for pack format (not a parallel YAML schema).
+- W3C DTCG 2025.10 as the future token format within packs (current tokens stay as-is until migration).
+- Material Color Utilities (`@material/material-color-utilities`) for seed-to-palette generation (HCT color space, CAM16, WCAG-compliant contrast pairs).
+- Namespace addressing (`@agentforge/...`, `@user/...`).
+
+**What's genuinely novel vs. reinventing wheels (research §9.4):**
+- *Novel:* Clarifier choosing effect packs based on PRD analysis. No shipping tool does this.
+- *Novel:* Domain as a bundle (not just a theme). Stronger abstraction than daisyUI or Material 3.
+- *Novel:* Unified StyleProfile surviving across PRD updates and pack swaps.
+- *Reinventing (avoid):* Custom effect pack format (use shadcn), custom palette generation (use Material 3), custom token format (use DTCG when ready).
+
+**Prerequisites (resolve before §9.7 implementation):**
+1. **Verified prompt builder:** confirm `buildComponentCatalogPrompt()` correctly iterates merged catalog entries (base + effect pack) with correct categorization. Current bug surface: the function groups by `category` field — effect packs must include a valid category or a new "treatment" category must be added.
+2. **Verified Properties panel:** end-to-end test confirming all 23 existing properties in `property-registry.ts` work correctly via iframe bridge. The Properties panel must be stable before extending it for effect-pack properties.
+3. **StyleProfile added to vision.md Layer 5 artifacts:** write ADR documenting StyleProfile as a Clarifier output alongside EnrichedRequirement and AssumptionLedger. StyleProfile is a last-write-wins LangGraph channel.
+4. **banned_patterns wired to Gap/Conflict Detector:** banned_patterns is populated by the Clarifier's deterministic checklist pass (vision Layer 5 stage 3), not a standalone system. Requires Clarifier implementation to be in progress.
+
+**Revisit when:** effect pack count exceeds 12 and users request composition (combining packs); or when the renderer gap closes (15 of 34 catalog components currently lack dedicated renderers, falling through to generic container).
+
 ---
 
 ## Appendix: Rejected alternatives catalog

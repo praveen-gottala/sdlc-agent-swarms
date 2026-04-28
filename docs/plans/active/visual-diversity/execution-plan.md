@@ -33,6 +33,10 @@ Generated UX designs lack visual variety — every content section uses the iden
 - **Penpot-design.json has structure `designSpec.nodes`** — not `nodes` or `spec.nodes`. Backfill scripts must handle all three node map paths.
 - **`ResolvedNode` and `TreeNode` KEEP `textAlign`/`helper`/`title`** — only `NodeSpec` (LLM-facing) lost them. Renderers read from internal types unchanged. Resolver/tree-builder populate from overrides.
 - **`text_align` alias** — resolver checks both `overrides.textAlign` and `overrides.text_align` on the catalog path because LLMs emit both forms.
+- **DesignSpecStore** (`@agentforge/core/design-spec-store`) is the canonical read/write layer for `designs/{pageId}.json`. Both CLI pipeline (`saveCachedArtifact`) and dashboard API routes use it. Created 2026-04-28 to fix CLI-to-dashboard path disconnect.
+- **`--design-only` does NOT trigger the flat-file write.** Only a full pipeline run (with LLM) calls `saveCachedArtifact` → `writeDesignSpec`. If testing the store fix, must run without `--design-only`.
+- **Prompt contradictions block catalog adoption (Phase 3.3 blocker).** `ux-penpot-designspec-v2.md` has 3 conflicting instructions: (1) line 48 says "decompose Modal, Form, Tabs into structural nodes" but these have renderers now; (2) lines 30-37 define `section`/`header` as accelerator types so the LLM uses `type:` instead of `catalog:`; (3) working examples at lines 186-195 use `type: "section"` not `catalog: "Section"`. Fix: remove line 48, update accelerator docs, update examples.
+- **59 renderable catalog IDs** are injected into the prompt via `{{RENDERABLE_CATALOG_IDS}}` in `browser-design-work.ts:136-142`. The LLM sees them but follows examples over lists.
 
 ---
 
@@ -57,11 +61,45 @@ Update this checklist as each task completes.
 - [x] **2.6** Visual verification (2026-04-27). Ran `design:page:all` on PET fixture (5 pages, v2.2.0 prompt). Found prompt conflict: line 88 "do not use border overrides" contradicted container treatment patterns. Fixed in v2.2.0. Also fixed `buildPageDescription` crash for pages without `components`. Re-ran pipeline — LLM still produces monotonous treatments (all Elevated or all Bare). Conclusion: prompts establish rules but cannot guarantee compliance alone. Phase 4 evaluator diversity scoring is the enforcement mechanism.
 - [x] **2.7** E2E test (2026-04-27). `e2e/container-variety.spec.ts` — 6 tests verifying renderer handles all 4 treatments (Elevated, Outlined, Flat, Separated) with correct CSS properties. Synthetic fixture, no LLM calls. All pass headed. Screenshot at `e2e/screenshots/container-variety.png`.
 
+### Prerequisite — Renderer Component Gap Closure (COMPLETE, 2026-04-28)
+> 16 of 34 catalog components lacked dedicated renderers (original audit listed 15; StepIndicator was the 16th). All now have dedicated renderers in `DesignSpecRenderer.tsx`.
+> See `design-quality-vision.md` §Prerequisite for full analysis.
+
+- [x] **P.1** Add dedicated renderers for layout components: Section, PageHeader, Footer, Sidebar (2026-04-28). Semantic HTML (`<section>`, `<div role="banner">`, `<footer>`, `<aside><nav>`), ARIA roles, catalog token defaults. 6 E2E tests in `e2e/layout-catalog-renderers.spec.ts`.
+- [x] **P.2** Add dedicated renderers for input components: Radio, TextArea, DatePicker (2026-04-28). Radio with circle indicator + selected state. TextArea uses shadcn `Textarea`. DatePicker with calendar icon.
+- [x] **P.3** Add dedicated renderers for feedback components: Modal, LoadingSpinner, Skeleton (2026-04-28). Modal with overlay + dialog (`role="dialog"`, `aria-modal`). Spinner with CSS animation. Skeleton uses shadcn `Skeleton`.
+- [x] **P.4** Add dedicated renderers for navigation components: Breadcrumb, StepIndicator (2026-04-28). Breadcrumb with chevron separators. StepIndicator with numbered circles, connector lines, active/completed states.
+- [x] **P.5** Add dedicated renderers for composite components: Form, SelectionGrid, FilterBar (2026-04-28). Form as `<form role="form">`. SelectionGrid with grid layout. FilterBar with `role="search"`, row layout.
+- [x] **P.6** Add dedicated renderer for data_display component: EmptyState (2026-04-28). Centered layout with icon, heading-3 title, description.
+- [x] **P.7** Add shadcn `@/components/ui/` imports: `textarea.tsx`, `skeleton.tsx` (2026-04-28). Both wired into renderers.
+- [x] **P.8** E2E tests: 19 tests across 2 files (2026-04-28). `e2e/layout-catalog-renderers.spec.ts` (6 tests: visual + semantic HTML + ARIA + CSS). `e2e/catalog-renderers-full.spec.ts` (13 tests: all remaining components). Full suite: 164 passed, 0 failures.
+- [x] **P.9** Fix CLI-to-dashboard design spec disconnect (2026-04-28). Created `DesignSpecStore` in `@agentforge/core` (`design-spec-store.ts`) — shared read/write/exists/backup/revert for canonical path `agentforge/designs/{pageId}.json`. Wired `saveCachedArtifact` to also write canonical flat file. Migrated 7 dashboard API routes (spec, design, chat, correct, revert, audit, vision, coherence, pages status) to use the store. Updated `docs/architecture/prototype-rendering-dataflow.md` §2. Verified: ran `design:page:all` on PET → both files written with identical timestamps + content → dashboard shows fresh LLM output.
+
+**Verification gap — root cause analysis (2026-04-28):**
+P.1-P.8 renderers are proven by synthetic E2E fixtures (DOM structure, ARIA, CSS assertions). Real LLM pipeline verification showed only 3 of 16 new catalog types (`icon`, `button-secondary`, `button-destructive`) appear in fresh output. The other 13 are emitted as accelerator nodes (`type: 'container'` 88x, `type: 'text'` 69x, `type: 'section'`, etc.).
+
+**Root cause: three contradictions in `ux-penpot-designspec-v2.md`:**
+1. **Line 48** explicitly says "Tabs, SearchInput, ProgressBar, Pagination, Modal, Form must be decomposed into structural nodes" — but these IDs ARE in the renderable catalog list at line 45. The instruction was written before these renderers existed and directly tells the LLM not to use them.
+2. **Lines 30-37** define `section`, `header`, `container` as accelerator **types** — the LLM uses these instead of catalog entries `Section`, `PageHeader`, etc.
+3. **Lines 186-195** (working examples) use `type: "section"` not `catalog: "Section"` — the LLM learns from examples over ID lists.
+
+**Phase 3 task 3.3 is the fix** — it must resolve these contradictions. The renderers are ready; the prompt is the blocker.
+
 ### Phase 3 — Catalog Variants
-- [ ] **3.1** Add Card variants (elevated, flat, outlined, inset) to `base-component-catalog.yaml`.
-- [ ] **3.2** Add Section variants (flat, bordered, inset).
-- [ ] **3.3** Update catalog prompt builder to show available variants.
-- [ ] **3.4** E2E test: `e2e/catalog-variants.spec.ts`.
+- [x] **3.1** Add Card variants (elevated, flat, outlined, inset) to `base-component-catalog.yaml` (2026-04-28).
+- [x] **3.2** Add Section variants (flat, bordered, inset) (2026-04-28).
+- [x] **3.3** Fix prompt contradictions + teach LLM to use catalog entries (2026-04-28). Changes in `ux-penpot-designspec-v2.md` (v2.2.0 → v2.3.0):
+  - **Removed line 48** decomposition instruction ("Modal, Form, Tabs must be decomposed"). Replaced with: "All IDs in this list have dedicated renderers — do NOT decompose them into structural nodes."
+  - **Updated lines 30-37** accelerator type list: clarified that `section`/`header` accelerators are for pure layout containers WITHOUT heading anatomy. When the component needs anatomy, use `catalog: "Section"` or `catalog: "PageHeader"` with `label`.
+  - **Updated working examples** to use `catalog: "Section"` with `label` for headed sections — removed 3 separate title text nodes. Added note explaining when to use `catalog:` vs `type:`.
+  - **Added guidance**: "Prefer `catalog:` over `type:` when a catalog entry exists."
+  - **`ux-penpot-design-system.md` not applicable** — generates Penpot JS scripts directly, has no type/catalog node system, so the 3 contradictions do not exist there.
+- [x] **3.4** E2E test: `e2e/catalog-variants.spec.ts` (2026-04-28). 8 tests: Section semantic HTML + heading from label, Section flat/bordered/inset variants, Card elevated/flat/outlined variants, style fingerprint uniqueness. Full E2E suite: 148 passed, 0 failures.
+- [ ] **3.5** **Pipeline verification gate (NOT DEFERRABLE).** Run `design:page:all` on PET fixture after prompt changes. Verify:
+  1. **Catalog adoption:** Parse `designs/{page}.json` — at least 8 of the 16 new catalog types must appear in the generated specs. If the LLM still uses accelerators instead of catalog entries, the prompt changes failed.
+  2. **Renderer exercised:** For each catalog type found, visually confirm in the browser (Chrome DevTools MCP screenshot) that it renders with the correct semantic HTML (not as generic container).
+  3. **No regressions:** Full E2E suite must pass. Compare rendered screenshots before/after to catch visual regressions.
+  4. **Document results:** Record which catalog types the LLM adopted vs. which still use accelerators. Any still on accelerator path after prompt changes needs investigation (prompt not clear enough, or the LLM has a structural reason to prefer accelerators).
 
 ### Phase 4 — Evaluator Diversity Scoring
 - [x] **4.1** Add container diversity deduction rules to `EVALUATION_SYSTEM_PROMPT` in `design-evaluator.ts` (2026-04-27). Added `classifyContainerTreatment` and `assessContainerDiversity` in new `assess-container-diversity.ts` module. Structural post-processing wired after navigateTo check. Deducts 10 points if 3+ top-level sections all use one treatment. Vision prompt updated with diversity guidance.

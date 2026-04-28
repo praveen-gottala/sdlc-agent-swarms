@@ -59,7 +59,7 @@ Key configuration details discovered during setup:
 - `packages/telemetry/` adds `@langfuse/tracing`, `@langfuse/otel`, `@opentelemetry/sdk-node` as dependencies
 - `packages/cli/` adds `@agentforge/telemetry` as a dependency
 - Docker is required only for the Langfuse UI — the pipeline works without it
-- Phase 7 of the pipeline unification roadmap is partially complete (LLM call tracing). Remaining: prompt versioning (git frontmatter), cost aggregation dashboard, evaluation replay infrastructure.
+- Phase 7 of the pipeline unification roadmap is partially complete (LLM call tracing + prompt versioning). Remaining: cost aggregation dashboard, evaluation replay infrastructure.
 
 ## Alternatives Considered
 
