@@ -1,0 +1,8 @@
+import { add } from './math-utils.js';
+import { initialize } from './module-a.js';
+import type { Config } from './config.js';
+
+export async function runService(config: Config): Promise<number> {
+  const state = initialize(config);
+  return add(state.count, 10);
+}

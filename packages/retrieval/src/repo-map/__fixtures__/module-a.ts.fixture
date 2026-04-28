@@ -1,0 +1,28 @@
+import { add, multiply } from './math-utils.js';
+import type { Config } from './config.js';
+
+export interface AppState {
+  count: number;
+  label: string;
+}
+
+export function initialize(config: Config): AppState {
+  const result = add(1, multiply(2, 3));
+  return { count: result, label: config.name };
+}
+
+export class AppController {
+  private state: AppState;
+
+  constructor(config: Config) {
+    this.state = initialize(config);
+  }
+
+  getCount(): number {
+    return this.state.count;
+  }
+
+  increment(by: number): void {
+    this.state.count = add(this.state.count, by);
+  }
+}

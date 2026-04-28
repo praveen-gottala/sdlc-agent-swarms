@@ -1,0 +1,11 @@
+export interface Config {
+  name: string;
+  debug: boolean;
+}
+
+export type Environment = 'dev' | 'staging' | 'production';
+
+export const DEFAULT_CONFIG: Config = {
+  name: 'default',
+  debug: false,
+};

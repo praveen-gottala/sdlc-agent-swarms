@@ -30,9 +30,9 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Plans:** `docs/plans/active/` (active), `docs/plans/backlog/` (paused/backlog), `docs/plans/completed/` (done)
 
 **Active plans (read these during session-start):**
-1. Visual Diversity — Phase 1-2, 4 COMPLETE. Prerequisite next (renderer gap closure P.1-P.8: 16 catalog components need dedicated renderers). Then Phase 3 (catalog variants). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
-2. Observability — Phase 1-2 COMPLETE (incl. 2.4 promptTraces cleanup), Phase 3 next (prompt versioning). See `docs/plans/active/observability/execution-plan.md`
-3. Clarifier Initiative — Resequenced: Phase 0 (foundation) -> Phase 2 (RAG) -> Phase 1 (Clarifier). Phase 0 COMPLETE (2026-04-28). Next: Phase 2.0 (retrieval package scaffold). See `docs/plans/active/clarifier-initiative/execution-plan.md`
+1. Visual Diversity — Phase 1-2, 4 COMPLETE. Prerequisite COMPLETE (P.1-P.9: 16 renderers + DesignSpecStore + CLI-dashboard path fix). Phase 3 next (catalog variants + prompt fix for catalog adoption). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
+2. Observability — Phase 1-3 COMPLETE (incl. 3.1-3.3 prompt versioning), Phase 4 next (extended tracing). See `docs/plans/active/observability/execution-plan.md`
+3. Clarifier Initiative — Resequenced: Phase 0 (foundation) -> Phase 2 (RAG) -> Phase 1 (Clarifier). Phase 0 COMPLETE (2026-04-28). Phase 2 COMPLETE (2026-04-28): `packages/retrieval/` with 79 tests, 3 clients (Voyage/Cohere/Qdrant), repo map, code/doc/design chunkers+indexers+search, 5 MCP tools, golden query eval. Next: Phase 1.0 (clarifier package scaffold). See `docs/plans/active/clarifier-initiative/execution-plan.md`
 
 **Backlog plans (do NOT read during session-start — note status only):**
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
@@ -41,7 +41,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 - Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session:** Clarifier initiative Phase 0 complete — 9 cross-boundary artifact Zod schemas + LangGraph checkpointer factory. Next: Phase 2 (RAG layer).
+**Last session:** Clarifier Initiative Phase 2 COMPLETE — RAG layer. `packages/retrieval/` scaffolded with 79 tests: 3 SDK clients (Voyage embeddings, Cohere reranking, Qdrant vector store), regex-based parser + symbol graph + PageRank repo map, BM25 sparse vectors, Merkle-tree incremental indexing, hybrid dense+sparse search with RRF fusion, code/doc/design chunkers, 5 MCP-compatible tool definitions, RetrievedContext Zod schema, golden query evaluation framework. Qdrant added to docker-compose. Native tree-sitter failed (Node 25.8.1 node-gyp) — switched to web-tree-sitter WASM.
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -234,7 +234,7 @@ and rejected with rejection reasoning. Notable rejected patterns:
   adds pipeline lifecycle spans. Graceful no-op when `LANGFUSE_SECRET_KEY` unset.
   Self-hosted: `docker compose -f docker/docker-compose.langfuse.yml up -d`
   (UI at http://localhost:3001). Setup, verification, and troubleshooting:
-  `docs/guides/langfuse-setup.md`. Prompt versioning not yet implemented.
+  `docs/guides/langfuse-setup.md`. Prompt versioning: frontmatter parser + TracedProvider metadata + pre-commit hook.
 - Testing: Jest + ts-jest for all packages
 - Linting: ESLint + Prettier (config in root)
 
@@ -291,7 +291,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `agents-*` depend on: `core`, `governance`, `providers`
 - `telemetry` depends on: `core`; peers: `agents-ux`, `providers` (ADR-046)
 - `designspec-renderer` depends on: `core` (type-only devDependency, zero runtime deps)
-- `retrieval` (planned) depends on: `core`
+- `retrieval` depends on: `core`, `voyageai`, `cohere-ai`, `@qdrant/js-client-rest`, `web-tree-sitter`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
 
 ## Commands

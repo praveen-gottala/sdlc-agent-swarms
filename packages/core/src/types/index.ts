@@ -173,3 +173,6 @@ export type {
   ReviewFinding,
   ReviewResult,
 } from './cross-boundary-artifacts.js';
+
+export { RetrievedContextSchema } from './retrieved-context.js';
+export type { RetrievedContext } from './retrieved-context.js';
