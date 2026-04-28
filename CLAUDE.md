@@ -283,7 +283,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 **Governance:** MIDDLEWARE wrapping agent execution, not a service.
 
 ## Package Dependencies
-- `core` depends on: nothing (zero external deps beyond `yaml`, `zod`, `eventemitter3` [for telemetry only])
+- `core` depends on: `yaml`, `zod`, `eventemitter3` [telemetry only], `@langchain/core`, `@langchain/langgraph-checkpoint`, `@langchain/langgraph-checkpoint-postgres` [checkpointer]
 - `governance` depends on: `core`
 - `providers` depends on: `core`
 - `channels` depends on: `core`

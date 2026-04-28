@@ -27,7 +27,7 @@ The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text
 ### Phase 0 — Foundation Completion
 - [x] **0.1** ADR-043 orchestration runtime (pre-existing, merged)
 - [x] **0.2** Typed cross-boundary artifact schemas (2026-04-28) — 9 Zod schemas + TS interfaces in `packages/core/src/types/cross-boundary-artifacts.{schemas,}.ts`. 25 tests (parse + reject invalid). Exported from barrel.
-- [ ] **0.3** Postgres checkpointer — LangGraph checkpoint with Docker Postgres
+- [x] **0.3** Postgres checkpointer (2026-04-28) — `@langchain/langgraph-checkpoint` + `@langchain/langgraph-checkpoint-postgres` in core. Factory `createCheckpointer()`: MemorySaver when no DB, PostgresSaver when `DATABASE_URL` set. Docker Compose at `docker/docker-compose.agentforge.yml` (port 5433). 4 unit tests, 3 integration tests (skipped without `AGENTFORGE_TEST_POSTGRES`). Exported from core barrel.
 
 ### Phase 2 — RAG Layer
 - [ ] **2.0** Package scaffold + integration spike (`packages/retrieval/`)

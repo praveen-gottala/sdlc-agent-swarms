@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  agentforge-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agentforge
+      POSTGRES_PASSWORD: agentforge_dev
+      POSTGRES_DB: agentforge
+    ports:
+      - "5433:5432"
+    volumes:
+      - agentforge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  agentforge_pgdata:

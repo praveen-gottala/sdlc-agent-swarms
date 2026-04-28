@@ -53,9 +53,21 @@ export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
 // Scaffolding
 export { scaffoldProject } from './scaffolding/index.js';
 
+// Checkpointer
+export { createCheckpointer, MemorySaver } from './checkpointer/index.js';
+export type { CheckpointerConfig, BaseCheckpointSaver } from './checkpointer/index.js';
+
 // Constants
 export { DEFAULT_MAX_AGE_MS, PREVIEW_DIR_REL, DEFAULT_MODEL, EVALUATOR_MODEL, ENV_MODEL_OVERRIDE, ENV_VISION_LLM, isVisionLLMEnabled, DEFAULT_SERVICE_URLS } from './constants.js';
 export { PIPELINE_ARTIFACTS } from './pipeline-artifacts.js';
+export {
+  readDesignSpec,
+  readDesignSpecText,
+  writeDesignSpec,
+  designSpecExists,
+  backupDesignSpec,
+  revertDesignSpec,
+} from './design-spec-store.js';
 
 export {
   readLearnings,
