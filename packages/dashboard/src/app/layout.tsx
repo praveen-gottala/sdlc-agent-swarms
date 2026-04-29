@@ -1,9 +1,15 @@
 import type { Metadata } from 'next';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
+import { chipTheme } from '../theme';
+
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AgentForge Dashboard',
-  description: 'V3 web dashboard for AgentForge multi-agent orchestration',
+  title: 'CHIP Dashboard',
+  description: 'Crafted Human Intelligence Platform — AI-powered SDLC orchestration',
 };
 
 export default function RootLayout({
@@ -12,9 +18,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-mantine-color-scheme="dark">
+      <head>
+        <ColorSchemeScript forceColorScheme="dark" />
+      </head>
       <body className="min-h-screen bg-bg-base text-text-primary antialiased">
-        {children}
+        <MantineProvider theme={chipTheme} forceColorScheme="dark">
+          <Notifications position="top-right" />
+          {children}
+        </MantineProvider>
       </body>
     </html>
   );

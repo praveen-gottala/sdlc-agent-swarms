@@ -54,8 +54,8 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
-      <h1 className="text-3xl font-bold text-text-primary">AgentForge Dashboard</h1>
-      <p className="mt-2 text-text-muted">V3 multi-agent orchestration dashboard</p>
+      <h1 className="text-3xl font-bold text-text-primary">CHIP Dashboard</h1>
+      <p className="mt-2 text-text-muted">Crafted Human Intelligence Platform</p>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((m) => (
@@ -100,7 +100,7 @@ export default function HomePage() {
               New Project
             </h2>
           </div>
-          <p className="text-sm text-text-muted">Create a new AgentForge project</p>
+          <p className="text-sm text-text-muted">Create a new CHIP project</p>
         </Link>
       </div>
 

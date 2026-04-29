@@ -109,14 +109,13 @@ export function SidebarNav({
         }`}
     >
       {/* Logo & version */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-border">
-        <span className="text-accent-blue font-bold text-lg leading-none select-none">
-          AF
-        </span>
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-border">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/chip-logo.svg" alt="CHIP" className="w-7 h-7 shrink-0" />
         {!collapsed && (
           <div className="flex flex-col">
             <span className="text-text-primary font-semibold text-sm leading-tight">
-              AgentForge
+              CHIP
             </span>
             <span className="text-text-muted text-[10px] leading-tight">
               v0.1.0

@@ -1,44 +1,88 @@
 @import "tailwindcss";
 
 @theme {
-  /* Background layers */
-  --color-bg-base: #0f1117;
-  --color-bg-card: #1a1b2e;
-  --color-bg-elevated: #252736;
+  /* ── Background layers (4-level elevation) ───────────────── */
+  --color-bg-base: #0a0b10;
+  --color-bg-surface: #0f1117;
+  --color-bg-card: #161827;
+  --color-bg-elevated: #1e2035;
 
   /* Sidebar */
-  --color-sidebar: #13141f;
+  --color-sidebar: #0c0d15;
 
-  /* Text */
-  --color-text-primary: #e2e8f0;
+  /* ── Text hierarchy ──────────────────────────────────────── */
+  --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
+  --color-text-dim: #475569;
 
-  /* Border */
-  --color-border: #2d2f42;
+  /* ── Border ──────────────────────────────────────────────── */
+  --color-border: #1e2035;
+  --color-border-subtle: #161827;
+  --color-border-bright: #2d3354;
 
-  /* Accent / status colors */
+  /* ── CHIP brand colors ───────────────────────────────────── */
+  --color-accent-blue: #3b82f6;
+  --color-accent-purple: #8b5cf6;
+  --color-accent-indigo: #6366f1;
+
+  /* ── Status colors ───────────────────────────────────────── */
   --color-accent-green: #22c55e;
   --color-accent-orange: #f97316;
   --color-accent-yellow: #eab308;
   --color-accent-red: #ef4444;
-  --color-accent-purple: #a855f7;
-  --color-accent-blue: #3b82f6;
   --color-accent-cyan: #06b6d4;
   --color-accent-teal: #14b8a6;
 
-  /* Fonts */
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* ── Glassmorphism ───────────────────────────────────────── */
+  --color-glass-bg: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.06);
+  --color-glass-hover: rgba(255, 255, 255, 0.08);
+
+  /* ── Fonts ───────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Animations */
+  /* ── Animations ──────────────────────────────────────────── */
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-fade-toast: fade-toast 3s ease-in-out forwards;
+  --animate-fade-in: fade-in 0.3s ease-out forwards;
+  --animate-slide-up: slide-up 0.3s ease-out forwards;
+  --animate-scale-in: scale-in 0.2s ease-out forwards;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
 }
 
+/* ── Keyframes ─────────────────────────────────────────────── */
+
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(251,146,60,0.15); }
-  50% { box-shadow: 0 0 20px rgba(251,146,60,0.3); }
+  0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.15); }
+  50% { box-shadow: 0 0 24px rgba(59,130,246,0.35); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(99,102,241,0.2); }
+  50% { box-shadow: 0 0 32px rgba(99,102,241,0.4); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @keyframes fade-toast {
@@ -47,6 +91,8 @@
   85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, 8px); }
 }
+
+/* ── Base styles ───────────────────────────────────────────── */
 
 @layer base {
   *,
@@ -59,27 +105,54 @@
     @apply bg-bg-base text-text-primary antialiased;
   }
 
-  /* Scrollbar styling for dark theme */
-  ::-webkit-scrollbar {
-    @apply w-2 h-2;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-bg-base;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-text-muted;
-  }
+  ::-webkit-scrollbar { @apply w-1.5 h-1.5; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-border-bright/50 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-text-muted/50; }
 }
 
+/* ── Component utilities ───────────────────────────────────── */
+
 @layer components {
-  /* Shared focus ring for interactive elements */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-bg-base;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-1 focus:ring-offset-bg-base;
+  }
+
+  .glass {
+    background: var(--color-glass-bg);
+    border: 1px solid var(--color-glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-hover:hover {
+    background: var(--color-glass-hover);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
+  }
+
+  .gradient-btn {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    transition: all 0.2s ease;
+  }
+  .gradient-btn:hover {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 0 20px rgba(59,130,246,0.3);
+  }
+
+  .shimmer-skeleton {
+    background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
   }
 }
