@@ -85,6 +85,11 @@ html[data-mantine-color-scheme="light"] {
   50% { box-shadow: 0 0 32px rgba(99,102,241,0.4); }
 }
 
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -175,4 +180,28 @@ html[data-mantine-color-scheme="light"] {
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
   }
+
+  .hover-bg-elevated:hover {
+    background-color: var(--color-bg-elevated);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseAccent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes liveDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
 }

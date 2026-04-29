@@ -168,6 +168,18 @@ react-diff-viewer-continued            # Future: code diffs
 
 6. **`next build` also needs `--webpack` in Next.js 16** — not just `next dev`. Both dashboard and brownfield-app build scripts now include it.
 
+**Additional gotchas from Phase 4.0 session (2026-04-29):**
+
+7. **Mantine v9 `Collapse` uses `expanded` prop** — not `in` (v6) or `opened`. Check `node_modules/@mantine/core/lib/components/Collapse/Collapse.d.ts` when unsure about Mantine prop names.
+
+8. **`RunStatus.type` in `run-manager.ts` is a closed union** — only has design-pipeline types (`init`, `design-generate`, etc.). When Architect/Implementer/Reviewer stages ship, new run types must be added to this union. The `RunHistoryTable` uses `RUN_TYPE_LABELS` mapping for human labels — update that too.
+
+9. **Shared SpineRail component** — extracted to `components/spine/spine-constants.ts` + `spine-rail.tsx`. Home page uses `variant="compact"`, Runs page uses `variant="detailed"`. When adding new pages that show the spine, import from `@/components/spine/spine-rail` — don't duplicate.
+
+10. **`/api/pipeline` is deprecated** — the old 5-phase API route still exists but has a `@deprecated` JSDoc. The Runs page uses `/api/runs` instead. Do not add new consumers of `/api/pipeline`.
+
+11. **No `transpilePackages` and no tsconfig `paths` to source** — both were removed in Phase 2.0. `transpilePackages` was removed entirely from `next.config.js`. tsconfig `paths` pointing to `../*/src/` were removed. Dashboard uses pre-built `dist/`. See CLAUDE.md "Dashboard Dev Server" and lessons-learned-rules.md "Dashboard Dev Server: tsconfig paths Force Source Compilation."
+
 ### Verification gate (PENDING)
 
 **Skill order (mandatory — see `.claude/plans/breezy-swinging-pike.md` for rationale):**
@@ -314,45 +326,28 @@ and rebuilt with Mantine. Not a component swap — a product rethink.
 
 **Dev server speed (Phase 2.0, 2026-04-29):** Removed `@agentforge/source` webpack condition and tsconfig `paths` pointing to raw TypeScript source. Dashboard now uses pre-built `dist/`. Must `nx run-many -t build` before running dashboard after package source changes. See CLAUDE.md "Dashboard Dev Server" section.
 
-### 4.0 Pipeline → Runs (CRITICAL — vision alignment)
+### 4.0 Pipeline → Runs (COMPLETE — 2026-04-29)
 
 **Problem:** Current Pipeline page shows 5 static phase cards that don't match the architecture. The vision (Layer 3) defines a 4-stage spine. Tasks run in parallel via git worktrees (Layer 8). A single linear diagram can't represent concurrent execution.
 
-**Vision alignment (Layer 14, lines 656-691):**
-> "graph visualization of the current spine run. Highlighted current node.
-> Pending HITL approvals surfaced prominently. Cost and progress per node."
+**Implementation (2026-04-29):**
+- [x] Replaced wrong 5-phase model with 4-stage spine (Clarifier → Architect → Implementer → Reviewer)
+- [x] Extracted shared `SpineRail` component from Home page to `components/spine/`
+- [x] Run history table with expandable detail panels (stage timeline, cost, error)
+- [x] Emergency controls (Pause All / Abort All) with confirmation modal
+- [x] Sidebar label Pipeline → Runs, Home page button label updated
+- [x] Pause API stub (`/api/commands/pause`), runs API status filter
+- [x] Deleted old `components/pipeline/` (phase-pipeline, phase-card, summary-stats)
+- [x] Deprecated `/api/pipeline/route.ts` (old 5-phase model)
+- [x] ADR-050: graph visualization deferred (stage-timeline rail instead — only 1/4 stages implemented), SSE deferred (2s polling via useRunProgress)
+- [x] 7 new E2E tests (`e2e/runs-page.spec.ts`), navigation E2E updated
+- [x] Verification gate: typecheck (18), tests (423), lint (0 errors), E2E headed (174 pass)
 
-**Research findings (2026-04-29):**
-- No `SpineRun` type exists in code — only `RunStatus` (design-pipeline-specific)
-- Only the Clarifier has a LangGraph graph; Architect/Implementer/Reviewer are not implemented yet
-- The `/api/runs` endpoint exists and tracks design pipeline runs
-- Vision prescribes SSE/websockets for real-time (current: 2s polling)
-
-**Proposed data model:**
-```
-SpineRun
-  ├── runId, projectId, threadId (LangGraph)
-  ├── status: idle | running | interrupted | complete | failed
-  ├── currentStage: clarifier | architect | implementer | reviewer
-  ├── interruptGate: clarification | design_approval | code_merge | null
-  ├── stages[]
-  │    ├── name, status, cost, duration, nodes[]
-  │    └── artifacts[] (EnrichedRequirement, ArchitectureSpec, Diff, ReviewResult)
-  └── tasks[] (within Implementer, parallel via worktrees)
-```
-
-**Proposed Runs page:**
-- **Active Runs panel** — React Flow DAG of the spine with active node highlighted, HITL gates glowing amber when awaiting input
-- **Run history** — Table of past runs with duration, cost, outcome, link to detail
-- **Run detail** — Click a run to expand: per-stage timeline, per-node cost/timing, artifact links
-- **Emergency controls** — Pause All / Abort All (vision Layer 14)
-- Project health summary cards move to Home (`/`) page
-
-**Research task (before implementation):**
-- [ ] Read vision Layer 14 (lines 656-691) for dashboard prescriptions
-- [ ] Study GitHub Actions run view, Vercel deployment view, LangGraph Studio for UX patterns
-- [ ] Define `SpineRun` TypeScript interface in `packages/core/src/types/`
-- [ ] Wire existing `/api/runs` to the new data model (bridge current RunStatus)
+**Scope decisions (documented in ADR-050):**
+- Stage-timeline rail instead of React Flow DAG (vision Layer 14 deviation — 3/4 stages not implemented)
+- 2s polling instead of SSE/WebSocket (vision Layer 14 deviation — no SSE infra exists)
+- No `SpineRun` type in `@agentforge/core` — deferred until Architect stage ships
+- URL stays `/pipeline`, only label changed to "Runs"
 
 ### 4.1 Home → Project Dashboard
 
@@ -364,15 +359,30 @@ SpineRun
 - [ ] Study Linear project overview, Vercel project dashboard
 - [ ] Propose: project health (run status, budget, recent activity, pending approvals) vs. module grid
 
-### 4.2 Design Studio
+### 4.2 Design Studio (IN PROGRESS — 2026-04-29)
 
-**Question:** This is the core product — 1,546 lines, 13 API routes. It works but uses hand-rolled components. What's the minimum Mantine migration that doesn't break the complex interactions (drag, canvas, prototype mode, audit)?
+**Scope:** Full visual overhaul — Mantine adapter layer + page registry redesign + contextual toolbar + inspector 3-zone restructure + resizable panels.
 
-**Research task:**
-- [ ] Screenshot every view state (page list, canvas, prototype, inspector, chat, audit)
-- [ ] Identify which components are hand-rolled and could be Mantine
-- [ ] Identify which are custom and must stay custom (canvas renderer, iframe bridge)
-- [ ] Propose surgical Mantine swaps vs. full redesign
+**Implementation (2026-04-29):**
+- [x] **Phase 0:** 12 ui/ components converted to Mantine wrappers (Button, Badge, Modal, Tabs, Select, Input, Table, Tooltip, ProgressBar, ToggleGroup, Card, Tag)
+- [x] **Phase 1:** Page Registry redesigned — full names (no truncation), colored left borders + status dots, search filter, description tooltips. Width 200px to 240px
+- [x] **Phase 2:** Toolbar redesigned — contextual action bar: primary button + icon actions + progress bar. Three states: canvas/generating/prototype
+- [x] **Phase 3:** Inspector restructured — 4 tabs (Properties/AI Edits/Chat/Audit) replaced with 3 collapsible zones (Properties/Quality/Chat). Quality merges AI Edits + Audit. Chat persistent at bottom. Sections collapsed by default, Properties auto-expands on node selection
+- [x] **Fix:** Resizable inspector panel (260-500px, drag handle, localStorage persistence)
+- [x] **Fix:** Resizable Activity aside (200-480px, drag handle, localStorage persistence)
+- [x] **Fix:** Canvas header compact (no wrapping for long project names)
+- [x] **Fix:** Prototype ScreenSelectorBar compact (horizontal scroll, truncated names, single row)
+- [x] **Fix:** Activity sidebar defaults to collapsed, inspector zones default to collapsed
+- [x] **Fix:** E2E selectors updated for 3-zone inspector (tab role selectors replaced with section testid selectors)
+- [x] **UX:** Edit mode gate — inspector hidden until pencil icon clicked or canvas node clicked. Canvas gets 100% width by default
+- [x] **UX:** Generate picker — play icon opens checkbox popover for selective page generation. Designed pages shown with "(redesign)" label
+- [x] **UX:** Property input font reduced (text-xs → text-[11px], py-1.5 → py-1) for compact density
+- [x] **UX:** New Project button restyled from gradient button to regular subtle nav link
+- [x] **UX:** Canvas context bar made compact (truncate + nowrap, no line wrapping for long project names)
+- [x] **E2E:** 4 new tests in `e2e/design-studio-ux.spec.ts` (search filter, edit mode gate, disabled guard, generate picker)
+- [x] **Verification:** 18 typecheck, 1233 unit tests, 0 lint errors, 110 E2E pass (full suite) + 4 new UX tests pass
+- [ ] **Remaining:** Phase 4 sub-component polish (pipeline-progress → Stepper, modals → Mantine Modal, navigation-editor → Mantine)
+- [ ] **Remaining:** Phase 5 animations + Skeleton loading states + Mantine Notifications
 
 ### 4.3 Spec Viewer
 

@@ -26,8 +26,12 @@ test.describe('Design Inspector', () => {
     // Inspector should remain visible
     await expect(page.getByTestId('design-inspector')).toBeVisible();
 
-    // Properties tab should show prompt to click an element
-    const propertiesHint = page.getByText('Click an element to edit properties');
+    // Properties zone header should be visible (collapsed by default)
+    const propertiesSection = page.getByTestId('section-properties');
+    await expect(propertiesSection).toBeVisible({ timeout: 5000 });
+    // Expand to see the hint
+    await propertiesSection.click();
+    const propertiesHint = page.getByText('Click an element to inspect');
     await expect(propertiesHint).toBeVisible({ timeout: 5000 });
   });
 
@@ -38,12 +42,12 @@ test.describe('Design Inspector', () => {
     const inspector = page.getByTestId('design-inspector');
     await expect(inspector).toBeVisible();
 
-    // Verify the tab structure exists
-    const propertiesTab = inspector.getByRole('tab', { name: 'Properties' });
-    await expect(propertiesTab).toBeVisible();
+    // Verify the zone structure exists (3 collapsible zones instead of tabs)
+    const propertiesSection = page.getByTestId('section-properties');
+    await expect(propertiesSection).toBeVisible();
 
-    const aiEditsTab = inspector.getByRole('tab', { name: 'AI Edits' });
-    await expect(aiEditsTab).toBeVisible();
+    const qualitySection = page.getByTestId('section-quality');
+    await expect(qualitySection).toBeVisible();
 
     // Click a node to see property rows
     await studio.waitForIframeReady();

@@ -444,7 +444,7 @@ The design LLM receives this width as a hard constraint and lays out all content
 ## Next.js 16 + Mantine v9 Compatibility Gotchas
 
 **Context:** `packages/dashboard/` — Next.js 16.2.4, Mantine v9.1.1, React 19.2.5
-**Rule:** Seven things to know when working with this stack:
+**Rule:** Eight things to know when working with this stack:
 1. **Turbopack doesn't support `extensionAlias`** — always use `--webpack` flag. Both `dev` AND `build` scripts must include it (`npm run dev` and `npm run build` have it baked in).
 2. **Mantine v9 requires React 19** — `useEffectEvent` is used by Mantine internals. Next.js 15 bundled an old React that didn't have it.
 3. **`renderRoot` on NavLink doesn't trigger Next.js routing** — use `component={Link}` instead.
@@ -452,8 +452,18 @@ The design LLM receives this width as a hard constraint and lays out all content
 5. **Mantine v9 Select puts `data-testid` on the `<input>` element directly** — not on a wrapper div. `innerText()` and `textContent()` return empty on inputs. Use `element.evaluate((el) => el instanceof HTMLInputElement ? el.value || el.placeholder : el.textContent)` to read the displayed value.
 6. **React version mismatch causes hooks test failures** — if root `package.json` has `react@^19.1.0` but dashboard has `react@^19.2.5`, npm installs a duplicate. `renderHook` then fails with `Cannot read properties of null (reading 'useState')`. Always align React versions across the monorepo.
 7. **setState inside useEffect is a lint error in React 19** — use useState lazy initializers `useState(() => { ... })` instead of reading localStorage in useEffect.
+8. **Mantine v9 Collapse uses `expanded` prop** — not `in` (Mantine v6) or `opened` (some docs). The TypeScript type is `CollapseProps.expanded: boolean`. Cost 3 compile attempts to discover.
 **Why:** Each of these cost 15-30 minutes of debugging during Phase 2 sessions (2026-04-29). The Turbopack, React version, and Mantine Select DOM issues were especially confusing because error messages didn't point to the root cause.
 **How to apply:** The dashboard's `package.json` dev and build scripts already include `--webpack`. For visual audits, run `cd packages/dashboard && npx next build && npx next start --port 3000`.
+
+---
+
+## Mantine ActionIcon Uses `data-disabled`, Not Native `disabled`
+
+**Context:** `packages/dashboard/src/app/(dashboard)/design/page.tsx` — Mantine v9 ActionIcon with disabled prop
+**Rule:** Mantine v9 ActionIcon sets `data-disabled="true"` on the element, NOT the native HTML `disabled` attribute. Playwright's `toBeEnabled()`/`toBeDisabled()` checks the native attribute and will give wrong results. Use `toHaveAttribute('data-disabled', 'true')` instead.
+**Why:** Cost ~30 minutes debugging E2E test failures. The Edit button appeared disabled in Playwright but was actually enabled in the browser. The issue was Playwright checking `disabled` (absent) while Mantine used `data-disabled`.
+**How to apply:** In E2E tests for Mantine ActionIcon/Button components, use `page.locator('[aria-label="X"]').toHaveAttribute('data-disabled', 'true')` to check disabled state. For checking enabled: `expect(async () => { expect(await el.getAttribute('data-disabled')).not.toBe('true'); }).toPass()`.
 
 ---
 

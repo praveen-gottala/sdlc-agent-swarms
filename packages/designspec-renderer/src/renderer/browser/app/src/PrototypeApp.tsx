@@ -345,38 +345,43 @@ function ScreenSelectorBar({ screens, activeScreenId, overlayScreenId, onSelect,
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        padding: '8px 16px',
+        gap: 6,
+        padding: '6px 12px',
         borderTop: '1px solid #e5e7eb',
         background: '#fafafa',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: 13,
+        fontSize: 12,
         flexShrink: 0,
+        overflowX: 'auto',
+        whiteSpace: 'nowrap',
       }}
     >
-      <span style={{ color: '#9ca3af', marginRight: 8 }}>{projectName}</span>
+      <span style={{ color: '#9ca3af', marginRight: 4, flexShrink: 0 }}>{projectName}</span>
       {screens.map(screen => {
         const isActive = screen.screenId === activeScreenId || screen.screenId === overlayScreenId;
         const typeLabel = screen.screenType && screen.screenType !== 'page'
           ? ` [${screen.screenType}]`
           : '';
-        const badgeTitle = screen.screenType && screen.screenType !== 'page'
-          ? `Screen type: ${screen.screenType}. Override in pages.yaml → screen_type`
-          : undefined;
+        const badgeTitle = `${screen.name}${typeLabel}${screen.screenType && screen.screenType !== 'page' ? `. Override in pages.yaml → screen_type` : ''}`;
         return (
           <button
             key={screen.screenId}
             onClick={() => onSelect(screen.screenId)}
             title={badgeTitle}
             style={{
-              padding: '4px 12px',
-              borderRadius: 6,
+              padding: '3px 10px',
+              borderRadius: 4,
               border: isActive ? '1px solid #3b82f6' : '1px solid transparent',
               background: isActive ? '#eff6ff' : 'transparent',
               color: isActive ? '#2563eb' : '#6b7280',
               cursor: 'pointer',
               fontWeight: isActive ? 600 : 400,
-              fontSize: 13,
+              fontSize: 12,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: 140,
+              flexShrink: 0,
             }}
           >
             {screen.name}{typeLabel}

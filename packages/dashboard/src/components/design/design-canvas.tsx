@@ -366,14 +366,14 @@ export function DesignCanvas({
   return (
     <div className="flex flex-col h-full">
       {/* Context bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-bg-card/50">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-text-primary">{projectName}</span>
-          <span className="text-xs text-text-muted">{pageCount} page{pageCount !== 1 ? 's' : ''}</span>
+      <div className="flex items-center justify-between px-4 py-1.5 border-b border-border bg-bg-card/50 gap-3 min-h-0 flex-shrink-0" style={{ flexWrap: 'nowrap' }}>
+        <div className="flex items-center gap-2 min-w-0 flex-shrink">
+          <span className="text-xs font-medium text-text-primary truncate">{projectName}</span>
+          <span className="text-xs text-text-muted whitespace-nowrap">{pageCount} pages</span>
         </div>
         {page && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted">{page.name}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-text-muted truncate max-w-[120px]">{page.name}</span>
             <Badge variant={status === 'approved' ? 'success' : status === 'generating' ? 'info' : 'default'}>
               {status ?? 'draft'}
             </Badge>

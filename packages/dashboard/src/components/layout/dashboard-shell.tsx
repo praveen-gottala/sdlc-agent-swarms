@@ -12,6 +12,10 @@ const MIN_WIDTH = 140;
 const MAX_WIDTH = 360;
 const STORAGE_KEY = 'chip-sidebar-width';
 const ACTIVITY_KEY = 'chip-activity-open';
+const ASIDE_WIDTH_KEY = 'chip-aside-width';
+const ASIDE_DEFAULT = 280;
+const ASIDE_MIN = 200;
+const ASIDE_MAX = 480;
 
 export interface DashboardShellProps {
   children: React.ReactNode;
@@ -20,7 +24,7 @@ export interface DashboardShellProps {
 
 export function DashboardShell({
   children,
-  pageTitle = 'Dashboard',
+  pageTitle: _pageTitle = 'Dashboard',
 }: DashboardShellProps): React.JSX.Element {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     if (typeof window === 'undefined') return DEFAULT_WIDTH;
@@ -39,14 +43,20 @@ export function DashboardShell({
     return false;
   });
   const [activityOpen, setActivityOpen] = useState(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem(ACTIVITY_KEY);
-    return stored !== null ? stored === 'true' : true;
+    return stored !== null ? stored === 'true' : false;
   });
   const [project, setProject] = useState<ProjectContext | undefined>();
   const [allProjects, setAllProjects] = useState<ProjectInfo[]>([]);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [asideWidth, setAsideWidth] = useState(() => {
+    if (typeof window === 'undefined') return ASIDE_DEFAULT;
+    const stored = localStorage.getItem(ASIDE_WIDTH_KEY);
+    return stored ? Math.max(ASIDE_MIN, Math.min(ASIDE_MAX, parseInt(stored, 10))) : ASIDE_DEFAULT;
+  });
+  const [isAsideResizing, setIsAsideResizing] = useState(false);
   const switchErrorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const savedWidth = useRef(sidebarWidth === COLLAPSED_WIDTH ? DEFAULT_WIDTH : sidebarWidth);
 
@@ -142,6 +152,32 @@ export function DashboardShell({
     handleToggleCollapse();
   }, [handleToggleCollapse]);
 
+  const handleAsideResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = asideWidth;
+    setIsAsideResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX;
+      setAsideWidth(Math.max(ASIDE_MIN, Math.min(ASIDE_MAX, startW + delta)));
+    };
+
+    const onMouseUp = () => {
+      setIsAsideResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setAsideWidth(w => { localStorage.setItem(ASIDE_WIDTH_KEY, String(w)); return w; });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [asideWidth]);
+
   const navbarWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
 
   return (
@@ -149,12 +185,12 @@ export function DashboardShell({
       header={{ height: 52 }}
       navbar={{ width: navbarWidth, breakpoint: 0 }}
       aside={{
-        width: 280,
+        width: asideWidth,
         breakpoint: 0,
         collapsed: { desktop: !activityOpen, mobile: true },
       }}
       padding="md"
-      transitionDuration={isResizing ? 0 : 200}
+      transitionDuration={(isResizing || isAsideResizing) ? 0 : 200}
       transitionTimingFunction="ease"
       styles={{
         main: {
@@ -219,7 +255,21 @@ export function DashboardShell({
 
       <AppShell.Main>{children}</AppShell.Main>
 
-      <AppShell.Aside>
+      <AppShell.Aside data-shell-aside>
+        {/* Aside resize handle */}
+        <div
+          onMouseDown={handleAsideResizeStart}
+          style={{
+            position: 'absolute',
+            left: -2,
+            top: 0,
+            bottom: 0,
+            width: 5,
+            cursor: 'col-resize',
+            zIndex: 20,
+          }}
+          className={isAsideResizing ? 'bg-accent-blue/40' : 'hover:bg-accent-blue/20'}
+        />
         <ActivitySidebar />
       </AppShell.Aside>
 

@@ -8,6 +8,31 @@ import { DesignInspector } from '@/components/design/design-inspector';
 import { useRendererBridge, type UseRendererBridgeResult } from '@/lib/hooks/use-renderer-bridge';
 import { propertyToCss } from '@/lib/design/property-to-css';
 import { Button } from '@/components/ui/button';
+import {
+  ActionIcon,
+  Tooltip as MantineTooltip,
+  Progress as MantineProgress,
+  Group as MantineGroup,
+  Text as MantineText,
+  Menu,
+  Loader as MantineLoader,
+  Box as MantineBox,
+  Popover,
+  Checkbox,
+  Button as MantineButton,
+  Stack as MantineStack,
+  ScrollArea as MantineScrollArea,
+} from '@mantine/core';
+import {
+  IconShieldCheck,
+  IconLink,
+  IconPlayerPlayFilled,
+  IconArrowLeft,
+  IconEye,
+  IconRoute,
+  IconPencil,
+  IconX,
+} from '@tabler/icons-react';
 import { CoherenceResultsModal } from '@/components/design/coherence-results-modal';
 import { PipelineProgress } from '@/components/design/pipeline-progress';
 import type { CoherenceResult } from '@/lib/design/coherence-check';
@@ -47,6 +72,48 @@ function DesignStudioContent() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('page'));
   const [projectName, setProjectName] = useState('Project');
+
+  // Inspector panel resize
+  const INSPECTOR_STORAGE_KEY = 'chip-inspector-width';
+  const INSPECTOR_MIN = 260;
+  const INSPECTOR_MAX = 500;
+  const INSPECTOR_DEFAULT = 300;
+  const [inspectorWidth, setInspectorWidth] = useState(() => {
+    if (typeof window === 'undefined') return INSPECTOR_DEFAULT;
+    const saved = localStorage.getItem(INSPECTOR_STORAGE_KEY);
+    return saved ? Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, Number(saved))) : INSPECTOR_DEFAULT;
+  });
+  const [isInspectorResizing, setIsInspectorResizing] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [generatePickerOpen, setGeneratePickerOpen] = useState(false);
+  const [generateSelection, setGenerateSelection] = useState<Set<string>>(new Set());
+
+  const handleInspectorResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = inspectorWidth;
+    setIsInspectorResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX;
+      const clamped = Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, startWidth + delta));
+      setInspectorWidth(clamped);
+    };
+
+    const onMouseUp = () => {
+      setIsInspectorResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setInspectorWidth(w => { localStorage.setItem(INSPECTOR_STORAGE_KEY, String(w)); return w; });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [inspectorWidth]);
 
   // Inspector state
   const [selectedNode, setSelectedNode] = useState<{
@@ -113,7 +180,6 @@ function DesignStudioContent() {
   const [prototypeMode, setPrototypeMode] = useState(false);
   const [prototypeLoading, setPrototypeLoading] = useState(false);
   const [prototypePayload, setPrototypePayload] = useState<string | null>(null);
-  const [showNavEditor, setShowNavEditor] = useState(false);
   const [prototypeScreens, setPrototypeScreens] = useState<{ id: string; name: string; screenType?: 'page' | 'modal' | 'drawer' | 'sheet' }[]>([]);
   const [activeProtoScreen, setActiveProtoScreen] = useState<string | null>(null);
   const [pickedNode, setPickedNode] = useState<{ nodeId: string; catalogType: string | null } | null>(null);
@@ -189,7 +255,6 @@ function DesignStudioContent() {
   const handleExitPrototype = useCallback(() => {
     setPrototypeMode(false);
     setPrototypePayload(null);
-    setShowNavEditor(false);
     bridgeRef.current = null;
     if (selectedId && designSpec) {
       const rd = rendererDataRef.current;
@@ -800,6 +865,7 @@ function DesignStudioContent() {
   const handleNodeClicked = useCallback(
     (data: { nodeId: string; catalogType: string | null; computedStyles: Record<string, string> }) => {
       setSelectedNode(data);
+      setEditMode(true);
     },
     [],
   );
@@ -1214,140 +1280,240 @@ function DesignStudioContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] -m-6 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 border-b border-border bg-bg-card/50 px-4 py-2 flex-shrink-0">
+      <div className="flex items-center gap-2 border-b border-border bg-bg-card/50 px-4 py-3 flex-shrink-0" style={{ transition: 'background-color 200ms ease' }}>
         {prototypeMode ? (
           <>
             <Button variant="secondary" size="sm" onClick={handleExitPrototype}>
-              Exit Prototype
+              <MantineGroup gap={4}>
+                <IconArrowLeft size={14} />
+                <span>Exit</span>
+              </MantineGroup>
             </Button>
-            <div className="w-px h-4 bg-border" />
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowNavEditor(!showNavEditor)}
-              >
-                Navigation
-              </Button>
-              {showNavEditor && (
-                <div className="absolute top-full left-0 mt-1 z-50 w-80 rounded-lg border border-border bg-sidebar shadow-xl">
-                  <div className="flex items-center gap-1 px-3 py-2 border-b border-border overflow-x-auto">
-                    {prototypeScreens.map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => setActiveProtoScreen(s.id)}
-                        className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
-                          activeProtoScreen === s.id
-                            ? 'bg-accent-blue/10 text-accent-blue font-medium'
-                            : 'text-text-muted hover:text-text-primary'
-                        }`}
-                      >
-                        {s.name}
-                      </button>
-                    ))}
-                  </div>
-                  <NavigationEditor
-                    pages={prototypeScreens}
-                    activePageId={activeProtoScreen}
-                    pickedNode={pickedNode}
-                    onStartPicking={() => {
-                      bridgeRef.current?.enableTagging();
-                      bridgeRef.current?.onNodeClicked((nodeId, catalogType) => {
-                        setPickedNode({ nodeId, catalogType });
-                        for (const [screenId, spec] of Object.entries(protoSpecsRef.current)) {
-                          const nodes = (spec as { nodes?: Record<string, unknown> }).nodes;
-                          if (nodes && nodeId in nodes) {
-                            setActiveProtoScreen(screenId);
-                            break;
-                          }
-                        }
-                      });
-                    }}
-                    onStopPicking={() => {
-                      bridgeRef.current?.disableTagging();
-                      bridgeRef.current?.onNodeClicked(null);
-                      setPickedNode(null);
-                    }}
-                    onSaved={async () => {
-                      try {
-                        const res = await fetch('/api/prototype');
-                        if (!res.ok) return;
-                        const data = await res.json();
-                        const payload = JSON.stringify({
-                          manifest: data.manifest,
-                          specs: data.specs,
-                          tokens: data.tokens,
-                          catalog: data.catalog,
-                          chromeSpec: data.chromeSpec ?? null,
-                        });
-                        protoSpecsRef.current = data.specs as Record<string, Record<string, unknown>>;
-                        setPrototypePayload(payload);
-                        setProtoKey(k => k + 1);
-                        log('INFO', 'studio', 'Prototype refreshed with updated navigation');
-                      } catch {
-                        // ignore
-                      }
-                    }}
-                  />
+
+            <Menu shadow="md" width={320} position="bottom-start">
+              <Menu.Target>
+                <Button variant="ghost" size="sm">
+                  <MantineGroup gap={4}>
+                    <IconRoute size={14} />
+                    <span>Navigation</span>
+                  </MantineGroup>
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown p={0}>
+                <div className="flex items-center gap-1 px-3 py-2 border-b border-border overflow-x-auto">
+                  {prototypeScreens.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveProtoScreen(s.id)}
+                      className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
+                        activeProtoScreen === s.id
+                          ? 'bg-accent-blue/10 text-accent-blue font-medium'
+                          : 'text-text-muted hover:text-text-primary'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-            <span className="text-xs text-text-muted">
-              {prototypeScreens.length} screens
-            </span>
-            <span className="ml-auto text-xs font-medium text-accent-blue">
-              Prototype Mode
-            </span>
+                <NavigationEditor
+                  pages={prototypeScreens}
+                  activePageId={activeProtoScreen}
+                  pickedNode={pickedNode}
+                  onStartPicking={() => {
+                    bridgeRef.current?.enableTagging();
+                    bridgeRef.current?.onNodeClicked((nodeId, catalogType) => {
+                      setPickedNode({ nodeId, catalogType });
+                      for (const [screenId, spec] of Object.entries(protoSpecsRef.current)) {
+                        const nodes = (spec as { nodes?: Record<string, unknown> }).nodes;
+                        if (nodes && nodeId in nodes) {
+                          setActiveProtoScreen(screenId);
+                          break;
+                        }
+                      }
+                    });
+                  }}
+                  onStopPicking={() => {
+                    bridgeRef.current?.disableTagging();
+                    bridgeRef.current?.onNodeClicked(null);
+                    setPickedNode(null);
+                  }}
+                  onSaved={async () => {
+                    try {
+                      const res = await fetch('/api/prototype');
+                      if (!res.ok) return;
+                      const data = await res.json();
+                      const payload = JSON.stringify({
+                        manifest: data.manifest,
+                        specs: data.specs,
+                        tokens: data.tokens,
+                        catalog: data.catalog,
+                        chromeSpec: data.chromeSpec ?? null,
+                      });
+                      protoSpecsRef.current = data.specs as Record<string, Record<string, unknown>>;
+                      setPrototypePayload(payload);
+                      setProtoKey(k => k + 1);
+                      log('INFO', 'studio', 'Prototype refreshed with updated navigation');
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                />
+              </Menu.Dropdown>
+            </Menu>
+
+            <MantineText size="xs" c="dimmed">{prototypeScreens.length} screens</MantineText>
+
+            <MantineGroup gap={6} ml="auto">
+              <MantineBox w={8} h={8} style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-blue-5)', animation: 'liveDot 2s ease-in-out infinite' }} />
+              <MantineText size="xs" fw={500} c="blue">Live</MantineText>
+            </MantineGroup>
           </>
         ) : (
           <>
+            {/* Primary action */}
             <Button
               variant="primary"
               size="sm"
               disabled={approvedCount < 2 || prototypeLoading}
               onClick={handleLoadPrototype}
             >
-              {prototypeLoading ? 'Loading...' : 'Prototype'}
+              {prototypeLoading ? (
+                <MantineGroup gap={6}><MantineLoader size={12} color="white" /><span>Loading</span></MantineGroup>
+              ) : (
+                <MantineGroup gap={4}><IconEye size={14} /><span>Prototype</span></MantineGroup>
+              )}
             </Button>
-            <div className="w-px h-4 bg-border" />
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={approvedCount < 2 || coherenceLoading}
-              onClick={handleCheckCoherence}
-            >
-              {coherenceLoading ? 'Checking...' : 'Check Coherence'}
-            </Button>
-            <div className="w-px h-4 bg-border" />
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!selectedId || !designSpec || mechanicalAuditLoading}
-              onClick={handleRunMechanicalAudit}
-            >
-              {mechanicalAuditLoading ? 'Auditing...' : 'Audit'}
-            </Button>
-            {pages.some(p => p.designStatus !== 'rendered' && p.designStatus !== 'approved' && p.designStatus !== 'generating') && (
-              <>
-                <div className="w-px h-4 bg-border" />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={generatingAll}
-                  onClick={handleGenerateAll}
-                  data-testid="generate-all-designs"
+
+            {/* Edit mode toggle */}
+            <MantineTooltip label={editMode ? 'Close inspector' : 'Edit design'} position="bottom" withArrow>
+              <ActionIcon
+                variant={editMode ? 'filled' : 'default'}
+                size="md"
+                aria-label="Edit"
+                color={editMode ? 'blue' : undefined}
+                onClick={() => setEditMode(v => !v)}
+                disabled={!selectedId || !designSpec}
+              >
+                {editMode ? <IconX size={14} /> : <IconPencil size={14} />}
+              </ActionIcon>
+            </MantineTooltip>
+
+            {/* Secondary icon actions */}
+            <MantineGroup gap={4}>
+              <MantineTooltip label="Run audit" position="bottom" withArrow>
+                <ActionIcon
+                  variant="default"
+                  size="md"
+                  aria-label="Audit"
+                  disabled={!selectedId || !designSpec || mechanicalAuditLoading}
+                  onClick={handleRunMechanicalAudit}
                 >
-                  {generatingAll && genAllProgress
-                    ? `Generating ${genAllProgress.current}/${genAllProgress.total}...`
-                    : 'Generate All'}
-                </Button>
-              </>
+                  {mechanicalAuditLoading ? <MantineLoader size={14} /> : <IconShieldCheck size={16} />}
+                </ActionIcon>
+              </MantineTooltip>
+
+              <MantineTooltip label="Check coherence" position="bottom" withArrow>
+                <ActionIcon
+                  variant="default"
+                  size="md"
+                  aria-label="Check Coherence"
+                  disabled={approvedCount < 2 || coherenceLoading}
+                  onClick={handleCheckCoherence}
+                >
+                  {coherenceLoading ? <MantineLoader size={14} /> : <IconLink size={16} />}
+                </ActionIcon>
+              </MantineTooltip>
+
+              <Popover
+                opened={generatePickerOpen}
+                onChange={setGeneratePickerOpen}
+                position="bottom-end"
+                shadow="md"
+                width={280}
+                onOpen={() => {
+                  const pending = new Set(
+                    pages
+                      .filter(p => p.designStatus !== 'rendered' && p.designStatus !== 'approved' && p.designStatus !== 'generating')
+                      .map(p => p.id)
+                  );
+                  setGenerateSelection(pending);
+                }}
+              >
+                <Popover.Target>
+                  <MantineTooltip label={generatingAll && genAllProgress ? `Generating ${genAllProgress.current}/${genAllProgress.total}` : 'Generate designs'} position="bottom" withArrow>
+                    <ActionIcon
+                      variant="default"
+                      size="md"
+                      aria-label="Generate"
+                      disabled={generatingAll}
+                      onClick={() => setGeneratePickerOpen(v => !v)}
+                      data-testid="generate-all-designs"
+                    >
+                      {generatingAll ? <MantineLoader size={14} /> : <IconPlayerPlayFilled size={14} />}
+                    </ActionIcon>
+                  </MantineTooltip>
+                </Popover.Target>
+                <Popover.Dropdown>
+                  <MantineText size="xs" fw={600} mb="xs">Select pages to generate</MantineText>
+                  <MantineScrollArea.Autosize mah={240}>
+                    <MantineStack gap={4}>
+                      {pages.map(p => {
+                        const isDesigned = p.designStatus === 'rendered' || p.designStatus === 'approved';
+                        return (
+                          <Checkbox
+                            key={p.id}
+                            size="xs"
+                            label={
+                              <MantineGroup gap={4}>
+                                <MantineText size="xs" style={{ opacity: isDesigned ? 0.6 : 1 }}>{p.name}</MantineText>
+                                {isDesigned && <MantineText size="xs" c="dimmed">(redesign)</MantineText>}
+                              </MantineGroup>
+                            }
+                            checked={generateSelection.has(p.id)}
+                            onChange={() => {
+                              setGenerateSelection(prev => {
+                                const next = new Set(prev);
+                                if (next.has(p.id)) next.delete(p.id);
+                                else next.add(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        );
+                      })}
+                    </MantineStack>
+                  </MantineScrollArea.Autosize>
+                  <MantineGroup justify="space-between" mt="sm">
+                    <MantineText size="xs" c="dimmed">{generateSelection.size} selected</MantineText>
+                    <MantineButton
+                      size="compact-xs"
+                      disabled={generateSelection.size === 0}
+                      onClick={() => {
+                        setGeneratePickerOpen(false);
+                        handleGenerateAll();
+                      }}
+                    >
+                      Generate ({generateSelection.size})
+                    </MantineButton>
+                  </MantineGroup>
+                </Popover.Dropdown>
+              </Popover>
+            </MantineGroup>
+
+            {/* Progress indicator */}
+            {pages.length > 0 && (
+              <MantineGroup gap={8} ml="auto" wrap="nowrap">
+                <MantineProgress
+                  value={pages.length > 0 ? (approvedCount / pages.length) * 100 : 0}
+                  size="xs"
+                  color="blue"
+                  w={100}
+                />
+                <MantineText size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                  {approvedCount} of {pages.length} designed
+                </MantineText>
+              </MantineGroup>
             )}
-            <span className="text-xs text-text-muted">
-              {approvedCount < 2
-                ? `Need 2+ designed pages (${approvedCount} available)`
-                : `${approvedCount} designed pages`}
-            </span>
           </>
         )}
       </div>
@@ -1420,7 +1586,7 @@ function DesignStudioContent() {
       <div className="flex flex-1 min-h-0 overflow-hidden px-6">
       {/* Left panel: Page Registry — hidden in prototype mode */}
       {!prototypeMode && (
-      <div className="w-[200px] flex-shrink-0 border-r border-border bg-bg-card/30">
+      <div className="w-[240px] flex-shrink-0 border-r border-border bg-bg-card/30">
         <PageRegistry
           pages={pages}
           selectedId={selectedId}
@@ -1431,7 +1597,7 @@ function DesignStudioContent() {
       )}
 
       {/* Center panel */}
-      <div className="flex-1 min-w-0 bg-bg-base">
+      <div className="flex-1 min-w-0 bg-bg-base overflow-hidden">
         {prototypeMode ? (
           <PrototypeView onBridgeReady={handleBridgeReady} />
         ) : pipelineRunId ? (
@@ -1467,9 +1633,22 @@ function DesignStudioContent() {
         )}
       </div>
 
-      {/* Right panel: Inspector — hidden in prototype mode */}
-      {!prototypeMode && (
-      <div className="w-[260px] flex-shrink-0 border-l border-border overflow-hidden flex flex-col">
+      {/* Right panel: Inspector — hidden in prototype mode and when not in edit mode */}
+      {!prototypeMode && editMode && (
+      <>
+      {/* Resize handle */}
+      <div
+        onMouseDown={handleInspectorResizeStart}
+        style={{
+          width: 4,
+          cursor: 'col-resize',
+          flexShrink: 0,
+          background: isInspectorResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
+          transition: isInspectorResizing ? 'none' : 'background 150ms',
+        }}
+        className="hover:bg-border"
+      />
+      <div className="flex-shrink-0 border-l border-border overflow-hidden flex flex-col" style={{ width: inspectorWidth, transition: isInspectorResizing ? 'none' : 'width 200ms ease' }}>
         <DesignInspector
           selectedNode={selectedNode}
           designSpec={designSpec}
@@ -1500,6 +1679,7 @@ function DesignStudioContent() {
           addressedIssues={addressedIssues}
         />
       </div>
+      </>
       )}
       </div>
 

@@ -1,7 +1,18 @@
 'use client';
 
-import React from 'react';
-import { Badge, type BadgeVariant } from '../ui/badge';
+import React, { useState, useMemo } from 'react';
+import {
+  TextInput,
+  Tooltip,
+  ScrollArea,
+  Loader,
+  UnstyledButton,
+  Box,
+  Text,
+  Stack,
+  Group,
+} from '@mantine/core';
+import { IconSearch, IconPlus } from '@tabler/icons-react';
 import { Button } from '../ui/button';
 
 export interface Page {
@@ -20,92 +31,141 @@ export interface PageRegistryProps {
   onCreateNew: () => void;
 }
 
-const statusBadgeConfig: Record<string, { label: string; variant: BadgeVariant; pulse?: boolean }> = {
-  draft: { label: 'Draft', variant: 'default' },
-  generating: { label: 'Generating', variant: 'info', pulse: true },
-  rendered: { label: 'Rendered', variant: 'warning' },
-  correction: { label: 'Correction', variant: 'warning' },
-  approved: { label: 'Approved', variant: 'success' },
-  locked: { label: 'Locked', variant: 'purple' },
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  draft: { label: 'Draft', color: 'var(--mantine-color-gray-6)' },
+  generating: { label: 'Generating', color: 'var(--mantine-color-blue-5)' },
+  rendered: { label: 'Rendered', color: 'var(--mantine-color-yellow-5)' },
+  correction: { label: 'Correction', color: 'var(--mantine-color-yellow-5)' },
+  approved: { label: 'Approved', color: 'var(--mantine-color-green-5)' },
+  locked: { label: 'Locked', color: 'var(--mantine-color-violet-5)' },
 };
 
-function PageStatusBadge({ designStatus, specStatus }: { designStatus: string; specStatus?: string }) {
-  // If design pipeline has been touched (not draft), show designStatus
+function getStatusConfig(designStatus: string, specStatus?: string): { label: string; color: string } {
   if (designStatus && designStatus !== 'draft') {
-    const config = statusBadgeConfig[designStatus] ?? { label: designStatus, variant: 'default' as BadgeVariant };
-    return (
-      <Badge variant={config.variant} className={config.pulse ? 'animate-pulse' : ''}>
-        {config.label}
-      </Badge>
-    );
+    return STATUS_CONFIG[designStatus] ?? { label: designStatus, color: 'var(--mantine-color-gray-6)' };
   }
-
-  // Derive from spec status when design is still draft
   if (specStatus === 'approved') {
-    return <Badge variant="info">Ready to design</Badge>;
+    return { label: 'Ready to design', color: 'var(--mantine-color-blue-5)' };
   }
   if (specStatus === 'requested' || specStatus === 'draft') {
-    return <Badge variant="default">Spec pending</Badge>;
+    return { label: 'Spec pending', color: 'var(--mantine-color-gray-6)' };
   }
-
-  // Fallback
-  const config = statusBadgeConfig.draft;
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+  return STATUS_CONFIG.draft;
 }
 
-/**
- * Left-panel page registry listing all pages with their design status.
- * Allows selecting a page and creating new ones.
- */
-export function PageRegistry({ pages, selectedId, onSelect, onCreateNew }: PageRegistryProps) {
+export function PageRegistry({ pages, selectedId, onSelect, onCreateNew }: PageRegistryProps): React.ReactElement {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return pages;
+    const q = search.toLowerCase();
+    return pages.filter(p => p.name.toLowerCase().includes(q));
+  }, [pages, search]);
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-3 py-3 border-b border-border">
-        <h2 className="text-sm font-semibold text-text-primary">Pages</h2>
-        <p className="text-xs text-text-muted mt-0.5">{pages.length} page{pages.length !== 1 ? 's' : ''}</p>
-      </div>
+    <Stack gap={0} h="100%">
+      {/* Header with search */}
+      <Box px="sm" py="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+        <Group justify="space-between" mb={4}>
+          <Text size="sm" fw={600}>Pages</Text>
+          <Text size="xs" c="dimmed">{pages.length}</Text>
+        </Group>
+        <TextInput
+          placeholder="Filter screens..."
+          size="xs"
+          leftSection={<IconSearch size={14} />}
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+        />
+      </Box>
 
-      <div className="flex-1 overflow-y-auto py-2 space-y-1 px-2">
-        {pages.map((page) => {
-          const isSelected = page.id === selectedId;
-          return (
-            <button
-              key={page.id}
-              data-testid={`page-${page.id}`}
-              onClick={() => onSelect(page.id)}
-              className={[
-                'w-full text-left rounded-md px-3 py-2.5 transition-colors',
-                isSelected
-                  ? 'bg-accent-blue/15 border border-accent-blue/40'
-                  : 'hover:bg-bg-elevated border border-transparent',
-              ].join(' ')}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-text-primary truncate">{page.name}</span>
-                <PageStatusBadge designStatus={page.designStatus ?? 'draft'} specStatus={page.status} />
-              </div>
-              {page.description && (
-                <p className="text-xs text-text-muted mt-1 line-clamp-2">{page.description}</p>
-              )}
-              {page.components && page.components.length > 0 && (
-                <p className="text-xs text-text-muted mt-0.5">{page.components.length} component{page.components.length !== 1 ? 's' : ''}</p>
-              )}
-            </button>
-          );
-        })}
+      {/* Page list */}
+      <ScrollArea flex={1} type="auto" offsetScrollbars>
+        <Stack gap={2} p="xs">
+          {filtered.map((page) => {
+            const isSelected = page.id === selectedId;
+            const isGenerating = page.designStatus === 'generating';
+            const config = getStatusConfig(page.designStatus ?? 'draft', page.status);
 
-        {pages.length === 0 && (
-          <div className="text-center py-8 text-text-muted text-xs">
-            No pages yet. Create one to get started.
-          </div>
-        )}
-      </div>
+            return (
+              <UnstyledButton
+                key={page.id}
+                data-testid={`page-${page.id}`}
+                onClick={() => onSelect(page.id)}
+                px="sm"
+                py={8}
+                style={{
+                  borderRadius: 'var(--mantine-radius-md)',
+                  borderLeft: `3px solid ${isSelected ? 'var(--mantine-color-blue-5)' : config.color}`,
+                  backgroundColor: isSelected ? 'var(--mantine-color-blue-light)' : undefined,
+                  transition: 'all 150ms ease',
+                }}
+                className={isSelected ? '' : 'hover-bg-elevated'}
+              >
+                <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
+                  <Box flex={1} miw={0}>
+                    <Text
+                      size="sm"
+                      fw={500}
+                      lineClamp={2}
+                      style={{ wordBreak: 'break-word' }}
+                    >
+                      {page.name}
+                    </Text>
+                    {page.description && (
+                      <Tooltip label={page.description} multiline maw={260} position="right" withArrow>
+                        <Text size="xs" c="dimmed" lineClamp={1} mt={2}>
+                          {page.description}
+                        </Text>
+                      </Tooltip>
+                    )}
+                  </Box>
+                  {/* Status indicator */}
+                  {isGenerating ? (
+                    <Loader size={14} color="blue" mt={3} />
+                  ) : (
+                    <Tooltip label={config.label} position="right" withArrow>
+                      <Box
+                        w={8}
+                        h={8}
+                        mt={5}
+                        style={{
+                          borderRadius: '50%',
+                          backgroundColor: config.color,
+                          flexShrink: 0,
+                          animation: page.designStatus === 'generating' ? 'pulseAccent 1.5s ease-in-out infinite' : undefined,
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                </Group>
+              </UnstyledButton>
+            );
+          })}
 
-      <div className="px-3 py-3 border-t border-border">
-        <Button variant="secondary" size="sm" className="w-full" data-testid="create-page-btn" onClick={onCreateNew}>
-          + New page
+          {filtered.length === 0 && (
+            <Text ta="center" py="xl" size="xs" c="dimmed">
+              {search ? 'No pages match your filter' : 'No pages yet. Create one to get started.'}
+            </Text>
+          )}
+        </Stack>
+      </ScrollArea>
+
+      {/* Footer with new page button */}
+      <Box px="sm" py="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          data-testid="create-page-btn"
+          onClick={onCreateNew}
+        >
+          <Group gap={4}>
+            <IconPlus size={14} />
+            <span>New page</span>
+          </Group>
         </Button>
-      </div>
-    </div>
+      </Box>
+    </Stack>
   );
 }

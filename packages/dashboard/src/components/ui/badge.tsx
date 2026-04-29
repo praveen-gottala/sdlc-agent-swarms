@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { Badge as MantineBadge } from '@mantine/core';
 
 export type BadgeVariant =
   | 'default'
@@ -14,32 +17,29 @@ export interface BadgeProps {
   className?: string;
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  default: 'bg-bg-elevated text-text-secondary',
-  success: 'bg-accent-green/15 text-accent-green',
-  warning: 'bg-accent-yellow/15 text-accent-yellow',
-  danger: 'bg-accent-red/15 text-accent-red',
-  info: 'bg-accent-blue/15 text-accent-blue',
-  purple: 'bg-accent-purple/15 text-accent-purple',
+const COLOR_MAP: Record<BadgeVariant, string> = {
+  default: 'gray',
+  success: 'green',
+  warning: 'yellow',
+  danger: 'red',
+  info: 'blue',
+  purple: 'violet',
 };
 
-/**
- * Small colored pill badge for status indicators.
- */
 export function Badge({
   variant = 'default',
   className = '',
   children,
-}: BadgeProps) {
+}: BadgeProps): React.ReactElement {
   return (
-    <span
-      className={[
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        variantClasses[variant],
-        className,
-      ].join(' ')}
+    <MantineBadge
+      variant="light"
+      color={COLOR_MAP[variant]}
+      size="sm"
+      radius="xl"
+      className={className}
     >
       {children}
-    </span>
+    </MantineBadge>
   );
 }

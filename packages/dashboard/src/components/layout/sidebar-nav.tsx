@@ -48,7 +48,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Build',
     items: [
-      { icon: IconPipeline, label: 'Pipeline', href: '/pipeline' },
+      { icon: IconPipeline, label: 'Runs', href: '/pipeline' },
       { icon: IconPalette, label: 'Design Studio', href: '/design' },
       { icon: IconFileText, label: 'Spec', href: '/spec' },
     ],
@@ -207,7 +207,7 @@ export function SidebarNav({
         )}
       </Box>
 
-      {/* New Project link */}
+      {/* New Project link — styled as regular nav item */}
       <Box px={collapsed ? 6 : 'xs'} pt="xs">
         <Tooltip label="New Project" position="right" withArrow disabled={!collapsed}>
           <NavLink
@@ -216,17 +216,7 @@ export function SidebarNav({
             label={collapsed ? undefined : 'New Project'}
             leftSection={<IconPlus size={18} stroke={1.5} />}
             active={pathname === '/new'}
-            color="blue"
-            variant="light"
-            className="gradient-btn"
-            styles={{
-              root: {
-                borderRadius: 'var(--mantine-radius-md)',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: 13,
-              },
-            }}
+            variant="subtle"
             data-testid="nav-new-project"
           />
         </Tooltip>

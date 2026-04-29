@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { Paper, Box } from '@mantine/core';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -7,29 +10,27 @@ export interface CardProps {
   className?: string;
 }
 
-/**
- * Card container with dark background, border, optional header and hover effect.
- */
 export function Card({
   children,
   header,
   hover = false,
   className = '',
-}: CardProps) {
+}: CardProps): React.ReactElement {
   return (
-    <div
-      className={[
-        'rounded-lg border border-border bg-bg-card',
-        hover ? 'transition-colors hover:border-text-muted' : '',
-        className,
-      ].join(' ')}
+    <Paper
+      withBorder
+      radius="md"
+      className={className}
+      style={hover ? { transition: 'border-color 150ms ease' } : undefined}
+      onMouseEnter={hover ? (e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mantine-color-gray-5)'; } : undefined}
+      onMouseLeave={hover ? (e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; } : undefined}
     >
       {header != null && (
-        <div className="border-b border-border px-4 py-3 text-sm font-medium text-text-primary">
+        <Box px="md" py="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           {header}
-        </div>
+        </Box>
       )}
-      <div className="p-4">{children}</div>
-    </div>
+      <Box p="md">{children}</Box>
+    </Paper>
   );
 }

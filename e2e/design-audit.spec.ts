@@ -30,14 +30,17 @@ test.describe('Design Audit @audit', () => {
     await expect(auditBtn).toBeDisabled();
   });
 
-  test('audit tab exists in inspector', async ({ page }) => {
-    const auditTab = page.getByRole('tab', { name: /audit/i });
-    await expect(auditTab).toBeVisible({ timeout: 10_000 });
+  test('audit section exists in inspector quality zone', async ({ page }) => {
+    const qualitySection = page.getByTestId('section-quality');
+    await expect(qualitySection).toBeVisible({ timeout: 10_000 });
+    await qualitySection.click();
+    await expect(page.getByText('MECHANICAL AUDIT')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('audit tab shows idle message before running', async ({ page }) => {
-    const auditTab = page.getByRole('tab', { name: /audit/i });
-    await auditTab.click();
+  test('audit section shows idle message before running', async ({ page }) => {
+    const qualitySection = page.getByTestId('section-quality');
+    await expect(qualitySection).toBeVisible({ timeout: 10_000 });
+    await qualitySection.click();
     await expect(page.getByText(/Click.*Audit.*toolbar/)).toBeVisible({ timeout: 5_000 });
   });
 
@@ -62,9 +65,9 @@ test.describe('Design Audit @audit', () => {
 
     await auditBtn.click();
 
-    // Switch to Audit tab in inspector
-    const auditTab = page.getByRole('tab', { name: /audit/i });
-    await auditTab.click();
+    // Expand Quality zone to see audit results
+    const qualitySection = page.getByTestId('section-quality');
+    await qualitySection.click();
 
     // Wait for DOM extraction + API call + results render
     await expect(page.getByText('spec nodes found in DOM')).toBeVisible({ timeout: 30_000 });
@@ -108,29 +111,24 @@ test.describe('Design Audit @audit', () => {
     await expect(auditBtn).toBeEnabled({ timeout: 30_000 });
     await page.waitForTimeout(5000);
     await auditBtn.click();
-    const auditTabBtn = page.getByRole('tab', { name: /audit/i });
-    await auditTabBtn.click();
+    // Audit results are visible in the Quality zone
     await expect(page.getByText('spec nodes found in DOM')).toBeVisible({ timeout: 30_000 });
 
     // Switch to second page
     await secondPageBtn.click();
     await page.waitForTimeout(3000);
 
-    // Switch to Audit tab — should show idle message
-    const auditTab = page.getByRole('tab', { name: /audit/i });
-    await auditTab.click();
+    // Quality zone should show idle message for the new page
     await expect(page.getByText(/Click.*Audit.*toolbar/)).toBeVisible({ timeout: 5_000 });
   });
 
   test('deep audit button state depends on API key', async ({ page }) => {
     await page.waitForTimeout(2000);
 
-    // Switch to audit tab
-    const auditTab = page.getByRole('tab', { name: /audit/i });
-    await auditTab.click();
-
-    // Deep audit section should be visible
-    await expect(page.getByText('Deep Audit (Vision)')).toBeVisible({ timeout: 5_000 });
+    // Expand Quality zone to see audit content
+    const qualitySection = page.getByTestId('section-quality');
+    await qualitySection.click();
+    await expect(page.getByText('DEEP AUDIT (VISION)')).toBeVisible({ timeout: 5_000 });
 
     // The "Run Deep Audit" button should exist
     const deepBtn = page.getByRole('button', { name: /Run Deep Audit/i });
