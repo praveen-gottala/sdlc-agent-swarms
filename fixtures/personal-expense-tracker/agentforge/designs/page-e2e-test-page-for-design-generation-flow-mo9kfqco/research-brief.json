@@ -1,0 +1,50 @@
+{
+  "briefId": "brief-page-e2e-test-page-for-design-generation-flow-mo9kfqco-1700000000000",
+  "moduleId": "page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Must use 8px spacing unit grid system consistent with the established design token scale (4, 8, 12, 16, 24, 32, 48, 64px)",
+    "Background must use background-primary token (deep-navy #0F172A) to match the dark-theme application shell",
+    "Surface cards and containers must use surface-primary (navy-surface #1E293B) or surface-elevated (navy-raised #293548) tokens",
+    "Typography must use DM Sans (display) for headings and DM Mono (body) for body/label text per established font families",
+    "Border radius must follow token scale: small=6px, medium=10px, large=16px, pill=9999px",
+    "Maximum 3 levels of visual hierarchy to maintain clarity on a test/utility page",
+    "Content max-width capped at 1280px with 24px grid margins and 24px gutters on a 12-column grid",
+    "Primary CTA elements must use cta-primary (gold-amber #F59E0B) with text-on-cta (deep-navy #0F172A) for contrast",
+    "Borders must use border-default (slate-border #334155) for container outlines",
+    "Elevation level 1 shadow (0 1px 4px rgba(0,0,0,0.3)) for card components on the dark surface",
+    "Desktop-first layout at 1440px viewport with tablet support at 768px breakpoint",
+    "Minimum touch target size of 44x44px for all interactive elements",
+    "Focus ring must use cta-primary color with 2px width and 2px offset per state tokens",
+    "Motion transitions must use normal duration (300ms) with default easing cubic-bezier(0.4,0,0.2,1) for any interactive state changes",
+    "Page is a utility/test page — layout should be minimal, single-column, centered, with clear status indicators using teal-success (#14B8A6) and coral-error (#F87171) tokens"
+  ],
+  "referencePatterns": [
+    "Single-column centered layout pattern consistent with the Add Expense focused form page",
+    "TopBar shared component pattern for consistent app chrome (appears on dashboard, add-expense, spending-insights)",
+    "NavigationTabs shared component pattern for bottom navigation consistency across main pages",
+    "Card-based content grouping using navy-surface background with elevation level 1 shadow",
+    "Status badge pattern using BudgetStatusBadge / SpendingDiffBadge visual language with teal-success and coral-error semantic colors",
+    "EmptyState pattern for placeholder content areas when no data or components are present",
+    "Gold-amber accent highlight pattern for primary interactive elements and key data points",
+    "Monospace body font (DM Mono) for any code, test output, or technical data display",
+    "Dark navy illustration/icon style with geometric minimal aesthetic per brand illustration direction"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of at least 4.5:1 for all normal text — silver-text (#CBD5E1) on deep-navy (#0F172A) achieves approximately 10.9:1 and is compliant",
+    "WCAG 2.1 AA color contrast ratio of at least 3:1 for large text (18px+ or 14px bold) and UI component boundaries",
+    "All interactive elements must be keyboard navigable with visible focus indicators using the gold-amber (#F59E0B) focus ring (2px width, 2px offset)",
+    "Focus order must follow a logical top-to-bottom, left-to-right DOM sequence matching visual layout",
+    "All status indicators (success/error/warning states) must not rely on color alone — must include text labels or icons alongside color cues",
+    "Any test result or status output sections must have appropriate ARIA live regions (aria-live='polite' or 'assertive') for dynamic content updates",
+    "Page landmark regions must be defined: <main> for primary content, <header> for TopBar, <nav> for NavigationTabs",
+    "All icon-only buttons must have aria-label attributes describing their action",
+    "Minimum touch target size of 44x44px for all interactive controls per established touch_targets token",
+    "Text must not be rendered as images; all content must be selectable and screen-reader accessible",
+    "Disabled states must use disabled_opacity (0.38) and include aria-disabled='true' on affected elements",
+    "Color tokens coral-error (#F87171) used for error states must meet 3:1 contrast against navy-surface (#1E293B) background for UI component boundaries"
+  ],
+  "dataModelDependencies": []
+}

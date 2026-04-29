@@ -1,0 +1,55 @@
+{
+  "briefId": "brief-page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3-1776833153480",
+  "moduleId": "page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Must use 8px spacing unit grid system with scale values [4, 8, 12, 16, 24, 32, 48, 64]px",
+    "Background must use background-primary token (deep-navy #0F172A) consistent with all other app screens",
+    "Form sections and setting groups must use surface-primary (navy-surface #1E293B) cards with elevation level 1 shadow (0 1px 4px rgba(0,0,0,0.3))",
+    "Input fields must use surface-input (deep-navy #0F172A) background with slate-border (#334155) default border and gold-amber (#F59E0B) focus border",
+    "Primary Save/Done CTA must use cta-primary (gold-amber #F59E0B) background with text-on-cta (deep-navy #0F172A) text, matching dashboard and add-expense CTA patterns",
+    "Maximum 3 levels of visual hierarchy: page title → section headers → field labels",
+    "Content max width of 1280px with 24px grid margin; single-column layout for settings form fields",
+    "Border radius must follow token scale: small=6px for inputs, medium=10px for cards/sections, pill=9999px for toggle/chip elements",
+    "TopBar shared component must be included for consistency with dashboard, add-expense, and spending-insights pages",
+    "NavigationTabs shared component must be included at bottom for consistent app-wide navigation",
+    "Minimum touch target size of 44×44px for all interactive controls including toggles, selects, and buttons",
+    "Desktop-first layout at 1440px viewport with tablet support at 768px breakpoint",
+    "Typography must use DM Sans (display) for headings and section labels, DM Mono (body) for input values and data fields",
+    "Focus ring must use gold-amber (#F59E0B) with 2px width and 2px offset on all interactive elements",
+    "Destructive or error states must use coral-error (#F87171) for border-error and error tokens"
+  ],
+  "referencePatterns": [
+    "Settings drawer pattern from existing /settings screen — adapt drawer content into full-page layout with identical field groupings",
+    "Card-based section grouping pattern from Dashboard BudgetSummaryCard — use navy-surface cards to visually separate profile, preferences, and budget setting sections",
+    "Chip/selector row pattern from Add Expense PaymentMethodChipRow and CategoryChipGrid — apply to currency selector and preference toggles",
+    "Full-width primary CTA button pattern from Add Expense SaveExpenseButton — replicate for Save/Done action at bottom of form",
+    "TopBar with back navigation pattern from Add Expense screen — include back arrow navigating to dashboard",
+    "Form input field pattern from Add Expense NoteInput and AmountHeroInput — consistent input styling with surface-input background and slate-border",
+    "Section header typography pattern using heading-2 (DM Sans 16px/600) for group labels and label role (DM Mono 12px/500) for field labels",
+    "BudgetStatusBadge / SpendingDiffBadge inline badge pattern for displaying current saved values next to editable fields"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of at least 4.5:1 for all text — silver-text (#CBD5E1) on deep-navy (#0F172A) achieves approximately 10.6:1; verify all text/background combinations",
+    "All form inputs must have associated visible labels or aria-label attributes; placeholder text alone is not sufficient",
+    "Save/Done button must have descriptive aria-label indicating action and destination (e.g., 'Save settings and return to Dashboard')",
+    "All toggle switches must expose role='switch' with aria-checked state and accessible name",
+    "Currency selector and preference dropdowns must be keyboard navigable with arrow key support and announce selected value to screen readers",
+    "Focus order must follow logical top-to-bottom, left-to-right reading order through all form sections",
+    "Focus ring must be visible on all interactive elements using gold-amber (#F59E0B) 2px outline with 2px offset",
+    "Error states for invalid inputs must use aria-invalid='true' and aria-describedby pointing to error message element styled with coral-error (#F87171)",
+    "Section groupings must use fieldset and legend elements or equivalent ARIA landmark roles (role='group' with aria-labelledby) for screen reader navigation",
+    "Page must include a skip-to-main-content link for keyboard users bypassing TopBar navigation",
+    "All interactive elements must meet minimum 44×44px touch target requirement",
+    "Success confirmation after save must be announced via aria-live='polite' region (toast or inline message)"
+  ],
+  "dataModelDependencies": [
+    "UserSettings entity — fields: id, currency, default_monthly_budget, locale, created_at, updated_at (from user-settings model, db_table: user_settings)",
+    "GET /api/settings endpoint — fetch current user settings for pre-filling profile and preference fields on page load",
+    "PUT /api/settings endpoint — persist updated currency preference, default monthly budget, and locale on Save/Done action",
+    "Budget entity — fields: amount, currency, month, year — referenced for displaying and editing default monthly budget context",
+    "GET /api/budgets endpoint — may be needed to display current month budget alongside default budget setting for user context"
+  ]
+}

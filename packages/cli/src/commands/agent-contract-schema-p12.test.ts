@@ -66,6 +66,7 @@ function getAgentsYaml(): { version: string; agents: Array<Record<string, unknow
 
 /** Phase 1 agents per PRD v2.0 Section 10.1 */
 const PHASE_1_AGENTS = [
+  'clarifier',
   'ux_researcher',
   'wireframer',
   'spec_writer',
@@ -97,7 +98,7 @@ describe('P12: Agent Contract Schema Completeness', () => {
       expect(agentsData.version).toBe('1.0');
     });
 
-    it('contains all 7 Phase 1 agents', () => {
+    it('contains all 8 Phase 1 agents', () => {
       const roles = agentsData.agents.map((a) => a.role);
       for (const expectedRole of PHASE_1_AGENTS) {
         expect(roles).toContain(expectedRole);

@@ -95,6 +95,9 @@ export function saveCachedArtifact(
   fs.writeFile(path, JSON.stringify(payload, null, 2));
 
   if (artifact === 'designSpecV2') {
-    writeDesignSpec(projectRoot, moduleId, payload);
+    const screen = isRecord(payload) ? (payload as Record<string, unknown>).screen : undefined;
+    if (screen !== '__chrome__') {
+      writeDesignSpec(projectRoot, moduleId, payload);
+    }
   }
 }

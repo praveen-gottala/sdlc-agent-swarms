@@ -1,20 +1,16 @@
 /**
  * @module @agentforge/telemetry/langfuse-sink
  *
- * PipelineTelemetrySink implementation that creates OTel spans for
- * pipeline lifecycle events. These spans are exported to Langfuse via
- * the LangfuseSpanProcessor configured in otel-init.ts.
+ * PipelineTelemetrySink implementation that creates Langfuse observations
+ * for pipeline lifecycle events. Uses `wrapStage()` with
+ * `startActiveObservation` to establish proper parent-child span hierarchy:
+ * stage span → LLM generation spans nest automatically via OTel context.
  *
  * LLM call content (prompt/response) is captured by TracedProvider
- * (traced-provider.ts), not by this sink. This sink provides the
- * pipeline-level structure (stages, timing, cost aggregation).
- *
- * Follows Langfuse v5 best practices:
- * - Descriptive trace/span names (not 'trace-1')
- * - Proper span hierarchy for multi-step operations
- * - Input set explicitly to relevant data only
+ * (traced-provider.ts), not by this sink.
  */
 
+import { startActiveObservation } from '@langfuse/tracing';
 import type { PipelineTelemetrySink } from '@agentforge/agents-ux';
 import { isLangfuseConfigured } from './otel-init.js';
 
@@ -29,9 +25,40 @@ export class LangfuseSink implements PipelineTelemetrySink {
     this.traceId = traceId;
   }
 
+  async wrapStage<T>(
+    stage: string,
+    attrs: { agentRole: string; moduleId: string; taskId: string },
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    if (!isLangfuseConfigured()) return fn();
+
+    return startActiveObservation(
+      `stage:${stage}`,
+      async (span) => {
+        span.update({
+          metadata: {
+            'pipeline.stage': stage,
+            'pipeline.agentRole': attrs.agentRole,
+            'pipeline.moduleId': attrs.moduleId,
+            'pipeline.taskId': attrs.taskId,
+          },
+        });
+
+        try {
+          const result = await fn();
+          return result;
+        } catch (err) {
+          span.update({
+            level: 'ERROR',
+            metadata: { 'pipeline.error': String(err) },
+          });
+          throw err;
+        }
+      },
+    );
+  }
+
   onStageStart(stage: string, attrs: { agentRole: string; moduleId: string; taskId: string }): void {
-    // Stage lifecycle is captured implicitly via TracedProvider's generation
-    // spans. The sink logs stage transitions for debugging.
     if (process.env.LANGFUSE_DEBUG === 'true') {
       console.debug(`[langfuse-sink] stage:${stage} started`, attrs);
     }
@@ -56,8 +83,6 @@ export class LangfuseSink implements PipelineTelemetrySink {
     costUsd: number;
     latencyMs: number;
   }): void {
-    // LLM call details are captured by TracedProvider's generation spans.
-    // This callback provides aggregate metrics for the CLI/dashboard sinks.
     if (process.env.LANGFUSE_DEBUG === 'true') {
       console.debug(`[langfuse-sink] llm:${stage}`, attrs);
     }

@@ -170,7 +170,13 @@ function mapApiError(error: unknown): ProviderError {
     }
     return { code: 'PROVIDER_DOWN', status: error.status, message: error.message };
   }
-  return { code: 'INVALID_RESPONSE', raw: String(error) };
+  // Vertex AI wraps quota/rate errors as generic exceptions, not Anthropic.APIError.
+  // Detect 429 / RESOURCE_EXHAUSTED in the stringified error.
+  const errorStr = String(error);
+  if (errorStr.includes('429') || errorStr.includes('RESOURCE_EXHAUSTED') || errorStr.includes('Quota exceeded')) {
+    return { code: 'RATE_LIMITED', retryAfterMs: 60_000, message: errorStr };
+  }
+  return { code: 'INVALID_RESPONSE', raw: errorStr };
 }
 
 /**

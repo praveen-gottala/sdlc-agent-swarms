@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { designSpecExists } from '@agentforge/core';
 import { readYamlFile, writeYamlFile, getActiveProjectRoot } from '../_lib/project-reader';
+import { getActiveRun } from '../_lib/run-manager';
+
+export const dynamic = 'force-dynamic';
 
 interface PageEntry {
   id: string;
@@ -22,6 +25,12 @@ interface PagesFile {
  */
 export async function GET() {
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
+
+  const activeRun = getActiveRun();
+  const activePageId = activeRun
+    ? (activeRun.params as Record<string, unknown>)?.pageId as string | undefined
+    : undefined;
+
   const pages = (pagesFile?.pages ?? []).map((p) => ({
     id: p.id,
     name: p.name ?? '',
@@ -30,10 +39,16 @@ export async function GET() {
     status: p.status ?? 'draft',
     designStatus: (() => {
       const raw = p.designStatus ?? 'draft';
+      if (raw === 'generating') {
+        return activePageId === p.id ? 'generating' : 'draft';
+      }
       if (raw !== 'draft' && !designSpecExists(getActiveProjectRoot(), p.id)) return 'draft';
       return raw;
     })(),
     components: p.components ?? [],
+    ...(p.designStatus === 'generating' && activePageId === p.id && activeRun
+      ? { activeRunId: activeRun.runId }
+      : {}),
   }));
 
   return NextResponse.json({ pages });

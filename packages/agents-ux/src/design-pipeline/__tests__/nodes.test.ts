@@ -333,15 +333,40 @@ describe('evaluatorNode', () => {
     }
   });
 
-  it('returns undefined evaluation in Phase 1 — full evaluation deferred to Phase 2 (execution-plan §2.x)', async () => {
+  it('returns Err when design.spec is missing', async () => {
     const result = await evaluatorNode(
-      createState({ design: { spec: { screen: 'test', nodes: {} } } }),
+      createState({ design: { spec: undefined as unknown as Record<string, unknown> } }),
+      createCtx(),
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect((result.error as PipelineStageError).stage).toBe('evaluator');
+    }
+  });
+
+  it('returns structural evaluation with score for a clean spec (ADR-045 Phase 1.1)', async () => {
+    const result = await evaluatorNode(
+      createState({
+        design: {
+          spec: {
+            screen: 'test',
+            nodes: {
+              root: { type: 'page', parent: null, order: 0, layout: 'vertical' },
+            },
+          },
+        },
+      }),
       createCtx(),
     );
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.evaluation).toBeUndefined();
+      expect(result.value.evaluation).toBeDefined();
+      expect(result.value.evaluation?.structural).toBe(true);
+      expect(result.value.evaluation?.score).toBeGreaterThanOrEqual(0);
+      expect(result.value.evaluation?.score).toBeLessThanOrEqual(100);
+      expect(result.value.evaluation?.overallQuality).toBeDefined();
     }
   });
 });

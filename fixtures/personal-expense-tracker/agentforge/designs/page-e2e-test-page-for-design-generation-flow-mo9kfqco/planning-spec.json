@@ -1,0 +1,391 @@
+{
+  "specRef": "spec-page-e2e-test-page-for-design-generation-flow-mo9kfqco-1700000000000",
+  "moduleId": "page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+  "componentTree": [
+    {
+      "name": "E2EPageLayout",
+      "props": [
+        "maxWidth",
+        "padding",
+        "gap"
+      ],
+      "defaultValues": {
+        "maxWidth": 1280,
+        "padding": 24,
+        "gap": 32
+      },
+      "children": [
+        "TopBar",
+        "E2EPageContent",
+        "NavigationTabs"
+      ]
+    },
+    {
+      "name": "TopBar",
+      "props": [
+        "title",
+        "showBackButton",
+        "showSettingsButton"
+      ],
+      "defaultValues": {
+        "title": "E2E Test Page",
+        "showBackButton": 0,
+        "showSettingsButton": 1
+      },
+      "children": []
+    },
+    {
+      "name": "E2EPageContent",
+      "props": [
+        "paddingY",
+        "gap",
+        "maxWidth"
+      ],
+      "defaultValues": {
+        "paddingY": 48,
+        "gap": 24,
+        "maxWidth": 1280
+      },
+      "children": [
+        "E2EPageHeader",
+        "TestStatusCard",
+        "TestSuiteCard",
+        "TestOutputCard"
+      ]
+    },
+    {
+      "name": "E2EPageHeader",
+      "props": [
+        "title",
+        "subtitle",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "title": "Design Generation Flow — E2E Test",
+        "subtitle": "Validates the end-to-end design generation pipeline for this module.",
+        "paddingY": 16
+      },
+      "children": []
+    },
+    {
+      "name": "TestStatusCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "TestStatusBadge",
+        "TestStatusLabel",
+        "TestStatusDescription"
+      ]
+    },
+    {
+      "name": "TestStatusBadge",
+      "props": [
+        "status",
+        "label",
+        "icon"
+      ],
+      "defaultValues": {
+        "status": "success",
+        "label": "Pass",
+        "icon": "check-circle"
+      },
+      "children": []
+    },
+    {
+      "name": "TestStatusLabel",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "Overall Status"
+      },
+      "children": []
+    },
+    {
+      "name": "TestStatusDescription",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "All design generation checks completed successfully."
+      },
+      "children": []
+    },
+    {
+      "name": "TestSuiteCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "rowGap": 12
+      },
+      "children": [
+        "TestSuiteHeader",
+        "TestCaseRow",
+        "TestCaseRow",
+        "TestCaseRow"
+      ]
+    },
+    {
+      "name": "TestSuiteHeader",
+      "props": [
+        "title",
+        "caseCount"
+      ],
+      "defaultValues": {
+        "title": "Test Suite",
+        "caseCount": 3
+      },
+      "children": []
+    },
+    {
+      "name": "TestCaseRow",
+      "props": [
+        "testName",
+        "status",
+        "duration",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "testName": "Component tree generation",
+        "status": "pass",
+        "duration": "120ms",
+        "paddingY": 8
+      },
+      "children": []
+    },
+    {
+      "name": "TestOutputCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "TestOutputHeader",
+        "TestOutputConsole",
+        "RunTestsButton"
+      ]
+    },
+    {
+      "name": "TestOutputHeader",
+      "props": [
+        "title"
+      ],
+      "defaultValues": {
+        "title": "Test Output"
+      },
+      "children": []
+    },
+    {
+      "name": "TestOutputConsole",
+      "props": [
+        "content",
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "content": "No output yet. Run tests to see results.",
+        "paddingX": 16,
+        "paddingY": 16,
+        "borderRadius": 6,
+        "minHeight": 120
+      },
+      "children": []
+    },
+    {
+      "name": "RunTestsButton",
+      "props": [
+        "label",
+        "variant"
+      ],
+      "defaultValues": {
+        "label": "Run Tests",
+        "variant": "default"
+      },
+      "children": []
+    },
+    {
+      "name": "NavigationTabs",
+      "props": [
+        "activeTab",
+        "height"
+      ],
+      "defaultValues": {
+        "activeTab": "home",
+        "height": 64
+      },
+      "children": [
+        "HomeTabItem",
+        "AddExpenseTabItem",
+        "InsightsTabItem"
+      ]
+    },
+    {
+      "name": "HomeTabItem",
+      "props": [
+        "label",
+        "icon"
+      ],
+      "defaultValues": {
+        "label": "Home",
+        "icon": "home"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "AddExpenseTabItem",
+      "props": [
+        "label",
+        "icon"
+      ],
+      "defaultValues": {
+        "label": "Add Expense",
+        "icon": "plus-circle"
+      },
+      "navigateTo": "add-expense",
+      "children": []
+    },
+    {
+      "name": "InsightsTabItem",
+      "props": [
+        "label",
+        "icon"
+      ],
+      "defaultValues": {
+        "label": "Insights",
+        "icon": "bar-chart-2"
+      },
+      "navigateTo": "spending-insights",
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "E2EPageLayout.background": "background-primary",
+    "E2EPageContent.background": "background-primary",
+    "E2EPageHeader.color": "text-primary",
+    "E2EPageHeader.typography": "heading-1",
+    "E2EPageHeader.subtitleColor": "text-secondary",
+    "E2EPageHeader.subtitleTypography": "body",
+    "TestStatusCard.background": "surface-primary",
+    "TestStatusCard.borderRadius": "medium",
+    "TestStatusCard.shadow": "elevation-1",
+    "TestStatusCard.border": "border-default",
+    "TestStatusBadge.successColor": "success",
+    "TestStatusBadge.errorColor": "error",
+    "TestStatusBadge.typography": "label",
+    "TestStatusLabel.color": "text-primary",
+    "TestStatusLabel.typography": "heading-2",
+    "TestStatusDescription.color": "text-secondary",
+    "TestStatusDescription.typography": "body",
+    "TestSuiteCard.background": "surface-elevated",
+    "TestSuiteCard.borderRadius": "medium",
+    "TestSuiteCard.shadow": "elevation-1",
+    "TestSuiteHeader.color": "text-primary",
+    "TestSuiteHeader.typography": "heading-2",
+    "TestCaseRow.passColor": "success",
+    "TestCaseRow.failColor": "error",
+    "TestCaseRow.labelColor": "text-primary",
+    "TestCaseRow.typography": "body",
+    "TestCaseRow.durationColor": "text-secondary",
+    "TestCaseRow.durationTypography": "small",
+    "TestCaseRow.border": "border-default",
+    "TestOutputCard.background": "surface-primary",
+    "TestOutputCard.borderRadius": "medium",
+    "TestOutputCard.shadow": "elevation-1",
+    "TestOutputCard.border": "border-default",
+    "TestOutputHeader.color": "text-primary",
+    "TestOutputHeader.typography": "heading-2",
+    "TestOutputConsole.background": "surface-secondary",
+    "TestOutputConsole.borderRadius": "small",
+    "TestOutputConsole.color": "text-primary",
+    "TestOutputConsole.typography": "body",
+    "TestOutputConsole.border": "border-default",
+    "RunTestsButton.background": "cta-primary",
+    "RunTestsButton.color": "text-on-cta",
+    "RunTestsButton.borderRadius": "medium",
+    "RunTestsButton.focusRingColor": "border-focus",
+    "NavigationTabs.background": "surface-primary",
+    "NavigationTabs.border": "border-default",
+    "HomeTabItem.activeColor": "cta-primary",
+    "HomeTabItem.inactiveColor": "text-secondary",
+    "HomeTabItem.typography": "label",
+    "AddExpenseTabItem.activeColor": "cta-primary",
+    "AddExpenseTabItem.inactiveColor": "text-secondary",
+    "AddExpenseTabItem.typography": "label",
+    "InsightsTabItem.activeColor": "cta-primary",
+    "InsightsTabItem.inactiveColor": "text-secondary",
+    "InsightsTabItem.typography": "label",
+    "TopBar.background": "surface-primary",
+    "TopBar.border": "border-default",
+    "TopBar.titleColor": "text-primary",
+    "TopBar.titleTypography": "heading-2"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Single-column centered layout with 1280px max-width, 24px margins, and 32px vertical gap between cards",
+      "layout": "single-column",
+      "changes": [
+        "Full TopBar with title and settings button",
+        "Centered content column capped at 1280px",
+        "TestStatusCard, TestSuiteCard, and TestOutputCard stacked vertically with 24px gap",
+        "NavigationTabs pinned to bottom with full-width display",
+        "RunTestsButton right-aligned within TestOutputCard"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "E2E Test Page",
+      "components": [
+        "E2EPageLayout",
+        "TopBar",
+        "E2EPageContent",
+        "E2EPageHeader",
+        "TestStatusCard",
+        "TestStatusBadge",
+        "TestStatusLabel",
+        "TestStatusDescription",
+        "TestSuiteCard",
+        "TestSuiteHeader",
+        "TestCaseRow",
+        "TestOutputCard",
+        "TestOutputHeader",
+        "TestOutputConsole",
+        "RunTestsButton",
+        "NavigationTabs",
+        "HomeTabItem",
+        "AddExpenseTabItem",
+        "InsightsTabItem"
+      ]
+    }
+  ]
+}

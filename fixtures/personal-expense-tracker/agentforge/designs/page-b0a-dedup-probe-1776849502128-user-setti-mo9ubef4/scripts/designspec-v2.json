@@ -1,0 +1,690 @@
+{
+  "screen": "page-b0a-dedup-probe-1776849502128-user-setti-mo9ubef4",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 1440,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "align": "stretch"
+      },
+      "background": "background-primary"
+    },
+    "top-bar": {
+      "parent": "root",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "gap": 12
+      },
+      "background": "surface-primary",
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "top-bar-left": {
+      "parent": "top-bar",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "top-bar-back-icon": {
+      "parent": "top-bar-left",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "arrow-left"
+      },
+      "color": "text-primary"
+    },
+    "top-bar-title": {
+      "parent": "top-bar-left",
+      "order": 1,
+      "type": "text",
+      "content": "Settings",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "top-bar-actions": {
+      "parent": "top-bar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "top-bar-add-button": {
+      "parent": "top-bar-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Add Expense",
+      "overrides": {
+        "icon": "plus"
+      },
+      "navigateTo": "add-expense"
+    },
+    "top-bar-settings-trigger": {
+      "parent": "top-bar-actions",
+      "order": 1,
+      "catalog": "icon",
+      "overrides": {
+        "name": "settings"
+      },
+      "color": "text-secondary"
+    },
+    "month-selector": {
+      "parent": "top-bar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "month-prev-btn": {
+      "parent": "month-selector",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-left"
+      },
+      "color": "text-secondary"
+    },
+    "month-label": {
+      "parent": "month-selector",
+      "order": 1,
+      "type": "text",
+      "content": "June 2025",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "month-next-btn": {
+      "parent": "month-selector",
+      "order": 2,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-right"
+      },
+      "color": "text-secondary"
+    },
+    "settings-content-scroll": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 0,
+        "py": 32,
+        "px": 24
+      },
+      "background": "background-primary"
+    },
+    "settings-content-area": {
+      "parent": "settings-content-scroll",
+      "order": 0,
+      "width": 1280,
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "align": "stretch"
+      },
+      "catalog": "Section",
+      "label": "Profile & Preferences",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "profile-settings-card": {
+      "parent": "settings-content-area",
+      "order": 1,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 10,
+      "catalog": "Section",
+      "label": "Profile",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "profile-field-row": {
+      "parent": "profile-settings-card",
+      "order": 1,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 6
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "profile-field-label": {
+      "parent": "profile-field-row",
+      "order": 0,
+      "type": "text",
+      "content": "Display Name",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "profile-name-input": {
+      "parent": "profile-field-row",
+      "order": 1,
+      "catalog": "input-text",
+      "label": "",
+      "placeholder": "e.g. Alex Rivera",
+      "value": "Alex Rivera",
+      "width": "fill",
+      "overrides": {
+        "borderRadius": 6
+      }
+    },
+    "locale-field-row": {
+      "parent": "profile-settings-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "locale-field-label": {
+      "parent": "locale-field-row",
+      "order": 0,
+      "type": "text",
+      "content": "Locale",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "locale-chip-selector": {
+      "parent": "locale-field-row",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "wrap": true
+      }
+    },
+    "locale-chip-en-us": {
+      "parent": "locale-chip-selector",
+      "order": 0,
+      "catalog": "chip",
+      "label": "🇺🇸 EN-US",
+      "overrides": {
+        "selected": true,
+        "borderRadius": 9999
+      }
+    },
+    "locale-chip-en-gb": {
+      "parent": "locale-chip-selector",
+      "order": 1,
+      "catalog": "chip",
+      "label": "🇬🇧 EN-GB",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "locale-chip-es": {
+      "parent": "locale-chip-selector",
+      "order": 2,
+      "catalog": "chip",
+      "label": "🇪🇸 ES",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "locale-chip-fr": {
+      "parent": "locale-chip-selector",
+      "order": 3,
+      "catalog": "chip",
+      "label": "🇫🇷 FR",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "locale-chip-de": {
+      "parent": "locale-chip-selector",
+      "order": 4,
+      "catalog": "chip",
+      "label": "🇩🇪 DE",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "locale-chip-ja": {
+      "parent": "locale-chip-selector",
+      "order": 5,
+      "catalog": "chip",
+      "label": "🇯🇵 JA",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "preferences-settings-card": {
+      "parent": "settings-content-area",
+      "order": 2,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-secondary",
+      "radius": 10,
+      "overrides": {
+        "border": "1px solid var(--border-default)",
+        "__promoted": true
+      },
+      "catalog": "Section",
+      "label": "Preferences"
+    },
+    "preferences-divider": {
+      "parent": "preferences-settings-card",
+      "order": 0,
+      "type": "divider",
+      "width": "fill"
+    },
+    "currency-field-row": {
+      "parent": "preferences-settings-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "currency-field-label": {
+      "parent": "currency-field-row",
+      "order": 0,
+      "type": "text",
+      "content": "Currency",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "currency-chip-selector": {
+      "parent": "currency-field-row",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "wrap": true
+      }
+    },
+    "currency-chip-usd": {
+      "parent": "currency-chip-selector",
+      "order": 0,
+      "catalog": "chip",
+      "label": "$ USD",
+      "overrides": {
+        "selected": true,
+        "borderRadius": 9999
+      }
+    },
+    "currency-chip-eur": {
+      "parent": "currency-chip-selector",
+      "order": 1,
+      "catalog": "chip",
+      "label": "€ EUR",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "currency-chip-gbp": {
+      "parent": "currency-chip-selector",
+      "order": 2,
+      "catalog": "chip",
+      "label": "£ GBP",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "currency-chip-jpy": {
+      "parent": "currency-chip-selector",
+      "order": 3,
+      "catalog": "chip",
+      "label": "¥ JPY",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "currency-chip-cad": {
+      "parent": "currency-chip-selector",
+      "order": 4,
+      "catalog": "chip",
+      "label": "$ CAD",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "currency-chip-aud": {
+      "parent": "currency-chip-selector",
+      "order": 5,
+      "catalog": "chip",
+      "label": "$ AUD",
+      "overrides": {
+        "borderRadius": 9999
+      }
+    },
+    "theme-field-row": {
+      "parent": "preferences-settings-card",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "theme-field-label-group": {
+      "parent": "theme-field-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "theme-field-label": {
+      "parent": "theme-field-label-group",
+      "order": 0,
+      "type": "text",
+      "content": "Dark Mode",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "theme-field-hint": {
+      "parent": "theme-field-label-group",
+      "order": 1,
+      "type": "text",
+      "content": "Use dark theme across the app",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "theme-switch": {
+      "parent": "theme-field-row",
+      "order": 1,
+      "catalog": "switch",
+      "value": "on"
+    },
+    "budget-settings-card": {
+      "parent": "settings-content-area",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 10,
+      "catalog": "Section",
+      "label": "Budget",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "budget-divider": {
+      "parent": "budget-settings-card",
+      "order": 0,
+      "type": "divider",
+      "width": "fill"
+    },
+    "default-budget-field-row": {
+      "parent": "budget-settings-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 6
+      }
+    },
+    "default-budget-field-label": {
+      "parent": "default-budget-field-row",
+      "order": 0,
+      "type": "text",
+      "content": "Default Monthly Budget",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "default-budget-input": {
+      "parent": "default-budget-field-row",
+      "order": 1,
+      "catalog": "input-currency",
+      "label": "",
+      "placeholder": "e.g. 3,000.00",
+      "value": "3000.00",
+      "width": "fill",
+      "overrides": {
+        "borderRadius": 6
+      }
+    },
+    "default-budget-helper": {
+      "parent": "default-budget-field-row",
+      "order": 2,
+      "type": "text",
+      "content": "Applied to months without a custom budget",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "notifications-field-row": {
+      "parent": "budget-settings-card",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "notifications-label-group": {
+      "parent": "notifications-field-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "notifications-label": {
+      "parent": "notifications-label-group",
+      "order": 0,
+      "type": "text",
+      "content": "Budget Alerts",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "notifications-hint": {
+      "parent": "notifications-label-group",
+      "order": 1,
+      "type": "text",
+      "content": "Notify when spending exceeds 80% of budget",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "notifications-switch": {
+      "parent": "notifications-field-row",
+      "order": 1,
+      "catalog": "switch",
+      "value": "on"
+    },
+    "save-settings-button": {
+      "parent": "settings-content-area",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "Save & Return to Dashboard",
+      "width": "fill",
+      "height": 48,
+      "radius": 10,
+      "navigateTo": "dashboard"
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 0,
+        "gap": 0
+      },
+      "background": "surface-primary",
+      "overrides": {
+        "borderTop": "1px solid var(--border-default)"
+      }
+    },
+    "nav-tab-home": {
+      "parent": "nav-tabs",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "dashboard"
+    },
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "home"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
+      "order": 1,
+      "type": "text",
+      "content": "Home",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "nav-tab-add-expense": {
+      "parent": "nav-tabs",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "add-expense"
+    },
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add-expense",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "plus"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add-expense",
+      "order": 1,
+      "type": "text",
+      "content": "Add",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "spending-insights"
+    },
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "bar-chart"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
+      "order": 1,
+      "type": "text",
+      "content": "Insights",
+      "typography": "small",
+      "color": "text-secondary"
+    }
+  },
+  "regions": {
+    "header": [
+      "top-bar"
+    ],
+    "footer": [
+      "nav-tabs"
+    ]
+  }
+}

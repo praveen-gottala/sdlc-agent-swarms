@@ -381,6 +381,16 @@ export interface UXModuleDeployed extends BaseDomainEventFields {
   readonly figmaContextRef: string;
 }
 
+/** Fired when the Clarifier completes requirement clarification (telemetry plane). */
+export interface RequirementsClarified extends BaseDomainEventFields {
+  readonly type: 'RequirementsClarified';
+  readonly mode: 'bootstrap' | 'evolution';
+  readonly questionCount: number;
+  readonly roundCount: number;
+  readonly assumptionCount: number;
+  readonly confidence: number;
+}
+
 /** Fired when a pipeline run progresses through stages. */
 export interface PipelineRunProgress extends BaseDomainEventFields {
   readonly type: 'PipelineRunProgress';
@@ -444,7 +454,8 @@ export type DomainEvent =
   | UXReviewCompleted
   | UXTestSuiteCompleted
   | UXModuleDeployed
-  | PipelineRunProgress;
+  | PipelineRunProgress
+  | RequirementsClarified;
 
 /** Union of all possible `type` values on a `DomainEvent`. */
 export type DomainEventType = DomainEvent['type'];

@@ -227,9 +227,17 @@ In-memory state means the first real long-running agent task that crashes loses 
 ## Layer 5: Clarifier (front door)
 
 ### Current state
-- `/new` route in dashboard accepts a text box of raw input.
-- No gap analysis, no question loop, no assumption handling.
-- PRD is effectively what the user types. If it's underspecified, downstream stages inherit the underspecification.
+- `packages/agents-clarifier/` implements all 6 Clarifier stages as a LangGraph `StateGraph` with typed `Annotation.Root()` channels (first LangGraph graph in the monorepo).
+- **Context Retriever** (Task 1.1): bootstrap loads base catalog + tokens; evolution calls all 5 RAG tools (`searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`) via `Promise.allSettled` with partial failure tolerance.
+- **PRD/Request Analyzer** (Task 1.2): `claude-opus-4-6`, forced-JSON via `responseSchema`, mode-aware prompts, `PRDSchema.safeParse()` validation.
+- **Gap/Conflict Detector** (Task 1.3): deterministic checklist (auth, validation, errors, NFR targets, accessibility, orphan screens) + ClarifyGPT (2 LLM calls with `claude-sonnet-4-6` — 3 implementations at temp 0.7, divergence analysis at temp 0). Round>1 filters addressed gaps.
+- **Question Prioritizer** (Task 1.4): EVPI proxy ranking (`blastRadius * answerability * confidenceGap`), budget enforcement (micro≤2, standard≤7, cross-cutting≤15), below-threshold gaps → `AssumptionLedger`. Multiple-choice in evolution mode with codebase precedent.
+- **Story Writer** (Task 1.5): `claude-sonnet-4-6`, EARS-format acceptance criteria, `FeaturePlan` DAG with dependencies, `EnrichedRequirement` assembly. After max rounds: confidence capped at 0.5, unresolved gaps → assumptions with `requiresConfirmation: true`.
+- **Critic** (Task 1.6): deterministic EARS/INVEST/DAG compliance checks, bounded retry (≤2 then pass with warnings).
+- **Graph topology**: `__start__` → contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer → [HITL interrupt] → storyWriter → critic → conditional routing (retry/new round/escalation/complete). Two HITL interrupt points: `storyWriter` (human answers questions) and `escalationGate` (accept/restart/abandon after max rounds).
+- **Escalation resolved**: after 3 rounds without convergence, user gets accept (best-effort PRD, low confidence), restart (reset rounds), or abandon (exit). Implemented via `escalationGate` node with `interruptBefore`.
+- **Not yet wired**: `RequirementsClarified` event emission in `emitComplete` node (Task 1.7 remaining). Dashboard integration at `/new` and `/evolve` (Task 1.8).
+- **108 tests** across 7 test suites in `packages/agents-clarifier/`.
 
 ### Target vision
 Six-stage conversational clarifier, symmetric across bootstrap (new app) and evolution (change to existing app) modes:
@@ -254,7 +262,7 @@ Six-stage conversational clarifier, symmetric across bootstrap (new app) and evo
 - **Whether the dashboard conversational UI uses chat metaphor or wizard metaphor.** Chat scales better for follow-ups; wizard is clearer for first-time users. Research bias: industry pattern has moved away from wizards (Bolt, Lovable, v0 all use chat + optional attachments).
 - **Whether the user can skip the clarifier.** Risk: they always will. Probably: offer "accept all suggested assumptions and proceed" after the first clarification round, but not skip the clarifier entirely.
 - **Input modalities beyond text.** Image upload for inspiration, URL ingestion for reference apps, voice input. Defer.
-- **When the clarifier escalates.** If three rounds of questions don't converge, what happens? Options: hand back to human, produce a "best-effort PRD with confidence X%" with all ambiguities flagged, or refuse. Decide in Phase 1.
+- ~~**When the clarifier escalates.**~~ **Resolved (2026-04-28).** After max rounds (default 3), the graph interrupts at `escalationGate` with three options: **accept** (best-effort PRD with capped confidence ≤0.5, unresolved gaps become assumptions with `requiresConfirmation: true`), **restart** (reset round counter, re-enter gap detection), or **abandon** (exit to END). Implemented via `routeAfterEscalation` in `clarifier-graph.ts`.
 
 ### Why the current state is wrong
 A text-box input without clarification is the most common root cause of autonomous agent failures documented in the research report (Answer.AI's Devin test, Replit Agent 3 "creative workarounds", the general "looks-right-but-broken" failure mode). The clarifier is the single highest-leverage differentiation opportunity per the research — no commercial tool ships it properly. Skipping the clarifier means every downstream stage compounds ambiguity it could have resolved upfront.
@@ -501,14 +509,15 @@ Single-gate HITL means errors that occur earlier (clarification) or later (imple
 
 ## Layer 11: Observability
 
-### Current state (updated 2026-04-27, ADR-046)
+### Current state (updated 2026-04-28, ADR-046)
 - **Langfuse self-hosted** via `docker/docker-compose.langfuse.yml` (Postgres, ClickHouse, Redis, MinIO).
 - **OTel spans** via `packages/telemetry/` — `TracedProvider` wraps `provider.complete()` to auto-capture LLM call I/O (system prompt, user message, response, tokens, cost, latency).
-- **`LangfuseSink`** implements `PipelineTelemetrySink` for pipeline lifecycle spans (stage start/complete/fail).
+- **`createTracedMCPClient`** wraps `MCPClient.callTool()` with OTel spans (`mcp:server.method`). Uses `@opentelemetry/api` directly for post-hoc span lifecycle.
+- **`LangfuseSink`** emits real OTel spans for pipeline stage lifecycle (`stage:research`, `stage:planning`, etc.) with cost/token attributes. `dispose()` for orphan cleanup.
 - **`CompositeSink`** combines transport sinks (CLI stdout, dashboard SSE) with LangfuseSink.
 - **Graceful degradation** — when `LANGFUSE_SECRET_KEY` is not set, all telemetry code is no-op.
 - **Prompt versioning** — `parsePromptFrontmatter()` strips YAML frontmatter from `.md` prompts; version recorded in `metadata.promptVersion` on Langfuse generation spans via `CompletionOptions.promptVersion`. Pre-commit hook (`scripts/check-prompt-versions.ts`) enforces version bumps.
-- Cost tracking exists in governance layer + telemetry sinks; not yet aggregated in Langfuse cost dashboard.
+- Cost tracking captured per-call via `TracedProvider.costDetails`; Langfuse aggregates automatically.
 
 ### Target vision
 **OpenTelemetry is the tracing spine.** Every LLM call, tool call, and state transition emits an OTel span with typed attributes:

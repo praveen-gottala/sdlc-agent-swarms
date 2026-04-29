@@ -9,189 +9,49 @@
       "width": 1440,
       "layout": {
         "dir": "column",
-        "gap": 0,
-        "align": "stretch"
+        "align": "stretch",
+        "gap": 0
       },
-      "background": "background-primary",
-      "overrides": {
-        "backgroundColor": "#0F172A"
-      }
+      "background": "background-primary"
     },
     "top-bar": {
       "parent": "root",
       "order": 0,
-      "type": "header",
+      "type": "container",
       "width": "fill",
       "height": 64,
       "background": "surface-primary",
+      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 24,
-        "gap": 16
+        "py": 0
       },
       "overrides": {
-        "borderBottom": "1px solid #334155",
-        "backgroundColor": "#1E293B"
+        "borderBottom": "1px solid var(--border-default)"
       }
     },
-    "top-bar-left": {
+    "top-bar-back-btn": {
       "parent": "top-bar",
       "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 12
-      }
-    },
-    "app-logo": {
-      "parent": "top-bar-left",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 8
-      }
-    },
-    "app-logo-icon": {
-      "parent": "app-logo",
-      "order": 0,
-      "catalog": "icon",
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "name": "wallet",
-        "color": "#F59E0B",
-        "size": 24
-      }
-    },
-    "app-logo-text": {
-      "parent": "app-logo",
-      "order": 1,
-      "type": "text",
-      "content": "Spendly",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 700,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1"
-      }
-    },
-    "back-btn": {
-      "parent": "top-bar-left",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6
+        "icon": "arrow-left",
+        "aria-label": "Go back to Dashboard"
       },
-      "navigateTo": "dashboard",
-      "overrides": {
-        "cursor": "pointer"
-      }
+      "navigateTo": "dashboard"
     },
-    "back-btn-icon": {
-      "parent": "back-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "arrow-left",
-        "color": "#CBD5E1",
-        "size": 20
-      }
-    },
-    "back-btn-label": {
-      "parent": "back-btn",
-      "order": 1,
-      "type": "text",
-      "content": "Dashboard",
-      "typography": "label",
-      "color": "text-secondary",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B"
-      }
-    },
-    "month-selector": {
+    "top-bar-title": {
       "parent": "top-bar",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 8
-      },
-      "height": 44
-    },
-    "prev-month-btn": {
-      "parent": "month-selector",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "width": 32,
-      "height": 32,
-      "radius": 6,
-      "overrides": {
-        "cursor": "pointer",
-        "backgroundColor": "#293548"
-      }
-    },
-    "prev-month-icon": {
-      "parent": "prev-month-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-left",
-        "color": "#CBD5E1",
-        "size": 16
-      }
-    },
-    "month-year-label": {
-      "parent": "month-selector",
-      "order": 1,
       "type": "text",
-      "content": "January 2025",
-      "typography": "heading-3",
+      "content": "Add Expense",
+      "typography": "heading-2",
       "color": "text-primary",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1"
-      }
-    },
-    "next-month-btn": {
-      "parent": "month-selector",
-      "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "width": 32,
-      "height": 32,
-      "radius": 6,
-      "overrides": {
-        "cursor": "pointer",
-        "backgroundColor": "#293548"
-      }
-    },
-    "next-month-icon": {
-      "parent": "next-month-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-right",
-        "color": "#CBD5E1",
-        "size": 16
-      }
+      "weight": 700
     },
     "top-bar-actions": {
       "parent": "top-bar",
@@ -203,35 +63,27 @@
         "gap": 8
       }
     },
-    "settings-icon-btn": {
+    "top-bar-add-button": {
       "parent": "top-bar-actions",
       "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "width": 36,
-      "height": 36,
-      "radius": 6,
-      "navigateTo": "settings",
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "cursor": "pointer",
-        "backgroundColor": "#293548"
+        "icon": "plus",
+        "aria-label": "Add new"
       }
     },
-    "settings-icon": {
-      "parent": "settings-icon-btn",
-      "order": 0,
-      "catalog": "icon",
+    "top-bar-settings-trigger": {
+      "parent": "top-bar-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "name": "settings",
-        "color": "#64748B",
-        "size": 18
+        "icon": "settings",
+        "aria-label": "Open settings"
       }
     },
-    "page-content": {
+    "page-body": {
       "parent": "root",
       "order": 1,
       "type": "container",
@@ -242,32 +94,27 @@
         "gap": 0,
         "py": 0
       },
-      "overrides": {
-        "flex": "1",
-        "overflowY": "auto"
-      }
+      "background": "background-primary"
     },
-    "inner-layout": {
-      "parent": "page-content",
+    "center-col": {
+      "parent": "page-body",
       "order": 0,
       "type": "container",
-      "width": 1280,
+      "width": 640,
       "layout": {
         "dir": "column",
-        "gap": 20,
-        "px": 24,
-        "py": 20
+        "gap": 24,
+        "py": 24
       }
     },
     "quick-add-section": {
-      "parent": "inner-layout",
+      "parent": "center-col",
       "order": 0,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 8,
-        "py": 4
+        "gap": 8
       }
     },
     "quick-add-label": {
@@ -277,13 +124,7 @@
       "content": "Quick Add",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
+      "weight": 500
     },
     "quick-add-chips-row": {
       "parent": "quick-add-section",
@@ -293,368 +134,146 @@
       "layout": {
         "dir": "row",
         "gap": 8,
-        "align": "center",
-        "wrap": true
+        "wrap": true,
+        "align": "center"
       }
     },
-    "qac-1": {
+    "qac-coffee": {
       "parent": "quick-add-chips-row",
       "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "☕ Coffee $4.50",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "qac-1-emoji": {
-      "parent": "qac-1",
-      "order": 0,
-      "type": "text",
-      "content": "☕",
-      "typography": "body",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "qac-1-text": {
-      "parent": "qac-1",
-      "order": 1,
-      "type": "text",
-      "content": "Starbucks · $6.50",
-      "typography": "label",
-      "color": "text-primary",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "qac-2": {
+    "qac-lunch": {
       "parent": "quick-add-chips-row",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🍜 Lunch $12.80",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "qac-2-emoji": {
-      "parent": "qac-2",
-      "order": 0,
-      "type": "text",
-      "content": "🚇",
-      "typography": "body",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "qac-2-text": {
-      "parent": "qac-2",
-      "order": 1,
-      "type": "text",
-      "content": "Metro · $2.90",
-      "typography": "label",
-      "color": "text-primary",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "qac-3": {
+    "qac-transit": {
       "parent": "quick-add-chips-row",
       "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🚇 Transit $2.75",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "qac-3-emoji": {
-      "parent": "qac-3",
-      "order": 0,
-      "type": "text",
-      "content": "🍜",
-      "typography": "body",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "qac-3-text": {
-      "parent": "qac-3",
-      "order": 1,
-      "type": "text",
-      "content": "Ramen House · $14.00",
-      "typography": "label",
-      "color": "text-primary",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "qac-4": {
+    "qac-groceries": {
       "parent": "quick-add-chips-row",
       "order": 3,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🛒 Groceries $67.20",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "qac-4-emoji": {
-      "parent": "qac-4",
-      "order": 0,
-      "type": "text",
-      "content": "🛒",
-      "typography": "body",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "qac-4-text": {
-      "parent": "qac-4",
-      "order": 1,
-      "type": "text",
-      "content": "Whole Foods · $38.20",
-      "typography": "label",
-      "color": "text-primary",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "qac-5": {
+    "qac-gym": {
       "parent": "quick-add-chips-row",
       "order": 4,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🏋️ Gym $30.00",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "qac-5-emoji": {
-      "parent": "qac-5",
-      "order": 0,
-      "type": "text",
-      "content": "⛽",
-      "typography": "body",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "qac-5-text": {
-      "parent": "qac-5",
-      "order": 1,
-      "type": "text",
-      "content": "Shell Gas · $52.00",
-      "typography": "label",
-      "color": "text-primary",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "expense-form-card": {
-      "parent": "inner-layout",
-      "order": 1,
-      "type": "section",
-      "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 24,
-        "px": 32,
-        "py": 32
-      },
-      "background": "surface-primary",
-      "shadow": "md",
-      "radius": 16,
-      "overrides": {
-        "backgroundColor": "#1E293B"
-      }
-    },
-    "form-title-row": {
-      "parent": "expense-form-card",
-      "order": 0,
-      "type": "container",
-      "width": "fill",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between"
-      }
-    },
-    "form-title": {
-      "parent": "form-title-row",
-      "order": 0,
-      "type": "text",
-      "content": "New Expense",
-      "typography": "heading-2",
-      "color": "text-primary",
-      "weight": 700,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1"
-      }
-    },
-    "form-subtitle": {
-      "parent": "form-title-row",
-      "order": 1,
-      "type": "text",
-      "content": "Fill in the details below",
-      "typography": "body",
-      "color": "text-secondary",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B"
+        "borderRadius": "9999px"
       }
     },
     "amount-hero-section": {
-      "parent": "expense-form-card",
+      "parent": "center-col",
       "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 6
-      }
+        "align": "center",
+        "gap": 8,
+        "py": 32
+      },
+      "background": "background-primary"
     },
-    "amount-label": {
+    "amount-currency-row": {
       "parent": "amount-hero-section",
       "order": 0,
-      "type": "text",
-      "content": "Amount",
-      "typography": "label",
-      "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
-    },
-    "amount-input-wrapper": {
-      "parent": "amount-hero-section",
-      "order": 1,
-      "type": "container",
-      "width": "fill",
-      "height": 88,
       "layout": {
         "dir": "row",
         "align": "center",
         "gap": 8,
-        "px": 24,
-        "py": 20
+        "justify": "center"
       },
-      "radius": 10,
+      "catalog": "Section",
+      "label": "$",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "2px solid #334155"
+        "__promoted": true
       }
     },
-    "amount-currency-symbol": {
-      "parent": "amount-input-wrapper",
+    "amount-hero-input": {
+      "parent": "amount-currency-row",
       "order": 0,
-      "type": "text",
-      "content": "$",
-      "typography": "heading-1",
-      "color": "text-secondary",
-      "weight": 700,
+      "catalog": "input-text",
+      "label": "",
+      "placeholder": "0.00",
+      "value": "",
+      "width": 280,
       "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#64748B",
-        "fontSize": "40px"
+        "fontSize": "48px",
+        "fontWeight": "700",
+        "textAlign": "center",
+        "border": "none",
+        "borderBottom": "2px solid var(--border-default)",
+        "borderRadius": "0",
+        "background": "transparent",
+        "aria-label": "Expense amount"
       }
     },
-    "amount-value": {
-      "parent": "amount-input-wrapper",
+    "amount-hint": {
+      "parent": "amount-hero-section",
       "order": 1,
       "type": "text",
-      "content": "0.00",
-      "typography": "heading-1",
-      "color": "text-primary",
-      "weight": 700,
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "48px",
-        "opacity": "0.4"
+      "content": "Enter the expense amount",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "expense-form-card": {
+      "parent": "center-col",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 16,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "px": 24,
+        "py": 24
       }
     },
     "category-section": {
       "parent": "expense-form-card",
-      "order": 2,
+      "order": 0,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 10
+        "gap": 12,
+        "py": 16
       }
     },
-    "category-label": {
+    "category-section-label": {
       "parent": "category-section",
       "order": 0,
       "type": "text",
       "content": "Category",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
+      "weight": 600
     },
-    "category-chips-grid": {
+    "category-chip-grid": {
       "parent": "category-section",
       "order": 1,
       "type": "container",
@@ -662,638 +281,280 @@
       "layout": {
         "dir": "row",
         "gap": 8,
-        "align": "center",
-        "wrap": true
+        "wrap": true,
+        "align": "center"
       }
     },
     "cat-food": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🍔 Food",
       "overrides": {
-        "backgroundColor": "#F59E0B",
-        "border": "2px solid #F59E0B",
-        "cursor": "pointer"
-      }
-    },
-    "cat-food-emoji": {
-      "parent": "cat-food",
-      "order": 0,
-      "type": "text",
-      "content": "🍔",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-food-label": {
-      "parent": "cat-food",
-      "order": 1,
-      "type": "text",
-      "content": "Food & Dining",
-      "typography": "label",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#0F172A",
-        "fontSize": "12px"
+        "borderRadius": "9999px",
+        "selected": true
       }
     },
     "cat-transport": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🚗 Transport",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "cat-transport-emoji": {
-      "parent": "cat-transport",
-      "order": 0,
-      "type": "text",
-      "content": "🚗",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-transport-label": {
-      "parent": "cat-transport",
-      "order": 1,
-      "type": "text",
-      "content": "Transport",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "borderRadius": "9999px"
       }
     },
     "cat-shopping": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🛍️ Shopping",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "cat-shopping-emoji": {
-      "parent": "cat-shopping",
-      "order": 0,
-      "type": "text",
-      "content": "🛍️",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-shopping-label": {
-      "parent": "cat-shopping",
-      "order": 1,
-      "type": "text",
-      "content": "Shopping",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "borderRadius": "9999px"
       }
     },
     "cat-health": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 3,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "💊 Health",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "cat-health-emoji": {
-      "parent": "cat-health",
-      "order": 0,
-      "type": "text",
-      "content": "💊",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-health-label": {
-      "parent": "cat-health",
-      "order": 1,
-      "type": "text",
-      "content": "Health",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "borderRadius": "9999px"
       }
     },
     "cat-entertainment": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 4,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🎬 Entertainment",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "cat-entertainment-emoji": {
-      "parent": "cat-entertainment",
-      "order": 0,
-      "type": "text",
-      "content": "🎬",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-entertainment-label": {
-      "parent": "cat-entertainment",
-      "order": 1,
-      "type": "text",
-      "content": "Entertainment",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "borderRadius": "9999px"
       }
     },
     "cat-utilities": {
-      "parent": "category-chips-grid",
+      "parent": "category-chip-grid",
       "order": 5,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "💡 Utilities",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "cat-utilities-emoji": {
-      "parent": "cat-utilities",
-      "order": 0,
-      "type": "text",
-      "content": "💡",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-utilities-label": {
-      "parent": "cat-utilities",
-      "order": 1,
-      "type": "text",
-      "content": "Utilities",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "cat-travel": {
-      "parent": "category-chips-grid",
+    "cat-add-new": {
+      "parent": "category-chip-grid",
       "order": 6,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "+ New",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px",
+        "border": "1px dashed var(--border-default)"
       }
     },
-    "cat-travel-emoji": {
-      "parent": "cat-travel",
-      "order": 0,
-      "type": "text",
-      "content": "✈️",
-      "overrides": {
-        "fontSize": "14px"
-      }
-    },
-    "cat-travel-label": {
-      "parent": "cat-travel",
-      "order": 1,
-      "type": "text",
-      "content": "Travel",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "cat-new": {
-      "parent": "category-chips-grid",
-      "order": 7,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
-      "overrides": {
-        "backgroundColor": "transparent",
-        "border": "1px dashed #334155",
-        "cursor": "pointer"
-      }
-    },
-    "cat-new-icon": {
-      "parent": "cat-new",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "plus",
-        "color": "#64748B",
-        "size": 14
-      }
-    },
-    "cat-new-label": {
-      "parent": "cat-new",
-      "order": 1,
-      "type": "text",
-      "content": "New Category",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "12px"
-      }
-    },
-    "new-category-form": {
-      "parent": "expense-form-card",
-      "order": 3,
+    "new-category-inline-form": {
+      "parent": "category-section",
+      "order": 2,
       "type": "container",
       "width": "fill",
+      "background": "surface-secondary",
+      "radius": 10,
       "layout": {
         "dir": "column",
         "gap": 12,
         "px": 16,
         "py": 16
       },
-      "radius": 10,
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155"
+        "border": "1px solid var(--border-default)"
       }
     },
     "new-cat-form-title": {
-      "parent": "new-category-form",
+      "parent": "new-category-inline-form",
       "order": 0,
       "type": "text",
-      "content": "Create New Category",
+      "content": "New Category",
       "typography": "label",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1"
-      }
-    },
-    "new-cat-name-row": {
-      "parent": "new-category-form",
-      "order": 1,
-      "type": "container",
-      "width": "fill",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 10
-      }
-    },
-    "new-cat-emoji-input": {
-      "parent": "new-cat-name-row",
-      "order": 0,
-      "type": "container",
-      "width": 44,
-      "height": 44,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 6,
-      "overrides": {
-        "backgroundColor": "#1E293B",
-        "border": "1px solid #334155",
-        "fontSize": "20px"
-      }
-    },
-    "new-cat-emoji-placeholder": {
-      "parent": "new-cat-emoji-input",
-      "order": 0,
-      "type": "text",
-      "content": "😀",
-      "overrides": {
-        "fontSize": "20px"
-      }
+      "color": "text-primary",
+      "weight": 600
     },
     "new-cat-name-input": {
-      "parent": "new-cat-name-row",
+      "parent": "new-category-inline-form",
       "order": 1,
       "catalog": "input-text",
-      "label": "",
-      "placeholder": "Category name (e.g. Gym, Pets)",
-      "width": "fill",
-      "overrides": {
-        "backgroundColor": "#1E293B",
-        "borderColor": "#334155",
-        "color": "#CBD5E1",
-        "fontFamily": "DM Sans"
-      }
+      "label": "Category Name",
+      "placeholder": "e.g. Subscriptions",
+      "width": "fill"
     },
-    "color-picker-row-container": {
-      "parent": "new-category-form",
+    "color-picker-row-label": {
+      "parent": "new-category-inline-form",
       "order": 2,
-      "type": "container",
-      "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 6
-      }
-    },
-    "color-picker-label": {
-      "parent": "color-picker-row-container",
-      "order": 0,
       "type": "text",
       "content": "Pick a color",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px"
-      }
+      "color": "text-secondary"
     },
-    "color-swatches": {
-      "parent": "color-picker-row-container",
-      "order": 1,
+    "color-picker-row": {
+      "parent": "new-category-inline-form",
+      "order": 3,
       "type": "container",
+      "width": "fill",
       "layout": {
         "dir": "row",
         "gap": 8,
         "align": "center"
       }
     },
-    "swatch-amber": {
-      "parent": "color-swatches",
+    "color-swatch-1": {
+      "parent": "color-picker-row",
       "order": 0,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
+      "background": "cta-primary",
+      "layout": {
+        "dir": "row"
+      },
       "overrides": {
-        "backgroundColor": "#F59E0B",
-        "border": "3px solid #CBD5E1",
-        "cursor": "pointer"
+        "cursor": "pointer",
+        "outline": "2px solid var(--cta-primary)",
+        "outlineOffset": "2px"
       }
     },
-    "swatch-teal": {
-      "parent": "color-swatches",
+    "color-swatch-2": {
+      "parent": "color-picker-row",
       "order": 1,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
+      "background": "success",
+      "layout": {
+        "dir": "row"
+      },
       "overrides": {
-        "backgroundColor": "#14B8A6",
         "cursor": "pointer"
       }
     },
-    "swatch-coral": {
-      "parent": "color-swatches",
+    "color-swatch-3": {
+      "parent": "color-picker-row",
       "order": 2,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
+      "background": "error",
+      "layout": {
+        "dir": "row"
+      },
       "overrides": {
-        "backgroundColor": "#F87171",
         "cursor": "pointer"
       }
     },
-    "swatch-blue": {
-      "parent": "color-swatches",
+    "color-swatch-4": {
+      "parent": "color-picker-row",
       "order": 3,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
+      "background": "warning",
+      "layout": {
+        "dir": "row"
+      },
       "overrides": {
-        "backgroundColor": "#60A5FA",
         "cursor": "pointer"
       }
     },
-    "swatch-purple": {
-      "parent": "color-swatches",
+    "color-swatch-5": {
+      "parent": "color-picker-row",
       "order": 4,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
+      "background": "info",
+      "layout": {
+        "dir": "row"
+      },
       "overrides": {
-        "backgroundColor": "#A78BFA",
         "cursor": "pointer"
       }
     },
-    "swatch-green": {
-      "parent": "color-swatches",
+    "color-swatch-6": {
+      "parent": "color-picker-row",
       "order": 5,
       "type": "container",
       "width": 32,
       "height": 32,
       "radius": 9999,
-      "overrides": {
-        "backgroundColor": "#4ADE80",
-        "cursor": "pointer"
-      }
-    },
-    "swatch-pink": {
-      "parent": "color-swatches",
-      "order": 6,
-      "type": "container",
-      "width": 32,
-      "height": 32,
-      "radius": 9999,
-      "overrides": {
-        "backgroundColor": "#F472B6",
-        "cursor": "pointer"
-      }
-    },
-    "new-cat-save-btn": {
-      "parent": "new-category-form",
-      "order": 3,
-      "type": "container",
+      "background": "surface-secondary",
       "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "end",
-        "gap": 8
-      }
-    },
-    "new-cat-cancel": {
-      "parent": "new-cat-save-btn",
-      "order": 0,
-      "catalog": "button-ghost",
-      "label": "Cancel",
+        "dir": "row"
+      },
       "overrides": {
-        "color": "#64748B"
+        "cursor": "pointer",
+        "border": "1px solid var(--border-default)",
+        "background": "#A78BFA"
       }
     },
-    "new-cat-create": {
-      "parent": "new-cat-save-btn",
-      "order": 1,
-      "catalog": "button-primary",
-      "label": "Create Category",
-      "overrides": {
-        "backgroundColor": "#F59E0B",
-        "color": "#0F172A",
-        "fontFamily": "DM Sans",
-        "fontWeight": "600"
-      }
-    },
-    "date-section": {
-      "parent": "expense-form-card",
+    "new-cat-actions": {
+      "parent": "new-category-inline-form",
       "order": 4,
       "type": "container",
       "width": "fill",
       "layout": {
-        "dir": "column",
-        "gap": 8
+        "dir": "row",
+        "gap": 8,
+        "justify": "end"
       }
     },
-    "date-label": {
+    "new-cat-cancel-btn": {
+      "parent": "new-cat-actions",
+      "order": 0,
+      "catalog": "button-secondary",
+      "label": "Cancel"
+    },
+    "new-cat-save-btn": {
+      "parent": "new-cat-actions",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Add Category"
+    },
+    "form-divider-1": {
+      "parent": "expense-form-card",
+      "order": 1,
+      "type": "divider",
+      "width": "fill"
+    },
+    "date-section": {
+      "parent": "expense-form-card",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "py": 16
+      }
+    },
+    "date-section-label": {
       "parent": "date-section",
       "order": 0,
       "type": "text",
       "content": "Date",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
+      "weight": 600
     },
-    "date-picker-trigger": {
+    "date-picker-input": {
       "parent": "date-section",
       "order": 1,
-      "type": "container",
+      "catalog": "date-picker",
+      "label": "Expense Date",
+      "value": "January 15, 2025",
       "width": "fill",
-      "height": 44,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "space-between",
-        "px": 16
-      },
-      "radius": 10,
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "date-picker-left": {
-      "parent": "date-picker-trigger",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 10
-      }
-    },
-    "date-picker-icon": {
-      "parent": "date-picker-left",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "calendar",
-        "color": "#64748B",
-        "size": 16
-      }
-    },
-    "date-picker-value": {
-      "parent": "date-picker-left",
-      "order": 1,
-      "type": "text",
-      "content": "Wednesday, January 15, 2025",
-      "typography": "body",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "14px"
-      }
-    },
-    "date-picker-chevron": {
-      "parent": "date-picker-trigger",
-      "order": 1,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-down",
-        "color": "#64748B",
-        "size": 16
+        "aria-label": "Select expense date"
       }
     },
     "mini-calendar-dropdown": {
@@ -1301,20 +562,20 @@
       "order": 2,
       "type": "container",
       "width": "fill",
+      "background": "surface-primary",
+      "shadow": "md",
+      "radius": 10,
       "layout": {
         "dir": "column",
         "gap": 12,
-        "px": 20,
+        "px": 16,
         "py": 16
       },
-      "radius": 16,
-      "shadow": "lg",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155"
+        "border": "1px solid var(--border-default)"
       }
     },
-    "mini-cal-header": {
+    "month-selector": {
       "parent": "mini-calendar-dropdown",
       "order": 0,
       "type": "container",
@@ -1325,176 +586,110 @@
         "justify": "space-between"
       }
     },
-    "mini-cal-prev": {
-      "parent": "mini-cal-header",
+    "month-prev-btn": {
+      "parent": "month-selector",
       "order": 0,
-      "type": "container",
-      "width": 28,
-      "height": 28,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 6,
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "backgroundColor": "#1E293B",
-        "cursor": "pointer"
+        "icon": "chevron-left",
+        "aria-label": "Previous month"
       }
     },
-    "mini-cal-prev-icon": {
-      "parent": "mini-cal-prev",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-left",
-        "color": "#CBD5E1",
-        "size": 14
-      }
-    },
-    "mini-cal-month-label": {
-      "parent": "mini-cal-header",
+    "month-label": {
+      "parent": "month-selector",
       "order": 1,
       "type": "text",
       "content": "January 2025",
       "typography": "heading-3",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1"
-      }
+      "color": "text-primary",
+      "weight": 600
     },
-    "mini-cal-next": {
-      "parent": "mini-cal-header",
+    "month-next-btn": {
+      "parent": "month-selector",
       "order": 2,
-      "type": "container",
-      "width": 28,
-      "height": 28,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 6,
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "backgroundColor": "#1E293B",
-        "cursor": "pointer"
+        "icon": "chevron-right",
+        "aria-label": "Next month"
       }
     },
-    "mini-cal-next-icon": {
-      "parent": "mini-cal-next",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-right",
-        "color": "#CBD5E1",
-        "size": 14
-      }
-    },
-    "mini-cal-weekdays": {
+    "calendar-weekdays": {
       "parent": "mini-calendar-dropdown",
       "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
-        "display": "grid",
         "dir": "row",
-        "columns": 7,
-        "gap": 4
+        "justify": "space-between",
+        "align": "center"
       }
     },
-    "wd-sun": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-su": {
+      "parent": "calendar-weekdays",
       "order": 0,
       "type": "text",
       "content": "Su",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-mon": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-mo": {
+      "parent": "calendar-weekdays",
       "order": 1,
       "type": "text",
       "content": "Mo",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-tue": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-tu": {
+      "parent": "calendar-weekdays",
       "order": 2,
       "type": "text",
       "content": "Tu",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-wed": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-we": {
+      "parent": "calendar-weekdays",
       "order": 3,
       "type": "text",
       "content": "We",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-thu": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-th": {
+      "parent": "calendar-weekdays",
       "order": 4,
       "type": "text",
       "content": "Th",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-fri": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-fr": {
+      "parent": "calendar-weekdays",
       "order": 5,
       "type": "text",
       "content": "Fr",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "wd-sat": {
-      "parent": "mini-cal-weekdays",
+    "cal-day-sa": {
+      "parent": "calendar-weekdays",
       "order": 6,
       "type": "text",
       "content": "Sa",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px",
-        "textAlign": "center"
-      }
+      "color": "text-secondary",
+      "weight": 500
     },
-    "mini-cal-days": {
+    "calendar-grid": {
       "parent": "mini-calendar-dropdown",
       "order": 2,
       "type": "container",
@@ -1506,1144 +701,791 @@
         "gap": 4
       }
     },
-    "day-empty-1": {
-      "parent": "mini-cal-days",
+    "cg-d1": {
+      "parent": "calendar-grid",
       "order": 0,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
-        "dir": "row"
-      }
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
+      },
+      "children": []
     },
-    "day-empty-2": {
-      "parent": "mini-cal-days",
+    "cg-d1t": {
+      "parent": "cg-d1",
+      "order": 0,
+      "type": "text",
+      "content": "",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "cg-d2": {
+      "parent": "calendar-grid",
       "order": 1,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
       }
     },
-    "day-empty-3": {
-      "parent": "mini-cal-days",
+    "cg-d2t": {
+      "parent": "cg-d2",
+      "order": 0,
+      "type": "text",
+      "content": "",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "cg-d3": {
+      "parent": "calendar-grid",
       "order": 2,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
-        "dir": "row"
+        "dir": "row",
+        "align": "center",
+        "justify": "center"
       }
     },
-    "day-1": {
-      "parent": "mini-cal-days",
+    "cg-d3t": {
+      "parent": "cg-d3",
+      "order": 0,
+      "type": "text",
+      "content": "1",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "cg-d4": {
+      "parent": "calendar-grid",
       "order": 3,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
-      },
-      "children": []
-    },
-    "day-1-text": {
-      "parent": "day-1",
-      "order": 0,
-      "type": "text",
-      "content": "1",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
       }
     },
-    "day-2": {
-      "parent": "mini-cal-days",
+    "cg-d4t": {
+      "parent": "cg-d4",
+      "order": 0,
+      "type": "text",
+      "content": "2",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "cg-d5": {
+      "parent": "calendar-grid",
       "order": 4,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-2-text": {
-      "parent": "day-2",
+    "cg-d5t": {
+      "parent": "cg-d5",
       "order": 0,
       "type": "text",
-      "content": "2",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "3",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-3": {
-      "parent": "mini-cal-days",
+    "cg-d6": {
+      "parent": "calendar-grid",
       "order": 5,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-3-text": {
-      "parent": "day-3",
+    "cg-d6t": {
+      "parent": "cg-d6",
       "order": 0,
       "type": "text",
-      "content": "3",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "4",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-4": {
-      "parent": "mini-cal-days",
+    "cg-d7": {
+      "parent": "calendar-grid",
       "order": 6,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-4-text": {
-      "parent": "day-4",
+    "cg-d7t": {
+      "parent": "cg-d7",
       "order": 0,
       "type": "text",
-      "content": "4",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "5",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-5": {
-      "parent": "mini-cal-days",
+    "cg-d8": {
+      "parent": "calendar-grid",
       "order": 7,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-5-text": {
-      "parent": "day-5",
+    "cg-d8t": {
+      "parent": "cg-d8",
       "order": 0,
       "type": "text",
-      "content": "5",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "6",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-6": {
-      "parent": "mini-cal-days",
+    "cg-d9": {
+      "parent": "calendar-grid",
       "order": 8,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-6-text": {
-      "parent": "day-6",
+    "cg-d9t": {
+      "parent": "cg-d9",
       "order": 0,
       "type": "text",
-      "content": "6",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "7",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-7": {
-      "parent": "mini-cal-days",
+    "cg-d10": {
+      "parent": "calendar-grid",
       "order": 9,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-7-text": {
-      "parent": "day-7",
+    "cg-d10t": {
+      "parent": "cg-d10",
       "order": 0,
       "type": "text",
-      "content": "7",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "8",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-8": {
-      "parent": "mini-cal-days",
+    "cg-d11": {
+      "parent": "calendar-grid",
       "order": 10,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-8-text": {
-      "parent": "day-8",
+    "cg-d11t": {
+      "parent": "cg-d11",
       "order": 0,
       "type": "text",
-      "content": "8",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "9",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-9": {
-      "parent": "mini-cal-days",
+    "cg-d12": {
+      "parent": "calendar-grid",
       "order": 11,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-9-text": {
-      "parent": "day-9",
+    "cg-d12t": {
+      "parent": "cg-d12",
       "order": 0,
       "type": "text",
-      "content": "9",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "10",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-10": {
-      "parent": "mini-cal-days",
+    "cg-d13": {
+      "parent": "calendar-grid",
       "order": 12,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-10-text": {
-      "parent": "day-10",
+    "cg-d13t": {
+      "parent": "cg-d13",
       "order": 0,
       "type": "text",
-      "content": "10",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "11",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-11": {
-      "parent": "mini-cal-days",
+    "cg-d14": {
+      "parent": "calendar-grid",
       "order": 13,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-11-text": {
-      "parent": "day-11",
+    "cg-d14t": {
+      "parent": "cg-d14",
       "order": 0,
       "type": "text",
-      "content": "11",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "12",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-12": {
-      "parent": "mini-cal-days",
+    "cg-d15": {
+      "parent": "calendar-grid",
       "order": 14,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
+      "background": "cta-primary",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-12-text": {
-      "parent": "day-12",
+    "cg-d15t": {
+      "parent": "cg-d15",
       "order": 0,
       "type": "text",
-      "content": "12",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "13",
+      "typography": "body",
+      "color": "text-on-cta",
+      "weight": 700
     },
-    "day-13": {
-      "parent": "mini-cal-days",
+    "cg-d16": {
+      "parent": "calendar-grid",
       "order": 15,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-13-text": {
-      "parent": "day-13",
+    "cg-d16t": {
+      "parent": "cg-d16",
       "order": 0,
       "type": "text",
-      "content": "13",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "14",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-14": {
-      "parent": "mini-cal-days",
+    "cg-d17": {
+      "parent": "calendar-grid",
       "order": 16,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-14-text": {
-      "parent": "day-14",
+    "cg-d17t": {
+      "parent": "cg-d17",
       "order": 0,
       "type": "text",
-      "content": "14",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "15",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-15-selected": {
-      "parent": "mini-cal-days",
+    "cg-d18": {
+      "parent": "calendar-grid",
       "order": 17,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "backgroundColor": "#F59E0B",
-        "cursor": "pointer"
       }
     },
-    "day-15-text": {
-      "parent": "day-15-selected",
+    "cg-d18t": {
+      "parent": "cg-d18",
       "order": 0,
       "type": "text",
-      "content": "15",
-      "typography": "label",
-      "weight": 700,
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#0F172A",
-        "fontSize": "13px"
-      }
+      "content": "16",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-16": {
-      "parent": "mini-cal-days",
+    "cg-d19": {
+      "parent": "calendar-grid",
       "order": 18,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-16-text": {
-      "parent": "day-16",
+    "cg-d19t": {
+      "parent": "cg-d19",
       "order": 0,
       "type": "text",
-      "content": "16",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "17",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-17": {
-      "parent": "mini-cal-days",
+    "cg-d20": {
+      "parent": "calendar-grid",
       "order": 19,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-17-text": {
-      "parent": "day-17",
+    "cg-d20t": {
+      "parent": "cg-d20",
       "order": 0,
       "type": "text",
-      "content": "17",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "18",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-18": {
-      "parent": "mini-cal-days",
+    "cg-d21": {
+      "parent": "calendar-grid",
       "order": 20,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-18-text": {
-      "parent": "day-18",
+    "cg-d21t": {
+      "parent": "cg-d21",
       "order": 0,
       "type": "text",
-      "content": "18",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "19",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-19": {
-      "parent": "mini-cal-days",
+    "cg-d22": {
+      "parent": "calendar-grid",
       "order": 21,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-19-text": {
-      "parent": "day-19",
+    "cg-d22t": {
+      "parent": "cg-d22",
       "order": 0,
       "type": "text",
-      "content": "19",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "20",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-20": {
-      "parent": "mini-cal-days",
+    "cg-d23": {
+      "parent": "calendar-grid",
       "order": 22,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-20-text": {
-      "parent": "day-20",
+    "cg-d23t": {
+      "parent": "cg-d23",
       "order": 0,
       "type": "text",
-      "content": "20",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "21",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-21": {
-      "parent": "mini-cal-days",
+    "cg-d24": {
+      "parent": "calendar-grid",
       "order": 23,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-21-text": {
-      "parent": "day-21",
+    "cg-d24t": {
+      "parent": "cg-d24",
       "order": 0,
       "type": "text",
-      "content": "21",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "22",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-22": {
-      "parent": "mini-cal-days",
+    "cg-d25": {
+      "parent": "calendar-grid",
       "order": 24,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-22-text": {
-      "parent": "day-22",
+    "cg-d25t": {
+      "parent": "cg-d25",
       "order": 0,
       "type": "text",
-      "content": "22",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "23",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-23": {
-      "parent": "mini-cal-days",
+    "cg-d26": {
+      "parent": "calendar-grid",
       "order": 25,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-23-text": {
-      "parent": "day-23",
+    "cg-d26t": {
+      "parent": "cg-d26",
       "order": 0,
       "type": "text",
-      "content": "23",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "24",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-24": {
-      "parent": "mini-cal-days",
+    "cg-d27": {
+      "parent": "calendar-grid",
       "order": 26,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-24-text": {
-      "parent": "day-24",
+    "cg-d27t": {
+      "parent": "cg-d27",
       "order": 0,
       "type": "text",
-      "content": "24",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "25",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-25": {
-      "parent": "mini-cal-days",
+    "cg-d28": {
+      "parent": "calendar-grid",
       "order": 27,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-25-text": {
-      "parent": "day-25",
+    "cg-d28t": {
+      "parent": "cg-d28",
       "order": 0,
       "type": "text",
-      "content": "25",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "26",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-26": {
-      "parent": "mini-cal-days",
+    "cg-d29": {
+      "parent": "calendar-grid",
       "order": 28,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-26-text": {
-      "parent": "day-26",
+    "cg-d29t": {
+      "parent": "cg-d29",
       "order": 0,
       "type": "text",
-      "content": "26",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "27",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-27": {
-      "parent": "mini-cal-days",
+    "cg-d30": {
+      "parent": "calendar-grid",
       "order": 29,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-27-text": {
-      "parent": "day-27",
+    "cg-d30t": {
+      "parent": "cg-d30",
       "order": 0,
       "type": "text",
-      "content": "27",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "28",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-28": {
-      "parent": "mini-cal-days",
+    "cg-d31": {
+      "parent": "calendar-grid",
       "order": 30,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-28-text": {
-      "parent": "day-28",
+    "cg-d31t": {
+      "parent": "cg-d31",
       "order": 0,
       "type": "text",
-      "content": "28",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "29",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-29": {
-      "parent": "mini-cal-days",
+    "cg-d32": {
+      "parent": "calendar-grid",
       "order": 31,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-29-text": {
-      "parent": "day-29",
+    "cg-d32t": {
+      "parent": "cg-d32",
       "order": 0,
       "type": "text",
-      "content": "29",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "content": "30",
+      "typography": "body",
+      "color": "text-primary"
     },
-    "day-30": {
-      "parent": "mini-cal-days",
+    "cg-d33": {
+      "parent": "calendar-grid",
       "order": 32,
       "type": "container",
       "width": 36,
       "height": 36,
+      "radius": 9999,
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
       }
     },
-    "day-30-text": {
-      "parent": "day-30",
-      "order": 0,
-      "type": "text",
-      "content": "30",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
-    },
-    "day-31": {
-      "parent": "mini-cal-days",
-      "order": 33,
-      "type": "container",
-      "width": 36,
-      "height": 36,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 9999,
-      "overrides": {
-        "cursor": "pointer"
-      }
-    },
-    "day-31-text": {
-      "parent": "day-31",
+    "cg-d33t": {
+      "parent": "cg-d33",
       "order": 0,
       "type": "text",
       "content": "31",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#CBD5E1",
-        "fontSize": "13px"
-      }
+      "typography": "body",
+      "color": "text-primary"
     },
-    "payment-section": {
+    "form-divider-2": {
       "parent": "expense-form-card",
-      "order": 5,
+      "order": 3,
+      "type": "divider",
+      "width": "fill"
+    },
+    "payment-method-section": {
+      "parent": "expense-form-card",
+      "order": 4,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 10
+        "gap": 8,
+        "py": 16
       }
     },
-    "payment-label": {
-      "parent": "payment-section",
+    "payment-section-label": {
+      "parent": "payment-method-section",
       "order": 0,
       "type": "text",
       "content": "Payment Method",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
+      "weight": 600
     },
-    "payment-chips-row": {
-      "parent": "payment-section",
+    "payment-chip-row": {
+      "parent": "payment-method-section",
       "order": 1,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "row",
         "gap": 8,
-        "align": "center",
-        "wrap": true
-      }
-    },
-    "pm-card": {
-      "parent": "payment-chips-row",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
-      "overrides": {
-        "backgroundColor": "#F59E0B",
-        "border": "2px solid #F59E0B",
-        "cursor": "pointer"
-      }
-    },
-    "pm-card-icon": {
-      "parent": "pm-card",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "credit-card",
-        "color": "#0F172A",
-        "size": 14
-      }
-    },
-    "pm-card-label": {
-      "parent": "pm-card",
-      "order": 1,
-      "type": "text",
-      "content": "Credit Card",
-      "typography": "label",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#0F172A",
-        "fontSize": "12px"
-      }
-    },
-    "pm-debit": {
-      "parent": "payment-chips-row",
-      "order": 1,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
-      "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "pm-debit-icon": {
-      "parent": "pm-debit",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "credit-card",
-        "color": "#64748B",
-        "size": 14
-      }
-    },
-    "pm-debit-label": {
-      "parent": "pm-debit",
-      "order": 1,
-      "type": "text",
-      "content": "Debit Card",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "wrap": true,
+        "align": "center"
       }
     },
     "pm-cash": {
-      "parent": "payment-chips-row",
+      "parent": "payment-chip-row",
+      "order": 0,
+      "catalog": "chip",
+      "label": "💵 Cash",
+      "overrides": {
+        "borderRadius": "9999px",
+        "selected": true
+      }
+    },
+    "pm-credit": {
+      "parent": "payment-chip-row",
+      "order": 1,
+      "catalog": "chip",
+      "label": "💳 Credit Card",
+      "overrides": {
+        "borderRadius": "9999px"
+      }
+    },
+    "pm-debit": {
+      "parent": "payment-chip-row",
       "order": 2,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🏦 Debit Card",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "pm-cash-icon": {
-      "parent": "pm-cash",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "dollar-sign",
-        "color": "#64748B",
-        "size": 14
-      }
-    },
-    "pm-cash-label": {
-      "parent": "pm-cash",
-      "order": 1,
-      "type": "text",
-      "content": "Cash",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
-    },
-    "pm-wallet": {
-      "parent": "payment-chips-row",
+    "pm-apple-pay": {
+      "parent": "payment-chip-row",
       "order": 3,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "📱 Apple Pay",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
-      }
-    },
-    "pm-wallet-icon": {
-      "parent": "pm-wallet",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "wallet",
-        "color": "#64748B",
-        "size": 14
-      }
-    },
-    "pm-wallet-label": {
-      "parent": "pm-wallet",
-      "order": 1,
-      "type": "text",
-      "content": "Digital Wallet",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
+        "borderRadius": "9999px"
       }
     },
     "pm-bank": {
-      "parent": "payment-chips-row",
+      "parent": "payment-chip-row",
       "order": 4,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 6,
-        "px": 14,
-        "py": 8
-      },
-      "radius": 9999,
+      "catalog": "chip",
+      "label": "🏛️ Bank Transfer",
       "overrides": {
-        "backgroundColor": "#293548",
-        "border": "1px solid #334155",
-        "cursor": "pointer"
+        "borderRadius": "9999px"
       }
     },
-    "pm-bank-icon": {
-      "parent": "pm-bank",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "hash",
-        "color": "#64748B",
-        "size": 14
-      }
-    },
-    "pm-bank-label": {
-      "parent": "pm-bank",
-      "order": 1,
-      "type": "text",
-      "content": "Bank Transfer",
-      "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#CBD5E1",
-        "fontSize": "12px"
-      }
+    "form-divider-3": {
+      "parent": "expense-form-card",
+      "order": 5,
+      "type": "divider",
+      "width": "fill"
     },
     "note-section": {
       "parent": "expense-form-card",
@@ -2652,125 +1494,71 @@
       "width": "fill",
       "layout": {
         "dir": "column",
-        "gap": 6
+        "gap": 4,
+        "py": 16
       }
     },
-    "note-label": {
+    "note-section-label": {
       "parent": "note-section",
       "order": 0,
       "type": "text",
       "content": "Note",
       "typography": "label",
       "color": "text-secondary",
-      "weight": 500,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.08em"
-      }
+      "weight": 600
     },
-    "note-textarea-wrapper": {
+    "note-input": {
       "parent": "note-section",
       "order": 1,
-      "type": "container",
-      "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 0
-      }
-    },
-    "note-textarea": {
-      "parent": "note-textarea-wrapper",
-      "order": 0,
       "catalog": "text-area",
-      "placeholder": "Add a note (optional) — e.g. business lunch with client",
+      "label": "",
+      "placeholder": "Add a note (optional)",
       "width": "fill",
-      "height": 80,
       "overrides": {
-        "backgroundColor": "#293548",
-        "borderColor": "#334155",
-        "color": "#CBD5E1",
-        "fontFamily": "DM Mono",
-        "fontSize": "14px",
-        "borderRadius": "10px"
+        "rows": 3,
+        "maxLength": 140,
+        "aria-label": "Expense note",
+        "aria-describedby": "char-counter"
       }
     },
-    "note-counter-row": {
-      "parent": "note-textarea-wrapper",
-      "order": 1,
+    "char-counter-row": {
+      "parent": "note-section",
+      "order": 2,
       "type": "container",
       "width": "fill",
       "layout": {
         "dir": "row",
-        "justify": "end",
-        "align": "center",
-        "pt": 4
+        "justify": "end"
       }
     },
-    "note-counter": {
-      "parent": "note-counter-row",
+    "char-counter": {
+      "parent": "char-counter-row",
       "order": 0,
       "type": "text",
       "content": "0 / 140",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Mono",
-        "color": "#64748B",
-        "fontSize": "11px"
-      }
+      "color": "text-secondary"
     },
-    "save-btn-wrapper": {
+    "form-divider-4": {
       "parent": "expense-form-card",
       "order": 7,
-      "type": "container",
-      "width": "fill",
-      "layout": {
-        "dir": "column",
-        "gap": 0
-      }
+      "type": "divider",
+      "width": "fill"
     },
     "save-expense-btn": {
-      "parent": "save-btn-wrapper",
-      "order": 0,
-      "type": "container",
+      "parent": "expense-form-card",
+      "order": 8,
+      "catalog": "button-primary",
+      "label": "Save Expense",
       "width": "fill",
-      "height": 52,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center",
-        "gap": 10
+      "height": 48,
+      "overrides": {
+        "aria-label": "Save expense",
+        "borderRadius": "10px",
+        "fontSize": "18px",
+        "fontWeight": "700"
       },
-      "radius": 10,
-      "navigateTo": "dashboard",
-      "overrides": {
-        "backgroundColor": "#F59E0B",
-        "cursor": "pointer"
-      }
-    },
-    "save-btn-icon": {
-      "parent": "save-expense-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "check-circle",
-        "color": "#0F172A",
-        "size": 20
-      }
-    },
-    "save-btn-label": {
-      "parent": "save-expense-btn",
-      "order": 1,
-      "type": "text",
-      "content": "Save Expense",
-      "typography": "heading-3",
-      "weight": 700,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#0F172A",
-        "fontSize": "16px"
-      }
+      "navigateTo": "dashboard"
     },
     "nav-tabs": {
       "parent": "root",
@@ -2778,19 +1566,20 @@
       "type": "container",
       "width": "fill",
       "height": 64,
+      "background": "surface-primary",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
-        "px": 0
+        "px": 0,
+        "py": 0
       },
-      "background": "surface-primary",
       "overrides": {
-        "borderTop": "1px solid #334155",
-        "backgroundColor": "#1E293B"
-      }
+        "borderTop": "1px solid var(--border-default)"
+      },
+      "shadow": "sm"
     },
-    "home-tab": {
+    "nav-tab-home": {
       "parent": "nav-tabs",
       "order": 0,
       "type": "container",
@@ -2807,29 +1596,24 @@
         "cursor": "pointer"
       }
     },
-    "home-tab-icon": {
-      "parent": "home-tab",
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "home",
-        "color": "#64748B",
-        "size": 20
-      }
+        "name": "home"
+      },
+      "color": "text-secondary"
     },
-    "home-tab-label": {
-      "parent": "home-tab",
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
       "order": 1,
       "type": "text",
       "content": "Home",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px"
-      }
+      "color": "text-secondary"
     },
-    "add-expense-tab": {
+    "nav-tab-add-expense": {
       "parent": "nav-tabs",
       "order": 1,
       "type": "container",
@@ -2842,34 +1626,28 @@
         "gap": 4
       },
       "overrides": {
-        "cursor": "pointer",
-        "borderTop": "2px solid #F59E0B"
+        "cursor": "pointer"
       }
     },
-    "add-expense-tab-icon": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add-expense",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "plus",
-        "color": "#F59E0B",
-        "size": 20
-      }
+        "name": "plus"
+      },
+      "color": "cta-primary"
     },
-    "add-expense-tab-label": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add-expense",
       "order": 1,
       "type": "text",
-      "content": "Add Expense",
+      "content": "Add",
       "typography": "label",
-      "weight": 600,
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#F59E0B",
-        "fontSize": "11px"
-      }
+      "color": "cta-primary",
+      "weight": 600
     },
-    "insights-tab": {
+    "nav-tab-insights": {
       "parent": "nav-tabs",
       "order": 2,
       "type": "container",
@@ -2886,27 +1664,22 @@
         "cursor": "pointer"
       }
     },
-    "insights-tab-icon": {
-      "parent": "insights-tab",
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "bar-chart",
-        "color": "#64748B",
-        "size": 20
-      }
+        "name": "bar-chart"
+      },
+      "color": "text-secondary"
     },
-    "insights-tab-label": {
-      "parent": "insights-tab",
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
       "order": 1,
       "type": "text",
       "content": "Insights",
       "typography": "label",
-      "overrides": {
-        "fontFamily": "DM Sans",
-        "color": "#64748B",
-        "fontSize": "11px"
-      }
+      "color": "text-secondary"
     }
   }
 }

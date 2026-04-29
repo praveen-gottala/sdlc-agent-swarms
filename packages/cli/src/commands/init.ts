@@ -218,6 +218,19 @@ function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
     version: '1.0',
     agents: [
       {
+        role: 'clarifier',
+        phase: 'clarify',
+        provider: manifest.agents.providers.overrides?.['architecture'] ?? manifest.agents.providers.default,
+        execution: { ...defaultExecution },
+        tools: ['spec.read_project', 'retrieval.search_code', 'retrieval.search_docs', 'retrieval.search_designs', 'retrieval.get_repo_map', 'retrieval.find_similar_patterns'],
+        permissions: ['read_spec', 'write_spec', 'read_design', 'read_code'],
+        denied: ['write_code', 'deploy', 'merge_pr', 'write_design'],
+        hitl_policy: 'full_approval',
+        budget: { ...defaultBudget },
+        on_complete: 'RequirementsClarified',
+        on_error: 'notify_human',
+      },
+      {
         role: 'ux_researcher',
         phase: 'design',
         provider: manifest.agents.providers.default,

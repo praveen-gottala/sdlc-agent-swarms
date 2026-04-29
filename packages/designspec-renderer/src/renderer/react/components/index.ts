@@ -68,6 +68,10 @@ const CATALOG_RENDERERS: Readonly<Record<string, ReactComponentRenderer>> = {
   'progress-bar-active': renderProgressBar,
   'search-input': renderSearchInput,
   'pagination': renderPagination,
+  'Section': renderSection,
+  'page-header': renderHeader,
+  'footer': renderContainer,
+  'form': renderContainer,
 };
 
 /** Get a renderer for an accelerator type. */

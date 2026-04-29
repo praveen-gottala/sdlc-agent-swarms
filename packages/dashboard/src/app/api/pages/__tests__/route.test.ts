@@ -2,17 +2,30 @@
  * @jest-environment node
  */
 import { NextRequest } from 'next/server';
-import { POST } from '../route';
+import { GET, POST } from '../route';
 
 jest.mock('../../_lib/project-reader', () => ({
   readYamlFile: jest.fn(),
   writeYamlFile: jest.fn(),
+  getActiveProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+}));
+
+jest.mock('../../_lib/run-manager', () => ({
+  getActiveRun: jest.fn(),
+}));
+
+jest.mock('@agentforge/core', () => ({
+  designSpecExists: jest.fn(),
 }));
 
 import { readYamlFile, writeYamlFile } from '../../_lib/project-reader';
+import { getActiveRun } from '../../_lib/run-manager';
+import { designSpecExists } from '@agentforge/core';
 
 const mockReadYamlFile = readYamlFile as jest.MockedFunction<typeof readYamlFile>;
 const mockWriteYamlFile = writeYamlFile as jest.MockedFunction<typeof writeYamlFile>;
+const mockGetActiveRun = getActiveRun as jest.MockedFunction<typeof getActiveRun>;
+const mockDesignSpecExists = designSpecExists as jest.MockedFunction<typeof designSpecExists>;
 
 interface PageEntry {
   id: string;
@@ -63,5 +76,77 @@ describe('POST /api/pages', () => {
     const secondBody = (await second.json()) as { pageId: string; description: string };
     expect(secondBody.pageId).toBe(firstBody.pageId);
     expect(mockWriteYamlFile).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('GET /api/pages', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockGetActiveRun.mockReturnValue(null);
+    mockDesignSpecExists.mockReturnValue(false);
+  });
+
+  it('preserves generating status and returns activeRunId when a run is active for the page', async () => {
+    mockReadYamlFile.mockReturnValue({
+      pages: [{ id: 'page-1', name: 'Home', description: 'Home page', route: '/', status: 'draft', designStatus: 'generating' }],
+    });
+    mockGetActiveRun.mockReturnValue({
+      runId: 'run-abc', type: 'design-browser', status: 'running',
+      stage: 'Research', stageDescription: null, progress: null,
+      agentRole: null, startedAt: new Date().toISOString(), completedAt: null,
+      error: null, params: { pageId: 'page-1' }, cost: null, stageTimings: null,
+    });
+
+    const res = await GET();
+    const data = await res.json();
+
+    expect(data.pages[0].designStatus).toBe('generating');
+    expect(data.pages[0].activeRunId).toBe('run-abc');
+  });
+
+  it('recovers generating to draft when no active run exists', async () => {
+    mockReadYamlFile.mockReturnValue({
+      pages: [{ id: 'page-1', name: 'Home', description: 'Home page', route: '/', status: 'draft', designStatus: 'generating' }],
+    });
+    mockGetActiveRun.mockReturnValue(null);
+
+    const res = await GET();
+    const data = await res.json();
+
+    expect(data.pages[0].designStatus).toBe('draft');
+    expect(data.pages[0].activeRunId).toBeUndefined();
+  });
+
+  it('recovers generating to draft when active run belongs to a different page', async () => {
+    mockReadYamlFile.mockReturnValue({
+      pages: [
+        { id: 'page-1', name: 'Home', description: 'Home page', route: '/', status: 'draft', designStatus: 'generating' },
+        { id: 'page-2', name: 'About', description: 'About page', route: '/about', status: 'draft', designStatus: 'draft' },
+      ],
+    });
+    mockGetActiveRun.mockReturnValue({
+      runId: 'run-xyz', type: 'design-browser', status: 'running',
+      stage: 'Design', stageDescription: null, progress: null,
+      agentRole: null, startedAt: new Date().toISOString(), completedAt: null,
+      error: null, params: { pageId: 'page-2' }, cost: null, stageTimings: null,
+    });
+
+    const res = await GET();
+    const data = await res.json();
+
+    expect(data.pages[0].designStatus).toBe('draft');
+    expect(data.pages[0].activeRunId).toBeUndefined();
+  });
+
+  it('preserves rendered status when spec file exists', async () => {
+    mockReadYamlFile.mockReturnValue({
+      pages: [{ id: 'page-1', name: 'Home', description: 'Home page', route: '/', status: 'draft', designStatus: 'rendered' }],
+    });
+    mockDesignSpecExists.mockReturnValue(true);
+
+    const res = await GET();
+    const data = await res.json();
+
+    expect(data.pages[0].designStatus).toBe('rendered');
   });
 });

@@ -93,7 +93,7 @@ function introduceColorBug(spec: DesignSpecV2): DesignSpecV2 {
 
 function introduceLayoutBug(spec: DesignSpecV2): DesignSpecV2 {
   const bugged = JSON.parse(JSON.stringify(spec)) as DesignSpecV2;
-  const topbar = bugged.nodes['topbar'];
+  const topbar = bugged.nodes['top-bar'] ?? bugged.nodes['topbar'];
   if (topbar?.layout) {
     (topbar.layout as Record<string, unknown>).dir = 'column';
   }
@@ -191,7 +191,8 @@ describeIfAuth('Vision Correction Effectiveness @vision-correction', () => {
   it('detects topbar layout flipped to column', async () => {
     const goodSpec = loadSpec();
     const buggedSpec = introduceLayoutBug(goodSpec);
-    expect(buggedSpec.nodes['topbar']?.layout?.dir).toBe('column');
+    const topbar = buggedSpec.nodes['top-bar'] ?? buggedSpec.nodes['topbar'];
+    expect(topbar?.layout?.dir).toBe('column');
 
     await captureBeforeScreenshot(buggedSpec, 'layout-bug');
 

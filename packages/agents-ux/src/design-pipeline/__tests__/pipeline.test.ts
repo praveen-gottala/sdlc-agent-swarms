@@ -145,7 +145,7 @@ describe('runDesignPipeline', () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect((result.error as PipelineStageError).stage).toBe('init');
+      expect((result.error as PipelineStageError).stage).toBe('research');
     }
   });
 
@@ -257,5 +257,46 @@ describe('runDesignPipeline', () => {
 
     const cachedResearch = JSON.parse(readFileSync(join(input.projectRoot, 'agentforge/designs/test-page/research-brief.json'), 'utf-8'));
     expect(cachedResearch.briefId).toBe('p');
+  });
+
+  it('calls sink.wrapStage when provided and stage fn result flows through', async () => {
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const wrapStageCalls: string[] = [];
+    const sink: PipelineTelemetrySink = {
+      onStageStart: jest.fn(),
+      onStageComplete: jest.fn(),
+      onStageFail: jest.fn(),
+      onLlmCall: jest.fn(),
+      onLog: jest.fn(),
+      async wrapStage<T>(_stage: string, _attrs: { agentRole: string; moduleId: string; taskId: string }, fn: () => Promise<T>): Promise<T> {
+        wrapStageCalls.push(_stage);
+        return fn();
+      },
+    };
+
+    const input = createInput({ telemetry: sink });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+    expect(wrapStageCalls).toEqual(['research', 'planning', 'design', 'evaluator']);
+  });
+
+  it('pipeline works without wrapStage (backward compatible)', async () => {
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const sink = createSink(); // no wrapStage
+    const input = createInput({ telemetry: sink });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+    expect(sink.onStageStart).toHaveBeenCalledTimes(4);
+    expect(sink.onStageComplete).toHaveBeenCalledTimes(4);
   });
 });

@@ -17,13 +17,31 @@ import { Err, Ok } from '@agentforge/core';
 import type { Result } from '@agentforge/core';
 import { debugLog } from '@agentforge/core';
 import { SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { promoteToCatalog } from './promote-to-catalog.js';
 import { extractDesignSpecFromToolCall } from '../ux-design/penpot-script-executor.js';
 import { buildPromptFromTokens } from '../prompts/prompt-template-builder.js';
 import { formatPageContextPrompt } from '../page-context-prompt.js';
 import type { DesignPhaseState, NodeContext, PipelineStageError } from './types.js';
 import { pipelineStageError } from './types.js';
+import type { CatalogMap } from '@agentforge/designspec-renderer';
 
 const MAX_EMPTY_NODES_RETRIES = 1;
+
+function buildCatalogMappingHint(catalogMap?: CatalogMap): string | null {
+  if (!catalogMap) return null;
+  return `\n## Catalog Mapping Guide
+
+When translating the planning componentTree to DesignSpec nodes, map these patterns:
+- Any component named "...Section", "...Card", "...Panel" with a title/heading → \`catalog: "Section"\` with \`label\`
+- Any component named "...Form", "...InputGroup", "...FieldSet" → \`catalog: "Form"\`
+- Any component named "...Header", "...TopBar", "...NavBar" at page level → \`catalog: "PageHeader"\` with \`label\`
+- Any component named "...Footer", "...BottomBar" → \`catalog: "Footer"\`
+- Input components → use specific catalog: \`input-text\`, \`select\`, \`checkbox\`, \`radio\`, \`date-picker\`, \`text-area\`
+- Button components → \`button-primary\`, \`button-secondary\`, \`button-ghost\`, \`button-destructive\`
+
+Use \`type: "container"\` ONLY for pure layout wrappers that have no heading, no semantic role, and no catalog equivalent.`;
+}
 
 // ── System prompt loading (cached) ──
 
@@ -109,6 +127,11 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
 
   if (state.planning) {
     parts.push(`\nPlanning Output:\n${JSON.stringify(state.planning, null, 2)}`);
+  }
+
+  const catalogHint = buildCatalogMappingHint(state.catalogMap);
+  if (catalogHint) {
+    parts.push(catalogHint);
   }
 
   if (state.pageContext) {
@@ -232,9 +255,14 @@ export async function browserDesignWork(
         `LLM returned design spec with no nodes after ${retry + 1} attempt(s).`));
     }
 
+    const { spec: promotedSpec, promotions } = promoteToCatalog(spec as DesignSpecV2);
+    if (promotions.length > 0) {
+      debugLog(`browserDesignWork: ${promotions.length} catalog promotions applied`);
+    }
+
     const finalSpec = state.chromePass?.mode === 'generate'
-      ? { ...spec, screen: '__chrome__' }
-      : spec;
+      ? { ...promotedSpec, screen: '__chrome__' }
+      : promotedSpec;
 
     return Ok({
       design: {

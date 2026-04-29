@@ -25,6 +25,27 @@
       "isDefault": true
     },
     {
+      "screenId": "page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3",
+      "name": "page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3",
+      "route": "/page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3",
+      "specPath": "agentforge/designs/page-b0a-dedup-probe-1776833153480-user-setti-mo9kkzq3/scripts/designspec-v2.json",
+      "isDefault": false
+    },
+    {
+      "screenId": "page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64",
+      "name": "page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64",
+      "route": "/page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64",
+      "specPath": "agentforge/designs/page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64/scripts/designspec-v2.json",
+      "isDefault": false
+    },
+    {
+      "screenId": "page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+      "name": "page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+      "route": "/page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+      "specPath": "agentforge/designs/page-e2e-test-page-for-design-generation-flow-mo9kfqco/scripts/designspec-v2.json",
+      "isDefault": false
+    },
+    {
       "screenId": "settings",
       "name": "settings",
       "route": "/settings",
@@ -43,23 +64,23 @@
   "navigation": [
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "back-btn",
+      "sourceNodeId": "top-bar-logo-btn",
       "targetScreenId": "dashboard",
-      "reason": "spec-driven: container navigates to dashboard",
+      "reason": "spec-driven: button-ghost navigates to dashboard",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "add-expense",
-      "sourceNodeId": "settings-icon-btn",
+      "sourceNodeId": "top-bar-add-btn",
       "targetScreenId": "settings",
-      "reason": "spec-driven: container navigates to settings",
+      "reason": "spec-driven: button-ghost navigates to settings",
       "mode": "overlay"
     },
     {
       "sourceScreenId": "add-expense",
       "sourceNodeId": "save-expense-btn",
       "targetScreenId": "dashboard",
-      "reason": "spec-driven: container navigates to dashboard",
+      "reason": "spec-driven: button-primary navigates to dashboard",
       "mode": "navigate"
     },
     {
@@ -78,10 +99,24 @@
     },
     {
       "sourceScreenId": "dashboard",
-      "sourceNodeId": "settings-icon-btn",
+      "sourceNodeId": "top-bar-add-btn",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: button-primary navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "top-bar-settings-btn",
       "targetScreenId": "settings",
-      "reason": "spec-driven: container navigates to settings",
+      "reason": "spec-driven: button-ghost navigates to settings",
       "mode": "overlay"
+    },
+    {
+      "sourceScreenId": "dashboard",
+      "sourceNodeId": "expense-detail-edit-btn",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: button-primary navigates to add-expense",
+      "mode": "navigate"
     },
     {
       "sourceScreenId": "dashboard",
@@ -99,9 +134,16 @@
     },
     {
       "sourceScreenId": "spending-insights",
-      "sourceNodeId": "settings-icon-btn",
+      "sourceNodeId": "top-bar-add-btn",
+      "targetScreenId": "add-expense",
+      "reason": "spec-driven: button-primary navigates to add-expense",
+      "mode": "navigate"
+    },
+    {
+      "sourceScreenId": "spending-insights",
+      "sourceNodeId": "top-bar-settings-btn",
       "targetScreenId": "settings",
-      "reason": "spec-driven: container navigates to settings",
+      "reason": "spec-driven: button-ghost navigates to settings",
       "mode": "overlay"
     },
     {
@@ -155,37 +197,30 @@
     },
     {
       "sourceScreenId": "__chrome__",
-      "sourceNodeId": "settings-icon-btn",
+      "sourceNodeId": "top-bar-logo-btn",
       "targetScreenId": "settings",
-      "reason": "chrome: container navigates to settings",
+      "reason": "chrome: button-ghost navigates to settings",
       "mode": "overlay"
+    },
+    {
+      "sourceScreenId": "__chrome__",
+      "sourceNodeId": "top-bar-add-btn",
+      "targetScreenId": "add-expense",
+      "reason": "chrome: button-primary navigates to add-expense",
+      "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
       "sourceNodeId": "add-expense-tab",
       "targetScreenId": "add-expense",
-      "reason": "chrome: container navigates to add-expense",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "__chrome__",
-      "sourceNodeId": "add-expense-tab-label",
-      "targetScreenId": "add-expense",
-      "reason": "chrome: text navigates to add-expense",
+      "reason": "chrome: button-ghost navigates to add-expense",
       "mode": "navigate"
     },
     {
       "sourceScreenId": "__chrome__",
       "sourceNodeId": "insights-tab",
       "targetScreenId": "spending-insights",
-      "reason": "chrome: container navigates to spending-insights",
-      "mode": "navigate"
-    },
-    {
-      "sourceScreenId": "__chrome__",
-      "sourceNodeId": "insights-tab-label",
-      "targetScreenId": "spending-insights",
-      "reason": "chrome: text navigates to spending-insights",
+      "reason": "chrome: button-ghost navigates to spending-insights",
       "mode": "navigate"
     }
   ]

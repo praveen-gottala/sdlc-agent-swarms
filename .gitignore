@@ -107,3 +107,7 @@ apps/test-app
 apps/gamingzone
 # Untracked test fixtures
 fixtures/claim-filling-sample
+apps/shoppingguys
+apps/shopperspoint
+apps/llm-e2e-1777414212532
+apps/e2e-test-1777414327216

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { existsSync, mkdirSync } from 'fs';
 import { readDesignSpecText, writeDesignSpec, backupDesignSpec } from '@agentforge/core';
+import type { DesignTokensSpec } from '@agentforge/core';
 import { join } from 'path';
 import {
   readYamlFile,
@@ -8,10 +9,11 @@ import {
   getActiveProjectRoot,
 } from '../../../../_lib/project-reader';
 import { getClaudeProvider, NO_CLAUDE_AUTH_ERROR } from '../../../../_lib/llm-provider';
-import { BrowserFeedbackAdapter } from '@agentforge/agents-ux';
+import type { ClaudeProviderResult } from '../../../../_lib/llm-provider';
+import { BrowserFeedbackAdapter, runBrowserCorrectionPipeline } from '@agentforge/agents-ux';
 import type { LLMProviderRef } from '@agentforge/core';
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
-import { normalizeSpecOverrides } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
+import { normalizeSpecOverrides, loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 
 interface PageEntry {
   id: string;
@@ -42,19 +44,6 @@ interface VisionIssue {
 }
 
 const MAX_CORRECTION_ITERATIONS = 3;
-
-function formatVisionIssuesAsPrompt(issues: VisionIssue[], nodeIds: string[], feedback?: string): string {
-  const lines = issues.map((issue, i) =>
-    `Issue ${i + 1}. [${issue.severity.toUpperCase()}] ${issue.component}: ${issue.description}\n  Fix: ${issue.fix}`
-  );
-  let prompt = `Fix ALL ${issues.length} design issues below. Each issue MUST have a corresponding patch.\n\n`;
-  prompt += `Available node IDs: ${nodeIds.join(', ')}\n\n`;
-  prompt += lines.join('\n\n');
-  if (feedback) {
-    prompt += `\n\nAdditional user guidance: ${feedback}`;
-  }
-  return prompt;
-}
 
 /**
  * POST /api/pages/[pageId]/design/correct
@@ -160,13 +149,105 @@ export async function POST(
   }
   backupDesignSpec(projectRoot, pageId);
 
-  const specNodeIds = Object.keys(spec.nodes);
-  let feedbackMessage = issues
-    ? formatVisionIssuesAsPrompt(issues, specNodeIds, body.feedback)
-    : `Fix these issues:\n${(tags ?? []).map((t) => `[${t.nodeId}]: ${t.feedback}`).join('\n')}`;
+  // Vision issues → iterative correction pipeline (same as CLI)
+  if (isVisionFix) {
+    return handleVisionCorrection(
+      spec, projectRoot, pageId, pages, idx, currentIteration, claude, issues!,
+    );
+  }
 
-  if (body.previousAttempt) {
-    const { scoreBefore, scoreAfter, patchesTried } = body.previousAttempt;
+  // Manual tags → single-pass BrowserFeedbackAdapter
+  return handleManualCorrection(
+    spec, projectRoot, pageId, pages, idx, currentIteration, claude, tags!, body.previousAttempt,
+  );
+}
+
+/**
+ * Vision-based "Fix All": iterative correction loop via runBrowserCorrectionPipeline.
+ * Same pipeline the CLI uses — opens a browser, takes screenshots, evaluates,
+ * and applies corrections iteratively until score threshold is met.
+ */
+async function handleVisionCorrection(
+  spec: DesignSpecV2,
+  projectRoot: string,
+  pageId: string,
+  pages: PageEntry[],
+  idx: number,
+  currentIteration: number,
+  claude: ClaudeProviderResult,
+  issues: VisionIssue[],
+): Promise<NextResponse> {
+  try {
+    const rawTokens = readYamlFile<DesignTokensSpec>('agentforge/spec/design-tokens.yaml');
+    const rawCatalog = readYamlFile<RawCatalogSpec>('agentforge/spec/component-catalog.yaml');
+
+    const tokens: RendererTokens = rawTokens
+      ? (() => { const { version: _, created_by: __, ...rest } = rawTokens as DesignTokensSpec & Record<string, unknown>; void _; void __; return rest as RendererTokens; })()
+      : {} as RendererTokens;
+    const catalog = loadCatalogForRenderer(rawCatalog ?? undefined, tokens);
+
+    const result = await runBrowserCorrectionPipeline(
+      spec, tokens, catalog,
+      claude.provider,
+      {
+        maxCorrections: MAX_CORRECTION_ITERATIONS,
+        qualityThreshold: 80,
+        visionCorrection: true,
+        interactive: false,
+        mechanicalFixes: true,
+      },
+    );
+
+    const normalizedSpec = normalizeSpecOverrides(result.spec);
+    writeDesignSpec(projectRoot, pageId, normalizedSpec);
+
+    const newIteration = currentIteration + result.iterations;
+    pages[idx].correctionIteration = newIteration;
+    pages[idx].designStatus = 'rendered';
+    writeYamlFile('agentforge/spec/pages.yaml', { pages });
+
+    return NextResponse.json({
+      iteration: newIteration,
+      maxIterations: MAX_CORRECTION_ITERATIONS,
+      patchesApplied: result.iterations,
+      tagsReceived: 0,
+      issuesReceived: issues.length,
+      finalScore: result.finalScore,
+      thresholdMet: result.thresholdMet,
+      reasoning: `Iterative correction: ${result.iterations} iterations, final score ${result.finalScore}/100`,
+    });
+  } catch (err) {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    pages[idx].designStatus = 'rendered';
+    pages[idx].correctionIteration = (pages[idx].correctionIteration ?? 0) + 1;
+    writeYamlFile('agentforge/spec/pages.yaml', { pages });
+
+    return NextResponse.json(
+      { error: `Vision correction pipeline failed: ${errMessage}` },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Manual tag-based correction: single-pass via BrowserFeedbackAdapter.
+ * Used for chat-based user feedback (per-node corrections).
+ */
+async function handleManualCorrection(
+  spec: DesignSpecV2,
+  projectRoot: string,
+  pageId: string,
+  pages: PageEntry[],
+  idx: number,
+  currentIteration: number,
+  claude: ClaudeProviderResult,
+  tags: FeedbackTag[],
+  previousAttempt?: { scoreBefore: number; scoreAfter: number; patchesTried: Record<string, unknown> },
+): Promise<NextResponse> {
+  let feedbackMessage = `Fix these issues:\n${tags.map((t) => `[${t.nodeId}]: ${t.feedback}`).join('\n')}`;
+
+  if (previousAttempt) {
+    const { scoreBefore, scoreAfter, patchesTried } = previousAttempt;
     feedbackMessage = `CRITICAL: The previous fix attempt FAILED — score dropped from ${scoreBefore} to ${scoreAfter}.\n` +
       `The patches below made things WORSE. Analyze why and try a DIFFERENT approach.\n` +
       `Previous patches that failed: ${JSON.stringify(patchesTried)}\n\n` +
@@ -190,26 +271,24 @@ export async function POST(
         writeYamlFile('agentforge/spec/pages.yaml', { pages });
         return NextResponse.json({
           iteration: newIteration, maxIterations: MAX_CORRECTION_ITERATIONS,
-          patchesApplied: 0, tagsReceived: tags?.length ?? 0,
+          patchesApplied: 0, tagsReceived: tags.length,
           error: 'Patch would break the design (no root node). Try fixing fewer issues at once.',
         }, { status: 422 });
       }
       patchesApplied = Object.keys(reviewResult.value.patches).length;
       reasoning = reviewResult.value.reasoning;
 
-      if (tags) {
-        const nodes = updatedSpec.nodes as unknown as Record<string, Record<string, unknown>>;
-        for (const tag of tags) {
-          const node = nodes[tag.nodeId];
-          if (node) {
-            if (!node._userFeedback) {
-              node._userFeedback = [];
-            }
-            (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
-              feedback: tag.feedback,
-              iteration: currentIteration + 1,
-            });
+      const nodes = updatedSpec.nodes as unknown as Record<string, Record<string, unknown>>;
+      for (const tag of tags) {
+        const node = nodes[tag.nodeId];
+        if (node) {
+          if (!node._userFeedback) {
+            node._userFeedback = [];
           }
+          (node._userFeedback as Array<{ feedback: string; iteration: number }>).push({
+            feedback: tag.feedback,
+            iteration: currentIteration + 1,
+          });
         }
       }
 
@@ -226,7 +305,7 @@ export async function POST(
         iteration: newIteration,
         maxIterations: MAX_CORRECTION_ITERATIONS,
         patchesApplied: 0,
-        tagsReceived: tags?.length ?? 0,
+        tagsReceived: tags.length,
         error: errMsg,
       }, { status: 502 });
     }
@@ -240,13 +319,13 @@ export async function POST(
       iteration: newIteration,
       maxIterations: MAX_CORRECTION_ITERATIONS,
       patchesApplied,
-      tagsReceived: tags?.length ?? 0,
+      tagsReceived: tags.length,
       reasoning,
     });
   } catch (err) {
     const errMessage = err instanceof Error ? err.message : String(err);
     pages[idx].designStatus = 'rendered';
-    pages[idx].correctionIteration = (page.correctionIteration ?? 0) + 1;
+    pages[idx].correctionIteration = (pages[idx].correctionIteration ?? 0) + 1;
     writeYamlFile('agentforge/spec/pages.yaml', { pages });
 
     return NextResponse.json(

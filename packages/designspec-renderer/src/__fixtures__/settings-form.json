@@ -64,10 +64,10 @@
       "color": "text-secondary"
     },
     "profileSection": {
-      "type": "section",
+      "catalog": "Section",
       "parent": "content",
       "order": 1,
-      "title": "Profile",
+      "label": "Profile",
       "layout": { "dir": "column", "gap": 16, "py": 24 }
     },
     "nameInput": {
@@ -115,10 +115,10 @@
       "order": 2
     },
     "prefsSection": {
-      "type": "section",
+      "catalog": "Section",
       "parent": "content",
       "order": 3,
-      "title": "Preferences",
+      "label": "Preferences",
       "layout": { "dir": "column", "gap": 16, "py": 24 }
     },
     "fontSizeStepper": {

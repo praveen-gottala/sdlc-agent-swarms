@@ -27,6 +27,7 @@ export { initLangfuseTracing, shutdownTracing, isLangfuseConfigured } from './ot
 export { createTracedProvider } from './traced-provider.js';
 export { LangfuseSink, createLangfuseSink } from './langfuse-sink.js';
 export { CompositeSink } from './composite-sink.js';
+export { createTracedMCPClient } from './traced-mcp-client.js';
 
 // Re-export Langfuse v5 tracing primitives for callers that need
 // trace-level metadata (userId, sessionId, tags).

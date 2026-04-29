@@ -7,7 +7,7 @@
  */
 
 import type { Result } from '@agentforge/core';
-import { Err, Ok } from '@agentforge/core';
+import { Err, Ok, resolveModelForRole, debugLog } from '@agentforge/core';
 import type { PipelineInput, DesignPhaseState, NodeContext, PipelineStageError } from './types.js';
 import { pipelineStageError } from './types.js';
 import { researchNode, planningNode, designNode, evaluatorNode } from './nodes.js';
@@ -15,6 +15,22 @@ import { loadCachedArtifact, saveCachedArtifact } from './cache.js';
 import type { PIPELINE_ARTIFACTS } from '@agentforge/core';
 
 type ArtifactName = keyof typeof PIPELINE_ARTIFACTS;
+
+/** Maps pipeline stage names to agent role keys for model resolution (ADR-033). */
+const STAGE_ROLES: Readonly<Record<string, string>> = {
+  research: 'ux_research',
+  planning: 'ux_planning',
+  design: 'ux_design',
+  evaluator: 'ux_evaluator',
+};
+
+/** Contract defaults matching the Quality preset — recommended for new projects. */
+const STAGE_DEFAULTS: Readonly<Record<string, string>> = {
+  research: 'claude-sonnet-4-6',
+  planning: 'claude-opus-4-7',
+  design: 'claude-opus-4-6',
+  evaluator: 'claude-opus-4-7',
+};
 
 const STAGES = [
   { name: 'research', fn: researchNode, cache: 'researchBrief' as ArtifactName, stateKey: 'research' as const },
@@ -44,17 +60,7 @@ export async function runDesignPipeline(
 ): Promise<Result<DesignPhaseState, PipelineStageError>> {
   const fs = input.agentContext.fs;
 
-  const providerResult = input.agentContext.resolveProvider(input.providerString);
-  if (!providerResult.ok) {
-    return Err(pipelineStageError('init', `Failed to resolve provider "${input.providerString}": ${(providerResult.error as { message?: string }).message ?? 'unknown'}`));
-  }
-
   let state = initState(input);
-  const ctx: NodeContext = {
-    provider: providerResult.value,
-    agentContext: input.agentContext,
-    telemetry: input.telemetry,
-  };
 
   const sink = input.telemetry;
   const startIdx = input.stage ? STAGE_ORDER.indexOf(input.stage as typeof STAGE_ORDER[number]) : 0;
@@ -83,23 +89,52 @@ export async function runDesignPipeline(
       }
     }
 
-    sink?.onStageStart(stage.name, { agentRole: stage.name, moduleId: input.moduleId, taskId: input.taskId });
+    // Per-stage model resolution via ADR-033 priority chain
+    const role = STAGE_ROLES[stage.name] ?? stage.name;
+    const stageDefault = STAGE_DEFAULTS[stage.name] ?? input.providerString;
+    const stageModel = resolveModelForRole(role, stageDefault, input.agentContext.manifest);
+    debugLog(`[pipeline] ${stage.name}: resolved model ${stageModel} (role=${role})`);
 
-    const result = await stage.fn(state, ctx);
-
-    if (!result.ok) {
-      sink?.onStageFail(stage.name, (result.error as PipelineStageError).message);
-      return result as Result<never, PipelineStageError>;
+    const stageProviderResult = input.agentContext.resolveProvider(stageModel);
+    if (!stageProviderResult.ok) {
+      return Err(pipelineStageError(stage.name, `Failed to resolve provider for model "${stageModel}": ${(stageProviderResult.error as { message?: string }).message ?? 'unknown'}`));
     }
 
-    state = { ...state, ...result.value };
+    const stageCtx: NodeContext = {
+      provider: stageProviderResult.value,
+      agentContext: { ...input.agentContext, resolvedModel: stageModel },
+      telemetry: input.telemetry,
+    };
 
-    // Cache stage output
-    if (stage.cache && result.value[stage.stateKey] !== undefined) {
-      saveCachedArtifact(fs, input.projectRoot, input.moduleId, stage.cache, result.value[stage.stateKey]);
+    const stageAttrs = { agentRole: stage.name, moduleId: input.moduleId, taskId: input.taskId };
+
+    const runStage = async (): Promise<Result<DesignPhaseState, PipelineStageError>> => {
+      sink?.onStageStart(stage.name, stageAttrs);
+
+      const result = await stage.fn(state, stageCtx);
+
+      if (!result.ok) {
+        sink?.onStageFail(stage.name, (result.error as PipelineStageError).message);
+        return result as Result<never, PipelineStageError>;
+      }
+
+      state = { ...state, ...result.value };
+
+      if (stage.cache && result.value[stage.stateKey] !== undefined) {
+        saveCachedArtifact(fs, input.projectRoot, input.moduleId, stage.cache, result.value[stage.stateKey]);
+      }
+
+      sink?.onStageComplete(stage.name, {});
+      return Ok(state);
+    };
+
+    const stageResult = sink?.wrapStage
+      ? await sink.wrapStage(stage.name, stageAttrs, runStage)
+      : await runStage();
+
+    if (!stageResult.ok) {
+      return stageResult as Result<never, PipelineStageError>;
     }
-
-    sink?.onStageComplete(stage.name, {});
   }
 
   return Ok(state);

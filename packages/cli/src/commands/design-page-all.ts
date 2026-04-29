@@ -190,7 +190,8 @@ export async function designPageAllCommand(
   // Load project manifest for design config
   const manifestFs = createRealFs();
   const manifestResult = loadProjectManifest(projectRoot, manifestFs);
-  const designConfig: DesignConfig | undefined = manifestResult.ok ? manifestResult.value.design : undefined;
+  const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
+  const designConfig: DesignConfig | undefined = projectManifest?.design;
 
   // Load pages.yaml
   const pagesPath = join(projectRoot, 'agentforge', 'spec', 'pages.yaml');
@@ -340,7 +341,7 @@ export async function designPageAllCommand(
         resume: !!options.designOnly,
         telemetry: createSink(refTaskId),
         chromePass: { mode: 'generate' },
-        agentContext: createPipelineContext(refTaskId, undefined, projectRoot, providerFactory),
+        agentContext: createPipelineContext(refTaskId, undefined, projectRoot, providerFactory, projectManifest),
         prdRequirements: [refDescription],
         pageContext: refPageContext,
         designTokensSpec: structuredTokens,
@@ -375,11 +376,8 @@ export async function designPageAllCommand(
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
-    // Skip reference page if it was already designed during Chrome Pass
-    if (sharedMeta && page.id === sharedMeta.referencePageId && sharedChromeSpec && !options.designOnly) {
-      results.push({ id: page.id, name: page.name, status: 'ok', durationMs: 0, stage: 'complete (chrome pass)' });
-      continue;
-    }
+    // Chrome Pass generates shared chrome only (header + nav); the reference page
+    // still needs a full design pass with chromePass: 'consume' for page content.
 
     const moduleId = page.id;
     const taskId = `task_page_${page.id}_${Date.now()}`;
@@ -403,7 +401,7 @@ export async function designPageAllCommand(
       resume: !!options.designOnly,
       ...(options.designOnly ? { stage: 'design' as const } : {}),
       telemetry: createSink(taskId),
-      agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory),
+      agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory, projectManifest),
       prdRequirements: [description],
       pageContext,
       designTokensSpec: structuredTokens,
@@ -553,7 +551,6 @@ export async function designPageAllCommand(
       }
     }
 
-    const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
     const protoProjectName = projectManifest?.project?.name ?? 'Project';
 
     // Build manifest first to get screen list

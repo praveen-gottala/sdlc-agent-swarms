@@ -358,6 +358,16 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'dashboard',
     timestamp: now,
   },
+  RequirementsClarified: {
+    type: 'RequirementsClarified',
+    mode: 'bootstrap',
+    questionCount: 5,
+    roundCount: 2,
+    assumptionCount: 3,
+    confidence: 0.85,
+    source: 'clarifier',
+    timestamp: now,
+  },
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -553,6 +563,8 @@ describe('EventBus', () => {
       'UXModuleDeployed',
       // Pipeline tracking
       'PipelineRunProgress',
+      // Clarifier
+      'RequirementsClarified',
     ];
 
     it('has a fixture for every defined domain event type', () => {

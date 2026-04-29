@@ -38,13 +38,14 @@ The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text
 
 ### Phase 1 — Clarifier
 - [x] **1.0** Clarifier package scaffold (2026-04-28) — `packages/agents-clarifier/` with ESM config, 6 node stubs, LangGraph StateGraph with `interrupt_before` on storyWriter, `ClarifierStateAnnotation` with typed channels, internal Zod schemas (Gap, Question, ClarifierContext, HumanResponse). Full new-agent checklist: `RequirementsClarified` domain event, init.ts clarifier role, governance `clarify` phase + `clarification` HITL phase, CLAUDE.md deps. 7 scaffold tests, 391 monorepo tests green.
-- [ ] **1.1** Context Retriever node (bootstrap: catalog; evolution: all 5 RAG tools incl. `searchDesignsTool`)
-- [ ] **1.2** PRD/Request Analyzer node (forced-JSON, claude-opus-4-6, TracedProvider)
-- [ ] **1.3** Gap/Conflict Detector node (deterministic checklist + ClarifyGPT, TracedProvider)
-- [ ] **1.4** Question Prioritizer node (EVPI proxy ranking)
-- [ ] **1.5** Story Writer / PRD Synthesizer node (EARS format, INVEST stories, TracedProvider)
-- [ ] **1.6** Critic node (compliance check, bounded retry)
-- [ ] **1.7** LangGraph StateGraph assembly (typed channels, `interrupt_before` for HITL, Postgres checkpointer)
+- [x] **Foundation** DI + state + graph topology (2026-04-28) — `ClarifierDeps` factory pattern, 5 new state channels (prdDraft, featurePlan, criticRetries, criticPassed, escalationDecision), conditional routing (critic retry, multi-round, escalation gate with accept/restart/abandon HITL), `runClarifierPipeline()` wrapper, core barrel exports for cross-boundary types. 17 tests, 408 monorepo tests green. Challenge report applied (3 violations fixed, 3 trade-offs resolved).
+- [x] **1.1** Context Retriever node (2026-04-28) — `createContextRetriever(deps)`, bootstrap: `loadBaseCatalog()` + optional tokens + platform constraints, evolution: project catalog (fallback to base) + all 5 RAG tools via `Promise.allSettled` with partial failure tolerance. 8 tests.
+- [x] **1.2** PRD/Request Analyzer node (2026-04-28) — `createPrdAnalyzer(deps)`, claude-opus-4-6, forced-JSON via PRD_RESPONSE_SCHEMA (manual JSON Schema mirroring PRDSchema), `parsePromptFrontmatter` for version tracking, prompt at `src/prompts/prd-analyzer-system.md` (v1.0.0), mode-aware user message (bootstrap=thorough, evolution=impact focus with code/doc/design context). Falls back to content parsing when structured output unavailable. 12 tests.
+- [x] **1.3** Gap/Conflict Detector node (2026-04-28) — `createGapDetector(deps)`, Pass 1: deterministic checklist (auth, validation, error handling, NFR targets, accessibility, orphan screens), Pass 2: ClarifyGPT (2 LLM calls, claude-sonnet-4-6 — generate 3 implementations at temp 0.7 + divergence analysis at temp 0). Round>1 filters addressed gaps via humanResponses. Deduplicates LLM gaps matching deterministic gaps. Prompts: `gap-detector-system.md`, `gap-divergence-system.md` (v1.0.0). 21 tests.
+- [x] **1.4** Question Prioritizer node (2026-04-28) — `createQuestionPrioritizer(deps)`, EVPI proxy: `blastRadius * answerability * confidenceGap` per gap. Budget: micro (≤5 items) → 2 questions, standard (6-15) → 7, cross-cutting (>15) → 15. Below-threshold (EVPI<0.15) + budget-overflow gaps → `AssumptionLedger` entries (deduped, confidence-based confirmation flag). Multiple-choice when evolution mode + code context + divergent interpretations. No LLM calls. 19 tests.
+- [x] **1.5** Story Writer node (2026-04-28) — `createStoryWriter(deps)`, claude-sonnet-4-6, EARS-format acceptance criteria (`WHEN <condition> THE SYSTEM SHALL <behavior>`), FeaturePlan DAG with dependencies, EnrichedRequirement wrapping prdDraft + AssumptionLedger + clarification rounds. Mode branching: bootstrap=completeness, evolution=impact. After max rounds: confidence capped at 0.5, unresolved gaps → assumptions with `requiresConfirmation: true`. Prompt: `story-writer-system.md` (v1.0.0). 15 tests.
+- [x] **1.6** Critic node (2026-04-28) — `createCritic(deps)`, deterministic-only: EARS compliance (criteria existence + non-empty condition/behavior), INVEST compliance (description length + criteria count), DAG consistency (orphan deps + cycle detection via DFS). Bounded retry: retries<2 → fail (routes to storyWriter), retries>=2 → pass with warnings. Prompt `critic-system.md` (v1.0.0) scaffolded for optional LLM review (not wired). 14 tests.
+- [ ] **1.7** Graph assembly remaining — RequirementsClarified event emission, integration test (graph topology done in Foundation)
 - [ ] **1.8** Dashboard integration (`/new` bootstrap, `/evolve` evolution, chat UI)
 
 **Context for Phase 1 implementers (2026-04-28 challenge report):**
@@ -57,11 +58,26 @@ The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text
 - **Design retrieval gap was closed (2026-04-28).** `design-indexer.ts` and `design-search.ts` were added to complete Task 2.3b. The `searchDesigns` method is now on the `RetrievalTools` interface.
 - **Domain event name:** Add `RequirementsClarified` to `packages/core/src/events/domain-events.ts`. This is a telemetry event (not coordination) per vision Layer 2.
 
+**Implementation gotchas (discovered during Phase 1 foundation, 2026-04-28):**
+- **Cross-boundary types not re-exported from core barrel.** `EnrichedRequirement`, `AssumptionLedger`, `PRD`, `FeaturePlan` are in `packages/core/src/types/cross-boundary-artifacts.ts` and `packages/core/src/types/index.ts`, but were NOT in `packages/core/src/index.ts`. Jest+SWC transpiles without full type checking so scaffold tests passed, but `tsc --build` fails. Fixed: added cross-boundary type/schema exports to core barrel.
+- **LangGraph StateGraph builder type tracking is extremely strict.** `buildClarifierGraph()` must NOT declare an explicit return type — let TypeScript infer it from the chain. Declaring `StateGraph<typeof ClarifierStateAnnotation.State>` causes type mismatches because `addNode`/`addEdge`/`addConditionalEdges` return progressively narrower types that don't match the base annotation type. `compileClarifierGraph` uses `ReturnType<ReturnType<typeof buildClarifierGraph>['compile']>` for the return type.
+- **`addConditionalEdges` path maps cause type errors.** The third argument (path map) triggers strict type narrowing that rejects valid node names. Omit the path map — LangGraph resolves routing from the function return value automatically.
+- **`createCheckpointer()` is async.** Returns `Promise<BaseCheckpointSaver>`, not `BaseCheckpointSaver`. Must `await` it before passing to `graph.compile()`.
+- **Factory pattern for dependency injection.** Each node is a `create*(deps: ClarifierDeps) → ClarifierNodeFn` factory. `buildClarifierGraph(deps)` threads deps to all factories. This avoids `as unknown` casts that `config.configurable` would require. Defined in `src/deps.ts`.
+- **Escalation gate with HITL.** `interruptBefore: ['storyWriter', 'escalationGate']` — two HITL interrupt points. After max rounds, the graph interrupts at `escalationGate` so the user can accept/restart/abandon.
+
 **Implementation gotchas (discovered during Task 1.0, 2026-04-28):**
 - **New-agent checklist has hidden test dependencies.** `.claude/rules/new-agent.md` lists 7 items, but two test files also need updating: `event-bus.test.ts` requires the new event in BOTH its `fixtures` record AND its `allEventTypes` array; `agent-contract-schema-p12.test.ts` requires the new role in `PHASE_1_AGENTS`.
 - **Packages with `.md` prompt files need a `project.json`.** Nx auto-infers targets for packages without non-TS assets, but prompt files require explicit `cp -r src/prompts/* dist/prompts/` in the build. See `packages/agents-ux/project.json` for the pattern. Packages without prompts (like `retrieval`, `telemetry`) need NO `project.json`.
 - **LangGraph `Annotation.Root()` pattern.** First usage in the monorepo is `packages/agents-clarifier/src/graph/state.ts`. Each channel gets a `reducer` function (last-write-wins for scalars, concatenation for arrays like `humanResponses`) and a `default` factory. The `interruptBefore` option on `graph.compile()` takes an array of node names — e.g., `['storyWriter']`.
 - **Governance phase naming convention.** `AgentAction.phase` uses short names (`clarify`, `design`, `spec`, `code`). `HITLPhase` uses descriptive names (`clarification`, `spec_review`, `code_generation`). The mapping is in `PHASE_MAPPING` in `hitl-enforcer.ts`.
+
+**Implementation gotchas (discovered during Tasks 1.2-1.6, 2026-04-28):**
+- **Mock `CompletionResult` requires full `CostRecord`.** The `CostRecord` interface has mandatory `model: string` and `timestamp: string` fields, plus `inputCostUsd`/`outputCostUsd`/`totalCostUsd` (NOT `inputCost`/`outputCost`/`totalCost`). SWC-transformed Jest tests compile without type errors, but `tsc --build` catches the mismatch. Always include `model` and `timestamp` in mock cost objects.
+- **Linter strips unused prompt loading code.** If you scaffold `readFileSync` + `parsePromptFrontmatter` + `import.meta.url` for a future LLM call but don't wire the LLM call yet (as in Critic), the linter removes the unused imports on save. Re-add them when wiring the LLM call.
+- **`extractStructured` pattern for every LLM-calling node.** Check `result.value.structured` first (native structured output via `output_config`), then fall back to JSON-parsing `result.value.content` with code-fence stripping (`/^```(?:json)?\s*/m`). Three nodes (prd-analyzer, gap-detector, story-writer) implement this. Extract to shared utility if a 4th node needs it.
+- **Manual JSON Schema for `responseSchema`, not `zodToJsonSchema`.** CLAUDE.md says use `zod-to-json-schema` but zero codebase usage exists. All `responseSchema` objects in agents-ux are hand-written JSON Schema. Follow this pattern for consistency. Use `PRDSchema.safeParse()` (Zod) for response validation after receipt.
+- **EVPI threshold calibration.** Set at 0.15. Gaps with `category: 'incomplete'` + `confidence: 0.9` produce EVPI = 0.5 * 0.9 * 0.1 = 0.045, well below threshold → they become assumptions, not questions. This is intentional: high-confidence minor gaps shouldn't consume the question budget.
 
 **Phase 1 exit criteria:** User submits seed at `/new`, clarifier asks <=7 questions in <=3 rounds, produces structured PRD YAML with assumption ledger, dashboard shows PRD for approval. Both modes (bootstrap + evolution) work. HITL interrupt persists in Postgres (survives page refresh). All tests green (typecheck, unit, lint, E2E).
 
@@ -90,63 +106,105 @@ Six internal stages (vision Layer 5), wired as a **LangGraph `StateGraph`** with
 7. Integration test — `packages/agents-clarifier/src/__tests__/clarifier-pipeline.integration.test.ts`
 8. CLAUDE.md Package Dependencies — add `agents-clarifier` depends on: `core`, `providers`, `retrieval`, `telemetry`
 
-#### Task 1.1: Context Retriever Node (1 session)
+#### Foundation: Dependency Injection + State + Graph Topology (COMPLETE, 2026-04-28)
 
-- `packages/agents-clarifier/src/nodes/context-retriever.ts`
-- Bootstrap: loads catalog from `packages/core/src/catalogs/base-component-catalog.yaml`, pattern library, platform constraints (file reads, no RAG)
-- Evolution: calls `getRepoMapTool`, `searchCodeTool`, `searchDocsTool`, `searchDesignsTool` from `@agentforge/retrieval` (vision Layer 5)
-- Output: `ClarifierContext` typed object
+**Completed as Step 1 of the implementation plan.** Pulled forward graph topology (originally Task 1.7) because all nodes depend on the factory pattern and routing.
 
-#### Task 1.2: PRD/Request Analyzer Node (1 session)
+**Key design decisions (from challenge report):**
+- **Factory pattern for DI.** Each node is `create*(deps: ClarifierDeps) → ClarifierNodeFn`. `ClarifierDeps` has `provider` (TracedProvider-wrapped), `retrievalTools?`, `projectRoot`, `projectId`. Defined in `src/deps.ts`.
+- **5 new state channels:** `prdDraft` (PRD | null), `featurePlan` (FeaturePlan | null), `criticRetries` (number), `criticPassed` (boolean), `escalationDecision` ('accept' | 'restart' | 'abandon' | null). Types from `@agentforge/core`.
+- **Graph topology with conditional routing:**
+  ```
+  __start__ → contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer
+  → [HITL interrupt] → storyWriter → critic → routeAfterCritic
+  routeAfterCritic: retry → storyWriter | new round → gapDetector | max rounds → escalationGate [HITL] | pass → emitComplete → END
+  escalationGate: accept → emitComplete | restart → gapDetector (round=0) | abandon → END
+  ```
+- **`runClarifierPipeline(input)`** in `src/run.ts` — convenience wrapper, entry point for Task 1.8.
+- **17 tests** (7 scaffold + 10 routing). 408 monorepo tests green.
 
-- `packages/agents-clarifier/src/nodes/prd-analyzer.ts`
-- `packages/agents-clarifier/src/prompts/prd-analyzer-system.md` (frontmatter: version 1.0.0)
+**Files created/modified:**
+- `src/deps.ts` (new) — `ClarifierDeps`, `ClarifierNodeFn`
+- `src/run.ts` (new) — `runClarifierPipeline()` wrapper
+- `src/graph/state.ts` — 5 new channels
+- `src/graph/clarifier-graph.ts` — factory deps, conditional routing, escalation edges
+- `src/types.ts` — `EscalationDecision`, updated `ClarifierState`
+- `src/nodes/*.ts` (6 files) — converted to `create*` factory pattern
+- `src/index.ts`, `src/nodes/index.ts`, `src/graph/index.ts` — updated barrels
+- `packages/core/src/index.ts` — added cross-boundary type exports (PRD, FeaturePlan, EnrichedRequirement, etc.)
+
+#### Task 1.1: Context Retriever Node
+
+- `packages/agents-clarifier/src/nodes/context-retriever.ts` — `createContextRetriever(deps)`
+- **Bootstrap:** read base catalog from `packages/core/src/catalogs/base-component-catalog.yaml` (NOT `agentforge/spec/` — project doesn't exist yet). Read `design-tokens.yaml` if available.
+- **Evolution:** read project catalog from `{projectRoot}/agentforge/spec/component-catalog.yaml` (fallback to base catalog). Call all 5 retrieval tools via `Promise.allSettled`: `searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`.
+- **Reads:** `rawInput`, `mode`. **Writes:** `context`, `error`.
+- **No LLM calls.**
+- **Test:** bootstrap file reads, evolution 5-tool calls, missing tools error, partial failure graceful.
+
+#### Task 1.2: PRD/Request Analyzer Node
+
+- `packages/agents-clarifier/src/nodes/prd-analyzer.ts` — `createPrdAnalyzer(deps)`
+- `packages/agents-clarifier/src/prompts/prd-analyzer-system.md` (frontmatter: version 1.0.0, extend with output schema)
 - Forced-JSON via `provider.complete(prompt, { responseSchema })` with Zod schema
-- Model: `claude-opus-4-6` (vision Layer 5: reasoning)
+- **Model: `claude-opus-4-6`** (structured intent extraction from ambiguous raw input requires stronger reasoning)
 - All LLM calls via `createTracedProvider()` from `@agentforge/telemetry` (ADR-046)
-- Follows `generateAppSpec` pattern (`packages/agents-ux/src/app-spec/generate-app-spec.ts`)
+- Parse response with `PRDSchema.safeParse()` from `@agentforge/core`
+- **Reads:** `rawInput`, `context`, `mode`. **Writes:** `prdDraft`, `error`.
+- **Test:** valid response parsing, malformed JSON error, promptVersion threading.
 
-#### Task 1.3: Gap/Conflict Detector Node (1 session)
+#### Task 1.3: Gap/Conflict Detector Node
 
-- `packages/agents-clarifier/src/nodes/gap-detector.ts`
-- **Pass 1 (deterministic):** checklist (auth, validation, error states, edge cases, NFR targets, metrics)
-- **Pass 2 (ClarifyGPT):** 3 plausible implementations via LLM, divergence = gap. Model: `claude-sonnet-4-6`. Cost cap: 3 extra LLM calls.
+- `packages/agents-clarifier/src/nodes/gap-detector.ts` — `createGapDetector(deps)`
+- **Pass 1 (deterministic):** checklist (auth, validation, error states, edge cases, NFR targets, metrics, accessibility)
+- **Pass 2 (ClarifyGPT):** 2 LLM calls with `claude-sonnet-4-6` — generate 3 implementations (temp 0.7) + analyze divergence (temp 0). Cost cap: 3 extra LLM calls (2 + retry).
+- Round>1: filter gaps addressed by prior `humanResponses`
 - All LLM calls via `createTracedProvider()` (ADR-046)
-- Output: `Gap[]` with `{ id, description, category, confidence, deterministic, divergentInterpretations? }`
+- **Prompts (new):** `gap-detector-system.md`, `gap-divergence-system.md`
+- **Reads:** `prdDraft`, `context`, `mode`, `humanResponses` (round>1), `gaps` (round>1). **Writes:** `gaps`, `round` (increment).
+- **Test:** deterministic gap creation, LLM gap dedup, round filtering, cost cap.
 
-#### Task 1.4: Question Prioritizer Node (0.5 session)
+#### Task 1.4: Question Prioritizer Node
 
-- `packages/agents-clarifier/src/nodes/question-prioritizer.ts`
-- EVPI proxy: `blast_radius * answerability * confidence_gap`
-- Budget: micro 0-2, standard 3-7, cross-cutting max 15/round, max 3 rounds
-- Multiple-choice when codebase precedent exists (evolution mode)
-- Below-threshold gaps become `AssumptionLedger` entries (using `AssumptionLedgerSchema` from `@agentforge/core`)
+- `packages/agents-clarifier/src/nodes/question-prioritizer.ts` — `createQuestionPrioritizer(deps)`
+- EVPI proxy: `blastRadius * answerability * confidenceGap` per gap
+- Budget: micro (<=2 features) → 2 questions, standard → 7, cross-cutting → 15
+- Multiple-choice when context retrieval surfaces codebase precedent (evolution mode, grounded per vision Layer 5)
+- Below-threshold gaps → `AssumptionLedger` entries via `AssumptionLedgerSchema` from `@agentforge/core`
+- **No LLM calls.** Pure computation.
+- **Reads:** `gaps`, `prdDraft`, `mode`. **Writes:** `questions`, `assumptions`.
+- **Test:** scoring order, budget enforcement, assumption creation, multiple-choice generation.
 
-#### Task 1.5: Story Writer / PRD Synthesizer Node (1 session)
+#### Task 1.5: Story Writer Node
 
-- `packages/agents-clarifier/src/nodes/story-writer.ts` (evolution: EARS stories)
-- `packages/agents-clarifier/src/nodes/prd-synthesizer.ts` (bootstrap: structured PRD YAML)
+- `packages/agents-clarifier/src/nodes/story-writer.ts` — `createStoryWriter(deps)` (single file, mode branching)
 - EARS format: "WHEN `<condition>` THE SYSTEM SHALL `<behavior>`"
 - INVEST-compliant stories, typed feature DAG
-- All LLM calls via `createTracedProvider()` (ADR-046)
-- Output: `EnrichedRequirement` + `AssumptionLedger` (using schemas from `@agentforge/core`)
+- All LLM calls with `claude-sonnet-4-6` via `createTracedProvider()` (ADR-046)
+- **Output: `EnrichedRequirement` + `FeaturePlan` + updated `AssumptionLedger`** (all from `@agentforge/core` schemas)
+- `FeaturePlan` as separate state channel with `FeatureNode[]` containing `acceptanceCriteria: EARSCriterion[]` and `dependencies`
+- Mode branching: bootstrap emphasizes completeness/feature discovery; evolution emphasizes impact analysis/change scoping. Different system prompt sections, same output schema.
+- After max rounds: set low confidence on `EnrichedRequirement`, all unresolved gaps → assumptions with `requiresConfirmation: true`
+- **Prompt (new):** `story-writer-system.md`
+- **Reads:** `prdDraft`, `context`, `questions`, `humanResponses`, `assumptions`, `mode`, `round`. **Writes:** `requirement`, `featurePlan`, `assumptions`.
+- **Test:** response parsing, EARS format, FeaturePlan production, human response merging, low-confidence output after max rounds.
 
-#### Task 1.6: Critic Node (0.5 session)
+#### Task 1.6: Critic Node
 
-- `packages/agents-clarifier/src/nodes/critic.ts`
-- INVEST + EARS compliance check, bounded retry (max 2)
-- DAG consistency: no orphans, no cycles
-- After 2 retries: flag as warnings, don't block
+- `packages/agents-clarifier/src/nodes/critic.ts` — `createCritic(deps)`
+- INVEST compliance on `FeaturePlan` nodes, EARS compliance on acceptance criteria
+- DAG consistency: no orphans, no cycles (topological sort)
+- Optional LLM quality review with `claude-sonnet-4-6` if deterministic checks pass
+- Bounded retry: retries<2 → fail (routes to storyWriter); retries>=2 → pass with warnings
+- **Prompt (new):** `critic-system.md`
+- **Reads:** `requirement`, `featurePlan`, `criticRetries`. **Writes:** `criticPassed`, `criticRetries`, `requirement` (warnings).
+- **Test:** INVEST/EARS/DAG checks, bounded retry, clean pass.
 
-#### Task 1.7: LangGraph StateGraph Assembly (1.5 sessions)
+#### Task 1.7: Graph Assembly — PARTIALLY COMPLETE (2026-04-28)
 
-- `packages/agents-clarifier/src/graph/clarifier-graph.ts` — LangGraph `StateGraph` definition
-- **Typed state channels** with Zod schemas (vision Layer 2): `ClarifierState` containing `rawInput`, `mode`, `context`, `gaps`, `questions`, `requirement`, `assumptions`, `round`
-- **Sequential node execution:** contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer → storyWriter/prdSynthesizer → critic
-- **HITL via `interrupt_before`** on the storyWriter/prdSynthesizer node — after question prioritizer produces batched questions, the graph interrupts. Human answers resume the graph. Timeout: 24h, fallback to assumptions.
-- **Postgres checkpointer** via `createCheckpointer()` from `@agentforge/core` (Phase 0.3). State persists across interrupts.
-- `packages/agents-clarifier/src/graph/state.ts` — typed state definition with `Annotation` from `@langchain/langgraph`
-- `runClarifierPipeline()` convenience wrapper that creates graph, compiles, invokes with checkpointer.
+Graph topology, conditional routing, escalation edges, and `runClarifierPipeline()` were completed as part of Foundation (Step 1). Remaining work:
+- `RequirementsClarified` event emission in `emitComplete` node (Step 8)
+- Integration test covering all routing scenarios (Step 8)
 
 #### Task 1.8: Dashboard Integration (2 sessions)
 

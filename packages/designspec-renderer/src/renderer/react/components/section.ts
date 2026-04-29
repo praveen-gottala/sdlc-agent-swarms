@@ -13,13 +13,13 @@ export const renderSection: ReactComponentRenderer = (node, ctx, renderChildren)
 
   ctx.builder.open('section', `className="${classes}"`);
 
-  // Emit title if present
-  if (node.title) {
+  const heading = node.label ?? node.title;
+  if (heading) {
     const titleTypo = typographyClasses('heading-3', ctx.tokens);
     const titleColor = resolveColorToClass('text-primary', 'text');
     const titleClasses = cn(titleTypo, titleColor);
     ctx.builder.open('h3', `className="${titleClasses}"`);
-    ctx.builder.text(node.title);
+    ctx.builder.text(heading);
     ctx.builder.close('h3');
   }
 

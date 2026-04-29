@@ -3,7 +3,7 @@ import { loadCatalogForRenderer, RawCatalogSpec } from './loader.js';
 describe('loadCatalogForRenderer', () => {
   it('returns V2 built-ins when called with no args', () => {
     const catalog = loadCatalogForRenderer();
-    expect(Object.keys(catalog)).toHaveLength(25);
+    expect(Object.keys(catalog)).toHaveLength(29);
   });
 
   it('contains expected built-in entry keys', () => {

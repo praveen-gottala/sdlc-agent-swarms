@@ -50,6 +50,28 @@ export type { DesignTool, DesignOutput } from './types/index.js';
 export { ScaffoldProjectInputSchema } from './types/index.js';
 export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
 
+// Cross-boundary artifact schemas (vision Layer 2)
+export {
+  EnrichedRequirementSchema,
+  AssumptionLedgerSchema,
+  PRDSchema,
+  FeaturePlanSchema,
+  FeatureNodeSchema,
+  EARSCriterionSchema,
+  ClarificationRoundSchema,
+  AssumptionEntrySchema,
+} from './types/index.js';
+export type {
+  EnrichedRequirement,
+  AssumptionLedger,
+  PRD,
+  FeaturePlan,
+  FeatureNode,
+  EARSCriterion,
+  ClarificationRound,
+  AssumptionEntry,
+} from './types/index.js';
+
 // Scaffolding
 export { scaffoldProject } from './scaffolding/index.js';
 
@@ -127,6 +149,7 @@ export type {
   UXTestSuiteCompleted,
   UXModuleDeployed,
   PipelineRunProgress,
+  RequirementsClarified,
 } from './events/index.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './events/index.js';

@@ -268,10 +268,20 @@ function normalizeStructuredOptions(
 }
 
 /** Build the system prompt for the LLM. */
-function buildSystemPrompt(output: NodeJS.WritableStream): string {
-  const systemPrompt = `You are a design system expert. Generate 3 distinct design direction options for a web application.
+function buildSystemPrompt(output: NodeJS.WritableStream, colorScheme?: string): string {
+  const schemeConstraint = colorScheme && colorScheme !== 'both'
+    ? `\n\nCOLOR SCHEME CONSTRAINT: The user selected "${colorScheme}" mode. All 3 options MUST use a ${colorScheme} color scheme. For light: background-primary must be a light color (white, off-white, cream — luminance >= #F0F0F0). For dark: background-primary must be a dark color (charcoal, near-black — luminance <= #1A1A1A).`
+    : '';
+
+  const systemPrompt = `You are a design system expert creating contemporary, production-quality design systems. Generate 3 distinct design direction options for a web application.
 
 Each option should feel meaningfully different — vary the mood, color temperature, and typography personality.
+
+Modern design guidance:
+- Use contemporary typefaces popular in 2024-2025 design. Prefer: Inter, Plus Jakarta Sans, DM Sans, Geist, Satoshi, Manrope, Outfit, Sora, Figtree. Avoid dated/retro condensed display fonts (Bebas Neue, Impact, Oswald, Russo One) unless the direction specifically calls for retro aesthetic.
+- Color palettes should feel current and polished. For light themes: warm whites, subtle grays, one vibrant accent. For dark themes: deep neutrals (not pure black #000), muted or refined accents — avoid gaming/crypto aesthetics (amber-on-black, neon-on-dark).
+- Typography scale should have visual impact: heading-1 >= 36px, body >= 15px.
+- Elevation shadows should be subtle and color-tinted (tint shadows toward the brand color), not uniform grayscale rgba(0,0,0,0.x).
 
 Rules:
 - 5-8 primitive colors per option, using kebab-case names (e.g. "deep-teal", "warm-cream")
@@ -280,28 +290,46 @@ Rules:
 - Ensure sufficient contrast between background-primary and text-primary (WCAG AA)
 - surface-secondary should be a subtle variant of surface-primary (e.g. slightly darker or lighter) for nested content areas
 - surface-input should be the background for input fields (often same as background-primary or slightly different)
-- Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)
+- Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)${schemeConstraint}
 
 The "extras" field is a JSON string for optional design tokens. Include a JSON object with any of these keys:
 - "typography_scale": array of {role, size, weight, family, line_height} — include if design needs non-standard sizing. 6 roles: heading-1, heading-2, heading-3, body, label, small. "family" must be "display" or "body" (abstract keys, not actual font names).
 - "borders": {radius: {small, medium, large, pill}} — include for specific corner treatment (small=0 for brutalist, large=24 for soft/playful).
 - "motion": {durations: {fast, normal, slow}, easings: {default, emphasized}} — include if brand personality suggests specific animation character.
-- "preview": {metrics: [{label, value, trend}], table_rows: [{name, status, amount, date}], nav_items: [string]} — SHOULD include 3 metrics, 4 table_rows, 4 nav_items matching the app domain.`
+- "preview": {metrics: [{label, value, trend}], table_rows: [{name, status, amount, date}], nav_items: [string]} — SHOULD include 3 metrics, 4 table_rows, 4 nav_items matching the app domain.`;
   debugLog('buildSystemPrompt: Building system prompt');
   return systemPrompt;
 }
 
+/** Extract target audience from PRD text when not explicitly provided. */
+function extractAudienceFromPrd(prdContent?: string): string {
+  if (!prdContent) return 'general users';
+  const patterns = [
+    /target\s+audience[:\s]+([^\n.]+)/i,
+    /intended\s+(?:for|users?)[:\s]+([^\n.]+)/i,
+    /(?:primary|target)\s+users?[:\s]+([^\n.]+)/i,
+    /persona[s]?[:\s]+([^\n.]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = prdContent.match(pattern);
+    if (match?.[1]) {
+      const audience = match[1].trim();
+      if (audience.length > 5 && audience.length < 200) return audience;
+    }
+  }
+  return 'general users';
+}
+
 /** Build the user prompt with app context. */
-function buildUserPrompt(context: {
-  appName: string;
-  description: string;
-  targetAudience: string;
-  prdContent?: string;
-}, output: NodeJS.WritableStream): string {
+function buildUserPrompt(context: DesignOptionsContext, output: NodeJS.WritableStream): string {
   debugLog(context.prdContent ? 'buildUserPrompt: prdContent included in the prompt' : 'buildUserPrompt: prdContent not included in the prompt');
+  const effectiveAudience = (context.targetAudience && context.targetAudience !== 'general')
+    ? context.targetAudience
+    : extractAudienceFromPrd(context.prdContent);
+
   const appContext = context.prdContent
-    ? `- App name: ${context.appName}\n\nPRD:\n${context.prdContent}`
-    : `- App name: ${context.appName}\n- Description: ${context.description || 'A web application'}\n- Target audience: ${context.targetAudience || 'general'}`;
+    ? `- App name: ${context.appName}\n- Target audience: ${effectiveAudience}\n\nPRD:\n${context.prdContent}`
+    : `- App name: ${context.appName}\n- Description: ${context.description || 'A web application'}\n- Target audience: ${effectiveAudience}`;
 
   return `Generate 3 design system options for:\n${appContext}`;
 }
@@ -552,6 +580,7 @@ type DesignOptionsContext = {
   description: string;
   targetAudience: string;
   prdContent?: string;
+  colorScheme?: 'light' | 'dark' | 'both';
 };
 
 /**
@@ -748,7 +777,7 @@ export async function generateDesignOptions(
 /** Attempt LLM generation, return null on failure. */
 async function tryLLMGeneration(
   providerConfig: ProviderConfig,
-  context: { appName: string; description: string; targetAudience: string; prdContent?: string },
+  context: DesignOptionsContext,
   output: NodeJS.WritableStream,
 ): Promise<DesignOption[] | null> {
   let provider: LLMProvider;
@@ -759,7 +788,7 @@ async function tryLLMGeneration(
     return null;
   }
 
-  const systemPrompt = buildSystemPrompt(output);
+  const systemPrompt = buildSystemPrompt(output, context.colorScheme);
   const userPrompt = buildUserPrompt(context, output);
 
   for (let attempt = 0; attempt < 2; attempt++) {

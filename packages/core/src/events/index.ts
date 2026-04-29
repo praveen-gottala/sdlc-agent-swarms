@@ -45,6 +45,7 @@ export type {
   UXTestSuiteCompleted,
   UXModuleDeployed,
   PipelineRunProgress,
+  RequirementsClarified,
 } from './domain-events.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './event-bus.js';

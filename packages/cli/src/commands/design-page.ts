@@ -77,6 +77,7 @@ import {
   createLangfuseSink,
   CompositeSink,
   isLangfuseConfigured,
+  createTracedMCPClient,
 } from '@agentforge/telemetry';
 import type { RendererTokens } from '@agentforge/designspec-renderer';
 import { loadCatalogForRenderer, openBrowserSession, openInteractivePreview } from '@agentforge/designspec-renderer';
@@ -265,7 +266,8 @@ export async function designPageCommand(
 
   // Load project manifest for design config
   const manifestResult = loadProjectManifest(projectRoot, realFs);
-  const designConfig: DesignConfig | undefined = manifestResult.ok ? manifestResult.value.design : undefined;
+  const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
+  const designConfig: DesignConfig | undefined = projectManifest?.design;
 
   // ── Load PRD for app context ──
   const prdPath = join(projectRoot, 'docs', 'prd.md');
@@ -331,11 +333,11 @@ export async function designPageCommand(
     if (!connectionResult) {
       return;
     }
-    mcpClient = connectionResult.mcpClient;
+    mcpClient = createTracedMCPClient(connectionResult.mcpClient);
     disconnectFn = connectionResult.disconnectFn;
   } else {
     // Use a mock client for the pipeline — Penpot is optional
-    mcpClient = createNoOpMCPClient();
+    mcpClient = createTracedMCPClient(createNoOpMCPClient());
     output.write(infoMsg('  Penpot connection deferred (browser correction is primary)\n'));
   }
 
@@ -370,7 +372,7 @@ export async function designPageCommand(
     if (!needsPenpotEarly) {
       const connectionResult = await ensureDesignToolConnection('penpot', output, { mock: options.mock });
       if (!connectionResult) { return; }
-      mcpClient = connectionResult.mcpClient;
+      mcpClient = createTracedMCPClient(connectionResult.mcpClient);
       disconnectFn = connectionResult.disconnectFn;
     }
     const cached = loadArtifact<PenpotDesignOutput>(outputDir, PIPELINE_ARTIFACTS.penpotDesign);
@@ -548,7 +550,7 @@ export async function designPageCommand(
     stage: skipToStage as PipelineInput['stage'],
     resume: !forceFresh,
     telemetry: sink,
-    agentContext: createPipelineContext(taskId, mcpClient, baseDir, providerFactory),
+    agentContext: createPipelineContext(taskId, mcpClient, baseDir, providerFactory, projectManifest),
     prdRequirements,
     pageContext,
     designTokensSpec: designTokens,
@@ -624,6 +626,11 @@ export async function designPageCommand(
   output.write(infoMsg(`  Module: ${moduleId}\n`));
   output.write(infoMsg(`  Pipeline: ${(pipelineMs / 1000).toFixed(1)}s\n`));
 
+  if (pipelineState.evaluation) {
+    const ev = pipelineState.evaluation;
+    output.write(infoMsg(`  Structural Evaluation: ${ev.score}/100 (${ev.overallQuality})${ev.issues.length > 0 ? `, ${ev.issues.length} issue(s)` : ''}\n`));
+  }
+
   if (browserCorrectionResult) {
     output.write(infoMsg(`  Browser Correction: score=${browserCorrectionResult.finalScore}/100, iterations=${browserCorrectionResult.iterations}, threshold=${browserCorrectionResult.thresholdMet ? 'met' : 'not met'}\n`));
   }
@@ -651,7 +658,7 @@ export async function designPageCommand(
       if (!connectionResult) {
         output.write(errorMsg('  Penpot export failed: could not connect to Penpot.\n'));
       } else {
-        mcpClient = connectionResult.mcpClient;
+        mcpClient = createTracedMCPClient(connectionResult.mcpClient);
         disconnectFn = connectionResult.disconnectFn;
       }
     }

@@ -29,6 +29,24 @@ const createMockProvider = (response: string): LLMProvider => ({
   estimateCost: () => ({ estimatedInputTokens: 0, estimatedOutputTokens: 0, estimatedCostUsd: 0, confidence: 'medium' as const }),
 });
 
+const createStructuredMockProvider = (structured: Record<string, unknown>): LLMProvider => ({
+  name: 'mock',
+  models: ['mock-model'],
+  complete: async () => Ok({
+    content: '',
+    structured,
+    toolCalls: [],
+    usage: { inputTokens: 100, outputTokens: 50 },
+    cost: { inputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, model: 'mock', timestamp: new Date().toISOString() },
+    model: 'mock',
+    latencyMs: 100,
+    finishReason: 'stop' as const,
+  }),
+  stream: async function* () { /* empty */ },
+  isAvailable: async () => true,
+  estimateCost: () => ({ estimatedInputTokens: 0, estimatedOutputTokens: 0, estimatedCostUsd: 0, confidence: 'medium' as const }),
+});
+
 const createFailingProvider = (): LLMProvider => ({
   name: 'mock',
   models: ['mock-model'],
@@ -165,6 +183,77 @@ describe('evaluateDesign', () => {
       expect(diversityIssue?.severity).toBe('major');
       expect(diversityIssue?.description).toContain('elevated');
       expect(diversityIssue?.description).toContain('4');
+    }
+  });
+
+  it('caps structural deductions at MAX_STRUCTURAL_DEDUCTION (20)', async () => {
+    const spec = {
+      screen: 'test-page',
+      width: 1440,
+      nodes: {
+        root: { parent: null, order: 0, type: 'page' },
+        s1: { parent: 'root', order: 0, type: 'container', shadow: 'sm', radius: 12 },
+        h1: { parent: 's1', order: 0, type: 'text', typography: 'heading-2', content: 'Title' },
+        c1: { parent: 's1', order: 1, type: 'text', content: 'Body' },
+        s2: { parent: 'root', order: 1, type: 'container', shadow: 'sm', radius: 12 },
+        h2: { parent: 's2', order: 0, type: 'text', typography: 'heading-2', content: 'Title' },
+        c2: { parent: 's2', order: 1, type: 'text', content: 'Body' },
+        s3: { parent: 'root', order: 2, type: 'container', shadow: 'sm', radius: 12 },
+        h3: { parent: 's3', order: 0, type: 'text', typography: 'heading-2', content: 'Title' },
+        c3: { parent: 's3', order: 1, type: 'text', content: 'Body' },
+        s4: { parent: 'root', order: 3, type: 'container', shadow: 'sm', radius: 12 },
+        h4: { parent: 's4', order: 0, type: 'text', typography: 'heading-2', content: 'Title' },
+        c4: { parent: 's4', order: 1, type: 'text', content: 'Body' },
+      },
+    };
+
+    const provider = createMockProvider(JSON.stringify({ score: 95, issues: [] }));
+    const result = await evaluateDesign('base64data', JSON.stringify(spec), provider);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Monotony (-10) + low catalog adoption (-10) = 20 raw, capped at 20
+      expect(result.value.score).toBe(75);
+      const monotonyIssue = result.value.issues.find((i) => i.issueId === 'container-treatment-monotony');
+      const adoptionIssue = result.value.issues.find((i) => i.issueId === 'low-catalog-adoption');
+      expect(monotonyIssue).toBeDefined();
+      expect(adoptionIssue).toBeDefined();
+    }
+  });
+
+  it('unwraps nested {response:{...}} from structured output', async () => {
+    const simpleSpec = { screen: 'test', nodes: { root: { type: 'page', parent: null, order: 0 } } };
+    const provider = createStructuredMockProvider({
+      response: {
+        score: 82,
+        issues: [{ severity: 'minor', component: 'Card', description: 'Rounded too much', fix: 'Reduce radius' }],
+      },
+    });
+
+    const result = await evaluateDesign('base64data', JSON.stringify(simpleSpec), provider);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.score).toBe(82);
+      expect(result.value.overallQuality).toBe('good');
+      expect(result.value.issues).toHaveLength(1);
+      expect(result.value.issues[0].component).toBe('Card');
+    }
+  });
+
+  it('falls back to score 0 when structured output fails Zod parse', async () => {
+    const simpleSpec = { screen: 'test', nodes: { root: { type: 'page', parent: null, order: 0 } } };
+    const provider = createStructuredMockProvider({
+      score: 'not-a-number',
+      issues: 'invalid-array',
+    });
+
+    const result = await evaluateDesign('base64data', JSON.stringify(simpleSpec), provider);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.score).toBe(0);
+      expect(result.value.overallQuality).toBe('poor');
     }
   });
 });

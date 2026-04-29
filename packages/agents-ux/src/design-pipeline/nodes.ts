@@ -20,6 +20,8 @@ import type { UXPlanningInput } from '../ux-planning/ux-planning.js';
 import { penpotDesignWork } from '../ux-design/ux-penpot-design.js';
 import type { PenpotDesignInput } from '../ux-design/ux-penpot-design.js';
 import { browserDesignWork } from './browser-design-work.js';
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { runStructuralQualityGate } from '../ux-design/structural-quality-gate.js';
 
 /** Research stage — wraps uxResearchWork. */
 export async function researchNode(
@@ -36,8 +38,8 @@ export async function researchNode(
 
   const result = await uxResearchWork(input, ctx.provider, [], ctx.agentContext);
   if (!result.ok) {
-    const err = result.error as { message?: string };
-    return Err(pipelineStageError('research', err.message ?? 'Research stage failed'));
+    const err = result.error as { message?: string; raw?: string };
+    return Err(pipelineStageError('research', err.message ?? err.raw ?? 'Research stage failed'));
   }
   return { ok: true, value: { research: result.value } };
 }
@@ -62,8 +64,11 @@ export async function planningNode(
 
   const result = await uxPlanningWork(input, ctx.provider, [], ctx.agentContext);
   if (!result.ok) {
-    const err = result.error as { message?: string };
-    return Err(pipelineStageError('planning', err.message ?? 'Planning stage failed'));
+    const err = result.error as { message?: string; code?: string; raw?: string };
+    const detail = err.message ?? err.raw ?? 'Planning stage failed';
+    // eslint-disable-next-line no-console
+    console.error(`[planningNode] Planning failed (${err.code ?? 'unknown'}): ${detail}`);
+    return Err(pipelineStageError('planning', detail));
   }
   return { ok: true, value: { planning: result.value } };
 }
@@ -107,8 +112,8 @@ export async function designNode(
 
   const result = await penpotDesignWork(input, ctx.provider, ctx.agentContext.mcpClient);
   if (!result.ok) {
-    const err = result.error as { message?: string };
-    return Err(pipelineStageError('design', err.message ?? 'Penpot design stage failed'));
+    const err = result.error as { message?: string; raw?: string };
+    return Err(pipelineStageError('design', err.message ?? err.raw ?? 'Penpot design stage failed'));
   }
 
   return {
@@ -128,22 +133,35 @@ export async function designNode(
 }
 
 /**
- * Evaluator stage — wraps evaluateDesign().
- * Second argument: JSON.stringify(state.design.spec) (DesignSpec JSON, not planning JSON).
- * Phase 5 retires the CLI's planning-JSON code path and writes the ADR.
+ * Evaluator stage — progressive evaluation.
  *
- * DEVIATION (ADR-045): Returns undefined evaluation in Phase 1. evaluateDesign()
- * requires a browser screenshot (base64) which needs an active browser session.
- * Full evaluator integration deferred to Phase 2 (execution-plan §2.x).
+ * Phase 1.1 (ADR-045 amendment): Structural-only evaluation. Runs container
+ * diversity and catalog adoption checks on the DesignSpec JSON — no browser,
+ * no screenshot, no vision LLM.
+ *
+ * Phase 2 (future): Add screenshot capture + vision evaluation on top of
+ * structural deductions.
  */
 export async function evaluatorNode(
   state: DesignPhaseState,
-  ctx: NodeContext,
+  _ctx: NodeContext,
 ): Promise<Result<Partial<DesignPhaseState>, PipelineStageError>> {
-  if (!state.design) {
+  if (!state.design?.spec) {
     return Err(pipelineStageError('evaluator', 'design output missing — run design stage first'));
   }
 
-  // Phase 1: screenshot capture requires browser session (Phase 2)
-  return { ok: true, value: { evaluation: undefined } };
+  const spec = state.design.spec as unknown as DesignSpecV2;
+  const result = runStructuralQualityGate(spec);
+
+  return {
+    ok: true,
+    value: {
+      evaluation: {
+        score: result.score,
+        overallQuality: result.score >= 80 ? 'good' : result.score >= 50 ? 'needs_fixes' : 'poor',
+        issues: result.issues,
+        structural: true,
+      },
+    },
+  };
 }

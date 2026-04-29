@@ -14,24 +14,29 @@
 
 ---
 
-## Current Position (2026-04-27)
+## Current Position (2026-04-28)
 
 **What works:**
 - Five container treatments defined in prompts (elevated, outlined, flat, inset, separated)
 - Renderer handles all treatments correctly (E2E-verified: `e2e/container-variety.spec.ts`, 6 tests)
 - Design prompts include "3+ sections MUST use 2+ treatments" rule
-- Evaluator diversity scoring enforces treatment variety (Phase 4 complete: `assess-container-diversity.ts`, 10-point deduction for monotonous specs)
-- Properties Free panel in dashboard: 23-property direct editing, zero tokens, live preview, per-node revert (`design-inspector.tsx`, `property-registry.ts`)
+- Evaluator diversity scoring enforces treatment variety (Phase 4 complete: `assess-container-diversity.ts`)
+- Evaluator uses 5-dimension anchored rubric for deterministic scoring (Phase 3.7: rubric replaces vague 0-100 scale since Opus 4.7 has no temperature support)
+- Structural deductions capped at 20 points (nav mismatch + diversity + catalog adoption)
+- **All 34 catalog components have dedicated renderers** (Prerequisite P.1-P.9 COMPLETE, 2026-04-28)
+- Deterministic catalog promotion post-processor: container→Section, container→Form, header→PageHeader (Phase 3.6, 50 promotions across 8 pages in pipeline verification)
+- Catalog adoption scoring in evaluator (10-point deduction for low adoption with promotable patterns)
+- Planning-to-design catalog bridge: suffix naming convention + catalog mapping hint (~200 tokens)
+- Properties Free panel in dashboard: 23-property direct editing, zero tokens, live preview
 - 19/24 NodeSpec field budget available (5 slots of headroom)
 - TracedProvider captures all LLM I/O in Langfuse for debugging
-- Renderer uses real shadcn/ui components (`@/components/ui/` — Button, Badge, Avatar, Card, Input, Progress, Checkbox, Pagination)
-- Catalog has `library_mapping.shadcn` for all 34 components
+- Renderer uses real shadcn/ui components (`@/components/ui/` — Button, Badge, Avatar, Card, Input, Progress, Checkbox, Pagination, Textarea, Skeleton)
+- All Figma/Penpot references removed from browser pipeline prompts
 
 **What doesn't work yet:**
-- LLM still produces monotonous treatments despite prompt rules (Phase 2.6 finding) — evaluator scoring now catches this, but correction loop compliance not yet verified at scale
-- No catalog variants — all cards/sections use the same base component
+- LLM still produces monotonous treatments despite prompt rules (Phase 2.6 finding) — evaluator scoring catches this, correction loop effectiveness not yet verified with calibrated evaluator
+- Catalog adoption for complex pages (dashboard, spending-insights) stays at ~20% despite promoter — the LLM composes from container+text at leaf level, which is structurally correct for small UI elements
 - No domain awareness — a finance app and a social app get identical treatment patterns
-- **15 of 34 catalog components lack dedicated renderers** — Radio, TextArea, DatePicker, Modal, LoadingSpinner, Skeleton, Breadcrumb, Form, SelectionGrid, FilterBar, Section, PageHeader, Footer, Sidebar, EmptyState fall through to generic flexbox container. Effect packs and domain bundles are meaningless if components render as blank boxes.
 - No effect pack system — treatments are hardcoded in prompts, not data-driven
 - No style intelligence — no PRD-derived style inference, no competitor analysis, no user-uploadable effect packs
 
@@ -39,9 +44,7 @@
 
 ## Prerequisite: Renderer Component Gap Closure
 
-**Status:** Not started. **Priority: HIGHEST — blocks Tier 1 completion and all downstream tiers.**
-
-15 of 34 catalog components have `library_mapping.shadcn` entries and full anatomy/state definitions in `base-component-catalog.yaml`, but no dedicated render function in `DesignSpecRenderer.tsx`. They fall through to the generic `default:` case (empty flexbox container).
+**Status:** COMPLETE (2026-04-28). All 34 catalog components have dedicated renderers.
 
 | Component | Category | Impact |
 |-----------|----------|--------|

@@ -485,6 +485,20 @@ function DesignStudioContent() {
         if (qp && fetched.some((p) => p.id === qp)) {
           setSelectedId(qp);
         }
+
+        // Recover active pipeline run from server
+        const generatingPage = (data.pages ?? []).find(
+          (p: Record<string, unknown>) => p.activeRunId,
+        );
+        if (generatingPage) {
+          const runId = generatingPage.activeRunId as string;
+          const pageId = generatingPage.id as string;
+          pipelineRunMapRef.current[pageId] = runId;
+          const targetPage = qp && fetched.some((f) => f.id === qp) ? qp : selectedId;
+          if (targetPage === pageId) {
+            setPipelineRunId(runId);
+          }
+        }
       })
       .catch(() => setLoading(false));
 
@@ -1031,17 +1045,26 @@ function DesignStudioContent() {
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           const runId = (data as Record<string, unknown>).runId as string | undefined;
+          let runStatus = 'unknown';
           if (runId) {
             for (let poll = 0; poll < 120; poll++) {
               await new Promise(r => setTimeout(r, 3_000));
-              const statusRes = await fetch(`/api/runs?limit=1`).then(r => r.json()).catch(() => null);
-              const runs = (statusRes as Record<string, unknown>[] | null) ?? [];
-              const run = Array.isArray(runs) ? runs.find((r: Record<string, unknown>) => r.runId === runId) : null;
-              if (run && ((run as Record<string, unknown>).status === 'complete' || (run as Record<string, unknown>).status === 'failed')) break;
+              const run = await fetch(`/api/runs/${runId}`).then(r => r.ok ? r.json() : null).catch(() => null) as { status?: string; error?: string } | null;
+              if (run?.status === 'complete' || run?.status === 'failed') {
+                runStatus = run.status;
+                if (run.status === 'failed') {
+                  log('ERROR', 'studio', `Design failed for "${pg.name}": ${run.error ?? 'Pipeline error'}`);
+                }
+                break;
+              }
               refreshPage(pg.id);
             }
           }
-          log('INFO', 'studio', `Design generated for "${pg.name}"`);
+          if (runStatus === 'complete') {
+            log('INFO', 'studio', `Design generated for "${pg.name}"`);
+          } else if (runStatus === 'unknown') {
+            log('WARN', 'studio', `Design status unknown for "${pg.name}" — pipeline may still be running`);
+          }
         } else {
           const data = await res.json().catch(() => ({ error: 'Unknown error' }));
           log('WARN', 'studio', `Design failed for "${pg.name}": ${(data as Record<string, unknown>).error}`);
@@ -1054,8 +1077,9 @@ function DesignStudioContent() {
 
     setGeneratingAll(false);
     setGenAllProgress(null);
+    await refreshAllPages();
     log('INFO', 'studio', `Batch generation complete`);
-  }, [pages, selectedModel, refreshPage, log]);
+  }, [pages, selectedModel, refreshPage, refreshAllPages, log]);
 
   const handleApprove = useCallback(async () => {
     if (!selectedId) return;

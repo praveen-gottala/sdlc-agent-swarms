@@ -1,0 +1,591 @@
+{
+  "specRef": "spec-page-b0a-dedup-probe-1776851489036-user-setti-mo9vhzj2-1700000000000",
+  "moduleId": "page-b0a-dedup-probe-1776851489036-user-setti-mo9vhzj2",
+  "componentTree": [
+    {
+      "name": "SettingsPageLayout",
+      "props": [
+        "maxWidth",
+        "padding",
+        "gap"
+      ],
+      "defaultValues": {
+        "maxWidth": 1280,
+        "padding": 24,
+        "gap": 24
+      },
+      "children": [
+        "TopBar",
+        "SettingsContentArea",
+        "NavigationTabs",
+        "SettingsSavedToast"
+      ]
+    },
+    {
+      "name": "TopBar",
+      "props": [
+        "title",
+        "showBackArrow",
+        "height"
+      ],
+      "defaultValues": {
+        "title": "Settings",
+        "showBackArrow": 1,
+        "height": 64
+      },
+      "children": [
+        "TopBarBackButton"
+      ]
+    },
+    {
+      "name": "TopBarBackButton",
+      "props": [
+        "label",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Back",
+        "ariaLabel": "Go back to Dashboard"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "SettingsContentArea",
+      "props": [
+        "paddingY",
+        "rowGap",
+        "maxWidth"
+      ],
+      "defaultValues": {
+        "paddingY": 32,
+        "rowGap": 24,
+        "maxWidth": 1280
+      },
+      "children": [
+        "SettingsPageTitle",
+        "ProfileSettingsCard",
+        "PreferencesSettingsCard",
+        "BudgetSettingsCard",
+        "SettingsActionRow"
+      ]
+    },
+    {
+      "name": "SettingsPageTitle",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "Profile & Preferences"
+      },
+      "children": []
+    },
+    {
+      "name": "ProfileSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 32,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "ProfileSectionHeading",
+        "ProfileSectionDivider",
+        "CurrencyFieldRow",
+        "LocaleFieldRow"
+      ]
+    },
+    {
+      "name": "ProfileSectionHeading",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "Profile"
+      },
+      "children": []
+    },
+    {
+      "name": "ProfileSectionDivider",
+      "props": [],
+      "defaultValues": {},
+      "children": []
+    },
+    {
+      "name": "CurrencyFieldRow",
+      "props": [
+        "label",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Currency",
+        "helperText": "Select your preferred display currency"
+      },
+      "children": [
+        "CurrencySelector"
+      ]
+    },
+    {
+      "name": "CurrencySelector",
+      "props": [
+        "value",
+        "options",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "value": "USD",
+        "ariaLabel": "Select currency"
+      },
+      "children": []
+    },
+    {
+      "name": "LocaleFieldRow",
+      "props": [
+        "label",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Locale",
+        "helperText": "Select your regional format preference"
+      },
+      "children": [
+        "LocaleSelector"
+      ]
+    },
+    {
+      "name": "LocaleSelector",
+      "props": [
+        "value",
+        "options",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "value": "en-US",
+        "ariaLabel": "Select locale"
+      },
+      "children": []
+    },
+    {
+      "name": "PreferencesSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 32,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "PreferencesSectionHeading",
+        "PreferencesSectionDivider",
+        "DefaultCategoryFieldRow",
+        "NotificationsToggleRow"
+      ]
+    },
+    {
+      "name": "PreferencesSectionHeading",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "Preferences"
+      },
+      "children": []
+    },
+    {
+      "name": "PreferencesSectionDivider",
+      "props": [],
+      "defaultValues": {},
+      "children": []
+    },
+    {
+      "name": "DefaultCategoryFieldRow",
+      "props": [
+        "label",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Default Category",
+        "helperText": "Pre-select a category when adding expenses"
+      },
+      "children": [
+        "DefaultCategoryChipSelector"
+      ]
+    },
+    {
+      "name": "DefaultCategoryChipSelector",
+      "props": [
+        "selectedCategory",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "selectedCategory": "Uncategorized",
+        "ariaLabel": "Select default category"
+      },
+      "children": []
+    },
+    {
+      "name": "NotificationsToggleRow",
+      "props": [
+        "label",
+        "helperText",
+        "checked"
+      ],
+      "defaultValues": {
+        "label": "Budget Alerts",
+        "helperText": "Receive alerts when approaching budget limit",
+        "checked": 1
+      },
+      "children": [
+        "NotificationsToggleSwitch"
+      ]
+    },
+    {
+      "name": "NotificationsToggleSwitch",
+      "props": [
+        "checked",
+        "ariaLabel",
+        "role"
+      ],
+      "defaultValues": {
+        "checked": 1,
+        "ariaLabel": "Toggle budget alerts",
+        "role": "switch"
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 32,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "BudgetSectionHeading",
+        "BudgetSectionDivider",
+        "DefaultMonthlyBudgetFieldRow",
+        "ResetPreferencesRow"
+      ]
+    },
+    {
+      "name": "BudgetSectionHeading",
+      "props": [
+        "text"
+      ],
+      "defaultValues": {
+        "text": "Budget"
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetSectionDivider",
+      "props": [],
+      "defaultValues": {},
+      "children": []
+    },
+    {
+      "name": "DefaultMonthlyBudgetFieldRow",
+      "props": [
+        "label",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Default Monthly Budget",
+        "helperText": "Used as the baseline budget for each new month"
+      },
+      "children": [
+        "BudgetAmountInput"
+      ]
+    },
+    {
+      "name": "BudgetAmountInput",
+      "props": [
+        "value",
+        "placeholder",
+        "ariaLabel",
+        "ariaInvalid"
+      ],
+      "defaultValues": {
+        "value": "",
+        "placeholder": "e.g. 3000",
+        "ariaLabel": "Default monthly budget amount",
+        "ariaInvalid": "false"
+      },
+      "children": []
+    },
+    {
+      "name": "ResetPreferencesRow",
+      "props": [
+        "label",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Reset All Preferences",
+        "helperText": "This action cannot be undone"
+      },
+      "children": [
+        "ResetPreferencesButton"
+      ]
+    },
+    {
+      "name": "ResetPreferencesButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Reset Preferences",
+        "variant": "destructive",
+        "ariaLabel": "Reset all preferences — requires confirmation"
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsActionRow",
+      "props": [
+        "gap",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "gap": 16,
+        "paddingY": 16
+      },
+      "children": [
+        "SaveSettingsButton",
+        "CancelSettingsButton"
+      ]
+    },
+    {
+      "name": "SaveSettingsButton",
+      "props": [
+        "label",
+        "variant",
+        "fullWidth",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Save Settings",
+        "variant": "default",
+        "fullWidth": 1,
+        "ariaLabel": "Save settings and return to Dashboard"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "CancelSettingsButton",
+      "props": [
+        "label",
+        "variant",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "label": "Cancel",
+        "variant": "outline",
+        "ariaLabel": "Cancel and return to Dashboard without saving"
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "NavigationTabs",
+      "props": [
+        "activeTab",
+        "height"
+      ],
+      "defaultValues": {
+        "activeTab": "settings",
+        "height": 64
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsSavedToast",
+      "props": [
+        "message",
+        "ariaLive",
+        "zIndex"
+      ],
+      "defaultValues": {
+        "message": "Settings saved successfully",
+        "ariaLive": "polite",
+        "zIndex": 1300
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "SettingsPageLayout.background": "background-primary",
+    "TopBar.background": "surface-primary",
+    "TopBar.borderBottom": "border-default",
+    "TopBar.shadow": "elevation-1",
+    "TopBarBackButton.color": "text-primary",
+    "TopBarBackButton.focusRingColor": "focus-ring-color",
+    "SettingsPageTitle.typography": "heading-1",
+    "SettingsPageTitle.color": "text-primary",
+    "ProfileSettingsCard.background": "surface-primary",
+    "ProfileSettingsCard.shadow": "elevation-1",
+    "ProfileSettingsCard.borderRadius": "medium",
+    "ProfileSectionHeading.typography": "heading-2",
+    "ProfileSectionHeading.color": "text-primary",
+    "ProfileSectionDivider.color": "border-default",
+    "CurrencyFieldRow.labelTypography": "label",
+    "CurrencyFieldRow.labelColor": "text-secondary",
+    "CurrencyFieldRow.helperTypography": "small",
+    "CurrencyFieldRow.helperColor": "text-secondary",
+    "CurrencySelector.background": "surface-input",
+    "CurrencySelector.border": "border-default",
+    "CurrencySelector.borderFocus": "border-focus",
+    "CurrencySelector.color": "text-primary",
+    "CurrencySelector.borderRadius": "small",
+    "CurrencySelector.typography": "body",
+    "LocaleFieldRow.labelTypography": "label",
+    "LocaleFieldRow.labelColor": "text-secondary",
+    "LocaleFieldRow.helperTypography": "small",
+    "LocaleFieldRow.helperColor": "text-secondary",
+    "LocaleSelector.background": "surface-input",
+    "LocaleSelector.border": "border-default",
+    "LocaleSelector.borderFocus": "border-focus",
+    "LocaleSelector.color": "text-primary",
+    "LocaleSelector.borderRadius": "small",
+    "LocaleSelector.typography": "body",
+    "PreferencesSettingsCard.background": "surface-elevated",
+    "PreferencesSettingsCard.shadow": "elevation-1",
+    "PreferencesSettingsCard.borderRadius": "medium",
+    "PreferencesSectionHeading.typography": "heading-2",
+    "PreferencesSectionHeading.color": "text-primary",
+    "PreferencesSectionDivider.color": "border-default",
+    "DefaultCategoryFieldRow.labelTypography": "label",
+    "DefaultCategoryFieldRow.labelColor": "text-secondary",
+    "DefaultCategoryFieldRow.helperTypography": "small",
+    "DefaultCategoryFieldRow.helperColor": "text-secondary",
+    "DefaultCategoryChipSelector.background": "surface-input",
+    "DefaultCategoryChipSelector.border": "border-default",
+    "DefaultCategoryChipSelector.borderRadius": "pill",
+    "DefaultCategoryChipSelector.color": "text-primary",
+    "DefaultCategoryChipSelector.typography": "label",
+    "NotificationsToggleRow.labelTypography": "label",
+    "NotificationsToggleRow.labelColor": "text-primary",
+    "NotificationsToggleRow.helperTypography": "small",
+    "NotificationsToggleRow.helperColor": "text-secondary",
+    "NotificationsToggleSwitch.activeColor": "cta-primary",
+    "NotificationsToggleSwitch.borderRadius": "pill",
+    "NotificationsToggleSwitch.focusRingColor": "focus-ring-color",
+    "BudgetSettingsCard.background": "surface-primary",
+    "BudgetSettingsCard.shadow": "elevation-1",
+    "BudgetSettingsCard.borderRadius": "medium",
+    "BudgetSectionHeading.typography": "heading-2",
+    "BudgetSectionHeading.color": "text-primary",
+    "BudgetSectionDivider.color": "border-default",
+    "DefaultMonthlyBudgetFieldRow.labelTypography": "label",
+    "DefaultMonthlyBudgetFieldRow.labelColor": "text-secondary",
+    "DefaultMonthlyBudgetFieldRow.helperTypography": "small",
+    "DefaultMonthlyBudgetFieldRow.helperColor": "text-secondary",
+    "BudgetAmountInput.background": "surface-input",
+    "BudgetAmountInput.border": "border-default",
+    "BudgetAmountInput.borderFocus": "border-focus",
+    "BudgetAmountInput.borderError": "border-error",
+    "BudgetAmountInput.color": "text-primary",
+    "BudgetAmountInput.borderRadius": "small",
+    "BudgetAmountInput.typography": "body",
+    "ResetPreferencesRow.labelTypography": "label",
+    "ResetPreferencesRow.labelColor": "error",
+    "ResetPreferencesRow.helperTypography": "small",
+    "ResetPreferencesRow.helperColor": "text-secondary",
+    "ResetPreferencesButton.background": "error",
+    "ResetPreferencesButton.color": "text-primary",
+    "ResetPreferencesButton.borderRadius": "small",
+    "ResetPreferencesButton.focusRingColor": "focus-ring-color",
+    "SaveSettingsButton.background": "cta-primary",
+    "SaveSettingsButton.color": "text-on-cta",
+    "SaveSettingsButton.typography": "heading-3",
+    "SaveSettingsButton.borderRadius": "medium",
+    "SaveSettingsButton.focusRingColor": "focus-ring-color",
+    "CancelSettingsButton.border": "border-default",
+    "CancelSettingsButton.color": "text-secondary",
+    "CancelSettingsButton.typography": "heading-3",
+    "CancelSettingsButton.borderRadius": "medium",
+    "CancelSettingsButton.focusRingColor": "focus-ring-color",
+    "NavigationTabs.background": "surface-primary",
+    "NavigationTabs.borderTop": "border-default",
+    "NavigationTabs.activeColor": "cta-primary",
+    "NavigationTabs.inactiveColor": "text-secondary",
+    "SettingsSavedToast.background": "surface-elevated",
+    "SettingsSavedToast.color": "text-primary",
+    "SettingsSavedToast.borderRadius": "medium",
+    "SettingsSavedToast.shadow": "elevation-3"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Single-column centered layout with 1280px max-width, 24px side margins, 24px vertical gap between setting cards",
+      "layout": "single-column",
+      "changes": [
+        "Full TopBar with back arrow and page title visible",
+        "Three settings cards (Profile, Preferences, Budget) stacked vertically with 24px gap",
+        "Each card uses 32px horizontal padding and 24px vertical padding",
+        "Save and Cancel buttons displayed in a row at the bottom of the content area",
+        "NavigationTabs pinned to bottom of viewport",
+        "Toast notification appears at z-toast layer in top-right corner"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "User Settings",
+      "components": [
+        "SettingsPageLayout",
+        "TopBar",
+        "TopBarBackButton",
+        "SettingsContentArea",
+        "SettingsPageTitle",
+        "ProfileSettingsCard",
+        "ProfileSectionHeading",
+        "ProfileSectionDivider",
+        "CurrencyFieldRow",
+        "CurrencySelector",
+        "LocaleFieldRow",
+        "LocaleSelector",
+        "PreferencesSettingsCard",
+        "PreferencesSectionHeading",
+        "PreferencesSectionDivider",
+        "DefaultCategoryFieldRow",
+        "DefaultCategoryChipSelector",
+        "NotificationsToggleRow",
+        "NotificationsToggleSwitch",
+        "BudgetSettingsCard",
+        "BudgetSectionHeading",
+        "BudgetSectionDivider",
+        "DefaultMonthlyBudgetFieldRow",
+        "BudgetAmountInput",
+        "ResetPreferencesRow",
+        "ResetPreferencesButton",
+        "SettingsActionRow",
+        "SaveSettingsButton",
+        "CancelSettingsButton",
+        "NavigationTabs",
+        "SettingsSavedToast"
+      ]
+    }
+  ]
+}

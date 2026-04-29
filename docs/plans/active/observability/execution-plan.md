@@ -41,10 +41,10 @@ Vision Layer 11 prescribes OpenTelemetry + Langfuse self-hosted for LLM observab
 - [x] **3.2** LLM wrapper records prompt version per call (in OTel span metadata) (2026-04-28). `promptVersion?: string` added to `CompletionOptions`. `TracedProvider` records it in Langfuse `metadata.promptVersion`. Threaded in 4 standard agents (planning, research, implementation via `provider.complete()`/`stream()`). 3 agents with local LLM interfaces (review, penpot-v2, browser-agent) strip frontmatter but can't thread version until migrated to standard provider.
 - [x] **3.3** Pre-commit hook fails if prompt content changed without version bump (2026-04-28). `checkVersionBump()` in `packages/core/src/prompts/`. Script at `scripts/check-prompt-versions.ts`. `npm run check:prompts`. Install via `scripts/install-hooks.sh`. 6 unit tests.
 
-### Phase 4 — Extended Tracing (NOT STARTED)
-- [ ] **4.1** MCP tool call tracing (vision: "every tool call emits an OTel span")
-- [ ] **4.2** Pipeline state transition tracing (vision: "every state transition")
-- [ ] **4.3** Cost aggregation in Langfuse dashboard (model pricing config)
+### Phase 4 — Extended Tracing (COMPLETE, 2026-04-28)
+- [x] **4.1** MCP tool call tracing (2026-04-28). `createTracedMCPClient()` in `packages/telemetry/src/traced-mcp-client.ts` — wraps `MCPClient.callTool()` with OTel spans (`mcp:server.method`). Uses `@opentelemetry/api` directly (not `@langfuse/tracing`) for span lifecycle control. Follows `createTracedProvider` pattern: returns unwrapped client when Langfuse unconfigured. 3 tests.
+- [x] **4.2** Pipeline state transition tracing (2026-04-28). `LangfuseSink` upgraded from debug-logging to real OTel spans. `onStageStart()` creates `stage:*` span, `onStageComplete()`/`onStageFail()` ends it with cost/token/error attributes. `dispose()` for orphan span cleanup. Uses `@opentelemetry/api` directly. 6 tests.
+- [x] **4.3** Cost aggregation — verified (2026-04-28). No new code needed. `TracedProvider` already sends `costDetails` on every generation span. Langfuse aggregates automatically.
 
 ### Phase 5 — Evaluation Infrastructure (NOT STARTED, deferred)
 - [ ] **5.1** Trace replay for regression detection

@@ -14,7 +14,7 @@ import type { LLMProvider, ContentBlock } from '@agentforge/providers';
 import type { UXPlanningOutput } from '../ux-planning/ux-planning.js';
 import { countPlanningNavigateTo, countSpecNavigateTo } from './validate-navigate-to.js';
 import { buildEvaluationContext } from './evaluation-context.js';
-import { assessContainerDiversity } from './assess-container-diversity.js';
+import { runStructuralQualityGate, MAX_STRUCTURAL_DEDUCTION } from './structural-quality-gate.js';
 
 /** JSON Schema for structured evaluation output. */
 const EVALUATION_OUTPUT_SCHEMA = {
@@ -58,6 +58,8 @@ export interface DesignEvaluation {
   readonly score: number;
   readonly overallQuality: 'good' | 'needs_fixes' | 'poor';
   readonly issues: readonly DesignIssue[];
+  /** True when evaluation was structural-only (no vision LLM). */
+  readonly structural?: boolean;
 }
 
 /** Optional post-vision structural checks (Plan B B0b). */
@@ -66,6 +68,8 @@ export interface EvaluateDesignOptions {
     readonly planning: UXPlanningOutput;
     readonly getSpec: () => DesignSpecV2;
   };
+  /** Model override for vision evaluation. Falls back to EVALUATOR_MODEL. */
+  readonly resolvedModel?: string;
 }
 
 /** History entry for a previous correction attempt. */
@@ -87,47 +91,55 @@ export interface FixAttemptRecord {
   readonly stepsSkipped: number;
 }
 
-const EVALUATION_SYSTEM_PROMPT = `You are a design quality evaluator. Analyze the provided Figma screenshot against the design specification.
+const EVALUATION_SYSTEM_PROMPT = `You are a design quality evaluator. Analyze the provided design screenshot against the design specification.
 
-Evaluate these dimensions:
-1. **Visual hierarchy** — clear content structure, appropriate heading sizes, spacing
-2. **Text presence** — all expected text nodes exist (no missing labels, values, titles)
-3. **Color application** — backgrounds, text colors, borders match spec (no all-white/blank areas)
-4. **Spacing & alignment** — consistent padding, proper auto-layout, aligned elements
-5. **Completeness** — all specified components are present (header, cards, charts, tables)
-6. **Content density & dead space** — no large empty areas below content, sections tightly packed, cards filling their row width, root board height matching actual content
+Score each dimension 0-20, then sum for the total score (0-100):
 
-Score from 0 to 100:
-- 80-100: Good — minor polish issues only
-- 50-79: Needs fixes — visible issues that affect usability
-- 0-49: Poor — major missing components or broken layout
+**1. Layout Structure (0-20)**
+- 20: All components present, correct hierarchy, no orphaned nodes
+- 15: Minor layout issues (1-2 misaligned elements)
+- 10: Significant gaps (missing section, broken hierarchy)
+- 5: Multiple missing components
+- 0: Major structural failure (blank page, single element only)
 
-Scoring modifiers for content density (apply these deductions):
-- Deduct 10–15 points if there is >200px of dead/empty space below the last content section (e.g., footer ends at 2000px but root is 4800px)
-- Deduct 5–10 points per section that uses >60px top or bottom padding (excessive whitespace)
-- Deduct 5 points if cards in a row don't fill at least 80% of the available row width
-- If the bottom 30%+ of a tall page (>2000px) appears visually empty → report as critical issue with issueId "excessive-root-height"
+**2. Visual Hierarchy (0-20)**
+- 20: Clear heading/body/label scale, consistent weight usage, 2+ typographic levels visible
+- 15: Minor hierarchy issues (1 inconsistent heading level)
+- 10: Flat hierarchy (most text same size/weight)
+- 5: Barely any differentiation
+- 0: No discernible hierarchy
 
-Text quality (critical — these indicate broken layout, not just poor design):
-- Deduct 15 points if any text appears truncated (cut off mid-word, or text visibly extends beyond its container)
-- Deduct 10 points if text nodes overlap each other or overlap input field boundaries
-- Deduct 5 points per text node that appears to overflow its parent container
-- If text labels show partial words (e.g., "Enter your bill de" instead of full text) → report as critical issue with issueId "text-truncation-{component}"
-- If a value and its label overlap (e.g., "$0.00" overlapping "Amount") → report as critical issue with issueId "text-overlap-{component}"
+**3. Content Completeness (0-20)**
+- 20: All text populated with realistic domain content, no placeholders, no truncation
+- 15: Minor gaps (1-2 missing labels or values)
+- 10: Multiple missing text nodes or truncated text
+- 5: Significant content gaps
+- 0: Most content missing or placeholder "Lorem ipsum"
 
-Container treatment diversity:
-- Deduct 10 points if 3+ content sections all use the same visual treatment (all elevated cards, all flat panels, etc.)
-- A well-designed page mixes treatments: Elevated (shadow), Outlined (border), Flat (colored background), Separated (bottom border)
-- Report as issue with issueId "container-treatment-monotony"
+**4. Spacing & Density (0-20)**
+- 20: Consistent gaps, appropriate padding, no dead space, cards fill row width
+- 15: Minor spacing inconsistencies (1-2 sections with slightly off padding)
+- 10: Significant dead space (>200px below content) or cramped sections
+- 5: Major spacing issues (overlapping elements, excessive gaps)
+- 0: Broken layout
+
+**5. Visual Treatment (0-20)**
+- 20: Mixed container treatments (2+ of: shadow, border, flat background), appropriate color usage, semantic tokens applied
+- 15: Slight monotony but acceptable variety (all cards have shadows but different colors)
+- 10: All sections use identical treatment (every card: same shadow + same radius + same background)
+- 5: Minimal visual treatment
+- 0: No visual treatment (all plain/bare containers)
+
+Text quality flags (report as issues regardless of score):
+- Text truncated (cut off mid-word) → issueId "text-truncation-{component}", severity "critical"
+- Text overlapping other elements → issueId "text-overlap-{component}", severity "critical"
+- >200px dead space below content → issueId "excessive-root-height", severity "major"
 
 ${buildEvaluatorConstraintsPrompt()}
 
 IMPORTANT:
-- Give each issue a stable "issueId" (lowercase-kebab-case, e.g., "missing-header-title", "card-spacing-wrong").
-  This allows tracking which issues persist across correction iterations.
-- Be SPECIFIC in the "fix" field. Include concrete values: exact colors, pixel sizes, node names to target.
-  Bad: "Add text nodes for each metric"
-  Good: "Create 3 TEXT nodes inside MetricsRow with content 'Total Cost', 'Daily Avg', 'Token Usage', fontSize 14, color {r:0.2,g:0.2,b:0.2}"
+- Give each issue a stable "issueId" (lowercase-kebab-case).
+- Be SPECIFIC in the "fix" field — include concrete node names, pixel values, colors.
 
 Respond ONLY with a JSON object:
 {
@@ -296,7 +308,7 @@ export async function evaluateDesign(
         ],
       },
       {
-        model: EVALUATOR_MODEL,
+        model: options?.resolvedModel ?? EVALUATOR_MODEL,
         maxTokens: 4096,
         responseSchema: EVALUATION_OUTPUT_SCHEMA,
       },
@@ -310,10 +322,18 @@ export async function evaluateDesign(
       let evalData: { score: number; issues: DesignIssue[] };
 
       if (structured) {
-        const structuredResult = DesignEvaluationOutputSchema.safeParse(structured);
-        evalData = structuredResult.success
-          ? structuredResult.data as { score: number; issues: DesignIssue[] }
-          : { score: 0, issues: [] };
+        let toValidate = structured as Record<string, unknown>;
+        if (toValidate && typeof toValidate === 'object' && 'response' in toValidate && typeof toValidate.response === 'object') {
+          debugLog('evaluateDesign: unwrapping nested {response:{...}} from vision LLM output');
+          toValidate = toValidate.response as Record<string, unknown>;
+        }
+        const structuredResult = DesignEvaluationOutputSchema.safeParse(toValidate);
+        if (structuredResult.success) {
+          evalData = structuredResult.data as { score: number; issues: DesignIssue[] };
+        } else {
+          debugLog(`evaluateDesign: structured output parse failed — ${structuredResult.error.issues.map(i => i.message).join(', ')}`);
+          evalData = { score: 0, issues: [] };
+        }
       } else {
         const parseResult = safeParse(result.value.content, DesignEvaluationOutputSchema, 'Design Evaluation');
         if (!parseResult.ok) return parseResult as Result<never>;
@@ -323,6 +343,8 @@ export async function evaluateDesign(
       let finalScore = typeof evalData.score === 'number' ? evalData.score : 0;
       const issues: DesignIssue[] = Array.isArray(evalData.issues) ? [...evalData.issues] : [];
 
+      let structuralDeductions = 0;
+
       if (options?.structuralNavCheck) {
         const { planning, getSpec } = options.structuralNavCheck;
         const specObj = getSpec();
@@ -331,33 +353,25 @@ export async function evaluateDesign(
           const act = countSpecNavigateTo(specObj);
           if (act < exp) {
             const gap = exp - act;
-            const deduct = Math.min(30, gap * 5);
-            finalScore = Math.max(0, finalScore - deduct);
-            const navIssue: DesignIssue = {
+            structuralDeductions += Math.min(15, gap * 3);
+            issues.push({
               severity: 'major',
               component: 'DesignSpec',
               description: `Expected ${String(exp)} navigateTo binding(s) from planning; DesignSpec has ${String(act)} (missing ${String(gap)}).`,
               fix: 'Map each componentTree node with navigateTo to a DesignSpec node with the same target.',
               issueId: 'navigateTo-count-mismatch',
-            };
-            issues.push(navIssue);
+            });
           }
         }
       }
 
       if (parsedSpec) {
-        const diversity = assessContainerDiversity(parsedSpec);
-        if (diversity.isMonotonous && diversity.dominantTreatment) {
-          finalScore = Math.max(0, finalScore - 10);
-          issues.push({
-            severity: 'major',
-            component: 'DesignSpec',
-            description: `All ${String(diversity.treatments.length)} top-level sections use "${diversity.dominantTreatment}" treatment. Design should mix treatments (elevated, outlined, flat, inset, separated).`,
-            fix: 'Vary container treatments: use Elevated (shadow) for primary content, Outlined (border) for secondary, Flat (background) for info panels.',
-            issueId: 'container-treatment-monotony',
-          });
-        }
+        const sqResult = runStructuralQualityGate(parsedSpec);
+        structuralDeductions += sqResult.deductions;
+        issues.push(...sqResult.issues);
       }
+
+      finalScore = Math.max(0, finalScore - Math.min(structuralDeductions, MAX_STRUCTURAL_DEDUCTION));
 
       const overallQuality: DesignEvaluation['overallQuality'] =
         finalScore >= 80 ? 'good' : finalScore >= 50 ? 'needs_fixes' : 'poor';

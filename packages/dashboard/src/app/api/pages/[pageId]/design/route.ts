@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeDesignSpec } from '@agentforge/core';
+import { writeDesignSpec, loadProjectManifest } from '@agentforge/core';
 import {
   readYamlFile,
   writeYamlFile,
@@ -172,7 +172,9 @@ async function runPipelineAsync(
   const dashSink = new DashboardSseSink(runId, 'design-browser', taskId);
   const langfuseSink = createLangfuseSink(runId, { projectName: projectRoot.split('/').pop() });
   const sink = langfuseSink ? new CompositeSink([dashSink, langfuseSink]) : dashSink;
-  const agentContext = createDashboardPipelineContext(taskId, projectRoot, providerFactory);
+  const manifestResult = loadProjectManifest(projectRoot, createRealFs());
+  const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
+  const agentContext = createDashboardPipelineContext(taskId, projectRoot, providerFactory, projectManifest);
   const pipelineInput = buildDashboardPipelineInput(pageId, taskId, sink, agentContext);
 
   if (!pipelineInput) {

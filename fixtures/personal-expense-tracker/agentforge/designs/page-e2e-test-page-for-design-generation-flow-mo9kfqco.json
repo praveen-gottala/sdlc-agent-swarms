@@ -1,0 +1,632 @@
+{
+  "screen": "e2e-test-page-for-design-generation-flow",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 1440,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "align": "stretch"
+      },
+      "background": "background-primary"
+    },
+    "top-bar": {
+      "parent": "root",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "py": 0
+      },
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "month-selector": {
+      "parent": "top-bar",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "month-prev-btn": {
+      "parent": "month-selector",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-left"
+      },
+      "color": "text-secondary"
+    },
+    "month-label": {
+      "parent": "month-selector",
+      "order": 1,
+      "type": "text",
+      "content": "E2E Test Page",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "month-next-btn": {
+      "parent": "month-selector",
+      "order": 2,
+      "catalog": "icon",
+      "overrides": {
+        "name": "chevron-right"
+      },
+      "color": "text-secondary"
+    },
+    "top-bar-actions": {
+      "parent": "top-bar",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "top-bar-add-button": {
+      "parent": "top-bar-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Add Expense",
+      "overrides": {
+        "icon": "plus"
+      }
+    },
+    "top-bar-settings-trigger": {
+      "parent": "top-bar-actions",
+      "order": 1,
+      "catalog": "icon",
+      "overrides": {
+        "name": "settings"
+      },
+      "color": "text-secondary"
+    },
+    "page-content": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 24,
+        "px": 80,
+        "py": 48,
+        "align": "stretch"
+      },
+      "background": "background-primary"
+    },
+    "e2e-page-header": {
+      "parent": "page-content",
+      "order": 0,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8,
+        "py": 16
+      },
+      "catalog": "Section",
+      "label": "Design Generation Flow — E2E Test",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "e2e-page-subtitle": {
+      "parent": "e2e-page-header",
+      "order": 0,
+      "type": "text",
+      "content": "Validates the end-to-end design generation pipeline for this module.",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "test-status-card": {
+      "parent": "page-content",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "radius": 10,
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "test-status-header-row": {
+      "parent": "test-status-card",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "test-status-badge": {
+      "parent": "test-status-header-row",
+      "order": 0,
+      "catalog": "badge-success",
+      "label": "Pass",
+      "overrides": {
+        "icon": "check-circle"
+      }
+    },
+    "test-status-label": {
+      "parent": "test-status-header-row",
+      "order": 1,
+      "type": "text",
+      "content": "Overall Status",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "test-status-description": {
+      "parent": "test-status-card",
+      "order": 1,
+      "type": "text",
+      "content": "All design generation checks completed successfully. The component tree, token bindings, and responsive rules were validated without errors.",
+      "typography": "body",
+      "color": "text-secondary"
+    },
+    "test-suite-card": {
+      "parent": "page-content",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "radius": 10,
+      "layout": {
+        "dir": "column",
+        "gap": 12,
+        "px": 24,
+        "py": 24
+      },
+      "overrides": {
+        "border": "1px solid var(--border-default)"
+      }
+    },
+    "test-suite-header": {
+      "parent": "test-suite-card",
+      "order": 0,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      },
+      "catalog": "Section",
+      "label": "Test Suite",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "test-suite-count": {
+      "parent": "test-suite-header",
+      "order": 0,
+      "catalog": "badge-info",
+      "label": "3 cases"
+    },
+    "test-suite-divider": {
+      "parent": "test-suite-card",
+      "order": 1,
+      "type": "divider"
+    },
+    "test-case-row-1": {
+      "parent": "test-suite-card",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 8
+      },
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "test-case-1-left": {
+      "parent": "test-case-row-1",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "test-case-1-icon": {
+      "parent": "test-case-1-left",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "check-circle"
+      },
+      "color": "success"
+    },
+    "test-case-1-name": {
+      "parent": "test-case-1-left",
+      "order": 1,
+      "type": "text",
+      "content": "Component tree generation",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "test-case-1-right": {
+      "parent": "test-case-row-1",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "test-case-1-badge": {
+      "parent": "test-case-1-right",
+      "order": 0,
+      "catalog": "badge-success",
+      "label": "Pass"
+    },
+    "test-case-1-duration": {
+      "parent": "test-case-1-right",
+      "order": 1,
+      "type": "text",
+      "content": "120ms",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "test-case-row-2": {
+      "parent": "test-suite-card",
+      "order": 3,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 8
+      },
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "test-case-2-left": {
+      "parent": "test-case-row-2",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "test-case-2-icon": {
+      "parent": "test-case-2-left",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "check-circle"
+      },
+      "color": "success"
+    },
+    "test-case-2-name": {
+      "parent": "test-case-2-left",
+      "order": 1,
+      "type": "text",
+      "content": "Token binding resolution",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "test-case-2-right": {
+      "parent": "test-case-row-2",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "test-case-2-badge": {
+      "parent": "test-case-2-right",
+      "order": 0,
+      "catalog": "badge-success",
+      "label": "Pass"
+    },
+    "test-case-2-duration": {
+      "parent": "test-case-2-right",
+      "order": 1,
+      "type": "text",
+      "content": "84ms",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "test-case-row-3": {
+      "parent": "test-suite-card",
+      "order": 4,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 8
+      }
+    },
+    "test-case-3-left": {
+      "parent": "test-case-row-3",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "test-case-3-icon": {
+      "parent": "test-case-3-left",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "check-circle"
+      },
+      "color": "success"
+    },
+    "test-case-3-name": {
+      "parent": "test-case-3-left",
+      "order": 1,
+      "type": "text",
+      "content": "Responsive layout rules validation",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "test-case-3-right": {
+      "parent": "test-case-row-3",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 12
+      }
+    },
+    "test-case-3-badge": {
+      "parent": "test-case-3-right",
+      "order": 0,
+      "catalog": "badge-success",
+      "label": "Pass"
+    },
+    "test-case-3-duration": {
+      "parent": "test-case-3-right",
+      "order": 1,
+      "type": "text",
+      "content": "57ms",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "test-output-card": {
+      "parent": "page-content",
+      "order": 3,
+      "width": "fill",
+      "background": "surface-primary",
+      "radius": 10,
+      "shadow": "sm",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "catalog": "Section",
+      "label": "Test Output",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "test-output-console": {
+      "parent": "test-output-card",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "height": 140,
+      "background": "surface-secondary",
+      "radius": 6,
+      "layout": {
+        "dir": "column",
+        "gap": 4,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border": "1px solid var(--border-default)"
+      }
+    },
+    "test-output-line-1": {
+      "parent": "test-output-console",
+      "order": 0,
+      "type": "text",
+      "content": "▶ Running design generation flow tests...",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "test-output-line-2": {
+      "parent": "test-output-console",
+      "order": 1,
+      "type": "text",
+      "content": "✓ Component tree generation — 120ms",
+      "typography": "small",
+      "color": "text-primary"
+    },
+    "test-output-line-3": {
+      "parent": "test-output-console",
+      "order": 2,
+      "type": "text",
+      "content": "✓ Token binding resolution — 84ms",
+      "typography": "small",
+      "color": "text-primary"
+    },
+    "test-output-line-4": {
+      "parent": "test-output-console",
+      "order": 3,
+      "type": "text",
+      "content": "✓ Responsive layout rules validation — 57ms",
+      "typography": "small",
+      "color": "text-primary"
+    },
+    "test-output-line-5": {
+      "parent": "test-output-console",
+      "order": 4,
+      "type": "text",
+      "content": "All 3 tests passed. Total: 261ms",
+      "typography": "small",
+      "color": "success",
+      "weight": 600
+    },
+    "test-output-actions": {
+      "parent": "test-output-card",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "justify": "end"
+      }
+    },
+    "run-tests-button": {
+      "parent": "test-output-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Run Tests",
+      "overrides": {
+        "icon": "refresh"
+      }
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "background": "surface-primary",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "center",
+        "gap": 0
+      },
+      "overrides": {
+        "borderTop": "1px solid var(--border-default)"
+      }
+    },
+    "nav-tab-home": {
+      "parent": "nav-tabs",
+      "order": 0,
+      "type": "container",
+      "width": 160,
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "dashboard"
+    },
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "home"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
+      "order": 1,
+      "type": "text",
+      "content": "Home",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "nav-tab-add-expense": {
+      "parent": "nav-tabs",
+      "order": 1,
+      "type": "container",
+      "width": 160,
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "add-expense"
+    },
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add-expense",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "plus"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add-expense",
+      "order": 1,
+      "type": "text",
+      "content": "Add Expense",
+      "typography": "label",
+      "color": "text-secondary"
+    },
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
+      "order": 2,
+      "type": "container",
+      "width": 160,
+      "height": 64,
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "justify": "center",
+        "gap": 4
+      },
+      "navigateTo": "spending-insights"
+    },
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "bar-chart"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
+      "order": 1,
+      "type": "text",
+      "content": "Insights",
+      "typography": "label",
+      "color": "text-secondary"
+    }
+  }
+}

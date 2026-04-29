@@ -60,7 +60,7 @@ export interface AgentAction {
   /** Human-readable description of what the agent intends to do. */
   readonly description: string;
   /** SDLC phase this action belongs to. */
-  readonly phase: 'design' | 'spec' | 'code' | 'cicd' | 'observe';
+  readonly phase: 'clarify' | 'design' | 'spec' | 'code' | 'cicd' | 'observe';
   /** ISO-8601 timestamp of when the action was initiated. */
   readonly timestamp: string;
   /** Optional metadata for action-specific context. */
@@ -139,6 +139,7 @@ export interface HITLGate {
  * Matches the override keys in the project manifest schema.
  */
 export type HITLPhase =
+  | 'clarification'
   | 'design'
   | 'spec_review'
   | 'code_generation'
@@ -311,7 +312,7 @@ export interface AuditEntry {
   /** The task the action belonged to. */
   readonly taskId: string;
   /** The SDLC phase. */
-  readonly phase: 'design' | 'spec' | 'code' | 'cicd' | 'observe';
+  readonly phase: 'clarify' | 'design' | 'spec' | 'code' | 'cicd' | 'observe';
   /** The action that was performed (PRD 19.3: action_taken). */
   readonly action: AgentAction;
   /** Outcome of the action. */

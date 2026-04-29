@@ -1,0 +1,569 @@
+{
+  "specRef": "spec-page-b0a-dedup-probe-1776850160373-user-setti-mo9upibw-1776850160373",
+  "moduleId": "page-b0a-dedup-probe-1776850160373-user-setti-mo9upibw",
+  "componentTree": [
+    {
+      "name": "SettingsPageLayout",
+      "props": [
+        "maxWidth",
+        "padding",
+        "gap"
+      ],
+      "defaultValues": {
+        "maxWidth": 1280,
+        "padding": 24,
+        "gap": 24
+      },
+      "children": [
+        "SettingsTopBar",
+        "SettingsContentArea",
+        "SettingsNavigationTabs"
+      ]
+    },
+    {
+      "name": "SettingsTopBar",
+      "props": [
+        "title",
+        "showBackArrow",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "title": "Settings",
+        "showBackArrow": 1,
+        "ariaLabel": "Settings page header"
+      },
+      "children": [
+        "SettingsBackButton"
+      ]
+    },
+    {
+      "name": "SettingsBackButton",
+      "props": [
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Back to Dashboard",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsContentArea",
+      "props": [
+        "paddingY",
+        "rowGap",
+        "maxWidth"
+      ],
+      "defaultValues": {
+        "paddingY": 32,
+        "rowGap": 24,
+        "maxWidth": 640
+      },
+      "children": [
+        "SettingsPageTitle",
+        "ProfileSettingsCard",
+        "PreferencesSettingsCard",
+        "BudgetSettingsCard",
+        "SettingsSaveDoneButton"
+      ]
+    },
+    {
+      "name": "SettingsPageTitle",
+      "props": [
+        "text",
+        "level"
+      ],
+      "defaultValues": {
+        "text": "Profile & Preferences",
+        "level": 1
+      },
+      "children": []
+    },
+    {
+      "name": "ProfileSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "ProfileSectionHeading",
+        "LocaleFieldGroup",
+        "SettingsSectionDivider"
+      ]
+    },
+    {
+      "name": "ProfileSectionHeading",
+      "props": [
+        "text",
+        "level"
+      ],
+      "defaultValues": {
+        "text": "Profile",
+        "level": 2
+      },
+      "children": []
+    },
+    {
+      "name": "LocaleFieldGroup",
+      "props": [
+        "label",
+        "htmlFor",
+        "gap"
+      ],
+      "defaultValues": {
+        "label": "Locale",
+        "htmlFor": "locale-input",
+        "gap": 8
+      },
+      "children": [
+        "LocaleInput"
+      ]
+    },
+    {
+      "name": "LocaleInput",
+      "props": [
+        "id",
+        "placeholder",
+        "ariaLabel",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "id": "locale-input",
+        "placeholder": "e.g. en-US",
+        "ariaLabel": "Locale preference",
+        "minHeight": 44
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsSectionDivider",
+      "props": [
+        "marginY"
+      ],
+      "defaultValues": {
+        "marginY": 8
+      },
+      "children": []
+    },
+    {
+      "name": "PreferencesSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "PreferencesSectionHeading",
+        "CurrencyFieldGroup"
+      ]
+    },
+    {
+      "name": "PreferencesSectionHeading",
+      "props": [
+        "text",
+        "level"
+      ],
+      "defaultValues": {
+        "text": "Preferences",
+        "level": 2
+      },
+      "children": []
+    },
+    {
+      "name": "CurrencyFieldGroup",
+      "props": [
+        "label",
+        "htmlFor",
+        "gap"
+      ],
+      "defaultValues": {
+        "label": "Currency",
+        "htmlFor": "currency-selector",
+        "gap": 8
+      },
+      "children": [
+        "CurrencyChipRow"
+      ]
+    },
+    {
+      "name": "CurrencyChipRow",
+      "props": [
+        "id",
+        "options",
+        "gap",
+        "ariaLabel"
+      ],
+      "defaultValues": {
+        "id": "currency-selector",
+        "options": "USD,EUR,GBP,JPY,CAD",
+        "gap": 8,
+        "ariaLabel": "Select currency"
+      },
+      "children": [
+        "CurrencyChip"
+      ]
+    },
+    {
+      "name": "CurrencyChip",
+      "props": [
+        "label",
+        "value",
+        "isSelected",
+        "ariaSelected",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "USD",
+        "value": "USD",
+        "isSelected": 1,
+        "ariaSelected": "true",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetSettingsCard",
+      "props": [
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "paddingX": 24,
+        "paddingY": 24,
+        "borderRadius": 10,
+        "gap": 16
+      },
+      "children": [
+        "BudgetSectionHeading",
+        "DefaultBudgetFieldGroup"
+      ]
+    },
+    {
+      "name": "BudgetSectionHeading",
+      "props": [
+        "text",
+        "level"
+      ],
+      "defaultValues": {
+        "text": "Budget",
+        "level": 2
+      },
+      "children": []
+    },
+    {
+      "name": "DefaultBudgetFieldGroup",
+      "props": [
+        "label",
+        "htmlFor",
+        "gap",
+        "helperText"
+      ],
+      "defaultValues": {
+        "label": "Default Monthly Budget",
+        "htmlFor": "default-budget-input",
+        "gap": 8,
+        "helperText": "Applied when no specific month budget is set"
+      },
+      "children": [
+        "DefaultBudgetInput",
+        "BudgetInputErrorMessage"
+      ]
+    },
+    {
+      "name": "DefaultBudgetInput",
+      "props": [
+        "id",
+        "type",
+        "placeholder",
+        "ariaLabel",
+        "ariaDescribedBy",
+        "minHeight"
+      ],
+      "defaultValues": {
+        "id": "default-budget-input",
+        "type": "number",
+        "placeholder": "e.g. 2000",
+        "ariaLabel": "Default monthly budget amount",
+        "ariaDescribedBy": "budget-error",
+        "minHeight": 44
+      },
+      "children": []
+    },
+    {
+      "name": "BudgetInputErrorMessage",
+      "props": [
+        "id",
+        "text",
+        "visible"
+      ],
+      "defaultValues": {
+        "id": "budget-error",
+        "text": "Please enter a valid budget amount",
+        "visible": 0
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsSaveDoneButton",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "fullWidth"
+      ],
+      "defaultValues": {
+        "label": "Save",
+        "ariaLabel": "Save settings and return to Dashboard",
+        "minHeight": 44,
+        "fullWidth": 1
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "SettingsStatusAnnouncer",
+      "props": [
+        "ariaLive",
+        "role",
+        "message"
+      ],
+      "defaultValues": {
+        "ariaLive": "polite",
+        "role": "status",
+        "message": ""
+      },
+      "children": []
+    },
+    {
+      "name": "SettingsNavigationTabs",
+      "props": [
+        "activeTab",
+        "height"
+      ],
+      "defaultValues": {
+        "activeTab": "settings",
+        "height": 64
+      },
+      "children": [
+        "NavTabHome",
+        "NavTabAddExpense",
+        "NavTabInsights"
+      ]
+    },
+    {
+      "name": "NavTabHome",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "Home",
+        "ariaLabel": "Go to Home Dashboard",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "navigateTo": "dashboard",
+      "children": []
+    },
+    {
+      "name": "NavTabAddExpense",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "Add Expense",
+        "ariaLabel": "Go to Add Expense",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "navigateTo": "add-expense",
+      "children": []
+    },
+    {
+      "name": "NavTabInsights",
+      "props": [
+        "label",
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "Insights",
+        "ariaLabel": "Go to Spending Insights",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "navigateTo": "spending-insights",
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "SettingsPageLayout.background": "background-primary",
+    "SettingsPageLayout.maxWidth": "content-max-width",
+    "SettingsPageLayout.gap": "24",
+    "SettingsTopBar.background": "surface-primary",
+    "SettingsTopBar.borderBottom": "border-default",
+    "SettingsTopBar.shadow": "elevation-1",
+    "SettingsTopBar.typography": "heading-2",
+    "SettingsTopBar.color": "text-primary",
+    "SettingsBackButton.color": "text-primary",
+    "SettingsBackButton.focusRingColor": "focus-ring-color",
+    "SettingsBackButton.focusRingWidth": "focus-ring-width",
+    "SettingsPageTitle.typography": "heading-1",
+    "SettingsPageTitle.color": "text-primary",
+    "ProfileSettingsCard.background": "surface-primary",
+    "ProfileSettingsCard.borderRadius": "medium",
+    "ProfileSettingsCard.shadow": "elevation-1",
+    "ProfileSettingsCard.border": "border-default",
+    "ProfileSectionHeading.typography": "heading-2",
+    "ProfileSectionHeading.color": "text-primary",
+    "LocaleFieldGroup.labelTypography": "label",
+    "LocaleFieldGroup.labelColor": "text-secondary",
+    "LocaleInput.background": "surface-input",
+    "LocaleInput.border": "border-default",
+    "LocaleInput.borderFocus": "border-focus",
+    "LocaleInput.borderRadius": "small",
+    "LocaleInput.color": "text-primary",
+    "LocaleInput.typography": "body",
+    "LocaleInput.focusRingColor": "focus-ring-color",
+    "LocaleInput.focusRingWidth": "focus-ring-width",
+    "SettingsSectionDivider.color": "border-default",
+    "PreferencesSettingsCard.background": "surface-elevated",
+    "PreferencesSettingsCard.borderRadius": "medium",
+    "PreferencesSettingsCard.shadow": "elevation-1",
+    "PreferencesSectionHeading.typography": "heading-2",
+    "PreferencesSectionHeading.color": "text-primary",
+    "CurrencyFieldGroup.labelTypography": "label",
+    "CurrencyFieldGroup.labelColor": "text-secondary",
+    "CurrencyChipRow.gap": "8",
+    "CurrencyChip.borderRadius": "pill",
+    "CurrencyChip.background": "surface-elevated",
+    "CurrencyChip.border": "border-default",
+    "CurrencyChip.selectedBackground": "cta-primary",
+    "CurrencyChip.selectedColor": "text-on-cta",
+    "CurrencyChip.color": "text-primary",
+    "CurrencyChip.typography": "label",
+    "CurrencyChip.focusRingColor": "focus-ring-color",
+    "CurrencyChip.focusRingWidth": "focus-ring-width",
+    "CurrencyChip.disabledOpacity": "disabled-opacity",
+    "BudgetSettingsCard.background": "surface-primary",
+    "BudgetSettingsCard.borderRadius": "medium",
+    "BudgetSettingsCard.shadow": "elevation-1",
+    "BudgetSettingsCard.border": "border-default",
+    "BudgetSectionHeading.typography": "heading-2",
+    "BudgetSectionHeading.color": "text-primary",
+    "DefaultBudgetFieldGroup.labelTypography": "label",
+    "DefaultBudgetFieldGroup.labelColor": "text-secondary",
+    "DefaultBudgetFieldGroup.helperTypography": "small",
+    "DefaultBudgetFieldGroup.helperColor": "text-secondary",
+    "DefaultBudgetInput.background": "surface-input",
+    "DefaultBudgetInput.border": "border-default",
+    "DefaultBudgetInput.borderFocus": "border-focus",
+    "DefaultBudgetInput.borderError": "border-error",
+    "DefaultBudgetInput.borderRadius": "small",
+    "DefaultBudgetInput.color": "text-primary",
+    "DefaultBudgetInput.typography": "body",
+    "DefaultBudgetInput.focusRingColor": "focus-ring-color",
+    "DefaultBudgetInput.focusRingWidth": "focus-ring-width",
+    "BudgetInputErrorMessage.color": "error",
+    "BudgetInputErrorMessage.typography": "small",
+    "SettingsSaveDoneButton.background": "cta-primary",
+    "SettingsSaveDoneButton.color": "text-on-cta",
+    "SettingsSaveDoneButton.typography": "heading-3",
+    "SettingsSaveDoneButton.borderRadius": "medium",
+    "SettingsSaveDoneButton.hoverBackground": "cta-hover",
+    "SettingsSaveDoneButton.focusRingColor": "focus-ring-color",
+    "SettingsSaveDoneButton.focusRingWidth": "focus-ring-width",
+    "SettingsSaveDoneButton.disabledOpacity": "disabled-opacity",
+    "SettingsStatusAnnouncer.color": "text-secondary",
+    "SettingsStatusAnnouncer.typography": "small",
+    "SettingsNavigationTabs.background": "surface-primary",
+    "SettingsNavigationTabs.borderTop": "border-default",
+    "SettingsNavigationTabs.shadow": "elevation-1",
+    "NavTabHome.color": "text-secondary",
+    "NavTabHome.typography": "label",
+    "NavTabHome.focusRingColor": "focus-ring-color",
+    "NavTabAddExpense.color": "text-secondary",
+    "NavTabAddExpense.typography": "label",
+    "NavTabAddExpense.focusRingColor": "focus-ring-color",
+    "NavTabInsights.color": "text-secondary",
+    "NavTabInsights.typography": "label",
+    "NavTabInsights.focusRingColor": "focus-ring-color"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Single-column centered form layout with 640px max content width, 24px grid margin, 24px section gap",
+      "layout": "single-column",
+      "changes": [
+        "Full TopBar with back arrow and page title",
+        "Settings cards stacked vertically with 24px gap",
+        "Currency chip row displayed inline horizontally",
+        "Full-width Save button at bottom of content area",
+        "NavigationTabs pinned to bottom of viewport",
+        "Content area centered with 640px max-width within 1280px content container"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "User Settings",
+      "components": [
+        "SettingsPageLayout",
+        "SettingsTopBar",
+        "SettingsBackButton",
+        "SettingsContentArea",
+        "SettingsPageTitle",
+        "ProfileSettingsCard",
+        "ProfileSectionHeading",
+        "LocaleFieldGroup",
+        "LocaleInput",
+        "SettingsSectionDivider",
+        "PreferencesSettingsCard",
+        "PreferencesSectionHeading",
+        "CurrencyFieldGroup",
+        "CurrencyChipRow",
+        "CurrencyChip",
+        "BudgetSettingsCard",
+        "BudgetSectionHeading",
+        "DefaultBudgetFieldGroup",
+        "DefaultBudgetInput",
+        "BudgetInputErrorMessage",
+        "SettingsSaveDoneButton",
+        "SettingsStatusAnnouncer",
+        "SettingsNavigationTabs",
+        "NavTabHome",
+        "NavTabAddExpense",
+        "NavTabInsights"
+      ]
+    }
+  ]
+}

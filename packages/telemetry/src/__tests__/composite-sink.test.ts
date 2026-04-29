@@ -53,4 +53,28 @@ describe('CompositeSink', () => {
     const composite = new CompositeSink([]);
     expect(() => composite.onStageStart('research', { agentRole: 'r', moduleId: 'm', taskId: 't' })).not.toThrow();
   });
+
+  it('wrapStage delegates to the first sink that implements it', async () => {
+    const plainSink = createRecordingSink();
+    let wrapCalled = false;
+    const tracingSink: PipelineTelemetrySink = {
+      ...createRecordingSink(),
+      async wrapStage<T>(_stage: string, _attrs: { agentRole: string; moduleId: string; taskId: string }, fn: () => Promise<T>): Promise<T> {
+        wrapCalled = true;
+        return fn();
+      },
+    };
+
+    const composite = new CompositeSink([plainSink, tracingSink]);
+    const result = await composite.wrapStage('research', { agentRole: 'r', moduleId: 'm', taskId: 't' }, async () => 42);
+
+    expect(wrapCalled).toBe(true);
+    expect(result).toBe(42);
+  });
+
+  it('wrapStage calls fn directly when no sink implements it', async () => {
+    const composite = new CompositeSink([createRecordingSink()]);
+    const result = await composite.wrapStage('research', { agentRole: 'r', moduleId: 'm', taskId: 't' }, async () => 'hello');
+    expect(result).toBe('hello');
+  });
 });

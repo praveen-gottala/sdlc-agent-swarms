@@ -7,7 +7,7 @@
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import type { MCPClient, AgentContext, LLMProviderRef } from '@agentforge/core';
+import type { MCPClient, AgentContext, LLMProviderRef, ProjectManifest } from '@agentforge/core';
 import {
   Ok,
   Err,
@@ -30,12 +30,14 @@ import {
  * @param providerFactory When provided, enables `resolveProvider(model)` for
  *   use with `runDesignPipeline`. CLI callers pass
  *   `(model) => createClaudeProvider(model, providerConfig)`.
+ * @param manifest Project manifest for per-stage model resolution (ADR-033).
  */
 export function createPipelineContext(
   taskId: string,
   mcpClient?: MCPClient,
   baseDir?: string,
   providerFactory?: (model: string) => LLMProviderRef,
+  manifest?: Pick<ProjectManifest, 'agents'>,
 ): AgentContext {
   if (!baseDir) {
     debugLog('createPipelineContext: baseDir not provided → default: process.cwd()');
@@ -46,6 +48,7 @@ export function createPipelineContext(
     eventBus: createEventBus(),
     fs: createRealFs(),
     mcpClient,
+    manifest,
     runGovernance: async () => Ok({ status: 'proceed' as const }),
     resolveProvider: providerFactory
       ? (model: string) => Ok(providerFactory(model))

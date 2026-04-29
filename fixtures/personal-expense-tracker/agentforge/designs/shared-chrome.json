@@ -16,67 +16,26 @@
     "top-bar": {
       "parent": "root",
       "order": 0,
-      "type": "header",
-      "width": "fill",
+      "type": "container",
+      "width": 1440,
       "height": 64,
       "background": "surface-primary",
+      "shadow": "sm",
       "layout": {
         "dir": "row",
         "align": "center",
         "justify": "space-between",
         "px": 24,
-        "py": 0
+        "gap": 16
       },
-      "shadow": "sm",
       "overrides": {
         "borderBottom": "1px solid var(--border-default)",
-        "position": "fixed",
-        "top": 0,
         "zIndex": 100
       }
     },
-    "top-bar-left": {
-      "parent": "top-bar",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 4
-      }
-    },
-    "app-logo": {
-      "parent": "top-bar-left",
-      "order": 0,
-      "type": "container",
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "gap": 8
-      }
-    },
-    "app-logo-icon": {
-      "parent": "app-logo",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "wallet",
-        "color": "#F59E0B",
-        "size": 24
-      }
-    },
-    "app-logo-text": {
-      "parent": "app-logo",
-      "order": 1,
-      "type": "text",
-      "content": "BudgetWise",
-      "typography": "heading-3",
-      "color": "text-primary",
-      "weight": 700
-    },
     "month-selector": {
       "parent": "top-bar",
-      "order": 1,
+      "order": 0,
       "type": "container",
       "layout": {
         "dir": "row",
@@ -84,156 +43,117 @@
         "gap": 8
       }
     },
-    "prev-month-btn": {
+    "month-prev-btn": {
       "parent": "month-selector",
       "order": 0,
-      "type": "container",
-      "width": 44,
-      "height": 44,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 10,
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "cursor": "pointer"
+        "icon": "chevron-left",
+        "aria-label": "Previous month",
+        "padding": "4px 8px"
       }
     },
-    "prev-month-icon": {
-      "parent": "prev-month-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-left"
-      },
-      "color": "text-primary"
-    },
-    "month-year-label": {
+    "month-label": {
       "parent": "month-selector",
       "order": 1,
       "type": "text",
       "content": "January 2025",
-      "typography": "heading-3",
+      "typography": "heading-2",
       "color": "text-primary",
-      "weight": 600,
-      "overrides": {
-        "minWidth": 140,
-        "textAlign": "center"
-      }
+      "weight": 700
     },
-    "next-month-btn": {
+    "month-next-btn": {
       "parent": "month-selector",
       "order": 2,
-      "type": "container",
-      "width": 44,
-      "height": 44,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 10,
+      "catalog": "button-ghost",
+      "label": "",
       "overrides": {
-        "cursor": "pointer"
+        "icon": "chevron-right",
+        "aria-label": "Next month",
+        "padding": "4px 8px"
       }
-    },
-    "next-month-icon": {
-      "parent": "next-month-btn",
-      "order": 0,
-      "catalog": "icon",
-      "overrides": {
-        "name": "chevron-right"
-      },
-      "color": "text-primary"
     },
     "top-bar-actions": {
       "parent": "top-bar",
-      "order": 2,
+      "order": 1,
       "type": "container",
       "layout": {
         "dir": "row",
         "align": "center",
-        "gap": 8
+        "gap": 12
       }
     },
-    "settings-icon-btn": {
+    "top-bar-settings-trigger": {
       "parent": "top-bar-actions",
       "order": 0,
-      "type": "container",
-      "width": 44,
-      "height": 44,
-      "layout": {
-        "dir": "row",
-        "align": "center",
-        "justify": "center"
-      },
-      "radius": 10,
+      "catalog": "button-ghost",
+      "label": "",
       "navigateTo": "settings",
       "overrides": {
-        "cursor": "pointer"
+        "icon": "settings",
+        "aria-label": "Open settings"
       }
     },
-    "settings-icon": {
-      "parent": "settings-icon-btn",
-      "order": 0,
-      "catalog": "icon",
+    "top-bar-add-button": {
+      "parent": "top-bar-actions",
+      "order": 1,
+      "catalog": "button-primary",
+      "label": "Add Expense",
+      "navigateTo": "add-expense",
       "overrides": {
-        "name": "settings"
-      },
-      "color": "text-secondary"
+        "icon": "plus",
+        "aria-label": "Add new expense",
+        "borderRadius": "10px"
+      }
     },
     "nav-tabs": {
       "parent": "root",
       "order": 1,
       "type": "container",
-      "width": "fill",
+      "width": 1440,
       "height": 64,
       "background": "surface-primary",
       "layout": {
         "dir": "row",
         "align": "center",
-        "justify": "space-between",
+        "justify": "center",
         "px": 24,
-        "py": 0
+        "gap": 0
       },
       "overrides": {
         "borderTop": "1px solid var(--border-default)",
-        "position": "fixed",
-        "bottom": 0,
-        "zIndex": 100
+        "zIndex": 110
       }
     },
-    "home-tab": {
+    "nav-tab-home": {
       "parent": "nav-tabs",
       "order": 0,
       "type": "container",
-      "height": 44,
       "layout": {
         "dir": "column",
         "align": "center",
-        "justify": "center",
         "gap": 4,
-        "px": 24,
+        "px": 32,
         "py": 8
       },
-      "radius": 6,
       "overrides": {
         "cursor": "pointer",
-        "flex": 1
+        "flex": "1",
+        "maxWidth": "200px"
       }
     },
-    "home-tab-icon": {
-      "parent": "home-tab",
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
       "order": 0,
       "catalog": "icon",
       "overrides": {
         "name": "home",
-        "color": "#F59E0B"
+        "color": "var(--cta-primary)"
       }
     },
-    "home-tab-label": {
-      "parent": "home-tab",
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
       "order": 1,
       "type": "text",
       "content": "Home",
@@ -241,86 +161,82 @@
       "color": "cta-primary",
       "weight": 600
     },
-    "add-expense-tab": {
+    "nav-tab-add-expense": {
       "parent": "nav-tabs",
       "order": 1,
       "type": "container",
-      "height": 44,
       "layout": {
         "dir": "column",
         "align": "center",
-        "justify": "center",
         "gap": 4,
-        "px": 24,
+        "px": 32,
         "py": 8
       },
-      "radius": 6,
       "navigateTo": "add-expense",
       "overrides": {
         "cursor": "pointer",
-        "flex": 1
+        "flex": "1",
+        "maxWidth": "200px"
       }
     },
-    "add-expense-tab-icon": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add-expense",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "plus"
-      },
-      "color": "text-secondary"
+        "name": "plus",
+        "color": "var(--text-secondary)"
+      }
     },
-    "add-expense-tab-label": {
-      "parent": "add-expense-tab",
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add-expense",
       "order": 1,
       "type": "text",
       "content": "Add Expense",
       "typography": "label",
-      "color": "text-secondary",
-      "navigateTo": "add-expense"
+      "color": "text-secondary"
     },
-    "insights-tab": {
+    "nav-tab-insights": {
       "parent": "nav-tabs",
       "order": 2,
       "type": "container",
-      "height": 44,
       "layout": {
         "dir": "column",
         "align": "center",
-        "justify": "center",
         "gap": 4,
-        "px": 24,
+        "px": 32,
         "py": 8
       },
-      "radius": 6,
       "navigateTo": "spending-insights",
       "overrides": {
         "cursor": "pointer",
-        "flex": 1
+        "flex": "1",
+        "maxWidth": "200px"
       }
     },
-    "insights-tab-icon": {
-      "parent": "insights-tab",
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
       "order": 0,
       "catalog": "icon",
       "overrides": {
-        "name": "bar-chart"
-      },
-      "color": "text-secondary"
+        "name": "bar-chart",
+        "color": "var(--text-secondary)"
+      }
     },
-    "insights-tab-label": {
-      "parent": "insights-tab",
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
       "order": 1,
       "type": "text",
       "content": "Insights",
       "typography": "label",
-      "color": "text-secondary",
-      "navigateTo": "spending-insights"
+      "color": "text-secondary"
     }
   },
   "regions": {
     "header": [
-      "top-bar",
+      "top-bar"
+    ],
+    "footer": [
       "nav-tabs"
     ]
   }

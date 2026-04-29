@@ -12,6 +12,14 @@ import type { PipelineTelemetrySink } from '@agentforge/agents-ux';
 export class CompositeSink implements PipelineTelemetrySink {
   constructor(private readonly sinks: readonly PipelineTelemetrySink[]) {}
 
+  async wrapStage<T>(stage: string, attrs: { agentRole: string; moduleId: string; taskId: string }, fn: () => Promise<T>): Promise<T> {
+    const wrapper = this.sinks.find(s => s.wrapStage);
+    if (wrapper?.wrapStage) {
+      return wrapper.wrapStage(stage, attrs, fn);
+    }
+    return fn();
+  }
+
   onStageStart(stage: string, attrs: { agentRole: string; moduleId: string; taskId: string }): void {
     for (const s of this.sinks) s.onStageStart(stage, attrs);
   }

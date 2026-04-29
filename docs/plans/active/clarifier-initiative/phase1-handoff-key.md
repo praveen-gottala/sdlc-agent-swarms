@@ -59,3 +59,30 @@
     - `docs/plans/active/clarifier-initiative/execution-plan.md` → "Implementation gotchas" block
     - `packages/agents-clarifier/project.json` (exists, with prompt copy command)
     - `packages/agents-ux/project.json` (same pattern)
+
+16. **`ClarifierDeps`** interface in **`src/deps.ts`**. Pattern: **factory/closure** — each node is a `create*(deps: ClarifierDeps) → ClarifierNodeFn` factory. `ClarifierDeps` has `provider` (LLMProvider, TracedProvider-wrapped), `retrievalTools?` (RetrievalTools, evolution only), `projectRoot` (string), `projectId` (string). `buildClarifierGraph(deps)` threads deps to all factories.
+    - `packages/agents-clarifier/src/deps.ts` → full interface
+    - `docs/plans/active/clarifier-initiative/execution-plan.md` → "Foundation" task detail
+
+17. Five channels: (1) **`prdDraft`** (`PRD | null`) — PRD Analyzer output, persists across rounds. (2) **`featurePlan`** (`FeaturePlan | null`) — typed feature DAG from story writer. (3) **`criticRetries`** (`number`) — bounded retry counter (max 2). (4) **`criticPassed`** (`boolean`) — routing signal from critic. (5) **`escalationDecision`** (`'accept' | 'restart' | 'abandon' | null`) — user choice after max rounds.
+    - `packages/agents-clarifier/src/graph/state.ts` → lines 38-42
+    - `docs/plans/active/clarifier-initiative/execution-plan.md` → Foundation task detail, "5 new state channels"
+
+18. Two HITL interrupt points: (1) **`storyWriter`** — fires after question prioritizer produces batched questions. Human answers questions before story writer runs. (2) **`escalationGate`** — fires after max rounds are exhausted. Human chooses accept/restart/abandon. Both configured via `interruptBefore: ['storyWriter', 'escalationGate']` in `graph.compile()`.
+    - `packages/agents-clarifier/src/graph/clarifier-graph.ts` → `compileClarifierGraph()` function
+
+19. **NO.** Must NOT declare an explicit return type. LangGraph's StateGraph builder tracks types through method chaining — each `addNode`/`addEdge`/`addConditionalEdges` call returns a progressively narrower type. Declaring `StateGraph<typeof ClarifierStateAnnotation.State>` causes type mismatches. Let TypeScript infer. `compileClarifierGraph` uses `ReturnType<ReturnType<typeof buildClarifierGraph>['compile']>` for its return type.
+    - `docs/plans/active/clarifier-initiative/execution-plan.md` → "Implementation gotchas (Foundation)" block
+    - `packages/agents-clarifier/src/graph/clarifier-graph.ts` → `buildClarifierGraph` function signature
+
+20. Three options: **accept** (proceed with best-effort PRD, low confidence, unresolved gaps as assumptions with `requiresConfirmation: true`), **restart** (reset round counter to 0, re-enter `gapDetector` with updated context), **abandon** (route to END with error). The state channel is **`escalationDecision`** (`'accept' | 'restart' | 'abandon' | null`).
+    - `packages/agents-clarifier/src/graph/clarifier-graph.ts` → `routeAfterEscalation`, `escalationGate` functions
+    - `packages/agents-clarifier/src/types.ts` → `EscalationDecision` type
+
+21. **`runClarifierPipeline(input: ClarifierInput)`** in **`src/run.ts`**. Creates graph, compiles with checkpointer (via `createCheckpointer()`), invokes. Returns `Result<ClarifierOutput, ClarifierError>`. On HITL interrupt: catches `GraphInterrupt`, calls `compiled.getState()`, returns `Ok({ state, threadId, interrupted: true })`. On completed run: returns `Ok({ state, threadId, interrupted: false })`.
+    - `packages/agents-clarifier/src/run.ts` → full file
+    - `docs/plans/active/clarifier-initiative/execution-plan.md` → Foundation task detail, "runClarifierPipeline()"
+
+22. **NO.** The parent execution plan explicitly specifies `claude-opus-4-6` for Task 1.2 (line 105): "Model: `claude-opus-4-6` (vision Layer 5: reasoning)." The challenge report identified this as a clear violation when the implementation plan proposed Sonnet. Structured intent extraction from ambiguous raw input requires stronger reasoning. Sonnet is used for Tasks 1.3 and 1.5, not 1.2.
+    - `docs/plans/active/clarifier-initiative/execution-plan.md` → Task 1.2 detail, "Model: `claude-opus-4-6`"
+    - Challenge report in `~/.claude/plans/abstract-soaring-seal.md` → "PRD Analyzer model" challenge

@@ -534,9 +534,13 @@ designNode(state, ctx)
   ├── designTool === 'browser' → browserDesignWork()
   │     Source: packages/agents-ux/src/design-pipeline/browser-design-work.ts
   │     LLM → submit_design tool-use → DesignSpecV2 JSON
+  │     Post-LLM: promoteToCatalog() promotes container→Section, container→Form,
+  │       header→PageHeader when pattern-matching detects high-confidence matches
+  │       (source: packages/agents-ux/src/design-pipeline/promote-to-catalog.ts)
   │     Handles: Chrome Pass injection, screen_type/viewport, navigateTo
   │     Retry: empty-node retry on malformed LLM output
   │     NodeSpec budget: 19/24 optional fields (5 slots headroom)
+  │     Tool schema: 6 accelerator types (section removed; use catalog: Section)
   │     Container treatments: elevated/outlined/flat/inset/separated
   │       (prompt requires 2+ treatments per page with 3+ sections)
   │
@@ -725,6 +729,27 @@ designNode(state, ctx)
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+### Phase 1.1: Structural-Only Evaluation (Deterministic)
+
+**Source:** `packages/agents-ux/src/ux-design/structural-quality-gate.ts`
+**Pipeline entry:** `evaluatorNode()` in `packages/agents-ux/src/design-pipeline/nodes.ts`
+
+The pipeline evaluator runs two deterministic structural checks on the DesignSpec
+JSON. No screenshot, no LLM call, no browser required. Runs on every pipeline
+execution (no feature gate).
+
+**Scoring:** `score = max(0, 100 - min(totalDeductions, MAX_STRUCTURAL_DEDUCTION))`
+
+| Check | Source | Deduction | Trigger |
+|-------|--------|-----------|---------|
+| Container treatment diversity | `assess-container-diversity.ts` | -10 | 3+ top-level sections all use identical treatment |
+| Catalog adoption ratio | `assess-catalog-adoption.ts` | -10 | >70% accelerator nodes AND promotable patterns exist |
+| **Combined cap** | `MAX_STRUCTURAL_DEDUCTION = 20` | max -20 | Sum of above, capped |
+
+**Output:** `DesignEvaluation` with `structural: true` flag. When the vision LLM
+is also enabled (`evaluateDesign()`), structural deductions are applied ON TOP of
+the vision score, sharing the same 20-point cap.
+
 ### Input Context (compact, not raw JSON)
 
 The evaluator sends a **compact tree representation** of the DesignSpec, not the raw JSON. The vision LLM sees the screenshot — it already knows layout, spacing, and colors. The text context conveys only intent: component names, text content, catalog entries, `navigateTo` targets, and background token references.
@@ -774,6 +799,7 @@ Vertex AI basic quota for claude-opus-4-7 can be as low as 4,000 TPM. The compac
 | Text overlap | Text nodes overlapping | -10 |
 | navigateTo compliance | Planning vs spec binding count | -5 per missing |
 | Container diversity | 3+ sections same treatment | -10 |
+| Catalog adoption | >70% accelerator nodes with promotable patterns | -10 |
 
 ---
 

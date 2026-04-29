@@ -97,6 +97,10 @@ export { buildDesignSystemContext, buildDesignSystemContextFromSpec, buildCompon
 export type { DesignIssue, DesignEvaluation, CorrectionHistory, FixAttemptRecord } from './ux-design/design-evaluator.js';
 export { evaluateDesign } from './ux-design/design-evaluator.js';
 
+// Structural Quality Gate
+export type { StructuralQualityResult } from './ux-design/structural-quality-gate.js';
+export { runStructuralQualityGate } from './ux-design/structural-quality-gate.js';
+
 // Correction Loop (shared)
 export type { CorrectionAdapter, CorrectionLoopOptions, CorrectionLoopResult, CorrectionFixResult } from './ux-design/correction-loop.js';
 export { runCorrectionLoop } from './ux-design/correction-loop.js';
@@ -196,6 +200,8 @@ export {
   buildBrowserDesignUserMessage,
   runDesignPipeline,
 } from './design-pipeline/index.js';
+export type { PipelinePreset, PipelineRoleKey } from './design-pipeline/index.js';
+export { PIPELINE_PRESETS, PIPELINE_ROLE_KEYS, AVAILABLE_MODELS } from './design-pipeline/index.js';
 
 // Feedback Adapters (Phase 2 Task 2.5 — unified feedback loop)
 export type { FeedbackAdapter, DesignSpecPatch } from './feedback/index.js';

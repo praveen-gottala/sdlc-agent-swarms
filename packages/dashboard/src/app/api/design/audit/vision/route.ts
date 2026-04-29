@@ -3,7 +3,7 @@ import { readDesignSpecText } from '@agentforge/core';
 import { readYamlFile, getActiveProjectRoot } from '../../../_lib/project-reader';
 import { getVisionProvider, NO_CLAUDE_AUTH_ERROR } from '../../../_lib/llm-provider';
 import type { DesignSpecV2, RendererTokens, RawCatalogSpec } from '@agentforge/designspec-renderer';
-import { EVALUATOR_MODEL, isVisionLLMEnabled } from '@agentforge/core';
+import { EVALUATOR_MODEL, isVisionLLMEnabled, loadProjectManifest, createRealFs, resolveModelForRole } from '@agentforge/core';
 import type { DesignTokensSpec } from '@agentforge/core';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Vision LLM is disabled (AGENTFORGE_ENABLE_VISION_LLM=false)' }, { status: 503 });
   }
 
-  const providerResult = getVisionProvider(EVALUATOR_MODEL);
+  const projectRoot = getActiveProjectRoot();
+  const manifestResult = loadProjectManifest(projectRoot, createRealFs());
+  const manifest = manifestResult.ok ? manifestResult.value : undefined;
+  const evaluatorModel = resolveModelForRole('ux_evaluator', EVALUATOR_MODEL, manifest);
+  const providerResult = getVisionProvider(evaluatorModel);
   if (!providerResult) {
     return NextResponse.json({ error: NO_CLAUDE_AUTH_ERROR }, { status: 503 });
   }

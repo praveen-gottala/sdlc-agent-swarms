@@ -1,0 +1,58 @@
+{
+  "briefId": "brief-page-b0a-dedup-probe-1776849502128-user-setti-mo9ubef4-1776849502128",
+  "moduleId": "page-b0a-dedup-probe-1776849502128-user-setti-mo9ubef4",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Must use 8px spacing unit grid system with scale values [4, 8, 12, 16, 24, 32, 48, 64]px",
+    "Background must use background-primary token (deep-navy #0F172A) consistent with global app dark theme",
+    "Form sections and setting groups must use surface-primary (navy-surface #1E293B) cards with elevation level 1 shadow (0 1px 4px rgba(0,0,0,0.3))",
+    "Input fields must use surface-input (deep-navy #0F172A) background with slate-border (#334155) default border and gold-amber (#F59E0B) focus border",
+    "Primary CTA (Save/Done) must use cta-primary gold-amber (#F59E0B) background with text-on-cta deep-navy (#0F172A) text, matching dashboard and add-expense CTA patterns",
+    "Typography must use DM Sans (display) for headings and DM Mono (body) for form labels and values",
+    "Border radius must follow token scale: small=6px for inputs, medium=10px for cards, large=16px for section containers, pill=9999px for chip-style toggles",
+    "Maximum 3 levels of visual hierarchy: page title → section heading → field label",
+    "Desktop-first single-column layout with max content width of 1280px and 24px grid margins",
+    "All interactive elements must meet minimum touch target size of 44×44px",
+    "Navigation back to Dashboard via Save/Done button must be a full-width or prominent primary button at the bottom of the form",
+    "Consistent TopBar component usage matching dashboard, add-expense, and spending-insights pages",
+    "NavigationTabs shared component must appear at the bottom consistent with other approved pages",
+    "Settings sections should be grouped into logical cards (e.g., Profile, Preferences) using the card-based data display pattern established in the dashboard"
+  ],
+  "referencePatterns": [
+    "Card-based section grouping pattern from Dashboard BudgetSummaryCard and CategoryDonutChart layout",
+    "Full-width primary CTA button pattern from Add Expense SaveExpenseButton",
+    "Chip selector pattern from Add Expense PaymentMethodChipRow for preference toggles (e.g., currency, locale)",
+    "TopBar with back navigation arrow pattern consistent with Add Expense screen",
+    "NavigationTabs bottom bar pattern shared across dashboard, add-expense, and spending-insights",
+    "Form input field pattern from Add Expense NoteInput with DM Mono body font and slate-border default state",
+    "Settings drawer content pattern from existing approved Settings screen for field grouping reference",
+    "Section divider pattern using slate-border (#334155) horizontal rules between setting groups",
+    "Label + value row pattern from ExpenseRow in RecentExpensesList for read-only profile display fields",
+    "Focus ring pattern: 2px gold-amber outline with 2px offset on all interactive inputs and buttons"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of at least 4.5:1 for all body text — silver-text (#CBD5E1) on deep-navy (#0F172A) achieves approximately 10.9:1",
+    "WCAG 2.1 AA color contrast ratio of at least 4.5:1 for form labels — silver-text (#CBD5E1) on navy-surface (#1E293B) achieves approximately 8.9:1",
+    "WCAG 2.1 AA color contrast ratio of at least 3:1 for large text and UI components — gold-amber (#F59E0B) on deep-navy (#0F172A) achieves approximately 8.5:1",
+    "All form inputs must have associated visible <label> elements or aria-label attributes for screen reader compatibility",
+    "Save/Done button must have descriptive aria-label indicating action and destination (e.g., 'Save settings and return to Dashboard')",
+    "Keyboard navigable form with logical tab order: TopBar → settings sections top-to-bottom → Save/Done CTA → NavigationTabs",
+    "Focus ring must be visible on all interactive elements using 2px gold-amber (#F59E0B) outline with 2px offset per design token state.focus_ring",
+    "Error states on form fields must use coral-error (#F87171) border and inline error message with role='alert' for screen reader announcement",
+    "Success confirmation (post-save) must be announced via aria-live region or toast notification",
+    "Section headings must use semantic HTML heading hierarchy (h1 for page title, h2 for section titles) for screen reader navigation",
+    "Chip/toggle preference selectors must use role='radio' or role='switch' with aria-checked state as appropriate",
+    "Minimum touch target size of 44×44px for all interactive controls per design token touch_targets specification",
+    "Page must have a descriptive <title> element and landmark regions (main, nav) for screen reader orientation",
+    "Disabled form states must use disabled_opacity of 0.38 and include aria-disabled='true' attribute"
+  ],
+  "dataModelDependencies": [
+    "UserSettings entity — fields: id, currency, default_monthly_budget, locale, created_at, updated_at (from user-settings model, db_table: user_settings)",
+    "GET /api/settings endpoint — fetch current user settings for pre-filling profile and preference fields",
+    "PUT /api/settings endpoint — persist updated currency preference, default monthly budget, and locale on Save/Done action",
+    "Budget entity — default_monthly_budget field referenced via UserSettings for budget preference display and editing",
+    "Category entity — may be referenced for default category preference if profile settings include expense categorization defaults"
+  ]
+}

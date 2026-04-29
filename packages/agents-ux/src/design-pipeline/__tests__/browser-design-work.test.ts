@@ -2,7 +2,7 @@ import { browserDesignWork, buildBrowserDesignUserMessage } from '../browser-des
 import type { DesignPhaseState, NodeContext, PipelineStageError } from '../types.js';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { createRealFs } from '@agentforge/core';
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, CatalogMap } from '@agentforge/designspec-renderer';
 
 // ── Helpers ──
 
@@ -251,5 +251,23 @@ describe('buildBrowserDesignUserMessage', () => {
     const msg = buildBrowserDesignUserMessage(state);
     expect(msg).toContain('Planning Output:');
     expect(msg).toContain('"specRef"');
+  });
+
+  it('excludes catalog mapping guide when catalogMap is undefined', () => {
+    const state = createState({ catalogMap: undefined });
+    const msg = buildBrowserDesignUserMessage(state);
+    expect(msg).not.toContain('Catalog Mapping Guide');
+  });
+
+  it('includes catalog mapping guide when catalogMap is provided', () => {
+    const state = createState({
+      catalogMap: { Section: { variants: {} } } as unknown as CatalogMap,
+    });
+    const msg = buildBrowserDesignUserMessage(state);
+    expect(msg).toContain('Catalog Mapping Guide');
+    expect(msg).toContain('catalog: "Section"');
+    expect(msg).toContain('catalog: "Form"');
+    expect(msg).toContain('catalog: "PageHeader"');
+    expect(msg).toContain('ONLY for pure layout wrappers');
   });
 });

@@ -15,6 +15,7 @@ interface DesignOptionsRequest {
   targetAudience?: string;
   prdContent?: string;
   useFallback?: boolean;
+  colorScheme?: 'light' | 'dark' | 'both';
 }
 
 type FallbackReason = 'user_choice' | 'no_api_key' | 'llm_error';
@@ -23,7 +24,7 @@ type FallbackReason = 'user_choice' | 'no_api_key' | 'llm_error';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = (await request.json()) as DesignOptionsRequest;
-    const { appName, description, targetAudience, prdContent, useFallback } = body;
+    const { appName, description, targetAudience, prdContent, useFallback, colorScheme } = body;
 
     if (!appName || typeof appName !== 'string') {
       return NextResponse.json({ error: 'appName is required' }, { status: 400 });
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             description: description ?? '',
             targetAudience: targetAudience ?? '',
             prdContent,
+            colorScheme,
           });
           source = 'llm';
           debugLog(`design-options: LLM generation succeeded (auth=${claude.authMethod})`);
@@ -79,25 +81,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 /** Call Claude via provider to generate design options (supports both direct API and Vertex AI). */
 async function generateOptionsViaLLM(
   provider: import('@agentforge/providers').LLMProvider,
-  context: { appName: string; description: string; targetAudience: string; prdContent?: string },
+  context: { appName: string; description: string; targetAudience: string; prdContent?: string; colorScheme?: 'light' | 'dark' | 'both' },
 ): Promise<DesignOption[]> {
-  const appContext = context.prdContent
-    ? `- App name: ${context.appName}\n\nPRD:\n${context.prdContent}`
-    : `- App name: ${context.appName}\n- Description: ${context.description || 'A web application'}\n- Target audience: ${context.targetAudience || 'general'}`;
+  const effectiveAudience = (context.targetAudience && context.targetAudience !== 'general')
+    ? context.targetAudience
+    : extractAudienceFromPrd(context.prdContent);
 
-  const systemPrompt = `You are a design system expert. Generate 3 distinct design direction options for a web application.
+  const appContext = context.prdContent
+    ? `- App name: ${context.appName}\n- Target audience: ${effectiveAudience}\n\nPRD:\n${context.prdContent}`
+    : `- App name: ${context.appName}\n- Description: ${context.description || 'A web application'}\n- Target audience: ${effectiveAudience}`;
+
+  const schemeConstraint = context.colorScheme && context.colorScheme !== 'both'
+    ? `\n\nCOLOR SCHEME CONSTRAINT: The user selected "${context.colorScheme}" mode. All 3 options MUST use a ${context.colorScheme} color scheme. For light: background-primary must be a light color (white, off-white, cream — luminance >= #F0F0F0). For dark: background-primary must be a dark color (charcoal, near-black — luminance <= #1A1A1A).`
+    : '';
+
+  const systemPrompt = `You are a design system expert creating contemporary, production-quality design systems. Generate 3 distinct design direction options for a web application.
 
 Each option MUST feel genuinely different from the others — not 3 variations of the same mood.
 Vary across these axes: color temperature (warm vs cool vs neutral), energy level (calm vs energetic vs bold), aesthetic era (classic vs contemporary vs futuristic), and personality (playful vs serious vs elegant).
 
-IMPORTANT: Do NOT default to the same 3 categories every time (e.g. always "professional", "warm", "bold"). Surprise the user with unexpected directions like retro, minimalist-zen, cyberpunk, nature-inspired, editorial, brutalist, art-deco, nordic, tropical, etc. Tailor the directions to the app's purpose and audience.
+IMPORTANT: Do NOT default to the same 3 categories every time (e.g. always "professional", "warm", "bold"). Surprise the user with unexpected directions like minimalist-zen, nature-inspired, editorial, nordic, tropical, etc. Tailor the directions to the app's purpose and audience.
+
+Modern design guidance:
+- Use contemporary typefaces popular in 2024-2025 design. Prefer: Inter, Plus Jakarta Sans, DM Sans, Geist, Satoshi, Manrope, Outfit, Sora, Figtree. Avoid dated/retro condensed display fonts (Bebas Neue, Impact, Oswald, Russo One) unless the direction specifically calls for retro aesthetic.
+- Color palettes should feel current and polished. For light themes: warm whites, subtle grays, one vibrant accent. For dark themes: deep neutrals (not pure black #000), muted or refined accents — avoid gaming/crypto aesthetics (amber-on-black, neon-on-dark).
+- Typography scale should have visual impact: heading-1 >= 36px, body >= 15px.
+- Elevation shadows should be subtle and color-tinted (tint shadows toward the brand color), not uniform grayscale rgba(0,0,0,0.x).
 
 Rules:
 - 5-8 primitive colors per option, using kebab-case names (e.g. "deep-teal", "warm-cream")
 - Semantic color values should reference primitive color names (except overlay which is an rgba value)
 - Use real Google Fonts that pair well
 - Ensure sufficient contrast between background-primary and text-primary (WCAG AA)
-- Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)
+- Elevation shadows should feel cohesive with the design direction (4 levels: flat, cards, dropdowns, modals)${schemeConstraint}
 
 Return a JSON object with an "options" array of 3 objects, each with:
 - label: string (creative, evocative name — e.g. "Nordic Clarity", "Sunset Studio", "Electric Ink")
@@ -149,6 +165,25 @@ Return a JSON object with an "options" array of 3 objects, each with:
       : colors.primitive;
     return { ...opt, colors: { primitive, semantic: colors.semantic } } as unknown as DesignOption;
   });
+}
+
+/** Extract target audience from PRD text when not explicitly provided. */
+function extractAudienceFromPrd(prdContent?: string): string {
+  if (!prdContent) return 'general users';
+  const patterns = [
+    /target\s+audience[:\s]+([^\n.]+)/i,
+    /intended\s+(?:for|users?)[:\s]+([^\n.]+)/i,
+    /(?:primary|target)\s+users?[:\s]+([^\n.]+)/i,
+    /persona[s]?[:\s]+([^\n.]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = prdContent.match(pattern);
+    if (match?.[1]) {
+      const audience = match[1].trim();
+      if (audience.length > 5 && audience.length < 200) return audience;
+    }
+  }
+  return 'general users';
 }
 
 /** Inject floating select button and postMessage communication into preview HTML. */

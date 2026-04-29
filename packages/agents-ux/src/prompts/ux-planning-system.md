@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.2.0
 purpose: System prompt for the UX planning agent. Produces component tree with token bindings and responsive rules.
 ---
 
@@ -173,6 +173,19 @@ When design tokens from `design-tokens.yaml` are provided in the user message, y
 - **Animation properties** (duration, easing): Use `duration-base`, `easing-default` — NOT raw values like `200`
 
 If the user message includes a `VALID TOKEN NAMES` section, you MUST use ONLY names from that allowlist. Any name not in the allowlist will cause a downstream resolution failure and trigger an automatic correction retry.
+
+## Structural Component Naming Convention
+
+When naming structural components in your componentTree, use suffixes that help the design agent select the correct catalog entries:
+
+- Use `...Section` suffix for titled content groups (maps to `catalog: "Section"`)
+- Use `...Form` suffix for groups of input fields (maps to `catalog: "Form"`)
+- Use `...Header` suffix for page-level headers (maps to `catalog: "PageHeader"`)
+- Use `...Footer` suffix for page footers (maps to `catalog: "Footer"`)
+
+Example: `ProfileSection`, `ContactForm`, `DashboardHeader`, `AppFooter`
+
+These suffixes are domain-agnostic — combine them with your domain-specific prefixes: `BudgetSection`, `ExpenseForm`, `InsightsHeader`.
 
 ## Using Component Library
 

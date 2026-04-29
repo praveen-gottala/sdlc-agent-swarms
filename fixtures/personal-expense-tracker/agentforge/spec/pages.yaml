@@ -59,6 +59,10 @@ pages:
       - target: settings
         trigger: Open settings drawer
         source_node: topbar-logo
+      - target: settings
+        trigger: Open settings drawer
+        source_node: topbar-logo
+    correctionIteration: 1
   - id: add-expense
     name: Add Expense
     description: A focused single-column form for logging new expenses or editing existing ones. Features a hero amount
@@ -364,3 +368,23 @@ pages:
         trigger: Click 'Confirm' button to delete expense and return to dashboard
       - target: dashboard
         trigger: Click 'Cancel' button to dismiss dialog and return to dashboard
+  - id: settings
+    name: Settings
+    description: User settings drawer
+    route: /settings
+    status: approved
+    screen_type: drawer
+    navigates_to:
+      - target: dashboard
+        trigger: Close or dismiss the settings drawer
+  - id: confirm-delete
+    name: Confirm Delete
+    description: Confirmation dialog for deleting expense
+    route: /confirm-delete
+    status: approved
+    screen_type: modal
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Confirm' button to delete the expense and return to Dashboard
+      - target: dashboard
+        trigger: Click 'Cancel' button to dismiss dialog and return to Dashboard

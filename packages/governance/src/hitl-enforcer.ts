@@ -34,6 +34,7 @@ export interface HITLEnforcer {
  * Mapping from SDLC action phases to HITL override phases.
  */
 const PHASE_MAPPING: Readonly<Record<string, HITLPhase>> = {
+  clarify: 'clarification',
   design: 'design',
   spec: 'spec_review',
   code: 'code_generation',

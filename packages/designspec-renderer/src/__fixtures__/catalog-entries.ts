@@ -388,6 +388,48 @@ const ILLUSTRATION: CatalogEntry = {
   },
 };
 
+/** Section with heading anatomy. */
+const SECTION: CatalogEntry = {
+  type: 'section',
+  background: 'transparent',
+  radius: 0,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'section', note: 'Semantic section with heading' },
+  },
+};
+
+/** Page header with title. */
+const PAGE_HEADER: CatalogEntry = {
+  type: 'page-header',
+  background: 'surface-primary',
+  height: 64,
+  required_fields: [],
+  library: {
+    shadcn: { component: 'div', note: 'Banner with heading' },
+  },
+};
+
+/** Footer area. */
+const FOOTER: CatalogEntry = {
+  type: 'footer',
+  background: 'transparent',
+  required_fields: [],
+  library: {
+    shadcn: { component: 'footer', note: 'Semantic footer' },
+  },
+};
+
+/** Form wrapper. */
+const FORM: CatalogEntry = {
+  type: 'form',
+  background: 'transparent',
+  required_fields: [],
+  library: {
+    shadcn: { component: 'form', note: 'Semantic form' },
+  },
+};
+
 /** All V2 built-in catalog entries. */
 export const V2_BUILTIN_CATALOG: CatalogMap = {
   'input-text': INPUT_TEXT,
@@ -415,4 +457,8 @@ export const V2_BUILTIN_CATALOG: CatalogMap = {
   'icon': ICON,
   'image': IMAGE,
   'illustration': ILLUSTRATION,
+  'Section': SECTION,
+  'page-header': PAGE_HEADER,
+  'footer': FOOTER,
+  'form': FORM,
 };

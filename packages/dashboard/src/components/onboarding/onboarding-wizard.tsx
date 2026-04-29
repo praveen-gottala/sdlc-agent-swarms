@@ -95,6 +95,7 @@ export function OnboardingWizard() {
           targetAudience,
           prdContent: prdContent || undefined,
           useFallback,
+          colorScheme,
         }),
       });
       if (!res.ok) {

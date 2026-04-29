@@ -9,7 +9,7 @@
  * - NodeSpec uses 19 of 24 optional fields (5 slots of headroom)
  * - Phase 1 migrated textAlign, helper, title to overrides
  * - layout sub-object: 1 required + 10 optional (dir + display/columns/wrap/gap/align/justify/px/py/pt/pb)
- * - 2 union types: AcceleratorType (7 members), width (number | 'fill') — well under 16 limit
+ * - 2 union types: AcceleratorType (6 in tool schema; 'section' removed — use catalog: "Section"), width (number | 'fill') — well under 16 limit
  * - Zero recursion
  */
 
@@ -77,14 +77,13 @@ export const SUBMIT_DESIGN_TOOL: ToolDefinition = {
               enum: [
                 'page',
                 'container',
-                'section',
                 'header',
                 'divider',
                 'spacer',
                 'text',
               ],
               description:
-                'Inline accelerator type. Use this for structural/layout primitives. Mutually exclusive with catalog.',
+                'Inline accelerator type. Use this for structural/layout primitives. Mutually exclusive with catalog. Prefer catalog entries (e.g. catalog: "Section", catalog: "PageHeader") over type when a catalog entry exists.',
             },
             catalog: {
               type: 'string',

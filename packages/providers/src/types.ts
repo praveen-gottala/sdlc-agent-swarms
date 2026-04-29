@@ -131,7 +131,7 @@ export type StreamChunk =
 
 /** Errors returned by provider operations. */
 export type ProviderError =
-  | { readonly code: 'RATE_LIMITED'; readonly retryAfterMs: number }
+  | { readonly code: 'RATE_LIMITED'; readonly retryAfterMs: number; readonly message?: string }
   | { readonly code: 'PROVIDER_DOWN'; readonly status: number; readonly message: string }
   | { readonly code: 'INVALID_RESPONSE'; readonly raw: string }
   | { readonly code: 'AUTH_FAILED'; readonly message: string }

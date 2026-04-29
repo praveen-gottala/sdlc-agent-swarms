@@ -218,7 +218,7 @@ const NUMERIC_FIELDS = new Set([
 ]);
 const DIMENSION_FIELDS = new Set(['width']); // accepts number | 'fill'
 const ENUM_FIELDS: Record<string, readonly string[]> = {
-  type: ['page', 'container', 'section', 'header', 'divider', 'spacer', 'text'],
+  type: ['page', 'container', 'header', 'divider', 'spacer', 'text'],
   textAlign: ['left', 'center', 'right'],
 };
 const LAYOUT_ENUM_FIELDS: Record<string, readonly string[]> = {
@@ -450,6 +450,7 @@ export function createBrowserCorrectionAdapter(
   mechanicalIssues?: readonly MechanicalIssue[],
   tokens?: RendererTokens,
   catalog?: CatalogMap,
+  resolvedEvaluatorModel?: string,
 ): CorrectionAdapter {
   return {
     async captureScreenshot(): Promise<Result<string>> {
@@ -582,7 +583,7 @@ export function createBrowserCorrectionAdapter(
           ],
         },
         {
-          model: EVALUATOR_MODEL,
+          model: resolvedEvaluatorModel ?? EVALUATOR_MODEL,
           maxTokens: 8000,
         },
       );

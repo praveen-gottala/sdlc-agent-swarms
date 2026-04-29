@@ -161,6 +161,12 @@ export async function runCorrectionLoop(
     // eslint-disable-next-line no-console
     console.log(`        [correction ${iterations}] Score: ${evaluation.score}/100 (${evaluation.overallQuality}), issues: ${evaluation.issues.length}`);
 
+    if (evaluation.score === 0 && evaluation.issues.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`        [correction ${iterations}] Score=0 with no issues — likely evaluator parse failure, stopping`);
+      break;
+    }
+
     // 3. Check score regression (noisy evaluator detection)
     if (previousScore >= 0 && evaluation.score < previousScore) {
       // eslint-disable-next-line no-console

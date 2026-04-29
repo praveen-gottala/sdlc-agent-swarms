@@ -10,11 +10,13 @@ import { McpCard } from '@/components/integrations/mcp-card';
 import { ProviderCard } from '@/components/integrations/provider-card';
 import { DesignToolCard } from '@/components/integrations/design-tool-card';
 import { EscalationPolicy } from '@/components/integrations/escalation-policy';
+import { PipelineModelConfig } from '@/components/integrations/pipeline-model-config';
 
 const tabs = [
   { label: 'Channels', value: 'channels' },
   { label: 'MCP Servers', value: 'mcp' },
   { label: 'LLM Providers', value: 'providers' },
+  { label: 'Design Pipeline', value: 'pipeline-models' },
   { label: 'Design Tools', value: 'design' },
 ];
 
@@ -248,6 +250,10 @@ export default function IntegrationsPage() {
             <ProviderCard key={p.name} {...p} />
           ))}
         </div>
+      )}
+
+      {activeTab === 'pipeline-models' && (
+        <PipelineModelConfig />
       )}
 
       {activeTab === 'design' && (

@@ -40,6 +40,9 @@ export interface PipelineTelemetrySink {
     latencyMs: number;
   }): void;
   onLog(stage: string, level: 'info' | 'warn' | 'error', message: string): void;
+  /** Wrap stage execution with tracing context. Implementations that support OTel
+   *  use this to establish parent-child span hierarchy. Default: just call fn(). */
+  wrapStage?<T>(stage: string, attrs: { agentRole: string; moduleId: string; taskId: string }, fn: () => Promise<T>): Promise<T>;
 }
 
 // ============================================================================

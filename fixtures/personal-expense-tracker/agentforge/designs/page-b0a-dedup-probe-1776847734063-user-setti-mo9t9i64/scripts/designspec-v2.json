@@ -1,0 +1,722 @@
+{
+  "screen": "page-b0a-dedup-probe-1776847734063-user-setti-mo9t9i64",
+  "width": 1440,
+  "nodes": {
+    "root": {
+      "parent": null,
+      "order": 0,
+      "type": "page",
+      "width": 1440,
+      "layout": {
+        "dir": "column",
+        "gap": 0,
+        "align": "stretch"
+      },
+      "background": "background-primary"
+    },
+    "top-bar": {
+      "parent": "root",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "gap": 16
+      },
+      "background": "surface-primary",
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "top-bar-back-btn": {
+      "parent": "top-bar",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "← Back",
+      "navigateTo": "dashboard",
+      "overrides": {
+        "icon": "arrow-left"
+      }
+    },
+    "top-bar-title": {
+      "parent": "top-bar",
+      "order": 1,
+      "type": "text",
+      "content": "Settings",
+      "typography": "heading-2",
+      "color": "text-primary",
+      "weight": 700
+    },
+    "top-bar-actions": {
+      "parent": "top-bar",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "top-bar-add-button": {
+      "parent": "top-bar-actions",
+      "order": 0,
+      "catalog": "button-primary",
+      "label": "Add Expense",
+      "navigateTo": "add-expense"
+    },
+    "top-bar-settings-trigger": {
+      "parent": "top-bar-actions",
+      "order": 1,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "settings",
+        "aria-label": "Settings"
+      }
+    },
+    "month-selector": {
+      "parent": "top-bar",
+      "order": 3,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "month-prev-btn": {
+      "parent": "month-selector",
+      "order": 0,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "chevron-left",
+        "aria-label": "Previous month"
+      }
+    },
+    "month-label": {
+      "parent": "month-selector",
+      "order": 1,
+      "type": "text",
+      "content": "November 2024",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "month-next-btn": {
+      "parent": "month-selector",
+      "order": 2,
+      "catalog": "button-ghost",
+      "label": "",
+      "overrides": {
+        "icon": "chevron-right",
+        "aria-label": "Next month"
+      }
+    },
+    "settings-content-wrapper": {
+      "parent": "root",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 0,
+        "py": 32,
+        "px": 24
+      },
+      "background": "background-primary"
+    },
+    "settings-content-area": {
+      "parent": "settings-content-wrapper",
+      "order": 0,
+      "width": 640,
+      "layout": {
+        "dir": "column",
+        "gap": 24
+      },
+      "catalog": "Section",
+      "label": "Profile & Preferences",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "profile-settings-card": {
+      "parent": "settings-content-area",
+      "order": 1,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 10,
+      "catalog": "Section",
+      "label": "Profile",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "profile-section-divider": {
+      "parent": "profile-settings-card",
+      "order": 0,
+      "type": "divider"
+    },
+    "display-name-field-group": {
+      "parent": "profile-settings-card",
+      "order": 2,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "display-name-label": {
+      "parent": "display-name-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Display Name",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "display-name-input": {
+      "parent": "display-name-field-group",
+      "order": 1,
+      "catalog": "input-text",
+      "label": "",
+      "placeholder": "e.g. Alex Johnson",
+      "value": "Alex Johnson",
+      "width": "fill",
+      "overrides": {
+        "border-radius": "6px"
+      }
+    },
+    "email-field-group": {
+      "parent": "profile-settings-card",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "email-label": {
+      "parent": "email-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Email Address",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "email-input": {
+      "parent": "email-field-group",
+      "order": 1,
+      "catalog": "input-text",
+      "label": "",
+      "placeholder": "alex@example.com",
+      "value": "alex.johnson@example.com",
+      "width": "fill",
+      "overrides": {
+        "border-radius": "6px"
+      }
+    },
+    "locale-field-group": {
+      "parent": "profile-settings-card",
+      "order": 4,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "locale-field-label": {
+      "parent": "locale-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Locale",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "locale-select-input": {
+      "parent": "locale-field-group",
+      "order": 1,
+      "catalog": "select",
+      "label": "",
+      "value": "en-US",
+      "width": "fill",
+      "overrides": {
+        "border-radius": "6px",
+        "aria-label": "Select locale"
+      },
+      "items": [
+        {
+          "label": "English (US)",
+          "value": "en-US"
+        },
+        {
+          "label": "English (UK)",
+          "value": "en-GB"
+        },
+        {
+          "label": "Español (ES)",
+          "value": "es-ES"
+        },
+        {
+          "label": "Français (FR)",
+          "value": "fr-FR"
+        },
+        {
+          "label": "Deutsch (DE)",
+          "value": "de-DE"
+        }
+      ]
+    },
+    "preferences-settings-card": {
+      "parent": "settings-content-area",
+      "order": 2,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-secondary",
+      "radius": 10,
+      "overrides": {
+        "border": "1px solid var(--border-default)",
+        "__promoted": true
+      },
+      "catalog": "Section",
+      "label": "Preferences"
+    },
+    "preferences-section-divider": {
+      "parent": "preferences-settings-card",
+      "order": 0,
+      "type": "divider"
+    },
+    "currency-field-group": {
+      "parent": "preferences-settings-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "currency-field-label": {
+      "parent": "currency-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Currency",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "currency-chip-row": {
+      "parent": "currency-field-group",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "wrap": true
+      }
+    },
+    "chip-usd": {
+      "parent": "currency-chip-row",
+      "order": 0,
+      "catalog": "chip",
+      "label": "USD $",
+      "overrides": {
+        "selected": true
+      }
+    },
+    "chip-eur": {
+      "parent": "currency-chip-row",
+      "order": 1,
+      "catalog": "chip",
+      "label": "EUR €"
+    },
+    "chip-gbp": {
+      "parent": "currency-chip-row",
+      "order": 2,
+      "catalog": "chip",
+      "label": "GBP £"
+    },
+    "chip-jpy": {
+      "parent": "currency-chip-row",
+      "order": 3,
+      "catalog": "chip",
+      "label": "JPY ¥"
+    },
+    "chip-cad": {
+      "parent": "currency-chip-row",
+      "order": 4,
+      "catalog": "chip",
+      "label": "CAD $"
+    },
+    "chip-aud": {
+      "parent": "currency-chip-row",
+      "order": 5,
+      "catalog": "chip",
+      "label": "AUD $"
+    },
+    "theme-field-group": {
+      "parent": "preferences-settings-card",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "theme-field-label": {
+      "parent": "theme-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Theme",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "theme-segmented": {
+      "parent": "theme-field-group",
+      "order": 1,
+      "catalog": "segmented-control",
+      "width": "fill",
+      "options": [
+        {
+          "label": "System",
+          "selected": false
+        },
+        {
+          "label": "Light",
+          "selected": false
+        },
+        {
+          "label": "Dark",
+          "selected": true
+        }
+      ]
+    },
+    "notifications-row": {
+      "parent": "preferences-settings-card",
+      "order": 4,
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "gap": 16
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "notifications-label-group": {
+      "parent": "notifications-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "notifications-label": {
+      "parent": "notifications-label-group",
+      "order": 0,
+      "type": "text",
+      "content": "Budget Alerts",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "notifications-sublabel": {
+      "parent": "notifications-label-group",
+      "order": 1,
+      "type": "text",
+      "content": "Notify when spending exceeds budget thresholds",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "notifications-switch": {
+      "parent": "notifications-row",
+      "order": 1,
+      "catalog": "switch",
+      "label": "",
+      "value": "on"
+    },
+    "budget-settings-card": {
+      "parent": "settings-content-area",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 24,
+        "py": 24
+      },
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 10,
+      "catalog": "Section",
+      "label": "Budget",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "budget-section-divider": {
+      "parent": "budget-settings-card",
+      "order": 0,
+      "type": "divider"
+    },
+    "default-budget-field-group": {
+      "parent": "budget-settings-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 8
+      }
+    },
+    "default-budget-field-label": {
+      "parent": "default-budget-field-group",
+      "order": 0,
+      "type": "text",
+      "content": "Default Monthly Budget",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "default-budget-input": {
+      "parent": "default-budget-field-group",
+      "order": 1,
+      "catalog": "input-currency",
+      "label": "",
+      "placeholder": "e.g. 2000",
+      "value": "3500",
+      "width": "fill",
+      "overrides": {
+        "border-radius": "6px",
+        "type": "number",
+        "aria-label": "Default monthly budget amount"
+      }
+    },
+    "default-budget-helper": {
+      "parent": "default-budget-field-group",
+      "order": 2,
+      "type": "text",
+      "content": "This amount will be used as the default budget for each new month.",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "rollover-row": {
+      "parent": "budget-settings-card",
+      "order": 3,
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "gap": 16
+      },
+      "catalog": "Form",
+      "overrides": {
+        "__promoted": true
+      }
+    },
+    "rollover-label-group": {
+      "parent": "rollover-row",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "rollover-label": {
+      "parent": "rollover-label-group",
+      "order": 0,
+      "type": "text",
+      "content": "Rollover Unused Budget",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "rollover-sublabel": {
+      "parent": "rollover-label-group",
+      "order": 1,
+      "type": "text",
+      "content": "Carry unspent budget forward to the next month",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "rollover-switch": {
+      "parent": "rollover-row",
+      "order": 1,
+      "catalog": "switch",
+      "label": "",
+      "value": "off"
+    },
+    "save-settings-btn": {
+      "parent": "settings-content-area",
+      "order": 3,
+      "catalog": "button-primary",
+      "label": "Save Settings",
+      "width": "fill",
+      "navigateTo": "dashboard",
+      "overrides": {
+        "aria-label": "Save settings and return to Dashboard",
+        "border-radius": "10px",
+        "min-height": "44px"
+      }
+    },
+    "settings-saved-toast": {
+      "parent": "settings-content-area",
+      "order": 4,
+      "catalog": "alert-success",
+      "label": "Settings saved successfully",
+      "width": "fill",
+      "overrides": {
+        "aria-live": "polite",
+        "border-radius": "10px"
+      }
+    },
+    "nav-tabs": {
+      "parent": "root",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "height": 64,
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "px": 24,
+        "gap": 0
+      },
+      "background": "surface-primary",
+      "overrides": {
+        "borderTop": "1px solid var(--border-default)"
+      }
+    },
+    "nav-tab-home": {
+      "parent": "nav-tabs",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 4,
+        "py": 8,
+        "px": 16
+      },
+      "navigateTo": "dashboard"
+    },
+    "nav-tab-home-icon": {
+      "parent": "nav-tab-home",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "home"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-home-label": {
+      "parent": "nav-tab-home",
+      "order": 1,
+      "type": "text",
+      "content": "Home",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "nav-tab-add-expense": {
+      "parent": "nav-tabs",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 4,
+        "py": 8,
+        "px": 16
+      },
+      "navigateTo": "add-expense"
+    },
+    "nav-tab-add-icon": {
+      "parent": "nav-tab-add-expense",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "plus"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-add-label": {
+      "parent": "nav-tab-add-expense",
+      "order": 1,
+      "type": "text",
+      "content": "Add Expense",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "nav-tab-insights": {
+      "parent": "nav-tabs",
+      "order": 2,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "align": "center",
+        "gap": 4,
+        "py": 8,
+        "px": 16
+      },
+      "navigateTo": "spending-insights"
+    },
+    "nav-tab-insights-icon": {
+      "parent": "nav-tab-insights",
+      "order": 0,
+      "catalog": "icon",
+      "overrides": {
+        "name": "bar-chart"
+      },
+      "color": "text-secondary"
+    },
+    "nav-tab-insights-label": {
+      "parent": "nav-tab-insights",
+      "order": 1,
+      "type": "text",
+      "content": "Insights",
+      "typography": "small",
+      "color": "text-secondary"
+    }
+  }
+}
