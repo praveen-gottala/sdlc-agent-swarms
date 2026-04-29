@@ -18,12 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-mantine-color-scheme="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <ColorSchemeScript forceColorScheme="dark" />
+        <ColorSchemeScript defaultColorScheme="dark" />
       </head>
       <body className="min-h-screen bg-bg-base text-text-primary antialiased">
-        <MantineProvider theme={chipTheme} forceColorScheme="dark">
+        <MantineProvider theme={chipTheme} defaultColorScheme="dark">
           <Notifications position="top-right" />
           {children}
         </MantineProvider>

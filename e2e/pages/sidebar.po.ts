@@ -13,23 +13,27 @@ export class SidebarPO {
   async isNavItemActive(label: string): Promise<boolean> {
     const slug = label.toLowerCase().replace(/\s+/g, '-');
     const el = this.page.getByTestId(`nav-${slug}`);
-    const cls = (await el.getAttribute('class')) ?? '';
-    return cls.includes('bg-accent-blue');
+    const active = await el.getAttribute('data-active');
+    return active === 'true';
   }
 
-  /** Open the project switcher dropdown. */
+  /** Open the project switcher dropdown (Mantine Select). */
   async openProjectSwitcher() {
     await this.page.getByTestId('project-switcher').click();
   }
 
-  /** Select a project from the open dropdown by name. */
+  /** Select a project from the open Mantine Select dropdown by name. */
   async selectProject(name: string) {
-    await this.page.getByRole('button', { name }).click();
+    await this.page.getByRole('option', { name }).click();
   }
 
-  /** Get the currently displayed project name. */
+  /** Get the currently displayed project name from the Mantine Select. */
   async getProjectName(): Promise<string> {
-    return (await this.page.getByTestId('project-name').textContent()) ?? '';
+    const switcher = this.page.getByTestId('project-switcher');
+    return switcher.evaluate((el) => {
+      if (el instanceof HTMLInputElement) return el.value || el.placeholder;
+      return el.textContent?.trim() || '';
+    });
   }
 
   /** Toggle sidebar collapse/expand. */

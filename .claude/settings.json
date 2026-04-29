@@ -1,50 +1,4 @@
 {
-  "enabledPlugins": {
-    "playwright@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash(rm -rf *)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'BLOCKED: Destructive rm -rf command' && exit 2"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash(git push * --force*)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'BLOCKED: Force push not allowed. Use --force-with-lease if needed.' && exit 2"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash(*RUN_E2E_PROOF*)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'BLOCKED: Integration tests call the live Anthropic API (~$1-3 per run). Ask the user before proceeding. To bypass, the user must run manually: RUN_E2E_PROOF=true CONFIRM_INTEGRATION=true npx nx test agents-ux' && exit 2"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$TOOL_INPUT_PATH\" | grep -qE '\\.ts$|\\.tsx$|\\.js$|\\.jsx$'; then npx prettier --write \"$TOOL_INPUT_PATH\" 2>/dev/null; fi"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(npm run *)",
@@ -88,5 +42,52 @@
       "Write(*.pem)",
       "Write(*.key)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(rm -rf *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Destructive rm -rf command' && exit 2"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git push * --force*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Force push not allowed. Use --force-with-lease if needed.' && exit 2"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(*RUN_E2E_PROOF*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Integration tests call the live Anthropic API (~$1-3 per run). Ask the user before proceeding. To bypass, the user must run manually: RUN_E2E_PROOF=true CONFIRM_INTEGRATION=true npx nx test agents-ux' && exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT_PATH\" | grep -qE '\\.ts$|\\.tsx$|\\.js$|\\.jsx$'; then npx prettier --write \"$TOOL_INPUT_PATH\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
   }
 }

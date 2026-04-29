@@ -8,30 +8,27 @@ test.describe('Project Switching', () => {
     setActiveProject(PET_ROOT);
     sidebar = new SidebarPO(page);
     await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
   });
 
   test('active project name shows in sidebar', async () => {
     const name = await sidebar.getProjectName();
-    // personal-expense-tracker's agentforge.yaml should have the project name
     expect(name).toBeTruthy();
   });
 
   test('project switcher dropdown lists discovered projects', async ({ page }) => {
     await sidebar.openProjectSwitcher();
-    // Wait for dropdown to appear
-    const dropdown = page.locator('[data-testid^="project-option-"]');
-    await expect(dropdown.first()).toBeVisible({ timeout: 5000 });
+    const options = page.getByRole('option');
+    await expect(options.first()).toBeVisible({ timeout: 5000 });
 
-    const count = await dropdown.count();
+    const count = await options.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('switching to another project reloads the page', async ({ page }) => {
+  test('switching to another project updates the sidebar', async ({ page }) => {
     await sidebar.openProjectSwitcher();
 
-    // Find a project option that is NOT the current active one (not highlighted)
-    const options = page.locator('[data-testid^="project-option-"]');
+    const options = page.getByRole('option');
     const count = await options.count();
 
     if (count < 2) {
@@ -39,27 +36,21 @@ test.describe('Project Switching', () => {
       return;
     }
 
-    // Get current project name
     const currentName = await sidebar.getProjectName();
 
-    // Click the first non-active project option and wait for navigation
+    // Click the first option whose text differs from the current project
     for (let i = 0; i < count; i++) {
-      const cls = (await options.nth(i).getAttribute('class')) ?? '';
-      if (!cls.includes('bg-accent-blue')) {
-        // Wait for the page to reload after clicking
-        await Promise.all([
-          page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }),
-          options.nth(i).click(),
-        ]);
+      const optionText = (await options.nth(i).textContent()) ?? '';
+      if (optionText.trim() !== currentName.trim()) {
+        await options.nth(i).click();
         break;
       }
     }
 
-    // After reload, wait for shell to hydrate
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 15000 });
-
-    // Project name should have changed
-    const newName = await sidebar.getProjectName();
-    expect(newName).not.toBe(currentName);
+    // Wait for the project name to change (SPA state update via API call)
+    await expect(async () => {
+      const newName = await sidebar.getProjectName();
+      expect(newName).not.toBe(currentName);
+    }).toPass({ timeout: 15000 });
   });
 });

@@ -137,12 +137,16 @@ test.describe('Onboarding', () => {
     const petRoot = join(ROOT, 'fixtures', 'personal-expense-tracker');
     setActiveProject(petRoot);
     await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
 
     // Now switch back to the test project
     setActiveProject(TEST_PROJECT_DIR);
     await page.goto('/');
-    await page.waitForSelector('[data-testid="project-name"]', { timeout: 10000 });
-    await expect(page.getByTestId('project-name')).toHaveText(TEST_PROJECT_NAME, { timeout: 10000 });
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+    const sidebar = new SidebarPO(page);
+    await expect(async () => {
+      const name = await sidebar.getProjectName();
+      expect(name).toBe(TEST_PROJECT_NAME);
+    }).toPass({ timeout: 10000 });
   });
 });

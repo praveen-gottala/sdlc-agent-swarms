@@ -424,6 +424,39 @@ The design LLM receives this width as a hard constraint and lays out all content
 
 ---
 
+## Dashboard Dev Server: tsconfig paths Force Source Compilation
+
+**Context:** `packages/dashboard/next.config.js`, `packages/dashboard/tsconfig.json` — dev server cold-start performance
+**Rule:** The dashboard's `tsconfig.json` must NOT have `paths` entries pointing to `../*/src/index.ts`. These leak into Next.js webpack and force compilation from raw TypeScript source (382 extra files, 65K lines), causing 60+ second page loads. Use pre-built `dist/` instead.
+**Why:** The root cause took 4 failed attempts to find (2026-04-29):
+
+1. **FAILED: Remove `@agentforge/source` from webpack `conditionNames`** — Next.js re-adds it from `tsconfig.base.json`'s `customConditions`. Filtering doesn't work.
+2. **FAILED: Override `conditionNames` with explicit list** — Same result. Next.js reads conditions at a level webpack config can't override.
+3. **FAILED: Remove packages from `transpilePackages`** — Didn't help because the real source resolution came from tsconfig `paths`, not export conditions.
+4. **WORKED: Remove `@agentforge/core`, `@agentforge/providers`, `@agentforge/designspec-renderer` from tsconfig `paths`** — These `paths` entries (`"@agentforge/core": ["../core/src/index.ts"]`) directly mapped to source, bypassing all export condition logic.
+
+**Additional fixes applied:** Moved server-only packages (`agents-ux`, `designspec-renderer`, `providers`, `cli`, `agents-clarifier`) to `serverExternalPackages`. Removed `transpilePackages` entirely. Removed `extensionAlias` (only needed for source compilation). Result: clean `next.config.js` with no webpack config block.
+
+**How to apply:** Before changing `next.config.js` or `tsconfig.json` in the dashboard, check: (1) no `paths` pointing to `../*/src/`, (2) no `@agentforge/source` in conditionNames, (3) `nx run-many -t build` before `npm run dev`. For visual audits, use `next build && next start` — production mode pre-compiles all pages.
+
+---
+
+## Next.js 16 + Mantine v9 Compatibility Gotchas
+
+**Context:** `packages/dashboard/` — Next.js 16.2.4, Mantine v9.1.1, React 19.2.5
+**Rule:** Seven things to know when working with this stack:
+1. **Turbopack doesn't support `extensionAlias`** — always use `--webpack` flag. Both `dev` AND `build` scripts must include it (`npm run dev` and `npm run build` have it baked in).
+2. **Mantine v9 requires React 19** — `useEffectEvent` is used by Mantine internals. Next.js 15 bundled an old React that didn't have it.
+3. **`renderRoot` on NavLink doesn't trigger Next.js routing** — use `component={Link}` instead.
+4. **For visual audits, use `next build && next start`** — webpack on-demand compilation in dev mode blocks Chrome DevTools MCP with 30s+ timeouts on first page visit.
+5. **Mantine v9 Select puts `data-testid` on the `<input>` element directly** — not on a wrapper div. `innerText()` and `textContent()` return empty on inputs. Use `element.evaluate((el) => el instanceof HTMLInputElement ? el.value || el.placeholder : el.textContent)` to read the displayed value.
+6. **React version mismatch causes hooks test failures** — if root `package.json` has `react@^19.1.0` but dashboard has `react@^19.2.5`, npm installs a duplicate. `renderHook` then fails with `Cannot read properties of null (reading 'useState')`. Always align React versions across the monorepo.
+7. **setState inside useEffect is a lint error in React 19** — use useState lazy initializers `useState(() => { ... })` instead of reading localStorage in useEffect.
+**Why:** Each of these cost 15-30 minutes of debugging during Phase 2 sessions (2026-04-29). The Turbopack, React version, and Mantine Select DOM issues were especially confusing because error messages didn't point to the root cause.
+**How to apply:** The dashboard's `package.json` dev and build scripts already include `--webpack`. For visual audits, run `cd packages/dashboard && npx next build && npx next start --port 3000`.
+
+---
+
 ## Claude API Rejects `additionalProperties: object` in Structured Output
 
 **Rule:** Never use `additionalProperties` as a type schema (map pattern) in Claude API structured output. Use `Array<{ key: string; value: T }>` instead, with a normalizer to convert back to a map after parsing.

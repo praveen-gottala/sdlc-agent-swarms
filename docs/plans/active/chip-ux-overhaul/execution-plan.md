@@ -131,12 +131,35 @@ react-diff-viewer-continued            # Future: code diffs
 - `Mantine ScrollArea` for overflow
 - Collapsible via `AppShell.Aside`
 
-### Verification gate
-- All existing pages render within new layout
-- Sidebar navigation works for all routes
-- Activity events still display
-- `npx playwright test` — all E2E pass
-- Chrome DevTools: screenshot before/after comparison
+### Phase 2 Implementation Status (2026-04-29)
+- [x] **2.0** Dev server speed — removed `@agentforge/source`, tsconfig `paths`, `transpilePackages`. Dashboard uses pre-built `dist/`. Cold start: 4s → instant (cached). See CLAUDE.md "Dashboard Dev Server" and lessons-learned-rules.md.
+- [x] **2.1** AppShell layout — Mantine AppShell with `Navbar`, `Header`, `Aside`, `Main`. Draggable resize (min 140px → snap to 64px collapsed, max 360px, default 220px). Width + activity panel persisted in localStorage.
+- [x] **2.2** Sidebar — Mantine NavLink + Tabler Icons. Grouped: BUILD/EXECUTE/GOVERN/CONFIGURE/EXTERNAL. `chip-full-logo-dark.png` when expanded. `component={Link}` for client-side routing.
+- [x] **2.3** Header — Mantine Group, Badge, Progress, ActionIcon (theme toggle + activity toggle). Vertical dividers for visual hierarchy. HH:MM clock (1min interval).
+- [x] **2.4** Activity — Mantine Timeline with ThemeIcon bullets. `active={0}` highlights newest. HITL config badges.
+- [x] **2.5** Navigation consolidation — 11→9 tabs. Removed Traces, Audit (→ Langfuse). Renamed Costs→Budget. Added Observability external link.
+- [x] **2.6** UX polish — activity persistence, project switch without reload, light mode CSS overrides.
+- [x] **Visual audit** — all 10 pages screenshotted. Home/Pipeline/Trust CRITICAL. Findings in Phase 4 baseline table.
+- [ ] **Verification gate** — PENDING: `/verify-done` not yet run (tests + headed E2E + retrospective).
+
+### Verification gate (PENDING)
+
+**Skill order (mandatory — see `.claude/plans/breezy-swinging-pike.md` for rationale):**
+```
+1. /mid-session-drift-check  → rule compliance audit
+2. /verify-done              → tests + E2E + visual + retrospective + docs
+3. git commit                → only after verify-done passes
+4. /prepare-handoff          → only if work continues in new session (DONE 2026-04-29)
+```
+
+**Checks within verify-done:**
+- `nx run-many -t typecheck && test && lint` — zero failures
+- `lsof -ti:4100 | xargs kill -9` — stale Vite
+- `npx playwright test --headed` — all E2E pass
+- Chrome DevTools screenshots of every page
+- Session retrospective → lessons-learned entry
+- `/verify-docs` → documentation completeness
+- Verification table with evidence per check
 
 ---
 
@@ -213,56 +236,198 @@ react-diff-viewer-continued            # Future: code diffs
 - Large centered `Mantine Textarea` with gradient submit
 
 ### Verification gate
-- Start dev server, navigate to `/new`
-- Screenshot: welcome state with CHIP branding
-- Type seed text, click Start → verify streaming stages appear in real-time
-- Verify pipeline stepper shows correct node progression
-- Toggle to graph view → verify React Flow DAG renders
-- Click graph node → verify JSON state drawer opens
-- Verify questions render with radio buttons after HITL interrupt
-- Answer questions → verify PRD preview with confidence ring
-- `npx playwright test` — all E2E pass
-- `nx run-many -t typecheck && nx run-many -t test && nx run-many -t lint`
+**Skill order:** `/mid-session-drift-check` → `/verify-done` → `git commit` → `/prepare-handoff`
+
+Within verify-done, also verify:
+- Navigate to `/new` — screenshot welcome state
+- Type seed text, click Start → streaming stages appear in real-time
+- Pipeline stepper shows correct node progression
+- Toggle graph view → React Flow DAG renders
+- Click graph node → JSON state drawer opens
+- Questions render with radio buttons after HITL interrupt
+- Answer questions → PRD preview with confidence ring
 
 ---
 
-## Phase 4 — Migrate Existing Pages (~1-2 sessions)
+## Phase 4 — Modernize Every Page (Vision-Aligned Redesign)
 
-**Goal:** Every dashboard page uses Mantine components. Consistent look across the app.
+**Goal:** Every dashboard page is questioned, redesigned to match `docs/vision.md`,
+and rebuilt with Mantine. Not a component swap — a product rethink.
 
-### 4.1 Design Studio
-- Replace hand-rolled tabs → `Mantine Tabs`
-- Inspector panel → `Mantine Paper` + `Mantine ScrollArea`
-- ChatTab → reuse streaming chat from Phase 3
+### Visual Audit Baseline (2026-04-29, browser-verified screenshots)
 
-### 4.2 Tasks + Agents
-- `Mantine Table` with sorting/filtering
-- Agent cards with `Mantine Card` + `Badge` + `Progress`
-- Status indicators with `Mantine ThemeIcon`
+| Page | Severity | Top Issue |
+|------|----------|-----------|
+| **Home `/`** | CRITICAL | Emoji icons, generic card grid, no data, shows removed tabs, no brand |
+| **Pipeline `/pipeline`** | CRITICAL | Wrong 5-phase model (should be 4-stage spine), mostly empty, static stats |
+| **Design Studio `/design`** | LOW | Core product, works. Needs Mantine migration but don't break it |
+| **Tasks `/tasks`** | MEDIUM | Kanban works but long task IDs, no filtering, tiny status dots |
+| **Agents `/agents`** | HIGH | Only shows learnings table, no agent cards/status/HITL levels |
+| **Approvals `/approvals`** | HIGH | Empty shell, no empty state design, table not cards, should feel urgent |
+| **Spec `/spec`** | MEDIUM | Functional YAML editor but looks like dev tool, needs summary view |
+| **Trust `/trust`** | CRITICAL | Completely empty — just a paragraph. No data at all |
+| **Budget `/costs`** | HIGH | Old phase model again (Design/Spec/Code Gen/CI/CD/Observe), all $0 |
+| **Integrations `/integrations`** | MEDIUM | Good structure, 5 tabs, but only escalation policy visible |
 
-### 4.3 Pipeline page
-- Add React Flow DAG for design pipeline (research → planning → design → eval → correction)
-- Reuse stepper pattern from Clarifier
+**Priority order for Phase 4:** Home (first impression) → Pipeline/Runs (architecture alignment) → Trust (empty) → Approvals (HITL is differentiator) → Agents → Tasks → Budget → Spec → Design Studio (low risk) → Integrations.
 
-### 4.4 Approvals
-- `Mantine Timeline` for approval flow
-- `Mantine Modal` for approve/reject dialogs
-- `Mantine Alert` for pending count
+**Methodology (apply to every tab):**
+1. **Map** — List every screen/view the tab contains, what data it shows, what actions it supports
+2. **Question** — How does this page fit in the vision? Is the data model correct? Does it reflect the 4-stage spine (Clarifier → Architect → Implementer → Reviewer) or the old 5-phase model? Is this page even needed?
+3. **Research** — How do competitors handle this? (Vercel, Linear, GitHub Actions, LangGraph Studio, Cursor, Replit Agent, Devin). What patterns work at $100M product scale?
+4. **Propose** — Design the modernized version with concrete wireframe/mockup
+5. **Validate** — Check proposal against vision.md, ensure it uses real data models
+6. **Build** — Implement with Mantine, test in browser, screenshot verify
+7. **Gate** — `/mid-session-drift-check` after each page, `/verify-done` after all pages
 
-### 4.5 Audit + Costs + Traces
-- Keep Recharts charts, wrap in `Mantine Card`
-- `Mantine Table` for data display
-- `Mantine Tabs` for section navigation
+### Phase 2 findings that inform Phase 4:
 
-### 4.6 Remove hand-rolled components
-- Migrate 12 files in `components/ui/` → Mantine equivalents
-- Delete old files after all pages migrated
-- Update imports across codebase
+**Navigation consolidation (Phase 2.5, 2026-04-29):** Sidebar restructured from 11 flat tabs to 9 grouped tabs (BUILD / EXECUTE / GOVERN / CONFIGURE / EXTERNAL). Traces, Audit removed (→ Langfuse). Costs renamed to Budget. Observability links to Langfuse externally.
+
+**Pipeline page is wrong (Phase 2 audit, 2026-04-29):** Shows old 5-phase model (Design → Spec → Code Gen → CI/CD → Observe). Vision Layer 3 defines the 4-stage spine: Clarifier → Architect → Implementer → Reviewer. The page should become a **Runs** view showing active/recent pipeline executions, not static phase cards.
+
+**Dev server speed (Phase 2.0, 2026-04-29):** Removed `@agentforge/source` webpack condition and tsconfig `paths` pointing to raw TypeScript source. Dashboard now uses pre-built `dist/`. Must `nx run-many -t build` before running dashboard after package source changes. See CLAUDE.md "Dashboard Dev Server" section.
+
+### 4.0 Pipeline → Runs (CRITICAL — vision alignment)
+
+**Problem:** Current Pipeline page shows 5 static phase cards that don't match the architecture. The vision (Layer 3) defines a 4-stage spine. Tasks run in parallel via git worktrees (Layer 8). A single linear diagram can't represent concurrent execution.
+
+**Vision alignment (Layer 14, lines 656-691):**
+> "graph visualization of the current spine run. Highlighted current node.
+> Pending HITL approvals surfaced prominently. Cost and progress per node."
+
+**Research findings (2026-04-29):**
+- No `SpineRun` type exists in code — only `RunStatus` (design-pipeline-specific)
+- Only the Clarifier has a LangGraph graph; Architect/Implementer/Reviewer are not implemented yet
+- The `/api/runs` endpoint exists and tracks design pipeline runs
+- Vision prescribes SSE/websockets for real-time (current: 2s polling)
+
+**Proposed data model:**
+```
+SpineRun
+  ├── runId, projectId, threadId (LangGraph)
+  ├── status: idle | running | interrupted | complete | failed
+  ├── currentStage: clarifier | architect | implementer | reviewer
+  ├── interruptGate: clarification | design_approval | code_merge | null
+  ├── stages[]
+  │    ├── name, status, cost, duration, nodes[]
+  │    └── artifacts[] (EnrichedRequirement, ArchitectureSpec, Diff, ReviewResult)
+  └── tasks[] (within Implementer, parallel via worktrees)
+```
+
+**Proposed Runs page:**
+- **Active Runs panel** — React Flow DAG of the spine with active node highlighted, HITL gates glowing amber when awaiting input
+- **Run history** — Table of past runs with duration, cost, outcome, link to detail
+- **Run detail** — Click a run to expand: per-stage timeline, per-node cost/timing, artifact links
+- **Emergency controls** — Pause All / Abort All (vision Layer 14)
+- Project health summary cards move to Home (`/`) page
+
+**Research task (before implementation):**
+- [ ] Read vision Layer 14 (lines 656-691) for dashboard prescriptions
+- [ ] Study GitHub Actions run view, Vercel deployment view, LangGraph Studio for UX patterns
+- [ ] Define `SpineRun` TypeScript interface in `packages/core/src/types/`
+- [ ] Wire existing `/api/runs` to the new data model (bridge current RunStatus)
+
+### 4.1 Home → Project Dashboard
+
+**Question:** Currently a module grid with links to other pages. Should it be a real-time project health dashboard instead?
+
+**Research task:**
+- [ ] Screenshot current Home page, list what it shows
+- [ ] Check what data is available from existing APIs (tasks count, run status, budget, agents)
+- [ ] Study Linear project overview, Vercel project dashboard
+- [ ] Propose: project health (run status, budget, recent activity, pending approvals) vs. module grid
+
+### 4.2 Design Studio
+
+**Question:** This is the core product — 1,546 lines, 13 API routes. It works but uses hand-rolled components. What's the minimum Mantine migration that doesn't break the complex interactions (drag, canvas, prototype mode, audit)?
+
+**Research task:**
+- [ ] Screenshot every view state (page list, canvas, prototype, inspector, chat, audit)
+- [ ] Identify which components are hand-rolled and could be Mantine
+- [ ] Identify which are custom and must stay custom (canvas renderer, iframe bridge)
+- [ ] Propose surgical Mantine swaps vs. full redesign
+
+### 4.3 Spec Viewer
+
+**Question:** Currently a YAML file browser with editor and generation controls. Is this the right metaphor for a $100M product, or should it be more like a structured document editor?
+
+**Research task:**
+- [ ] Screenshot current spec page
+- [ ] Check what spec files actually contain (YAML structure)
+- [ ] Study how Notion handles structured docs, how Linear handles specs
+- [ ] Propose: keep YAML editor (power users) vs. structured form (accessible) vs. both
+
+### 4.4 Tasks
+
+**Question:** Currently a kanban-style board with status columns. Does it need to show task-to-run relationships? How does it work with git worktree parallelism?
+
+**Research task:**
+- [ ] Screenshot current Tasks page
+- [ ] Check how tasks relate to runs (task has phase, agent, branch, PR)
+- [ ] Study Linear issue boards, Jira for task views
+- [ ] Propose: kanban vs. timeline vs. run-scoped task view
+
+### 4.5 Agents
+
+**Question:** Currently a card grid with status, role, quality score. Should this show agent *activity* (what each agent is doing right now) or just *configuration*?
+
+**Research task:**
+- [ ] Screenshot current Agents page
+- [ ] Check what agent data is available (trust, HITL level, tasks completed)
+- [ ] Study CrewAI agent monitor, Replit Agent sidebar
+- [ ] Propose: status dashboard vs. control panel vs. activity feed per agent
+
+### 4.6 Approvals
+
+**Question:** Currently an approval queue. This is a core differentiator (HITL gates). How do we make it feel premium, not like a basic form?
+
+**Research task:**
+- [ ] Screenshot current Approvals page
+- [ ] Check what approval data is available (gate type, artifact, agent, priority)
+- [ ] Study code review UIs (GitHub PR, GitLab MR) for approval patterns
+- [ ] Propose: review flow with inline artifact preview, not just approve/reject buttons
+
+### 4.7 Trust
+
+**Question:** Progressive trust is unique to CHIP. Current page shows trust scores per agent. Should it visualize the trust *trajectory* over time, showing how agents earn autonomy?
+
+**Research task:**
+- [ ] Screenshot current Trust page
+- [ ] Check trust data model (score, consecutive approvals, threshold)
+- [ ] Propose: trust progression visualization (timeline graph, level-up animations?)
+
+### 4.8 Budget (formerly Costs)
+
+**Question:** Langfuse handles cost *viewing*. This page should be budget *configuration* and alerts. What budget controls do users need?
+
+**Research task:**
+- [ ] Screenshot current Costs page
+- [ ] Check what budget data exists (monthly, per-phase, per-task limits)
+- [ ] Propose: budget config form + alert thresholds + link to Langfuse for detailed cost view
+
+### 4.9 Integrations
+
+**Question:** Currently 393 lines with 5 tabs. This is the configuration hub. Should it be structured as a settings page or as a marketplace/catalog?
+
+**Research task:**
+- [ ] Screenshot current Integrations page (all tabs)
+- [ ] Check what integrations are functional vs. placeholder
+- [ ] Study Vercel integrations, Slack app directory
+- [ ] Propose: settings style vs. marketplace style
+
+### 4.10 Remove hand-rolled components
+- After all pages redesigned, migrate remaining `components/ui/` to Mantine
+- Delete old files
+- Update imports
 
 ### Verification gate
-- Every page: screenshot before/after
-- All E2E tests pass
-- No hand-rolled components remain in use
+**Skill order:** `/mid-session-drift-check` → `/verify-done` → `git commit` → `/prepare-handoff`
+
+Within verify-done, also verify:
+- Every page: screenshot before/after comparison
+- All E2E tests pass headed (`npx playwright test --headed`)
+- Chrome DevTools visual verification of every redesigned page
 
 ---
 
@@ -272,7 +437,7 @@ react-diff-viewer-continued            # Future: code diffs
 
 | Feature | Inspiration | Priority | Notes |
 |---------|-------------|----------|-------|
-| Parallel agent swim lanes | Replit Agent, Cursor | High | Show concurrent agents in horizontal tracks |
+| Parallel agent swim lanes | Replit Agent, Cursor | High | Show concurrent agents in horizontal tracks within Runs view |
 | A2UI — agent-generated UI | CrewAI | Medium | Agents emit JSON UI surfaces, dashboard renders dynamically |
 | Live artifact preview | Replit, Bolt.new | Medium | Running code in iframe alongside agent reasoning |
 | State inspection debugger | LangGraph Studio | High | Partial in Phase 3.3 (click node → JSON). Full: compare before/after, replay |
@@ -280,7 +445,6 @@ react-diff-viewer-continued            # Future: code diffs
 | Session replay | LangGraph Cloud | Medium | Replay past pipeline runs step by step |
 | Cost Sankey diagram | LangGraph Studio | Low | Token flow visualization across pipeline stages |
 | `/evolve` page | Vision Layer 5 | High | Evolution mode clarifier for existing projects |
-| Full pipeline orchestration | Vision Layer 3 | High | Clarifier → Architect → Implementer → Reviewer spine |
 
 Write these to `docs/roadmap.md` and `docs/plans/backlog/`.
 

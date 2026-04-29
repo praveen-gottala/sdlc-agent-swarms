@@ -53,6 +53,26 @@
   --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
 }
 
+/* ── Light mode overrides ─────────────────────────────────── */
+
+html[data-mantine-color-scheme="light"] {
+  --color-bg-base: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-card: #f1f5f9;
+  --color-bg-elevated: #e2e8f0;
+  --color-sidebar: #ffffff;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #cbd5e1;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-border-bright: #cbd5e1;
+  --color-glass-bg: rgba(0, 0, 0, 0.02);
+  --color-glass-border: rgba(0, 0, 0, 0.06);
+  --color-glass-hover: rgba(0, 0, 0, 0.04);
+}
+
 /* ── Keyframes ─────────────────────────────────────────────── */
 
 @keyframes pulse-glow {

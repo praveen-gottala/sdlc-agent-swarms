@@ -15,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -25,15 +25,6 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@agentforge/core": [
-        "../core/src/index.ts"
-      ],
-      "@agentforge/providers": [
-        "../providers/src/index.ts"
-      ],
-      "@agentforge/designspec-renderer": [
-        "../designspec-renderer/src/index.ts"
       ]
     }
   },
@@ -41,7 +32,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

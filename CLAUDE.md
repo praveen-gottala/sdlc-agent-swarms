@@ -34,7 +34,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 2. Observability — Phase 1-4 COMPLETE (incl. 4.1-4.3 extended tracing: MCP span wrapper + LangfuseSink OTel upgrade + cost verification), Phase 5 next (evaluation infrastructure — deferred). See `docs/plans/active/observability/execution-plan.md`
 3. Clarifier Initiative — Phase 0 COMPLETE, Phase 2 (RAG) COMPLETE, Phase 1 Tasks 1.0-1.7 COMPLETE (2026-04-28): 6 nodes, LangGraph StateGraph, 114 tests, event emission via `writeBridgeEvent()`, interrupt detection fixed (`getState().next`). Task 1.8 PARTIAL: API routes done, `/new` page created but UX needs redesign (Phase 3 of CHIP UX Overhaul). See `docs/plans/active/clarifier-initiative/execution-plan.md`
 4. Dashboard Pipeline Fix — Planning stage fails from dashboard but works from CLI. Root cause confirmed: `import.meta.url` under webpack. Partial fix: `serverExternalPackages` for agents-clarifier. Full fix for agents-ux pending. See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
-5. CHIP UX Overhaul — Rebrand from AgentForge to CHIP (Crafted Human Intelligence Platform). Phase 1 COMPLETE (2026-04-28): Mantine v9, CHIP branding, upgraded design tokens. Phase 2 next (layout shell). See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
+5. CHIP UX Overhaul — Rebrand from AgentForge to CHIP (Crafted Human Intelligence Platform). Phase 1 COMPLETE (2026-04-28). Phase 2 IMPLEMENTATION COMPLETE (2026-04-29): Mantine AppShell, Tabler Icons, grouped sidebar (BUILD/EXECUTE/GOVERN/CONFIGURE/EXTERNAL), draggable resize, CHIP full logo, dev server speed fix (pre-built dist, no @agentforge/source), navigation consolidation (11→9 tabs, Traces/Audit→Langfuse), visual audit of all pages. NEEDS: /verify-done before commit. Next: Phase 3 (Clarifier /new showcase) or Phase 4 (page modernization — Home page is CRITICAL). See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
 
 **Backlog plans (do NOT read during session-start — note status only):**
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
@@ -43,7 +43,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 - Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session:** Task 1.7 COMPLETE (event emission + interrupt fix + 6 integration tests, 114 clarifier tests). Task 1.8 PARTIAL (API routes + initial `/new` page — UX needs redesign). Rebranded to CHIP (Crafted Human Intelligence Platform). Mantine v9 installed. Design tokens upgraded (glassmorphism, gradients, animations). CHIP logo in sidebar. Key gotchas: LangGraph `interruptBefore` returns normally (doesn't throw), `import.meta.url` needs `serverExternalPackages`, event emission from wrapper not graph node. 423 monorepo tests green.
+**Last session (2026-04-29):** CHIP UX Phase 2 verified and committed. E2E tests updated for Mantine sidebar (sidebar.po.ts, navigation, project-switching, onboarding). Fixed: duplicate React 19 installation, Next.js 16 Turbopack `--webpack` flag for builds, React 19 lint error (useState lazy initializers), Mantine Select DOM inspection pattern, project-switch page refresh via `router.refresh()`. All gates green: 18 projects typecheck, 423 unit tests, 168 E2E tests, 0 lint errors.
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -296,6 +296,17 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `retrieval` depends on: `core`, `voyageai`, `cohere-ai`, `@qdrant/js-client-rest`, `web-tree-sitter`
 - `agents-clarifier` depends on: `core`, `providers`, `retrieval`, `telemetry`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
+
+### Dashboard Dev Server (IMPORTANT)
+- The dashboard uses pre-built `dist/` from monorepo packages (NOT raw TypeScript source).
+  This makes cold-start ~10x faster but means **you must rebuild packages before running the dashboard** if you changed package source code.
+- **Before starting the dashboard dev server:** `nx run-many -t build` (rebuilds all packages)
+- **Start dashboard:** `cd packages/dashboard && npm run dev` (runs `next dev --webpack --port 3000`)
+- **When to rebuild:** After changing any file in `packages/core/src/`, `packages/agents-ux/src/`,
+  `packages/designspec-renderer/src/`, `packages/providers/src/`, or any other package that the
+  dashboard imports. Dashboard-only changes (under `packages/dashboard/src/`) do NOT require rebuilding.
+- The old `@agentforge/source` webpack condition was removed because it forced compilation of 382 extra
+  TypeScript files (~65K lines) on every page load. The `dist/` approach compiles 0 extra files.
 
 ## Commands
 - Build all: `nx run-many -t build`
