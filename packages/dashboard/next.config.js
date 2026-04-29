@@ -7,7 +7,7 @@ const nextConfig = {
     '@agentforge/providers',
     '@agentforge/cli',
   ],
-  serverExternalPackages: ['playwright', 'playwright-core'],
+  serverExternalPackages: ['playwright', 'playwright-core', '@agentforge/agents-clarifier'],
   eslint: {
     ignoreDuringBuilds: true,
   },

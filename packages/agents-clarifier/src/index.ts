@@ -1,0 +1,54 @@
+/**
+ * @module @agentforge/agents-clarifier
+ *
+ * Clarifier pipeline — first spine stage (vision Layer 3).
+ * Six-stage conversational clarifier with bootstrap and evolution modes,
+ * backed by RAG retrieval and LangGraph StateGraph with HITL interrupts.
+ */
+
+// Types
+export type {
+  ClarifierMode,
+  ClarifierState,
+  ClarifierContext,
+  EscalationDecision,
+  Gap,
+  Question,
+  HumanResponse,
+} from './types.js';
+
+// Deps
+export type { ClarifierDeps, ClarifierNodeFn } from './deps.js';
+
+// Schemas
+export {
+  GapSchema,
+  QuestionSchema,
+  ClarifierContextSchema,
+  HumanResponseSchema,
+} from './schemas.js';
+
+// Node factories
+export {
+  createContextRetriever,
+  createPrdAnalyzer,
+  createGapDetector,
+  createQuestionPrioritizer,
+  createStoryWriter,
+  createCritic,
+} from './nodes/index.js';
+
+// Graph
+export {
+  buildClarifierGraph,
+  compileClarifierGraph,
+  ClarifierStateAnnotation,
+  routeAfterCritic,
+  routeAfterEscalation,
+  hasUnresolvedGaps,
+} from './graph/index.js';
+export type { ClarifierStateType } from './graph/index.js';
+
+// Pipeline runner
+export { runClarifierPipeline } from './run.js';
+export type { ClarifierInput, ClarifierOutput, ClarifierError } from './run.js';
