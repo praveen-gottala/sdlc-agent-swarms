@@ -178,7 +178,6 @@ export function DashboardShell({
     >
       <AppShell.Header>
         <HeaderBar
-          title={pageTitle}
           activityOpen={activityOpen}
           onToggleActivity={() => {
             setActivityOpen((prev) => {

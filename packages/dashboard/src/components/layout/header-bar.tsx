@@ -18,7 +18,6 @@ import {
 } from '@tabler/icons-react';
 
 export interface HeaderBarProps {
-  title: string;
   phase?: string;
   budgetUsed?: number;
   budgetTotal?: number;
@@ -28,7 +27,6 @@ export interface HeaderBarProps {
 }
 
 export function HeaderBar({
-  title,
   phase = 'Code Gen Phase',
   budgetUsed = 27.5,
   budgetTotal = 200,
@@ -56,10 +54,13 @@ export function HeaderBar({
 
   return (
     <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-      {/* Left: title */}
-      <Text fw={600} size="lg" c="var(--color-text-primary)" truncate>
-        {title}
-      </Text>
+      {/* Left: CHIP brand — fills header height */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={colorScheme === 'light' ? '/chip-full-logo-creme.png' : '/chip-full-logo-dark.png'}
+        alt="CHIP — Crafted Human Intelligence Platform"
+        style={{ height: 42, width: 'auto', objectFit: 'contain', maxWidth: 200 }}
+      />
 
       {/* Right cluster */}
       <Group gap="md" wrap="nowrap">

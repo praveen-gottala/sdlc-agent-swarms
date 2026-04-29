@@ -151,18 +151,20 @@ export function SidebarNav({
 
   return (
     <>
-      {/* Logo + collapse toggle */}
+      {/* Project identity + collapse toggle */}
       <Box px={collapsed ? 6 : 'sm'} py="sm" className="border-b border-border">
         {collapsed ? (
           <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/chip-symbol.png"
-              alt="CHIP"
-              width={28}
-              height={28}
-              style={{ borderRadius: 4 }}
-            />
+            <Link href="/" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--color-bg-elevated)',
+              border: '1px solid var(--color-border)',
+              fontSize: 14, fontWeight: 700, color: 'var(--color-text-secondary)',
+              textDecoration: 'none',
+            }}>
+              {getInitials(projectName)}
+            </Link>
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -176,12 +178,20 @@ export function SidebarNav({
           </Box>
         ) : (
           <Group justify="space-between" align="center" wrap="nowrap">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/chip-full-logo-dark.png"
-              alt="CHIP — Crafted Human Intelligence Platform"
-              style={{ height: 36, width: 'auto', objectFit: 'contain' }}
-            />
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', minWidth: 0 }}>
+              <Box style={{
+                width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                background: 'var(--color-bg-elevated)',
+                border: '1px solid var(--color-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)',
+              }}>
+                {getInitials(projectName)}
+              </Box>
+              <Text size="sm" fw={600} c="var(--color-text-primary)" truncate>
+                {projectName}
+              </Text>
+            </Link>
             <ActionIcon
               variant="subtle"
               color="gray"
