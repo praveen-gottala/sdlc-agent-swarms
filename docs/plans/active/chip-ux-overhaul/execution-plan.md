@@ -140,7 +140,33 @@ react-diff-viewer-continued            # Future: code diffs
 - [x] **2.5** Navigation consolidation — 11→9 tabs. Removed Traces, Audit (→ Langfuse). Renamed Costs→Budget. Added Observability external link.
 - [x] **2.6** UX polish — activity persistence, project switch without reload, light mode CSS overrides.
 - [x] **Visual audit** — all 10 pages screenshotted. Home/Pipeline/Trust CRITICAL. Findings in Phase 4 baseline table.
-- [ ] **Verification gate** — PENDING: `/verify-done` not yet run (tests + headed E2E + retrospective).
+- [x] **Verification gate** — COMPLETE (2026-04-29): `/mid-session-drift-check` + `/verify-done` (18 typecheck, 423 unit tests, 168 E2E headed, 0 lint errors). E2E selectors updated for Mantine (sidebar.po.ts, navigation, project-switching, onboarding). Committed as `ca5df49`.
+
+### Phase 4.1 Implementation Status (2026-04-29)
+- [x] **4.1** Home page redesigned — state-aware landing pad replacing emoji module grid. Committed as `ae0e8ba`.
+  - Project hero: initials avatar + name + description + tech stack (plain text, not badges)
+  - Pipeline spine: 4-stage visual (Clarify→Architect→Implement→Review) with active stage highlighting
+  - Attention items: conditional — approvals pending (orange), run failed (red), pipeline running (blue). Hidden when idle.
+  - Calm state: "X of Y tasks complete. Last run Z." Simple sentence, no green-circle card.
+  - Quick actions: Pipeline (primary), Design Studio (secondary), tasks badge, + New (subtle)
+  - Layout: CHIP logo moved to header (42px, theme-aware dark/creme), project identity in sidebar top (initials + name), header `title` prop removed
+  - Anti-AI-aesthetic: no gradient rings, no glass cards, no centered symmetry, no stat cards with zeros. Typography and whitespace do the work.
+
+### Context for Phase 4.0 implementers
+
+**Critical gotchas from Phase 2 + 4.1 sessions (2026-04-29):**
+
+1. **`window.location.reload()` for project switching, NOT `router.refresh()`.** Client components fetch data via `useEffect(() => {...}, [])`. `router.refresh()` only re-renders server components — client-side useEffects don't re-fire. The project switch handler in `dashboard-shell.tsx` uses `window.location.reload()` after the POST succeeds.
+
+2. **E2E hydration selectors.** The sidebar uses `data-testid="sidebar-toggle"` (always present) as the hydration wait selector. But this fires BEFORE async project data loads. Any test checking project name must use `expect(async () => {...}).toPass({ timeout })` retry pattern. See `e2e/navigation.spec.ts:16`.
+
+3. **Mantine v9 Select renders `data-testid` on the `<input>` directly** — NOT on a wrapper div. `innerText()` and `textContent()` return empty on inputs. Use `element.evaluate((el) => el instanceof HTMLInputElement ? el.value || el.placeholder : el.textContent)`. See `e2e/pages/sidebar.po.ts:getProjectName()`.
+
+4. **Home page is a landing pad, NOT a mission control.** The Pipeline/Runs page (Phase 4.0) is the mission control with concurrent runs, DAG visualization, and run management. Home routes you to the right page — it doesn't duplicate Pipeline functionality. See vision Layer 14 for the three-surface model.
+
+5. **Design principle: no AI aesthetic.** The execution plan principle #3 says "No AI look-and-feel." Concrete tells to avoid: gradient border rings, glassmorphic cards for functional elements, centered symmetrical layouts, stat cards with mostly-zero values, green checkmark circles. Real products use restraint — typography, whitespace, one accent color.
+
+6. **`next build` also needs `--webpack` in Next.js 16** — not just `next dev`. Both dashboard and brownfield-app build scripts now include it.
 
 ### Verification gate (PENDING)
 
