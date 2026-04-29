@@ -111,7 +111,7 @@ export function SidebarNav({
       {/* Logo & version */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-border">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/chip-logo.svg" alt="CHIP" className="w-7 h-7 shrink-0" />
+        <img src="/chip-symbol.png" alt="CHIP" className="w-7 h-7 shrink-0 rounded" />
         {!collapsed && (
           <div className="flex flex-col">
             <span className="text-text-primary font-semibold text-sm leading-tight">
