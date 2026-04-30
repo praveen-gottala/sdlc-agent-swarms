@@ -1,7 +1,8 @@
 # CHIP Roadmap — Eight-Phase Rollout Plan
 
-> The sequenced plan for shipping the missing pieces. Each phase produces
-> something demoable. Merge each PR before starting the next phase.
+!!! info "Sequencing principle"
+
+    Each phase produces something demoable. Merge each PR before starting the next phase.
 
 ---
 
@@ -20,6 +21,30 @@
 | 8 | Evaluation harness | Automated eval with regression detection on PRs |
 
 **Phase 8** is continuous — seeds with 5 scenarios, grows with each production failure.
+
+```mermaid
+graph LR
+    P0["Phase 0<br/>Foundation"] --> P1["Phase 1<br/>Clarifier"]
+    P0 --> P2["Phase 2<br/>RAG"]
+    P2 --> P1
+    P1 --> P3["Phase 3<br/>Change Classification"]
+    P3 --> P4["Phase 4<br/>Design Coherence"]
+    P3 --> P5["Phase 5<br/>Implementer"]
+    P5 --> P6["Phase 6<br/>Reviewer"]
+    P0 -.->|"recommended early"| P7["Phase 7<br/>Observability"]
+    P6 --> P8["Phase 8<br/>Evaluation"]
+    P8 -.->|continuous| P8
+
+    style P0 fill:#2ECC71,color:#fff
+    style P1 fill:#2ECC71,color:#fff
+    style P2 fill:#2ECC71,color:#fff
+    style P3 fill:#95A5A6,color:#fff
+    style P4 fill:#95A5A6,color:#fff
+    style P5 fill:#95A5A6,color:#fff
+    style P6 fill:#95A5A6,color:#fff
+    style P7 fill:#2ECC71,color:#fff
+    style P8 fill:#95A5A6,color:#fff
+```
 
 ---
 
@@ -202,6 +227,33 @@ Removed (re-enable when needed): `frontend-design`, `figma`.
 ## Decision gates for leadership
 
 Points at which Praveen should pause, assess, and decide whether to continue or pivot:
+
+```mermaid
+graph TD
+    P1[Phase 1 Complete] --> G1{"Gate: Demo clarifier<br/>Better than text box?"}
+    G1 -->|yes| P2[Phase 2 Complete]
+    G1 -->|no| RECON1([Reconsider approach])
+
+    P2 --> G2{"Gate: Golden query set<br/>precision@5 ≥ 70%?"}
+    G2 -->|yes| P5[Phase 5 Complete]
+    G2 -->|no| INVEST([Invest more in RAG])
+
+    P5 --> G3{"Gate: Implementer success<br/>first-pass ≥ 50%?"}
+    G3 -->|yes| P7[Phase 7 Complete]
+    G3 -->|no| PROMPT([Improve prompt/context])
+
+    P7 --> G4{"Gate: Cost per feature<br/>≤ $5/feature?"}
+    G4 -->|yes| P8([Phase 8: Evaluation])
+    G4 -->|no| REEVAL([Re-evaluate model/context])
+
+    KILL{{"Kill criteria:<br/>2 failed exit criteria<br/>or blocked > completed"}} -.->|triggers| SCOPE([Reassess scope])
+
+    style G1 fill:#F39C12,color:#fff
+    style G2 fill:#F39C12,color:#fff
+    style G3 fill:#F39C12,color:#fff
+    style G4 fill:#F39C12,color:#fff
+    style KILL fill:#E74C3C,color:#fff
+```
 
 **After Phase 1:** Demo the clarifier. If it doesn't feel obviously better than the text box, reconsider.
 

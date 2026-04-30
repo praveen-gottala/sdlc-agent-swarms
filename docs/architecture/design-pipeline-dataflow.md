@@ -7,23 +7,24 @@
 
 ## End-to-End Pipeline Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        AgentForge Design Pipeline                          │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    S0["Stage 0<br/>Init Wizard"] --> S1["Stage 1<br/>design:generate<br/>App Spec"]
+    S1 --> S2["Stage 2<br/>Research Agent"]
+    S2 --> S3["Stage 3<br/>Planning Agent"]
+    S3 --> S4["Stage 4<br/>Design Agent<br/>(browser|penpot)"]
+    S4 --> S5["Stage 5<br/>Feedback Loop"]
+    S5 --> S6["Stage 6<br/>Implementation Agent"]
+    S6 --> S7["Stage 7<br/>Output Files"]
 
- ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────────┐
- │  Stage 0 │    │   Stage 1    │    │   Stage 2    │    │    Stage 3    │
- │   init   │───▶│design:generate│───▶│  Research    │───▶│   Planning   │
- │  wizard  │    │  app spec    │    │    Agent     │    │    Agent      │
- └──────────┘    └──────────────┘    └──────────────┘    └───────┬───────┘
-                                                                  │
-                                                                  ▼
- ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────────┐
- │  Stage 7 │    │   Stage 6    │    │   Stage 5    │    │    Stage 4    │
- │  Output  │◀───│Implementation│◀───│  Feedback    │◀───│ Design Agent  │
- │  Files   │    │    Agent     │    │    Loop      │    │(browser|penpot)│
- └──────────┘    └──────────────┘    └──────────────┘    └───────────────┘
+    style S0 fill:#3498DB,color:#fff
+    style S1 fill:#3498DB,color:#fff
+    style S2 fill:#9B59B6,color:#fff
+    style S3 fill:#9B59B6,color:#fff
+    style S4 fill:#E74C3C,color:#fff
+    style S5 fill:#F39C12,color:#fff
+    style S6 fill:#2ECC71,color:#fff
+    style S7 fill:#2ECC71,color:#fff
 ```
 
 **Orchestrated by `runDesignPipeline()`** in
@@ -35,34 +36,47 @@ stage produces artifacts consumed by downstream stages. See ADR-046.
 
 ## Channels and Callers (Three-Layer Architecture)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Layer C — Transport Callers                                 │
-│                                                              │
-│  CLI design:page.ts ──────┐                                  │
-│  CLI design-page-all.ts ──┤── PipelineInput ──┐              │
-│  Dashboard design/route.ts┘                   │              │
-│                                               ▼              │
-│  ┌────────────────────────────────────────────────────────┐   │
-│  │  Layer B — Orchestrator: runDesignPipeline()           │   │
-│  │                                                        │   │
-│  │  Sequential: research → planning → design → evaluator  │   │
-│  │  Caching: per-stage JSON artifacts for resume           │   │
-│  │  Telemetry: PipelineTelemetrySink callbacks             │   │
-│  │  Dispatch: designTool → browserDesignWork | penpotWork  │   │
-│  └────────────────────────────────────────────────────────┘   │
-│                         │                                     │
-│                         ▼                                     │
-│  ┌────────────────────────────────────────────────────────┐   │
-│  │  Layer A — Work Functions (pure agent logic)           │   │
-│  │                                                        │   │
-│  │  uxResearchWork()    — typed UXResearchOutput           │   │
-│  │  uxPlanningWork()    — typed UXPlanningOutput            │   │
-│  │  browserDesignWork() — DesignSpecV2 via submit_design    │   │
-│  │  penpotDesignWork()  — DesignSpecV2 via Penpot scripts   │   │
-│  │  evaluateDesign()    — vision LLM evaluation             │   │
-│  └────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Layer C — Transport Callers"
+        CLI1["CLI design:page.ts"]
+        CLI2["CLI design-page-all.ts"]
+        DASH["Dashboard design/route.ts"]
+    end
+
+    CLI1 -->|PipelineInput| ORCH
+    CLI2 -->|PipelineInput| ORCH
+    DASH -->|PipelineInput| ORCH
+
+    subgraph "Layer B — Orchestrator"
+        ORCH["runDesignPipeline()<br/><br/>Sequential: research → planning → design → evaluator<br/>Caching: per-stage JSON artifacts for resume<br/>Telemetry: PipelineTelemetrySink callbacks"]
+        ORCH -->|"designTool=browser"| BWK
+        ORCH -->|"designTool=penpot"| PWK
+    end
+
+    subgraph "Layer A — Work Functions (pure agent logic)"
+        RES["uxResearchWork()<br/>→ UXResearchOutput"]
+        PLAN["uxPlanningWork()<br/>→ UXPlanningOutput"]
+        BWK["browserDesignWork()<br/>→ DesignSpecV2"]
+        PWK["penpotDesignWork()<br/>→ DesignSpecV2"]
+        EVAL["evaluateDesign()<br/>→ vision LLM evaluation"]
+    end
+
+    ORCH --> RES
+    RES --> PLAN
+    PLAN --> ORCH
+    BWK --> EVAL
+    PWK --> EVAL
+
+    style CLI1 fill:#3498DB,color:#fff
+    style CLI2 fill:#3498DB,color:#fff
+    style DASH fill:#3498DB,color:#fff
+    style ORCH fill:#F39C12,color:#fff
+    style RES fill:#9B59B6,color:#fff
+    style PLAN fill:#9B59B6,color:#fff
+    style BWK fill:#E74C3C,color:#fff
+    style PWK fill:#E74C3C,color:#fff
+    style EVAL fill:#2ECC71,color:#fff
 ```
 
 | Caller | Entry point | `designTool` | Sink |
@@ -551,83 +565,47 @@ designNode(state, ctx)
 
 ### Penpot Path — 3-Phase Pipeline
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                    PENPOT DESIGN AGENT                                │
-│                                                                      │
-│  Source: packages/agents-ux/src/ux-design/ux-penpot-design.ts        │
-│  Entry:  penpotDesignWork(input, provider, mcpClient, traceCollector)│
-│  Role:   penpot_design                                               │
-│  Event:  ComponentSpecReady → PenpotDesignReady                      │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                     PHASE A: LLM Script Generation            │   │
-│  │                                                               │   │
-│  │  1. discoverPenpotAPI(mcpClient)                              │   │
-│  │     └─ penpot:high_level_overview                             │   │
-│  │     └─ penpot:penpot_api_info (Board, FlexLayout, Fill, etc.) │   │
-│  │                                                               │   │
-│  │  2. LLM Call                                                  │   │
-│  │     Model:    claude-sonnet-4-6 (configurable via UI)         │   │
-│  │     Tokens:   64000                                           │   │
-│  │     Temp:     0.7                                             │   │
-│  │     Prompt:   ux-penpot-design-system.md                      │   │
-│  │       {{DESIGN_SYSTEM}}      ← design tokens + brand          │   │
-│  │       {{PENPOT_API_DOCS}}    ← dynamic API discovery          │   │
-│  │       {{COMPONENT_CATALOG}}  ← component anatomy              │   │
-│  │       + pageContext?         ← from pages.yaml (nav, models)  │   │
-│  │                                                               │   │
-│  │  3. parsePenpotDesignScript() → { script, breakpoints }       │   │
-│  │     Guard: rejects scripts with direct `layoutChild = ...`    │   │
-│  │            (Penpot `layoutChild` is getter-only)              │   │
-│  └─────────────────────────────────────┬─────────────────────────┘   │
-│                                        │                             │
-│  ┌─────────────────────────────────────▼─────────────────────────┐   │
-│  │                     PHASE B: Script Execution                 │   │
-│  │                                                               │   │
-│  │  1. Wrap script in try/catch error handler                    │   │
-│  │  2. Execute via penpot:execute_code (single MCP call)         │   │
-│  │  3. Extract: rootId (root shape) + nodeIds (name→shapeID)     │   │
-│  │  4. Error detection: syntax errors, runtime errors, MCP fail  │   │
-│  └─────────────────────────────────────┬─────────────────────────┘   │
-│                                        │                             │
-│  ┌─────────────────────────────────────▼─────────────────────────┐   │
-│  │               PHASE C: Visual Self-Correction                 │   │
-│  │               (max 3 iterations, threshold: 80/100)           │   │
-│  │                                                               │   │
-│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐  │   │
-│  │  │Screenshot│──▶│ Evaluate │──▶│ Generate │──▶│ Execute  │  │   │
-│  │  │ export   │   │  Design  │   │   Fixes  │   │  Fixes   │  │   │
-│  │  │  shape   │   │  (vision)│   │  (LLM)   │   │  (MCP)   │  │   │
-│  │  └──────────┘   └──────────┘   └──────────┘   └──────────┘  │   │
-│  │       ▲                                             │         │   │
-│  │       └─────────────── loop ◀───────────────────────┘         │   │
-│  │                                                               │   │
-│  │  Exit conditions:                                             │   │
-│  │    • score >= 80 (quality threshold)                          │   │
-│  │    • score not improving over iterations                      │   │
-│  │    • max 3 iterations reached                                 │   │
-│  │    • max 5 fixes per iteration                                │   │
-│  └───────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌───────────────────────────────────────────────────────────────┐    │
-│  │                        OUTPUT                                 │    │
-│  │                                                               │    │
-│  │  penpotProjectId: string      ── Penpot project ID            │    │
-│  │  penpotPageId: string         ── Penpot page ID               │    │
-│  │  penpotNodeIds: Record<string, string>  ── name→shapeID       │    │
-│  │  breakpoints: string[]        ── responsive breakpoints       │    │
-│  │  script?: string              ── raw JS (for replay)          │    │
-│  │  fixScripts?: string[]        ── Phase C correction scripts   │    │
-│  │  screenshotPath?: string      ── final screenshot             │    │
-│  │  componentSnapshots?: ComponentSnapshot[]                     │    │
-│  └───────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  Tools:   penpot:execute_code, penpot:high_level_overview,           │
-│           penpot:penpot_api_info, penpot:export_shape                 │
-│  HITL:    full_approval                                              │
-│  Budget:  40k tokens, $1.50/task                                     │
-└──────────────────────────────────────────────────────────────────────┘
+> **Source:** `packages/agents-ux/src/ux-design/ux-penpot-design.ts`
+> **Entry:** `penpotDesignWork(input, provider, mcpClient, traceCollector)`
+> **Event:** ComponentSpecReady → PenpotDesignReady
+> **Tools:** `penpot:execute_code`, `penpot:high_level_overview`, `penpot:penpot_api_info`, `penpot:export_shape`
+> **Budget:** 40k tokens, $1.50/task
+
+```mermaid
+graph TD
+    subgraph "Phase A: LLM Script Generation"
+        A1["discoverPenpotAPI(mcpClient)<br/>penpot:high_level_overview<br/>penpot:penpot_api_info"] --> A2["LLM Call<br/>claude-sonnet-4-6, 64K tokens, temp 0.7<br/>Prompt: ux-penpot-design-system.md"]
+        A2 --> A3["parsePenpotDesignScript()<br/>→ script + breakpoints<br/>Guard: reject layoutChild assignment"]
+    end
+
+    A3 --> B1
+
+    subgraph "Phase B: Script Execution"
+        B1["Wrap in try/catch"] --> B2["penpot:execute_code"]
+        B2 --> B3["Extract rootId + nodeIds"]
+        B3 --> B4{"Errors?"}
+        B4 -->|syntax/runtime/MCP| ERR([Error])
+    end
+
+    B4 -->|success| C1
+
+    subgraph "Phase C: Visual Self-Correction (max 3 iter, threshold 80/100)"
+        C1["Screenshot<br/>export_shape"] --> C2["Evaluate Design<br/>(vision LLM)"]
+        C2 --> C3{"score ≥ 80?"}
+        C3 -->|no, improving| C4["Generate Fixes<br/>(LLM, max 5)"]
+        C4 --> C5["Execute Fixes<br/>(MCP)"]
+        C5 --> C1
+    end
+
+    C3 -->|"yes / plateau / max iter"| OUT
+
+    OUT["OUTPUT<br/>penpotProjectId, penpotPageId,<br/>penpotNodeIds, breakpoints,<br/>script, fixScripts, screenshotPath"]
+
+    style A2 fill:#9B59B6,color:#fff
+    style B2 fill:#3498DB,color:#fff
+    style C2 fill:#E74C3C,color:#fff
+    style C3 fill:#F39C12,color:#fff
+    style OUT fill:#2ECC71,color:#fff
 ```
 
 ### MCP Tool Usage
@@ -1014,43 +992,27 @@ Each stage saves artifacts to `.agentforge/preview/{moduleId}/`. When using
 
 ## Event Flow Summary
 
-```
-UXModuleRequested
-  │  { moduleId, taskId, prdRequirements }
-  │
-  ▼
-uxResearchWork()
-  │
-  ▼
-DesignBriefCompleted
-  │  { briefId, moduleId, requirementIds, designConstraints,
-  │    referencePatterns, accessibilityRequirements, dataModelDependencies }
-  │
-  ▼
-uxPlanningWork()
-  │
-  ▼
-ComponentSpecReady
-  │  { specRef, moduleId, componentTree, tokenBindings,
-  │    responsiveRules, screens? }
-  │
-  ▼
-penpotDesignWork()  ──── [Phase A → B → C self-correction loop]
-  │
-  ▼
-PenpotDesignReady
-  │  { penpotProjectId, penpotPageId, penpotNodeIds,
-  │    breakpoints, script?, screenshotPath?, componentSnapshots? }
-  │
-  ▼
-runDesignFeedbackLoop()  ──── [Human-in-the-loop review]
-  │
-  ▼
-uxImplementationWork()
-  │
-  ▼
-ImplementationDraftReady
-    { moduleId, stage, files[], totalCostUsd }
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Research as uxResearchWork()
+    participant Planning as uxPlanningWork()
+    participant Design as penpotDesignWork()
+    participant Feedback as runDesignFeedbackLoop()
+    participant Impl as uxImplementationWork()
+
+    Caller->>Research: UXModuleRequested<br/>{moduleId, taskId, prdRequirements}
+    Research->>Planning: DesignBriefCompleted<br/>{briefId, designConstraints,<br/>referencePatterns, accessibility}
+    Planning->>Design: ComponentSpecReady<br/>{specRef, componentTree,<br/>tokenBindings, responsiveRules}
+
+    Note over Design: Phase A → B → C<br/>self-correction loop
+
+    Design->>Feedback: PenpotDesignReady<br/>{penpotProjectId, penpotPageId,<br/>penpotNodeIds, breakpoints}
+
+    Note over Feedback: Human-in-the-loop review
+
+    Feedback->>Impl: Approved
+    Impl->>Caller: ImplementationDraftReady<br/>{moduleId, stage, files[], totalCostUsd}
 ```
 
 ---

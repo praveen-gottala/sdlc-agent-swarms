@@ -13,11 +13,34 @@ The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text
 
 **Resequenced roadmap:** Phase 0 -> Phase 2 (RAG) -> Phase 1 (Clarifier), instead of Phase 0 -> 1 -> 2. Rationale: evolution mode needs real semantic search, not stubs. RAG built first so the Clarifier demo shows grounded questions from day one.
 
-**Context for implementers:**
-- **Use LangGraph `StateGraph` from day one** — do NOT follow the plain async `runDesignPipeline` pattern. The Clarifier is the first LangGraph graph in the monorepo (see challenge report below).
-- Follow `generateAppSpec` pattern for LLM calls with Zod schemas (`packages/agents-ux/src/app-spec/generate-app-spec.ts`)
-- Follow `packages/agents-ux/` structure for new agent package scaffold
-- See `.claude/rules/new-agent.md` for the full agent role checklist
+```mermaid
+graph LR
+    subgraph "Original Sequence"
+        O0["Phase 0<br/>Foundation"] --> O1["Phase 1<br/>Clarifier"]
+        O1 --> O2["Phase 2<br/>RAG"]
+    end
+
+    subgraph "Actual Sequence (resequenced)"
+        A0["Phase 0<br/>Foundation"] --> A2["Phase 2<br/>RAG"]
+        A2 --> A1["Phase 1<br/>Clarifier"]
+    end
+
+    A2 -.->|"evolution mode needs<br/>real semantic search"| A1
+
+    style O0 fill:#95A5A6,color:#fff
+    style O1 fill:#95A5A6,color:#fff
+    style O2 fill:#95A5A6,color:#fff
+    style A0 fill:#2ECC71,color:#fff
+    style A2 fill:#2ECC71,color:#fff
+    style A1 fill:#2ECC71,color:#fff
+```
+
+!!! tip "Context for implementers"
+
+    - **Use LangGraph `StateGraph` from day one** — do NOT follow the plain async `runDesignPipeline` pattern. The Clarifier is the first LangGraph graph in the monorepo (see challenge report below).
+    - Follow `generateAppSpec` pattern for LLM calls with Zod schemas (`packages/agents-ux/src/app-spec/generate-app-spec.ts`)
+    - Follow `packages/agents-ux/` structure for new agent package scaffold
+    - See `.claude/rules/new-agent.md` for the full agent role checklist
 
 ---
 
@@ -48,46 +71,53 @@ The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text
 - [x] **1.7** Graph assembly (2026-04-28) — RequirementsClarified event via `writeBridgeEvent()` in wrapper (NOT graph node). Fixed interrupt detection: `getState().next`. 6 integration tests. 114 total.
 - [ ] **1.8** Dashboard integration — PARTIAL. API routes done. `/new` page created but UX needs redesign — see `docs/plans/active/chip-ux-overhaul/execution-plan.md` Phase 3.
 
-**Context for Phase 1 implementers (2026-04-28 challenge report):**
-- **LangGraph StateGraph from day one.** Do NOT use plain async `runDesignPipeline` pattern. The Clarifier is the first spine stage (vision Layer 3) and owns the first HITL checkpoint (Layer 10). HITL must use real LangGraph `interrupt_before` persisted to Postgres checkpointer, not simulated polling. This is the first LangGraph graph in the monorepo — validates the runtime pattern for all future spine stages.
-- **Cross-boundary schemas already exist.** `EnrichedRequirementSchema` and `AssumptionLedgerSchema` are in `packages/core/src/types/cross-boundary-artifacts.schemas.ts` (Phase 0.2). Import from `@agentforge/core`, do NOT duplicate in `agents-clarifier/src/schemas.ts`. Only internal types (`ClarifierState`, `Gap`, `Question`, `ClarifierContext`) go in the agent package.
-- **All 5 retrieval tools in evolution mode.** `searchDesignsTool` was missing from the original plan but vision Layer 5 explicitly lists "existing designs" as a Context Retriever source. The tool exists and is wired in `createRetrievalTools()`.
-- **TracedProvider on every LLM call.** Observability Phase 1-3 is complete (ADR-046). All LLM calls must use `createTracedProvider()` from `@agentforge/telemetry`. Tasks 1.2, 1.3, 1.5 each make LLM calls.
-- **Full new-agent checklist.** `.claude/rules/new-agent.md` requires 7 items: init.ts, domain-events, core barrel export, implementation, permission-checker, hitl-enforcer, integration test. Don't skip governance stubs.
-- **`screenId` derivation for design search.** `chunkDesignSpec(filePath, content, screenId)` requires a third argument. The design indexer extracts screenId via `basename(filePath, '.json')`. This is NOT stored in the spec — it's derived from the filename.
-- **Design retrieval gap was closed (2026-04-28).** `design-indexer.ts` and `design-search.ts` were added to complete Task 2.3b. The `searchDesigns` method is now on the `RetrievalTools` interface.
-- **Domain event name:** Add `RequirementsClarified` to `packages/core/src/events/domain-events.ts`. This is a telemetry event (not coordination) per vision Layer 2.
+!!! info "Context for Phase 1 implementers (2026-04-28 challenge report)"
 
-**Implementation gotchas (discovered during Phase 1 foundation, 2026-04-28):**
-- **Cross-boundary types not re-exported from core barrel.** `EnrichedRequirement`, `AssumptionLedger`, `PRD`, `FeaturePlan` are in `packages/core/src/types/cross-boundary-artifacts.ts` and `packages/core/src/types/index.ts`, but were NOT in `packages/core/src/index.ts`. Jest+SWC transpiles without full type checking so scaffold tests passed, but `tsc --build` fails. Fixed: added cross-boundary type/schema exports to core barrel.
-- **LangGraph StateGraph builder type tracking is extremely strict.** `buildClarifierGraph()` must NOT declare an explicit return type — let TypeScript infer it from the chain. Declaring `StateGraph<typeof ClarifierStateAnnotation.State>` causes type mismatches because `addNode`/`addEdge`/`addConditionalEdges` return progressively narrower types that don't match the base annotation type. `compileClarifierGraph` uses `ReturnType<ReturnType<typeof buildClarifierGraph>['compile']>` for the return type.
-- **`addConditionalEdges` path maps cause type errors.** The third argument (path map) triggers strict type narrowing that rejects valid node names. Omit the path map — LangGraph resolves routing from the function return value automatically.
-- **`createCheckpointer()` is async.** Returns `Promise<BaseCheckpointSaver>`, not `BaseCheckpointSaver`. Must `await` it before passing to `graph.compile()`.
-- **Factory pattern for dependency injection.** Each node is a `create*(deps: ClarifierDeps) → ClarifierNodeFn` factory. `buildClarifierGraph(deps)` threads deps to all factories. This avoids `as unknown` casts that `config.configurable` would require. Defined in `src/deps.ts`.
-- **Escalation gate with HITL.** `interruptBefore: ['storyWriter', 'escalationGate']` — two HITL interrupt points. After max rounds, the graph interrupts at `escalationGate` so the user can accept/restart/abandon.
+    - **LangGraph StateGraph from day one.** Do NOT use plain async `runDesignPipeline` pattern. The Clarifier is the first spine stage (vision Layer 3) and owns the first HITL checkpoint (Layer 10). HITL must use real LangGraph `interrupt_before` persisted to Postgres checkpointer, not simulated polling. This is the first LangGraph graph in the monorepo — validates the runtime pattern for all future spine stages.
+    - **Cross-boundary schemas already exist.** `EnrichedRequirementSchema` and `AssumptionLedgerSchema` are in `packages/core/src/types/cross-boundary-artifacts.schemas.ts` (Phase 0.2). Import from `@agentforge/core`, do NOT duplicate in `agents-clarifier/src/schemas.ts`. Only internal types (`ClarifierState`, `Gap`, `Question`, `ClarifierContext`) go in the agent package.
+    - **All 5 retrieval tools in evolution mode.** `searchDesignsTool` was missing from the original plan but vision Layer 5 explicitly lists "existing designs" as a Context Retriever source. The tool exists and is wired in `createRetrievalTools()`.
+    - **TracedProvider on every LLM call.** Observability Phase 1-3 is complete (ADR-046). All LLM calls must use `createTracedProvider()` from `@agentforge/telemetry`. Tasks 1.2, 1.3, 1.5 each make LLM calls.
+    - **Full new-agent checklist.** `.claude/rules/new-agent.md` requires 7 items: init.ts, domain-events, core barrel export, implementation, permission-checker, hitl-enforcer, integration test. Don't skip governance stubs.
+    - **`screenId` derivation for design search.** `chunkDesignSpec(filePath, content, screenId)` requires a third argument. The design indexer extracts screenId via `basename(filePath, '.json')`. This is NOT stored in the spec — it's derived from the filename.
+    - **Design retrieval gap was closed (2026-04-28).** `design-indexer.ts` and `design-search.ts` were added to complete Task 2.3b. The `searchDesigns` method is now on the `RetrievalTools` interface.
+    - **Domain event name:** Add `RequirementsClarified` to `packages/core/src/events/domain-events.ts`. This is a telemetry event (not coordination) per vision Layer 2.
 
-**Implementation gotchas (discovered during Task 1.0, 2026-04-28):**
-- **New-agent checklist has hidden test dependencies.** `.claude/rules/new-agent.md` lists 7 items, but two test files also need updating: `event-bus.test.ts` requires the new event in BOTH its `fixtures` record AND its `allEventTypes` array; `agent-contract-schema-p12.test.ts` requires the new role in `PHASE_1_AGENTS`.
-- **Packages with `.md` prompt files need a `project.json`.** Nx auto-infers targets for packages without non-TS assets, but prompt files require explicit `cp -r src/prompts/* dist/prompts/` in the build. See `packages/agents-ux/project.json` for the pattern. Packages without prompts (like `retrieval`, `telemetry`) need NO `project.json`.
-- **LangGraph `Annotation.Root()` pattern.** First usage in the monorepo is `packages/agents-clarifier/src/graph/state.ts`. Each channel gets a `reducer` function (last-write-wins for scalars, concatenation for arrays like `humanResponses`) and a `default` factory. The `interruptBefore` option on `graph.compile()` takes an array of node names — e.g., `['storyWriter']`.
-- **Governance phase naming convention.** `AgentAction.phase` uses short names (`clarify`, `design`, `spec`, `code`). `HITLPhase` uses descriptive names (`clarification`, `spec_review`, `code_generation`). The mapping is in `PHASE_MAPPING` in `hitl-enforcer.ts`.
+??? warning "Implementation gotchas (Phase 1 foundation, 2026-04-28)"
 
-**Implementation gotchas (discovered during Tasks 1.2-1.6, 2026-04-28):**
-- **Mock `CompletionResult` requires full `CostRecord`.** The `CostRecord` interface has mandatory `model: string` and `timestamp: string` fields, plus `inputCostUsd`/`outputCostUsd`/`totalCostUsd` (NOT `inputCost`/`outputCost`/`totalCost`). SWC-transformed Jest tests compile without type errors, but `tsc --build` catches the mismatch. Always include `model` and `timestamp` in mock cost objects.
-- **Linter strips unused prompt loading code.** If you scaffold `readFileSync` + `parsePromptFrontmatter` + `import.meta.url` for a future LLM call but don't wire the LLM call yet (as in Critic), the linter removes the unused imports on save. Re-add them when wiring the LLM call.
-- **`extractStructured` pattern for every LLM-calling node.** Check `result.value.structured` first (native structured output via `output_config`), then fall back to JSON-parsing `result.value.content` with code-fence stripping (`/^```(?:json)?\s*/m`). Three nodes (prd-analyzer, gap-detector, story-writer) implement this. Extract to shared utility if a 4th node needs it.
-- **Manual JSON Schema for `responseSchema`, not `zodToJsonSchema`.** CLAUDE.md says use `zod-to-json-schema` but zero codebase usage exists. All `responseSchema` objects in agents-ux are hand-written JSON Schema. Follow this pattern for consistency. Use `PRDSchema.safeParse()` (Zod) for response validation after receipt.
-- **EVPI threshold calibration.** Set at 0.15. Gaps with `category: 'incomplete'` + `confidence: 0.9` produce EVPI = 0.5 * 0.9 * 0.1 = 0.045, well below threshold → they become assumptions, not questions. This is intentional: high-confidence minor gaps shouldn't consume the question budget.
+    - **Cross-boundary types not re-exported from core barrel.** `EnrichedRequirement`, `AssumptionLedger`, `PRD`, `FeaturePlan` are in `packages/core/src/types/cross-boundary-artifacts.ts` and `packages/core/src/types/index.ts`, but were NOT in `packages/core/src/index.ts`. Jest+SWC transpiles without full type checking so scaffold tests passed, but `tsc --build` fails. Fixed: added cross-boundary type/schema exports to core barrel.
+    - **LangGraph StateGraph builder type tracking is extremely strict.** `buildClarifierGraph()` must NOT declare an explicit return type — let TypeScript infer it from the chain. Declaring `StateGraph<typeof ClarifierStateAnnotation.State>` causes type mismatches because `addNode`/`addEdge`/`addConditionalEdges` return progressively narrower types that don't match the base annotation type. `compileClarifierGraph` uses `ReturnType<ReturnType<typeof buildClarifierGraph>['compile']>` for the return type.
+    - **`addConditionalEdges` path maps cause type errors.** The third argument (path map) triggers strict type narrowing that rejects valid node names. Omit the path map — LangGraph resolves routing from the function return value automatically.
+    - **`createCheckpointer()` is async.** Returns `Promise<BaseCheckpointSaver>`, not `BaseCheckpointSaver`. Must `await` it before passing to `graph.compile()`.
+    - **Factory pattern for dependency injection.** Each node is a `create*(deps: ClarifierDeps) → ClarifierNodeFn` factory. `buildClarifierGraph(deps)` threads deps to all factories. This avoids `as unknown` casts that `config.configurable` would require. Defined in `src/deps.ts`.
+    - **Escalation gate with HITL.** `interruptBefore: ['storyWriter', 'escalationGate']` — two HITL interrupt points. After max rounds, the graph interrupts at `escalationGate` so the user can accept/restart/abandon.
 
-**Implementation gotchas (discovered during Tasks 1.7-1.8, 2026-04-28):**
-- **LangGraph `interruptBefore` does NOT throw.** `invoke()` returns the partial state normally when an interrupt fires. Do NOT catch `GraphInterrupt` — instead call `getState(config)` after invoke and check `graphState.next.length > 0` to detect interrupts. The original `runClarifierPipeline` caught exceptions that never came, so `interrupted` was always `false`. Fixed in `run.ts:74-79`.
-- **Event emission belongs in the wrapper, not the graph node.** Challenge revealed that NO pipeline stage node in the codebase takes `eventBus` as a dependency. The design pipeline uses a sink pattern where callers handle telemetry. `emitComplete` stays as a no-op state transition. `runClarifierPipeline()` emits `RequirementsClarified` via `writeBridgeEvent()` after successful non-interrupted completion.
-- **`import.meta.url` under Next.js webpack** resolves to `.next/server/app/api/clarifier/` where prompt `.md` files don't exist. Fix: add `@agentforge/agents-clarifier` to `serverExternalPackages` in `next.config.js` (not `transpilePackages`). Must `nx build agents-clarifier` before running dashboard dev server so `dist/` + `dist/prompts/` exist.
-- **`loadBaseCatalog()` fails under webpack** because `__dirname` resolves to the webpack output directory. Dashboard workaround: pass `baseCatalog` string via `ClarifierInput` (optional field), pre-loaded from `MONOREPO_ROOT` absolute path in the API route. Context retriever uses it when available, falls back to `loadBaseCatalog()` otherwise.
-- **`createCheckpointer()` tries Postgres when `DATABASE_URL` is set.** Dashboard API routes must try/catch and fall back to `new MemorySaver()` when the database is unavailable. Integration tests always pass `checkpointer: new MemorySaver()` to avoid Postgres dependency.
-- **Mantine v9.1.1** was installed (latest), not v7 as originally planned. API is compatible. Coexists with Tailwind — components accept `className` prop. PostCSS config needs `postcss-preset-mantine` + `postcss-simple-vars` alongside `@tailwindcss/postcss`.
+??? warning "Implementation gotchas (Task 1.0, 2026-04-28)"
 
-**Phase 1 exit criteria:** User submits seed at `/new`, clarifier asks <=7 questions in <=3 rounds, produces structured PRD YAML with assumption ledger, dashboard shows PRD for approval. Both modes (bootstrap + evolution) work. HITL interrupt persists in Postgres (survives page refresh). All tests green (typecheck, unit, lint, E2E).
+    - **New-agent checklist has hidden test dependencies.** `.claude/rules/new-agent.md` lists 7 items, but two test files also need updating: `event-bus.test.ts` requires the new event in BOTH its `fixtures` record AND its `allEventTypes` array; `agent-contract-schema-p12.test.ts` requires the new role in `PHASE_1_AGENTS`.
+    - **Packages with `.md` prompt files need a `project.json`.** Nx auto-infers targets for packages without non-TS assets, but prompt files require explicit `cp -r src/prompts/* dist/prompts/` in the build. See `packages/agents-ux/project.json` for the pattern. Packages without prompts (like `retrieval`, `telemetry`) need NO `project.json`.
+    - **LangGraph `Annotation.Root()` pattern.** First usage in the monorepo is `packages/agents-clarifier/src/graph/state.ts`. Each channel gets a `reducer` function (last-write-wins for scalars, concatenation for arrays like `humanResponses`) and a `default` factory. The `interruptBefore` option on `graph.compile()` takes an array of node names — e.g., `['storyWriter']`.
+    - **Governance phase naming convention.** `AgentAction.phase` uses short names (`clarify`, `design`, `spec`, `code`). `HITLPhase` uses descriptive names (`clarification`, `spec_review`, `code_generation`). The mapping is in `PHASE_MAPPING` in `hitl-enforcer.ts`.
+
+??? warning "Implementation gotchas (Tasks 1.2-1.6, 2026-04-28)"
+
+    - **Mock `CompletionResult` requires full `CostRecord`.** The `CostRecord` interface has mandatory `model: string` and `timestamp: string` fields, plus `inputCostUsd`/`outputCostUsd`/`totalCostUsd` (NOT `inputCost`/`outputCost`/`totalCost`). SWC-transformed Jest tests compile without type errors, but `tsc --build` catches the mismatch. Always include `model` and `timestamp` in mock cost objects.
+    - **Linter strips unused prompt loading code.** If you scaffold `readFileSync` + `parsePromptFrontmatter` + `import.meta.url` for a future LLM call but don't wire the LLM call yet (as in Critic), the linter removes the unused imports on save. Re-add them when wiring the LLM call.
+    - **`extractStructured` pattern for every LLM-calling node.** Check `result.value.structured` first (native structured output via `output_config`), then fall back to JSON-parsing `result.value.content` with code-fence stripping (`/^```(?:json)?\s*/m`). Three nodes (prd-analyzer, gap-detector, story-writer) implement this. Extract to shared utility if a 4th node needs it.
+    - **Manual JSON Schema for `responseSchema`, not `zodToJsonSchema`.** CLAUDE.md says use `zod-to-json-schema` but zero codebase usage exists. All `responseSchema` objects in agents-ux are hand-written JSON Schema. Follow this pattern for consistency. Use `PRDSchema.safeParse()` (Zod) for response validation after receipt.
+    - **EVPI threshold calibration.** Set at 0.15. Gaps with `category: 'incomplete'` + `confidence: 0.9` produce EVPI = 0.5 * 0.9 * 0.1 = 0.045, well below threshold → they become assumptions, not questions. This is intentional: high-confidence minor gaps shouldn't consume the question budget.
+
+??? warning "Implementation gotchas (Tasks 1.7-1.8, 2026-04-28)"
+
+    - **LangGraph `interruptBefore` does NOT throw.** `invoke()` returns the partial state normally when an interrupt fires. Do NOT catch `GraphInterrupt` — instead call `getState(config)` after invoke and check `graphState.next.length > 0` to detect interrupts. The original `runClarifierPipeline` caught exceptions that never came, so `interrupted` was always `false`. Fixed in `run.ts:74-79`.
+    - **Event emission belongs in the wrapper, not the graph node.** Challenge revealed that NO pipeline stage node in the codebase takes `eventBus` as a dependency. The design pipeline uses a sink pattern where callers handle telemetry. `emitComplete` stays as a no-op state transition. `runClarifierPipeline()` emits `RequirementsClarified` via `writeBridgeEvent()` after successful non-interrupted completion.
+    - **`import.meta.url` under Next.js webpack** resolves to `.next/server/app/api/clarifier/` where prompt `.md` files don't exist. Fix: add `@agentforge/agents-clarifier` to `serverExternalPackages` in `next.config.js` (not `transpilePackages`). Must `nx build agents-clarifier` before running dashboard dev server so `dist/` + `dist/prompts/` exist.
+    - **`loadBaseCatalog()` fails under webpack** because `__dirname` resolves to the webpack output directory. Dashboard workaround: pass `baseCatalog` string via `ClarifierInput` (optional field), pre-loaded from `MONOREPO_ROOT` absolute path in the API route. Context retriever uses it when available, falls back to `loadBaseCatalog()` otherwise.
+    - **`createCheckpointer()` tries Postgres when `DATABASE_URL` is set.** Dashboard API routes must try/catch and fall back to `new MemorySaver()` when the database is unavailable. Integration tests always pass `checkpointer: new MemorySaver()` to avoid Postgres dependency.
+    - **Mantine v9.1.1** was installed (latest), not v7 as originally planned. API is compatible. Coexists with Tailwind — components accept `className` prop. PostCSS config needs `postcss-preset-mantine` + `postcss-simple-vars` alongside `@tailwindcss/postcss`.
+
+!!! success "Phase 1 exit criteria"
+
+    User submits seed at `/new`, clarifier asks <=7 questions in <=3 rounds, produces structured PRD YAML with assumption ledger, dashboard shows PRD for approval. Both modes (bootstrap + evolution) work. HITL interrupt persists in Postgres (survives page refresh). All tests green (typecheck, unit, lint, E2E).
 
 ### Phase 1 Task Detail
 
@@ -122,12 +152,32 @@ Six internal stages (vision Layer 5), wired as a **LangGraph `StateGraph`** with
 - **Factory pattern for DI.** Each node is `create*(deps: ClarifierDeps) → ClarifierNodeFn`. `ClarifierDeps` has `provider` (TracedProvider-wrapped), `retrievalTools?`, `projectRoot`, `projectId`. Defined in `src/deps.ts`.
 - **5 new state channels:** `prdDraft` (PRD | null), `featurePlan` (FeaturePlan | null), `criticRetries` (number), `criticPassed` (boolean), `escalationDecision` ('accept' | 'restart' | 'abandon' | null). Types from `@agentforge/core`.
 - **Graph topology with conditional routing:**
-  ```
-  __start__ → contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer
-  → [HITL interrupt] → storyWriter → critic → routeAfterCritic
-  routeAfterCritic: retry → storyWriter | new round → gapDetector | max rounds → escalationGate [HITL] | pass → emitComplete → END
-  escalationGate: accept → emitComplete | restart → gapDetector (round=0) | abandon → END
-  ```
+
+```mermaid
+graph TD
+    START([__start__]) --> CR[contextRetriever]
+    CR --> PA[prdAnalyzer]
+    PA --> GD[gapDetector]
+    GD --> QP[questionPrioritizer]
+    QP --> HITL1{{"HITL interrupt"}}
+    HITL1 --> SW[storyWriter]
+    SW --> CRITIC[critic]
+    CRITIC --> ROUTE{routeAfterCritic}
+
+    ROUTE -->|"retry (≤2)"| SW
+    ROUTE -->|new round| GD
+    ROUTE -->|max rounds| ESC{{"HITL: escalationGate"}}
+    ROUTE -->|pass| EMIT[emitComplete]
+
+    ESC -->|accept| EMIT
+    ESC -->|"restart (round=0)"| GD
+    ESC -->|abandon| END1([END])
+    EMIT --> END2([END])
+
+    style HITL1 fill:#F39C12,color:#fff
+    style ESC fill:#F39C12,color:#fff
+    style ROUTE fill:#3498DB,color:#fff
+```
 - **`runClarifierPipeline(input)`** in `src/run.ts` — convenience wrapper, entry point for Task 1.8.
 - **17 tests** (7 scaffold + 10 routing). 408 monorepo tests green.
 
@@ -140,6 +190,53 @@ Six internal stages (vision Layer 5), wired as a **LangGraph `StateGraph`** with
 - `src/nodes/*.ts` (6 files) — converted to `create*` factory pattern
 - `src/index.ts`, `src/nodes/index.ts`, `src/graph/index.ts` — updated barrels
 - `packages/core/src/index.ts` — added cross-boundary type exports (PRD, FeaturePlan, EnrichedRequirement, etc.)
+
+#### Per-Node Channel Data Flow
+
+```mermaid
+graph LR
+    subgraph "State Channels"
+        RI[rawInput]
+        MODE[mode]
+        CTX[context]
+        PRD[prdDraft]
+        GAPS[gaps]
+        QS[questions]
+        HR[humanResponses]
+        ASM[assumptions]
+        REQ[requirement]
+        FP[featurePlan]
+        CR_R[criticRetries]
+        CP[criticPassed]
+        RND[round]
+        ED[escalationDecision]
+        ERR[error]
+    end
+
+    CR2["Context<br/>Retriever"] -->|writes| CTX
+    CR2 -.->|reads| RI
+    CR2 -.->|reads| MODE
+
+    PA2["PRD<br/>Analyzer"] -->|writes| PRD
+    PA2 -.->|reads| CTX
+
+    GD2["Gap<br/>Detector"] -->|writes| GAPS
+    GD2 -->|writes| RND
+    GD2 -.->|reads| PRD
+    GD2 -.->|reads| HR
+
+    QP2["Question<br/>Prioritizer"] -->|writes| QS
+    QP2 -->|writes| ASM
+    QP2 -.->|reads| GAPS
+
+    SW2["Story<br/>Writer"] -->|writes| REQ
+    SW2 -->|writes| FP
+    SW2 -.->|reads| HR
+
+    CRT["Critic"] -->|writes| CP
+    CRT -->|writes| CR_R
+    CRT -.->|reads| FP
+```
 
 #### Task 1.1: Context Retriever Node
 

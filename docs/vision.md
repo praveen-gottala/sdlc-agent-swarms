@@ -1,12 +1,33 @@
 # CHIP — Architecture Vision
 
-> **Read this before making any architectural decision.** This document is the
-> target vision for CHIP. The current codebase is in migration toward
-> this vision. When the codebase and this document conflict, the document
-> wins — add a TODO, an ADR, or raise the conflict; do not replicate the
-> codebase's legacy pattern as if it were correct.
+!!! warning "Read this before making any architectural decision"
+
+    This document is the target vision for CHIP. The current codebase is in migration toward this vision. When the codebase and this document conflict, **the document wins** — add a TODO, an ADR, or raise the conflict; do not replicate the codebase's legacy pattern as if it were correct.
 
 ---
+
+## Executive summary
+
+CHIP is a four-stage agent spine (**Clarify → Architect → Implement → Review**) that turns a product idea into working software.
+
+**What's operational today:**
+
+- **Clarifier** — 6-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling
+- **Design pipeline** — 4-stage Research → Planning → Design → Evaluator with vision correction
+- **RAG layer** — hybrid search (BM25 + dense + rerank) for code, docs, and designs; repo map; 5 MCP tools
+- **Dashboard** — 15 routes, Mantine v9, serves both design and clarifier workflows
+- **Observability** — OTel + Langfuse self-hosted, prompt versioning, cost tracking
+
+**What's specified but not yet built:**
+
+- Architect, Implementer, and Reviewer spine stages
+- Golden evaluation test sets
+- Sandboxing / ephemeral containers
+
+This document describes both what exists and what's next — every layer explicitly separates current state from target vision.
+
+---
+
 ## How to use this document
 
 This is the architectural authority for CHIP. Every layer has current-state, 
@@ -62,27 +83,76 @@ Every legacy pattern in the current state has a reason it's there, and a reason 
 
 ## 1. Product vision (one paragraph)
 
-CHIP is an autonomous multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. It does this through a small set of specialized LLM-driven stages coordinated as a typed, durable, checkpointed graph, with a conversational clarifier front-end, a code/doc RAG layer, a spec-first artifact system, and structural human-in-the-loop gates at phase boundaries. The framework's differentiation is not in how many agents it has or how autonomous they seem — it is in the quality of context engineering, the rigor of clarification before implementation, and the discipline of single-writer artifacts. The target audience is Persona B (5–15 person engineering teams) first; Persona A (solo builders) second.
+CHIP is an autonomous multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software.
+
+**How it works:** A small set of specialized LLM-driven stages coordinated as a typed, durable, checkpointed graph — with a conversational clarifier front-end, a code/doc RAG layer, a spec-first artifact system, and structural human-in-the-loop gates at phase boundaries.
+
+**What differentiates CHIP:** Not how many agents it has or how autonomous they seem — but the quality of **context engineering**, the rigor of **clarification before implementation**, and the discipline of **single-writer artifacts**.
+
+**Target audience:** Persona B (5–15 person engineering teams) first; Persona A (solo builders) second.
 
 ---
 
 ## 2. Architectural layers at a glance
 
-| # | Layer | Current state (summary) | Target (summary) |
-|---|---|---|---|
-| 1 | Orchestration runtime | Split: TypeScript agents + Python LangGraph engine in `services/engine` with stub nodes | TypeScript LangGraph only |
-| 2 | Coordination substrate | In-memory EventEmitter used for control flow | Typed LangGraph channels for control; event bus relegated to telemetry |
-| 3 | Agent taxonomy | Ten peer agents on event bus (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs) | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
-| 4 | State persistence | YAML files on disk + in-memory dict | YAML for artifacts + Postgres LangGraph checkpointer for run state |
-| 5 | Clarifier / input | Text box on `/new`, no feedback | Six-stage conversational clarifier with assumption ledger |
-| 6 | RAG / context | None (agents operate without codebase retrieval) | Aider-style repo map + voyage-code-3 + Qdrant for code; LlamaIndex + voyage-3-large for docs |
-| 7 | Design pipeline | Per-screen generation works; Pass 3 coherence is post-hoc | In-loop cross-screen coherence with shared running context |
-| 8 | Implementation | PRD Section 24.2 specifies parallel frontend+backend+tests coders | Single-threaded tool-loop implementer with sequential write order |
-| 9 | Review | Not implemented | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
-| 10 | HITL | One approval gate after design | Three gates: clarification, design/API, code merge |
-| 11 | Observability | Langfuse self-hosted + OTel spans via packages/telemetry (ADR-046). Prompt versioning implemented (frontmatter parser + TracedProvider metadata + pre-commit hook). Cost tracking not yet implemented. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
-| 12 | Evaluation | None | Golden test sets with CI-integrated regression detection |
-| 13 | Sandboxing | Runs on dev machine | Ephemeral containers, egress allowlist, zero-secret agent design |
+| # | Layer | Where we are | Current state (summary) | Target (summary) |
+|---|---|---|---|---|
+| 1 | Orchestration runtime | Done | TypeScript LangGraph adopted (ADR-043). Python engine deprecated. | TypeScript LangGraph only |
+| 2 | Coordination substrate | Partial | Clarifier uses typed channels. Older code still uses EventEmitter for some control flow. | Typed LangGraph channels for control; event bus relegated to telemetry |
+| 3 | Agent taxonomy | Partial | Clarifier + Design pipeline operational as spine stages. Architect/Implementer/Reviewer not built. | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
+| 4 | State persistence | Partial | YAML artifacts operational. Checkpointer factory built (MemorySaver/PostgresSaver). Not yet wired into all pipelines. | YAML for artifacts + Postgres LangGraph checkpointer for run state |
+| 5 | Clarifier / input | Done | Six-stage LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling. | Six-stage conversational clarifier with assumption ledger |
+| 6 | RAG / context | Done | Hybrid search (BM25+dense+rerank) for code/docs/designs. Repo map. 5 MCP tools. Wired into Clarifier. | Aider-style repo map + voyage-code-3 + Qdrant for code; LlamaIndex + voyage-3-large for docs |
+| 7 | Design pipeline | Partial | Per-screen pipeline works (Research→Planning→Design→Evaluator). Cross-screen coherence is post-hoc. | In-loop cross-screen coherence with shared running context |
+| 8 | Implementation | Not started | Architecture specified (single-threaded, sequential write order). No code. | Single-threaded tool-loop implementer with sequential write order |
+| 9 | Review | Not started | Architecture specified (fresh context, deterministic gates first). No code. | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
+| 10 | HITL | Partial | Two gates operational (clarification interrupt, design approval). Code merge gate not built. | Three gates: clarification, design/API, code merge |
+| 11 | Observability | Done | Langfuse self-hosted + OTel spans + prompt versioning + cost tracking per call. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
+| 12 | Evaluation | Not started | Design evaluator exists (structural + vision). No golden test sets. | Golden test sets with CI-integrated regression detection |
+| 13 | Sandboxing | Not started | Runs on dev machine. Zero-secret design principle followed. | Ephemeral containers, egress allowlist, zero-secret agent design |
+
+```mermaid
+graph TD
+    subgraph Infrastructure
+        L1[1. Orchestration Runtime]
+        L2[2. Coordination Substrate]
+        L4[4. State & Persistence]
+        L11[11. Observability]
+    end
+
+    subgraph Spine ["Vertical Spine (sequential)"]
+        L5[5. Clarifier] --> L3A[3. Architect]
+        L3A --> L8[8. Implementer]
+        L8 --> L9[9. Reviewer]
+    end
+
+    subgraph Horizontal ["Horizontal Capabilities"]
+        L6[6. RAG / Context]
+        L7[7. Design Pipeline]
+        L10[10. HITL Gates]
+        L12[12. Evaluation]
+    end
+
+    subgraph Platform
+        L13[13. Sandboxing]
+        L14[14. Dashboard & UX]
+        L15[15. Integrations]
+    end
+
+    L5 -.-> L6
+    L5 -.-> L7
+    L5 -.-> L10
+
+    style L5 fill:#2ECC71,color:#fff
+    style L6 fill:#2ECC71,color:#fff
+    style L7 fill:#F39C12,color:#fff
+    style L11 fill:#2ECC71,color:#fff
+    style L14 fill:#F39C12,color:#fff
+    style L8 fill:#95A5A6,color:#fff
+    style L9 fill:#95A5A6,color:#fff
+```
+
+> Legend: 🟢 Done — 🟡 Partial — ⚪ Not started
 
 ---
 
@@ -90,28 +160,31 @@ CHIP is an autonomous multi-agent SDLC framework that takes a product idea and p
 
 ### Current state
 - TypeScript monorepo (Nx workspace) contains the real agent logic: `packages/agents-ux`, `packages/agents-design`, `packages/designspec-renderer`, `packages/core`, `packages/cli`, `packages/dashboard`.
-- Python service at `services/engine` has LangGraph patterns but agent nodes are stubs; no active workflow reaches it.
-- ADR-022 committed to TypeScript-only orchestration, but the Python engine was never removed. This is documented drift.
+- Python service at `services/engine` is **deprecated** (ADR-043). Agent nodes are stubs; no active workflow reaches it. Scheduled for removal after migration Phase M-4.
+- ADR-022 committed to TypeScript-only orchestration. ADR-043 formalizes the deprecation.
 
 ### Target vision
 Single orchestration runtime: `@langchain/langgraph` (TypeScript). Every spine and specialist runs in the TypeScript process. Python remains available for auxiliary services only (not orchestration).
 
 ### Locked decisions
-- **TypeScript LangGraph is the sole orchestration runtime.** Python engine to be formally deprecated via ADR-043.
+- **TypeScript LangGraph is the sole orchestration runtime.** Python engine formally deprecated via ADR-043. Scheduled for deletion after migration Phase M-4.
 - **LangGraph is chosen over CrewAI (no typed state), OpenAI Agents SDK (no checkpointing), and Microsoft Agent Framework (fine but wrong ecosystem fit).**
 
 ### Open decisions
-- **Whether any legacy Python code survives the migration.** Currently nothing reaches `services/engine` at runtime. The ADR will confirm whether anything in Python is load-bearing. If not, delete.
+- ~~**Whether any legacy Python code survives the migration.**~~ **Resolved (ADR-043).** Nothing in `services/engine` is load-bearing at runtime. Scheduled for deletion after migration Phase M-4.
 - **LangGraph local vs LangGraph Platform.** Local for POC. Hosted Platform is an upgrade path if deployment complexity grows — not a near-term decision.
 
-### Why the current state is wrong
-Two orchestrators means every feature lands in two codebases or one side becomes a zombie. The Python engine is currently the zombie. Maintaining both forces cross-language state serialization (fragile) or duplicate logic (drift-prone). The research report's Part 1 and the Anthropic/Cognition reconciliation both assume a single, typed, checkpointable graph — that's LangGraph TS here.
+??? danger "Why the current state is wrong"
+
+    Two orchestrators means every feature lands in two codebases or one side becomes a zombie. The Python engine is currently the zombie. Maintaining both forces cross-language state serialization (fragile) or duplicate logic (drift-prone). The research report's Part 1 and the Anthropic/Cognition reconciliation both assume a single, typed, checkpointable graph — that's LangGraph TS here.
 
 ---
 
 ## Layer 2: Coordination substrate
 
-> For an expanded overview with diagrams, see [Concepts: Coordination & State](concepts/coordination-and-state.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Coordination & State](concepts/coordination-and-state.md)
 
 ### Current state
 - `CLAUDE.md` at repo root says: "Agents communicate via event bus ONLY. No direct agent-to-agent calls."
@@ -134,8 +207,9 @@ Two distinct planes:
 - **Whether to keep `EventEmitter` or switch to OpenTelemetry-native event emission.** Either works for the telemetry plane. Easier migration is: keep EventEmitter as a facade that emits OTel spans underneath.
 - **Reducer semantics for specific channels.** Most channels are last-write-wins. `AssumptionLedger` needs concatenation. `errors` needs concatenation. Per-channel decision, made when the channel is introduced.
 
-### Why the current state is wrong
-Every emitter-receiver pair with an untyped payload is a silent-drift bug candidate. With ten agents, that's ~45 pairwise channels. Types catch shape errors at authoring time; event buses catch them in production, if at all. See research report Part 1 "Inter-agent communication" and the Anthropic/Cognition analysis on implicit-decision drift. The `CLAUDE.md` rule "agents communicate via event bus ONLY" must be rewritten — it's currently directing Claude Code to reinforce the anti-pattern.
+??? danger "Why the current state is wrong"
+
+    Every emitter-receiver pair with an untyped payload is a silent-drift bug candidate. With ten agents, that's ~45 pairwise channels. Types catch shape errors at authoring time; event buses catch them in production, if at all. See research report Part 1 "Inter-agent communication" and the Anthropic/Cognition analysis on implicit-decision drift. The `CLAUDE.md` rule "agents communicate via event bus ONLY" must be rewritten — it's currently directing Claude Code to reinforce the anti-pattern.
 
 ### Migration note
 The `CLAUDE.md` rule at repo root that mandates event-bus-only communication is the single highest-leverage update. Until it changes, Claude Code has license to build every new feature on the wrong substrate. Phase 0.1 ADR must include updating this rule.
@@ -144,7 +218,9 @@ The `CLAUDE.md` rule at repo root that mandates event-bus-only communication is 
 
 ## Layer 3: Agent taxonomy
 
-> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 Ten peer agents in PRD v2.0:
@@ -179,6 +255,59 @@ Ten peer agents in PRD v2.0:
 - **Visual validator** — Playwright for UI work.
 - **Documentation generator** — invoked during Implementer phase.
 
+```mermaid
+graph LR
+    subgraph "Current: 10 Peer Agents"
+        PM[PM Agent]
+        Prod[Product Agent]
+        Arch[Architect Agent]
+        Des[Design Agent]
+        Impl[Implementation Agent]
+        Test[Testing Agent]
+        Rev[Review Agent]
+        DevOps[DevOps Agent]
+        Sec[Security Agent]
+        Docs[Docs Agent]
+    end
+
+    subgraph "Target: 4-Stage Spine + Specialists"
+        direction TB
+        C[Clarifier] --> A[Architect]
+        A --> I[Implementer]
+        I --> R[Reviewer]
+    end
+
+    subgraph Specialists
+        RS[Research Subagent]
+        DS[Design Subagent]
+        TG[Test Generator]
+        SS[Security Scanner]
+        VV[Visual Validator]
+        DG[Doc Generator]
+    end
+
+    PM -.->|absorbed into| C
+    Prod -.->|absorbed into| C
+    Arch -.->|becomes| A
+    Des -.->|becomes specialist| DS
+    Impl -.->|becomes| I
+    Test -.->|becomes specialist| TG
+    Rev -.->|becomes| R
+    DevOps -.->|becomes specialist| SS
+    Sec -.->|becomes specialist| SS
+    Docs -.->|becomes specialist| DG
+
+    I -.->|invokes| RS
+    I -.->|invokes| DS
+    I -.->|invokes| TG
+    R -.->|invokes| SS
+
+    style C fill:#2ECC71,color:#fff
+    style A fill:#95A5A6,color:#fff
+    style I fill:#95A5A6,color:#fff
+    style R fill:#95A5A6,color:#fff
+```
+
 ### Locked decisions
 - **Four-stage spine is the committed structure.** No flat peer network.
 - **Specialists are read-heavy or narrow-write tools invoked by spine stages.** They never run in parallel as writers to a shared artifact.
@@ -190,14 +319,17 @@ Ten peer agents in PRD v2.0:
 - **Whether the Design subagent should be owned by Architect or Implementer.** It's invoked by both. Likely: Architect uses it for screen-level design; Implementer uses it for component-level proposals. Decide when concrete workflows clarify.
 - **Whether testing is a specialist tool or part of the Implementer's inner loop.** Both patterns work. Recommended: test generation is a tool; test execution is a deterministic gate, not an agent.
 
-### Why the current state is wrong
-The ten-agent taxonomy is org-chart thinking: it maps the system onto how a human engineering team is organized, then expects LLM calls to inherit the properties of human collaboration. They don't. The real questions — which LLM call owns which artifact, what context gets passed between calls, who decides when to stop — are answered by the four-stage spine cleanly and answered by the ten-agent pattern not at all. See the research report Part 1 "The agent taxonomy problem."
+??? danger "Why the current state is wrong"
+
+    The ten-agent taxonomy is org-chart thinking: it maps the system onto how a human engineering team is organized, then expects LLM calls to inherit the properties of human collaboration. They don't. The real questions — which LLM call owns which artifact, what context gets passed between calls, who decides when to stop — are answered by the four-stage spine cleanly and answered by the ten-agent pattern not at all. See the research report Part 1 "The agent taxonomy problem."
 
 ---
 
 ## Layer 4: State and persistence
 
-> For an expanded overview with diagrams, see [Concepts: Coordination & State](concepts/coordination-and-state.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: State Persistence](concepts/state-persistence.md) and [Concepts: Coordination & State](concepts/coordination-and-state.md)
 
 ### Current state
 - YAML files in `agentforge/spec/` as the living spec (project.yaml, pages.yaml, api.yaml, models.yaml, components/).
@@ -225,14 +357,17 @@ Three tiers of persistence, each with the right substrate:
 - **Retention policy for checkpoints.** Keep indefinitely during POC; add TTL for production.
 - **Whether to support SQLite for single-user local development.** LangGraph has a SQLite checkpointer. Could ease local setup.
 
-### Why the current state is wrong
-In-memory state means the first real long-running agent task that crashes loses all work — a research or implementation session that burned $5 of LLM calls disappears with the process. LangGraph checkpointers solve this with minimal integration cost. The current "YAML + in-memory" pattern conflates two different persistence needs (artifact storage vs run state) into one mechanism that's wrong for one of them.
+??? danger "Why the current state is wrong"
+
+    In-memory state means the first real long-running agent task that crashes loses all work — a research or implementation session that burned $5 of LLM calls disappears with the process. LangGraph checkpointers solve this with minimal integration cost. The current "YAML + in-memory" pattern conflates two different persistence needs (artifact storage vs run state) into one mechanism that's wrong for one of them.
 
 ---
 
 ## Layer 5: Clarifier (front door)
 
-> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 - `packages/agents-clarifier/` implements all 6 Clarifier stages as a LangGraph `StateGraph` with typed `Annotation.Root()` channels (first LangGraph graph in the monorepo).
@@ -246,6 +381,38 @@ In-memory state means the first real long-running agent task that crashes loses 
 - **Escalation resolved**: after 3 rounds without convergence, user gets accept (best-effort PRD, low confidence), restart (reset rounds), or abandon (exit). Implemented via `escalationGate` node with `interruptBefore`.
 - **Not yet wired**: `RequirementsClarified` event emission in `emitComplete` node (Task 1.7 remaining). Dashboard integration at `/new` and `/evolve` (Task 1.8).
 - **108 tests** across 7 test suites in `packages/agents-clarifier/`.
+
+```mermaid
+graph TD
+    START([__start__]) --> CR[Context Retriever]
+    CR --> PA[PRD Analyzer]
+    PA --> GD[Gap Detector]
+    GD --> QP[Question Prioritizer]
+    QP --> HITL1{{"HITL Interrupt<br/>Human answers questions"}}
+    HITL1 --> SW[Story Writer]
+    SW --> CRITIC[Critic]
+    CRITIC --> ROUTE{routeAfterCritic}
+
+    ROUTE -->|retry ≤2| SW
+    ROUTE -->|new round| GD
+    ROUTE -->|max rounds| ESC{{"HITL Interrupt<br/>Escalation Gate"}}
+    ROUTE -->|pass| EMIT[emitComplete]
+
+    ESC -->|accept| EMIT
+    ESC -->|restart| GD
+    ESC -->|abandon| END1([END])
+
+    EMIT --> END2([END])
+
+    style HITL1 fill:#F39C12,color:#fff
+    style ESC fill:#F39C12,color:#fff
+    style CR fill:#2ECC71,color:#fff
+    style PA fill:#2ECC71,color:#fff
+    style GD fill:#2ECC71,color:#fff
+    style QP fill:#2ECC71,color:#fff
+    style SW fill:#2ECC71,color:#fff
+    style CRITIC fill:#2ECC71,color:#fff
+```
 
 ### Target vision
 Six-stage conversational clarifier, symmetric across bootstrap (new app) and evolution (change to existing app) modes:
@@ -272,12 +439,17 @@ Six-stage conversational clarifier, symmetric across bootstrap (new app) and evo
 - **Input modalities beyond text.** Image upload for inspiration, URL ingestion for reference apps, voice input. Defer.
 - ~~**When the clarifier escalates.**~~ **Resolved (2026-04-28).** After max rounds (default 3), the graph interrupts at `escalationGate` with three options: **accept** (best-effort PRD with capped confidence ≤0.5, unresolved gaps become assumptions with `requiresConfirmation: true`), **restart** (reset round counter, re-enter gap detection), or **abandon** (exit to END). Implemented via `routeAfterEscalation` in `clarifier-graph.ts`.
 
-### Why the current state is wrong
-A text-box input without clarification is the most common root cause of autonomous agent failures documented in the research report (Answer.AI's Devin test, Replit Agent 3 "creative workarounds", the general "looks-right-but-broken" failure mode). The clarifier is the single highest-leverage differentiation opportunity per the research — no commercial tool ships it properly. Skipping the clarifier means every downstream stage compounds ambiguity it could have resolved upfront.
+??? danger "Why the current state is wrong"
+
+    A text-box input without clarification is the most common root cause of autonomous agent failures documented in the research report (Answer.AI's Devin test, Replit Agent 3 "creative workarounds", the general "looks-right-but-broken" failure mode). The clarifier is the single highest-leverage differentiation opportunity per the research — no commercial tool ships it properly. Skipping the clarifier means every downstream stage compounds ambiguity it could have resolved upfront.
 
 ---
 
 ## Layer 6: RAG / context engineering
+
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: RAG & Context](concepts/rag-context.md)
 
 ### Current state
 - `packages/retrieval/` implements the full RAG layer (Phase 2 complete, 2026-04-28).
@@ -329,14 +501,17 @@ All five exposed as LangGraph tools: `searchCodeTool`, `searchDocsTool`, `search
 - **Qdrant vs pgvector.** Qdrant is purpose-built and faster. Pgvector means one fewer service. Qdrant recommended but not locked.
 - **Whether to build a dedicated compression model for long contexts.** Cognition fine-tuned one. For POC, a Haiku call as compressor is good enough.
 
-### Why the current state is wrong
-Without retrieval, every agent operates blind to the codebase. The clarifier can't ask grounded questions ("I see you already use pattern X in this codebase — reuse or extend?"). The implementer can't follow existing patterns. The reviewer can't spot inconsistencies with conventions. Every feature effectively reinvents the codebase from scratch every time. The research report Part 2 is entirely about why this is the single largest quality lever.
+??? danger "Why the current state is wrong"
+
+    Without retrieval, every agent operates blind to the codebase. The clarifier can't ask grounded questions ("I see you already use pattern X in this codebase — reuse or extend?"). The implementer can't follow existing patterns. The reviewer can't spot inconsistencies with conventions. Every feature effectively reinvents the codebase from scratch every time. The research report Part 2 is entirely about why this is the single largest quality lever.
 
 ---
 
 ## Layer 7: Design pipeline
 
-> For an expanded overview with diagrams, see [Concepts: Design Pipeline](concepts/design-pipeline.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Design Pipeline](concepts/design-pipeline.md)
 
 ### Current state
 - Per-screen design pipeline works: Planning Agent → Design Agent → browser render → mechanical checks → vision correction loop.
@@ -361,6 +536,37 @@ Per-screen pipeline wrapped as a LangGraph subgraph; batch coordinator runs scre
 **HITL gate:**
 - Approve all affected screens together, atomically. Any screen rejected drops the whole batch back to `in_correction` status.
 
+```mermaid
+graph TD
+    subgraph "Batch Coordinator"
+        TOPO[Topological Sort] --> CTX[Initialize Shared Context]
+    end
+
+    CTX --> S1
+
+    subgraph "Per-Screen Subgraph (sequential)"
+        S1["Screen 1 (Home)"] --> COH1[Coherence Check]
+        COH1 --> S2["Screen 2 (linked from Home)"]
+        S2 --> COH2[Coherence Check]
+        COH2 --> S3["Screen N (linked from 2)"]
+        S3 --> COH3[Coherence Check]
+    end
+
+    COH3 --> XCOH[Cross-Screen Coherence]
+    XCOH --> HITL{{"HITL: Batch Approval"}}
+    HITL -->|all approved| DONE([Approved])
+    HITL -->|any rejected| REGEN[Regenerate with Shared Context]
+    REGEN --> COH1
+
+    S1 -.->|"updates running context:<br/>routes, components, tokens, fields"| CTX
+    S2 -.->|updates running context| CTX
+    S3 -.->|updates running context| CTX
+
+    style HITL fill:#F39C12,color:#fff
+    style TOPO fill:#3498DB,color:#fff
+    style XCOH fill:#E74C3C,color:#fff
+```
+
 ### Locked decisions
 - **Per-screen generation is single-threaded within a screen.** Planning → Design → Render → Correction is sequential.
 - **Across-screen generation is sequential via topological order.** Not parallel, even though each screen's file is independent.
@@ -374,14 +580,17 @@ Per-screen pipeline wrapped as a LangGraph subgraph; batch coordinator runs scre
 - **Whether partial regeneration (Pattern B) for requirement changes gets smarter.** Currently: whole-screen regen. Smarter: diff the requirement change and only regenerate affected sections.
 - **Design system changes (token modifications) cascading across screens.** Classifier knows this is a cross-cutting change; design branch must then regenerate all screens using those tokens. Workflow not yet specified.
 
-### Why the current state is partially wrong
-The existing per-screen pipeline is good and stays. The failure mode is in the cross-screen story: today, coherence is post-hoc and informational, which means the human has to notice and act on inconsistencies. At POC scale with a human clicking one screen at a time, this works. At any scale requiring batch generation, inconsistencies propagate silently. The fix is structural: move coherence into the loop and serialize across screens.
+??? danger "Why the current state is partially wrong"
+
+    The existing per-screen pipeline is good and stays. The failure mode is in the cross-screen story: today, coherence is post-hoc and informational, which means the human has to notice and act on inconsistencies. At POC scale with a human clicking one screen at a time, this works. At any scale requiring batch generation, inconsistencies propagate silently. The fix is structural: move coherence into the loop and serialize across screens.
 
 ---
 
 ## Layer 8: Implementation
 
-> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 - Implementation Agent described in PRD v2.0 Section 11.3.1 as a parallel fan-out: Frontend Coder + Backend Coder + Test Writer running concurrently via `max_concurrent_agents: 3`.
@@ -400,6 +609,23 @@ The existing per-screen pipeline is good and stays. The failure mode is in the c
 6. Integration test spanning both
 
 Each step appends to the LLM's context so later steps see earlier decisions.
+
+```mermaid
+graph LR
+    DB["1. DB Migration"] --> BE["2. Backend<br/>Endpoint + Service"]
+    BE --> BT["3. Backend Tests"]
+    BT --> FE["4. Frontend<br/>Component"]
+    FE --> FT["5. Frontend Tests"]
+    FT --> INT["6. Integration Test"]
+    INT --> GATE{"Deterministic Gates"}
+    GATE -->|"typecheck ✓<br/>lint ✓<br/>tests ✓"| DONE([Exit: Success])
+    GATE -->|"iteration < 5<br/>tokens < 200K<br/>time < 15min"| DB
+    GATE -->|caps exceeded| FAIL([Exit: Fail Loud])
+
+    style GATE fill:#E74C3C,color:#fff
+    style DONE fill:#2ECC71,color:#fff
+    style FAIL fill:#95A5A6,color:#fff
+```
 
 **Tools available to the implementer:**
 - Workspace tools: `read_file`, `write_file`, `apply_patch` (scoped to git worktree).
@@ -432,14 +658,17 @@ Each step appends to the LLM's context so later steps see earlier decisions.
 - **How to handle tasks that touch multiple modules (e.g., a cross-cutting refactor).** Single worktree, larger sequential write order? Or split into smaller tasks upstream? Lean toward: classifier/architect splits, so implementer always gets scoped tasks.
 - **Whether implementer should commit intermediate progress.** Intermediate commits give rollback points; continuous rebase gives a clean final diff. Either works.
 
-### Why the current state is wrong (about the aspirational part)
-PRD Section 24.2's parallel pattern is the textbook Cognition Flappy Bird failure mode. File locks don't help — the shared artifact is the running application. Frontend and backend agents will invent incompatible API shapes because their implicit decisions (field names, error formats, timestamp types) can't be fully pinned down by the OpenAPI spec. This is the single most important decision to lock before implementation work begins. See research report Part 1 and the Cognition discussion.
+??? danger "Why the current state is wrong (about the aspirational part)"
+
+    PRD Section 24.2's parallel pattern is the textbook Cognition Flappy Bird failure mode. File locks don't help — the shared artifact is the running application. Frontend and backend agents will invent incompatible API shapes because their implicit decisions (field names, error formats, timestamp types) can't be fully pinned down by the OpenAPI spec. This is the single most important decision to lock before implementation work begins. See research report Part 1 and the Cognition discussion.
 
 ---
 
 ## Layer 9: Review
 
-> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 - Review Agent exists in PRD but not implemented.
@@ -458,6 +687,32 @@ Reviewer as a spine stage running in fresh LangGraph context (not inheriting the
 3. **Assumption validator** compares diff against AssumptionLedger; flags any implementation detail that contradicts a recorded assumption.
 4. **Triage** categorizes findings into blocking / suggestion / false-positive with evidence.
 
+```mermaid
+graph TD
+    DIFF[Diff + Spec + AssumptionLedger] --> P1
+
+    subgraph "Fresh LangGraph Context"
+        P1["Pass 1: Deterministic Gates<br/>typecheck, lint, tests,<br/>security scan, license check"]
+        P1 -->|all pass| P2["Pass 2: LLM Reviewer<br/>failure-mode checklist prompt<br/>scoped to diff"]
+        P1 -->|any fail| BLOCK([Blocking: Return to Implementer])
+        P2 --> P3["Pass 3: Assumption Validator<br/>diff vs AssumptionLedger"]
+        P3 --> P4["Pass 4: Triage<br/>blocking / suggestion / false-positive"]
+    end
+
+    P4 --> ROUTE{Review Outcome}
+    ROUTE -->|approved| HITL{{"HITL: Merge Gate"}}
+    ROUTE -->|rejected + blocking| RETRY["Return to Implementer<br/>(≤2 revisions)"]
+    ROUTE -->|2 failed revisions| ESC([Escalate to Human])
+
+    RETRY -->|revised diff| DIFF
+
+    style P1 fill:#E74C3C,color:#fff
+    style P2 fill:#3498DB,color:#fff
+    style P3 fill:#9B59B6,color:#fff
+    style P4 fill:#F39C12,color:#fff
+    style HITL fill:#F39C12,color:#fff
+```
+
 **Review outcome routes back:**
 - Approved: proceed to HITL merge gate.
 - Rejected with blocking findings: return to Implementer with findings. Bounded retry (≤2 revisions).
@@ -475,14 +730,17 @@ Reviewer as a spine stage running in fresh LangGraph context (not inheriting the
 - **Whether reviewer findings need their own schema for downstream consumption.** Probably yes — the UI displays them, Implementer parses them.
 - **How to scope "the diff" for large changes.** If the diff is >1000 lines, reviewer by hunk? By file? Likely per-file with a final cross-file integration review.
 
-### Why this layer is not yet wrong — it's just missing
-No reviewer means every diff goes straight to human. At POC scale with the builder reviewing their own agent's output, this works. At any larger scale, it's a bottleneck. The reviewer is the piece that lets the human focus on semantic decisions while the reviewer catches mechanical drift.
+??? warning "Why this layer is not yet wrong — it's just missing"
+
+    No reviewer means every diff goes straight to human. At POC scale with the builder reviewing their own agent's output, this works. At any larger scale, it's a bottleneck. The reviewer is the piece that lets the human focus on semantic decisions while the reviewer catches mechanical drift.
 
 ---
 
 ## Layer 10: HITL (human-in-the-loop)
 
-> For an expanded overview with diagrams, see [Concepts: HITL & Governance](concepts/hitl-governance.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: HITL & Governance](concepts/hitl-governance.md)
 
 ### Current state
 - One approval gate: after design generation, before code.
@@ -495,6 +753,36 @@ No reviewer means every diff goes straight to human. At POC scale with the build
 1. **Clarification round** — human answers batched questions from the Clarifier. Multiple-choice where possible.
 2. **Design / API approval** — after design batch coherence, before Implementer runs. Cross-screen approval is atomic.
 3. **Code review** — per-hunk diff review before merge. Integrated with git host (GitHub PR).
+
+```mermaid
+graph LR
+    subgraph "Spine Stages"
+        CL[Clarifier] --> AR[Architect]
+        AR --> IM[Implementer]
+        IM --> RV[Reviewer]
+    end
+
+    CL -->|"Gate 1"| G1{{"Clarification<br/>Batched questions<br/>Multiple-choice"}}
+    G1 -->|human answers| CL
+
+    AR -->|"Gate 2"| G2{{"Design / API Approval<br/>Cross-screen atomic<br/>Inline edits allowed"}}
+    G2 -->|approved| IM
+
+    RV -->|"Gate 3"| G3{{"Code Merge<br/>Per-hunk diff review<br/>GitHub PR integration"}}
+    G3 -->|approved| DONE([Merged])
+
+    G1 -.->|"timeout"| T1[Retry → Secondary Channel → Assumptions]
+    G2 -.->|"timeout"| T2[Retry → Secondary Channel]
+    G3 -.->|"timeout"| T3[Retry → Escalate]
+
+    style G1 fill:#F39C12,color:#fff
+    style G2 fill:#F39C12,color:#fff
+    style G3 fill:#F39C12,color:#fff
+    style CL fill:#2ECC71,color:#fff
+    style AR fill:#95A5A6,color:#fff
+    style IM fill:#95A5A6,color:#fff
+    style RV fill:#95A5A6,color:#fff
+```
 
 **All HITL implemented as LangGraph interrupts:**
 - State persists in the Postgres checkpointer when an interrupt fires.
@@ -518,14 +806,17 @@ No reviewer means every diff goes straight to human. At POC scale with the build
 - **Notification strategy.** Email is universal but slow. Slack/Telegram per user preference. Dashboard always shows pending.
 - **Authentication / authorization for approvals.** Signed approval? Single human? Team-based?
 
-### Why the current state is wrong (about having only one gate)
-Single-gate HITL means errors that occur earlier (clarification) or later (implementation) propagate without a checkpoint. If the clarifier hallucinates a requirement, it flows through design and into code before anyone notices. If the implementer makes a bad decision, it's in the branch before human sees it. Three gates catch three different classes of error at lower correction cost than one late gate.
+??? danger "Why the current state is wrong (about having only one gate)"
+
+    Single-gate HITL means errors that occur earlier (clarification) or later (implementation) propagate without a checkpoint. If the clarifier hallucinates a requirement, it flows through design and into code before anyone notices. If the implementer makes a bad decision, it's in the branch before human sees it. Three gates catch three different classes of error at lower correction cost than one late gate.
 
 ---
 
 ## Layer 11: Observability
 
-> For an expanded overview with diagrams, see [Concepts: Observability](concepts/observability.md)
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Observability](concepts/observability.md)
 
 ### Current state (updated 2026-04-28, ADR-046)
 - **Langfuse self-hosted** via `docker/docker-compose.langfuse.yml` (Postgres, ClickHouse, Redis, MinIO).
@@ -572,8 +863,9 @@ Single-gate HITL means errors that occur earlier (clarification) or later (imple
 - **Prompt registry vs git frontmatter.** Git works for POC. External registry (Helicone, PromptLayer) might matter at scale. Defer.
 - **Replay infrastructure.** Storing enough state to replay a run is substantial. Decide when eval harness demands it.
 
-### Why the current state is wrong
-Without traces, every bug report starts with "can you reproduce it?" and ends with "well, the model was non-deterministic." Without prompt versions, you can't tell which change caused a regression. Without cost tracking, you discover your LLM bill is 10× expected at the end of the month. These are not nice-to-haves for agent systems — they're the difference between a debuggable system and a black box.
+??? danger "Why the current state is wrong"
+
+    Without traces, every bug report starts with "can you reproduce it?" and ends with "well, the model was non-deterministic." Without prompt versions, you can't tell which change caused a regression. Without cost tracking, you discover your LLM bill is 10× expected at the end of the month. These are not nice-to-haves for agent systems — they're the difference between a debuggable system and a black box.
 
 ---
 
@@ -622,8 +914,9 @@ Without traces, every bug report starts with "can you reproduce it?" and ends wi
 - **Human-in-the-loop evaluation on a sample.** Anthropic's pattern. Catches what automated eval misses.
 - **Cross-model evaluation (how does the system perform on Claude vs GPT vs Gemini).** Likely defer — picks one model, optimize for it, evaluate on others if portability becomes a requirement.
 
-### Why the current state is wrong
-Without eval, every change is a guess. The research report is unanimous: teams that skip evaluation end up with mysterious quality regressions they can't diagnose. Eval is the feedback loop that lets you improve prompts, retrieval, and workflow without depending on subjective judgment.
+??? danger "Why the current state is wrong"
+
+    Without eval, every change is a guess. The research report is unanimous: teams that skip evaluation end up with mysterious quality regressions they can't diagnose. Eval is the feedback loop that lets you improve prompts, retrieval, and workflow without depending on subjective judgment.
 
 ---
 
@@ -666,12 +959,17 @@ Without eval, every change is a guess. The research report is unanimous: teams t
 - **Specific allowlist.** Starts small (Anthropic API, npm, PyPI, GitHub). Extends as tools require.
 - **Audit logging format.** OTel spans capture most of this; supplement with explicit audit events for compliance.
 
-### Why this layer is deferred for POC
-POC users (Praveen) run against their own machine and accept the security tradeoff. Any multi-user exposure triggers this layer as non-negotiable. Design for it now (tool isolation patterns, no-secrets-in-context) to avoid retrofit pain.
+??? info "Why this layer is deferred for POC"
+
+    POC users (Praveen) run against their own machine and accept the security tradeoff. Any multi-user exposure triggers this layer as non-negotiable. Design for it now (tool isolation patterns, no-secrets-in-context) to avoid retrofit pain.
 
 ---
 
 ## Layer 14: Dashboard and UX
+
+!!! abstract "Expanded overview"
+
+    For an expanded overview with diagrams, see [Concepts: Dashboard & UX](concepts/dashboard-architecture.md)
 
 ### Current state
 - Next.js dashboard in `packages/dashboard`.
@@ -705,8 +1003,9 @@ POC users (Praveen) run against their own machine and accept the security tradeo
 - **Collaborative features (multi-user, team).** Defer past POC.
 - **Notification strategy (in-dashboard, email, Slack, Telegram).** Configurable per user.
 
-### Why the current state is partially wrong
-The existing dashboard works and most of it stays. The `/new` text box is the wrong entry point for the clarifier-first vision. The pipeline view needs to expose the new spine structure rather than the old ten-agent layout. These are localized changes, not rewrites.
+??? danger "Why the current state is partially wrong"
+
+    The existing dashboard works and most of it stays. The `/new` text box is the wrong entry point for the clarifier-first vision. The pipeline view needs to expose the new spine structure rather than the old ten-agent layout. These are localized changes, not rewrites.
 
 ---
 
@@ -738,8 +1037,9 @@ The existing dashboard works and most of it stays. The `/new` text box is the wr
 - **Jira/Linear integration depth.** Ingress only (read tickets, create PRDs) vs bidirectional (update tickets as work progresses).
 - **Custom MCP servers for enterprise systems** (Salesforce, Workday, etc.). Not POC scope.
 
-### Why this is mostly about the future
-Current state is fine for POC. The MCP-first design is about not locking out integration options later.
+??? info "Why this is mostly about the future"
+
+    Current state is fine for POC. The MCP-first design is about not locking out integration options later.
 
 ---
 
@@ -747,23 +1047,23 @@ Current state is fine for POC. The MCP-first design is about not locking out int
 
 For every layer above, the current state diverges from the target. Here's the single map of what needs to change:
 
-| Layer | Change required | Phase |
-|---|---|---|
-| Orchestration | Deprecate Python engine via ADR | 0.1 |
-| Coordination | Rewrite CLAUDE.md "event bus only" rule; introduce typed channels | 0.1, 0.2 |
-| State persistence | Add Postgres checkpointer | 0.3 |
-| Clarifier | Build `packages/agents-clarifier`, replace text-box UI | 1 |
-| RAG | Build `packages/retrieval` | 2 |
-| Agent taxonomy | Collapse ten agents into four-stage spine | Spread across 3, 4, 5, 6 |
-| Design pipeline | Move coherence in-loop, add batch coordinator | 4 |
-| Implementation | Kill parallel code-gen; build single-threaded implementer | 5 |
-| Review | Build `packages/agents-reviewer` | 6 |
-| HITL | Add three gates as LangGraph interrupts | Spread across 1, 4, 6 |
-| Observability | Add OTel + Langfuse + prompt versions | 7 |
-| Evaluation | Build `packages/eval` with golden sets | 8 |
-| Sandboxing | Add Docker sandboxing when scale demands | Post-POC |
-| Dashboard | Update `/new` for clarifier, pipeline for spine | Spread across 1, 3 |
-| Integrations | MCP-compatible tools by default | Ongoing |
+| Layer | Change required | Phase | Status |
+|---|---|---|---|
+| Orchestration | Deprecate Python engine via ADR | 0.1 | ✅ ADR-043 done |
+| Coordination | Rewrite CLAUDE.md "event bus only" rule; introduce typed channels | 0.1, 0.2 | ✅ Clarifier uses typed channels |
+| State persistence | Add Postgres checkpointer | 0.3 | ✅ Factory built |
+| Clarifier | Build `packages/agents-clarifier`, replace text-box UI | 1 | ✅ Graph built, UI partial |
+| RAG | Build `packages/retrieval` | 2 | ✅ Complete |
+| Agent taxonomy | Collapse ten agents into four-stage spine | Spread across 3, 4, 5, 6 | Partial |
+| Design pipeline | Move coherence in-loop, add batch coordinator | 4 | Partial |
+| Implementation | Kill parallel code-gen; build single-threaded implementer | 5 | Not started |
+| Review | Build `packages/agents-reviewer` | 6 | Not started |
+| HITL | Add three gates as LangGraph interrupts | Spread across 1, 4, 6 | Partial (2 of 3) |
+| Observability | Add OTel + Langfuse + prompt versions | 7 | ✅ Complete |
+| Evaluation | Build `packages/eval` with golden sets | 8 | Not started |
+| Sandboxing | Add Docker sandboxing when scale demands | Post-POC | Not started |
+| Dashboard | Update `/new` for clarifier, pipeline for spine | Spread across 1, 3 | Partial (UX overhaul in progress) |
+| Integrations | MCP-compatible tools by default | Ongoing | Partial (MCP tools built) |
 
 ---
 
