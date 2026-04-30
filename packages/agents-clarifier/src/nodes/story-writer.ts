@@ -200,7 +200,7 @@ function assembleEnrichedRequirement(
     prd: state.prdDraft!,
     assumptionLedger: assumptions,
     clarificationRounds: [{
-      round: state.round,
+      round: Math.max(state.round, 1),
       questionsAsked: state.questions.length,
       questionsAnswered: state.humanResponses.length,
       timestamp: new Date().toISOString(),

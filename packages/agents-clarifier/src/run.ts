@@ -5,7 +5,7 @@
  * Entry point for dashboard API routes (Task 1.8).
  */
 
-import { Ok, Err, createCheckpointer, writeBridgeEvent } from '@agentforge/core';
+import { Ok, Err, createCheckpointer, writeBridgeEvent, debugLog } from '@agentforge/core';
 import type { Result, BaseCheckpointSaver, DomainEventInput } from '@agentforge/core';
 import type { LLMProvider } from '@agentforge/providers';
 import type { RetrievalTools } from '@agentforge/retrieval';
@@ -122,7 +122,7 @@ function emitRequirementsClarified(projectRoot: string, state: GraphState): void
 
   try {
     writeBridgeEvent(projectRoot, event);
-  } catch {
-    // Telemetry failure must not break the pipeline.
+  } catch (err: unknown) {
+    debugLog(`clarifier: telemetry event emission failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
