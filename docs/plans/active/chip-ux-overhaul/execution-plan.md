@@ -180,6 +180,20 @@ react-diff-viewer-continued            # Future: code diffs
 
 11. **No `transpilePackages` and no tsconfig `paths` to source** — both were removed in Phase 2.0. `transpilePackages` was removed entirely from `next.config.js`. tsconfig `paths` pointing to `../*/src/` were removed. Dashboard uses pre-built `dist/`. See CLAUDE.md "Dashboard Dev Server" and lessons-learned-rules.md "Dashboard Dev Server: tsconfig paths Force Source Compilation."
 
+**Additional gotchas from Phase 4.2 sub-component polish session (2026-04-30):**
+
+12. **`activateEditMode()` required before accessing inspector zones.** The edit mode gate (Phase 4.2) conditionally renders the inspector. Tests that access `section-properties`, `section-quality`, `section-chat`, or the inspector panel itself MUST call `studio.activateEditMode()` first. The PO method clicks `[aria-label="Edit"]` and waits for `design-inspector` testid. 36 E2E tests were broken by this — all now use the PO method.
+
+13. **`UnstyledButton` wrapping `Badge` preserves `<button>` element for E2E.** Mantine `Badge` renders as `<div>`. E2E selector `button[title*="Mode:"]` in `onboarding-prototype.spec.ts:73` requires a `<button>` element. Use `<UnstyledButton>` around `<Badge>` to keep the button role. This applies to any clickable badge/chip that E2E tests locate by `button[...]` selector.
+
+14. **`text=Prototype Mode` is gone.** The prototype toolbar no longer shows "Prototype Mode" text — it shows Exit + Navigation + screen count. All prototype E2E tests must use `text=/\d+ screens/` as the ready indicator. 8 references across 4 files were updated.
+
+15. **PET fixture page IDs are descriptive, not sequential.** Claim Filling Sample uses `dashboard`, `claims-list`, `new-claim`, etc. — NOT `page-001`, `page-002`. Any test using `selectPage('page-001')` or `page-page-001` testid will silently fail (element not found timeout). Performance + design-chat tests were fixed.
+
+16. **Chat zone auto-expand on send.** `ChatZone.handleSubmit` in `design-inspector.tsx:573` calls `if (!expanded) onToggle()` to auto-expand the history when a message is sent. Without this, the sent message is invisible (history hidden in collapsed zone). E2E chat tests depend on this behavior.
+
+17. **PET fixture was polluted with 58 test artifacts.** Dedup-probe pages, E2E draft/pipeline test pages, and duplicate settings/confirm-delete entries accumulated from prior test runs. Cleaned to 5 real pages. Also cleaned 14 duplicate `navigates_to` entries on the dashboard page. Design artifact directories (`agentforge/designs/page-b0a-dedup-probe-*`) may still need manual deletion.
+
 ### Verification gate (PENDING)
 
 **Skill order (mandatory — see `.claude/plans/breezy-swinging-pike.md` for rationale):**
