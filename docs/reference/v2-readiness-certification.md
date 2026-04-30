@@ -1,4 +1,4 @@
-# AgentForge V2 Readiness Certification
+# CHIP V2 Readiness Certification
 
 **Date:** 2026-03-18
 **Certification:** CERTIFIED READY

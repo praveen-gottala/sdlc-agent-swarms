@@ -1,4 +1,4 @@
-# AgentForge Failure Modes and Recovery
+# CHIP Failure Modes and Recovery
 
 ## Phase 1 Critical Failures (Must Handle)
 

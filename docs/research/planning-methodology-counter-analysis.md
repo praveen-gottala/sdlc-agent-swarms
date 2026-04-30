@@ -1,4 +1,4 @@
-# Balanced Analysis: Planning Methodology for AgentForge
+# Balanced Analysis: Planning Methodology for CHIP
 
 This analysis verifies the cited sources, pressure-tests the arXiv mapping, surfaces planning models the doc ignores, assesses `future-roadmap.md` honestly against its own arguments, and lays out the trade-offs without recommending. Where the methodology doc is right, that's stated. Where it overreaches, that's stated too.
 

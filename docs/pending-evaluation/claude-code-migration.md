@@ -4,7 +4,7 @@
 > - **Counter-argument:** Useful for onboarding new team members. Unique content not found elsewhere.
 > - **Recommendation:** Keep in docs/ — still relevant for onboarding.
 
-# Migrating from Claude Code to AgentForge
+# Migrating from Claude Code to CHIP
 
 If you already have Claude Code configured with Google Vertex AI, **you don't need to reconfigure anything**. AgentForge is 100% compatible with Claude Code's environment variables.
 
@@ -31,7 +31,7 @@ export CLOUD_ML_REGION=global
 export ANTHROPIC_VERTEX_PROJECT_ID=gen-ai-preview
 ```
 
-## What to Add for AgentForge
+## What to Add for CHIP
 
 **Option 1: Zero changes (recommended)**
 
@@ -97,7 +97,7 @@ gcloud auth application-default print-access-token
 # Should print an access token if authenticated
 ```
 
-## Configure AgentForge to Use Vertex Models
+## Configure CHIP to Use Vertex Models
 
 In your project's `agentforge.yaml`:
 
@@ -123,7 +123,7 @@ agents:
 
 You can **mix and match** providers per agent role!
 
-## What If I Want to Switch Between Claude Code and AgentForge?
+## What If I Want to Switch Between Claude Code and CHIP?
 
 Both tools read the same variables, so you can use both simultaneously:
 
@@ -165,7 +165,7 @@ Or:
 gcloud auth application-default login
 ```
 
-### Check What AgentForge Detected
+### Check What CHIP Detected
 
 Run this to see detected config:
 

@@ -1,4 +1,4 @@
-# DesignSpec: Declarative Design Rendering for AgentForge
+# DesignSpec: Declarative Design Rendering for CHIP
 
 ## Requirements Document v1.0
 

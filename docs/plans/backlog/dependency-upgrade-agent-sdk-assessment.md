@@ -1,4 +1,4 @@
-# AgentForge: Dependency Upgrade & Agent SDK Assessment
+# CHIP: Dependency Upgrade & Agent SDK Assessment
 
 **Date:** 2026-04-08
 **Status:** Planned (not yet implemented)
@@ -67,7 +67,7 @@ AgentForge should **not** adopt the Anthropic Agent SDK (`@anthropic-ai/agent-sd
 - MCP integration
 - Tracing/observability
 
-### Why It Conflicts with AgentForge's Architecture
+### Why It Conflicts with CHIP's Architecture
 
 **1. Governance middleware cannot wrap internal SDK calls.**
 AgentForge's governance pipeline (permission -> budget -> HITL -> audit, per ADR-004) must wrap **every** LLM call and **every** tool call. The Agent SDK's agentic loop encapsulates these internally with no hook points to insert per-call governance.
@@ -81,7 +81,7 @@ The Agent SDK is Anthropic-only. AgentForge routes to Claude, OpenAI, or Ollama 
 **4. MCP middleware chain would be bypassed.**
 AgentForge's MCP client has 6 middleware layers (observability -> governance -> auth -> rate-limit -> cache -> retry). The SDK's built-in MCP client would bypass all of these.
 
-### What AgentForge Already Has vs. Agent SDK
+### What CHIP Already Has vs. Agent SDK
 
 | Capability | AgentForge | Agent SDK |
 |------------|-----------|-----------|

@@ -520,7 +520,7 @@ function resolveToHex(value: string, primitives: Record<string, string>): string
 }
 ```
 
-### Mapping from AgentForge semantic names to shadcn CSS variable names
+### Mapping from CHIP semantic names to shadcn CSS variable names
 
 This mapping translates intent-based names to shadcn's structure-based names. It lives in the generator — NOT in the spec files:
 

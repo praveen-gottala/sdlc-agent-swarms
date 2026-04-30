@@ -1,7 +1,7 @@
-# ARCHON / AgentForge — Layered Vision
+# CHIP — Architecture Vision
 
 > **Read this before making any architectural decision.** This document is the
-> target vision for AgentForge. The current codebase is in migration toward
+> target vision for CHIP. The current codebase is in migration toward
 > this vision. When the codebase and this document conflict, the document
 > wins — add a TODO, an ADR, or raise the conflict; do not replicate the
 > codebase's legacy pattern as if it were correct.
@@ -9,7 +9,7 @@
 ---
 ## How to use this document
 
-This is the architectural authority for ARCHON. Every layer has current-state, 
+This is the architectural authority for CHIP. Every layer has current-state, 
 target-vision, and locked-vs-open decisions explicit.
 
 For other reading modes:

@@ -4,7 +4,7 @@
 > - **Counter-argument:** Valuable design document for V3 planning. Moving to docs/plans/ makes it findable when V3 begins.
 > - **Recommendation:** Move to docs/plans/ — it's a plan, not current architecture documentation.
 
-# AgentForge — UX Agent Architecture Blueprint
+# CHIP — UX Agent Architecture Blueprint
 
 **Complete Specification for V2 → V3 Dashboard Development**
 

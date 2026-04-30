@@ -342,7 +342,7 @@ The **assumption ledger threads through every stage**. Clarifier emits assumptio
 
 ---
 
-## Part 4: Gap analysis of the current AgentForge design
+## Part 4: Gap analysis of the current CHIP design
 
 The baseline design — PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs Agents with event-bus orchestration and YAML state — makes four structural choices that the evidence now argues against.
 

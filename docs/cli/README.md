@@ -1,4 +1,4 @@
-# AgentForge CLI Reference
+# CHIP CLI Reference
 
 Command-line interface for the AgentForge multi-agent SDLC framework.
 

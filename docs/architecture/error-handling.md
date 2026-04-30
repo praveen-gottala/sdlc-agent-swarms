@@ -1,4 +1,4 @@
-# AgentForge Error Handling
+# CHIP Error Handling
 
 ## Core Principle: Result Pattern (Never Throw)
 

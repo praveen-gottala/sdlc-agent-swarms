@@ -49,7 +49,7 @@ After two years of churn the consensus is remarkably tight:
 3. **The output looks generic.** This is the most common complaint across reviews and threads tags: defaulting to Inter/Roboto, generic blue, "wrap everything in a card," gray‑on‑colored text, and bland safe‑gradient hero sections. Lovable users on Threads in November 2025: *"Why does everything still have to look like 2 years ago though? The design that comes out of Lovable has barely changed."* This is the gap your §9.5 + §9.7 are trying to close, and it is genuinely a real gap.
 4. **Design systems aren't ready for agents.** The "AI Design Systems Conference 2026" recap from Into Design Systems identifies five failure modes — documentation drift, monolithic components, conflicting source of truth, generic defaults, and missing AI‑specific affordances — that production teams (Spotify Encore, GitHub, Indeed) are now explicitly designing for.
 
-### 1.4 Implication for AgentForge
+### 1.4 Implication for CHIP
 
 Your current architecture (multi‑agent with DesignSpec JSON, real shadcn renderer in Playwright, DOM+screenshot correction loop) is on the correct side of every consensus point above. The 5‑treatment system is the part that is straightforwardly out of date — every other tool has either externalized themes (Lovable, daisyUI, shadcn registry) or made them user‑definable (v0, Stitch's DESIGN.md). The §9.5 move to YAML‑defined treatment palettes is catching up with where the market already is.
 
@@ -155,7 +155,7 @@ This is where the shipped consensus is strongest and where the §9.6 Channel 4 p
 
 The cost arithmetic is simple. One generation in v0 is 1–5 credits depending on complexity (2026 pricing). One Design Mode tweak is free. A user shaping a hero section will make 30–80 micro‑adjustments. If those are LLM round‑trips, the user is broke or angry within an hour. If they are AST mutations, they're delighted.
 
-### 4.2 The right model for AgentForge
+### 4.2 The right model for CHIP
 
 Your DesignSpec is a flat node tree with stable identifiers (you have catalog references and node IDs). Your renderer is React/shadcn with Playwright. You already have the infrastructure to do exactly what Lovable does — Vite plugin assigning stable IDs (you may already have this), client‑side AST/DesignSpec mutations, HMR via Vite. **Build §9.6 Channel 4 as direct manipulation of the DesignSpec, not as "user annotates and a vision LLM critiques."** The vision‑LLM critique loop is exactly what your existing correction pipeline already does at generation time; trying to also use it at refinement time inverts the cost curve.
 

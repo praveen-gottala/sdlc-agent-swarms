@@ -1,4 +1,4 @@
-# AgentForge Roadmap — Eight-Phase Rollout Plan
+# CHIP Roadmap — Eight-Phase Rollout Plan
 
 > The sequenced plan for shipping the missing pieces. Each phase produces
 > something demoable. Merge each PR before starting the next phase.

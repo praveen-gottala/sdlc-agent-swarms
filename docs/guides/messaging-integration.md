@@ -1,4 +1,4 @@
-# AgentForge Messaging Integration
+# CHIP Messaging Integration
 
 ## Two-Layer Abstraction
 

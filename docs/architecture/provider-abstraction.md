@@ -1,4 +1,4 @@
-# AgentForge LLM Provider Abstraction
+# CHIP LLM Provider Abstraction
 
 ## Provider Interface
 

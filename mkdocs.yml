@@ -1,0 +1,172 @@
+site_name: CHIP Documentation
+site_description: Crafted Human Intelligence Platform -- Multi-agent SDLC framework
+repo_url: https://github.com/praveen-gottala/sdlc-agent-swarms
+edit_uri: edit/main/docs/
+nav:
+  - Overview:
+      - Home: index.md
+      - Roadmap: roadmap.md
+      - Research Report: research-report.md
+  - Architecture:
+      - Vision: vision.md
+      - System Architecture: architecture/architecture.md
+      - Design Decisions: design-decisions.md
+      - Architecture Overview: architecture/README.md
+      - Agent Contracts: architecture/agent-contracts.md
+      - Component Catalog: architecture/component-catalog.md
+      - Design Evaluator: architecture/design-evaluator.md
+      - Design Pipeline Dataflow: architecture/design-pipeline-dataflow.md
+      - Error Handling: architecture/error-handling.md
+      - Prototype Rendering Dataflow: architecture/prototype-rendering-dataflow.md
+      - Provider Abstraction: architecture/provider-abstraction.md
+  - Specifications:
+      - Overview: specs/README.md
+      - PRD: specs/PRD.md
+      - Platform Architecture: specs/platform-architecture.md
+      - SDLC Agents: specs/sdlc-agents.md
+      - Governance & Operations: specs/governance-and-operations.md
+      - Dashboard: specs/dashboard.md
+      - Appendices: specs/appendices.md
+  - How-To Guides:
+      - Overview: guides/README.md
+      - CLI Reference: cli/README.md
+      - CLI Setup: cli/setup.md
+      - CLI Design Commands: cli/design.md
+      - CLI Orchestration: cli/orchestration.md
+      - Agent Model Guide: guides/agent-model-guide.md
+      - Design Generation: guides/design-generation.md
+      - Design Studio Logging: guides/design-studio-logging.md
+      - Langfuse Setup: guides/langfuse-setup.md
+      - Messaging Integration: guides/messaging-integration.md
+      - Planning Docs: guides/planning-docs.md
+      - Viewport Config: guides/viewport-config.md
+      - Pipeline Unification Review: guides/design-pipeline-unification-review-notes.md
+      - Backstage TechDocs Preview: guides/backstage-techdocs-local-preview.md
+      - Developer Portal Guide: guides/backstage-developer-portal.md
+  - ADRs:
+      - ADR-002 Event Payload Structure: adrs/ADR-002-event-payload-structure.md
+      - ADR-003 Event Bus Method Naming: adrs/ADR-003-event-bus-method-naming.md
+      - ADR-004 Governance Middleware Ordering: adrs/ADR-004-governance-middleware-ordering.md
+      - ADR-005 Channel Setup via Env Vars: adrs/ADR-005-channel-setup-via-env-vars.md
+      - ADR-006 File Locking Human Edit Detection: adrs/ADR-006-file-locking-human-edit-detection.md
+      - ADR-007 CI Wait Strategy Concurrency: adrs/ADR-007-ci-wait-strategy-concurrency.md
+      - ADR-008 Cost Record Optional Fields: adrs/ADR-008-cost-record-optional-fields.md
+      - ADR-009 Audit Entry Optional Fields: adrs/ADR-009-audit-entry-optional-fields.md
+      - ADR-010 Agent Contract Schema Completeness: adrs/ADR-010-agent-contract-schema-completeness.md
+      - ADR-011 Agent Definitions Separate File: adrs/ADR-011-agent-definitions-separate-file.md
+      - ADR-012 Orchestration Section Nesting: adrs/ADR-012-orchestration-section-nesting.md
+      - ADR-013 Context Injection Runtime Not YAML: adrs/ADR-013-context-injection-runtime-not-yaml.md
+      - ADR-014 Generic Prompts Fallback: adrs/ADR-014-generic-prompts-fallback.md
+      - ADR-015 Storybook Fallback Phase 2: adrs/ADR-015-storybook-fallback-phase2.md
+      - ADR-017 Secret Scoping Env Vars Phase 1: adrs/ADR-017-secret-scoping-env-vars-phase1.md
+      - ADR-018 Cache Short Circuits Observability: adrs/ADR-018-cache-short-circuits-observability.md
+      - ADR-019 Init Wizard TTY Requirement: adrs/ADR-019-init-wizard-tty-requirement.md
+      - ADR-020 Status Update Failover: adrs/ADR-020-status-update-failover.md
+      - ADR-021 Double On-Complete Emission: adrs/ADR-021-double-on-complete-emission.md
+      - ADR-022 TypeScript-Only Orchestration Engine: adrs/ADR-022-typescript-only-orchestration-engine.md
+      - ADR-023 UX Squad Architecture: adrs/ADR-023-ux-squad-architecture.md
+      - ADR-025 Dashboard Greenfield: adrs/ADR-025-dashboard-greenfield.md
+      - ADR-026 Design Approval Decision Encoding: adrs/ADR-026-design-approval-decision-encoding.md
+      - ADR-026 E2E Proof Cost Dashboard: adrs/ADR-026-e2e-proof-cost-dashboard.md
+      - ADR-028 Design System Onboarding: adrs/ADR-028-design-system-onboarding.md
+      - ADR-030 Penpot Design Tool Support: adrs/ADR-030-penpot-design-tool-support.md
+      - ADR-031 Token Bridge: adrs/ADR-031-token-bridge.md
+      - ADR-032 RunAgent Non-Recoverable No Retry: adrs/ADR-032-runagent-nonrecoverable-no-retry.md
+      - ADR-033 Configurable Model Resolution: adrs/ADR-033-configurable-model-resolution.md
+      - ADR-034 Flat Adjacency List Over Nested Tree: adrs/ADR-034-flat-adjacency-list-over-nested-tree.md
+      - ADR-035 Catalog-First Component Model: adrs/ADR-035-catalog-first-component-model.md
+      - ADR-036 Text as Accelerator Type: adrs/ADR-036-text-as-accelerator-type.md
+      - ADR-037 Standalone Renderer Package: adrs/ADR-037-standalone-renderer-package.md
+      - ADR-038 PRD as Product Intent: adrs/ADR-038-prd-as-product-intent.md
+      - ADR-039 Chrome Pass Shared Layouts: adrs/ADR-039-chrome-pass-shared-layouts.md
+      - ADR-040 Prototype Runtime Scrubbing: adrs/ADR-040-prototype-runtime-scrubbing.md
+      - ADR-041 Spec Order Chrome Regions: adrs/ADR-041-spec-order-chrome-regions.md
+      - ADR-042 Chat-Driven Design Iteration: adrs/ADR-042-chat-driven-design-iteration.md
+      - ADR-043 TypeScript-Only Orchestration: adrs/ADR-043-typescript-only-orchestration.md
+      - ADR-044 Design Phase State in Agents-UX: adrs/ADR-044-design-phase-state-in-agents-ux.md
+      - ADR-045 Evaluator Deferred to Phase 2: adrs/ADR-045-evaluator-deferred-to-phase-2.md
+      - ADR-046 Langfuse Observability: adrs/ADR-046-langfuse-observability.md
+      - ADR-046 Unified Design Pipeline: adrs/ADR-046-unified-design-pipeline.md
+      - ADR-047 Browser Default Design Tool: adrs/ADR-047-browser-default-design-tool.md
+      - ADR-048 Feedback Loop Strategy: adrs/ADR-048-feedback-loop-strategy.md
+      - ADR-049 Stage 7 Dashboard Deferral: adrs/ADR-049-stage-7-dashboard-deferral.md
+      - ADR-050 Runs Page Vision Deviations: adrs/ADR-050-runs-page-vision-deviations.md
+      - ADR-051 Backstage Developer Portal: adrs/ADR-051-backstage-developer-portal.md
+  - Operations:
+      - Active Plans:
+          - Visual Diversity: plans/active/visual-diversity/execution-plan.md
+          - Visual Diversity Quality Vision: plans/active/visual-diversity/design-quality-vision.md
+          - Visual Diversity Phase 3.8: plans/active/visual-diversity/phase-3.8-progressive-evaluator.md
+          - Clarifier Initiative: plans/active/clarifier-initiative/execution-plan.md
+          - CHIP UX Overhaul: plans/active/chip-ux-overhaul/execution-plan.md
+          - Dashboard Pipeline Fix: plans/active/dashboard-pipeline-fix/execution-plan.md
+          - Docs Reorganization: plans/active/docs-reorganization/execution-plan.md
+          - Observability: plans/active/observability/execution-plan.md
+      - Backlog Plans:
+          - Screen Types Plan B: plans/backlog/screen-types-plan-b.md
+          - Base Catalog Enrichment: plans/backlog/base-catalog-enrichment-plan.md
+          - Brownfield Import Pipeline: plans/backlog/brownfield-import-pipeline.md
+          - Dependency Upgrade Assessment: plans/backlog/dependency-upgrade-agent-sdk-assessment.md
+          - Observability MCP E2E: plans/backlog/observability-mcp-e2e-verification.md
+          - Progressive Vision Evaluation: plans/backlog/progressive-vision-evaluation.md
+          - Skill Drift Automation: plans/backlog/skill-drift-automation.md
+          - Structured Output Migration: plans/backlog/structured-output-migration.md
+      - Completed Plans:
+          - Unify Pipeline: plans/completed/unify-pipeline/execution-plan.md
+          - Unify Pipeline Spike Results: plans/completed/unify-pipeline/spike-1.1s-results.md
+          - Unify Design Pipeline: plans/completed/unify-design-pipeline.md
+          - Screen Types Plan A: plans/completed/screen-types-plan-a.md
+          - DesignSpec V2 Requirements: plans/completed/designspec-v2-requirements.md
+          - Viewport Config: plans/completed/viewport-config.md
+          - Fix Penpot Design Prompt: plans/completed/fix-penpot-design-prompt-plan.md
+          - Fix Penpot Text Layout: plans/completed/fix-penpot-text-layout.md
+          - Fix Planning Token Bindings: plans/completed/fix-planning-token-bindings-prompt.md
+          - Make Agents Tool Agnostic: plans/completed/make-agents-tool-agnostic.md
+          - Modernize Design Prompt: plans/completed/modernize-design-prompt.md
+          - Penpot Renderer NextGen: plans/completed/penpot-renderer-nextgen.md
+      - Known Issues:
+          - Chrome Region Assignment: issues/chrome-region-assignment-without-regex.md
+          - CLI-Dashboard Pipeline Divergence: issues/cli-dashboard-pipeline-divergence.md
+          - Dashboard for Apps: issues/dashboard-for-apps.md
+          - Dashboard Pipeline Gap Analysis: issues/dashboard-pipeline-gap-analysis.md
+          - Dashboard Pipeline Planning Failure: issues/dashboard-pipeline-planning-failure.md
+          - Design Pipeline Audit: issues/design-pipeline-audit.md
+          - Design Studio Modifications: issues/design-studio-modifications.md
+          - Feedback HTML Renderer: issues/feedback-html-renderer.md
+          - Flaky Tests: issues/flaky-tests.md
+          - Improvements Spec to Renderer: issues/improvements-in-spec-to-renderer.md
+          - Improvising UI: issues/improvising-ui.md
+          - Missing Catalog Renderers: issues/missing-catalog-renderers.md
+          - Prototype Visual Gap Audit: issues/prototype-visual-gap-audit.md
+          - Token Vocabulary Mismatch: issues/token-vocabulary-mismatch.md
+  - Reference:
+      - Overview: reference/README.md
+      - Lessons Learned (Rules): lessons-learned-rules.md
+      - Lessons Learned (Full): lessons-learned.md
+      - Failure Modes: reference/failure-modes.md
+      - Pipeline Improvements: reference/pipeline-improvements.md
+      - Plan Prompt Quality: reference/plan-prompt-quality.md
+      - Prototype Limitations: reference/prototype-limitations.md
+      - V2 Readiness Certification: reference/v2-readiness-certification.md
+  - Research:
+      - Planning Methodology Investigation: research/planning-methodology-investigation.md
+      - Planning Methodology Counter-Analysis: research/planning-methodology-counter-analysis.md
+      - Visual Diversity Investigation: research/visual-diversity-investigation.md
+  - Internal:
+      - Pending Evaluation:
+          - Claude Code Migration: pending-evaluation/claude-code-migration.md
+          - Codebase Context Brief: pending-evaluation/codebase-context-brief.md
+          - Data Model: pending-evaluation/data-model.md
+          - DesignSpec Renderer Penpot Crosswalk: pending-evaluation/designspec-renderer-penpot-api-crosswalk.md
+          - MCP Spike Setup: pending-evaluation/mcp-spike-setup.md
+          - UX Agent Blueprint: pending-evaluation/ux-agent-blueprint-v1.md
+          - Vertex AI Setup: pending-evaluation/vertex-ai-setup.md
+      - Audits:
+          - Session Distribution: audits/2026-04-22-session-distribution-audit.md
+      - Self-Correction:
+          - Overlay System E2E: self-correction/2026-04-22-phase-a6-overlay-system-e2e.md
+      - Test Fixtures:
+          - Sample PRD: tests/sample-prd.md
+          - Sample PRD Food: tests/sample-prd-food.md
+plugins:
+  - techdocs-core

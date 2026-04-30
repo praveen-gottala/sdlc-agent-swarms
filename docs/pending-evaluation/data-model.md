@@ -4,7 +4,7 @@
 > - **Counter-argument:** Documents YAML schema details that PRD v2.0 may not cover at the same depth (file-by-file field listings). Could serve as a "practical schema guide."
 > - **Recommendation:** Keep if PRD v2.0 doesn't cover schema details; delete if it does.
 
-# AgentForge Data Model
+# CHIP Data Model
 
 Three core data structures. All YAML, all version-controlled, all in the repo.
 

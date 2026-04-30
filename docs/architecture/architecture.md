@@ -1,4 +1,4 @@
-# AgentForge Architecture
+# CHIP Architecture
 
 ## System Overview
 

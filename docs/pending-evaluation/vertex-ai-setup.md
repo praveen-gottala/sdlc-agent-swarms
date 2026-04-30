@@ -4,7 +4,7 @@
 > - **Counter-argument:** Only place this info exists. Saves hours for Vertex AI setup.
 > - **Recommendation:** Keep in docs/ — unique operational content.
 
-# Using Google Vertex AI with AgentForge
+# Using Google Vertex AI with CHIP
 
 AgentForge supports Google Vertex AI as an LLM provider using **Application Default Credentials (ADC)** for authentication.
 

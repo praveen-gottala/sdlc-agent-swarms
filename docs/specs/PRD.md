@@ -1,4 +1,4 @@
-# AgentForge — Product Requirements Document
+# CHIP — Product Requirements Document
 
 *An Open-Source Multi-Agent Framework for End-to-End Application Lifecycle Orchestration*
 

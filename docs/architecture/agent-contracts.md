@@ -1,4 +1,4 @@
-# AgentForge Agent Contracts
+# CHIP Agent Contracts
 
 Every agent in AgentForge is defined by a YAML contract. This document specifies the contract schema, lifecycle, and examples.
 

@@ -4,7 +4,7 @@
 > - **Counter-argument:** Useful as a quick-start briefing for new contributors or new Claude Code sessions.
 > - **Recommendation:** Delete — architecture.md + CLAUDE.md cover the same ground more completely.
 
-# AgentForge Codebase Context Brief
+# CHIP Codebase Context Brief
 
 **Purpose**: This document gives Claude Code the ground truth about the existing implementation so it can produce a plan that builds on what exists rather than reinventing it. Read this alongside the UX Agent Architecture Blueprint v1.0 and the PRD v2.0.
 

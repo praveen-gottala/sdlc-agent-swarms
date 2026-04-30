@@ -1,4 +1,4 @@
-# AgentForge Documentation
+# CHIP Documentation
 
 Start with [CLAUDE.md](../CLAUDE.md) for the reading order and development rules.
 
