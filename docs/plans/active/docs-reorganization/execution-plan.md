@@ -116,66 +116,27 @@ AI PATH (CLAUDE.md reading order → raw file reads):
 
 ---
 
-## Phase 2 — Concept Pages (human-friendly layer summaries) ✅ COMPLETE (2026-04-30)
+## Phase 2 — Concept Pages + `/create-backstage-doc` Skill ✅ COMPLETE (2026-04-30)
 
-**Goal:** Create 5-7 concept pages that extract and expand vision.md layers into human-friendly docs with diagrams and examples. Vision.md stays unchanged — concept pages are additive views.
+**Goal:** Create initial concept pages AND codify the documentation methodology as a reusable skill.
 
-**New files (all under `docs/concepts/`):**
-- `docs/concepts/overview.md` — "What is CHIP" product brief (1 page: what, who, why, architecture-at-a-glance, tech stack)
-- `docs/concepts/agent-taxonomy.md` — 4-stage spine explained with diagram (from vision Layers 3, 5, 8, 9)
-- `docs/concepts/design-pipeline.md` — how designs are generated, corrected, prototyped (from vision Layer 7 + dataflow doc)
-- `docs/concepts/coordination-and-state.md` — typed channels, state persistence (from vision Layers 2, 4)
-- `docs/concepts/hitl-governance.md` — HITL gates, governance middleware (from vision Layer 10 + governance spec)
-- `docs/concepts/observability.md` — OpenTelemetry + Langfuse setup (from vision Layer 11 + Langfuse guide)
-- `docs/concepts/current-status.md` — where we are across all initiatives, what's working, what's not
+**What shipped:**
+- 7 concept pages under `docs/concepts/` (overview, agent-taxonomy, design-pipeline, coordination-and-state, hitl-governance, observability, current-status)
+- Forward links in vision.md (Layers 2-5, 7-11)
+- Concepts section in mkdocs.yml nav
+- Mermaid rendering: `pymdownx.superfences` config in mkdocs.yml + `backstage-plugin-techdocs-addon-mermaid` in Backstage app
+- "Open source" / "Apache 2.0" removed from all docs (proprietary)
 
-**Each concept page follows this template:**
-```markdown
-# <Concept Name>
+**Skill created:** `/create-backstage-doc` at `.claude/skills/create-backstage-doc/SKILL.md`
+- 5 doc types: `concept`, `tutorial`, `guide`, `architecture`, `status`
+- Competitor-swap test as the load-bearing editorial principle
+- Audience-aware templates (leadership vs developer vs AI agent)
+- Diagram rules: full diagram first (with interactive link to Mermaid Live Editor / Excalidraw), then sliced sub-diagrams for explanation
+- Length guidance: split into sub-pages, never cut substantive content
+- Mechanical verification: 3 quoted swap-test sentences in every run report
+- Citation discipline: open the cited file, quote the specific claim — no paraphrasing from memory
 
-> Authoritative source: [vision.md Layer N](../vision.md#layer-n-name)
-
-## Summary
-<2-3 paragraphs, no jargon, leadership-friendly>
-
-## How It Works
-<Diagram (ASCII/Mermaid) + step-by-step explanation>
-
-## Current State
-<What's implemented today>
-
-## What's Next
-<Planned improvements, link to relevant active plan>
-
-## Key Decisions
-<Table: decision, rationale, ADR link>
-
-## Related Docs
-- [Vision Layer N](../vision.md#layer-n-name) — canonical authority
-- [ADR-NNN](../adrs/ADR-NNN-*.md) — relevant decisions
-- [Guide: ...](../guides/...) — operational how-to
-```
-
-**Add to mkdocs.yml nav:**
-```yaml
-  - Concepts:
-      - What is CHIP: concepts/overview.md
-      - Current Status: concepts/current-status.md
-      - Agent Taxonomy: concepts/agent-taxonomy.md
-      - Design Pipeline: concepts/design-pipeline.md
-      - Coordination & State: concepts/coordination-and-state.md
-      - HITL & Governance: concepts/hitl-governance.md
-      - Observability: concepts/observability.md
-```
-
-**Add forward links in vision.md** (per-layer, one line each):
-```markdown
-## Layer 5: Clarifier (front door)
-> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
-```
-
-**Impact on skills/agents:** None. Concept pages not in CLAUDE.md reading order. Vision.md content unchanged — only additive forward links.
-**Estimate:** ~3-4 hours.
+**Template superseded.** The Phase 2 concept template (Summary/How It Works/Current State) was replaced during implementation. The authoritative templates now live in the skill file. All future Tier 2 docs use `/create-backstage-doc`.
 
 ---
 
@@ -183,21 +144,18 @@ AI PATH (CLAUDE.md reading order → raw file reads):
 
 **Goal:** Make vision.md itself friendlier without breaking its authority role. Changes are additive — no content removed.
 
-**Changes to vision.md:**
-1. Fix title: "ARCHON / AgentForge" → "CHIP — Architecture Vision"
-2. Add executive summary (5 lines) before Section 0:
-   ```
-   > CHIP is a multi-agent SDLC framework. Four spine stages (Clarify →
-   > Architect → Implement → Review) coordinate via typed LangGraph channels.
-   > Single-writer discipline per artifact. Human-in-the-loop at three gates.
-   > Context quality is the single invariant.
-   ```
-3. Add "Where We Are Today" row to the Layer overview table (Section 2) — a third column showing implementation status (Done / In Progress / Not Started)
-4. Update stale references (Python engine → note deprecation per ADR-043)
-5. Add Mermaid layer diagram in Section 2 (renders in Backstage, shows as code block for AI — acceptable overhead)
+**Already done (Phase 1-2):**
+- ~~Fix title: "ARCHON / AgentForge" → "CHIP — Architecture Vision"~~ ✅ Phase 1
+- ~~Forward links to concept pages~~ ✅ Phase 2
 
-**Impact on skills/agents:** Minimal. Skills read the full file — additive content at the top adds ~200 tokens. The layer structure is preserved. No headings renamed (skills reference "Layer 2", "Layer 8" etc. by content search, not heading anchors).
-**Estimate:** ~2 hours.
+**Remaining changes to vision.md:**
+1. Add executive summary (5 lines) before Section 0
+2. Add "Where We Are Today" column to the Layer overview table (Section 2) — implementation status (Done / In Progress / Not Started)
+3. Update stale references (Python engine → note deprecation per ADR-043)
+4. Add Mermaid layer diagram in Section 2 with interactive Excalidraw/Mermaid Live link (per skill diagram rules: full diagram + sliced walkthrough)
+
+**Impact on skills/agents:** Minimal. Additive content at the top adds ~200 tokens. Layer structure preserved.
+**Estimate:** ~1.5 hours.
 
 ---
 
@@ -244,46 +202,54 @@ concepts: docs/concepts/   # human-only, not in AI reading order
 
 ---
 
-## Phase 5 — Contributor Getting Started Guide
+## Phase 5 — Tutorials + Getting Started
 
-**Goal:** New contributors can go from clone to running demo in one page.
+**Goal:** New users can go from clone to running demo. First-time experience that converts skeptics into users.
 
-**Create `docs/guides/getting-started.md`:**
-- Prerequisites (Node.js 20+, Python 3, Docker)
-- Clone + npm install + nx build
-- Run the dashboard (`npm run dev:dashboard`)
-- Run the design pipeline on a sample project
-- Run tests (`nx run-many -t test`)
-- Reading order (CLAUDE.md → vision → PRD)
-- How to add a new agent (link to `.claude/rules/new-agent.md`)
-- How to navigate docs (Backstage portal at localhost:3003)
+**Use the skill:** All pages created via `/create-backstage-doc tutorial <topic>`.
 
-**Add to mkdocs.yml nav** under Guides.
+**Pages to create:**
 
-**Impact:** New file only. Zero existing behavior changes.
-**Estimate:** ~1-2 hours.
+| Invocation | Page | What the reader has at the end |
+|-----------|------|-------------------------------|
+| `/create-backstage-doc tutorial first-design` | `docs/tutorials/first-design.md` | A rendered multi-screen prototype from a sample PRD |
+| `/create-backstage-doc tutorial first-clarifier` | `docs/tutorials/first-clarifier.md` | A clarified requirement with assumption ledger from a vague input |
+| `/create-backstage-doc guide getting-started` | `docs/guides/getting-started.md` | Full dev environment: clone → install → build → dashboard → tests → Backstage |
+
+**Add to mkdocs.yml nav:**
+```yaml
+  - Tutorials:
+      - Your First Design: tutorials/first-design.md
+      - Your First Clarifier Run: tutorials/first-clarifier.md
+```
+
+**Impact:** New files only. Zero existing behavior changes.
+**Estimate:** ~2-3 hours.
 
 ---
 
 ## Execution Order
 
 ```
-Phase 1 (Branding + Nav)       ← Do first, quick wins, ~1-2hrs
+Phase 1 (Branding + Nav)       ✅ COMPLETE (2026-04-29)
   ↓
-Phase 2 (Concept Pages)        ← Biggest human UX improvement, ~3-4hrs
+Phase 2 (Concept Pages + Skill)✅ COMPLETE (2026-04-30)
   ↓
-Phase 3 (Vision Refresh)       ← Makes the canonical file friendlier, ~2hrs
+Phase 7 (Content Quality Pass) ← NEXT: use /create-backstage-doc on 12 pages, ~6-8hrs
   ↓
-Phase 5 (Getting Started)      ← Unblocks new contributors, ~1-2hrs
+Phase 3 (Vision Refresh)       ← Canonical file improvements, ~1.5hrs
   ↓
-Phase 6 (Auto-Generated)       ← Rich dashboards with zero maintenance, ~3-4hrs
+Phase 5 (Tutorials + Guide)    ← First-time user experience, ~2-3hrs
   ↓
-Phase 4 (Path Registry)        ← Preparation for eventual file moves, ~1.5hrs
+Phase 6 (Auto-Generated)       ← CI dashboards, zero maintenance, ~3hrs
+  ↓
+Phase 4 (Path Registry)        ← Infrastructure for future file moves, ~1.5hrs
 ```
 
-Phases 1-3 are foundational. Phase 5 + 6 are independent of each other. Phase 4 is infrastructure for future work.
+Phase 7 comes next because the skill is ready and the audit identified 12 concrete improvements — 3 high-priority for leadership visibility. Phases 3-6 are independent of each other. Phase 4 is infrastructure for future work.
 
-**Total estimated effort:** ~12-16 hours across 6 phases, doable in 3-4 focused sessions.
+**Completed effort:** ~5 hours (Phases 1-2).
+**Remaining effort:** ~14-17 hours across 5 phases, doable in 4-5 focused sessions.
 
 ---
 
@@ -291,7 +257,10 @@ Phases 1-3 are foundational. Phase 5 + 6 are independent of each other. Phase 4 
 
 **Goal:** CI pipeline generates rich human-only pages from canonical sources on every push. Zero manual maintenance.
 
-**Create `scripts/generate-docs.ts`** — TypeScript script that:
+**Already done (Phase 2):**
+- ~~Mermaid rendering~~ ✅ `pymdownx.superfences` + `backstage-plugin-techdocs-addon-mermaid` installed
+
+**Remaining: Create `scripts/generate-docs.ts`** — TypeScript script that:
 1. **Parses plan execution plans** → generates `docs/_generated/current-status.md`
    - Reads every `docs/plans/active/*/execution-plan.md`
    - Counts `- [x]` (done) vs `- [ ]` (pending) checkboxes
@@ -299,36 +268,58 @@ Phases 1-3 are foundational. Phase 5 + 6 are independent of each other. Phase 4 
 2. **Parses package.json files** → generates `docs/_generated/package-index.md`
    - Reads every `packages/*/package.json`
    - Extracts: name, description, dependencies (only `@agentforge/*`)
-   - Outputs a table with dependency count and links to README (once they exist)
+   - Outputs a table with dependency count and links to README
 3. **Parses ADR files** → generates `docs/_generated/adr-index.md`
    - Reads every `docs/adrs/ADR-*.md`
    - Extracts: number, title, status (from `## Status` line)
    - Outputs a sortable table: ADR# | Title | Status | Date
-4. **Renders Mermaid** — install `backstage-plugin-techdocs-addon-mermaid` in Backstage app for client-side Mermaid rendering (no build-time rendering needed)
 
 **Add to `.gitignore`:** `docs/_generated/`
 
-**Add to `mkdocs.yml` nav:**
-```yaml
-  - Dashboards:
-      - Current Status: _generated/current-status.md
-      - Package Index: _generated/package-index.md
-      - ADR Index: _generated/adr-index.md
-```
+**Impact on AI agents:** Zero. Generated files are gitignored.
+**Estimate:** ~3 hours (script + CI workflow).
 
-**Add to `.github/workflows/docs.yml`:**
-```yaml
-- name: Generate enriched docs
-  run: npx tsx scripts/generate-docs.ts
-- name: Build TechDocs
-  run: npx @techdocs/cli generate --source-dir . --output-dir ./site
-```
+---
 
-**Local development:** Developers run `npx tsx scripts/generate-docs.ts` before `mkdocs serve` to see generated pages locally. Or skip them — Backstage shows Tier 1 + 2 pages regardless.
+## Phase 7 — Content Quality Pass (using `/create-backstage-doc`)
 
-**Impact on AI agents:** Zero. Generated files are gitignored. AI agents never see `docs/_generated/`. CLAUDE.md reading order unchanged.
+**Goal:** Apply the skill to existing pages and fill coverage gaps identified by docs site audit (2026-04-30).
 
-**Estimate:** ~3-4 hours (script + CI workflow + Mermaid addon).
+All pages created or revised via `/create-backstage-doc <type> <topic>`. The skill enforces the competitor-swap test, citation discipline, diagram rules, and audience-appropriate content.
+
+### HIGH priority (leadership visibility)
+
+| # | Invocation | Target | What's wrong |
+|---|-----------|--------|-------------|
+| 1 | `/create-backstage-doc concept overview` | `docs/concepts/overview.md` | Missing "why CHIP" positioning — doesn't answer why another SDLC framework exists. Source: `research-report.md` Part 1 + `design-decisions.md` §1.3 |
+| 2 | `/create-backstage-doc architecture design-evaluator` | `docs/architecture/design-evaluator.md` | No sample evaluations, no failure cases, no explanation of 80/100 threshold origin |
+| 3 | `/create-backstage-doc status current-status` | `docs/concepts/current-status.md` | Reads like a spreadsheet — "Partial" without explaining what blocks completion or what depends on what |
+
+### MEDIUM priority (developer onboarding)
+
+| # | Invocation | Target | What's wrong |
+|---|-----------|--------|-------------|
+| 4 | `/create-backstage-doc guide design-generation` | `docs/guides/design-generation.md` | 835 lines, no visual navigation. Split into sub-guides per skill splitting rules |
+| 5 | `/create-backstage-doc concept coordination-and-state` | `docs/concepts/coordination-and-state.md` | No worked example showing actual `Annotation.Root()` channel definition from clarifier-graph.ts |
+| 6 | `/create-backstage-doc concept rag-context` | NEW: `docs/concepts/rag-context.md` | Vision Layer 6 fully implemented but no concept page. Missing tool taxonomy and when-to-use decision tree |
+| 7 | `/create-backstage-doc concept dashboard-architecture` | NEW: `docs/concepts/dashboard-architecture.md` | Vision Layer 14, no concept page. CHIP UX Overhaul active but no shared mental model of 15-route structure |
+| 8 | `/create-backstage-doc guide cli-design-commands` | NEW: `docs/guides/cli-design-commands.md` | `design:page`, `design-page-all`, `design-system`, `design-preflight` undocumented. Need command taxonomy with decision tree |
+| 9 | `/create-backstage-doc concept state-persistence` | NEW: `docs/concepts/state-persistence.md` | Mixed into coordination-and-state.md. Deserves own page: YAML schema, checkpointer factory, crash recovery |
+
+### LOW priority (nice to have)
+
+| # | Invocation | Target | What's wrong |
+|---|-----------|--------|-------------|
+| 10 | `/create-backstage-doc guide failure-mode-testing` | NEW: `docs/guides/failure-mode-testing.md` | `failure-modes.md` lists F1-F6 but no way to reproduce them in test environment |
+| 11 | `/create-backstage-doc guide model-selection` | `docs/guides/agent-model-guide.md` | Explains tier system but no persona-based guidance (solo builder vs team of 5) |
+| 12 | `/create-backstage-doc architecture error-handling` | `docs/architecture/error-handling.md` | Result pattern defined but no integration with agent execution flow or HITL gates |
+
+**Remove test counts from existing concept pages:**
+- `docs/concepts/overview.md` — remove "116 tests on the Clarifier graph alone"
+- `docs/concepts/agent-taxonomy.md` — remove "116 tests across 7 test suites"
+- `docs/concepts/current-status.md` — remove test counts, rename "Tests" column to "Role"
+
+**Estimate:** ~6-8 hours across 2-3 sessions. Items 1-3 first (leadership demo readiness), then 4-9 (developer onboarding), then 10-12 (stretch).
 
 ---
 
