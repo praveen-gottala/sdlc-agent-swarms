@@ -70,6 +70,11 @@
 **Figma Self-Correction**
 - [Phase C: Visual Self-Correction Loop — Issue Tracker](#phase-c-visual-self-correction-loop--issue-tracker) — RESOLVED (most issues)
 
+**Backstage TechDocs**
+- [TechDocs Markdown Rendering — Python-Markdown vs CommonMark](#techdocs-markdown-rendering--python-markdown-vs-commonmark) — RULE
+- [ASCII Box Diagrams Don't Render in MkDocs — Use Mermaid](#ascii-box-diagrams-dont-render-in-mkdocs--use-mermaid) — RULE
+- [Collapsible Admonitions for Rationale Sections](#collapsible-admonitions-for-rationale-sections) — RULE
+
 **Debugging**
 - [Cross-Origin Iframe Debugging](#cross-origin-iframe-debugging--use-playwright-not-chrome-devtools-mcp) — REFERENCE
 - [Claude 4.7+ Models Reject Sampling Parameters](#claude-47-models-reject-sampling-parameters) — REFERENCE
@@ -888,3 +893,46 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When debugging a runtime error that persists after a source fix, check whether the build cache is serving stale output. Use `npx nx build <package> --skip-nx-cache` to force a clean rebuild.
 **Why:** Nx caches build outputs keyed on input file hashes. If the `.tsbuildinfo` file or hash computation has a race condition, a stale build artifact can survive a source change. This is rare but wastes significant debug time when it happens.
 **How to apply:** If a fix "should work" but the runtime error is identical, the first check is `--skip-nx-cache`. If that fixes it, the cache was stale.
+
+---
+
+## TechDocs Markdown Rendering — Python-Markdown vs CommonMark
+
+**Context:** Backstage TechDocs (`mkdocs.yml`, `techdocs-core` plugin), all markdown files under `docs/`  
+**Rule:** Three things to know about TechDocs markdown rendering:  
+1. **Python-Markdown requires a blank line before lists after paragraphs.** VS Code uses `markdown-it` (CommonMark-compliant) which doesn't. The pattern `**Bold text:**\n- item` renders as inline text in TechDocs but as a proper list in VS Code. `mdx_truly_sane_lists` (bundled by `techdocs-core`) does NOT fix this — it only handles nested list indentation.  
+2. **`extra_css` and `<style>` tags are blocked.** Backstage bug [#12302](https://github.com/backstage/backstage/issues/12302) prevents `extra_css` in mkdocs.yml from being registered. DOMPurify config has `FORBID_TAGS: ["style"]`. However, **inline `style` attributes on elements ARE allowed** — this is the only CSS injection path.  
+3. **MkDocs `hooks:` config may be stripped** by editor formatters/linters. Use a Python-Markdown extension (registered under `markdown_extensions:`) instead. Install as `mdx_fix_list_spacing.py` in Python site-packages.  
+**Why:** 718 list occurrences across 95 docs files rendered as inline text in Backstage but looked fine in VS Code preview. Inline `<code>` elements had invisible white backgrounds. Cost ~3 hours debugging the pipeline (MkDocs hooks, DOMPurify config, extension behavior) before finding the correct approach.  
+**How to apply:** The `mdx_fix_list_spacing` extension in `mkdocs.yml` handles both issues automatically. When authoring new docs, add a blank line before bullet lists after paragraph text — this makes the markdown correct for both parsers and doesn't depend on the extension.
+
+---
+
+## Langfuse SDK Drops Raw OTel Spans — Use @langfuse/tracing SDK Only
+
+**Context:** Observability Phase 4 (2026-04-28). Adding pipeline stage spans and MCP tool call spans to Langfuse via `packages/telemetry/`.
+**Problem:** Spans created via `@opentelemetry/api`'s `tracer.startSpan()` were silently dropped by Langfuse. The `LANGFUSE_DEBUG=true` output showed: `"Dropped span due to shouldExportSpan filter. { spanName: 'stage:research' }"`. Unit tests passed because they run without `LANGFUSE_SECRET_KEY` (testing only the graceful degradation path). The bug was only discoverable via e2e verification against a running Langfuse instance.
+**Root cause:** `LangfuseSpanProcessor` (from `@langfuse/otel`) has a `shouldExportSpan` filter that only exports spans created through the `@langfuse/tracing` SDK (e.g., `startActiveObservation`, `startObservation`). Raw OTel spans created via `@opentelemetry/api` directly are rejected. This is by design — Langfuse needs its SDK-specific attributes (observation type, trace association) that raw OTel spans don't carry.
+**Fix:** Replaced all raw `@opentelemetry/api` usage with `@langfuse/tracing` SDK:
+- `LangfuseSink`: added `wrapStage()` method using `startActiveObservation('stage:${name}')` — wraps stage execution so LLM generation spans nest under stage spans via OTel context propagation.
+- `createTracedMCPClient`: uses `startActiveObservation('mcp:server.method', ..., { asType: 'tool' })`.
+- `PipelineTelemetrySink` interface: added optional `wrapStage<T>(stage, attrs, fn)` method. `CompositeSink` delegates to the first sink that implements it.
+**Rule:** When using Langfuse with OTel, never create spans via `@opentelemetry/api` directly. Always use `@langfuse/tracing` SDK (`startActiveObservation` for wrapping async calls, `startObservation` for manual lifecycle). The Langfuse span processor silently drops raw OTel spans — unit tests won't catch this because they test the unconfigured path.
+
+---
+
+## ASCII Box Diagrams Don't Render in MkDocs — Use Mermaid
+
+**Context:** Backstage TechDocs, docs under `docs/` containing `┌──┐`, `│`, `└──┘`, `▶`, `▼` box-drawing characters.
+**Rule:** ASCII box-drawing diagrams (pipe+box characters) render as broken monospace text in MkDocs/Backstage TechDocs because font metrics and character widths vary across browsers. They look fine in VS Code and GitHub markdown preview but break in TechDocs where the monospace font doesn't align box-drawing characters.
+**Why:** 12 ASCII diagrams in `docs/architecture/design-pipeline-dataflow.md` were unreadable in TechDocs — boxes misaligned, arrows disconnected, nested layouts collapsed into noise. Mermaid is already enabled via `pymdownx.superfences` custom_fences in `mkdocs.yml`.
+**How to apply:** Replace ASCII box diagrams with Mermaid `graph`, `sequenceDiagram`, or `flowchart` blocks. Keep ASCII art in fenced code blocks only for short inline-code snippets (e.g., a 3-line command output). For anything with structure (flows, architectures, data flow), use Mermaid. Use `style` directives for color coding (green=done, orange=partial, gray=not started).
+
+---
+
+## Collapsible Admonitions for Rationale Sections
+
+**Context:** `docs/vision.md`, any authoritative doc with "Why" or rationale sections that are important for context but not needed on first read.
+**Rule:** Convert repeating rationale sections (e.g., "Why the current state is wrong") to collapsible admonitions (`???` syntax) instead of `###` headings. Use `??? danger` for architectural debt, `??? warning` for missing-but-planned layers, `??? info` for deferred-for-good-reason items.
+**Why:** vision.md had 15 "Why the current state is wrong" sections taking ~200 lines of the 900-line document. As `###` headings, they were always-visible, cluttered the ToC, and made the document feel like a list of complaints rather than a vision. As collapsible admonitions, readers can expand them when they need the rationale and skip them when scanning for decisions.
+**How to apply:** `??? danger "Title"` followed by 4-space indented content. Don't use `???+` (expanded by default) — the whole point is reducing visual noise. Keep the original content verbatim inside the admonition.

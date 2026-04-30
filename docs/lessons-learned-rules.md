@@ -1,13 +1,14 @@
 # Lessons Learned — Active Rules
 
-> This file contains only RULE and SUPERSEDED entries from `docs/lessons-learned.md`.
-> These are the actionable principles that apply to every session.
-> For historical context (RESOLVED entries, REFERENCE entries), see the full file.
+!!! info "About this file"
 
-> Status markers: **RULE** = ongoing principle. **SUPERSEDED** = replaced by different approach (do NOT follow).
+    This file contains only **RULE** and **SUPERSEDED** entries from `docs/lessons-learned.md`. These are the actionable principles that apply to every session. For historical context (RESOLVED entries, REFERENCE entries), see the full file.
+
+    Status markers: **RULE** = ongoing principle. **SUPERSEDED** = replaced by different approach (do NOT follow).
 
 ## Table of contents
 
+- [Langfuse SDK Drops Raw OTel Spans](#langfuse-sdk-drops-raw-otel-spans--use-langfusetracing-sdk-only) — RULE
 - [DesignSpec browser renderer — regression prevention](#designspec-browser-renderer--regression-prevention) — RULE
 - [DesignSpec v2: Separate WHAT from HOW](#designspec-v2-separate-what-from-how) — RULE
 - [NodeSpec Field Budget: Internal Fields Use Type Intersections](#nodespec-field-budget-internal-fields-use-type-intersections) — RULE
@@ -31,6 +32,9 @@
 - [Verify Renderer Output Against Working Scripts](#verify-renderer-output-against-real-working-scripts) — RULE
 - [Missing Catalog Renderers Must Be Added](#missing-catalog-renderers-must-be-added-not-just-logged) — RULE
 - [Future: Pipeline Integration Test (Phase 4)](#future-pipeline-integration-test-phase-4) — RULE
+- [TechDocs Markdown Rendering — Python-Markdown vs CommonMark](#techdocs-markdown-rendering--python-markdown-vs-commonmark) — RULE
+- [ASCII Box Diagrams Don't Render in MkDocs — Use Mermaid](#ascii-box-diagrams-dont-render-in-mkdocs--use-mermaid) — RULE
+- [Collapsible Admonitions for Rationale Sections](#collapsible-admonitions-for-rationale-sections) — RULE
 
 ---
 
@@ -472,3 +476,44 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** Never use `additionalProperties` as a type schema (map pattern) in Claude API structured output. Use `Array<{ key: string; value: T }>` instead, with a normalizer to convert back to a map after parsing.
 **Why:** Claude API returns 400 for `additionalProperties: { oneOf: [...] }`. Only `additionalProperties: false` is supported.
 **How to apply:** Before adding a structured output schema, grep for `additionalProperties` — every instance must be `false` or absent.
+
+---
+
+---
+
+## TechDocs Markdown Rendering — Python-Markdown vs CommonMark
+
+**Context:** Backstage TechDocs (`mkdocs.yml`, `techdocs-core` plugin), all markdown files under `docs/`  
+**Rule:** Three things to know about TechDocs markdown rendering:  
+1. **Python-Markdown requires a blank line before lists after paragraphs.** VS Code uses `markdown-it` (CommonMark-compliant) which doesn't. The pattern `**Bold text:**\n- item` renders as inline text in TechDocs but as a proper list in VS Code. `mdx_truly_sane_lists` (bundled by `techdocs-core`) does NOT fix this — it only handles nested list indentation.  
+2. **`extra_css` and `<style>` tags are blocked.** Backstage bug [#12302](https://github.com/backstage/backstage/issues/12302) prevents `extra_css` in mkdocs.yml from being registered. DOMPurify config has `FORBID_TAGS: ["style"]`. However, **inline `style` attributes on elements ARE allowed** — this is the only CSS injection path.  
+3. **MkDocs `hooks:` config may be stripped** by editor formatters/linters. Use a Python-Markdown extension (registered under `markdown_extensions:`) instead. Install as `mdx_fix_list_spacing.py` in Python site-packages.  
+**Why:** 718 list occurrences across 95 docs files rendered as inline text in Backstage but looked fine in VS Code preview. Inline `<code>` elements had invisible white backgrounds. Cost ~3 hours debugging the pipeline (MkDocs hooks, DOMPurify config, extension behavior) before finding the correct approach.  
+**How to apply:** The `mdx_fix_list_spacing` extension in `mkdocs.yml` handles both issues automatically. When authoring new docs, add a blank line before bullet lists after paragraph text — this makes the markdown correct for both parsers and doesn't depend on the extension.
+
+---
+
+## Langfuse SDK Drops Raw OTel Spans — Use @langfuse/tracing SDK Only
+
+**Context:** `packages/telemetry/` — adding pipeline stage spans and MCP tool call spans to Langfuse
+**Rule:** Never create OTel spans via `@opentelemetry/api`'s `tracer.startSpan()` when using Langfuse as the trace backend. Use `@langfuse/tracing` SDK instead (`startActiveObservation` for wrapping async calls, `startObservation` for manual lifecycle). Langfuse's `LangfuseSpanProcessor` has a `shouldExportSpan` filter that silently drops raw OTel spans — they lack the SDK-specific attributes (observation type, trace association) that Langfuse requires.
+**Why:** During Phase 4, stage spans created via `tracer.startSpan('stage:research')` compiled, passed unit tests, but were silently dropped at runtime. `LANGFUSE_DEBUG=true` showed: `"Dropped span due to shouldExportSpan filter"`. The bug was only discoverable via e2e verification against a running Langfuse instance — unit tests test the unconfigured (no-op) path.
+**How to apply:** For wrapped async calls: `startActiveObservation('name', async (span) => { ... }, { asType: 'generation' | 'tool' })`. For split-lifecycle spans: use `wrapStage()` pattern — add optional `wrapStage` to `PipelineTelemetrySink` interface, implement with `startActiveObservation` in `LangfuseSink`. Never import `trace` from `@opentelemetry/api` in telemetry code — if you need it, you're using the wrong API.
+
+---
+
+## ASCII Box Diagrams Don't Render in MkDocs — Use Mermaid
+
+**Context:** Backstage TechDocs, docs under `docs/` containing `┌──┐`, `│`, `└──┘`, `▶`, `▼` box-drawing characters.
+**Rule:** Replace ASCII box-drawing diagrams with Mermaid blocks. ASCII art renders as broken monospace text in MkDocs/Backstage TechDocs because font metrics vary across browsers — boxes misalign, arrows disconnect, nested layouts collapse.
+**Why:** 12 ASCII diagrams in `docs/architecture/design-pipeline-dataflow.md` were unreadable in TechDocs. Mermaid is enabled via `pymdownx.superfences` custom_fences in `mkdocs.yml`.
+**How to apply:** Use `graph`, `sequenceDiagram`, or `flowchart` Mermaid blocks. Keep ASCII in fenced code blocks only for short inline examples. Use `style` directives for color coding (green=done `#2ECC71`, orange=partial `#F39C12`, gray=not started `#95A5A6`).
+
+---
+
+## Collapsible Admonitions for Rationale Sections
+
+**Context:** `docs/vision.md`, any authoritative doc with repeating "Why" or rationale sections.
+**Rule:** Convert rationale sections to collapsible admonitions (`???` syntax) instead of `###` headings. Use `??? danger` for architectural debt, `??? warning` for missing-but-planned, `??? info` for deferred items.
+**Why:** vision.md had 15 "Why the current state is wrong" `###` headings taking ~200 lines. As always-visible headings they cluttered the ToC and made scanning for decisions harder. Collapsible admonitions let readers expand rationale on demand.
+**How to apply:** `??? danger "Title"` followed by 4-space indented content. Don't use `???+` (expanded by default) — the point is reducing visual noise. Keep original content verbatim.
