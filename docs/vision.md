@@ -62,7 +62,7 @@ Every legacy pattern in the current state has a reason it's there, and a reason 
 
 ## 1. Product vision (one paragraph)
 
-AgentForge is an autonomous multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. It does this through a small set of specialized LLM-driven stages coordinated as a typed, durable, checkpointed graph, with a conversational clarifier front-end, a code/doc RAG layer, a spec-first artifact system, and structural human-in-the-loop gates at phase boundaries. The framework's differentiation is not in how many agents it has or how autonomous they seem — it is in the quality of context engineering, the rigor of clarification before implementation, and the discipline of single-writer artifacts. The target audience is Persona B (5–15 person engineering teams) first; Persona A (solo builders) second.
+CHIP is an autonomous multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. It does this through a small set of specialized LLM-driven stages coordinated as a typed, durable, checkpointed graph, with a conversational clarifier front-end, a code/doc RAG layer, a spec-first artifact system, and structural human-in-the-loop gates at phase boundaries. The framework's differentiation is not in how many agents it has or how autonomous they seem — it is in the quality of context engineering, the rigor of clarification before implementation, and the discipline of single-writer artifacts. The target audience is Persona B (5–15 person engineering teams) first; Persona A (solo builders) second.
 
 ---
 

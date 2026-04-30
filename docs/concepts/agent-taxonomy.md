@@ -13,8 +13,8 @@ The real questions — which LLM call owns which artifact, what context gets pas
 ```mermaid
 graph TD
     subgraph Spine ["Sequential Spine (single writer per stage)"]
-        C[Clarifier] -->|Enriched Requirement<br/>+ Assumption Ledger| A[Architect]
-        A -->|Architecture Spec<br/>+ Task Plan| I[Implementer]
+        C[Clarifier] -->|Enriched Requirement + Assumption Ledger| A[Architect]
+        A -->|Architecture Spec + Task Plan| I[Implementer]
         I -->|Code Diff| R[Reviewer]
     end
 

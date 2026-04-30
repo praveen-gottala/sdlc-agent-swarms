@@ -1,7 +1,7 @@
 # AgentForge
 
 Multi-agent framework for end-to-end SDLC orchestration.
-Open source, Apache 2.0.
+
 
 **Shared tooling:** See **`AGENTS.md`** for how this file fits with Cursor rules and episodic handoff docs (so the same practices apply in both tools).
 
@@ -335,6 +335,10 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - When adding a new feature, module, or public API, ensure documentation exists.
 - When making an architectural change that touches vision Layer N, update
   `docs/vision.md` Layer N's Current State section.
+- **Developer Portal:** Backstage at `backstage/` (port 3003). See
+  `docs/guides/backstage-developer-portal.md` and ADR-051.
+  - When adding new docs under `docs/`, add the file to `mkdocs.yml` nav
+  - When adding new packages, create `catalog-info.yaml` + `README.md` in the package root
 
 ### Blind Subagent Test (MANDATORY for new documentation)
 After documenting any new system, feature, or setup procedure, run a **blind

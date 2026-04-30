@@ -10,7 +10,7 @@ This is the same mistake human teams make when they skip requirements gathering.
 
 ## What CHIP Does Differently
 
-**CHIP** (Crafted Human Intelligence Platform) is an open-source multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. Instead of one monolithic AI coding assistant, CHIP uses a small set of specialized stages — each with a clear job, clear inputs, and clear outputs.
+**CHIP** (Crafted Human Intelligence Platform) is a multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. Instead of one monolithic AI coding assistant, CHIP uses a small set of specialized stages — each with a clear job, clear inputs, and clear outputs.
 
 The key insight: **context quality matters more than agent quantity.** CHIP invests heavily in understanding the problem before writing code, enforces single-writer discipline per artifact, and places human checkpoints at the three moments where human judgment matters most.
 

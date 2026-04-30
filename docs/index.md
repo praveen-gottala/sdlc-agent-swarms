@@ -1,6 +1,6 @@
 # CHIP Documentation
 
-**CHIP** (Crafted Human Intelligence Platform) is an open-source multi-agent SDLC framework. AI agents handle design, specification, implementation, and review -- with human-in-the-loop oversight at every critical decision point.
+**CHIP** (Crafted Human Intelligence Platform) is a multi-agent SDLC framework. AI agents handle design, specification, implementation, and review -- with human-in-the-loop oversight at every critical decision point.
 
 ## Reading Order
 
