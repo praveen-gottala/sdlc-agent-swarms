@@ -111,6 +111,8 @@ Two orchestrators means every feature lands in two codebases or one side becomes
 
 ## Layer 2: Coordination substrate
 
+> For an expanded overview with diagrams, see [Concepts: Coordination & State](concepts/coordination-and-state.md)
+
 ### Current state
 - `CLAUDE.md` at repo root says: "Agents communicate via event bus ONLY. No direct agent-to-agent calls."
 - In-memory EventEmitter is the coordination primitive.
@@ -141,6 +143,8 @@ The `CLAUDE.md` rule at repo root that mandates event-bus-only communication is 
 ---
 
 ## Layer 3: Agent taxonomy
+
+> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 Ten peer agents in PRD v2.0:
@@ -193,6 +197,8 @@ The ten-agent taxonomy is org-chart thinking: it maps the system onto how a huma
 
 ## Layer 4: State and persistence
 
+> For an expanded overview with diagrams, see [Concepts: Coordination & State](concepts/coordination-and-state.md)
+
 ### Current state
 - YAML files in `agentforge/spec/` as the living spec (project.yaml, pages.yaml, api.yaml, models.yaml, components/).
 - In-memory dict for pipeline state during a run.
@@ -225,6 +231,8 @@ In-memory state means the first real long-running agent task that crashes loses 
 ---
 
 ## Layer 5: Clarifier (front door)
+
+> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 - `packages/agents-clarifier/` implements all 6 Clarifier stages as a LangGraph `StateGraph` with typed `Annotation.Root()` channels (first LangGraph graph in the monorepo).
@@ -328,6 +336,8 @@ Without retrieval, every agent operates blind to the codebase. The clarifier can
 
 ## Layer 7: Design pipeline
 
+> For an expanded overview with diagrams, see [Concepts: Design Pipeline](concepts/design-pipeline.md)
+
 ### Current state
 - Per-screen design pipeline works: Planning Agent → Design Agent → browser render → mechanical checks → vision correction loop.
 - Design Studio dashboard at `/design` provides per-screen approval.
@@ -370,6 +380,8 @@ The existing per-screen pipeline is good and stays. The failure mode is in the c
 ---
 
 ## Layer 8: Implementation
+
+> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
 - Implementation Agent described in PRD v2.0 Section 11.3.1 as a parallel fan-out: Frontend Coder + Backend Coder + Test Writer running concurrently via `max_concurrent_agents: 3`.
@@ -427,6 +439,8 @@ PRD Section 24.2's parallel pattern is the textbook Cognition Flappy Bird failur
 
 ## Layer 9: Review
 
+> For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+
 ### Current state
 - Review Agent exists in PRD but not implemented.
 - Current flow: implementation complete → PR created → human reviews.
@@ -468,6 +482,8 @@ No reviewer means every diff goes straight to human. At POC scale with the build
 
 ## Layer 10: HITL (human-in-the-loop)
 
+> For an expanded overview with diagrams, see [Concepts: HITL & Governance](concepts/hitl-governance.md)
+
 ### Current state
 - One approval gate: after design generation, before code.
 - Dashboard shows pending approvals.
@@ -508,6 +524,8 @@ Single-gate HITL means errors that occur earlier (clarification) or later (imple
 ---
 
 ## Layer 11: Observability
+
+> For an expanded overview with diagrams, see [Concepts: Observability](concepts/observability.md)
 
 ### Current state (updated 2026-04-28, ADR-046)
 - **Langfuse self-hosted** via `docker/docker-compose.langfuse.yml` (Postgres, ClickHouse, Redis, MinIO).

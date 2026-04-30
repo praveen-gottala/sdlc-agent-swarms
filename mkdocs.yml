@@ -7,6 +7,14 @@ nav:
       - Home: index.md
       - Roadmap: roadmap.md
       - Research Report: research-report.md
+  - Concepts:
+      - What is CHIP: concepts/overview.md
+      - Current Status: concepts/current-status.md
+      - Agent Taxonomy: concepts/agent-taxonomy.md
+      - Design Pipeline: concepts/design-pipeline.md
+      - Coordination & State: concepts/coordination-and-state.md
+      - HITL & Governance: concepts/hitl-governance.md
+      - Observability: concepts/observability.md
   - Architecture:
       - Vision: vision.md
       - System Architecture: architecture/architecture.md

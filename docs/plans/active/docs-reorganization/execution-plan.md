@@ -116,7 +116,7 @@ AI PATH (CLAUDE.md reading order → raw file reads):
 
 ---
 
-## Phase 2 — Concept Pages (human-friendly layer summaries)
+## Phase 2 — Concept Pages (human-friendly layer summaries) ✅ COMPLETE (2026-04-30)
 
 **Goal:** Create 5-7 concept pages that extract and expand vision.md layers into human-friendly docs with diagrams and examples. Vision.md stays unchanged — concept pages are additive views.
 
