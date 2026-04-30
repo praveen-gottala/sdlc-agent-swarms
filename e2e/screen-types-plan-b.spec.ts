@@ -129,7 +129,7 @@ async function gotoPetPrototype(page: Page): Promise<FrameLocator> {
   await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });
   await waitForRendererReady(page);
   await page.getByRole('button', { name: 'Prototype' }).click();
-  await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
   return page.frameLocator('iframe').first();
 }
 
@@ -393,7 +393,7 @@ test.describe('Plan B — Phase B2: LayoutShell @b2', () => {
     // click Prototype — otherwise the iframe loads before the server is up.
     await waitForRendererReady(page);
     await page.getByRole('button', { name: 'Prototype' }).click();
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
   });
 
   test('chrome DOM nodes persist across screen navigation (mountId unchanged) @b2-persistence', async ({ page }) => {
@@ -473,7 +473,7 @@ test.describe('Plan B — Phase B2: LayoutShell fallback @b2-fallback', () => {
     });
     await waitForRendererReady(page);
     await page.getByRole('button', { name: 'Prototype' }).click();
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
 
     const iframe = page.frameLocator('iframe').first();
     await expect(iframe.locator('[data-persistent="header"]')).toHaveCount(0);
@@ -791,7 +791,7 @@ test.describe.serial('Plan B — Phase B2.5: full loop @b2.5-full-loop', () => {
     await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });
     await waitForRendererReady(page);
     await page.getByRole('button', { name: 'Prototype' }).click();
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
 
     const iframe = page.frameLocator('iframe').first();
     await expect(iframe.locator('[data-persistent="header"]')).toBeVisible({ timeout: 30_000 });

@@ -11,11 +11,12 @@ test.describe('Design Inspector Properties', () => {
     sidebar = new SidebarPO(page);
     studio = new DesignStudioPO(page);
     await page.goto('/design', { waitUntil: 'domcontentloaded' });
-    await page.getByTestId('design-inspector').waitFor({ state: 'attached', timeout: 10000 });
+    await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 15000 });
 
     // Select the dashboard page (rendered) so the iframe loads
     await studio.selectPage('dashboard');
     await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
+    await studio.activateEditMode();
   });
 
   /**

@@ -53,8 +53,7 @@ test.describe('Prototype NavigationEditor', () => {
     await expect(protoButton).toBeVisible({ timeout: 10_000 });
     await protoButton.click();
 
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator('text=/\\d+ screens/')).toBeVisible();
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('button', { name: 'Navigation' }).click();
     await expect(page.locator('text=Navigation from')).toBeVisible({ timeout: 5_000 });
@@ -65,7 +64,7 @@ test.describe('Prototype NavigationEditor', () => {
     await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });
 
     await page.getByRole('button', { name: 'Prototype' }).click();
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('button', { name: 'Navigation' }).click();
     await expect(page.locator('text=Navigation from')).toBeVisible({ timeout: 5_000 });

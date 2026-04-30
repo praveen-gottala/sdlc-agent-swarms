@@ -40,7 +40,7 @@ async function enterPrototype(page: Page): Promise<FrameLocator> {
   await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });
   await waitForRendererReady(page);
   await page.getByRole('button', { name: 'Prototype' }).click();
-  await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 60_000 });
   const iframe = page.frameLocator('iframe[data-testid="prototype-iframe"]');
   await expect(iframe.locator('[data-node]').first()).toBeVisible({ timeout: 30_000 });
   return iframe;

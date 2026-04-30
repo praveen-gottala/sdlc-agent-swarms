@@ -15,44 +15,42 @@ test.describe('Design Generation', () => {
   });
 
   test('can create a new page from Design Studio', async ({ page }) => {
-    // Click "+ New page" button — this triggers window.prompt in the real code
-    // For E2E, we need to handle the dialog
     page.once('dialog', async (dialog) => {
       await dialog.accept('E2E test page for design generation flow');
     });
 
     await page.getByTestId('create-page-btn').click();
 
-    // After creation, the URL should update with the new page ID
     await expect(page).toHaveURL(/\/design\?page=/, { timeout: 10000 });
 
-    // The new page should appear in the page list
     const pages = await studio.getPageList();
-    expect(pages.length).toBeGreaterThanOrEqual(4); // 3 original + at least 1 new
+    expect(pages.length).toBeGreaterThanOrEqual(4);
   });
 
   test('selecting a draft page shows "Generate design" CTA', async ({ page }) => {
-    // add-expense page has no designStatus set (defaults to draft)
-    await studio.selectPage('add-expense');
-    await expect(page).toHaveURL(/\/design\?page=add-expense/, { timeout: 5000 });
+    page.once('dialog', async (dialog) => {
+      await dialog.accept(`Draft test ${Date.now()}`);
+    });
+    await page.getByTestId('create-page-btn').click();
+    await expect(page).toHaveURL(/\/design\?page=/, { timeout: 10000 });
 
     const generateBtn = page.getByRole('button', { name: 'Generate design' });
     await expect(generateBtn).toBeVisible({ timeout: 5000 });
   });
 
   test('clicking Generate design shows pipeline choice modal', async ({ page }) => {
-    await studio.selectPage('add-expense');
-    await expect(page).toHaveURL(/\/design\?page=add-expense/, { timeout: 5000 });
+    page.once('dialog', async (dialog) => {
+      await dialog.accept(`Pipeline test ${Date.now()}`);
+    });
+    await page.getByTestId('create-page-btn').click();
+    await expect(page).toHaveURL(/\/design\?page=/, { timeout: 10000 });
 
-    // Click "Generate design"
-    await page.getByRole('button', { name: 'Generate design' }).click();
+    await page.getByRole('button', { name: 'Generate design' }).click({ timeout: 10000 });
 
-    // The pipeline choice modal should appear
     await expect(page.getByText('Quick Generate')).toBeVisible({ timeout: 3000 });
     await expect(page.getByText('Full Pipeline')).toBeVisible();
     await expect(page.getByText('Single LLM call for fast results')).toBeVisible();
 
-    // Cancel the modal
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByText('Quick Generate')).not.toBeVisible();
   });
@@ -61,11 +59,9 @@ test.describe('Design Generation', () => {
     await studio.selectPage('dashboard');
     await expect(page).toHaveURL(/\/design\?page=dashboard/, { timeout: 5000 });
 
-    // The action bar should show Regenerate and Approve buttons
     await expect(page.getByRole('button', { name: 'Regenerate' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByTestId('approve-btn')).toBeVisible();
 
-    // Submit feedback button should be visible
     await expect(page.getByRole('button', { name: /Submit feedback|Correcting/ })).toBeVisible();
   });
 });

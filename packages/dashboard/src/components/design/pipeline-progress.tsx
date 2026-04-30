@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Stepper, Text, Group, Stack, Alert, Loader, Center } from '@mantine/core';
+import { IconCheck, IconX } from '@tabler/icons-react';
 import { useRunProgress } from '@/lib/hooks/use-run-progress';
 import type { StageTiming } from '@/lib/hooks/use-run-progress';
 import { Button } from '../ui/button';
@@ -40,6 +42,20 @@ interface PipelineProgressProps {
   onDismiss?: () => void;
 }
 
+function getStepColor(isDone: boolean, isActive: boolean, hasFailed: boolean): string | undefined {
+  if (hasFailed) return 'red';
+  if (isDone) return 'green';
+  if (isActive) return 'blue';
+  return undefined;
+}
+
+function getStatusColor(isDone: boolean, isActive: boolean, hasFailed: boolean): string {
+  if (hasFailed) return 'red';
+  if (isDone) return 'green';
+  if (isActive) return 'blue';
+  return 'dimmed';
+}
+
 export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplete, onRetry, onDismiss }: PipelineProgressProps) {
   const progress = useRunProgress(runId);
 
@@ -59,172 +75,137 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full px-8">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-accent-blue animate-pulse" />
-          <span className="text-sm text-text-muted">Loading pipeline status…</span>
-        </div>
-      </div>
+      <Center h="100%" px="xl">
+        <Group gap="xs">
+          <Loader size="xs" color="blue" />
+          <Text size="sm" c="dimmed">Loading pipeline status...</Text>
+        </Group>
+      </Center>
     );
   }
 
+  const activeStep = isComplete ? STAGES.length : currentStageIdx;
+
   return (
-    <div className="flex flex-col items-center justify-center h-full px-8">
-      <h2 className="text-base font-semibold text-text-primary mb-1">
-        {isComplete ? 'Pipeline Complete' : isFailed ? 'Pipeline Failed' : 'Design Pipeline Running'}
-      </h2>
-      <p className="text-sm text-text-muted mb-8">
-        {isComplete
-          ? 'All stages completed successfully'
-          : isFailed
-            ? progress.error ?? 'An error occurred'
-            : 'Research, Planning, and Design stages running sequentially'}
-      </p>
+    <Center h="100%" px="xl">
+      <Stack align="center" gap="xs">
+        <Text size="md" fw={600}>
+          {isComplete ? 'Pipeline Complete' : isFailed ? 'Pipeline Failed' : 'Design Pipeline Running'}
+        </Text>
+        <Text size="sm" c="dimmed" mb="xl">
+          {isComplete
+            ? 'All stages completed successfully'
+            : isFailed
+              ? progress.error ?? 'An error occurred'
+              : 'Research, Planning, and Design stages running sequentially'}
+        </Text>
 
-      {/* Stage progress */}
-      <div className="flex items-center gap-0 max-w-xl w-full">
-        {STAGES.map((stage, idx) => {
-          const isActive = (idx === currentStageIdx && isRunning) || (idx === 0 && isPending);
-          const isDone = isComplete || (isRunning && idx < currentStageIdx);
-          const hasFailed = isFailed && idx === currentStageIdx;
-          const timing: StageTiming | undefined = progress.stageTimings?.[stage.name];
+        <Stepper
+          active={activeStep}
+          size="sm"
+          allowNextStepsSelect={false}
+          color="green"
+          maw="36rem"
+          w="100%"
+        >
+          {STAGES.map((stage, idx) => {
+            const isActive = (idx === currentStageIdx && isRunning) || (idx === 0 && isPending);
+            const isDone = isComplete || (isRunning && idx < currentStageIdx);
+            const hasFailed = isFailed && idx === currentStageIdx;
+            const timing: StageTiming | undefined = progress.stageTimings?.[stage.name];
 
-          let statusText = 'Pending';
-          if (isDone) {
-            statusText = 'Complete';
-          } else if (isActive && isPending) {
-            statusText = 'Starting…';
-          } else if (isActive) {
-            statusText = progress.stageDescription ?? 'Running…';
-          } else if (hasFailed) {
-            statusText = 'Failed';
-          }
+            let statusText = 'Pending';
+            if (isDone) {
+              statusText = 'Complete';
+            } else if (isActive && isPending) {
+              statusText = 'Starting...';
+            } else if (isActive) {
+              statusText = progress.stageDescription ?? 'Running...';
+            } else if (hasFailed) {
+              statusText = 'Failed';
+            }
 
-          return (
-            <div key={stage.name} className="flex items-center flex-1">
-              {/* Stage card */}
-              <div
-                className={`flex-1 rounded-lg border p-4 transition-all ${
-                  isActive
-                    ? 'border-accent-blue bg-accent-blue/5 shadow-sm shadow-accent-blue/10'
-                    : isDone
-                      ? 'border-accent-green/50 bg-accent-green/5'
-                      : hasFailed
-                        ? 'border-red-400/50 bg-red-400/5'
-                        : 'border-border bg-bg-card'
-                }`}
-              >
-                {/* Status indicator */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    isDone
-                      ? 'bg-accent-green'
-                      : isActive
-                        ? 'bg-accent-blue animate-pulse'
-                        : hasFailed
-                          ? 'bg-red-400'
-                          : 'bg-border'
-                  }`} />
-                  <span className="text-sm font-semibold text-text-primary">{stage.name}</span>
-                </div>
+            return (
+              <Stepper.Step
+                key={stage.name}
+                label={stage.name}
+                loading={isActive}
+                color={getStepColor(isDone, isActive, hasFailed)}
+                completedIcon={<IconCheck size={14} />}
+                icon={hasFailed ? <IconX size={14} /> : undefined}
+                description={
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed">{stage.agent} · {model}</Text>
+                    <Text size="xs" c={getStatusColor(isDone, isActive, hasFailed)} fw={500} truncate>
+                      {statusText}
+                    </Text>
+                    {isActive && timing?.startedAt && (
+                      <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <ElapsedTimer since={timing.startedAt} />
+                      </Text>
+                    )}
+                    {isDone && timing?.durationMs != null && (
+                      <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {formatElapsed(timing.durationMs)}
+                      </Text>
+                    )}
+                    {isDone && !timing?.durationMs && progress.cost && (
+                      <Text size="xs" c="dimmed">
+                        ~${(progress.cost.totalCostUsd / STAGES.length).toFixed(3)}
+                      </Text>
+                    )}
+                  </Stack>
+                }
+              />
+            );
+          })}
+        </Stepper>
 
-                {/* Agent info */}
-                <p className="text-[11px] text-text-muted">
-                  {stage.agent} · {model}
-                </p>
-
-                {/* Status text */}
-                <p className={`text-[10px] mt-1.5 font-medium truncate ${
-                  isDone
-                    ? 'text-accent-green'
-                    : isActive
-                      ? 'text-accent-blue'
-                      : hasFailed
-                        ? 'text-red-400'
-                        : 'text-text-muted'
-                }`}>
-                  {statusText}
-                </p>
-
-                {/* Elapsed / duration */}
-                {isActive && timing?.startedAt && (
-                  <p className="text-[10px] text-text-muted mt-0.5 tabular-nums">
-                    <ElapsedTimer since={timing.startedAt} />
-                  </p>
+        {isComplete && (
+          <Stack align="center" gap={4} mt="lg">
+            {progress.cost && (
+              <Text size="xs" c="dimmed">
+                Total: ${progress.cost.totalCostUsd.toFixed(4)} · {progress.cost.tokensUsed.toLocaleString()} tokens
+              </Text>
+            )}
+            {progress.startedAt && (
+              <Text size="xs" c="dimmed">
+                Completed in {formatElapsed(
+                  new Date(progress.stageTimings?.[STAGES[STAGES.length - 1].name]?.completedAt ?? progress.startedAt).getTime()
+                  - new Date(progress.startedAt).getTime(),
                 )}
-                {isDone && timing?.durationMs != null && (
-                  <p className="text-[10px] text-text-muted mt-0.5 tabular-nums">
-                    {formatElapsed(timing.durationMs)}
-                  </p>
-                )}
-                {isDone && !timing?.durationMs && progress.cost && (
-                  <p className="text-[10px] text-text-muted mt-0.5">
-                    ~${(progress.cost.totalCostUsd / STAGES.length).toFixed(3)}
-                  </p>
-                )}
-              </div>
+              </Text>
+            )}
+          </Stack>
+        )}
 
-              {/* Connector */}
-              {idx < STAGES.length - 1 && (
-                <div className={`w-6 h-0.5 flex-shrink-0 ${
-                  (isRunning && idx < currentStageIdx) || isComplete ? 'bg-accent-green' : 'bg-border'
-                }`} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Total cost & elapsed */}
-      {isComplete && (
-        <div className="mt-6 text-center">
-          {progress.cost && (
-            <p className="text-xs text-text-muted">
-              Total: ${progress.cost.totalCostUsd.toFixed(4)} · {progress.cost.tokensUsed.toLocaleString()} tokens
-            </p>
-          )}
-          {progress.startedAt && (
-            <p className="text-[11px] text-text-muted mt-1">
-              Completed in {formatElapsed(
-                new Date(progress.stageTimings?.[STAGES[STAGES.length - 1].name]?.completedAt ?? progress.startedAt).getTime()
-                - new Date(progress.startedAt).getTime(),
-              )}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Running elapsed */}
-      {(isRunning || isPending) && progress.startedAt && (
-        <div className="mt-6 text-center">
-          <p className="text-[11px] text-text-muted">
+        {(isRunning || isPending) && progress.startedAt && (
+          <Text size="xs" c="dimmed" mt="lg">
             Elapsed: <ElapsedTimer since={progress.startedAt} />
-          </p>
-        </div>
-      )}
+          </Text>
+        )}
 
-      {/* Error detail */}
-      {isFailed && progress.error && (
-        <div className="mt-4 max-w-md">
-          <p className="text-xs text-red-400 bg-red-400/10 rounded-md px-3 py-2">{progress.error}</p>
-        </div>
-      )}
+        {isFailed && progress.error && (
+          <Alert color="red" variant="light" maw={400} mt="md">
+            <Text size="xs">{progress.error}</Text>
+          </Alert>
+        )}
 
-      {/* Action buttons on failure */}
-      {isFailed && (
-        <div className="mt-4 flex items-center gap-3">
-          {onRetry && (
-            <Button variant="primary" size="sm" onClick={onRetry}>
-              Retry Pipeline
-            </Button>
-          )}
-          {onDismiss && (
-            <Button variant="secondary" size="sm" onClick={onDismiss}>
-              Back to Canvas
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+        {isFailed && (
+          <Group gap="sm" mt="md">
+            {onRetry && (
+              <Button variant="primary" size="sm" onClick={onRetry}>
+                Retry Pipeline
+              </Button>
+            )}
+            {onDismiss && (
+              <Button variant="secondary" size="sm" onClick={onDismiss}>
+                Back to Canvas
+              </Button>
+            )}
+          </Group>
+        )}
+      </Stack>
+    </Center>
   );
 }

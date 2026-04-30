@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { type Page, expect } from '@playwright/test';
 
 export class DesignStudioPO {
   readonly page: Page;
@@ -50,10 +50,46 @@ export class DesignStudioPO {
     return visible ? 'iframe' : 'empty';
   }
 
-  /** Click the Chat tab in the inspector panel. */
-  async clickChatTab(): Promise<void> {
+  /** Activate edit mode by clicking the Edit button if inspector is not visible. */
+  async activateEditMode(): Promise<void> {
     const inspector = this.page.getByTestId('design-inspector');
-    await inspector.getByRole('tab', { name: 'Chat' }).click();
+    if (await inspector.isVisible()) return;
+    const editBtn = this.page.locator('[aria-label="Edit"]');
+    await expect(editBtn).toBeVisible({ timeout: 10_000 });
+    await editBtn.click();
+    await expect(inspector).toBeVisible({ timeout: 5_000 });
+  }
+
+  /** Expand the Chat zone in the inspector (activates edit mode if needed). */
+  async clickChatTab(): Promise<void> {
+    await this.activateEditMode();
+  }
+
+  /** Navigate to the design page and select a specific page by ID. */
+  async navigateToPage(pageId: string): Promise<void> {
+    await this.page.goto('/design', { waitUntil: 'domcontentloaded' });
+    await this.page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 15_000 });
+    await this.selectPage(pageId);
+    await expect(this.page).toHaveURL(new RegExp(`page=${pageId}`), { timeout: 5_000 });
+  }
+
+  /** Get a FrameLocator for the design renderer iframe. */
+  get rendererFrame() {
+    return this.page.frameLocator('[data-testid="design-iframe"]');
+  }
+
+  /** Wait for the renderer to report ready via the status API. */
+  async waitForRendererReady(timeoutMs = 30_000): Promise<void> {
+    await this.page.getByTestId('design-iframe').waitFor({ state: 'attached', timeout: timeoutMs });
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const res = await this.page.request.get('/api/renderer/status').catch(() => null);
+      if (res?.ok()) {
+        const json = await res.json().catch(() => null);
+        if (json?.status === 'ready') return;
+      }
+      await this.page.waitForTimeout(1000);
+    }
   }
 
   /** Fill the chat textarea with a message. */

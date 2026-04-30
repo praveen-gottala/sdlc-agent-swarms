@@ -39,7 +39,7 @@ test.describe('Performance Budgets', () => {
     await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 15000 });
 
     // Warm up: select first page and wait for renderer to start + iframe to load
-    await studio.selectPage('page-001');
+    await studio.selectPage('dashboard');
     await studio.waitForIframeReady();
     // Wait for render-complete from the iframe (renderer fully initialized)
     await page.waitForFunction(
@@ -65,7 +65,7 @@ test.describe('Performance Budgets', () => {
   test('spec bundle API responds within budget', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const t0 = performance.now();
-      const res = await fetch('/api/pages/page-001/design/spec?bundle=true');
+      const res = await fetch('/api/pages/dashboard/design/spec?bundle=true');
       const data = await res.json();
       const elapsed = performance.now() - t0;
       const nodeCount = data?.spec?.nodes ? Object.keys(data.spec.nodes).length : 0;
@@ -81,7 +81,7 @@ test.describe('Performance Budgets', () => {
   });
 
   test('page switch completes within budget (click to render-complete)', async ({ page }) => {
-    // Measure warm page switch: page-001 → page-002
+    // Measure warm page switch: dashboard → page-002
     const switchMs = await page.evaluate(() => {
       return new Promise<number>((resolve) => {
         const t0 = performance.now();
@@ -92,12 +92,12 @@ test.describe('Performance Budgets', () => {
           }
         };
         window.addEventListener('message', onMsg);
-        document.querySelector<HTMLButtonElement>('[data-testid="page-page-002"]')?.click();
+        document.querySelector<HTMLButtonElement>('[data-testid="page-claims-list"]')?.click();
         setTimeout(() => { window.removeEventListener('message', onMsg); resolve(-1); }, 15000);
       });
     });
 
-    console.log(`  Page switch (Dashboard → ClaimsList): ${switchMs.toFixed(0)}ms`);
+    console.log(`  Page switch (Dashboard → Claims List): ${switchMs.toFixed(0)}ms`);
 
     expect(switchMs).toBeGreaterThan(0); // -1 means timeout
     expect(switchMs).toBeLessThan(BUDGET.pageSwitchMs);
@@ -124,7 +124,7 @@ test.describe('Performance Budgets', () => {
           }
         };
         window.addEventListener('message', onMsg);
-        document.querySelector<HTMLButtonElement>('[data-testid="page-page-004"]')?.click();
+        document.querySelector<HTMLButtonElement>('[data-testid="page-claim-detail"]')?.click();
         setTimeout(() => { window.removeEventListener('message', onMsg); resolve(); }, 15000);
       });
     });
@@ -158,12 +158,12 @@ test.describe('Performance Budgets', () => {
         window.addEventListener('message', onMsg);
 
         // Rapid clicks: page-002, page-003, page-005
-        document.querySelector<HTMLButtonElement>('[data-testid="page-page-002"]')?.click();
+        document.querySelector<HTMLButtonElement>('[data-testid="page-claims-list"]')?.click();
         setTimeout(() => {
-          document.querySelector<HTMLButtonElement>('[data-testid="page-page-003"]')?.click();
+          document.querySelector<HTMLButtonElement>('[data-testid="page-new-claim"]')?.click();
         }, 100);
         setTimeout(() => {
-          document.querySelector<HTMLButtonElement>('[data-testid="page-page-005"]')?.click();
+          document.querySelector<HTMLButtonElement>('[data-testid="page-notifications-panel"]')?.click();
         }, 200);
 
         // Wait for renders to settle (at least 1.5s after last click)

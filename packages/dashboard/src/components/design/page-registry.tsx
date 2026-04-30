@@ -67,7 +67,7 @@ export function PageRegistry({ pages, selectedId, onSelect, onCreateNew }: PageR
       {/* Header with search */}
       <Box px="sm" py="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
         <Group justify="space-between" mb={4}>
-          <Text size="sm" fw={600}>Pages</Text>
+          <Text size="sm" fw={600} component="h3" m={0}>Pages</Text>
           <Text size="xs" c="dimmed">{pages.length}</Text>
         </Group>
         <TextInput

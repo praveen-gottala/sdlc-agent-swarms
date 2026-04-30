@@ -381,7 +381,8 @@ and rebuilt with Mantine. Not a component swap — a product rethink.
 - [x] **UX:** Canvas context bar made compact (truncate + nowrap, no line wrapping for long project names)
 - [x] **E2E:** 4 new tests in `e2e/design-studio-ux.spec.ts` (search filter, edit mode gate, disabled guard, generate picker)
 - [x] **Verification:** 18 typecheck, 1233 unit tests, 0 lint errors, 110 E2E pass (full suite) + 4 new UX tests pass
-- [ ] **Remaining:** Phase 4 sub-component polish (pipeline-progress → Stepper, modals → Mantine Modal, navigation-editor → Mantine)
+- [x] **Phase 4:** Sub-component polish (2026-04-29): pipeline-progress → Mantine Stepper (3 steps, loading/color/icon per state), coherence-results-modal → Alert+Stack+Paper+IconCheck, navigation-editor → Select wrapper+UnstyledButton+Badge+ActionIcon+Loader. Chat zone auto-expand on message send. Page registry heading → `component="h3"` for a11y.
+- [x] **E2E update (2026-04-30):** Bulk E2E repair across 12 test files for Phase 4.2 UI changes. design-studio.po.ts (navigateToPage, rendererFrame, waitForRendererReady, activateEditMode, clickChatTab). design-chat (page IDs dashboard, chat history selector, edit mode). design-audit (edit mode gate, quality zone expansion, page switch via testid). design-editing (rewritten for 3-zone inspector — zones not tabs). design-generation (create draft page for CTA). onboarding-prototype (screen count selector). design-inspector + design-inspector-properties (activateEditMode in beforeEach — 36 tests fixed). prototype-chrome-regions + prototype-overlays + screen-types-plan-b + layout-shell-claim-filling (Prototype Mode→screen count selector). performance (page IDs dashboard/claims-list/etc.).
 - [ ] **Remaining:** Phase 5 animations + Skeleton loading states + Mantine Notifications
 
 ### 4.3 Spec Viewer

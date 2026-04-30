@@ -572,8 +572,9 @@ function ChatZone({
     const msg = message.trim();
     setHistory((prev) => [...prev, { text: msg, ts: Date.now() }]);
     setMessage('');
+    if (!expanded) onToggle();
     onChatSubmit?.(msg);
-  }, [message, chatDisabled, onChatSubmit]);
+  }, [message, chatDisabled, onChatSubmit, expanded, onToggle]);
 
   useEffect(() => {
     historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight, behavior: 'smooth' });

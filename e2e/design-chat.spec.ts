@@ -15,7 +15,7 @@ test.describe('Design Chat Iteration', () => {
   });
 
   test('can type and submit a chat message on Dashboard page', async ({ page }) => {
-    await studio.selectPage('page-001');
+    await studio.selectPage('dashboard');
     await studio.clickChatTab();
 
     const textarea = page.getByTestId('chat-textarea');
@@ -26,11 +26,11 @@ test.describe('Design Chat Iteration', () => {
     await expect(textarea).toHaveValue(chatMessage);
 
     // Mock the API so we don't trigger a real pipeline
-    await page.route('**/api/pages/page-001/design/chat', (route) =>
+    await page.route('**/api/pages/dashboard/design/chat', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ runId: 'mock-run-1', pageId: 'page-001', taskId: 'task-1', status: 'running' }),
+        body: JSON.stringify({ runId: 'mock-run-1', pageId: 'dashboard', taskId: 'task-1', status: 'running' }),
       }),
     );
     // Mock run polling to return complete immediately
@@ -62,20 +62,20 @@ test.describe('Design Chat Iteration', () => {
     await expect(textarea).toHaveValue('');
 
     // Chat message should appear in history
-    const chatHistory = page.locator('[class*="bg-accent-blue"]').filter({ hasText: chatMessage });
+    const chatHistory = page.getByText(chatMessage).first();
     await expect(chatHistory).toBeVisible();
   });
 
   test('chat iteration triggers pipeline progress UI', async ({ page }) => {
-    await studio.selectPage('page-001');
+    await studio.selectPage('dashboard');
     await studio.clickChatTab();
 
     // Mock chat API
-    await page.route('**/api/pages/page-001/design/chat', (route) =>
+    await page.route('**/api/pages/dashboard/design/chat', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ runId: 'mock-run-2', pageId: 'page-001', taskId: 'task-2', status: 'running' }),
+        body: JSON.stringify({ runId: 'mock-run-2', pageId: 'dashboard', taskId: 'task-2', status: 'running' }),
       }),
     );
 

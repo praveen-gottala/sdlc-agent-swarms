@@ -49,7 +49,7 @@ async function gotoPetPrototype(page: Page): Promise<FrameLocator> {
   await expect(page.getByRole('heading', { name: 'Pages' })).toBeVisible({ timeout: 20_000 });
   await waitForRendererReady(page);
   await page.getByRole('button', { name: 'Prototype' }).click();
-  await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
   return page.frameLocator('iframe').first();
 }
 

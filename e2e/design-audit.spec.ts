@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, PET_ROOT } from './fixtures/test-base';
+import { DesignStudioPO } from './pages/design-studio.po';
 
 async function waitForRendererReady(page: Page, timeoutMs = 30_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
@@ -14,8 +15,13 @@ async function waitForRendererReady(page: Page, timeoutMs = 30_000): Promise<voi
 }
 
 test.describe('Design Audit @audit', () => {
-  test.beforeEach(async ({ page }) => {
+  let studio: DesignStudioPO;
+
+  test.beforeEach(async ({ page, setActiveProject }) => {
+    setActiveProject(PET_ROOT);
+    studio = new DesignStudioPO(page);
     await page.goto('/design', { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-testid^="page-"]').first().waitFor({ state: 'attached', timeout: 15_000 });
   });
 
   test('audit button visible in toolbar', async ({ page }) => {
@@ -26,11 +32,12 @@ test.describe('Design Audit @audit', () => {
   test('audit button disabled when no design page is selected', async ({ page }) => {
     const auditBtn = page.getByRole('button', { name: 'Audit' });
     await expect(auditBtn).toBeVisible({ timeout: 10_000 });
-    // Without a rendered page selected, the button should be disabled
-    await expect(auditBtn).toBeDisabled();
+    await expect(auditBtn).toHaveAttribute('data-disabled', 'true');
   });
 
   test('audit section exists in inspector quality zone', async ({ page }) => {
+    await studio.selectPage('dashboard');
+    await studio.activateEditMode();
     const qualitySection = page.getByTestId('section-quality');
     await expect(qualitySection).toBeVisible({ timeout: 10_000 });
     await qualitySection.click();
@@ -38,6 +45,8 @@ test.describe('Design Audit @audit', () => {
   });
 
   test('audit section shows idle message before running', async ({ page }) => {
+    await studio.selectPage('dashboard');
+    await studio.activateEditMode();
     const qualitySection = page.getByTestId('section-quality');
     await expect(qualitySection).toBeVisible({ timeout: 10_000 });
     await qualitySection.click();
@@ -45,50 +54,30 @@ test.describe('Design Audit @audit', () => {
   });
 
   test('mechanical audit runs and shows results on a rendered page', async ({ page }) => {
-    // Wait for pages to load then click "dashboard" (known rendered page)
-    await page.waitForTimeout(3000);
-    const dashboardBtn = page.locator('button', { hasText: 'dashboard' }).first();
-    if (await dashboardBtn.count() === 0) {
-      test.skip(true, 'No "dashboard" page in the active project');
-      return;
-    }
-
-    await dashboardBtn.click();
+    await studio.selectPage('dashboard');
     await waitForRendererReady(page);
 
-    // Wait for design spec to load AND the renderer iframe to be ready
     const auditBtn = page.getByRole('button', { name: 'Audit' });
     await expect(auditBtn).toBeEnabled({ timeout: 30_000 });
-
-    // Wait for the canvas iframe to render (bridge sends render-complete)
     await page.waitForTimeout(5000);
-
     await auditBtn.click();
 
-    // Expand Quality zone to see audit results
+    await studio.activateEditMode();
     const qualitySection = page.getByTestId('section-quality');
     await qualitySection.click();
 
-    // Wait for DOM extraction + API call + results render
     await expect(page.getByText('spec nodes found in DOM')).toBeVisible({ timeout: 30_000 });
 
-    // Wait for results (not the idle message)
-    await expect(page.getByText('spec nodes found in DOM')).toBeVisible({ timeout: 15_000 });
-
-    // Take screenshot to verify
     await page.screenshot({ path: 'e2e/screenshots/audit-mechanical-results.png', fullPage: false });
 
-    // Should show at least one verdict pill
     const passPill = page.locator('text=/\\d+ Pass/');
     const failPill = page.locator('text=/\\d+ Fail/');
     const hasPills = (await passPill.count()) + (await failPill.count());
     expect(hasPills).toBeGreaterThan(0);
 
-    // Should show expandable node list
     const nodes = page.locator('[data-testid="audit-node"]');
     expect(await nodes.count()).toBeGreaterThan(0);
 
-    // Expand first failing node (if any)
     const firstNode = nodes.first();
     await firstNode.click();
     await page.waitForTimeout(500);
@@ -96,45 +85,36 @@ test.describe('Design Audit @audit', () => {
   });
 
   test('audit clears when switching pages', async ({ page }) => {
-    await page.waitForTimeout(3000);
-    const dashboardBtn = page.locator('button', { hasText: 'dashboard' }).first();
-    const secondPageBtn = page.locator('button', { hasText: 'New Cl' }).first();
-    if (await dashboardBtn.count() === 0 || await secondPageBtn.count() === 0) {
-      test.skip(true, 'Need dashboard + new-claim page');
-      return;
-    }
-
-    await dashboardBtn.click();
+    await studio.selectPage('dashboard');
     await waitForRendererReady(page);
 
     const auditBtn = page.getByRole('button', { name: 'Audit' });
     await expect(auditBtn).toBeEnabled({ timeout: 30_000 });
     await page.waitForTimeout(5000);
     await auditBtn.click();
-    // Audit results are visible in the Quality zone
+
+    await studio.activateEditMode();
+    const qualitySection = page.getByTestId('section-quality');
+    await qualitySection.click();
     await expect(page.getByText('spec nodes found in DOM')).toBeVisible({ timeout: 30_000 });
 
-    // Switch to second page
-    await secondPageBtn.click();
-    await page.waitForTimeout(3000);
+    await page.getByTestId('page-add-expense').click();
+    await expect(page).toHaveURL(/page=add-expense/, { timeout: 10_000 });
+    await page.waitForTimeout(2000);
 
-    // Quality zone should show idle message for the new page
-    await expect(page.getByText(/Click.*Audit.*toolbar/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/Click.*Audit.*toolbar/)).toBeVisible({ timeout: 10_000 });
   });
 
   test('deep audit button state depends on API key', async ({ page }) => {
-    await page.waitForTimeout(2000);
+    await studio.selectPage('dashboard');
+    await studio.activateEditMode();
 
-    // Expand Quality zone to see audit content
     const qualitySection = page.getByTestId('section-quality');
     await qualitySection.click();
     await expect(page.getByText('DEEP AUDIT (VISION)')).toBeVisible({ timeout: 5_000 });
 
-    // The "Run Deep Audit" button should exist
     const deepBtn = page.getByRole('button', { name: /Run Deep Audit/i });
     await expect(deepBtn).toBeVisible();
-
-    // It should be disabled (no mechanical audit run yet)
     await expect(deepBtn).toBeDisabled();
 
     await page.screenshot({ path: 'e2e/screenshots/audit-deep-audit-section.png', fullPage: false });

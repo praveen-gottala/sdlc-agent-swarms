@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { Stack, Text, Alert, Paper, UnstyledButton, Group } from '@mantine/core';
+import { IconCheck } from '@tabler/icons-react';
 import { Modal } from '../ui/modal';
 import { Badge } from '../ui/badge';
 import type { CoherenceResult } from '../../lib/design/coherence-check';
@@ -30,53 +32,31 @@ export function CoherenceResultsModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Coherence Check Results" width="max-w-2xl">
-      <div className="max-h-[60vh] overflow-y-auto space-y-5">
-        {/* Warnings */}
+      <Stack gap="lg" style={{ maxHeight: '60vh', overflow: 'auto' }}>
         {warnings.length > 0 && (
-          <div className="space-y-1">
+          <Stack gap={4}>
             {warnings.map((w, i) => (
-              <p key={i} className="text-xs text-accent-yellow">
-                {w}
-              </p>
+              <Text key={i} size="xs" c="yellow">{w}</Text>
             ))}
-          </div>
+          </Stack>
         )}
 
-        {/* All passed */}
         {allPassed && (
-          <div className="flex items-center gap-2 rounded-md border border-accent-green/30 bg-accent-green/10 px-4 py-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-accent-green"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span className="text-sm text-accent-green font-medium">
-              All checks passed — no gaps found.
-            </span>
-          </div>
+          <Alert icon={<IconCheck size={16} />} color="green" variant="light">
+            All checks passed — no gaps found.
+          </Alert>
         )}
 
-        {/* No results */}
         {results.length === 0 && (
-          <p className="text-sm text-text-muted">
+          <Text size="sm" c="dimmed">
             No designs to check. Approve or render at least 2 pages first.
-          </p>
+          </Text>
         )}
 
-        {/* Per-page results */}
         {results.map((result) => (
           <PageResult key={result.pageId} result={result} onSelectPage={onSelectPage} />
         ))}
-      </div>
+      </Stack>
     </Modal>
   );
 }
@@ -93,73 +73,56 @@ function PageResult({
   const allDataOk = data.every((d) => d.missingFields.length === 0);
 
   return (
-    <div className="rounded-lg border border-border bg-bg-card/40 p-4 space-y-3">
-      {/* Page header */}
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold text-text-primary">{result.pageName}</h3>
-        {navOk && allDataOk && <Badge variant="success">Pass</Badge>}
-      </div>
+    <Paper withBorder radius="md" p="md">
+      <Stack gap="sm">
+        <Group gap="xs">
+          <Text size="sm" fw={600}>{result.pageName}</Text>
+          {navOk && allDataOk && <Badge variant="success">Pass</Badge>}
+        </Group>
 
-      {/* Navigation coverage */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-text-secondary">Navigation</span>
-          {navOk ? (
-            <Badge variant="success">
+        <Stack gap={6}>
+          <Group gap="xs">
+            <Text size="xs" fw={500} c="dimmed">Navigation</Text>
+            <Badge variant={navOk ? 'success' : 'warning'}>
               {nav.foundPages.length}/{nav.expectedPages.length}
             </Badge>
-          ) : (
-            <Badge variant="warning">
-              {nav.foundPages.length}/{nav.expectedPages.length}
-            </Badge>
+          </Group>
+          {nav.missingPages.length > 0 && (
+            <Stack gap={2} pl="xs">
+              <Text size="xs" c="dimmed">Missing page references:</Text>
+              {nav.missingPages.map((p) => (
+                <UnstyledButton key={p.id} onClick={() => onSelectPage(p.id)}>
+                  <Text size="xs" c="blue" td="underline">{p.name} ({p.route})</Text>
+                </UnstyledButton>
+              ))}
+            </Stack>
           )}
-        </div>
-        {nav.missingPages.length > 0 && (
-          <div className="pl-2 space-y-0.5">
-            <p className="text-xs text-text-muted">Missing page references:</p>
-            {nav.missingPages.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => onSelectPage(p.id)}
-                className="block text-xs text-accent-blue hover:underline"
-              >
-                {p.name} ({p.route})
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+        </Stack>
 
-      {/* Data field coverage */}
-      {data.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-xs font-medium text-text-secondary">Data Fields</span>
-          {data.map((model) => {
-            const ok = model.missingFields.length === 0;
-            return (
-              <div key={model.modelName} className="pl-2 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-secondary">{model.modelName}</span>
-                  {ok ? (
-                    <Badge variant="success">
+        {data.length > 0 && (
+          <Stack gap="xs">
+            <Text size="xs" fw={500} c="dimmed">Data Fields</Text>
+            {data.map((model) => {
+              const ok = model.missingFields.length === 0;
+              return (
+                <Stack key={model.modelName} gap={2} pl="xs">
+                  <Group gap="xs">
+                    <Text size="xs" c="dimmed">{model.modelName}</Text>
+                    <Badge variant={ok ? 'success' : 'warning'}>
                       {model.foundFields.length}/{model.expectedFields.length}
                     </Badge>
-                  ) : (
-                    <Badge variant="warning">
-                      {model.foundFields.length}/{model.expectedFields.length}
-                    </Badge>
+                  </Group>
+                  {model.missingFields.length > 0 && (
+                    <Text size="xs" c="dimmed">
+                      Missing: {model.missingFields.join(', ')}
+                    </Text>
                   )}
-                </div>
-                {model.missingFields.length > 0 && (
-                  <p className="text-xs text-text-muted">
-                    Missing: {model.missingFields.join(', ')}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                </Stack>
+              );
+            })}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
   );
 }

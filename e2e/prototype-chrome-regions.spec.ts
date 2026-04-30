@@ -32,7 +32,7 @@ async function waitForRendererReady(page: Page, timeoutMs = 90_000): Promise<voi
 
 async function enterPrototype(page: Page): Promise<FrameLocator> {
   await page.getByRole('button', { name: 'Prototype' }).click();
-  await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
   const frame = page.frameLocator('iframe').first();
   await expect(frame.locator('[data-persistent="header"]')).toBeVisible({ timeout: 15_000 });
   return frame;
@@ -299,7 +299,7 @@ test.describe('Prototype mode lifecycle', () => {
     await page.waitForTimeout(1000);
 
     await page.getByRole('button', { name: 'Prototype' }).click();
-    await expect(page.locator('text=Prototype Mode')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('text=/\\d+ screens/')).toBeVisible({ timeout: 30_000 });
     await expect(frame.locator('[data-persistent="header"]')).toBeVisible({ timeout: 15_000 });
   });
 

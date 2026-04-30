@@ -1,6 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { ActionIcon, Group, Stack, Text, Badge as MantineBadge, Loader, Paper, UnstyledButton } from '@mantine/core';
+import { IconX } from '@tabler/icons-react';
+import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 
 type ScreenType = 'page' | 'modal' | 'drawer' | 'sheet';
@@ -32,14 +35,12 @@ function deriveMode(targetScreenType: ScreenType | undefined): NavigationMode {
   return targetScreenType && targetScreenType !== 'page' ? 'overlay' : 'navigate';
 }
 
-function screenTypeBadgeColor(st: ScreenType): string {
-  switch (st) {
-    case 'modal': return 'bg-purple-500/20 text-purple-400';
-    case 'drawer': return 'bg-blue-500/20 text-blue-400';
-    case 'sheet': return 'bg-amber-500/20 text-amber-400';
-    default: return '';
-  }
-}
+const SCREEN_TYPE_COLOR: Record<ScreenType, string> = {
+  modal: 'violet',
+  drawer: 'blue',
+  sheet: 'yellow',
+  page: 'gray',
+};
 
 export function NavigationEditor({ pages, activePageId, onStartPicking, onStopPicking, pickedNode, onSaved }: NavigationEditorProps) {
   const [navTargets, setNavTargets] = useState<NavigationTarget[]>([]);
@@ -156,110 +157,107 @@ export function NavigationEditor({ pages, activePageId, onStartPicking, onStopPi
   const availableTargets = pages.filter(p => p.id !== activePageId);
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-t border-border">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-text-secondary">
+    <Stack gap="xs" p="sm" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+      <Group justify="space-between">
+        <Text size="xs" fw={500} c="dimmed">
           Navigation from {activePage?.name ?? activePageId}
-        </span>
+        </Text>
         {dirty && (
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
           </Button>
         )}
-      </div>
+      </Group>
 
       {loading ? (
-        <span className="text-xs text-text-muted">Loading...</span>
+        <Text size="xs" c="dimmed">Loading...</Text>
       ) : navTargets.length === 0 && !picking ? (
-        <span className="text-xs text-text-muted">No navigation targets defined</span>
+        <Text size="xs" c="dimmed">No navigation targets defined</Text>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <Stack gap={6}>
           {navTargets.map((nav, i) => {
             const targetPage = pages.find(p => p.id === nav.target);
             const targetType = getScreenType(nav.target);
             const effectiveMode = nav.mode ?? deriveMode(targetType);
             return (
-              <div key={i} className="flex items-center gap-1.5 text-xs rounded-md bg-bg-elevated/30 px-2 py-1.5">
-                <span className="flex-1 text-text-primary truncate" title={`${nav.trigger}${nav.source_node ? ` (${nav.source_node})` : ''}`}>
+              <Group key={i} gap={6} wrap="nowrap" style={{ background: 'var(--mantine-color-default-hover)', borderRadius: 6, padding: '6px 8px' }}>
+                <Text size="xs" truncate style={{ flex: 1 }} title={`${nav.trigger}${nav.source_node ? ` (${nav.source_node})` : ''}`}>
                   {nav.trigger}
-                </span>
-                <span className="text-text-muted">→</span>
-                <span className="text-accent-blue font-medium truncate max-w-[120px]">{targetPage?.name ?? nav.target}</span>
+                </Text>
+                <Text size="xs" c="dimmed">→</Text>
+                <Text size="xs" c="blue" fw={500} truncate maw={120}>{targetPage?.name ?? nav.target}</Text>
                 {targetType !== 'page' && (
-                  <span className={`px-1 py-0.5 rounded text-[10px] font-medium leading-none ${screenTypeBadgeColor(targetType)}`}>
+                  <MantineBadge variant="light" color={SCREEN_TYPE_COLOR[targetType]} size="xs">
                     {targetType}
-                  </span>
+                  </MantineBadge>
                 )}
-                <button
+                <UnstyledButton
                   onClick={() => handleToggleMode(i)}
-                  className={`px-1 py-0.5 rounded text-[10px] font-medium leading-none cursor-pointer transition-colors ${
-                    effectiveMode === 'overlay'
-                      ? 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25'
-                      : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
-                  }`}
                   title={`Mode: ${effectiveMode}. Click to toggle.`}
+                  style={{ lineHeight: 1 }}
                 >
-                  {effectiveMode}
-                </button>
-                <button
-                  onClick={() => handleRemove(i)}
-                  className="text-text-muted hover:text-accent-red transition-colors"
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
+                  <MantineBadge
+                    variant="light"
+                    color={effectiveMode === 'overlay' ? 'violet' : 'green'}
+                    size="xs"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {effectiveMode}
+                  </MantineBadge>
+                </UnstyledButton>
+                <ActionIcon variant="subtle" size="xs" onClick={() => handleRemove(i)} aria-label="Remove">
+                  <IconX size={12} />
+                </ActionIcon>
+              </Group>
             );
           })}
-        </div>
+        </Stack>
       )}
 
       {picking ? (
-        <div className="flex flex-col gap-1.5 rounded-md border border-accent-blue/50 bg-accent-blue/5 p-2">
-          {!pickedNodeId ? (
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-accent-blue animate-pulse" />
-              <span className="text-xs text-accent-blue font-medium">Click an element in the prototype...</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-muted">Element:</span>
-                <span className="text-text-primary font-medium">{pickedLabel}</span>
-                <span className="text-text-muted">({pickedNodeId})</span>
-              </div>
-              <select
-                value={newTarget}
-                onChange={e => setNewTarget(e.target.value)}
-                className="text-xs rounded border border-border bg-bg-base px-2 py-1 text-text-primary"
-              >
-                <option value="">Navigate to...</option>
-                {availableTargets.map(p => {
-                  const st = getScreenType(p.id);
-                  const suffix = st !== 'page' ? ` [${st}]` : '';
-                  return (
-                    <option key={p.id} value={p.id}>{p.name}{suffix}</option>
-                  );
-                })}
-              </select>
-            </>
-          )}
-          <div className="flex gap-1.5">
-            {pickedNodeId && (
-              <Button variant="primary" size="sm" onClick={handleConfirmBinding} disabled={!newTarget}>
-                Add
-              </Button>
+        <Paper withBorder radius="sm" p="xs" style={{ borderColor: 'var(--mantine-color-blue-5)', background: 'var(--mantine-color-blue-light)' }}>
+          <Stack gap={6}>
+            {!pickedNodeId ? (
+              <Group gap="xs">
+                <Loader size="xs" color="blue" type="dots" />
+                <Text size="xs" c="blue" fw={500}>Click an element in the prototype...</Text>
+              </Group>
+            ) : (
+              <>
+                <Group gap="xs">
+                  <Text size="xs" c="dimmed">Element:</Text>
+                  <Text size="xs" fw={500}>{pickedLabel}</Text>
+                  <Text size="xs" c="dimmed">({pickedNodeId})</Text>
+                </Group>
+                <Select
+                  options={availableTargets.map(p => {
+                    const st = getScreenType(p.id);
+                    const suffix = st !== 'page' ? ` [${st}]` : '';
+                    return { label: `${p.name}${suffix}`, value: p.id };
+                  })}
+                  value={newTarget}
+                  placeholder="Navigate to..."
+                  onChange={e => setNewTarget(e.target.value)}
+                />
+              </>
             )}
-            <Button variant="ghost" size="sm" onClick={handleCancelPicking}>
-              Cancel
-            </Button>
-          </div>
-        </div>
+            <Group gap={6}>
+              {pickedNodeId && (
+                <Button variant="primary" size="sm" onClick={handleConfirmBinding} disabled={!newTarget}>
+                  Add
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={handleCancelPicking}>
+                Cancel
+              </Button>
+            </Group>
+          </Stack>
+        </Paper>
       ) : (
         <Button variant="ghost" size="sm" onClick={handleStartPicking}>
           + Add navigation
         </Button>
       )}
-    </div>
+    </Stack>
   );
 }
