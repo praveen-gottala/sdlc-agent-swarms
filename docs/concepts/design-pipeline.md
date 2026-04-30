@@ -2,86 +2,87 @@
 
 > Authoritative source: [vision.md Layer 7](../vision.md#layer-7-design-pipeline) and [Design Pipeline Dataflow](../architecture/design-pipeline-dataflow.md)
 
-## Why Design Gets Its Own Pipeline
+Per-screen design generation pipeline orchestrated by `runDesignPipeline()` in `packages/agents-ux/src/design-pipeline/pipeline.ts`. Single entry point for both CLI (`design:page`) and dashboard (`/api/design`). Four stages run sequentially with per-stage caching for resume.
 
-Most AI coding tools treat UI as an afterthought — generate HTML, maybe add Tailwind classes, ship it. The result is software that looks like every other AI-generated app: Inter font, generic blue, "wrap everything in a card."
-
-CHIP treats design as a first-class engineering problem. A dedicated pipeline generates, validates, and iterates on designs using real rendering (not mockups), vision-based evaluation (not just code checks), and project-specific design tokens (not hardcoded defaults).
-
-## How It Works
+## Pipeline Stages
 
 ```mermaid
 graph LR
-    subgraph Pipeline ["Per-Screen Pipeline (sequential)"]
-        S1[Research] --> S2[Planning]
-        S2 --> S3[Design Agent]
-        S3 --> S4[Browser Render]
-        S4 --> S5[Evaluator]
-        S5 -->|Pass| S6[Output]
-        S5 -->|Fail| S3
-    end
+    R[research] --> P[planning]
+    P --> D[design]
+    D --> E[evaluator]
+    E -->|pass| O[Output]
+    E -->|fail, max 2| D
 
-    T[Design Tokens] -.-> S2
-    C[Component Catalog] -.-> S2
-    P[Pages Spec] -.-> S1
-
-    style S3 fill:#4A90D9,color:#fff
-    style S5 fill:#E67E22,color:#fff
+    style R fill:#4A90D9,color:#fff
+    style D fill:#7B68EE,color:#fff
+    style E fill:#E67E22,color:#fff
 ```
 
-**Seven stages, one entry point (`runDesignPipeline()`):**
+| Stage | Node Function | Cached Artifact | Output |
+|-------|--------------|-----------------|--------|
+| `research` | `researchNode` | `researchBrief` | Project context: tokens, catalog, brand, existing designs |
+| `planning` | `planningNode` | `planningSpec` | Screen plan: layout structure, component choices, data bindings, nav routes |
+| `design` | `designNode` | `designSpecV2` | DesignSpec JSON (flat adjacency list of typed nodes) |
+| `evaluator` | `evaluatorNode` | — | Token compliance, catalog correctness, layout quality, vision model review |
 
-1. **Research** — Loads project context: design tokens, component catalog, brand spec, existing designs. In evolution mode, retrieves current codebase patterns via RAG.
-2. **Planning** — Produces a screen plan: layout structure, component choices, data bindings, navigation routes. Uses design tokens and catalog as constraints.
-3. **Design Agent** — Generates a **DesignSpec JSON** (flat adjacency list of nodes with types, overrides, and catalog references). The LLM decides *what* to render; it never generates API calls.
-4. **Browser Render** — A deterministic renderer translates DesignSpec JSON into a real browser page using shadcn/Tailwind components. This is not a mockup — it's the actual component library.
-5. **Evaluator** — Takes a screenshot of the rendered page and evaluates it: token compliance, catalog correctness, layout quality, visual coherence. Mechanical checks run first; vision LLM review second.
-6. **Correction Loop** — If the evaluator flags issues, the design agent receives the findings and produces a corrected spec. Bounded to 2 iterations.
-7. **Output** — Final DesignSpec JSON + rendered screenshot saved to `agentforge/designs/<screen>/`.
+Stage order is defined by `STAGE_ORDER` in `pipeline.ts`. Pipeline supports resume from any stage via `input.stage` parameter — the orchestrator skips stages before the requested start index if cached artifacts exist.
 
-## The WHAT/HOW Separation
+## DesignSpec JSON
 
-The most important architectural decision in the design pipeline:
+The LLM produces a flat adjacency list of `NodeSpec` objects. `AcceleratorType` values: `page`, `container`, `section`, `header`, `divider`, `spacer`, `text`. Nodes reference catalog entries by ID (e.g., `catalog: "button"`, `catalog: "input"`). Overrides specify token-based styling (colors, typography, spacing).
 
-| Layer | Responsibility | Format |
-|-------|---------------|--------|
-| **LLM** (what) | Decides layout, component choices, content, styling | DesignSpec JSON (~300-600 tokens per screen) |
-| **Renderer** (how) | Translates JSON to real components, handles API quirks | React + shadcn + Tailwind |
+The LLM decides **what** to render (node tree, content, catalog references). The renderer in `packages/designspec-renderer` decides **how** (React components, CSS, Tailwind classes). The LLM never produces API calls or framework-specific code.
 
-Previous approaches let the LLM generate 600+ line scripts calling design tool APIs directly. The LLM hallucinated API calls ~30% of the time. With DesignSpec, the LLM outputs compact JSON; the renderer deterministically produces correct output. This eliminated all API bugs and reduced token usage ~89%.
+Structured output constraint: Anthropic's grammar compiler enforces a 24-optional-field limit per schema. Internal-only fields (set programmatically, never by the LLM) use local type intersections (`NodeSpec & { field?: Type }`) to avoid consuming slots.
 
-## Cross-Screen Coherence
+## Renderer
 
-Today, screens are generated one at a time. The target architecture serializes screens in topological order (home first, then pages linked from home) with a shared running context that threads:
+`packages/designspec-renderer` translates DesignSpec JSON to React/shadcn/Tailwind components in a Vite-served browser app (port 4100). The dashboard auto-starts the renderer; Playwright E2E tests use `waitForRendererReady()`.
 
-- Navigation routes declared by each screen
-- Component usage (catalog entries, variants)
-- Design tokens referenced
-- Data fields for model alignment
+Catalog resolution normalizes IDs via `normalizeCatalogIdToKebab()` in `catalog/catalog-id.ts`. Color tokens resolve through `resolveTokenColor()`. Missing catalog types fall back to container rendering with a warning — dedicated renderers exist for all built-in catalog types.
 
-Coherence checking moves from post-hoc (informational) to in-loop (blocking before approval).
+## Evaluator
 
-## Current State
+Two-pass evaluation on the rendered screenshot:
 
-- **Working:** Per-screen pipeline (research → planning → design → render → evaluation → correction)
-- **Working:** Design Studio dashboard at `/design` with per-screen approval
-- **Working:** Prototype renderer with screen-to-screen navigation
-- **Partial:** Cross-screen coherence (post-hoc only, not in-loop)
-- **Not built:** Batch generation with topological ordering
+1. **Mechanical checks** (deterministic): Token compliance, catalog entry validation, required fields present, navigation routes valid.
+2. **Vision model review** (LLM): Screenshot + compact evaluation context (`buildEvaluationContext(spec)`, ~300-600 tokens vs ~4,000-15,000 for raw JSON). The vision LLM sees the rendered output — the context only provides what the image can't convey (intent, names, `navigateTo` targets, token references).
 
-## Key Decisions
+Correction loop: evaluator findings feed back to the design node for a corrected spec. Bounded at 2 iterations. Progressive evaluation adjusts severity thresholds per iteration.
 
-| Decision | Rationale | ADR |
-|----------|-----------|-----|
-| Flat adjacency list for DesignSpec | Stays within LLM structured output limits (24 optional fields) | [ADR-034](../adrs/ADR-034-flat-adjacency-list-over-nested-tree.md) |
-| Catalog-first component model | Reusable components with consistent anatomy | [ADR-035](../adrs/ADR-035-catalog-first-component-model.md) |
-| Browser as default design tool | Real components, no design tool API quirks | [ADR-047](../adrs/ADR-047-browser-default-design-tool.md) |
-| Separate WHAT from HOW | LLM produces intent (JSON), renderer produces output | [Lessons Learned](../lessons-learned-rules.md#designspec-v2-separate-what-from-how) |
+## Cross-Screen Architecture
+
+**Current:** Per-screen generation is sequential within a screen. Cross-screen coherence runs post-hoc (informational only, after approval).
+
+**Target:** Batch coordinator runs screens in topological order (home first, linked pages next) with shared running context threading: navigation routes, component usage, tokens referenced, data fields. Coherence checking moves in-loop — incoherence triggers per-screen regeneration with the shared context, not post-hoc fixing.
+
+## Three-Layer Architecture
+
+```
+Layer C — Transport Callers
+  CLI design:page.ts ──────┐
+  CLI design-page-all.ts ──┤── PipelineInput
+  Dashboard design/route.ts┘        │
+                                     ▼
+Layer B — Orchestrator: runDesignPipeline()
+  Sequential: research → planning → design → evaluator
+  Caching: per-stage JSON artifacts for resume
+  Telemetry: PipelineTelemetrySink callbacks
+  Dispatch: designTool → browserDesignWork
+
+Layer A — Work Functions (pure agent logic)
+  uxResearchWork()  → typed UXResearchOutput
+  uxPlanningWork()  → typed UXPlanningOutput
+  browserDesignWork() → typed DesignSpecV2
+```
 
 ## Related Docs
 
 - [Vision Layer 7](../vision.md#layer-7-design-pipeline) — design pipeline authority
 - [Design Pipeline Dataflow](../architecture/design-pipeline-dataflow.md) — end-to-end data flow
 - [Design Evaluator](../architecture/design-evaluator.md) — evaluation architecture
-- [Design Generation Guide](../guides/design-generation.md) — operational how-to
-- [Visual Diversity Plan](../plans/active/visual-diversity/execution-plan.md) — active quality initiative
+- [ADR-034](../adrs/ADR-034-flat-adjacency-list-over-nested-tree.md) — flat adjacency list
+- [ADR-035](../adrs/ADR-035-catalog-first-component-model.md) — catalog-first components
+- [ADR-047](../adrs/ADR-047-browser-default-design-tool.md) — browser as default tool
+- [Visual Diversity Plan](../plans/active/visual-diversity/execution-plan.md) — quality initiative

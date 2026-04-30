@@ -1,21 +1,15 @@
-# Agent Taxonomy: The Four-Stage Spine
+# Agent Taxonomy
 
 > Authoritative source: [vision.md Layers 3, 5, 8, 9](../vision.md#layer-3-agent-taxonomy)
 
-## Why Not More Agents?
-
-The original design had ten peer agents on an event bus — mirroring how a human engineering team is organized (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs). This is org-chart thinking. LLM calls don't inherit the properties of human collaboration: they don't have persistent memory, they don't build rapport, and they can't negotiate ambiguous handoffs.
-
-The real questions — which LLM call owns which artifact, what context gets passed between calls, who decides when to stop — are answered cleanly by a four-stage spine and not at all by a ten-agent peer network.
-
-## The Spine
+CHIP uses a four-stage sequential spine with specialist tools, replacing the original ten-agent peer network. Each spine stage owns a typed artifact, enforces single-writer discipline, and hands off through Zod-typed LangGraph channels.
 
 ```mermaid
 graph TD
     subgraph Spine ["Sequential Spine (single writer per stage)"]
-        C[Clarifier] -->|Enriched Requirement + Assumption Ledger| A[Architect]
-        A -->|Architecture Spec + Task Plan| I[Implementer]
-        I -->|Code Diff| R[Reviewer]
+        C[Clarifier] -->|EnrichedRequirement + AssumptionLedger| A[Architect]
+        A -->|ArchitectureSpec + TaskPlan| I[Implementer]
+        I -->|CodeDiff| R[Reviewer]
     end
 
     subgraph Specialists ["Specialist Tools (invoked by spine stages)"]
@@ -43,59 +37,75 @@ graph TD
     style R fill:#E67E22,color:#fff
 ```
 
-### 1. Clarifier (Layer 5)
+## Spine Stages
 
-The front door. Takes raw input — either a new product idea or a change request to an existing app — and runs a six-stage pipeline: context retrieval, PRD analysis, gap detection, question prioritization, story writing, and a critic pass. Outputs an **Enriched Requirement** and an **Assumption Ledger** that tracks every question the system couldn't answer and had to assume.
+### Clarifier (`packages/agents-clarifier`)
 
-**Why it matters:** No commercial tool ships a proper clarifier. Devin, Replit Agent, and Cursor all skip this step. The result: autonomous agents that confidently build the wrong thing.
+LangGraph `StateGraph` with `Annotation.Root()` typed channels. Six nodes processing in sequence: `contextRetriever` → `prdAnalyzer` → `gapDetector` → `questionPrioritizer` → `storyWriter` → `critic`. Two HITL interrupt points: before `storyWriter` (human answers questions) and at `escalationGate` (after max rounds).
 
-### 2. Architect (Layers 3, 8)
+- **Bootstrap mode:** Loads base catalog + design tokens. Produces initial PRD.
+- **Evolution mode:** Retrieves codebase via all 5 RAG tools (`searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`). Produces change request with impact analysis.
+- **Gap detection:** Deterministic checklist (auth, validation, errors, NFRs, accessibility, orphan screens) + ClarifyGPT consistency sampling (3 implementations at temp 0.7, divergence analysis at temp 0).
+- **Question budget:** Micro features 0-2, standard epics 3-7, cross-cutting max 15 per round, max 3 rounds.
+- **Escalation:** After max rounds, user chooses accept (best-effort PRD, confidence capped at 0.5), restart, or abandon.
 
-Takes the enriched requirement and produces an architecture spec, ADRs for non-obvious decisions, and a task plan (DAG of implementation tasks). The design subagent is invoked here for screen-level UI proposals.
+116 tests across 7 test suites.
 
-### 3. Implementer (Layer 8)
+### Architect (specified, not yet implemented)
 
-Single-threaded tool loop that writes all code for one task sequentially: migration, backend, backend tests, frontend, frontend tests, integration test. Each step sees the output of earlier steps in its context window.
+Consumes `EnrichedRequirement`. Produces `ArchitectureSpec`, ADRs, and `TaskPlan` (DAG of scoped implementation tasks). Invokes design subagent for screen-level UI proposals.
 
-**The key constraint:** No parallel writers within a task. Cross-task parallelism happens via git worktrees, not concurrent LLM calls editing the same codebase.
+### Implementer (specified, not yet implemented)
 
-### 4. Reviewer (Layer 9)
+Single-threaded tool loop. Within-task write order: DB migration → backend + service layer → backend tests → frontend component → frontend tests → integration test. Each step appends to LLM context so later steps see earlier decisions.
 
-Runs in fresh context — does not inherit the Implementer's conversation. Multi-pass review: deterministic gates first (typecheck, lint, tests, security scan), then LLM review against the spec, then assumption validation against the ledger.
+Deterministic gates own "done" — the LLM never self-declares completion. Hard caps: 5 iteration limit, 200K token budget, 15-minute wall clock. Cross-task parallelism via git worktrees.
 
-## Specialists vs. Spine
+### Reviewer (specified, not yet implemented)
 
-Specialists are **tools**, not agents. They're invoked by spine stages and return results into the spine's context. They never run in parallel as writers to a shared artifact.
+Fresh LangGraph context (does not inherit Implementer's conversation). Four passes:
 
-| Specialist | Invoked by | What it does |
-|-----------|-----------|-------------|
-| Research subagent | Clarifier, Architect, Implementer | Read-only codebase/docs exploration |
-| Design subagent | Architect, Implementer | UI proposals, screen specs |
-| Test generator | Implementer | Failing tests before implementation |
-| Security scanner | Reviewer | Semgrep + LLM triage (no auto-remediation) |
-| Visual validator | Reviewer | Playwright for UI verification |
+1. Deterministic gates: `typecheck`, `lint`, tests, Semgrep security scan, license check
+2. LLM reviewer: failure-mode checklist prompt, scoped to diff, with architecture + AssumptionLedger as context
+3. Assumption validator: compares diff against AssumptionLedger, flags contradictions
+4. Triage: blocking / suggestion / false-positive with evidence
+
+Bounded retry: max 2 revisions before escalation to human.
+
+## Specialist Tools
+
+Specialists are invoked by spine stages as tools — never as parallel writers to shared artifacts.
+
+| Specialist | Invoked by | Implementation |
+|-----------|-----------|----------------|
+| Research subagent | Clarifier, Architect, Implementer | Read-only `packages/retrieval` tools returning compressed summaries |
+| Design subagent | Architect, Implementer | `packages/agents-ux` design pipeline (research → planning → design → evaluator) |
+| Test generator | Implementer | Emits failing tests before implementation |
+| Security scanner | Reviewer | Semgrep + CodeQL diff scan, LLM triage, no autonomous remediation |
+| Visual validator | Reviewer | Playwright browser verification |
 | Doc generator | Implementer | API docs, user guides |
 
-## Current State
+## Collapsed Roles
 
-- **Clarifier:** Fully implemented as a LangGraph StateGraph (6 nodes, 114 tests). Bootstrap and evolution modes both working.
-- **Architect:** Specified in vision, not yet implemented.
-- **Implementer:** Specified in vision, not yet implemented. Design pipeline (a specialist) is mature.
-- **Reviewer:** Specified in vision, not yet implemented.
+The original ten-agent model mapped to a human org chart. Four of those agents are absorbed; four are demoted to specialists:
 
-## Key Decisions
-
-| Decision | Rationale | ADR |
-|----------|-----------|-----|
-| Four-stage spine | Eliminates 45 pairwise communication channels of 10-agent model | [Vision Layer 3](../vision.md#layer-3-agent-taxonomy) |
-| Single-threaded implementer | Prevents parallel writer conflicts (the "Flappy Bird" failure mode) | [Vision Layer 8](../vision.md#layer-8-implementation) |
-| Specialists as tools, not agents | No parallel writes to shared artifacts | [Vision Layer 3](../vision.md#layer-3-agent-taxonomy) |
-| Fresh-context reviewer | Avoids confirmation bias from Implementer's conversation | [Vision Layer 9](../vision.md#layer-9-review) |
+| Original Agent | Disposition |
+|---------------|------------|
+| PM Agent | Absorbed into Clarifier |
+| Product Agent | Absorbed into Clarifier |
+| Architect Agent | Spine stage 2 |
+| Design Agent | Specialist tool (invoked by Architect, Implementer) |
+| Implementation Agent | Spine stage 3 |
+| Testing Agent | Specialist tool (invoked by Implementer) |
+| Review Agent | Spine stage 4 |
+| DevOps Agent | Specialist tool (invoked by Implementer) |
+| Security Agent | Specialist tool (invoked by Reviewer) |
+| Docs Agent | Specialist tool (invoked by Implementer) |
 
 ## Related Docs
 
-- [Vision Layer 3](../vision.md#layer-3-agent-taxonomy) — agent taxonomy authority
-- [Vision Layer 5](../vision.md#layer-5-clarifier-front-door) — clarifier deep dive
-- [Vision Layer 8](../vision.md#layer-8-implementation) — implementer design
-- [Vision Layer 9](../vision.md#layer-9-review) — reviewer design
-- [Research Report](../research-report.md) — evidence behind the spine design
+- [Vision Layer 3](../vision.md#layer-3-agent-taxonomy) — taxonomy authority
+- [Vision Layer 5](../vision.md#layer-5-clarifier-front-door) — clarifier specification
+- [Vision Layer 8](../vision.md#layer-8-implementation) — implementer specification
+- [Vision Layer 9](../vision.md#layer-9-review) — reviewer specification
+- [Clarifier Initiative](../plans/active/clarifier-initiative/execution-plan.md) — implementation plan

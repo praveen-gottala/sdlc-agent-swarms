@@ -1,33 +1,24 @@
-# What is CHIP?
+# CHIP
 
-> Authoritative source: [vision.md Section 1](../vision.md#1-product-vision-one-paragraph)
+> Authoritative source: [vision.md](../vision.md)
 
-## The Problem
+CHIP (Crafted Human Intelligence Platform) is a multi-agent SDLC framework built on TypeScript LangGraph. It coordinates four sequential stages — Clarifier, Architect, Implementer, Reviewer — through typed state channels with Zod schemas, with human-in-the-loop interrupts at three phase boundaries.
 
-Every AI coding tool today shares the same failure mode: they skip straight to code. A vague idea goes in, and lines of code come out — often plausible-looking but built on assumptions nobody verified. The result is software that "works" in demo but breaks in production, because no one asked the hard questions first.
+The framework is organized as 19 packages in an Nx monorepo, with 116 tests on the Clarifier graph alone, 5 hybrid-retrieval RAG tools, a 4-stage design pipeline producing DesignSpec JSON rendered through real shadcn/Tailwind components, and full observability via OpenTelemetry + Langfuse.
 
-This is the same mistake human teams make when they skip requirements gathering. The difference is that LLMs compound it faster and more confidently.
-
-## What CHIP Does Differently
-
-**CHIP** (Crafted Human Intelligence Platform) is a multi-agent SDLC framework that takes a product idea and produces working, reviewed, deployable software. Instead of one monolithic AI coding assistant, CHIP uses a small set of specialized stages — each with a clear job, clear inputs, and clear outputs.
-
-The key insight: **context quality matters more than agent quantity.** CHIP invests heavily in understanding the problem before writing code, enforces single-writer discipline per artifact, and places human checkpoints at the three moments where human judgment matters most.
-
-## How It Works
+## Architecture
 
 ```mermaid
 graph LR
     A[Product Idea] --> B[Clarifier]
-    B -->|Enriched Requirement| C[Architect]
-    C -->|Architecture + Task Plan| D[Implementer]
-    D -->|Code Diff| E[Reviewer]
-    E -->|Approved| F[Deployed Software]
+    B -->|EnrichedRequirement + AssumptionLedger| C[Architect]
+    C -->|ArchitectureSpec + TaskPlan| D[Implementer]
+    D -->|CodeDiff| E[Reviewer]
+    E -->|ReviewResult| F[Deployed Software]
 
-    B -.->|Questions| H[Human]
-    H -.->|Answers| B
-    C -.->|Design Approval| H
-    D -.->|Code Review| H
+    B -.->|HITL interrupt| H[Human]
+    C -.->|HITL interrupt| H
+    E -.->|HITL interrupt| H
 
     style B fill:#4A90D9,color:#fff
     style C fill:#7B68EE,color:#fff
@@ -35,50 +26,83 @@ graph LR
     style E fill:#E67E22,color:#fff
 ```
 
-**Four stages, three human checkpoints:**
+**Spine stages** run sequentially with single-writer discipline per artifact. Each stage's output is a Zod-typed channel consumed by the next. Specialist tools (research subagents, design agent, test generator, security scanner) are invoked by spine stages as read-only or narrow-write tools — never as parallel writers.
 
-1. **Clarifier** — Asks the right questions before anyone writes code. Produces an enriched requirement with an assumption ledger that tracks everything the system guessed.
-2. **Architect** — Designs the architecture, creates ADRs, and breaks work into scoped tasks. Design approval happens here.
-3. **Implementer** — Writes code one task at a time, sequentially. No parallel writers racing on the same artifact.
-4. **Reviewer** — Fresh-context review: deterministic checks first, then LLM review, then assumption validation.
+**Three HITL gates** implemented as LangGraph `interruptBefore` nodes with Postgres-backed state persistence:
 
-## The Single Invariant
+1. **Clarification** — Clarifier batches prioritized questions (EVPI-ranked, budget-capped at 15/round). Human answers; graph resumes.
+2. **Design/API approval** — Cross-screen atomic approval after coherence validation.
+3. **Code merge** — Deterministic gates (typecheck, lint, tests, Semgrep) run first; LLM review second; human decides on diff.
 
-Every architectural decision in CHIP is tested against one question:
+## Clarifier Graph
 
-> **Does this improve context quality or tighten write-coupling?**
+The first production LangGraph `StateGraph` in the monorepo. Six nodes, typed `Annotation.Root()` channels, two interrupt points:
 
-Good context into each LLM call. Single writer per artifact. If a proposed change helps either axis, it's probably right. If it hurts either, it's probably wrong.
+| Node | Model | Output |
+|------|-------|--------|
+| `contextRetriever` | — (RAG) | Bootstrap context or codebase retrieval via 5 tools |
+| `prdAnalyzer` | `claude-opus-4-6` | Structured PRD with `responseSchema` forced JSON |
+| `gapDetector` | `claude-sonnet-4-6` | Deterministic checklist + ClarifyGPT consistency sampling (3 implementations, divergence analysis) |
+| `questionPrioritizer` | — (deterministic) | EVPI proxy ranking: `blastRadius * answerability * confidenceGap` |
+| `storyWriter` | `claude-sonnet-4-6` | EARS-format acceptance criteria, INVEST stories, `FeaturePlan` DAG |
+| `critic` | — (deterministic) | EARS/INVEST/DAG compliance, bounded retry (max 2) |
 
-## Current State
+Handles both bootstrap (new app) and evolution (change request) modes through the same graph with mode-dependent retrieval priors.
 
-CHIP is in active development. The design pipeline (Clarifier + Design Agent) is the most mature subsystem, with per-screen generation, vision-based correction, and a browser-based prototype renderer. The Architect, Implementer, and Reviewer stages are specified but not yet implemented.
+## Design Pipeline
 
-- **Working today:** Design pipeline, Clarifier (6-stage LangGraph graph), RAG layer (5 retrieval tools), Dashboard (Next.js + Mantine), Observability (Langfuse + OTel)
-- **Specified, not built:** Architect stage, Implementer stage, Reviewer stage, cross-task parallelism via git worktrees
+Four stages orchestrated by `runDesignPipeline()` — single entry point for both CLI and dashboard:
 
-## Tech Stack
+| Stage | Agent Function | Cached Artifact |
+|-------|---------------|----------------|
+| `research` | `researchNode` | `researchBrief` |
+| `planning` | `planningNode` | `planningSpec` |
+| `design` | `designNode` | `designSpecV2` |
+| `evaluator` | `evaluatorNode` | — |
 
-| Component | Technology |
-|-----------|-----------|
-| Monorepo | Nx + TypeScript |
-| Orchestration | `@langchain/langgraph` (TypeScript) |
-| Dashboard | Next.js 16 + Mantine v9 |
-| Testing | Jest + Playwright |
-| Observability | OpenTelemetry + Langfuse (self-hosted) |
-| RAG | Tree-sitter + Voyage embeddings + Qdrant + Cohere Rerank |
+The LLM produces **DesignSpec JSON** (flat adjacency list, `AcceleratorType`: page, container, section, header, divider, spacer, text + catalog references). A deterministic renderer in `packages/designspec-renderer` translates to real React/shadcn components. Mechanical checks and vision-model evaluation run in a bounded correction loop (max 2 iterations).
 
-## Key Decisions
+## Retrieval Layer
 
-| Decision | Rationale | ADR |
-|----------|-----------|-----|
-| TypeScript LangGraph as sole runtime | Single-language, typed state, checkpointable | [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) |
-| Four-stage spine over 10-agent peer network | Eliminates coordination overhead, enforces single-writer | [ADR-022](../adrs/ADR-022-typescript-only-orchestration-engine.md) |
-| Event bus demoted to telemetry only | Typed channels prevent silent drift between agents | [Design Decisions](../design-decisions.md) |
+Five MCP-compatible tools in `packages/retrieval/src/tools/`:
 
-## Learn More
+| Tool | Pipeline |
+|------|----------|
+| `searchCode` | Tree-sitter AST chunking → Voyage-code-3 + BM25 hybrid (RRF k=60) → Cohere Rerank 3.5 |
+| `searchDocs` | Header-aware Markdown splitting → Voyage-3-large + BM25 hybrid → Cohere Rerank |
+| `searchDesigns` | DesignSpec JSON chunked by node → same hybrid pipeline |
+| `getRepoMap` | Aider-style repo map (Tree-sitter + PageRank over symbol graph, no embeddings) |
+| `findSimilarPatterns` | Pattern matching across indexed codebase |
 
-- [Vision Document](../vision.md) — the full architectural authority (15 layers)
-- [PRD](../specs/PRD.md) — product requirements and API contracts
-- [Current Status](current-status.md) — where each initiative stands today
-- [Agent Taxonomy](agent-taxonomy.md) — deep dive on the four-stage spine
+Qdrant vector store with 3 collections. Merkle-tree incremental re-indexing on git commits.
+
+## Observability
+
+`TracedProvider` wraps every `provider.complete()` call with OTel spans capturing model, prompt version, tokens, cost, latency. `LangfuseSink` adds pipeline-stage lifecycle spans. `createTracedMCPClient` wraps tool calls. Prompt versioning enforced via git frontmatter + pre-commit hook. Graceful no-op when `LANGFUSE_SECRET_KEY` unset.
+
+## Package Structure
+
+19 packages in the Nx monorepo:
+
+| Package | Role |
+|---------|------|
+| `core` | Types, config, LLM wrapper, checkpointer factory, test utilities |
+| `agents-clarifier` | Clarifier LangGraph graph (6 nodes, 116 tests) |
+| `agents-ux` | Design pipeline orchestration |
+| `designspec-renderer` | DesignSpec JSON → React/shadcn browser renderer |
+| `retrieval` | RAG layer (5 tools, Qdrant, Voyage, Cohere) |
+| `providers` | Multi-provider LLM abstraction (Claude, OpenAI, Vertex AI) |
+| `telemetry` | OTel + Langfuse integration |
+| `dashboard` | Next.js 16 + Mantine v9 (15 routes) |
+| `governance` | Permission, budget, HITL, audit middleware |
+| `cli` | Commander.js CLI |
+
+Plus 7 phase-specific agent packages (`agents-spec`, `agents-design`, `agents-code`, `agents-cicd`, `channels`, `integration-tests`, `e2e-test`) and `stacks` (project scaffolding templates).
+
+## Related Docs
+
+- [Vision](../vision.md) — 15-layer architectural authority
+- [Agent Taxonomy](agent-taxonomy.md) — spine stages and specialist tools
+- [Design Pipeline](design-pipeline.md) — DesignSpec rendering pipeline
+- [Coordination & State](coordination-and-state.md) — typed channels and persistence
+- [Current Status](current-status.md) — initiative progress

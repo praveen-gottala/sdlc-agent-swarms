@@ -2,85 +2,62 @@
 
 > Authoritative source: [vision.md Layers 2 and 4](../vision.md#layer-2-coordination-substrate)
 
-## The Two-Plane Model
+CHIP separates coordination (typed LangGraph channels with Zod schemas) from telemetry (OTel spans + EventEmitter). Spine stages communicate through declared state channels with explicit reducers. The event bus is demoted to observability — no control flow depends on event subscriptions.
 
-Agent systems need two kinds of communication, and conflating them is the single most common architectural mistake:
-
-1. **Coordination** — "Agent B, here is the enriched requirement; produce an architecture spec." This is a typed contract with a specific shape.
-2. **Telemetry** — "Agent B started at 14:32, consumed 4,200 tokens, cost $0.03." This is observability data for debugging and dashboards.
-
-Most agent frameworks use one mechanism for both. CHIP separates them explicitly.
+## Coordination Plane
 
 ```mermaid
-graph TB
-    subgraph Coordination ["Coordination Plane (typed LangGraph channels)"]
-        direction LR
-        C[Clarifier] -->|EnrichedRequirement| A[Architect]
-        A -->|ArchitectureSpec| I[Implementer]
-        I -->|CodeDiff| R[Reviewer]
+graph LR
+    subgraph Channels ["Typed LangGraph State Channels"]
+        C1[enrichedRequirement] --> A[Architect]
+        C2[assumptionLedger] --> A
+        A --> C3[architectureSpec]
+        A --> C4[taskPlan]
     end
 
-    subgraph Telemetry ["Telemetry Plane (OTel spans + events)"]
-        direction LR
-        T1[LLM Call Span] --> T2[Langfuse]
-        T3[Tool Call Span] --> T2
-        T4[State Transition] --> T2
-    end
-
-    C -.->|emits spans| T1
-    A -.->|emits spans| T1
-    I -.->|emits spans| T3
-    R -.->|emits spans| T3
-
-    style Coordination fill:#E8F4FD,stroke:#4A90D9
-    style Telemetry fill:#FDF2E8,stroke:#E67E22
+    style C1 fill:#4A90D9,color:#fff
+    style C3 fill:#7B68EE,color:#fff
 ```
 
-### Coordination Plane
+Every artifact crossing a stage boundary has a Zod schema in `packages/core/src/types/`. Channel reducers are declared per field:
 
-Every artifact that crosses a stage boundary has a **Zod schema** in `packages/core/src/types/`. The LangGraph state graph declares typed channels with explicit reducers:
+| Reducer | Usage | Example |
+|---------|-------|---------|
+| Last-write-wins | Most channels | `architectureSpec`, `enrichedRequirement` |
+| Concatenation | Accumulating channels | `assumptionLedger`, `errors` |
+| Merge | Partial update channels | State metadata |
 
-- **Last-write-wins** — most channels (e.g., `architectureSpec`)
-- **Concatenation** — channels where items accumulate (e.g., `assumptionLedger`, `errors`)
-- **Merge** — channels where partial updates are combined
+The Clarifier graph (`packages/agents-clarifier/src/graph/clarifier-graph.ts`) is the first production implementation: `Annotation.Root()` with typed channels, `interruptBefore` for HITL gates, conditional routing (`routeAfterEscalation`) for escalation handling.
 
-Shape errors are caught at authoring time, not in production. With a ten-agent event bus, that's ~45 pairwise channels where untyped payloads could silently drift. Typed channels reduce this to zero.
+## Telemetry Plane
 
-### Telemetry Plane
+`EventEmitter` from `eventemitter3` handles observability. `TracedProvider` wraps LLM calls with OTel spans. `LangfuseSink` emits pipeline-stage lifecycle spans. `CompositeSink` combines transport sinks (CLI stdout, dashboard SSE) with LangfuseSink.
 
-The in-memory `EventEmitter` is demoted to telemetry only. It emits spans for observability, debugging, and replay — but **no control flow decisions depend on event subscriptions.** If the event bus goes down, the pipeline still runs. If a span is dropped, no agent behavior changes.
+If the event bus goes down or a span is dropped, no agent behavior changes. The pipeline runs identically without telemetry infrastructure.
 
 ## State Persistence
 
-CHIP uses three tiers, each optimized for its access pattern:
+Three tiers, each optimized for its access pattern:
 
-| Tier | What | Backend | Why |
-|------|------|---------|-----|
-| **Artifacts** | PRDs, design specs, task plans, tokens | YAML files in git | Human-readable, version-controlled, diff-friendly |
-| **Run state** | Current node, channel contents, interrupt status, cost counters | Postgres (LangGraph checkpointer) | Durable across restarts, supports time-travel debugging |
-| **Ephemeral** | Tool call results, intermediate subagent outputs | In-memory | No persistence needed; already compressed into summaries |
+| Tier | Content | Backend | Properties |
+|------|---------|---------|------------|
+| Artifacts | PRDs, design specs, task plans, tokens, catalog | YAML in `agentforge/spec/` (git-tracked) | Human-readable, diffable, version-controlled |
+| Run state | Current node, channel contents, interrupt status, cost counters | Postgres via `@langchain/langgraph-checkpoint-postgres` | Durable, resumable, time-travel debugging |
+| Ephemeral | Tool call results, subagent intermediate outputs | In-memory per run | Discarded after compression into summaries |
 
-### Why Not Just YAML for Everything?
+Checkpointer factory in `packages/core/src/checkpointer/`: `MemorySaver` for development, `PostgresSaver` when `DATABASE_URL` is set. Docker Compose at `docker/docker-compose.agentforge.yml` (Postgres 16, port 5433). Checkpoints fire on every node boundary for fine-grained resumption.
 
-YAML works for artifacts — they're read by humans, edited by humans, version-controlled in git. But run state needs different properties: atomic writes, checkpoint/resume on crash, time-travel for debugging. If a 15-minute implementation task crashes at minute 12, you want to resume from the last checkpoint, not rerun from scratch ($5 of LLM calls lost).
+Human-edited YAML always wins over agent-edited YAML. File locking prevents concurrent corruption. Content hashing detects human edits mid-agent-write.
 
-## Current State
+## Current Implementation
 
-- **Coordination:** Event bus still used for some control flow (legacy). New code uses typed LangGraph channels (Clarifier is the first graph).
-- **State:** YAML artifacts working. Postgres checkpointer factory implemented (`MemorySaver` for dev, `PostgresSaver` when `DATABASE_URL` set). Not yet wired into pipelines beyond Clarifier.
-- **Telemetry:** OTel spans via `TracedProvider` + `LangfuseSink`. Working end-to-end.
-
-## Key Decisions
-
-| Decision | Rationale | ADR |
-|----------|-----------|-----|
-| Event bus demoted to telemetry only | Prevents silent-drift bugs from untyped payloads | [Vision Layer 2](../vision.md#layer-2-coordination-substrate) |
-| Typed LangGraph channels with Zod schemas | Shape errors caught at compile time | [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) |
-| Postgres checkpointer for run state | Durable, resumable, time-travel debugging | [Vision Layer 4](../vision.md#layer-4-state-and-persistence) |
-| YAML stays for artifacts | Human-readable, git-native, diff-friendly | [Vision Layer 4](../vision.md#layer-4-state-and-persistence) |
+- **Coordination:** Clarifier uses typed LangGraph channels. Older code paths still use EventEmitter for some control flow (migration target: typed channels for all new code).
+- **Persistence:** YAML artifacts operational across all pipelines. Postgres checkpointer factory implemented, wired into Clarifier. Docker Compose ready.
+- **Telemetry:** OTel spans via `TracedProvider` + `LangfuseSink` working end-to-end. Prompt versioning enforced.
 
 ## Related Docs
 
-- [Vision Layer 2](../vision.md#layer-2-coordination-substrate) — coordination substrate authority
-- [Vision Layer 4](../vision.md#layer-4-state-and-persistence) — state persistence authority
-- [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) — TypeScript-only orchestration
+- [Vision Layer 2](../vision.md#layer-2-coordination-substrate) — coordination authority
+- [Vision Layer 4](../vision.md#layer-4-state-and-persistence) — persistence authority
+- [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) — LangGraph adoption
+- [Observability](observability.md) — telemetry plane details

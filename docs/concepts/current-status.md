@@ -2,61 +2,73 @@
 
 > Last updated: 2026-04-30
 
-## Where We Are
+## Architecture Layer Implementation
 
-CHIP is in active development with the design pipeline as the most mature subsystem. The four-stage spine is specified in the [vision document](../vision.md), with the Clarifier as the first fully-implemented LangGraph graph. The dashboard has been redesigned with Mantine v9 and is undergoing page-by-page UX overhaul.
+| # | Layer | Implementation | Status |
+|---|-------|---------------|--------|
+| 1 | Orchestration | `@langchain/langgraph` (TypeScript). Python engine deprecated (ADR-043, pending deletion). | Partial |
+| 2 | Coordination | Clarifier uses typed LangGraph channels (`Annotation.Root()`). Older code paths still on EventEmitter. | Partial |
+| 3 | Agent taxonomy | 4-stage spine specified. Clarifier implemented (6 nodes, 116 tests). Architect/Implementer/Reviewer specified only. | 1 of 4 |
+| 4 | State | YAML artifacts operational. Postgres checkpointer factory in `packages/core/src/checkpointer/` (`MemorySaver` / `PostgresSaver`). Docker Compose ready. Wired into Clarifier. | Partial |
+| 5 | Clarifier | LangGraph `StateGraph`, 6 nodes, 2 HITL interrupts, bootstrap + evolution modes. 116 tests. | Done |
+| 6 | RAG | 5 tools operational: `searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`. Qdrant + Voyage + Cohere Rerank. Merkle-tree incremental indexing. | Done |
+| 7 | Design pipeline | `runDesignPipeline()`: research → planning → design → evaluator. Per-screen generation working. Cross-screen coherence post-hoc only. | Partial |
+| 8 | Implementation | Specified in vision. Single-threaded tool loop with deterministic gates. Not started. | Specified |
+| 9 | Review | Specified in vision. Fresh-context multi-pass review. Not started. | Specified |
+| 10 | HITL | Gate 1 (clarification): `interruptBefore` in Clarifier graph. Gate 2 (design): Design Studio UI. Gate 3 (merge): not started. | 2 of 3 |
+| 11 | Observability | `TracedProvider` + `LangfuseSink` + `createTracedMCPClient`. Prompt versioning (frontmatter + pre-commit hook). Langfuse self-hosted via Docker Compose. | Done |
+| 12 | Evaluation | Not started. Golden test sets planned. | Not started |
+| 13 | Sandboxing | Runs on dev machine. Ephemeral containers planned. | Not started |
+| 14 | Dashboard | Next.js 16 + Mantine v9. 15 routes. Redesign in progress (CHIP UX Overhaul Phase 4). | Active |
+| 15 | Integrations | Not started. Slack, GitHub, CI/CD planned. | Not started |
 
-## Initiative Status
+## Active Initiatives
 
-| Initiative | Status | What's Done | What's Next | Plan |
-|-----------|--------|------------|-------------|------|
-| **Visual Diversity** | Active | Phases 1-4, Prerequisite, 3.1-3.8 complete. Evaluator calibration, catalog bridge, progressive evaluator, correction parity all done. | Phase 5: Domain + Effects Foundation | [Plan](../plans/active/visual-diversity/execution-plan.md) |
-| **Observability** | Paused | Phases 1-4 complete. TracedProvider, LangfuseSink, MCP tracing, prompt versioning all working. | Phase 5: Evaluation infrastructure (deferred) | [Plan](../plans/active/observability/execution-plan.md) |
-| **Clarifier Initiative** | Active | Phase 0, Phase 2 (RAG), Tasks 1.0-1.7 complete. 6-node LangGraph StateGraph, 114 tests. | Task 1.8: Dashboard UX redesign | [Plan](../plans/active/clarifier-initiative/execution-plan.md) |
-| **CHIP UX Overhaul** | Active | Phases 1-2, 4.0-4.2 complete. Mantine migration, Home page, Runs page, Design Studio all redesigned. | Phase 4.3+: Remaining pages | [Plan](../plans/active/chip-ux-overhaul/execution-plan.md) |
-| **Dashboard Pipeline Fix** | Active | Root cause identified (`import.meta.url` under webpack). Partial fix applied. | Full fix for agents-ux package | [Plan](../plans/active/dashboard-pipeline-fix/execution-plan.md) |
-| **Docs Reorganization** | Active | Phase 1 complete (branding + nav). Phase 2 in progress (concept pages). | Phase 3: Vision.md refresh | [Plan](../plans/active/docs-reorganization/execution-plan.md) |
+| Initiative | Phase | Last Milestone | Next Step | Plan |
+|-----------|-------|---------------|-----------|------|
+| Visual Diversity | Phase 5 next | 3.1-3.8 complete: evaluator calibration, catalog bridge, progressive evaluator, correction parity | Domain + Effects Foundation | [Plan](../plans/active/visual-diversity/execution-plan.md) |
+| Clarifier | Task 1.8 | Tasks 1.0-1.7: 6 LangGraph nodes, 116 tests, event emission, interrupt detection | Dashboard UX redesign for `/new` | [Plan](../plans/active/clarifier-initiative/execution-plan.md) |
+| CHIP UX Overhaul | Phase 4.3+ | Phase 4.2: Design Studio — Mantine migration, edit mode gate, generate picker, resizable panels | Remaining pages per priority | [Plan](../plans/active/chip-ux-overhaul/execution-plan.md) |
+| Dashboard Pipeline Fix | Root cause found | `import.meta.url` under webpack identified. `serverExternalPackages` partial fix for agents-clarifier. | Full fix for agents-ux | [Plan](../plans/active/dashboard-pipeline-fix/execution-plan.md) |
+| Docs Reorganization | Phase 2 done | Phase 1 (branding + nav) + Phase 2 (concept pages) complete | Phase 3: vision.md refresh | [Plan](../plans/active/docs-reorganization/execution-plan.md) |
+| Observability | Phase 4 done | Phases 1-4: TracedProvider, LangfuseSink, MCP tracing, OTel upgrade, cost verification | Phase 5: evaluation infrastructure (deferred) | [Plan](../plans/active/observability/execution-plan.md) |
 
-## Architecture Layer Status
+## Package Inventory
 
-| Layer | Vision | Current State | Gap |
-|-------|--------|--------------|-----|
-| 1. Orchestration | TypeScript LangGraph only | Split: TS agents + deprecated Python engine | Python engine needs deletion (ADR-043) |
-| 2. Coordination | Typed LangGraph channels | EventEmitter for some control flow | Legacy event-bus coordination in older code |
-| 3. Agent Taxonomy | 4-stage spine + specialists | Clarifier implemented; others specified | Architect, Implementer, Reviewer not built |
-| 4. State | YAML + Postgres checkpointer | YAML working; Postgres factory ready | Checkpointer not wired into pipelines |
-| 5. Clarifier | 6-stage conversational pipeline | Fully implemented (114 tests) | Dashboard UX needs redesign |
-| 6. RAG | Hybrid retrieval (5 tools) | All 5 tools implemented | Not yet wired into spine stages |
-| 7. Design Pipeline | In-loop cross-screen coherence | Per-screen pipeline working | Cross-screen coherence is post-hoc |
-| 8. Implementation | Single-threaded tool-loop | Not started | Blocked by Architect stage |
-| 9. Review | Fresh-context multi-pass review | Not started | Blocked by Implementer stage |
-| 10. HITL | 3 gates via LangGraph interrupts | 1 gate (design approval) | Clarification + merge gates pending |
-| 11. Observability | OTel + Langfuse + prompt versioning | Working end-to-end | Cost dashboard in CHIP UI not built |
-| 12. Evaluation | Golden test sets + CI regression | Not started | Deferred to post-Clarifier |
-| 13. Sandboxing | Ephemeral containers, zero-secret | Runs on dev machine | Not started |
-| 14. Dashboard | CHIP-branded Mantine v9 | Active redesign (Phase 4) | Multiple pages remaining |
-| 15. Integrations | Slack, GitHub, CI/CD | Not started | Post-spine completion |
+19 packages in the Nx monorepo:
 
-## What's Working Today (Demo-Ready)
+| Package | Tests | Status |
+|---------|-------|--------|
+| `core` | Types, config, LLM wrapper, checkpointer, test utils | Production |
+| `agents-clarifier` | 116 tests, 7 suites | Production |
+| `agents-ux` | Design pipeline orchestration | Production |
+| `designspec-renderer` | DesignSpec → React/shadcn renderer | Production |
+| `retrieval` | 5 RAG tools, Qdrant integration | Production |
+| `providers` | Multi-provider LLM (Claude, OpenAI, Vertex AI) | Production |
+| `telemetry` | OTel + Langfuse | Production |
+| `governance` | Permission, budget, HITL, audit middleware | Partial |
+| `dashboard` | Next.js 16 + Mantine v9, 15 routes | Active development |
+| `cli` | Commander.js, 7 command groups | Production |
+| `agents-spec` | Specification agent | Scaffolded |
+| `agents-design` | Design agent | Scaffolded |
+| `agents-code` | Code generation agent | Scaffolded |
+| `agents-cicd` | CI/CD agent | Scaffolded |
+| `channels` | Event channel definitions | Production |
+| `integration-tests` | Cross-package integration | Active |
+| `e2e-test` | Playwright E2E | Active |
+| `stacks` | Project scaffolding templates | Production |
 
-These features can be demonstrated end-to-end:
+## Backlog
 
-1. **Design Pipeline** — Give it a product idea, get multi-screen designs with real shadcn components, vision-based quality evaluation, and a navigable prototype
-2. **Clarifier** — Conversational requirement gathering with gap detection, question prioritization, and assumption tracking (114 tests, 6 LangGraph nodes)
-3. **RAG** — Code, document, and design search with hybrid BM25+dense retrieval and Cohere reranking
-4. **Design Studio** — Per-screen design approval with chat-driven iteration, mechanical + vision audits, and edit-in-place
-5. **Observability** — Every LLM call and pipeline stage traced to Langfuse with prompt versioning
-
-## Backlog (Paused Work)
-
-| Initiative | Status | Why Paused |
-|-----------|--------|-----------|
-| Screen Types Plan B | B0-B2.7 complete | Visual diversity is higher priority |
-| Structured Output Migration | Planned | Waiting for stable `output_config` SDK support |
+| Initiative | Completed | Paused Reason |
+|-----------|-----------|---------------|
+| Screen Types Plan B | B0-B2.7 | Visual diversity higher priority |
+| Structured Output Migration | Planned | Waiting for stable `output_config` SDK |
 | Brownfield Import Pipeline | Planned | Post-spine completion |
+| Base Catalog Enrichment | Planned | Post-visual diversity |
 
 ## Related Docs
 
-- [Vision Document](../vision.md) — full 15-layer architecture authority
+- [Vision](../vision.md) — 15-layer architecture authority with current/target per layer
 - [Roadmap](../roadmap.md) — eight-phase rollout plan
-- [What is CHIP?](overview.md) — product overview
+- [CHIP Overview](overview.md) — architecture and package structure
