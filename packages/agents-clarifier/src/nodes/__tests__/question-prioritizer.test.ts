@@ -71,7 +71,11 @@ const MEDIUM_EVPI_GAP: Gap = {
   category: 'ambiguous',
   confidence: 0.4,
   deterministic: false,
-  divergentInterpretations: ['Tab bar', 'Sidebar', 'Bottom nav'],
+  divergentInterpretations: [
+    { label: 'Tab bar', description: '', recommended: false, source: 'llm' as const },
+    { label: 'Sidebar', description: '', recommended: false, source: 'llm' as const },
+    { label: 'Bottom nav', description: '', recommended: false, source: 'llm' as const },
+  ],
 };
 
 function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
@@ -92,6 +96,7 @@ function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
     criticRetries: 0,
     criticPassed: false,
     escalationDecision: null,
+    threadId: '',
     ...overrides,
   };
 }
@@ -250,15 +255,29 @@ describe('createQuestionPrioritizer', () => {
 
     const mcQuestion = result.questions!.find((q) => q.type === 'multiple-choice');
     expect(mcQuestion).toBeDefined();
-    expect(mcQuestion!.options).toEqual(['Tab bar', 'Sidebar', 'Bottom nav']);
+    expect(mcQuestion!.options!.map((o) => o.label)).toEqual(['Tab bar', 'Sidebar', 'Bottom nav']);
   });
 
-  it('generates open questions in bootstrap mode', async () => {
+  it('generates multiple-choice in bootstrap mode when divergent options exist', async () => {
     const node = createQuestionPrioritizer(mockDeps);
     const result = await node(
       makeState({
         mode: 'bootstrap',
         gaps: [MEDIUM_EVPI_GAP],
+      }),
+    );
+
+    const mcQuestion = result.questions!.find((q) => q.type === 'multiple-choice');
+    expect(mcQuestion).toBeDefined();
+    expect(mcQuestion!.options!.map((o) => o.label)).toEqual(['Tab bar', 'Sidebar', 'Bottom nav']);
+  });
+
+  it('generates open questions when gap has no divergent interpretations', async () => {
+    const node = createQuestionPrioritizer(mockDeps);
+    const result = await node(
+      makeState({
+        mode: 'bootstrap',
+        gaps: [HIGH_EVPI_GAP],
       }),
     );
 
@@ -272,5 +291,59 @@ describe('createQuestionPrioritizer', () => {
     const ids = result.questions!.map((q) => q.id);
     expect(ids.every((id) => id.startsWith('q-2-'))).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('scope confirmation gap ranks first due to EVPI score', async () => {
+    const scopeGap: Gap = {
+      id: 'det-scope-0',
+      topic: 'Scope',
+      description: 'Which features matter?',
+      category: 'missing',
+      confidence: 0.05,
+      deterministic: true,
+      divergentInterpretations: [
+        { label: 'Core features', description: 'Basic stuff', recommended: true, source: 'template' as const },
+        { label: 'Reports', description: 'Charts and insights', recommended: false, source: 'template' as const },
+      ],
+      divergenceScore: 1.0,
+    };
+
+    const node = createQuestionPrioritizer(mockDeps);
+    const result = await node(
+      makeState({
+        gaps: [MEDIUM_EVPI_GAP, scopeGap, HIGH_EVPI_GAP],
+        prdDraft: LARGE_PRD,
+      }),
+    );
+
+    expect(result.questions!.length).toBeGreaterThanOrEqual(2);
+    expect(result.questions![0].gapId).toBe('det-scope-0');
+  });
+
+  it('phantom gaps with divergenceScore 0 become assumptions', async () => {
+    const phantomGap: Gap = {
+      id: 'det-phantom-validation-0',
+      topic: 'Validation',
+      description: 'Instant validation with clear error messages.',
+      category: 'missing',
+      confidence: 0.95,
+      deterministic: true,
+      divergenceScore: 0.0,
+    };
+
+    const node = createQuestionPrioritizer(mockDeps);
+    const result = await node(
+      makeState({
+        gaps: [phantomGap, HIGH_EVPI_GAP],
+      }),
+    );
+
+    const questionGapIds = result.questions!.map((q) => q.gapId);
+    expect(questionGapIds).not.toContain('det-phantom-validation-0');
+    expect(questionGapIds).toContain('gap-high');
+
+    expect(result.assumptions).toBeDefined();
+    const assumptionIds = result.assumptions!.entries.map((e) => e.id);
+    expect(assumptionIds).toContain('assumption-det-phantom-validation-0');
   });
 });

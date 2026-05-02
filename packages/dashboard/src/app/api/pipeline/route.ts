@@ -1,3 +1,9 @@
+/**
+ * @deprecated Uses the old 5-phase model (Design/Spec/Code Gen/CI/CD/Observe).
+ * Vision Layer 3 commits the 4-stage spine (Clarifier/Architect/Implementer/Reviewer).
+ * The Runs page (/pipeline) now uses /api/runs instead.
+ * Kept for backward compatibility until confirmed no consumers remain.
+ */
 import { NextResponse } from 'next/server';
 import { readYamlFile } from '../_lib/project-reader';
 

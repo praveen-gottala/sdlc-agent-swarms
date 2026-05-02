@@ -2,10 +2,9 @@
  * POST /api/clarifier/respond — Resume the Clarifier after HITL interrupt.
  *
  * Accepts human answers and the threadId from a previous interrupt.
- * The checkpointer resumes the graph from where it was interrupted.
+ * Streams SSE events per node using runClarifierPipelineStream.
  */
 
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import {
   resolveClaudeAuth,
@@ -13,10 +12,24 @@ import {
   createClaudeProvider,
 } from '@agentforge/providers';
 import { createTracedProvider, initLangfuseTracing } from '@agentforge/telemetry';
-import { runClarifierPipeline } from '@agentforge/agents-clarifier';
+import { runClarifierPipelineStream } from '@agentforge/agents-clarifier';
 import type { ClarifierInput } from '@agentforge/agents-clarifier';
 import { createCheckpointer, MemorySaver } from '@agentforge/core';
-import { getActiveProjectRoot } from '../../_lib/project-reader';
+import { getActiveProjectRoot, MONOREPO_ROOT } from '../../_lib/project-reader';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const STAGE_LABELS: Record<string, string> = {
+  contextRetriever: 'Loading project context...',
+  prdAnalyzer: 'Analyzing requirements with Claude Opus...',
+  gapDetector: 'Detecting gaps and ambiguities...',
+  questionPrioritizer: 'Prioritizing clarification questions...',
+  prdUpdater: 'Updating PRD with your answers...',
+  storyWriter: 'Writing user stories...',
+  critic: 'Reviewing story quality...',
+  escalationGate: 'Awaiting your decision...',
+  emitComplete: 'Finalizing requirements...',
+};
 
 interface RespondBody {
   threadId?: string;
@@ -25,33 +38,35 @@ interface RespondBody {
     answer: string;
     selectedOption?: string;
   }>;
+  rawInput?: string;
   projectId?: string;
+  mode?: 'bootstrap' | 'evolution';
   escalationDecision?: 'accept' | 'restart' | 'abandon';
 }
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as RespondBody;
-  const { threadId, answers, projectId, escalationDecision } = body;
+  const { threadId, answers, rawInput, projectId, mode, escalationDecision } = body;
 
   if (!threadId) {
-    return NextResponse.json(
-      { error: 'threadId is required' },
-      { status: 400 },
+    return new Response(
+      JSON.stringify({ error: 'threadId is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
     );
   }
 
   if (!answers?.length && !escalationDecision) {
-    return NextResponse.json(
-      { error: 'Either answers or escalationDecision is required' },
-      { status: 400 },
+    return new Response(
+      JSON.stringify({ error: 'Either answers or escalationDecision is required' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
     );
   }
 
   const auth = resolveClaudeAuth();
   if (!auth) {
-    return NextResponse.json(
-      { error: 'No Claude API authentication configured.' },
-      { status: 503 },
+    return new Response(
+      JSON.stringify({ error: 'No Claude API authentication configured.' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } },
     );
   }
 
@@ -72,41 +87,142 @@ export async function POST(request: NextRequest) {
     checkpointer = new MemorySaver();
   }
 
+  const baseCatalogPath = join(MONOREPO_ROOT, 'packages', 'core', 'src', 'catalogs', 'base-component-catalog.yaml');
+  let baseCatalog: string | undefined;
+  try {
+    baseCatalog = readFileSync(baseCatalogPath, 'utf-8');
+  } catch {
+    // Falls back to loadBaseCatalog() inside the node
+  }
+
+  const humanResponses = answers?.map((a) => ({
+    questionId: a.questionId,
+    answer: a.answer,
+    selectedOption: a.selectedOption,
+  }));
+
   const input: ClarifierInput = {
-    rawInput: '',
-    mode: 'bootstrap',
+    rawInput: rawInput ?? '',
+    mode: mode ?? 'bootstrap',
     provider,
     projectRoot,
     projectId: resolvedProjectId,
     threadId,
     checkpointer,
+    baseCatalog,
+    humanResponses,
+    escalationDecision,
   };
 
-  const result = await runClarifierPipeline(input);
+  const encoder = new TextEncoder();
+  const stages = Object.keys(STAGE_LABELS);
 
-  if (!result.ok) {
-    return NextResponse.json(
-      { error: result.error.message, code: result.error.code },
-      { status: 500 },
-    );
-  }
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(event: string, data: unknown): void {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      }
 
-  const { state, interrupted } = result.value;
+      let nodeIndex = 0;
 
-  return NextResponse.json({
-    threadId,
-    interrupted,
-    state: {
-      mode: state.mode,
-      round: state.round,
-      maxRounds: state.maxRounds,
-      questions: state.questions,
-      gaps: state.gaps,
-      requirement: state.requirement,
-      assumptions: state.assumptions,
-      prdDraft: state.prdDraft,
-      featurePlan: state.featurePlan,
-      error: state.error,
+      try {
+        for await (const event of runClarifierPipelineStream(input)) {
+          switch (event.type) {
+            case 'node-complete': {
+              const stageLabel = STAGE_LABELS[event.node];
+              if (stageLabel) {
+                send('stage', {
+                  stage: event.node,
+                  label: stageLabel,
+                  index: nodeIndex,
+                  total: stages.length,
+                });
+                nodeIndex++;
+              }
+
+              if (event.node === 'prdAnalyzer' && event.state.prdDraft) {
+                send('prd-draft', { prdDraft: event.state.prdDraft });
+              }
+              if (event.node === 'gapDetector' && event.state.gaps) {
+                send('gaps', { gaps: event.state.gaps });
+              }
+              break;
+            }
+
+            case 'interrupt': {
+              send('stage', {
+                stage: 'questionPrioritizer',
+                label: 'Questions ready!',
+                index: stages.indexOf('questionPrioritizer'),
+                total: stages.length,
+              });
+
+              send('result', {
+                threadId: event.threadId,
+                interrupted: true,
+                state: {
+                  mode: event.state.mode,
+                  round: event.state.round,
+                  maxRounds: event.state.maxRounds,
+                  questions: event.state.questions,
+                  gaps: event.state.gaps,
+                  requirement: event.state.requirement,
+                  assumptions: event.state.assumptions,
+                  prdDraft: event.state.prdDraft,
+                  featurePlan: event.state.featurePlan,
+                  error: event.state.error,
+                },
+              });
+              break;
+            }
+
+            case 'complete': {
+              send('stage', {
+                stage: 'emitComplete',
+                label: 'Requirements complete!',
+                index: stages.length - 1,
+                total: stages.length,
+              });
+
+              send('result', {
+                threadId: event.threadId,
+                interrupted: false,
+                state: {
+                  mode: event.state.mode,
+                  round: event.state.round,
+                  maxRounds: event.state.maxRounds,
+                  questions: event.state.questions,
+                  gaps: event.state.gaps,
+                  requirement: event.state.requirement,
+                  assumptions: event.state.assumptions,
+                  prdDraft: event.state.prdDraft,
+                  featurePlan: event.state.featurePlan,
+                  error: event.state.error,
+                },
+              });
+              break;
+            }
+
+            case 'error': {
+              send('error', { error: event.error.message, code: event.error.code });
+              break;
+            }
+          }
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        send('error', { error: message, code: 'STREAM_ERROR' });
+      }
+
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
     },
   });
 }

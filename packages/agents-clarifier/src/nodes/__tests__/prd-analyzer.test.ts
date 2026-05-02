@@ -113,6 +113,7 @@ function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
     criticRetries: 0,
     criticPassed: false,
     escalationDecision: null,
+    threadId: '',
     ...overrides,
   };
 }

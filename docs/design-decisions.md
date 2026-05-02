@@ -1,8 +1,8 @@
 # CHIP Design Decisions
 
-> The durable record of architectural decisions made for CHIP (formerly AgentForge).
-> Not a decision log in chronological order — organized by topic.
-> Each decision has: the decision, the reasoning, alternatives considered, and when revisiting is warranted.
+!!! abstract "About this document"
+
+    The durable record of architectural decisions made for CHIP (formerly AgentForge). Not a decision log in chronological order — organized by topic. Each decision has: the decision, the reasoning, alternatives considered, and when revisiting is warranted.
 
 ---
 

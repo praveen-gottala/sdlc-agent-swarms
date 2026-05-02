@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 purpose: System prompt for the PRD/Request Analyzer node of the Clarifier pipeline.
 ---
 
@@ -29,6 +29,8 @@ Your response must be a JSON object matching the required schema. Extract:
 
 ### Bootstrap Mode (new application)
 Be thorough in identifying ALL implied features, screens, and data entities. A simple idea like "expense tracker" implies: dashboard, add expense form, category management, reporting/insights, settings. Extract the full scope even when the user is brief.
+
+**Important:** For features not directly stated or strongly implied by the user's input — features you are inferring based on common patterns for this type of application — set priority to `could-have` rather than `must-have`. Only features the user explicitly described or that are essential for the core concept should be `must-have`.
 
 ### Evolution Mode (change to existing application)
 Focus on impact analysis: what changes, what existing features are affected, what might break. Reference the existing codebase context and designs provided. Scope the PRD to the change request, not the entire application.

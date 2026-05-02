@@ -40,6 +40,7 @@ export const ClarifierStateAnnotation = Annotation.Root({
   criticRetries: Annotation<number>({ reducer: (_, b) => b, default: () => 0 }),
   criticPassed: Annotation<boolean>({ reducer: (_, b) => b, default: () => false }),
   escalationDecision: Annotation<EscalationDecision>({ reducer: (_, b) => b, default: () => null }),
+  threadId: Annotation<string>({ reducer: (_, b) => b, default: () => '' }),
 });
 
 export type ClarifierStateType = typeof ClarifierStateAnnotation.State;

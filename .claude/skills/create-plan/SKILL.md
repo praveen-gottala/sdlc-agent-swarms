@@ -96,6 +96,13 @@ Create the folder and file: `docs/plans/active/<name>/execution-plan.md`
 ## Key Files
 | File | Action |
 |------|--------|
+
+## Verification Gate
+**Skill order (mandatory at every phase/task completion):**
+1. `/mid-session-drift-check` — rule compliance (mocks, tests, patterns, honesty)
+2. `/verify-done` — functional verification (test triad, headed E2E, Chrome DevTools visual, session retrospective, verify-docs)
+3. `git commit` — only after verify-done passes
+4. `/prepare-handoff` — only if work continues in a new session
 ```
 
 **For ad-hoc initiatives**, scaffold from the description + exploration:
@@ -120,6 +127,13 @@ Create the folder and file: `docs/plans/active/<name>/execution-plan.md`
 ## Key Files
 | File | Action |
 |------|--------|
+
+## Verification Gate
+**Skill order (mandatory at every phase/task completion):**
+1. `/mid-session-drift-check` — rule compliance (mocks, tests, patterns, honesty)
+2. `/verify-done` — functional verification (test triad, headed E2E, Chrome DevTools visual, session retrospective, verify-docs)
+3. `git commit` — only after verify-done passes
+4. `/prepare-handoff` — only if work continues in a new session
 ```
 
 Fill in the Key Files table and refine tasks into concrete, file-level

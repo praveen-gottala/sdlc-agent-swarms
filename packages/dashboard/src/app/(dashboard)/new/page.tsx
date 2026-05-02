@@ -1,372 +1,339 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { QuestionCard } from '@/components/clarifier/question-card';
-import { AssumptionCard } from '@/components/clarifier/assumption-card';
-import { PrdPreview } from '@/components/clarifier/prd-preview';
-import { StatusBar } from '@/components/clarifier/status-bar';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { useAutoResize } from '@/lib/hooks/use-auto-resize';
+import { Tabs } from '@mantine/core';
+import { useClarifierStream } from '@/lib/hooks/use-clarifier-stream';
+import { SplitPanelLayout } from '@/components/clarifier/split-panel-layout';
+import { ChatPanel } from '@/components/clarifier/chat-panel';
+import { PrdPanel } from '@/components/clarifier/prd-panel';
+import type { AssumptionEntry, Question, StructuredOption } from '@/lib/clarifier-chat-types';
 
 /* ------------------------------------------------------------------ */
-/*  Types                                                              */
+/*  Question Answering Sub-component                                   */
 /* ------------------------------------------------------------------ */
 
-interface Question {
-  readonly id: string;
-  readonly gapId: string;
-  readonly text: string;
-  readonly type: 'open' | 'multiple-choice';
-  readonly options?: readonly string[];
-  readonly priority: number;
-  readonly evpiScore: number;
+interface QuestionFlowProps {
+  readonly questions: readonly Question[];
+  readonly round: number;
+  readonly maxRounds: number;
+  readonly onAllAnswered: (answers: ReadonlyArray<{ questionId: string; answer: string; selectedOption?: string }>) => void;
+  readonly onAddUserAnswer: (questionId: string, questionText: string, answer: string, selectedOption?: string) => void;
 }
 
-interface AssumptionEntry {
-  readonly id: string;
-  readonly description: string;
-  readonly confidence: number;
-  readonly source: string;
-  readonly requiresConfirmation: boolean;
-}
+const CheckIcon = ({ className }: { className?: string }): React.JSX.Element => (
+  <svg className={className ?? 'h-3.5 w-3.5'} viewBox="0 0 16 16" fill="currentColor">
+    <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+  </svg>
+);
 
-interface ClarifierState {
-  mode: string;
-  round: number;
-  maxRounds: number;
-  questions: Question[];
-  gaps: unknown[];
-  requirement: { prd: Record<string, unknown>; confidence: number } | null;
-  assumptions: { entries: AssumptionEntry[] } | null;
-  prdDraft: Record<string, unknown> | null;
-  featurePlan: Record<string, unknown> | null;
-  error: string | null;
-}
-
-interface ClarifierResponse {
-  threadId: string;
-  interrupted: boolean;
-  state: ClarifierState;
-}
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
-
-type PagePhase = 'welcome' | 'running' | 'questions' | 'complete' | 'error';
-
-const SUGGESTION_CHIPS = [
-  'Personal expense tracker with categories and budgets',
-  'E-commerce store with product catalog and cart',
-  'Project management dashboard with kanban board',
-  'Recipe sharing app with search and ratings',
-];
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
-
-export default function NewProjectPage() {
-  const [phase, setPhase] = useState<PagePhase>('welcome');
-  const [seed, setSeed] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(null);
-  const [clarifierState, setClarifierState] = useState<ClarifierState | null>(null);
+function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAnswer }: QuestionFlowProps): React.JSX.Element {
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentQIdx, setCurrentQIdx] = useState(0);
+  const [chatInput, setChatInput] = useState('');
+  const otherRef = useRef<HTMLTextAreaElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useAutoResize(otherRef, chatInput, 120);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages.length, phase]);
+  const currentQuestion = questions[currentQIdx];
+  const allAnswered = questions.every((q) => answers[q.id]?.trim());
 
-  /* ── API calls ─────────────────────────────────────────────────── */
-
-  const startClarifier = useCallback(async (input: string) => {
-    setPhase('running');
-    addMessage('user', input);
-
-    try {
-      const res = await fetch('/api/clarifier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawInput: input, mode: 'bootstrap' }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
-
-      const data: ClarifierResponse = await res.json();
-      setThreadId(data.threadId);
-      setClarifierState(data.state);
-
-      if (data.interrupted && data.state.questions.length > 0) {
-        addMessage('assistant', `I have ${data.state.questions.length} question${data.state.questions.length !== 1 ? 's' : ''} to help clarify your requirements.`);
-        setPhase('questions');
-      } else if (!data.interrupted && data.state.requirement) {
-        addMessage('assistant', 'Requirements clarification complete! Here\'s your PRD for review.');
-        setPhase('complete');
-      } else {
-        addMessage('assistant', 'Processing complete.');
-        setPhase('complete');
-      }
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
-      setPhase('error');
-    }
-  }, []);
-
-  const submitAnswers = useCallback(async () => {
-    if (!threadId) return;
-
-    setPhase('running');
-    const answeredQuestions = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId,
-      answer,
-    }));
-
-    addMessage('user', `Answered ${answeredQuestions.length} question${answeredQuestions.length !== 1 ? 's' : ''}`);
-
-    try {
-      const res = await fetch('/api/clarifier/respond', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, answers: answeredQuestions }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
-
-      const data: ClarifierResponse = await res.json();
-      setClarifierState(data.state);
-      setAnswers({});
-
-      if (data.interrupted && data.state.questions.length > 0) {
-        addMessage('assistant', `Round ${data.state.round}: ${data.state.questions.length} more question${data.state.questions.length !== 1 ? 's' : ''}.`);
-        setPhase('questions');
-      } else if (!data.interrupted && data.state.requirement) {
-        addMessage('assistant', 'All questions resolved. Here\'s your finalized PRD.');
-        setPhase('complete');
-      } else {
-        setPhase('complete');
-      }
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
-      setPhase('error');
-    }
-  }, [threadId, answers]);
-
-  /* ── Helpers ───────────────────────────────────────────────────── */
-
-  function addMessage(role: 'user' | 'assistant', content: string) {
-    setMessages((prev) => [...prev, {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      role,
-      content,
-      timestamp: Date.now(),
-    }]);
-  }
-
-  const handleSeedSubmit = () => {
-    if (!seed.trim()) return;
-    startClarifier(seed.trim());
-    setSeed('');
-  };
-
-  const handleAnswer = (questionId: string, answer: string) => {
+  const handleOptionSelect = (questionId: string, answer: string, option?: StructuredOption): void => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+    setChatInput('');
+    const q = questions.find((qq) => qq.id === questionId);
+    if (q) onAddUserAnswer(questionId, q.text, answer, option?.label);
+    requestAnimationFrame(() => {
+      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   };
 
-  const allAnswered = clarifierState?.questions.every((q) => answers[q.id]?.trim()) ?? false;
+  const handleChatAnswer = (): void => {
+    if (!chatInput.trim() || !currentQuestion) return;
+    const answer = chatInput.trim();
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
+    setChatInput('');
+    onAddUserAnswer(currentQuestion.id, currentQuestion.text, answer);
+  };
 
-  /* ── Render ────────────────────────────────────────────────────── */
+  const handleSubmitAll = (): void => {
+    const answeredQuestions = Object.entries(answers).map(([questionId, answer]) => {
+      const q = questions.find((qq) => qq.id === questionId);
+      const matchedOption = q?.options?.find((o) => o.label === answer);
+      return { questionId, answer, selectedOption: matchedOption?.label };
+    });
+    onAllAnswered(answeredQuestions);
+  };
+
+  const activeTabId = currentQuestion?.id ?? questions[0]?.id;
 
   return (
-    <div className="flex h-full flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-8">
-
-          {/* Welcome state */}
-          {phase === 'welcome' && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-blue/10">
-                <svg className="h-8 w-8 text-accent-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-text-primary">New Project</h1>
-              <p className="mt-2 text-sm text-text-secondary max-w-md">
-                Describe what you want to build. The Clarifier will ask smart questions
-                to produce a comprehensive PRD with minimal ambiguity.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-2">
-                {SUGGESTION_CHIPS.map((chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => { setSeed(chip); startClarifier(chip); }}
-                    className="rounded-full border border-border bg-bg-card px-4 py-2 text-xs text-text-secondary transition-colors hover:border-accent-blue/50 hover:text-text-primary"
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
+    <div className="mb-6 px-6">
+      <div className="mx-auto max-w-[640px]">
+          <div ref={tabsRef} className="animate-[fadeSlideUp_0.3s_ease-out] rounded-xl border border-border/60 bg-bg-card overflow-hidden">
+            {/* Tabs header + round badge */}
+            <div className="flex items-center justify-between px-4 pt-2">
+              <span className="text-[11px] text-text-muted">Round {round}/{maxRounds}</span>
             </div>
-          )}
+            <Tabs
+              value={activeTabId}
+              onChange={(id) => {
+                const idx = questions.findIndex((q) => q.id === id);
+                if (idx >= 0) setCurrentQIdx(idx);
+              }}
+            >
+              <Tabs.List style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
+                {questions.map((q, i) => {
+                  const isAnswered = !!answers[q.id];
+                  const tabLabel = q.topic ?? `Q${i + 1}`;
+                  return (
+                    <Tabs.Tab
+                      key={q.id}
+                      value={q.id}
+                      leftSection={isAnswered ? <CheckIcon className="h-3 w-3 text-green-500" /> : undefined}
+                      style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+                    >
+                      <span className="text-[12px]">{tabLabel}</span>
+                    </Tabs.Tab>
+                  );
+                })}
+              </Tabs.List>
 
-          {/* Message thread */}
-          {messages.length > 0 && (
-            <div className="space-y-4 mb-6">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-xl px-4 py-3 text-sm ${
-                      msg.role === 'user'
-                        ? 'bg-accent-blue/15 text-text-primary rounded-br-sm'
-                        : 'bg-bg-card border border-border text-text-primary rounded-bl-sm'
-                    }`}
-                  >
-                    {msg.content}
+              {questions.map((q) => (
+                <Tabs.Panel key={q.id} value={q.id}>
+                  <div className="p-5">
+                    <p className="text-[15px] leading-[1.7] text-text-primary mb-5">{q.text}</p>
+
+                    <div className="space-y-2.5">
+                      {(q.options ?? []).map((opt) => {
+                        const isSelected = answers[q.id] === opt.label;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => handleOptionSelect(q.id, opt.label, opt)}
+                            className={`flex w-full flex-col gap-2 rounded-lg border px-4 py-3.5 text-left transition-all ${
+                              isSelected
+                                ? 'border-accent-blue/40 bg-accent-blue/8 ring-1 ring-accent-blue/20'
+                                : 'border-border/40 hover:border-border hover:bg-bg-elevated'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                                isSelected ? 'border-accent-blue bg-accent-blue' : 'border-text-muted/30'
+                              }`}>
+                                {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
+                              </span>
+                              <span className={`text-[14px] font-medium leading-relaxed ${
+                                isSelected ? 'text-text-primary' : 'text-text-secondary'
+                              }`}>
+                                {opt.label}
+                              </span>
+                              {opt.recommended && (
+                                <span className="rounded-full bg-green-500/15 px-1.5 py-0.5 text-[10px] font-medium text-green-400">
+                                  Recommended
+                                </span>
+                              )}
+                              {opt.source === 'codebase' && opt.citation && (
+                                <span className="rounded bg-accent-blue/10 px-1.5 py-0.5 text-[10px] font-mono text-accent-blue/70">
+                                  {opt.citation}
+                                </span>
+                              )}
+                            </div>
+                            {opt.description && <p className="ml-7 text-[13px] leading-relaxed text-text-secondary">{opt.description}</p>}
+                            {opt.tradeoffs && opt.tradeoffs.length > 0 && (
+                              <div className="ml-7 mt-0.5 flex flex-wrap gap-1.5">
+                                {opt.tradeoffs.map((t) => {
+                                  const isPro = t.startsWith('+');
+                                  const isCon = t.startsWith('-');
+                                  const text = (isPro || isCon) ? t.slice(1).trim() : t;
+                                  return (
+                                    <span key={t} className={`rounded-md border px-2 py-0.5 text-[11px] ${
+                                      isPro ? 'border-green-500/20 bg-green-500/8 text-green-400' :
+                                      isCon ? 'border-amber-500/20 bg-amber-500/8 text-amber-400' :
+                                      'border-border/60 bg-bg-card text-text-secondary'
+                                    }`}>
+                                      {isPro ? '+ ' : isCon ? '- ' : ''}{text}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* Free text "Other" */}
+                      <div className="border border-border/40 rounded-lg px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-text-muted/30" />
+                          <div className="flex-1">
+                            <span className="text-[14px] text-text-secondary">Other</span>
+                            <textarea
+                              ref={otherRef}
+                              value={chatInput}
+                              onChange={(e) => setChatInput(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatAnswer(); } }}
+                              placeholder="Type your own answer..."
+                              rows={1}
+                              className="mt-1.5 w-full resize-none bg-transparent text-[14px] text-text-primary placeholder:text-text-muted/40 focus:outline-none leading-relaxed"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {chatInput.trim() && (
+                      <div className="mt-4 flex justify-end">
+                        <button type="button" onClick={handleChatAnswer}
+                          className="rounded-lg bg-accent-blue px-4 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-accent-blue/90 active:scale-[0.98]">
+                          Submit
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </Tabs.Panel>
               ))}
+            </Tabs>
+          </div>
 
-              {/* Typing indicator */}
-              {phase === 'running' && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-1.5 rounded-xl bg-bg-card border border-border px-4 py-3">
-                    <span className="h-2 w-2 rounded-full bg-text-muted animate-bounce [animation-delay:-0.3s]" />
-                    <span className="h-2 w-2 rounded-full bg-text-muted animate-bounce [animation-delay:-0.15s]" />
-                    <span className="h-2 w-2 rounded-full bg-text-muted animate-bounce" />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+        {/* Submit all — shown when at least one question is answered */}
+        {Object.keys(answers).length > 0 && (
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-[13px] text-text-muted">
+              {allAnswered
+                ? `All ${questions.length} questions answered`
+                : `${Object.keys(answers).length} of ${questions.length} answered`}
+            </span>
+            <button type="button" onClick={handleSubmitAll} disabled={!allAnswered}
+              className={`rounded-lg px-5 py-2.5 text-[14px] font-medium transition-all ${
+                allAnswered
+                  ? 'bg-accent-blue text-white hover:bg-accent-blue/90 active:scale-[0.98]'
+                  : 'bg-accent-blue/30 text-white/40 cursor-not-allowed'
+              }`}>
+              Submit Answers
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          {/* Questions */}
-          {phase === 'questions' && clarifierState && (
-            <div className="space-y-4 mb-6">
-              <div className="space-y-3">
-                {clarifierState.questions.map((q, i) => (
-                  <QuestionCard
-                    key={q.id}
-                    question={q}
-                    index={i}
-                    value={answers[q.id] ?? ''}
-                    onAnswer={handleAnswer}
-                    disabled={false}
-                  />
-                ))}
-              </div>
+/* ------------------------------------------------------------------ */
+/*  Escalation Sub-component                                           */
+/* ------------------------------------------------------------------ */
 
-              {clarifierState.assumptions && clarifierState.assumptions.entries.length > 0 && (
-                <AssumptionCard entries={clarifierState.assumptions.entries} />
-              )}
+interface EscalationControlsProps {
+  readonly clarifierState: { round: number; maxRounds: number; assumptions: { entries: AssumptionEntry[] } | null };
+  readonly onDecision: (decision: 'accept' | 'restart' | 'abandon') => void;
+}
 
-              <StatusBar
-                round={clarifierState.round}
-                maxRounds={clarifierState.maxRounds}
-                questionCount={clarifierState.questions.length}
-                assumptionCount={clarifierState.assumptions?.entries.length ?? 0}
-                isRunning={false}
-              />
+function EscalationControls({ clarifierState, onDecision }: EscalationControlsProps): React.JSX.Element {
+  return (
+    <div className="px-6">
+      <div className="mx-auto max-w-[640px] space-y-4 mb-6">
+        <div className="rounded-lg border border-amber-500/15 bg-amber-500/5 p-4">
+          <h3 className="text-[14px] font-semibold text-amber-400">Maximum Rounds Reached</h3>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-text-secondary">
+            {clarifierState.maxRounds} rounds completed. Some gaps remain.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => onDecision('accept')}
+              className="rounded-lg bg-accent-blue px-4 py-2 text-[13px] font-medium text-white transition-all hover:bg-accent-blue/90 active:scale-[0.98]">
+              Accept Best-Effort PRD
+            </button>
+            <button type="button" onClick={() => onDecision('restart')}
+              className="rounded-lg border border-border bg-bg-card px-4 py-2 text-[13px] font-medium text-text-primary transition-all hover:bg-bg-elevated active:scale-[0.98]">
+              Restart
+            </button>
+            <button type="button" onClick={() => onDecision('abandon')}
+              className="rounded-lg border border-red-500/15 px-4 py-2 text-[13px] font-medium text-red-400 transition-all hover:bg-red-500/5 active:scale-[0.98]">
+              Abandon
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={submitAnswers}
-                  disabled={!allAnswered}
-                  className="rounded-md bg-accent-blue px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-blue/90 active:bg-accent-blue/80 disabled:opacity-50 disabled:pointer-events-none focus-ring"
-                >
-                  Submit Answers
-                </button>
-              </div>
-            </div>
-          )}
+/* ------------------------------------------------------------------ */
+/*  Main Page                                                          */
+/* ------------------------------------------------------------------ */
 
-          {/* Running status */}
-          {phase === 'running' && clarifierState && (
-            <StatusBar
-              round={clarifierState.round}
-              maxRounds={clarifierState.maxRounds}
-              questionCount={clarifierState.questions.length}
-              assumptionCount={clarifierState.assumptions?.entries.length ?? 0}
-              isRunning={true}
-            />
-          )}
+export default function NewProjectPage(): React.JSX.Element {
+  const clarifier = useClarifierStream();
 
-          {/* Complete — PRD preview */}
-          {phase === 'complete' && clarifierState?.requirement && (
-            <div className="space-y-4">
-              <PrdPreview
-                requirement={clarifierState.requirement as { prd: { title: string; description: string; features: { id: string; name: string; description: string }[] }; confidence: number }}
-                featurePlan={clarifierState.featurePlan as { features: { id: string; name: string; description: string; acceptanceCriteria?: { formatted: string }[]; dependencies?: string[] }[] } | null}
-                onApprove={() => { /* Navigate to design pipeline */ }}
-                onRequestChanges={() => { setPhase('welcome'); setMessages([]); setClarifierState(null); }}
-              />
+  const prdPanelVisible = useMemo(() =>
+    !!clarifier.prdDraft || clarifier.isRunning || clarifier.phase === 'questions' || clarifier.phase === 'escalation' || clarifier.phase === 'complete',
+  [clarifier.prdDraft, clarifier.isRunning, clarifier.phase]);
 
-              {clarifierState.assumptions && clarifierState.assumptions.entries.length > 0 && (
-                <AssumptionCard entries={clarifierState.assumptions.entries} />
-              )}
-            </div>
-          )}
+  const currentQuestions = useMemo(() => {
+    const lastQuestionMsg = [...clarifier.messages].reverse().find((m) => m.payload.kind === 'agent-question');
+    if (!lastQuestionMsg || lastQuestionMsg.payload.kind !== 'agent-question') return null;
+    return lastQuestionMsg.payload;
+  }, [clarifier.messages]);
 
-          {/* Error */}
-          {phase === 'error' && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
-              <h3 className="text-sm font-medium text-red-400">Clarifier Error</h3>
-              <p className="mt-1 text-sm text-text-secondary">{errorMessage}</p>
-              <button
-                type="button"
-                onClick={() => { setPhase('welcome'); setErrorMessage(null); }}
-                className="mt-3 text-sm text-accent-blue hover:text-accent-blue/80 transition-colors"
-              >
+  const handleRequestChanges = useCallback(() => {
+    clarifier.reset();
+  }, [clarifier]);
+
+  return (
+    <div className="-m-[--mantine-spacing-md] h-[calc(100%+2*var(--mantine-spacing-md))]">
+    <SplitPanelLayout prdPanelVisible={prdPanelVisible}>
+      {/* Left: Chat panel — questions/escalation render above the input */}
+      <ChatPanel
+        messages={clarifier.messages}
+        phase={clarifier.phase}
+        isRunning={clarifier.isRunning}
+        onSubmitSeed={clarifier.startClarifier}
+      >
+        {clarifier.phase === 'questions' && currentQuestions && (
+          <QuestionFlow
+            questions={currentQuestions.questions}
+            round={currentQuestions.round}
+            maxRounds={currentQuestions.maxRounds}
+            onAllAnswered={clarifier.submitAnswers}
+            onAddUserAnswer={clarifier.addUserAnswer}
+          />
+        )}
+
+        {clarifier.phase === 'escalation' && clarifier.clarifierState && (
+          <EscalationControls
+            clarifierState={clarifier.clarifierState}
+            onDecision={clarifier.submitEscalation}
+          />
+        )}
+
+        {clarifier.phase === 'error' && (
+          <div className="px-6 py-4">
+            <div className="mx-auto max-w-[640px]">
+              <button type="button" onClick={clarifier.reset}
+                className="text-[13px] text-accent-blue hover:text-accent-blue/80 transition-colors">
                 Try again
               </button>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Input area — visible in welcome and questions phases */}
-      {(phase === 'welcome' || phase === 'questions') && !clarifierState?.questions.length && (
-        <div className="border-t border-border bg-bg-base px-6 py-4">
-          <div className="mx-auto max-w-2xl">
-            <div className="flex gap-3">
-              <textarea
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSeedSubmit();
-                  }
-                }}
-                placeholder="Describe what you want to build..."
-                rows={2}
-                className="flex-1 resize-none rounded-lg border border-border bg-bg-elevated px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus-ring transition-colors"
-              />
-              <button
-                type="button"
-                onClick={handleSeedSubmit}
-                disabled={!seed.trim()}
-                className="self-end rounded-lg bg-accent-blue px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-blue/90 active:bg-accent-blue/80 disabled:opacity-50 disabled:pointer-events-none focus-ring"
-              >
-                Start
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ChatPanel>
+
+      {/* Right: PRD panel */}
+      <PrdPanel
+        prdDraft={clarifier.prdDraft}
+        featurePlan={clarifier.featurePlan}
+        gaps={clarifier.gaps}
+        assumptions={clarifier.assumptions}
+        confidence={clarifier.clarifierState?.requirement?.confidence}
+        isComplete={clarifier.phase === 'complete'}
+        isRunning={clarifier.isRunning}
+        activeNode={clarifier.activeNode}
+        completedNodes={clarifier.completedNodes}
+        interruptedAt={clarifier.interruptedAt}
+        onApprove={() => {}}
+        onRequestChanges={handleRequestChanges}
+      />
+    </SplitPanelLayout>
     </div>
   );
 }

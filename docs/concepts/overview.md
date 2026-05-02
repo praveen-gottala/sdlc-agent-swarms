@@ -1,12 +1,20 @@
-# CHIP
+# CHIP — What It Is and Why It Exists
 
 > Authoritative source: [vision.md](../vision.md)
 
-CHIP (Crafted Human Intelligence Platform) is a multi-agent SDLC framework built on TypeScript LangGraph. It coordinates four sequential stages — Clarifier, Architect, Implementer, Reviewer — through typed state channels with Zod schemas, with human-in-the-loop interrupts at three phase boundaries.
+CHIP (Crafted Human Intelligence Platform) is a framework that turns a product requirement into working, reviewed software by passing it through four sequential stages — Clarifier, Architect, Implementer, Reviewer — where each stage has exactly one writer, each handoff carries a typed artifact, and a human approves at three boundaries. Think of it as a compiler for requirements: structured input in, verified code out, with human checkpoints instead of silent assumptions.
 
-The framework is organized as 19 packages in an Nx monorepo, with 116 tests on the Clarifier graph alone, 5 hybrid-retrieval RAG tools, a 4-stage design pipeline producing DesignSpec JSON rendered through real shadcn/Tailwind components, and full observability via OpenTelemetry + Langfuse.
+## Why CHIP does this differently
 
-## Architecture
+Every coding agent that reached production in 2025–2026 — Devin, Claude Code, Cursor Composer — runs single-threaded per artifact. Cognition's "Don't Build Multi-Agents" documents why: parallel write-agents sharing a codebase produce incompatible outputs the orchestrator cannot safely merge. Anthropic's multi-agent research system validates the opposite for reads: parallel subagents returning summaries improved research breadth by 90% (Research Report, Part 1, §"The agent taxonomy problem").
+
+CHIP applies this synthesis as its core topology: a thin sequential spine for writes, with parallel specialist tools for reads. This is design decision §1.3 ([design-decisions.md](../design-decisions.md)):
+
+> "Four-stage vertical spine — Clarify → Architect → Implement → Review — with specialists invoked as tools by spine nodes. No flat multi-agent peer network."
+
+The second differentiator is the Clarifier. No shipping product in 2026 implements EVPI-style question prioritization, ClarifyGPT-style consistency sampling, or an integrated assumption ledger that flows through the spine (Research Report, Part 1, §"Conversational clarification layer"). Most tools — Linear AI, Jira AI, Notion AI — are draft-and-edit; Devin expects someone else to clarify first. CHIP interrogates the requirement before generating anything, then carries every assumption forward as a trackable, validatable artifact.
+
+## How it works
 
 ```mermaid
 graph LR
@@ -26,83 +34,50 @@ graph LR
     style E fill:#E67E22,color:#fff
 ```
 
-**Spine stages** run sequentially with single-writer discipline per artifact. Each stage's output is a Zod-typed channel consumed by the next. Specialist tools (research subagents, design agent, test generator, security scanner) are invoked by spine stages as read-only or narrow-write tools — never as parallel writers.
+**Spine stages** run sequentially with single-writer discipline per artifact. Each stage's output is a Zod-typed LangGraph channel consumed by the next. Specialist tools (research subagents, design agent, test generator, security scanner) are invoked by spine stages as read-only or narrow-write tools — never as parallel writers to the same artifact.
 
-**Three HITL gates** implemented as LangGraph `interruptBefore` nodes with Postgres-backed state persistence:
+**Three human-in-the-loop (HITL) gates** are implemented as LangGraph `interruptBefore` nodes with Postgres-backed state persistence:
 
-1. **Clarification** — Clarifier batches prioritized questions (EVPI-ranked, budget-capped at 15/round). Human answers; graph resumes.
+1. **Clarification** — The Clarifier batches prioritized questions ranked by expected value of perfect information (EVPI): `blastRadius * answerability * confidenceGap`. Budget-capped at 15 questions per round, 3 rounds max. Human answers; graph resumes.
 2. **Design/API approval** — Cross-screen atomic approval after coherence validation.
 3. **Code merge** — Deterministic gates (typecheck, lint, tests, Semgrep) run first; LLM review second; human decides on diff.
 
-## Clarifier Graph
+## Components
 
-The first production LangGraph `StateGraph` in the monorepo. Six nodes, typed `Annotation.Root()` channels, two interrupt points:
+| Component | Package | Role |
+|-----------|---------|------|
+| Clarifier graph | `packages/agents-clarifier/src/graph/clarifier-graph.ts` | 6-node LangGraph `StateGraph` — context retrieval, PRD analysis, gap detection, question prioritization, story writing, critic |
+| Design pipeline | `packages/agents-ux/src/design-pipeline/pipeline.ts` | 4-stage pipeline (research → planning → design → evaluator) producing DesignSpec JSON |
+| DesignSpec renderer | `packages/designspec-renderer/src/renderer/browser/app/src/DesignSpecRenderer.tsx` | Translates DesignSpec JSON to real React/shadcn/Tailwind components in the browser |
+| Retrieval layer | `packages/retrieval/src/tools/` | 5 MCP-compatible RAG tools: `searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns` |
+| Observability | `packages/telemetry/src/traced-provider.ts` | OpenTelemetry spans on every LLM call + Langfuse pipeline lifecycle spans |
+| LLM providers | `packages/providers/` | Multi-provider abstraction (Claude, OpenAI, Vertex AI) with Application Default Credentials support |
+| Governance | `packages/governance/` | Permission, budget, HITL gate, and audit middleware |
+| Dashboard | `packages/dashboard/` | Next.js 16 + Mantine v9 web UI (15 routes) |
+| CLI | `packages/cli/` | Commander.js command-line interface |
 
-| Node | Model | Output |
-|------|-------|--------|
-| `contextRetriever` | — (RAG) | Bootstrap context or codebase retrieval via 5 tools |
-| `prdAnalyzer` | `claude-opus-4-6` | Structured PRD with `responseSchema` forced JSON |
-| `gapDetector` | `claude-sonnet-4-6` | Deterministic checklist + ClarifyGPT consistency sampling (3 implementations, divergence analysis) |
-| `questionPrioritizer` | — (deterministic) | EVPI proxy ranking: `blastRadius * answerability * confidenceGap` |
-| `storyWriter` | `claude-sonnet-4-6` | EARS-format acceptance criteria, INVEST stories, `FeaturePlan` DAG |
-| `critic` | — (deterministic) | EARS/INVEST/DAG compliance, bounded retry (max 2) |
+## Current implementation
 
-Handles both bootstrap (new app) and evolution (change request) modes through the same graph with mode-dependent retrieval priors.
+The Clarifier is the first production LangGraph `StateGraph` in the monorepo. It handles both bootstrap (new app from a PRD) and evolution (change request against an existing codebase) through the same graph with mode-dependent retrieval priors. Gap detection uses a deterministic checklist (auth, validation, errors, NFRs, accessibility, orphan screens) plus ClarifyGPT consistency sampling — three implementations at temperature 0.7, divergence analysis at temperature 0.
 
-## Design Pipeline
+The design pipeline is operational: `runDesignPipeline()` in `packages/agents-ux/src/design-pipeline/pipeline.ts` is the single entry point for both CLI and dashboard. The LLM produces DesignSpec JSON (a flat adjacency list with typed accelerators), and a deterministic renderer translates it to real React/shadcn components. Mechanical checks and vision-model evaluation run in a bounded correction loop (max 2 iterations).
 
-Four stages orchestrated by `runDesignPipeline()` — single entry point for both CLI and dashboard:
+The retrieval layer provides five hybrid-retrieval tools backed by Qdrant, Voyage embeddings, and Cohere Rerank, with Merkle-tree incremental re-indexing on git commits.
 
-| Stage | Agent Function | Cached Artifact |
-|-------|---------------|----------------|
-| `research` | `researchNode` | `researchBrief` |
-| `planning` | `planningNode` | `planningSpec` |
-| `design` | `designNode` | `designSpecV2` |
-| `evaluator` | `evaluatorNode` | — |
+Observability wraps every `provider.complete()` call with OpenTelemetry spans capturing model, prompt version, tokens, cost, and latency. Prompt versioning is enforced via git frontmatter and a pre-commit hook.
 
-The LLM produces **DesignSpec JSON** (flat adjacency list, `AcceleratorType`: page, container, section, header, divider, spacer, text + catalog references). A deterministic renderer in `packages/designspec-renderer` translates to real React/shadcn components. Mechanical checks and vision-model evaluation run in a bounded correction loop (max 2 iterations).
+## Known limitations
 
-## Retrieval Layer
+- **Architect, Implementer, and Reviewer are specified but not implemented.** The spine today runs only the Clarifier and the design pipeline. Full end-to-end PRD-to-code requires the remaining three stages.
+- **Cross-screen design coherence is post-hoc only.** The design pipeline generates screens individually and validates coherence after the fact, not during generation.
+- **No sandboxing.** Code runs on the developer's machine. Ephemeral container isolation is planned but not built.
+- **Dashboard pipeline integration is partial.** The design pipeline works from CLI but has `import.meta.url` issues under webpack in the Next.js dashboard ([Dashboard Pipeline Fix plan](../plans/active/dashboard-pipeline-fix/execution-plan.md)).
 
-Five MCP-compatible tools in `packages/retrieval/src/tools/`:
-
-| Tool | Pipeline |
-|------|----------|
-| `searchCode` | Tree-sitter AST chunking → Voyage-code-3 + BM25 hybrid (RRF k=60) → Cohere Rerank 3.5 |
-| `searchDocs` | Header-aware Markdown splitting → Voyage-3-large + BM25 hybrid → Cohere Rerank |
-| `searchDesigns` | DesignSpec JSON chunked by node → same hybrid pipeline |
-| `getRepoMap` | Aider-style repo map (Tree-sitter + PageRank over symbol graph, no embeddings) |
-| `findSimilarPatterns` | Pattern matching across indexed codebase |
-
-Qdrant vector store with 3 collections. Merkle-tree incremental re-indexing on git commits.
-
-## Observability
-
-`TracedProvider` wraps every `provider.complete()` call with OTel spans capturing model, prompt version, tokens, cost, latency. `LangfuseSink` adds pipeline-stage lifecycle spans. `createTracedMCPClient` wraps tool calls. Prompt versioning enforced via git frontmatter + pre-commit hook. Graceful no-op when `LANGFUSE_SECRET_KEY` unset.
-
-## Package Structure
-
-19 packages in the Nx monorepo:
-
-| Package | Role |
-|---------|------|
-| `core` | Types, config, LLM wrapper, checkpointer factory, test utilities |
-| `agents-clarifier` | Clarifier LangGraph graph (6 nodes, 116 tests) |
-| `agents-ux` | Design pipeline orchestration |
-| `designspec-renderer` | DesignSpec JSON → React/shadcn browser renderer |
-| `retrieval` | RAG layer (5 tools, Qdrant, Voyage, Cohere) |
-| `providers` | Multi-provider LLM abstraction (Claude, OpenAI, Vertex AI) |
-| `telemetry` | OTel + Langfuse integration |
-| `dashboard` | Next.js 16 + Mantine v9 (15 routes) |
-| `governance` | Permission, budget, HITL, audit middleware |
-| `cli` | Commander.js CLI |
-
-Plus 7 phase-specific agent packages (`agents-spec`, `agents-design`, `agents-code`, `agents-cicd`, `channels`, `integration-tests`, `e2e-test`) and `stacks` (project scaffolding templates).
-
-## Related Docs
+## Related
 
 - [Vision](../vision.md) — 15-layer architectural authority
 - [Agent Taxonomy](agent-taxonomy.md) — spine stages and specialist tools
 - [Design Pipeline](design-pipeline.md) — DesignSpec rendering pipeline
 - [Coordination & State](coordination-and-state.md) — typed channels and persistence
 - [Current Status](current-status.md) — initiative progress
+- [Design Decisions](../design-decisions.md) — topology, coordination, and artifact decisions with rejected alternatives

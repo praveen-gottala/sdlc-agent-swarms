@@ -1277,17 +1277,19 @@ function renderSelect(
   const labelColor = resolveTokenColor('text-secondary', tokenMap);
   const labelStyle = getTypographyStyles('label', tokens);
   const borderColor = resolveTokenColor('border-default', tokenMap);
-  const bg = resolveTokenColor('background-primary', tokenMap);
-  const fg = resolveTokenColor('text-primary', tokenMap);
+  const bg = resolveTokenColor(node.background ?? 'surface-elevated', tokenMap);
+  const fg = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
+  const radius = node.radius ?? 8;
   return (
     <div key={node.id} data-node={node.id} data-catalog="select" style={{ display: 'flex', flexDirection: 'column', gap: 4, ...common }}>
       {node.label && (
         <label style={{ ...labelStyle, color: labelColor }}>{node.label}</label>
       )}
       <select
+        defaultValue={node.value !== undefined ? String(node.value) : undefined}
         style={{
           height: 40,
-          borderRadius: 8,
+          borderRadius: radius,
           border: `1px solid ${borderColor ?? '#333'}`,
           backgroundColor: bg,
           color: fg,
@@ -1295,14 +1297,18 @@ function renderSelect(
           fontSize: 14,
         }}
       >
-        {node.options?.map((opt, i) => (
-          <option key={i} value={opt.label}>
-            {opt.label}
-          </option>
-        ))}
-        {!node.options?.length && (
-          <option>{node.placeholder ?? 'Select...'}</option>
-        )}
+        {(() => {
+          const overrideOpts = node.overrides?.options as readonly (string | { label: string })[] | undefined;
+          const opts = node.options ?? (overrideOpts ? overrideOpts.map(o => ({ label: typeof o === 'string' ? o : o.label })) : undefined);
+          if (opts?.length) {
+            return opts.map((opt, i) => (
+              <option key={i} value={opt.label}>
+                {opt.label}
+              </option>
+            ));
+          }
+          return <option>{node.value !== undefined ? String(node.value) : (node.placeholder ?? 'Select...')}</option>;
+        })()}
       </select>
     </div>
   );
@@ -1776,9 +1782,10 @@ function renderSection(
   const bg = resolveTokenColor(node.background ?? 'surface-primary', tokenMap);
   const textColor = resolveTokenColor(node.color ?? 'text-primary', tokenMap);
   const titleText = node.label ?? (node.overrides?.title as string | undefined);
+  const dir = node.layout?.dir === 'row' ? 'row' : 'column';
   const style: React.CSSProperties = {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: dir,
     gap: node.layout?.gap ?? 16,
     ...getSpacingStyles(node.layout),
     ...getSizeStyles(node.width, node.height),
@@ -1787,6 +1794,12 @@ function renderSection(
     backgroundColor: bg,
     ...getOverrideStyles(node.overrides),
   };
+  if (dir === 'row') {
+    if (node.layout?.align) style.alignItems = node.layout.align === 'center' ? 'center' : node.layout.align === 'end' ? 'flex-end' : node.layout.align;
+    if (node.layout?.justify === 'space-between' || node.layout?.justify === 'between') style.justifyContent = 'space-between';
+    else if (node.layout?.justify === 'center') style.justifyContent = 'center';
+    else if (node.layout?.justify === 'end') style.justifyContent = 'flex-end';
+  }
   if (node.radius) style.borderRadius = node.radius;
   const titleId = titleText ? `${node.id}-title` : undefined;
   return (

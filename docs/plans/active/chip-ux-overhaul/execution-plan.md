@@ -215,89 +215,110 @@ react-diff-viewer-continued            # Future: code diffs
 
 ---
 
-## Phase 3 — Clarifier `/new` Page Showcase (~2 sessions)
+## Phase 3 — Clarifier `/new` Page: ChatPRD-Style Split-Panel PRD Builder
 
-**Goal:** The `/new` page becomes demo-worthy. Streaming, graph viz, rich interactions.
+**Goal:** The `/new` page becomes a ChatPRD-inspired split-panel experience with a chat conversation on the left and a live PRD document building simultaneously on the right.
 
-### 3.1 SSE streaming API + hook
-- Refactor `POST /api/clarifier` to emit SSE events per node
-- Add `onNodeEnter(name)` / `onNodeExit(name, elapsed)` callbacks to `runClarifierPipeline`
-- Event types: `stage` (node progress), `thinking` (AI reasoning), `result` (final state), `error`
-- New hook: `packages/dashboard/src/hooks/use-clarifier-stream.ts`
-  - Consumes `fetch()` + `ReadableStream.getReader()` (not EventSource — POST body needed)
-  - Returns: `{ messages, stage, isRunning, state, error, submit, respond }`
+**Reference:** ChatPRD (https://www.chatprd.ai/) — left chat + right live document with suggestions, scoring, tool results.
 
-### 3.2 Pipeline stepper — Mantine Stepper
-- Vertical orientation, left panel of `/new` page
-- 6 steps matching Clarifier nodes:
-  1. Context Retrieval — "Loading project context"
-  2. PRD Analysis — "Analyzing with Claude Opus"
-  3. Gap Detection — "Finding ambiguities (ClarifyGPT)"
-  4. Question Prioritization — "Ranking by impact (EVPI)"
-  5. Story Writing — "Generating EARS criteria"
-  6. Critic Review — "INVEST/DAG quality check"
-- Active: animated spinner + description + elapsed timer
-- Completed: green checkmark + elapsed time
-- HITL interrupt: amber pause icon + "Awaiting your input"
+**Detailed plan:** `~/.claude/plans/i-want-to-build-swirling-alpaca.md` (session plan with full task breakdowns).
 
-### 3.3 React Flow graph visualization
-- Install `@xyflow/react`
-- Render Clarifier DAG with custom node/edge components:
-  - **Nodes:** Rounded glassmorphic cards with icon, name, status glow
-  - **Edges:** Animated dashed for conditional paths, solid for sequential
-  - **HITL nodes:** Amber border, pause icon
-  - **Active node:** Blue glow pulse animation
-  - **Completed node:** Green checkmark, dimmed
-- Dagre for auto-layout
-- Toggle: `Mantine SegmentedControl` — "Chat" | "Graph" views
-- Click node → `Mantine Drawer` with `@uiw/react-json-view` state snapshot
+### 3.1 SSE streaming API + hook — COMPLETE (2026-05-01)
+- Added `runClarifierPipelineStream()` to `packages/agents-clarifier/src/run.ts` using LangGraph native `graph.stream()` with `streamMode: 'updates'`
+- Yields `ClarifierStreamEvent` (node-complete | interrupt | complete | error) as async generator
+- Kept blocking `runClarifierPipeline()` for CLI use
+- Updated `POST /api/clarifier` route to consume async iterable, emits SSE events: `stage`, `prd-draft`, `gaps`, `result`, `error`
+- New `clarifier-chat-types.ts`: discriminated union for 9 chat message kinds
+- New `useClarifierStream` hook: SSE consumer + chat message builder, replaces inline SSE parsing
+- 6 unit tests for streaming pipeline, 9 unit tests for hook — all passing
 
-### 3.4 Modern chat interface
-- **User messages:** Right-aligned, `Mantine Paper` with blue gradient bg, `Mantine Avatar`
-- **AI messages:** Left-aligned, glassmorphic card, CHIP avatar, streaming text (word-by-word via rAF at 20-30ms)
-- **Thinking state:** Shimmer skeleton matching expected response shape (not bouncing dots)
-- **Stage context:** Small badge above AI message showing which node generated it
-- **Input:** `Mantine Textarea` full-width, gradient submit button, Enter to send, Shift+Enter newline
+### 3.2 Split-panel layout — COMPLETE (2026-05-01)
+- `SplitPanelLayout`: flex row, left panel flex-1 (min 360px), right panel resizable (320-640px, default 480px)
+- `ResizeHandle`: extracted from design page pattern (mousedown/mousemove/mouseup, localStorage persistence via `chip-prd-panel-width`)
+- PRD panel slides in from right (`animate-slideInRight`) when `prdDraft` first arrives
+- Mobile (`< md`): single column with Mantine `SegmentedControl` tab switcher (Chat | Document)
 
-### 3.5 Question cards
-- `Mantine Card` with glassmorphic className
-- `Mantine Radio.Group` for multiple-choice with smooth selection
-- `Mantine Textarea` for open-ended answers
-- `Mantine Badge` for priority ("High Impact" = amber glow)
-- Question number in `Mantine ThemeIcon` circle
+### 3.3 React Flow graph visualization — NOT STARTED
+- Install `@xyflow/react` + `dagre` for auto-layout
+- 7 nodes matching clarifier pipeline with custom node components
+- Edges: animated dashed for conditional, solid for sequential
+- HITL nodes: amber border + pause icon. Active: blue glow pulse. Completed: green + dimmed
+- Click node → Mantine Drawer with state snapshot
+- Add `Document | Graph` toggle (`SegmentedControl`) in PrdPanel header
+- Default to Document when prdDraft exists, Graph when running with no PRD yet
 
-### 3.6 Assumption display
-- `Mantine Accordion` with smooth collapse/expand
-- Each entry: `Mantine Progress` bar colored by confidence (green ≥0.8, amber ≥0.5, red <0.5)
-- `Mantine ThemeIcon` for warning/check icons
-- "Needs Review" badge on `requiresConfirmation` items
+### 3.4 Chat panel — COMPLETE (2026-05-01)
+- `ChatPanel`: flex column with scrollable thread + sticky input
+- `WelcomeHero`: extracted welcome phase with gradient blobs, heading, suggestion chips
+- `ChatThread`: scrollable message list with auto-scroll
+- `ChatMessage`: renders 9 message kinds (user-seed, user-answer, tool-result, agent-thinking, agent-question, prd-update, escalation, error, prd-complete)
+- `ChatInput`: auto-growing textarea, contextual placeholder, Enter/Shift+Enter, disabled during running
 
-### 3.7 PRD preview (completion state)
-- `Mantine Card` with gradient header
-- `Mantine RingProgress` for confidence score (animated conic gradient)
-- `Mantine Tabs`: Overview | Features | Acceptance Criteria | Dependencies
-- Feature tree in `Mantine Accordion`
-- EARS criteria in `Mantine Code` (monospace)
-- `Mantine Button.Group`: "Approve & Continue" (gradient primary), "Request Changes" (outline)
+### 3.5 PRD document panel — COMPLETE (2026-05-01)
+- `PrdPanel`: right panel with empty state → live document → approval actions
+- `PrdPanelHeader`: title, Draft/Complete badge, confidence score, "Build in CHIP" gradient button
+- `LivePrdDocument`: renders all 9 PRD sections (overview, features with priority badges, personas, data model, screens, NFRs, success metrics, out of scope, assumptions) with staggered `fadeSlideUp` animation (100ms between sections)
+- `PrdSection`: collapsible section with count badge
+- `SuggestionCallout`: orange callout boxes sourced from `requiresConfirmation` assumptions and `incomplete` gaps
+- `OpenQuestionsSection`: gaps below EVPI threshold with category badges and divergence scores
+- Quality scoring: section completeness indicators (Features/Personas/Screens/NFRs counts)
 
-### 3.8 Welcome state
-- Large centered layout with gradient text: "What do you want to build?"
-- CHIP logo mark (64px) above heading
-- `Mantine Chip.Group` for suggestion prompts with hover glow
-- Subtle CSS grid background pattern (no library)
-- Large centered `Mantine Textarea` with gradient submit
+### 3.6 Question flow — COMPLETE (2026-05-01)
+- One-at-a-time question cards with options (recommendation badges, codebase citation badges, tradeoff tags)
+- Tab navigation across questions
+- Free-text "Other" option
+- Answered questions shown as collapsed summaries with green checkmarks
+
+### 3.7 Page rewrite — COMPLETE (2026-05-01)
+- `page.tsx` rewritten from 763 → 336 lines as orchestrator
+- Uses `useClarifierStream` hook for all state management
+- `SplitPanelLayout` wraps `ChatPanel` + `PrdPanel`
+- `QuestionFlow` and `EscalationControls` as sub-components
+- Browser verified: clean render, no console errors
+
+### 3.8 Respond route SSE — NOT STARTED
+- Upgrade `/api/clarifier/respond` from JSON to SSE using `runClarifierPipelineStream`
+- Enables tool-result messages during follow-up rounds
+
+### 3.9 Visual polish — NOT STARTED
+- Run `/improvise-ux` against ChatPRD reference (https://www.chatprd.ai/)
+- Polish: suggestion callouts, tool result cards, PRD typography, confidence badges, chat bubble alignment, panel transitions
+
+??? warning "Context for implementers (Phase 3 session, 2026-05-01)"
+
+    **Gotcha 1: LangGraph `graph.stream()` yields node-name-keyed objects.**
+    `streamMode: 'updates'` yields `Record<string, unknown>` where keys are node names.
+    Iterate `Object.keys(update)` to get the node name — it's NOT a tuple or tagged event.
+
+    **Gotcha 2: prdAnalyzer produces the ENTIRE PRD in one LLM call.**
+    The node uses `claude-opus-4-6` with forced-JSON `responseSchema`. All 9 sections arrive at once.
+    "Progressive rendering" is a UI animation trick (staggered `animationDelay`), not actual section-by-section streaming.
+
+    **Gotcha 3: `graph.stream()` does NOT emit events for HITL interrupts.**
+    After the stream ends, you MUST call `compiled.getState(config)` and check `next.length > 0`
+    to detect whether the graph was interrupted before `storyWriter` or `escalationGate`.
+
+    **Gotcha 4: Jest/SWC in dashboard needs `TextEncoder`/`TextDecoder`/`ReadableStream` polyfills.**
+    Import from `node:util` and `node:stream/web` at the top of SSE-related test files.
+
+    **Gotcha 5: The `/api/clarifier/respond` route still returns JSON, not SSE.**
+    Phase 3.8 handles upgrading it. The `useClarifierStream` hook already handles both
+    content-types (`text/event-stream` → SSE parsing, otherwise → `res.json()`).
 
 ### Verification gate
 **Skill order:** `/mid-session-drift-check` → `/verify-done` → `git commit` → `/prepare-handoff`
 
 Within verify-done, also verify:
 - Navigate to `/new` — screenshot welcome state
-- Type seed text, click Start → streaming stages appear in real-time
-- Pipeline stepper shows correct node progression
-- Toggle graph view → React Flow DAG renders
-- Click graph node → JSON state drawer opens
-- Questions render with radio buttons after HITL interrupt
-- Answer questions → PRD preview with confidence ring
+- Type seed text, click Start → split panel appears, chat shows tool results
+- PRD sections appear progressively on the right panel
+- Suggestion callouts render for high-risk assumptions
+- Confidence score updates
+- Answer questions → chat thread + PRD panel both update
+- Resize handle works, persists to localStorage
+- Toggle graph view → React Flow DAG renders (Phase 3.3)
+- Click graph node → JSON state drawer opens (Phase 3.3)
+- Test mobile viewport (375px) → tab switcher appears
 
 ---
 

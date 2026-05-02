@@ -21,8 +21,13 @@ Generated UX designs lack visual variety — every content section uses the iden
 - **Effects are catalog entries, not a separate system** — ADR-035's one-catalog principle.
 - **Figma prompt (`ux-design-system.md`) is dead code** — active pipeline uses `ux-penpot-designspec-v2.md`.
 
-**Context for implementers:**
-- **TWO Penpot prompts exist.** `ux-penpot-design-system.md` is loaded by the old Penpot MCP pipeline (`ux-penpot-design.ts:144`). `ux-penpot-designspec-v2.md` is loaded by the active DesignSpec v2 pipeline (`browser-design-work.ts:37`). Both need container variety updates in Phase 2. The Figma prompt (`ux-design-system.md`) has a function `loadDesignSystemPrompt` in `design-system-context.ts:218` that loads it — but `browser-design-work.ts:33` defines its own local `loadDesignSystemPrompt()` that shadows the export and loads the v2 prompt instead. The exported one is dead code.
+!!! tip "Context for implementers"
+
+    Details below cover active prompt files, renderer behavior, and field budget.
+
+??? info "Detailed implementer notes"
+
+    - **TWO Penpot prompts exist.** `ux-penpot-design-system.md` is loaded by the old Penpot MCP pipeline (`ux-penpot-design.ts:144`). `ux-penpot-designspec-v2.md` is loaded by the active DesignSpec v2 pipeline (`browser-design-work.ts:37`). Both need container variety updates in Phase 2. The Figma prompt (`ux-design-system.md`) has a function `loadDesignSystemPrompt` in `design-system-context.ts:218` that loads it — but `browser-design-work.ts:33` defines its own local `loadDesignSystemPrompt()` that shadows the export and loads the v2 prompt instead. The exported one is dead code.
 - **Borders already render via overrides.** `SAFE_OVERRIDE_KEYS` in `DesignSpecRenderer.tsx:184-186` includes `border`, `borderTop`, etc. No renderer code changes needed for border support — only prompt guidance teaching `overrides: { border: '1px solid ...' }`.
 - **"Shadows NOT Borders" in the Penpot prompt is the root cause** of visual monotony. It was correct for initial quality (consistent cards) but must be replaced with container treatment variety in Phase 2. The rule is at `ux-penpot-design-system.md:137-172` and `ux-penpot-designspec-v2.md` (similar section).
 - **NodeSpec field budget comments are wrong NOW and will be wrong until Task 1.5.** The code comments (`design-spec-v2.ts:48` says "21 of 24"; `submit-design-tool.ts:9` says "21 of 24") are stale. The actual tool schema count is 22 optional fields. After Phase 1 completes (textAlign, helper, title removed from tool schema), the count will be **19 of 24 in the tool schema** = 5 slots of headroom. The TypeScript type will be 18 of 24 (also removed `active` which was never in the tool schema). Task 1.5 fixes the comments. **Trust the execution plan's count over the code comments until Task 1.5 is done.**

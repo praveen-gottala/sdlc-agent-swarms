@@ -53,4 +53,96 @@ test.describe('Project Switching', () => {
       expect(newName).not.toBe(currentName);
     }).toPass({ timeout: 15000 });
   });
+
+  test('switching project from /new page navigates to home', async ({ page }) => {
+    await page.goto('/new');
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+
+    await sidebar.openProjectSwitcher();
+    const options = page.getByRole('option');
+    await expect(options.first()).toBeVisible({ timeout: 5000 });
+
+    const count = await options.count();
+    if (count < 2) {
+      test.skip(true, 'Only one project available — cannot test switching');
+      return;
+    }
+
+    const currentName = await sidebar.getProjectName();
+
+    for (let i = 0; i < count; i++) {
+      const optionText = (await options.nth(i).textContent()) ?? '';
+      if (optionText.trim() !== currentName.trim()) {
+        await options.nth(i).click();
+        break;
+      }
+    }
+
+    // After switching, page should navigate to / (not stay on /new)
+    await expect(page).toHaveURL('http://localhost:3000/', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+
+    // Sidebar should show the newly selected project
+    await expect(async () => {
+      const newName = await sidebar.getProjectName();
+      expect(newName).not.toBe(currentName);
+    }).toPass({ timeout: 10000 });
+  });
+});
+
+test.describe('Hydration', () => {
+  test.beforeEach(async ({ setActiveProject }) => {
+    setActiveProject(PET_ROOT);
+  });
+
+  test('no hydration errors on home page', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+    // Allow time for any delayed hydration errors to surface
+    await page.waitForTimeout(1000);
+
+    const hydrationErrors = errors.filter(
+      (e) => e.includes('Hydration') || e.includes('did not match'),
+    );
+    expect(hydrationErrors).toHaveLength(0);
+  });
+
+  test('no hydration errors on /new page', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+
+    await page.goto('/new');
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+
+    const hydrationErrors = errors.filter(
+      (e) => e.includes('Hydration') || e.includes('did not match'),
+    );
+    expect(hydrationErrors).toHaveLength(0);
+  });
+
+  test('logo matches color scheme after toggle', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="sidebar-toggle"]', { timeout: 10000 });
+
+    const logo = page.getByAltText('CHIP — Crafted Human Intelligence Platform');
+
+    // Dark mode (default) — dark logo
+    await expect(logo).toHaveAttribute('src', '/chip-full-logo-dark.png');
+
+    // Toggle to light mode
+    await page.getByLabel('Toggle color scheme').click();
+    await expect(logo).toHaveAttribute('src', '/chip-full-logo-creme.png');
+
+    // Toggle back to dark mode
+    await page.getByLabel('Toggle color scheme').click();
+    await expect(logo).toHaveAttribute('src', '/chip-full-logo-dark.png');
+  });
 });

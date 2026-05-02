@@ -53,7 +53,7 @@ test.describe('Navigation', () => {
     const isActive = await sidebar.isNavItemActive('Design Studio');
     expect(isActive).toBe(true);
 
-    const pipelineActive = await sidebar.isNavItemActive('Pipeline');
-    expect(pipelineActive).toBe(false);
+    const runsActive = await sidebar.isNavItemActive('Runs');
+    expect(runsActive).toBe(false);
   });
 });

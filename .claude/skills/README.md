@@ -14,7 +14,9 @@ New initiative    Session start     Mid-session          End of task       Pre-r
 /create-plan     /session-start  /mid-session-drift-check /verify-done    /verify-docs
      |                                                    |                 --full-sweep
      +-> /challenge-plan (auto)                           +-> /verify-docs
-                                                              (task-scoped)
+                                                         |    (task-scoped)
+                                                         /backstage sync
+                                                              (doc drift)
 ```
 
 ## Skills Reference
@@ -76,6 +78,12 @@ New initiative    Session start     Mid-session          End of task       Pre-r
 # Inventories session changes, re-reads rules, reports violations with file:line cites
 ```
 
+### Observability (Langfuse)
+
+| Skill | Purpose | When to use |
+|-------|---------|-------------|
+| `/langfuse-password-reset` | Reset self-hosted Langfuse UI login password (Postgres `users.password` bcrypt) | Locked out of Langfuse UI, lost password, dev recovery |
+
 ### Compliance & Documentation
 
 | Skill | Purpose | When to use |
@@ -84,6 +92,8 @@ New initiative    Session start     Mid-session          End of task       Pre-r
 | `/write-adr` | Generate Architecture Decision Record | When implementation deviates from spec |
 | `/demo-readiness` | Find fastest path to a working, showable demo | Before presentations or stakeholder updates |
 | `/update-skill` | Realign a skill with canonical docs when it feels stale | When a skill cites superseded ADRs or wrong paths |
+| `/backstage create` | Create or revise backstage doc page with editorial protocol | When writing new docs or fixing existing ones |
+| `/backstage sync` | Regenerate Tier 3 pages + Tier 2 concept drift check | Before releases, demos, or periodically |
 
 **Example:**
 ```
@@ -109,6 +119,10 @@ one of them is doing it wrong.
 | Code matches PRD product requirements | `/review-prd-compliance` |
 | Plans align with framework philosophy | `/challenge-plan` |
 | Spec-to-renderer visual fidelity | `/verify-design-render` |
+| Creating/revising doc pages | `/backstage create` |
+| Doc drift detection (concept pages) | `/backstage sync` |
+| Langfuse UI login / Postgres password recovery | `/langfuse-password-reset` |
+| Langfuse API, CLI, docs | `.agents/skills/langfuse` (Langfuse skill) |
 
 ## How Skills Compose
 

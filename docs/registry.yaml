@@ -1,0 +1,62 @@
+# Documentation Path Registry
+#
+# Skills and rules should reference logical names, not physical paths.
+# When files move, update this registry — skills follow automatically.
+#
+# Usage pattern (TypeScript):
+#   import { load } from 'js-yaml';
+#   import { readFileSync } from 'node:fs';
+#   const registry = load(readFileSync('docs/registry.yaml', 'utf8'));
+#   const visionPath = registry.canonical.vision;
+#
+# Usage pattern (skill/rule file):
+#   Instead of hardcoding `docs/vision.md`, reference `canonical.vision`
+#   from this registry. When a file moves, one registry update propagates
+#   to all consumers.
+#
+# Migration status:
+#   Phase 4 creates this registry. Skills currently use hardcoded paths.
+#   Future work migrates skills to read from the registry. No existing
+#   behavior changes until migration occurs.
+
+canonical:
+  vision: docs/vision.md
+  prd: docs/specs/PRD.md
+  lessons-rules: docs/lessons-learned-rules.md
+  lessons-full: docs/lessons-learned.md
+  architecture: docs/architecture/architecture.md
+  roadmap: docs/roadmap.md
+  design-decisions: docs/design-decisions.md
+  research-report: docs/research-report.md
+
+plans:
+  active: docs/plans/active/
+  backlog: docs/plans/backlog/
+  completed: docs/plans/completed/
+
+specs:
+  platform: docs/specs/platform-architecture.md
+  agents: docs/specs/sdlc-agents.md
+  governance: docs/specs/governance-and-operations.md
+  dashboard: docs/specs/dashboard.md
+  appendices: docs/specs/appendices.md
+
+adrs: docs/adrs/
+
+guides:
+  design-generation: docs/guides/design-generation.md
+  agent-model-guide: docs/guides/agent-model-guide.md
+  cli-design-commands: docs/guides/cli-design-commands.md
+  failure-mode-testing: docs/guides/failure-mode-testing.md
+  langfuse-setup: docs/guides/langfuse-setup.md
+  backstage-portal: docs/guides/backstage-developer-portal.md
+
+concepts: docs/concepts/
+
+cli:
+  readme: docs/cli/README.md
+  setup: docs/cli/setup.md
+  design: docs/cli/design.md
+  orchestration: docs/cli/orchestration.md
+
+issues: docs/issues/

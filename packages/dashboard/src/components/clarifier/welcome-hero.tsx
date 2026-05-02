@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAutoResize } from '@/lib/hooks/use-auto-resize';
 
 const BLOB_COLORS = [
   'var(--color-gradient-1)',
@@ -63,6 +64,8 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
     return () => clearInterval(interval);
   }, [value.length]);
 
+  useAutoResize(inputRef, value);
+
   const handleSubmit = useCallback(() => {
     if (!value.trim()) return;
     onSubmit(value.trim());
@@ -94,7 +97,7 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
         {/* Two-row input card */}
         <div className="input-inline rounded-2xl px-5 pt-4 pb-3 flex flex-col gap-3 relative">
           {/* Top row: textarea with animated placeholder */}
-          <div className="relative min-h-[28px]">
+          <div className="relative">
             {value.length === 0 && (
               <span
                 aria-hidden="true"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   Group,
   Text,
@@ -35,6 +35,7 @@ export function HeaderBar({
   onToggleActivity,
 }: HeaderBarProps): React.JSX.Element {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const fmt = () =>
     new Date().toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -48,6 +49,8 @@ export function HeaderBar({
     return () => clearInterval(id);
   }, []);
 
+  const effectiveScheme = mounted ? colorScheme : 'dark';
+
   const budgetPct = budgetTotal > 0 ? (budgetUsed / budgetTotal) * 100 : 0;
   const budgetColor =
     budgetPct > 80 ? 'red' : budgetPct > 50 ? 'yellow' : 'green';
@@ -57,7 +60,7 @@ export function HeaderBar({
       {/* Left: CHIP brand — fills header height */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={colorScheme === 'light' ? '/chip-full-logo-creme.png' : '/chip-full-logo-dark.png'}
+        src={effectiveScheme === 'light' ? '/chip-full-logo-creme.png' : '/chip-full-logo-dark.png'}
         alt="CHIP — Crafted Human Intelligence Platform"
         style={{ height: 42, width: 'auto', objectFit: 'contain', maxWidth: 200 }}
       />
@@ -109,7 +112,7 @@ export function HeaderBar({
           radius="sm"
           size="md"
         >
-          {colorScheme === 'dark' ? (
+          {effectiveScheme === 'dark' ? (
             <IconSun size={18} stroke={1.5} />
           ) : (
             <IconMoon size={18} stroke={1.5} />

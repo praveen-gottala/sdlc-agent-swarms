@@ -35,15 +35,17 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 3. Clarifier Initiative — Phase 0 COMPLETE, Phase 2 (RAG) COMPLETE, Phase 1 Tasks 1.0-1.7 COMPLETE (2026-04-28): 6 nodes, LangGraph StateGraph, 114 tests, event emission via `writeBridgeEvent()`, interrupt detection fixed (`getState().next`). Task 1.8 PARTIAL: API routes done, `/new` page created but UX needs redesign (Phase 3 of CHIP UX Overhaul). See `docs/plans/active/clarifier-initiative/execution-plan.md`
 4. Dashboard Pipeline Fix — Planning stage fails from dashboard but works from CLI. Root cause confirmed: `import.meta.url` under webpack. Partial fix: `serverExternalPackages` for agents-clarifier. Full fix for agents-ux pending. See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
 5. CHIP UX Overhaul — Rebrand from AgentForge to CHIP (Crafted Human Intelligence Platform). Phase 1 COMPLETE (2026-04-28). Phase 2 COMPLETE (2026-04-29, committed `ca5df49`). Phase 4.1 COMPLETE (2026-04-29, committed `ae0e8ba`): Home page redesigned as state-aware landing pad. Phase 4.0 COMPLETE (2026-04-29): Pipeline → Runs page redesigned with 4-stage spine, run history table, emergency controls, shared SpineRail extraction, ADR-050 (vision deviations). Next: Phase 4.2+ (remaining pages per priority order). See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
-
+6. Focused Deep Audit — Enhance Deep Audit (Vision) to support node-scoped inspection. When a selected container has ≤N children, the audit passes nodeId to the API, loads research brief + planning spec for upstream intent, highlights the container in the screenshot, and sends focused context to the vision LLM. Phase 1 (wire selectedNode) next. See `docs/plans/active/focused-deep-audit/execution-plan.md`
 **Backlog plans (do NOT read during session-start — note status only):**
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
+- Docs Tutorials — Phase 5 of Docs Reorganization (3 tutorial/guide pages). See `docs/plans/backlog/docs-tutorials.md`
 
 **Completed plans (do NOT read during session-start):**
+- Docs Reorganization — Phases 1-4, 6, 7 COMPLETE (2026-04-30). Phase 5 moved to backlog. See `docs/plans/completed/docs-reorganization.md`
 - Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
 - Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
 
-**Last session (2026-04-29):** Phase 4.2 Design Studio visual overhaul. 12 ui/ components → Mantine wrappers. Page Registry: full names, status dots, search filter. Contextual toolbar: primary + icon actions + progress bar. Inspector: 4 tabs → 3 collapsible zones (Properties/Quality/Chat). Edit mode gate (inspector hidden until pencil icon or node click). Generate picker (checkbox popover). Resizable inspector + Activity panels. Canvas header compact. Prototype screen bar compact. New Project → subtle nav link. 4 new E2E tests. 18 typecheck, 1233 unit tests, 0 lint errors, 114 E2E pass. Remaining: Phase 4 sub-component polish, Phase 5 animations + skeletons. Next: Phase 4.2 remaining (Phases 4-5) or Phase 4.3+ other pages.
+**Last session (2026-04-30):** Docs Reorganization COMPLETE. Phase 4 (`docs/registry.yaml` path registry) + Phase 6 (`scripts/generate-docs.ts` auto-generates 3 dashboard pages into `docs/_generated/`). Phase 5 (tutorials) moved to backlog. Plan moved from active to `docs/plans/completed/docs-reorganization.md`. Doc generation command added to CLAUDE.md Commands section. mkdocs build clean. 19 typecheck pass.
 
 Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
 sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
@@ -314,6 +316,10 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - Test all: `nx run-many -t test`
 - Lint: `nx run-many -t lint`
 - Type check: `nx run-many -t typecheck`
+- Generate docs dashboards: `npx tsx scripts/generate-docs.ts`
+  - Produces `docs/_generated/` (gitignored): `current-status.md`, `package-index.md`, `adr-index.md`
+  - Must run before `mkdocs build` or Backstage TechDocs preview — generated pages are in the mkdocs nav but not committed
+  - Path registry at `docs/registry.yaml` maps logical doc names to physical paths (for future skill migration)
 
 ## Code Conventions
 - Strict TypeScript (`strict: true`, no `any`)
@@ -339,6 +345,12 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   `docs/guides/backstage-developer-portal.md` and ADR-051.
   - When adding new docs under `docs/`, add the file to `mkdocs.yml` nav
   - When adding new packages, create `catalog-info.yaml` + `README.md` in the package root
+
+### Markdown Formatting for Backstage TechDocs
+- Follow `.claude/rules/docs-formatting.md` when writing docs under `docs/`.
+  Key rules: use admonitions (`!!!`) for callouts, collapsible sections
+  (`???`) for gotchas, blank line before lists. Tables/code/blockquotes
+  get automatic styling via the `mdx_fix_list_spacing` extension.
 
 ### Blind Subagent Test (MANDATORY for new documentation)
 After documenting any new system, feature, or setup procedure, run a **blind
@@ -372,6 +384,9 @@ See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership bo
 - /verify-docs — Unified documentation verification: content accuracy, spec sync, vision layer currency, CLI docs, lessons-learned. Task-scoped (from verify-done) or full-sweep (pre-release). Absorbs former /review-spec-sync.
 - /mid-session-drift-check — Mid-session process compliance audit: mocks, tests, scope creep, honesty, rejected patterns, doc currency. Use before commits or when session feels long.
 - /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.
+- /backstage create <type> <topic> — Create/revise backstage doc page (concept, tutorial, guide, architecture, status) with editorial protocol and competitor-swap test
+- /backstage sync — Regenerate Tier 3 auto-generated pages + LLM-powered Tier 2 concept page drift check against authoritative sources
+- /improvise-ux [description] [reference URL or screenshot] — Improve existing UI component polish to match a reference design. 11-phase protocol with design system audit, mathematical contrast computation (WCAG ratios for text, L deltas for surfaces), strictly-additive token changes, all-state browser verification, and color-scheme verification.
 
 ## IMPORTANT
 - ALWAYS run `typecheck` after making changes across packages

@@ -5,12 +5,14 @@
  * EVPI proxy ranking: blast_radius * answerability * confidence_gap.
  * Budget: micro 0-2, standard 3-7, cross-cutting max 15/round, max 3 rounds.
  * Below-threshold gaps become AssumptionLedger entries.
+ * Divergence-based over-asking gate prevents unnecessary questions.
  * No LLM calls — pure computation.
  */
 
+import { debugLog } from '@agentforge/core';
 import type { AssumptionLedger } from '@agentforge/core';
 import type { ClarifierDeps, ClarifierNodeFn } from '../deps.js';
-import type { ClarifierState, Gap, Question } from '../types.js';
+import type { ClarifierState, Gap, Question, StructuredOption } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // EVPI proxy scoring
@@ -35,6 +37,7 @@ function computeEVPI(gap: Gap): number {
 // ---------------------------------------------------------------------------
 
 const EVPI_THRESHOLD = 0.15;
+const DIVERGENCE_THRESHOLD = 0.3;
 
 function computeBudget(prdDraft: ClarifierState['prdDraft']): number {
   if (!prdDraft) return 2;
@@ -49,38 +52,77 @@ function computeBudget(prdDraft: ClarifierState['prdDraft']): number {
 }
 
 // ---------------------------------------------------------------------------
+// Over-asking prevention (divergence-based gate)
+// ---------------------------------------------------------------------------
+
+function shouldAskQuestion(gap: Gap, evpi: number): boolean {
+  if (evpi < EVPI_THRESHOLD) return false;
+  if (gap.divergenceScore !== undefined && gap.divergenceScore < DIVERGENCE_THRESHOLD) {
+    debugLog(`question-prioritizer: auto-resolving gap ${gap.id} — divergenceScore ${gap.divergenceScore} below ${DIVERGENCE_THRESHOLD}`);
+    return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Recommendation validation
+// ---------------------------------------------------------------------------
+
+function validateRecommendations(options: readonly StructuredOption[]): StructuredOption[] {
+  const recommendedCount = options.filter((o) => o.recommended).length;
+
+  if (recommendedCount === 0) {
+    debugLog('question-prioritizer: LLM set zero recommendations — rendering without badge');
+    return options.map((o) => ({ ...o }));
+  }
+
+  if (recommendedCount === 1) {
+    return options.map((o) => ({ ...o }));
+  }
+
+  debugLog(`question-prioritizer: LLM set ${recommendedCount} recommendations — keeping first only`);
+  let firstFound = false;
+  return options.map((o) => {
+    if (o.recommended && !firstFound) {
+      firstFound = true;
+      return { ...o };
+    }
+    return { ...o, recommended: false };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Question generation
 // ---------------------------------------------------------------------------
 
 function gapToQuestion(gap: Gap, index: number, context: ClarifierState): Question {
-  const hasCodeChunks = (context.context.codeChunks?.length ?? 0) > 0;
   const hasDivergent = (gap.divergentInterpretations?.length ?? 0) >= 2;
-  const useMultipleChoice = context.mode === 'evolution' && hasCodeChunks && hasDivergent;
+
+  if (!hasDivergent) {
+    debugLog(`question-prioritizer: gap ${gap.id} has no options — falling back to open type (gap-detector should provide options for all gaps)`);
+  }
+
+  const validatedOptions = hasDivergent && gap.divergentInterpretations
+    ? validateRecommendations(gap.divergentInterpretations)
+    : undefined;
 
   return {
     id: `q-${context.round}-${index}`,
     gapId: gap.id,
+    topic: gap.topic,
     text: buildQuestionText(gap),
-    type: useMultipleChoice ? 'multiple-choice' : 'open',
-    ...(useMultipleChoice && gap.divergentInterpretations
-      ? { options: [...gap.divergentInterpretations] }
-      : {}),
+    type: hasDivergent ? 'multiple-choice' : 'open',
+    ...(validatedOptions ? { options: validatedOptions } : {}),
     priority: index + 1,
     evpiScore: computeEVPI(gap),
   };
 }
 
 function buildQuestionText(gap: Gap): string {
-  switch (gap.category) {
-    case 'missing':
-      return `The specification does not address: ${gap.description} — what is the expected behavior?`;
-    case 'ambiguous':
-      return `This requirement is ambiguous: ${gap.description} — which interpretation is correct?`;
-    case 'conflicting':
-      return `There is a conflict: ${gap.description} — which requirement takes priority?`;
-    case 'incomplete':
-      return `This requirement is incomplete: ${gap.description} — what additional detail is needed?`;
-  }
+  if (gap.description.endsWith('?')) return gap.description;
+
+  const desc = gap.description.replace(/^PRD /i, '').replace(/\.+$/, '');
+  return `${desc}?`;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,16 +139,23 @@ function gapsToAssumptions(
 
   const newEntries = gaps
     .filter((g) => !existingIds.has(`assumption-${g.id}`))
-    .map((g) => ({
-      id: `assumption-${g.id}`,
-      statement: `Assumed reasonable default for: ${g.description}`,
-      evidence: g.deterministic
-        ? 'Deterministic checklist gap — common industry default assumed.'
-        : `LLM divergence analysis (${g.divergentInterpretations?.length ?? 0} interpretations).`,
-      confidence: Math.max(g.confidence, 0.3),
-      blastRadius: BLAST_RADIUS[g.category] >= 0.85 ? ('high' as const) : ('low' as const),
-      requiresConfirmation: g.confidence < 0.5,
-    }));
+    .map((g) => {
+      const isDivergenceGated = g.divergenceScore !== undefined && g.divergenceScore < DIVERGENCE_THRESHOLD;
+      return {
+        id: `assumption-${g.id}`,
+        statement: `Assumed reasonable default for: ${g.description}`,
+        evidence: isDivergenceGated
+          ? `Low divergence (score: ${g.divergenceScore}) — implementations converged.`
+          : g.deterministic
+            ? 'Deterministic checklist gap — common industry default assumed.'
+            : `LLM divergence analysis (${g.divergentInterpretations?.length ?? 0} options).`,
+        confidence: isDivergenceGated
+          ? Math.max(g.confidence, 1 - (g.divergenceScore ?? 0))
+          : Math.max(g.confidence, 0.3),
+        blastRadius: BLAST_RADIUS[g.category] >= 0.85 ? ('high' as const) : ('low' as const),
+        requiresConfirmation: isDivergenceGated ? false : g.confidence < 0.5,
+      };
+    });
 
   return {
     id: existing?.id ?? `ledger-${Date.now()}`,
@@ -122,7 +171,8 @@ function gapsToAssumptions(
 
 /**
  * Create a Question Prioritizer node function for the Clarifier StateGraph.
- * Ranks gaps by EVPI and converts below-threshold gaps to assumptions.
+ * Ranks gaps by EVPI, applies divergence-based over-asking gate,
+ * and converts below-threshold gaps to assumptions.
  */
 export function createQuestionPrioritizer(_deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
@@ -136,17 +186,17 @@ export function createQuestionPrioritizer(_deps: ClarifierDeps): ClarifierNodeFn
 
     const budget = computeBudget(state.prdDraft);
 
-    const aboveThreshold = scored.filter((s) => s.evpi >= EVPI_THRESHOLD);
-    const belowThreshold = scored.filter((s) => s.evpi < EVPI_THRESHOLD);
+    const askable = scored.filter((s) => shouldAskQuestion(s.gap, s.evpi));
+    const notAskable = scored.filter((s) => !shouldAskQuestion(s.gap, s.evpi));
 
-    const topGaps = aboveThreshold.slice(0, budget);
-    const budgetOverflow = aboveThreshold.slice(budget);
+    const topGaps = askable.slice(0, budget);
+    const budgetOverflow = askable.slice(budget);
 
     const questions: Question[] = topGaps.map((s, i) =>
       gapToQuestion(s.gap, i, state),
     );
 
-    const assumptionGaps = [...belowThreshold.map((s) => s.gap), ...budgetOverflow.map((s) => s.gap)];
+    const assumptionGaps = [...notAskable.map((s) => s.gap), ...budgetOverflow.map((s) => s.gap)];
     const assumptions = assumptionGaps.length > 0
       ? gapsToAssumptions(assumptionGaps, state.assumptions)
       : state.assumptions;
@@ -155,4 +205,13 @@ export function createQuestionPrioritizer(_deps: ClarifierDeps): ClarifierNodeFn
   };
 }
 
-export { computeEVPI, computeBudget, gapsToAssumptions, EVPI_THRESHOLD, buildQuestionText };
+export {
+  computeEVPI,
+  computeBudget,
+  gapsToAssumptions,
+  shouldAskQuestion,
+  validateRecommendations,
+  EVPI_THRESHOLD,
+  DIVERGENCE_THRESHOLD,
+  buildQuestionText,
+};

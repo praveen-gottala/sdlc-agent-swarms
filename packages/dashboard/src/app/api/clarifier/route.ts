@@ -12,7 +12,7 @@ import {
   createClaudeProvider,
 } from '@agentforge/providers';
 import { createTracedProvider, initLangfuseTracing } from '@agentforge/telemetry';
-import { runClarifierPipeline } from '@agentforge/agents-clarifier';
+import { runClarifierPipelineStream } from '@agentforge/agents-clarifier';
 import type { ClarifierInput } from '@agentforge/agents-clarifier';
 import { createCheckpointer, MemorySaver } from '@agentforge/core';
 import { getActiveProjectRoot, MONOREPO_ROOT } from '../_lib/project-reader';
@@ -24,6 +24,7 @@ const STAGE_LABELS: Record<string, string> = {
   prdAnalyzer: 'Analyzing requirements with Claude Opus...',
   gapDetector: 'Detecting gaps and ambiguities...',
   questionPrioritizer: 'Prioritizing clarification questions...',
+  prdUpdater: 'Updating PRD with your answers...',
   storyWriter: 'Writing user stories...',
   critic: 'Reviewing story quality...',
   escalationGate: 'Awaiting your decision...',
@@ -90,49 +91,104 @@ export async function POST(request: NextRequest) {
   };
 
   const encoder = new TextEncoder();
+  const stages = Object.keys(STAGE_LABELS);
+
   const stream = new ReadableStream({
     async start(controller) {
-      function send(event: string, data: unknown) {
+      function send(event: string, data: unknown): void {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
 
-      const stages = Object.keys(STAGE_LABELS);
-      send('stage', { stage: stages[0], label: STAGE_LABELS[stages[0]], index: 0, total: stages.length });
+      let nodeIndex = 0;
 
-      const result = await runClarifierPipeline(input);
+      try {
+        for await (const event of runClarifierPipelineStream(input)) {
+          switch (event.type) {
+            case 'node-complete': {
+              const stageLabel = STAGE_LABELS[event.node];
+              if (stageLabel) {
+                send('stage', {
+                  stage: event.node,
+                  label: stageLabel,
+                  index: nodeIndex,
+                  total: stages.length,
+                });
+                nodeIndex++;
+              }
 
-      if (!result.ok) {
-        send('error', { error: result.error.message, code: result.error.code });
-        controller.close();
-        return;
+              if (event.node === 'prdAnalyzer' && event.state.prdDraft) {
+                send('prd-draft', { prdDraft: event.state.prdDraft });
+              }
+              if (event.node === 'gapDetector' && event.state.gaps) {
+                send('gaps', { gaps: event.state.gaps });
+              }
+              break;
+            }
+
+            case 'interrupt': {
+              send('stage', {
+                stage: 'questionPrioritizer',
+                label: 'Questions ready!',
+                index: stages.indexOf('questionPrioritizer'),
+                total: stages.length,
+              });
+
+              send('result', {
+                threadId: event.threadId,
+                interrupted: true,
+                state: {
+                  mode: event.state.mode,
+                  round: event.state.round,
+                  maxRounds: event.state.maxRounds,
+                  questions: event.state.questions,
+                  gaps: event.state.gaps,
+                  requirement: event.state.requirement,
+                  assumptions: event.state.assumptions,
+                  prdDraft: event.state.prdDraft,
+                  featurePlan: event.state.featurePlan,
+                  error: event.state.error,
+                },
+              });
+              break;
+            }
+
+            case 'complete': {
+              send('stage', {
+                stage: 'emitComplete',
+                label: 'Requirements complete!',
+                index: stages.length - 1,
+                total: stages.length,
+              });
+
+              send('result', {
+                threadId: event.threadId,
+                interrupted: false,
+                state: {
+                  mode: event.state.mode,
+                  round: event.state.round,
+                  maxRounds: event.state.maxRounds,
+                  questions: event.state.questions,
+                  gaps: event.state.gaps,
+                  requirement: event.state.requirement,
+                  assumptions: event.state.assumptions,
+                  prdDraft: event.state.prdDraft,
+                  featurePlan: event.state.featurePlan,
+                  error: event.state.error,
+                },
+              });
+              break;
+            }
+
+            case 'error': {
+              send('error', { error: event.error.message, code: event.error.code });
+              break;
+            }
+          }
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        send('error', { error: message, code: 'STREAM_ERROR' });
       }
-
-      const { state, threadId, interrupted } = result.value;
-
-      // Send the completed stage
-      send('stage', {
-        stage: interrupted ? 'questionPrioritizer' : 'emitComplete',
-        label: interrupted ? 'Questions ready!' : 'Requirements complete!',
-        index: interrupted ? 3 : stages.length - 1,
-        total: stages.length,
-      });
-
-      send('result', {
-        threadId,
-        interrupted,
-        state: {
-          mode: state.mode,
-          round: state.round,
-          maxRounds: state.maxRounds,
-          questions: state.questions,
-          gaps: state.gaps,
-          requirement: state.requirement,
-          assumptions: state.assumptions,
-          prdDraft: state.prdDraft,
-          featurePlan: state.featurePlan,
-          error: state.error,
-        },
-      });
 
       controller.close();
     },

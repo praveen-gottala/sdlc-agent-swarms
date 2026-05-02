@@ -42,6 +42,7 @@ function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
     criticRetries: 0,
     criticPassed: false,
     escalationDecision: null,
+    threadId: '',
     ...overrides,
   };
 }
@@ -76,7 +77,11 @@ describe('agents-clarifier scaffold', () => {
         gapId: 'gap-1',
         text: 'Which auth strategy?',
         type: 'multiple-choice',
-        options: ['OAuth2', 'JWT', 'Session'],
+        options: [
+          { label: 'OAuth2', description: 'OAuth 2.0 flow', recommended: true, source: 'template' },
+          { label: 'JWT', description: 'JSON Web Tokens', recommended: false, source: 'llm' },
+          { label: 'Session', description: 'Server-side sessions', recommended: false, source: 'llm' },
+        ],
         priority: 1,
         evpiScore: 0.9,
       });
@@ -138,7 +143,7 @@ describe('agents-clarifier scaffold', () => {
         maxRounds: 3,
         gaps: [{ id: 'g1', description: 'test', category: 'missing', confidence: 0.3, deterministic: true }],
       });
-      expect(routeAfterCritic(state)).toBe('gapDetector');
+      expect(routeAfterCritic(state)).toBe('prdUpdater');
     });
 
     it('routeAfterCritic routes to escalationGate when max rounds reached', () => {
@@ -163,7 +168,7 @@ describe('agents-clarifier scaffold', () => {
 
     it('routeAfterEscalation routes to gapDetector on restart', () => {
       const state = makeState({ escalationDecision: 'restart' });
-      expect(routeAfterEscalation(state)).toBe('gapDetector');
+      expect(routeAfterEscalation(state)).toBe('prdUpdater');
     });
 
     it('routeAfterEscalation routes to END on abandon', () => {

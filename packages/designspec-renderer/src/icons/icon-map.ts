@@ -79,6 +79,9 @@ export const ICON_MAP: Record<string, IconEntry> = {
   'trending-up': { componentName: 'TrendingUp', aliases: ['growth', 'increase'] },
   'trending-down': { componentName: 'TrendingDown', aliases: ['decline', 'decrease'] },
 
+  // Food & Drink
+  'coffee': { componentName: 'Coffee', aliases: ['cafe', 'cup', 'tea', 'drink'] },
+
   // Commerce
   'shopping-cart': { componentName: 'ShoppingCart', aliases: ['cart', 'basket'] },
   'credit-card': { componentName: 'CreditCard', aliases: ['card', 'payment'] },

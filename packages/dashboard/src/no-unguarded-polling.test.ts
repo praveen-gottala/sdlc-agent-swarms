@@ -45,6 +45,14 @@ const WHITELIST: Array<{ file: string; justification: string }> = [
     file: 'components/live-monitor/log-console.tsx',
     justification: 'Log console auto-scroll — UI-only, no network call',
   },
+  {
+    file: 'app/(dashboard)/new/page.tsx',
+    justification: 'ThinkingTimeline elapsed timer — 1s interval, UI-only, no network call',
+  },
+  {
+    file: 'components/clarifier/welcome-hero.tsx',
+    justification: 'Animated placeholder cycling — 3.5s interval, UI-only, stops when user types',
+  },
 ];
 
 describe('No unguarded polling', () => {

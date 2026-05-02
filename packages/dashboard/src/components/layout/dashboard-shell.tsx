@@ -86,7 +86,7 @@ export function DashboardShell({
         body: JSON.stringify({ path }),
       });
       if (res.ok) {
-        window.location.reload();
+        window.location.href = '/';
       } else {
         const msg = `Failed to switch project (${res.status})`;
         setSwitchError(msg);
@@ -193,13 +193,21 @@ export function DashboardShell({
       transitionDuration={(isResizing || isAsideResizing) ? 0 : 200}
       transitionTimingFunction="ease"
       styles={{
+        root: {
+          background: 'var(--color-sidebar)',
+        },
         main: {
           background: 'var(--color-bg-base)',
+          height: '100vh',
           minHeight: '100vh',
+          borderRadius: '16px 0 0 0',
+          borderLeft: '1px solid var(--color-border-bright)',
+          borderTop: '1px solid var(--color-border-bright)',
+          boxShadow: '-8px -4px 24px rgba(0,0,0,0.12), -2px -1px 8px rgba(0,0,0,0.06)',
         },
         navbar: {
           background: 'var(--color-sidebar)',
-          borderRight: 'none',
+          borderRight: '1px solid var(--color-border)',
           overflow: 'visible',
         },
         header: {
@@ -242,15 +250,22 @@ export function DashboardShell({
           aria-label="Resize sidebar"
           style={{
             position: 'absolute',
-            right: -2,
+            right: -4,
             top: 0,
             bottom: 0,
-            width: 5,
+            width: 8,
             cursor: 'col-resize',
             zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-          className={isResizing ? 'bg-accent-blue/40' : 'hover:bg-accent-blue/20'}
-        />
+          className={`group ${isResizing ? 'bg-accent-blue/20' : ''}`}
+        >
+          <div className={`h-8 w-1 rounded-full transition-opacity ${
+            isResizing ? 'opacity-100 bg-accent-blue/60' : 'opacity-0 group-hover:opacity-100 bg-text-muted/40'
+          }`} />
+        </div>
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
@@ -261,15 +276,22 @@ export function DashboardShell({
           onMouseDown={handleAsideResizeStart}
           style={{
             position: 'absolute',
-            left: -2,
+            left: -4,
             top: 0,
             bottom: 0,
-            width: 5,
+            width: 8,
             cursor: 'col-resize',
             zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-          className={isAsideResizing ? 'bg-accent-blue/40' : 'hover:bg-accent-blue/20'}
-        />
+          className={`group ${isAsideResizing ? 'bg-accent-blue/20' : ''}`}
+        >
+          <div className={`h-8 w-1 rounded-full transition-opacity ${
+            isAsideResizing ? 'opacity-100 bg-accent-blue/60' : 'opacity-0 group-hover:opacity-100 bg-text-muted/40'
+          }`} />
+        </div>
         <ActivitySidebar />
       </AppShell.Aside>
 

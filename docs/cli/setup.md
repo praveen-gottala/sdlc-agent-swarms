@@ -141,7 +141,9 @@ agentforge design-system update
 agentforge design-system validate
 ```
 
-**Note:** `design-tokens.yaml` and `brand.yaml` are created during `agentforge init`. Projects without these files will show a message suggesting to run init or update.
+!!! note
+
+    `design-tokens.yaml` and `brand.yaml` are created during `agentforge init`. Projects without these files will show a message suggesting to run init or update.
 
 ---
 

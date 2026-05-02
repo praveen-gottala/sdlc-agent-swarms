@@ -14,18 +14,16 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import {
-  IconCircleCheck,
   IconAlertTriangle,
   IconPlus,
   IconPalette,
   IconCircleX,
   IconArrowRight,
-  IconSparkles,
-  IconBolt,
-  IconRocket,
   IconPlayerPlay,
 } from '@tabler/icons-react';
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
+import { SpineRail } from '@/components/spine/spine-rail';
+import { SPINE_STAGES } from '@/components/spine/spine-constants';
 
 /* ── Types ── */
 
@@ -64,68 +62,6 @@ function timeAgo(dateStr: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
-}
-
-/* ── Spine ── */
-
-const SPINE = [
-  { key: 'clarifier', label: 'Clarify', icon: IconSparkles },
-  { key: 'architect', label: 'Architect', icon: IconBolt },
-  { key: 'implementer', label: 'Implement', icon: IconRocket },
-  { key: 'reviewer', label: 'Review', icon: IconCircleCheck },
-] as const;
-
-function SpineRail({ activeStage }: { activeStage: number }): React.JSX.Element {
-  return (
-    <Group gap={0} justify="center" wrap="nowrap">
-      {SPINE.map((stage, i) => {
-        const isActive = i === activeStage;
-        const isPast = activeStage >= 0 && i < activeStage;
-        const Icon = stage.icon;
-        return (
-          <Group key={stage.key} gap={0} wrap="nowrap" align="center">
-            <Box style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              padding: '0 20px',
-            }}>
-              <Box style={{
-                width: 40, height: 40, borderRadius: 10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isActive
-                  ? 'var(--color-accent-blue)'
-                  : isPast
-                    ? 'var(--color-bg-elevated)'
-                    : 'transparent',
-                border: isActive
-                  ? 'none'
-                  : `1.5px solid ${isPast ? 'var(--color-text-muted)' : 'var(--color-border)'}`,
-                transition: 'all 0.2s ease',
-              }}>
-                <Icon
-                  size={18}
-                  stroke={1.5}
-                  style={{
-                    color: isActive ? '#fff' : isPast ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
-                  }}
-                />
-              </Box>
-              <Text size="xs" fw={isActive ? 600 : 400}
-                c={isActive ? 'var(--color-text-primary)' : 'var(--color-text-muted)'}>
-                {stage.label}
-              </Text>
-            </Box>
-            {i < SPINE.length - 1 && (
-              <Box style={{
-                width: 32, height: 1.5,
-                background: isPast ? 'var(--color-text-muted)' : 'var(--color-border)',
-                marginBottom: 22,
-              }} />
-            )}
-          </Group>
-        );
-      })}
-    </Group>
-  );
 }
 
 /* ── Attention item ── */
@@ -178,9 +114,7 @@ export default function HomePage(): React.JSX.Element {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasProjects, setHasProjects] = useState<boolean | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  const [mounted] = useState(() => typeof window !== 'undefined');
 
   useEffect(() => {
     fetch('/api/projects')
@@ -219,7 +153,7 @@ export default function HomePage(): React.JSX.Element {
   const lastRun = runs[0] ?? null;
   const failedRun = runs.find((r) => r.status === 'failed');
   const activeStageIdx = activeRun
-    ? SPINE.findIndex((s) => activeRun.stage?.toLowerCase().includes(s.key))
+    ? SPINE_STAGES.findIndex((s) => activeRun.stage?.toLowerCase().includes(s.key))
     : -1;
 
   return (
@@ -296,7 +230,7 @@ export default function HomePage(): React.JSX.Element {
               <AttentionRow
                 icon={<IconPlayerPlay size={20} />}
                 color="var(--color-accent-blue)"
-                label="Pipeline running"
+                label="Run in progress"
                 detail={`${activeRun.type.replace(/-/g, ' ')} — ${activeRun.stage}`}
                 href="/pipeline"
               />
@@ -334,7 +268,7 @@ export default function HomePage(): React.JSX.Element {
                 },
               }}
             >
-              Pipeline
+              Runs
             </Button>
             <Button
               component={Link}

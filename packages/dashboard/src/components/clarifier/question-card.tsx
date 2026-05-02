@@ -2,12 +2,22 @@
 
 import { useState } from 'react';
 
+interface StructuredOption {
+  readonly label: string;
+  readonly description: string;
+  readonly rationale?: string;
+  readonly tradeoffs?: readonly string[];
+  readonly recommended: boolean;
+  readonly source: 'llm' | 'codebase' | 'template' | 'catalog';
+  readonly citation?: string;
+}
+
 interface Question {
   readonly id: string;
   readonly gapId: string;
   readonly text: string;
   readonly type: 'open' | 'multiple-choice';
-  readonly options?: readonly string[];
+  readonly options?: readonly StructuredOption[];
   readonly priority: number;
   readonly evpiScore: number;
 }
@@ -24,14 +34,16 @@ export function QuestionCard({ question, index, value, onAnswer, disabled }: Que
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [customText, setCustomText] = useState('');
 
-  const handleOptionSelect = (option: string) => {
+  const handleOptionSelect = (label: string) => {
     if (disabled) return;
-    setSelectedOption(option);
-    onAnswer(question.id, option, option);
+    setSelectedOption(label);
+    setCustomText('');
+    onAnswer(question.id, label, label);
   };
 
   const handleTextChange = (text: string) => {
     setCustomText(text);
+    setSelectedOption(null);
     onAnswer(question.id, text);
   };
 
@@ -55,28 +67,54 @@ export function QuestionCard({ question, index, value, onAnswer, disabled }: Que
         <div className="ml-8 space-y-2">
           {question.options.map((option) => (
             <button
-              key={option}
+              key={option.label}
               type="button"
               disabled={disabled}
-              onClick={() => handleOptionSelect(option)}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                selectedOption === option || value === option
+              onClick={() => handleOptionSelect(option.label)}
+              className={`flex w-full flex-col gap-1.5 rounded-md px-3 py-2.5 text-left transition-colors ${
+                selectedOption === option.label || value === option.label
                   ? 'bg-accent-blue/15 text-accent-blue ring-1 ring-accent-blue/30'
                   : 'bg-bg-card text-text-secondary hover:bg-bg-elevated hover:text-text-primary'
               } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
             >
-              <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                  selectedOption === option || value === option
-                    ? 'border-accent-blue bg-accent-blue'
-                    : 'border-text-muted'
-                }`}
-              >
-                {(selectedOption === option || value === option) && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                    selectedOption === option.label || value === option.label
+                      ? 'border-accent-blue bg-accent-blue'
+                      : 'border-text-muted'
+                  }`}
+                >
+                  {(selectedOption === option.label || value === option.label) && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  )}
+                </span>
+                <span className="text-sm font-medium">{option.label}</span>
+                {option.recommended && (
+                  <span
+                    className="rounded-full bg-green-500/15 px-1.5 py-0.5 text-[10px] font-medium text-green-400"
+                    title={option.rationale ?? 'Recommended option'}
+                  >
+                    Recommended
+                  </span>
                 )}
-              </span>
-              {option}
+                <span className="rounded-full bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-muted">
+                  {option.source}
+                  {option.citation ? ` · ${option.citation}` : ''}
+                </span>
+              </div>
+              {option.description && (
+                <p className="ml-6 text-xs text-text-muted">{option.description}</p>
+              )}
+              {option.tradeoffs && option.tradeoffs.length > 0 && (
+                <div className="ml-6 flex flex-wrap gap-1.5">
+                  {option.tradeoffs.map((t) => (
+                    <span key={t} className="text-[10px] text-text-muted/70">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
             </button>
           ))}
         </div>

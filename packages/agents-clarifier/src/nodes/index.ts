@@ -11,3 +11,4 @@ export { createGapDetector } from './gap-detector.js';
 export { createQuestionPrioritizer } from './question-prioritizer.js';
 export { createStoryWriter } from './story-writer.js';
 export { createCritic } from './critic.js';
+export { createPrdUpdater } from './prd-updater.js';

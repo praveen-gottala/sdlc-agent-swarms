@@ -1,7 +1,7 @@
 /**
  * Gap Detector node tests.
- * Scope: deterministic gap detection, ClarifyGPT LLM calls,
- * round>1 filtering, cost cap, deduplication.
+ * Scope: intent-level deterministic gap detection, ClarifyGPT LLM calls,
+ * round>1 filtering, cost cap, deduplication, ensureGapHasOptions.
  */
 
 import type { ClarifierDeps } from '../../deps.js';
@@ -11,7 +11,13 @@ import {
   createGapDetector,
   runDeterministicChecklist,
   filterAddressedGaps,
+  filterAskedGaps,
+  gapContentId,
   extractStructured,
+  ensureGapHasOptions,
+  groupFeaturesByIntent,
+  categorizeFeature,
+  buildDataEntryOptions,
   _resetPromptCache,
 } from '../gap-detector.js';
 
@@ -40,12 +46,25 @@ const BASE_PRD: PRD = {
   features: [
     { id: 'feat-001', name: 'Add Expense', description: 'Record new expenses with form input' },
     { id: 'feat-002', name: 'Dashboard', description: 'Overview of user spending patterns' },
+    { id: 'feat-003', name: 'Budget Management', description: 'Set and track monthly budget limits' },
+    { id: 'feat-004', name: 'Category Management', description: 'Organize expenses into categories and tags' },
+    { id: 'feat-005', name: 'Export Data', description: 'Export expense data as CSV or PDF reports' },
   ],
   personas: [
     { id: 'persona-001', name: 'User', role: 'consumer', goals: ['Track spending'] },
   ],
   dataEntities: [
-    { id: 'entity-001', name: 'Expense', fields: [{ name: 'amount', type: 'number' }, { name: 'category', type: 'string' }] },
+    {
+      id: 'entity-001',
+      name: 'Expense',
+      fields: [
+        { name: 'amount', type: 'number', required: true },
+        { name: 'category', type: 'string', required: true },
+        { name: 'date', type: 'date', required: true },
+        { name: 'description', type: 'string', required: false },
+        { name: 'receipt', type: 'string', required: false },
+      ],
+    },
   ],
   screens: [
     { id: 'screen-001', name: 'Dashboard', description: 'Overview screen' },
@@ -64,7 +83,7 @@ const BASE_PRD: PRD = {
 
 function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
   return {
-    rawInput: 'Build expense tracker',
+    rawInput: 'Build me a personal expense tracker',
     mode: 'bootstrap',
     context: {},
     gaps: [],
@@ -80,6 +99,7 @@ function makeState(overrides: Partial<ClarifierState> = {}): ClarifierState {
     criticRetries: 0,
     criticPassed: false,
     escalationDecision: null,
+    threadId: '',
     ...overrides,
   };
 }
@@ -99,16 +119,62 @@ function makeMockDeps(): ClarifierDeps {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Intent-level deterministic checklist
+// ---------------------------------------------------------------------------
+
 describe('runDeterministicChecklist', () => {
-  it('detects missing auth when PRD has user data but no auth feature', () => {
-    const gaps = runDeterministicChecklist(BASE_PRD);
-    const authGap = gaps.find((g) => g.description.toLowerCase().includes('authentication'));
-    expect(authGap).toBeDefined();
-    expect(authGap!.category).toBe('missing');
-    expect(authGap!.deterministic).toBe(true);
+  it('generates scope confirmation gap in bootstrap mode round 0', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const scopeGap = gaps.find((g) => g.topic === 'Scope');
+    expect(scopeGap).toBeDefined();
+    expect(scopeGap!.category).toBe('missing');
+    expect(scopeGap!.confidence).toBe(0.05);
+    expect(scopeGap!.divergenceScore).toBe(1.0);
+    expect(scopeGap!.divergentInterpretations!.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('does not flag auth gap when PRD includes auth feature', () => {
+  it('scope confirmation options reflect PRD feature groups', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const scopeGap = gaps.find((g) => g.topic === 'Scope');
+    const labels = scopeGap!.divergentInterpretations!.map((o) => o.label);
+    expect(labels.some((l) => l.includes('Budget') || l.includes('goal'))).toBe(true);
+    expect(labels.some((l) => l.includes('Categor') || l.includes('organization'))).toBe(true);
+  });
+
+  it('scope confirmation marks seed-implied features as recommended', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const scopeGap = gaps.find((g) => g.topic === 'Scope');
+    const options = scopeGap!.divergentInterpretations!;
+    const coreGroup = options.find((o) => o.label === 'Core features');
+    if (coreGroup) {
+      expect(coreGroup.recommended).toBe(true);
+    }
+    const recommended = options.filter((o) => o.recommended);
+    expect(recommended.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not generate scope confirmation in evolution mode', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'evolution', 0);
+    const scopeGap = gaps.find((g) => g.topic === 'Scope');
+    expect(scopeGap).toBeUndefined();
+  });
+
+  it('does not generate scope confirmation in round > 0', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 1);
+    const scopeGap = gaps.find((g) => g.topic === 'Scope');
+    expect(scopeGap).toBeUndefined();
+  });
+
+  it('generates user-count gap when PRD has personal/user keywords but no auth', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const usersGap = gaps.find((g) => g.topic === 'Users');
+    expect(usersGap).toBeDefined();
+    expect(usersGap!.description).toContain('just for you');
+    expect(usersGap!.divergentInterpretations!.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does not flag user-count gap when PRD includes auth feature', () => {
     const prd: PRD = {
       ...BASE_PRD,
       features: [
@@ -116,52 +182,206 @@ describe('runDeterministicChecklist', () => {
         { id: 'feat-auth', name: 'Login', description: 'User authentication with password' },
       ],
     };
-    const gaps = runDeterministicChecklist(prd);
-    const authGap = gaps.find((g) => g.description.toLowerCase().includes('authentication'));
-    expect(authGap).toBeUndefined();
+    const gaps = runDeterministicChecklist(prd, 'Build expense tracker', 'bootstrap', 0);
+    const usersGap = gaps.find((g) => g.topic === 'Users');
+    expect(usersGap).toBeUndefined();
   });
 
-  it('detects missing validation rules when forms exist', () => {
-    const gaps = runDeterministicChecklist(BASE_PRD);
-    const validationGap = gaps.find((g) => g.description.toLowerCase().includes('validation'));
-    expect(validationGap).toBeDefined();
-    expect(validationGap!.category).toBe('missing');
+  it('generates platform gap when no platform keywords in seed', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const platformGap = gaps.find((g) => g.topic === 'Platform');
+    expect(platformGap).toBeDefined();
+    expect(platformGap!.description).toContain('web app');
+    expect(platformGap!.divergentInterpretations!.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('detects missing error handling', () => {
-    const gaps = runDeterministicChecklist(BASE_PRD);
-    const errorGap = gaps.find((g) => g.description.toLowerCase().includes('error'));
-    expect(errorGap).toBeDefined();
+  it('does not generate platform gap when seed mentions platform', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build a mobile expense tracker', 'bootstrap', 0);
+    const platformGap = gaps.find((g) => g.topic === 'Platform');
+    expect(platformGap).toBeUndefined();
   });
 
-  it('detects NFRs without measurable targets', () => {
-    const gaps = runDeterministicChecklist(BASE_PRD);
-    const nfrGap = gaps.find((g) => g.description.includes('NFR'));
-    expect(nfrGap).toBeDefined();
-    expect(nfrGap!.category).toBe('incomplete');
+  it('generates data-entry-style gap when entity has 4+ fields', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const dataEntryGap = gaps.find((g) => g.topic?.startsWith('Adding'));
+    expect(dataEntryGap).toBeDefined();
+    expect(dataEntryGap!.description).toContain('quick');
+    expect(dataEntryGap!.divergentInterpretations!.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('does not flag NFR targets when all have targets', () => {
+  it('does not generate data-entry gap when entity has < 4 fields', () => {
     const prd: PRD = {
       ...BASE_PRD,
-      nfrs: [{ id: 'nfr-001', category: 'performance', description: 'Fast loads', target: '<2s' }],
+      dataEntities: [
+        { id: 'entity-001', name: 'Item', fields: [{ name: 'name', type: 'string' }, { name: 'price', type: 'number' }] },
+      ],
     };
-    const gaps = runDeterministicChecklist(prd);
-    const nfrGap = gaps.find((g) => g.description.includes('NFR'));
-    expect(nfrGap).toBeUndefined();
+    const gaps = runDeterministicChecklist(prd, 'Build expense tracker', 'bootstrap', 0);
+    const dataEntryGap = gaps.find((g) => g.topic?.startsWith('Adding'));
+    expect(dataEntryGap).toBeUndefined();
   });
 
-  it('detects missing accessibility requirements', () => {
-    const gaps = runDeterministicChecklist(BASE_PRD);
-    const a11yGap = gaps.find((g) => g.description.toLowerCase().includes('accessibility'));
-    expect(a11yGap).toBeDefined();
+  it('generates phantom gaps for validation, errors, accessibility with divergenceScore 0', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+
+    const validationPhantom = gaps.find((g) => g.topic === 'Validation');
+    expect(validationPhantom).toBeDefined();
+    expect(validationPhantom!.divergenceScore).toBe(0.0);
+    expect(validationPhantom!.confidence).toBe(0.95);
+
+    const errorPhantom = gaps.find((g) => g.topic === 'Error handling');
+    expect(errorPhantom).toBeDefined();
+    expect(errorPhantom!.divergenceScore).toBe(0.0);
+
+    const a11yPhantom = gaps.find((g) => g.topic === 'Accessibility');
+    expect(a11yPhantom).toBeDefined();
+    expect(a11yPhantom!.divergenceScore).toBe(0.0);
+  });
+
+  it('generates performance phantom gap when NFRs lack targets', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const perfPhantom = gaps.find((g) => g.topic === 'Performance');
+    expect(perfPhantom).toBeDefined();
+    expect(perfPhantom!.divergenceScore).toBe(0.0);
+  });
+
+  it('all non-phantom deterministic gaps have at least 2 options', () => {
+    const gaps = runDeterministicChecklist(BASE_PRD, 'Build expense tracker', 'bootstrap', 0);
+    const nonPhantom = gaps.filter((g) =>
+      g.divergenceScore === undefined || g.divergenceScore >= 0.3,
+    );
+    for (const gap of nonPhantom) {
+      expect(gap.divergentInterpretations?.length ?? 0).toBeGreaterThanOrEqual(2);
+    }
   });
 });
 
+// ---------------------------------------------------------------------------
+// Feature grouping helpers
+// ---------------------------------------------------------------------------
+
+describe('categorizeFeature', () => {
+  it('categorizes budget-related features', () => {
+    expect(categorizeFeature('Budget Management', 'Set budget limits')).toBe('Budgets & goals');
+  });
+
+  it('categorizes category-related features', () => {
+    expect(categorizeFeature('Category Mgmt', 'Organize into categories')).toBe('Categories & organization');
+  });
+
+  it('categorizes export features', () => {
+    expect(categorizeFeature('Export', 'Export CSV data')).toBe('Data export & backup');
+  });
+
+  it('falls back to Core features for uncategorized', () => {
+    expect(categorizeFeature('Something', 'Does stuff')).toBe('Core features');
+  });
+});
+
+describe('groupFeaturesByIntent', () => {
+  it('groups features into semantic clusters', () => {
+    const groups = groupFeaturesByIntent(BASE_PRD, 'Build expense tracker');
+    const labels = groups.map((g) => g.label);
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('marks seed-implied groups as recommended', () => {
+    const groups = groupFeaturesByIntent(BASE_PRD, 'Build expense tracker');
+    const recommended = groups.filter((g) => g.recommended);
+    expect(recommended.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('buildDataEntryOptions', () => {
+  it('generates quick and detailed options', () => {
+    const entity = BASE_PRD.dataEntities[0];
+    const options = buildDataEntryOptions(entity);
+    expect(options.length).toBeGreaterThanOrEqual(2);
+    expect(options.find((o) => o.label === 'Quick entry')).toBeDefined();
+    expect(options.find((o) => o.label === 'Detailed entry')).toBeDefined();
+  });
+
+  it('adds flexible option when entity has optional fields', () => {
+    const entity = BASE_PRD.dataEntities[0];
+    const options = buildDataEntryOptions(entity);
+    expect(options.find((o) => o.label === 'Flexible')).toBeDefined();
+  });
+
+  it('omits flexible option when no optional fields', () => {
+    const entity = {
+      id: 'e1',
+      name: 'Item',
+      fields: [
+        { name: 'a', type: 'string', required: true },
+        { name: 'b', type: 'number', required: true },
+        { name: 'c', type: 'date', required: true },
+        { name: 'd', type: 'string', required: true },
+      ],
+    };
+    const options = buildDataEntryOptions(entity);
+    expect(options.find((o) => o.label === 'Flexible')).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ensureGapHasOptions
+// ---------------------------------------------------------------------------
+
+describe('ensureGapHasOptions', () => {
+  it('passes through gaps that already have 2+ options', () => {
+    const gap: Gap = {
+      id: 'g1',
+      description: 'Some question?',
+      category: 'missing',
+      confidence: 0.5,
+      deterministic: false,
+      divergentInterpretations: [
+        { label: 'A', description: 'a', recommended: true, source: 'llm' },
+        { label: 'B', description: 'b', recommended: false, source: 'llm' },
+      ],
+    };
+    const result = ensureGapHasOptions(gap);
+    expect(result).toBe(gap);
+  });
+
+  it('adds yes/no fallback when gap has no options', () => {
+    const gap: Gap = {
+      id: 'g2',
+      topic: 'Notifications',
+      description: 'Do you want notifications?',
+      category: 'missing',
+      confidence: 0.5,
+      deterministic: false,
+    };
+    const result = ensureGapHasOptions(gap);
+    expect(result.divergentInterpretations!.length).toBe(2);
+    expect(result.divergentInterpretations![0].label).toBe('Yes, include this');
+    expect(result.divergentInterpretations![1].label).toBe('No, skip for now');
+  });
+
+  it('skips phantom gaps (divergenceScore < 0.3)', () => {
+    const gap: Gap = {
+      id: 'g3',
+      description: 'Validation default',
+      category: 'missing',
+      confidence: 0.95,
+      deterministic: true,
+      divergenceScore: 0.0,
+    };
+    const result = ensureGapHasOptions(gap);
+    expect(result).toBe(gap);
+    expect(result.divergentInterpretations).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterAddressedGaps
+// ---------------------------------------------------------------------------
+
 describe('filterAddressedGaps', () => {
   const gaps: Gap[] = [
-    { id: 'gap-1', description: 'Auth missing', category: 'missing', confidence: 0.9, deterministic: true },
-    { id: 'gap-2', description: 'No validation', category: 'missing', confidence: 0.7, deterministic: true },
+    { id: 'gap-1', description: 'Users question', category: 'missing', confidence: 0.3, deterministic: true },
+    { id: 'gap-2', description: 'Platform question', category: 'missing', confidence: 0.4, deterministic: true },
   ];
 
   it('keeps gaps when no human responses exist', () => {
@@ -171,9 +391,9 @@ describe('filterAddressedGaps', () => {
 
   it('removes gaps whose questions have been answered', () => {
     const questions = [
-      { id: 'q-1', gapId: 'gap-1', text: 'Which auth?', type: 'open' as const, priority: 1, evpiScore: 0.9 },
+      { id: 'q-1', gapId: 'gap-1', text: 'Who uses it?', type: 'multiple-choice' as const, priority: 1, evpiScore: 0.9 },
     ];
-    const responses = [{ questionId: 'q-1', answer: 'OAuth2' }];
+    const responses = [{ questionId: 'q-1', answer: 'Just me' }];
     const result = filterAddressedGaps(gaps, questions, responses);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('gap-2');
@@ -181,12 +401,16 @@ describe('filterAddressedGaps', () => {
 
   it('keeps gaps whose questions were not answered', () => {
     const questions = [
-      { id: 'q-1', gapId: 'gap-1', text: 'Which auth?', type: 'open' as const, priority: 1, evpiScore: 0.9 },
+      { id: 'q-1', gapId: 'gap-1', text: 'Who uses it?', type: 'multiple-choice' as const, priority: 1, evpiScore: 0.9 },
     ];
     const result = filterAddressedGaps(gaps, questions, []);
     expect(result).toHaveLength(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// extractStructured
+// ---------------------------------------------------------------------------
 
 describe('extractStructured', () => {
   it('returns structured when available', () => {
@@ -209,6 +433,10 @@ describe('extractStructured', () => {
     expect(result).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// createGapDetector (integration with LLM)
+// ---------------------------------------------------------------------------
 
 describe('createGapDetector', () => {
   beforeEach(() => {
@@ -243,6 +471,21 @@ describe('createGapDetector', () => {
     expect(result.round).toBe(1);
   });
 
+  it('includes scope confirmation as first gap in bootstrap mode', async () => {
+    const deps = makeMockDeps();
+    (deps.provider.complete as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: { code: 'RATE_LIMITED', retryAfterMs: 5000 },
+    });
+
+    const node = createGapDetector(deps);
+    const result = await node(makeState());
+
+    const scopeGap = result.gaps!.find((g) => g.topic === 'Scope');
+    expect(scopeGap).toBeDefined();
+    expect(scopeGap!.confidence).toBe(0.05);
+  });
+
   it('merges deterministic and LLM gaps when both succeed', async () => {
     const deps = makeMockDeps();
     const completeMock = deps.provider.complete as jest.Mock;
@@ -274,9 +517,13 @@ describe('createGapDetector', () => {
         structured: {
           gaps: [
             {
-              description: 'Data export format not specified',
+              topic: 'Sharing',
+              description: 'Do you want to share your expenses with anyone?',
               category: 'missing',
-              interpretations: ['CSV export', 'JSON export', 'PDF report'],
+              options: [
+                { label: 'Just me', description: 'Keep it private.', rationale: 'Simplest option.', recommended: true, source: 'template' },
+                { label: 'Share with family', description: 'Family members can see spending.', rationale: 'Good for shared budgets.', recommended: false, source: 'template' },
+              ],
             },
           ],
         },
@@ -297,8 +544,8 @@ describe('createGapDetector', () => {
     const llmGaps = result.gaps!.filter((g) => !g.deterministic);
     expect(detGaps.length).toBeGreaterThan(0);
     expect(llmGaps.length).toBe(1);
-    expect(llmGaps[0].description).toBe('Data export format not specified');
-    expect(llmGaps[0].divergentInterpretations).toEqual(['CSV export', 'JSON export', 'PDF report']);
+    expect(llmGaps[0].topic).toBe('Sharing');
+    expect(llmGaps[0].divergentInterpretations!.map((o) => o.label)).toEqual(['Just me', 'Share with family']);
   });
 
   it('deduplicates LLM gaps that match deterministic gaps', async () => {
@@ -332,9 +579,13 @@ describe('createGapDetector', () => {
         structured: {
           gaps: [
             {
-              description: 'PRD references user data but does not specify an authentication strategy.',
+              topic: 'Users',
+              description: 'Is this just for you, or should multiple people have separate accounts?',
               category: 'missing',
-              interpretations: ['OAuth', 'JWT'],
+              options: [
+                { label: 'Single user', description: 'One person.', rationale: 'Simple.', recommended: true, source: 'llm' },
+                { label: 'Multi user', description: 'Multiple people.', rationale: 'More reach.', recommended: false, source: 'llm' },
+              ],
             },
           ],
         },
@@ -350,11 +601,9 @@ describe('createGapDetector', () => {
     const node = createGapDetector(deps);
     const result = await node(makeState());
 
-    const authGaps = result.gaps!.filter((g) =>
-      g.description.toLowerCase().includes('authentication'),
-    );
-    expect(authGaps).toHaveLength(1);
-    expect(authGaps[0].deterministic).toBe(true);
+    const usersGaps = result.gaps!.filter((g) => g.topic === 'Users');
+    expect(usersGaps).toHaveLength(1);
+    expect(usersGaps[0].deterministic).toBe(true);
   });
 
   it('passes claude-sonnet-4-6 and correct schemas to provider', async () => {
@@ -397,7 +646,7 @@ describe('createGapDetector', () => {
     });
 
     const existingGaps: Gap[] = [
-      { id: 'det-missing-0', description: 'Auth missing', category: 'missing', confidence: 0.9, deterministic: true },
+      { id: 'det-users-0', description: 'Is this just for you, or should multiple people have separate accounts?', category: 'missing', confidence: 0.3, deterministic: true },
     ];
 
     const node = createGapDetector(deps);
@@ -405,14 +654,127 @@ describe('createGapDetector', () => {
       makeState({
         round: 1,
         gaps: existingGaps,
-        questions: [{ id: 'q-1', gapId: 'det-missing-0', text: 'Auth?', type: 'open', priority: 1, evpiScore: 0.9 }],
-        humanResponses: [{ questionId: 'q-1', answer: 'Use OAuth2' }],
+        questions: [{ id: 'q-1', gapId: 'det-users-0', text: 'Users?', type: 'multiple-choice', priority: 1, evpiScore: 0.9 }],
+        humanResponses: [{ questionId: 'q-1', answer: 'Just me' }],
       }),
     );
 
-    const authGaps = result.gaps!.filter((g) =>
-      g.description.toLowerCase().includes('authentication'),
+    const usersGaps = result.gaps!.filter((g) => g.topic === 'Users');
+    expect(usersGaps).toHaveLength(0);
+  });
+
+  it('ensures all non-phantom gaps have options after processing', async () => {
+    const deps = makeMockDeps();
+    const completeMock = deps.provider.complete as jest.Mock;
+
+    completeMock.mockResolvedValueOnce({
+      ok: true,
+      value: {
+        content: '',
+        structured: {
+          implementations: [
+            { approach: 'A', keyDecisions: ['d1'] },
+            { approach: 'B', keyDecisions: ['d2'] },
+            { approach: 'C', keyDecisions: ['d3'] },
+          ],
+        },
+        toolCalls: [],
+        usage: { inputTokens: 100, outputTokens: 200 },
+        cost: { inputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() },
+        model: 'claude-sonnet-4-6',
+        latencyMs: 500,
+        finishReason: 'stop',
+      },
+    });
+
+    completeMock.mockResolvedValueOnce({
+      ok: true,
+      value: {
+        content: '',
+        structured: {
+          gaps: [
+            {
+              topic: 'Data retention',
+              description: 'How long should data be kept?',
+              category: 'ambiguous',
+              options: [],
+            },
+          ],
+        },
+        toolCalls: [],
+        usage: { inputTokens: 100, outputTokens: 100 },
+        cost: { inputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() },
+        model: 'claude-sonnet-4-6',
+        latencyMs: 500,
+        finishReason: 'stop',
+      },
+    });
+
+    const node = createGapDetector(deps);
+    const result = await node(makeState());
+
+    const nonPhantom = result.gaps!.filter((g) =>
+      g.divergenceScore === undefined || g.divergenceScore >= 0.3,
     );
-    expect(authGaps).toHaveLength(0);
+    for (const gap of nonPhantom) {
+      expect(gap.divergentInterpretations?.length ?? 0).toBeGreaterThanOrEqual(2);
+    }
+  });
+});
+
+describe('gapContentId', () => {
+  it('produces stable IDs for the same topic+description', () => {
+    const id1 = gapContentId('Auth', 'No authentication strategy');
+    const id2 = gapContentId('Auth', 'No authentication strategy');
+    expect(id1).toBe(id2);
+  });
+
+  it('produces different IDs for different content', () => {
+    const id1 = gapContentId('Auth', 'No authentication strategy');
+    const id2 = gapContentId('Storage', 'Data persistence unclear');
+    expect(id1).not.toBe(id2);
+  });
+
+  it('starts with llm- prefix', () => {
+    const id = gapContentId('Topic', 'Description');
+    expect(id).toMatch(/^llm-[a-f0-9]{8}$/);
+  });
+
+  it('handles empty topic', () => {
+    const id = gapContentId('', 'Some description');
+    expect(id).toMatch(/^llm-[a-f0-9]{8}$/);
+  });
+});
+
+describe('filterAskedGaps', () => {
+  const gaps: Gap[] = [
+    { id: 'gap-1', description: 'Auth missing', category: 'missing', confidence: 0.3, deterministic: true },
+    { id: 'gap-2', description: 'Storage unclear', category: 'ambiguous', confidence: 0.4, deterministic: true },
+    { id: 'gap-3', description: 'Platform choice', category: 'missing', confidence: 0.2, deterministic: true },
+  ];
+
+  it('removes gaps that had questions generated (even if unanswered)', () => {
+    const questions = [
+      { id: 'q-0-0', gapId: 'gap-1', text: 'Auth?', type: 'open' as const, priority: 1, evpiScore: 0.8 },
+      { id: 'q-0-1', gapId: 'gap-2', text: 'Storage?', type: 'open' as const, priority: 2, evpiScore: 0.6 },
+    ];
+
+    const result = filterAskedGaps(gaps, questions);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.id).toBe('gap-3');
+  });
+
+  it('keeps all gaps when no questions exist', () => {
+    const result = filterAskedGaps(gaps, []);
+    expect(result).toHaveLength(3);
+  });
+
+  it('handles gaps with no matching questions', () => {
+    const questions = [
+      { id: 'q-0-0', gapId: 'gap-unknown', text: 'Unknown?', type: 'open' as const, priority: 1, evpiScore: 0.5 },
+    ];
+
+    const result = filterAskedGaps(gaps, questions);
+    expect(result).toHaveLength(3);
   });
 });

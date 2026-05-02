@@ -32,11 +32,9 @@ agentforge design:generate
 - `modal` — confirmation dialogs
 - `sheet` — bottom panels
 
-**Gotcha: Page IDs change on regeneration.** The LLM generates new
-descriptive IDs (`dashboard`, `claims-list`) that don't match existing
-design files (`page-001.json`). Existing designs become orphaned.
-Dashboard shows "Ready to design" for pages that have designs under old
-names. Manual rename required.
+!!! warning "Gotcha: Page IDs change on regeneration"
+
+    The LLM generates new descriptive IDs (`dashboard`, `claims-list`) that don't match existing design files (`page-001.json`). Existing designs become orphaned. Dashboard shows "Ready to design" for pages that have designs under old names. Manual rename required.
 
 ---
 

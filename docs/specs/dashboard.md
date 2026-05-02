@@ -94,7 +94,7 @@ The dashboard uses a persistent three-panel layout visible on every screen. This
 
 - **Logo and version:** AgentForge logo at the top with the current version number.
 - **Navigation items:** 10 nav items with icons, displayed vertically:
-  1. **Pipeline** — SDLC phase pipeline (landing page)
+  1. **Runs** — Spine execution history (formerly Pipeline)
   2. **Tasks** — Kanban board and list view
   3. **Approvals** — HITL approval queue (shows pending count badge)
   4. **Spec** — Living specification viewer
@@ -142,17 +142,20 @@ A persistent right panel providing real-time context. The sidebar is collapsible
 
 ---
 
-### 4.1 Pipeline View
+### 4.1 Runs View (formerly Pipeline View)
 
-The Pipeline View is the landing page. It shows the five SDLC phases (Design, Spec, Code Gen, CI/CD, Observe) as a horizontal progression with real-time status indicators.
+> **Updated 2026-04-29 (CHIP UX Phase 4.0, ADR-050).** The old 5-phase model (Design/Spec/Code Gen/CI/CD/Observe) was replaced with the 4-stage spine (Clarifier/Architect/Implementer/Reviewer) per `docs/vision.md` Layer 3. The Home page (`/`) is now the landing page.
+
+The Runs view (`/pipeline`) shows spine execution history with a stage-timeline rail and run history table.
 
 #### 4.1.1 Requirements
 
-- Each phase card shows: phase name, status (`pending`/`active`/`complete`), task count (done/total), accumulated cost, and a progress bar.
-- The active phase card has a visual pulse/glow treatment and a top accent bar.
-- Click a phase card to navigate to the Tasks view filtered to that phase.
-- Summary statistics row below: total tasks, phase cost vs budget, active agent count, average task completion time, and trend indicators.
-- **Real-time:** phase status and task counts update via WebSocket without page refresh.
+- **Spine stage rail:** Horizontal visualization of the 4-stage spine (Clarify, Architect, Implement, Review) with active stage highlighting, HITL gate indicators between stages, and "Upcoming" badges on unimplemented stages.
+- **Run history table:** Lists recent runs with status dot, type label, stage, started time, duration, and cost. Click to expand detail panel showing per-stage timeline, cost breakdown, and error info.
+- **Emergency controls:** Pause All and Abort All buttons in the page header. Disabled when no active run. Abort requires confirmation modal.
+- **Empty state:** "No pipeline runs yet" with link to `/new`.
+- **Real-time:** 2-second polling via `useRunProgress` hook (SSE deferred per ADR-050).
+- **Graph visualization:** Deferred per ADR-050. Stage-timeline rail is interim; React Flow graph planned when 2+ stages are implemented.
 
 ---
 

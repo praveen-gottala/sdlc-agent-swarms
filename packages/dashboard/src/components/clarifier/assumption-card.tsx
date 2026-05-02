@@ -4,9 +4,10 @@ import { useState } from 'react';
 
 interface AssumptionEntry {
   readonly id: string;
-  readonly description: string;
+  readonly statement: string;
+  readonly evidence: string;
   readonly confidence: number;
-  readonly source: string;
+  readonly blastRadius: string;
   readonly requiresConfirmation: boolean;
 }
 
@@ -27,7 +28,7 @@ function confidenceBg(confidence: number): string {
 }
 
 export function AssumptionCard({ entries }: AssumptionCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const needsConfirmation = entries.filter((e) => e.requiresConfirmation);
 
   if (entries.length === 0) return null;
@@ -70,12 +71,17 @@ export function AssumptionCard({ entries }: AssumptionCardProps) {
                   {entry.requiresConfirmation ? '⚠' : '✓'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary">{entry.description}</p>
+                  <p className="text-sm text-text-primary">{entry.statement}</p>
+                  {entry.evidence && (
+                    <p className="mt-0.5 text-xs text-text-secondary">{entry.evidence}</p>
+                  )}
                   <div className="mt-1 flex items-center gap-3">
                     <span className={`text-xs font-medium ${confidenceColor(entry.confidence)}`}>
                       {Math.round(entry.confidence * 100)}% confidence
                     </span>
-                    <span className="text-xs text-text-muted">{entry.source}</span>
+                    {entry.blastRadius && (
+                      <span className="text-xs text-text-muted">Blast radius: {entry.blastRadius}</span>
+                    )}
                   </div>
                 </div>
               </div>

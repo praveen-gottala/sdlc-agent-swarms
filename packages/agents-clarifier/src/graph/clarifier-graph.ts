@@ -26,6 +26,7 @@ import { createGapDetector } from '../nodes/gap-detector.js';
 import { createQuestionPrioritizer } from '../nodes/question-prioritizer.js';
 import { createStoryWriter } from '../nodes/story-writer.js';
 import { createCritic } from '../nodes/critic.js';
+import { createPrdUpdater } from '../nodes/prd-updater.js';
 
 function hasUnresolvedGaps(state: ClarifierState): boolean {
   const answeredGapIds = new Set(
@@ -41,7 +42,7 @@ function routeAfterCritic(state: ClarifierState): string {
     return 'storyWriter';
   }
   if (state.round < state.maxRounds && hasUnresolvedGaps(state)) {
-    return 'gapDetector';
+    return 'prdUpdater';
   }
   if (state.round >= state.maxRounds) {
     return 'escalationGate';
@@ -51,7 +52,7 @@ function routeAfterCritic(state: ClarifierState): string {
 
 function routeAfterEscalation(state: ClarifierState): string {
   if (state.escalationDecision === 'accept') return 'emitComplete';
-  if (state.escalationDecision === 'restart') return 'gapDetector';
+  if (state.escalationDecision === 'restart') return 'prdUpdater';
   return END;
 }
 
@@ -78,11 +79,13 @@ export function buildClarifierGraph(deps: ClarifierDeps) {
     .addNode('questionPrioritizer', createQuestionPrioritizer(deps))
     .addNode('storyWriter', createStoryWriter(deps))
     .addNode('critic', createCritic(deps))
+    .addNode('prdUpdater', createPrdUpdater(deps))
     .addNode('escalationGate', escalationGate)
     .addNode('emitComplete', emitComplete)
     .addEdge('__start__', 'contextRetriever')
     .addEdge('contextRetriever', 'prdAnalyzer')
     .addEdge('prdAnalyzer', 'gapDetector')
+    .addEdge('prdUpdater', 'gapDetector')
     .addEdge('gapDetector', 'questionPrioritizer')
     .addEdge('questionPrioritizer', 'storyWriter')
     .addEdge('storyWriter', 'critic')

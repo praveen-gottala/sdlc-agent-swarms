@@ -389,6 +389,12 @@ export interface RequirementsClarified extends BaseDomainEventFields {
   readonly roundCount: number;
   readonly assumptionCount: number;
   readonly confidence: number;
+  readonly mcQuestionCount?: number;
+  readonly recommendedAcceptanceRate?: number;
+  readonly otherUsageRate?: number;
+  readonly optionSelectionRate?: number;
+  readonly optionSourceDistribution?: Record<string, number>;
+  readonly autoResolvedAssumptionCount?: number;
 }
 
 /** Fired when a pipeline run progresses through stages. */

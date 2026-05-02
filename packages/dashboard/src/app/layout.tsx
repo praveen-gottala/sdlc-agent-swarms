@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         <ColorSchemeScript defaultColorScheme="dark" />
       </head>
       <body className="min-h-screen bg-bg-base text-text-primary antialiased">

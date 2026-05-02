@@ -15,6 +15,10 @@ export type {
   Gap,
   Question,
   HumanResponse,
+  StructuredOption,
+  OptionSource,
+  PipelineStageRecord,
+  QALogEntry,
 } from './types.js';
 
 // Deps
@@ -26,6 +30,8 @@ export {
   QuestionSchema,
   ClarifierContextSchema,
   HumanResponseSchema,
+  StructuredOptionSchema,
+  OptionSourceSchema,
 } from './schemas.js';
 
 // Node factories
@@ -36,6 +42,7 @@ export {
   createQuestionPrioritizer,
   createStoryWriter,
   createCritic,
+  createPrdUpdater,
 } from './nodes/index.js';
 
 // Graph
@@ -50,5 +57,15 @@ export {
 export type { ClarifierStateType } from './graph/index.js';
 
 // Pipeline runner
-export { runClarifierPipeline } from './run.js';
-export type { ClarifierInput, ClarifierOutput, ClarifierError } from './run.js';
+export { runClarifierPipeline, runClarifierPipelineStream } from './run.js';
+export type { ClarifierInput, ClarifierOutput, ClarifierError, ClarifierStreamEvent } from './run.js';
+
+// Pipeline execution trace
+export {
+  appendStageRecord,
+  appendQALog,
+  readExecutionLog,
+  readQALog,
+  readStageIO,
+  readLastSequence,
+} from './pipeline-trace.js';

@@ -1640,14 +1640,19 @@ function DesignStudioContent() {
       <div
         onMouseDown={handleInspectorResizeStart}
         style={{
-          width: 4,
+          width: 8,
           cursor: 'col-resize',
           flexShrink: 0,
-          background: isInspectorResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
-          transition: isInspectorResizing ? 'none' : 'background 150ms',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
-        className="hover:bg-border"
-      />
+        className={`group ${isInspectorResizing ? 'bg-accent-blue/20' : ''}`}
+      >
+        <div className={`h-8 w-1 rounded-full transition-opacity ${
+          isInspectorResizing ? 'opacity-100 bg-accent-blue/60' : 'opacity-0 group-hover:opacity-100 bg-text-muted/40'
+        }`} />
+      </div>
       <div className="flex-shrink-0 border-l border-border overflow-hidden flex flex-col" style={{ width: inspectorWidth, transition: isInspectorResizing ? 'none' : 'width 200ms ease' }}>
         <DesignInspector
           selectedNode={selectedNode}

@@ -49,8 +49,6 @@ LangGraph `StateGraph` with `Annotation.Root()` typed channels. Six nodes proces
 - **Question budget:** Micro features 0-2, standard epics 3-7, cross-cutting max 15 per round, max 3 rounds.
 - **Escalation:** After max rounds, user chooses accept (best-effort PRD, confidence capped at 0.5), restart, or abandon.
 
-116 tests across 7 test suites.
-
 ### Architect (specified, not yet implemented)
 
 Consumes `EnrichedRequirement`. Produces `ArchitectureSpec`, ADRs, and `TaskPlan` (DAG of scoped implementation tasks). Invokes design subagent for screen-level UI proposals.
