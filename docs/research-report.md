@@ -1,19 +1,12 @@
 # The Ideal Autonomous SDLC Framework for 2026
 
-## How to use this report
+!!! info "How to use this report"
 
-This is the deep-dive research that grounds ARCHON's architectural decisions. 
-Read it linearly when you want to understand a topic in full.
-
-For other reading modes:
-- Current architectural decisions → `vision.md`
-- Why we rejected alternatives → `design-decisions.md`
-
-This document is the most stable. Updated only when major new research lands.
+    This document captures the research that informed CHIP's architecture. Read it linearly when you want to understand a topic in full. Part 4 gap analysis reflects the state at time of writing; see [vision.md](vision.md) for current architectural decisions and [design-decisions.md](design-decisions.md) for rejected alternatives.
 
 ## Executive summary
 
-The ideal 2026 framework for bootstrapping a new application from a PRD is **not a ten-role agent cosplay on top of an event bus**. Across EPAM's ADLC, AWS's AI-DLC, GitHub's Copilot coding agent, Anthropic's research-system essay, and Cognition's "Don't Build Multi-Agents," the evidence converges on a different shape: **a thin, deterministic vertical spine (Clarify → Architect → Implement → Review) orchestrated as a durable, checkpointed graph, with horizontal specialists invoked as tools, a single writer per artifact, and structural HITL gates between phases**. Role personas are theatre; context engineering is the actual game.
+Across EPAM's ADLC, AWS's AI-DLC, GitHub's Copilot coding agent, Anthropic's research-system essay, and Cognition's "Don't Build Multi-Agents," the evidence converges on a specific shape: **a thin, deterministic vertical spine (Clarify → Architect → Implement → Review) orchestrated as a durable, checkpointed graph, with horizontal specialists invoked as tools, a single writer per artifact, and structural HITL gates between phases**. Context engineering — getting the right information into each LLM call — is the primary discipline.
 
 Four design decisions dominate everything else:
 
@@ -30,12 +23,22 @@ The rest of this report builds out these claims.
 
 ### The agent taxonomy problem
 
-The AgentForge baseline (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs) reflects how human org charts look, not how LLMs succeed. Two converging pieces of evidence reject this decomposition:
+The CHIP baseline (PM, Product, Architect, Design, Impl, Testing, Review, DevOps, Security, Docs) reflects how human org charts look, not how LLMs succeed. Two converging pieces of evidence reject this decomposition:
 
 - **Cognition's "Don't Build Multi-Agents"** (Jun 2025) argues that coordinated writes across parallel agents produce incompatible outputs the orchestrator cannot safely merge. Every coding agent that went to production single-threaded — Devin, Claude Code, Cursor Composer — did so for this reason.
 - **Anthropic's "How we built our multi-agent research system"** validates the opposite for *reads*: one lead plus N parallel subagents beat single-agent by 90.2% on research breadth at ~15× token cost.
 
 The synthesis is a **thin vertical spine with horizontal specialists**:
+
+```mermaid
+graph LR
+    C[Clarifier] --> A[Architect] --> I[Implementer] --> R[Reviewer]
+    A -.->|tool| D[Design]
+    I -.->|tool| T[Test Gen]
+    I -.->|tool| S[Security]
+    R -.->|tool| V[Visual Validator]
+    C -.->|tool| Res[Research]
+```
 
 **Vertical spine (sequential DAG, one writer at a time):**
 1. **Clarifier** — reads PRD + codebase + docs, runs the clarification pipeline, emits an enriched PRD plus assumption ledger. Gated: must finish before Phase 2.
@@ -52,7 +55,7 @@ The synthesis is a **thin vertical spine with horizontal specialists**:
 
 Why this works: the spine is predictable and resumable; specialists are read-heavy or narrow-write, which is the safe multi-agent regime; only one writer touches any given artifact at a time, eliminating merge hell; specialists can be parallelised without cross-contamination because they return summaries, not raw outputs.
 
-The **PM Agent and Product Agent in the AgentForge baseline are overhead.** Their job is absorbed into the Clarifier + Architect pair. The **DevOps Agent and Docs Agent** should also be demoted to specialists invoked during Implementation, not spine-level agents — they do not own a phase, they own a narrow write inside a phase.
+The **PM Agent and Product Agent in the CHIP baseline are overhead.** Their job is absorbed into the Clarifier + Architect pair. The **DevOps Agent and Docs Agent** should also be demoted to specialists invoked during Implementation, not spine-level agents — they do not own a phase, they own a narrow write inside a phase.
 
 ### Orchestration model
 
@@ -79,7 +82,7 @@ Five patterns, ranked by fit:
 4. **Event stream (OpenTelemetry)** — for observability, not control flow. Everything the spine does gets traced; nothing in the spine makes decisions based on arbitrary events from the bus.
 5. **Direct handoff (control transfer)** — avoid unless the receiver genuinely owns the next phase. Hard to trace; drops context at the boundary.
 
-This kills the "event bus as primary orchestration" choice in the AgentForge baseline. The event bus belongs in the telemetry plane, not the coordination plane. Agents coordinate through typed state transitions and explicit tool calls.
+This kills the "event bus as primary orchestration" choice in the CHIP baseline. The event bus belongs in the telemetry plane, not the coordination plane. Agents coordinate through typed state transitions and explicit tool calls.
 
 ### Document system: living docs, specs, artifacts, ephemeral
 
@@ -92,7 +95,7 @@ Adopt a four-tier artifact system aligned with how Kiro, AI-DLC, and Claude Code
 | **Generated artifacts** | Phase outputs | Code, tests, plans, diffs | Owned by agent; reviewed by human; committed or rejected |
 | **Ephemeral context** | Subagent results, tool outputs | Search results, raw file contents | Die at end of turn; only summaries survive |
 
-The **EARS format** ("WHEN <condition> THE SYSTEM SHALL <behavior>") should be the backbone for acceptance criteria — it's a constrained extension of temporal logic, produces testable output, and is Kiro's battle-tested choice. Every Story carries EARS ACs plus optional Gherkin for BDD teams.
+The **EARS format** ("WHEN <condition> THE SYSTEM SHALL <behavior>") should be the backbone for acceptance criteria — it's a constrained extension of temporal logic, produces testable output, and is Kiro's validated choice. Every Story carries EARS ACs plus optional Gherkin for BDD teams.
 
 Every Epic, Story, and AC must carry `codebase_refs` validated against the actual repo (file + line exists) before being emitted. This kills hallucinated-reference failures at source.
 
@@ -123,7 +126,7 @@ Grounded RAG changes the character of every question. Instead of asking "how sho
 
 Quality gates must be **deterministic and structural**, not "a smarter reviewer agent." In order of importance:
 
-1. **Tests pass.** Non-negotiable. Agents in tight test-write-run-fix loops are the highest-productivity delegation pattern observed.
+1. **Tests pass.** The baseline gate. Agents in tight test-write-run-fix loops are the highest-productivity delegation pattern observed.
 2. **Typechecker and linter block commit.** `tsc --noEmit`, `mypy --strict` on changed files, Ruff/ESLint. Catches 30–50% of looks-right-but-broken outputs.
 3. **Per-hunk diff review** (Cursor/Zed pattern). Not "accept all"; not "read the whole PR." Per-hunk is the measured sweet spot for reviewer attention.
 4. **Fresh-context reviewer subagent.** Catches what the Implementer's context-rotted attention could no longer see. Standard Anthropic pattern.
@@ -143,7 +146,7 @@ The enterprise research converges on a surprisingly consistent set of principles
 - **GitHub Copilot coding agent** is the reference implementation for sandboxed autonomous execution: ephemeral Actions container, firewalled egress with default allowlist, trusted MCP gateway in a separate container, API proxy holding LLM tokens (a "zero-secret agent" design), required human approval before any CI runs, CodeQL autofix on generated code. This is the most detailed publicly documented security architecture in the space.
 - **Gartner's "agent washing" warning and 40%-cancellation-by-2027 prediction** are genuine signals. Gate autonomy by risk tier; default to PR-based async for production workloads; budget explicitly for failed experiments.
 
-One important terminology clarification: four different things are all called ADLC/AI-DLC/Agentic-SDLC in 2025–2026 literature. EPAM/IBM/Salesforce mean "lifecycle for building AI agents themselves." AWS means "process for using agents to build software." Cycode means "evolution of existing SDLC with autonomous code generation." AI-SDLC means "human-led SDLC with AI assistants." AgentForge is mostly in the third and fourth buckets — don't let vendor docs from the first two confuse the design.
+One important terminology clarification: four different things are all called ADLC/AI-DLC/Agentic-SDLC in 2025–2026 literature. EPAM/IBM/Salesforce mean "lifecycle for building AI agents themselves." AWS means "process for using agents to build software." Cycode means "evolution of existing SDLC with autonomous code generation." AI-SDLC means "human-led SDLC with AI assistants." CHIP is mostly in the third and fourth buckets — don't let vendor docs from the first two confuse the design.
 
 ### Lessons from agentic coding tools
 
@@ -165,7 +168,7 @@ What fails in production, observed across Devin, Cursor, Copilot Workspace, Repl
 - **Hallucinated features and APIs** (Devin on Railway's deployment constraints): the agent presses forward on infeasible tasks rather than flagging infeasibility.
 - **Project-convention blindness** (Devin on nbdev/Quarto): custom toolchains regularly defeat autonomous agents regardless of docs.
 
-Devin's actual success rate deserves direct citation. Answer.AI's month-long controlled test (Hamel Husain, Isaac Flath, Johno Whitaker, Jan 2025) ran 20 tasks and recorded **3 successes, 14 failures, 3 inconclusive**, with no reliable signal for which tasks would succeed. Their verdict: "tasks it can do are those that are so small and well-defined that I may as well do them myself faster." Devin's contribution was productization (Slack UX, sandbox, async work), not autonomous capability. Plan AgentForge around the same limits Devin hit and don't believe benchmark numbers without trajectory-level inspection.
+Devin's actual success rate deserves direct citation. Answer.AI's month-long controlled test (Hamel Husain, Isaac Flath, Johno Whitaker, Jan 2025) ran 20 tasks and recorded **3 successes, 14 failures, 3 inconclusive**, with no reliable signal for which tasks would succeed. Their verdict: "tasks it can do are those that are so small and well-defined that I may as well do them myself faster." Devin's contribution was productization (Slack UX, sandbox, async work), not autonomous capability. Plan CHIP around the same limits Devin hit and don't believe benchmark numbers without trajectory-level inspection.
 
 ---
 
@@ -181,7 +184,7 @@ The RAG-vs-agentic-search debate is a false dichotomy. Cursor's Nov 2025 A/B tes
 
 **Reranking adds more than changing embedding model.** Voyage Rerank-2.5 beats Cohere Rerank 3.5 by +12.70% average on MAIR with 32K context and instruction-following. Cohere 3.5 is the easier default (4K context, cheaper, simpler integration). **If you can only add one thing to a baseline RAG, add a reranker, not a better embedding model.**
 
-**Hybrid retrieval (BM25 + dense) is the production default** for code specifically, because embeddings cannot match rare tokens, error codes, or exact identifiers. BM25 handles those; dense handles semantic queries. Reciprocal Rank Fusion (k=60) is the robust combiner; score-level fusion is brittle.
+**Hybrid retrieval (BM25 + dense) is the production default** for code specifically, because embeddings cannot match rare tokens, error codes, or exact identifiers. BM25 handles those; dense handles semantic queries. Reciprocal Rank Fusion (k=60) is the reliable combiner; score-level fusion is brittle.
 
 **GraphRAG over code is largely overhyped.** The structural relationships Microsoft GraphRAG extracts expensively with LLM calls are already in the AST and import graph — tree-sitter and LSP give them for free and accurately. The ICLR'26 "Do We Still Need GraphRAG?" benchmark finds agentic search over vector RAG closes the gap significantly. Full GraphRAG indexing of 1MB of text costs real money ($0.40+/query in user-reported setups). LazyGraphRAG (Nov 2024) cuts indexing cost ~1000× and query cost to 4%, which makes it the only sane GraphRAG variant to consider for docs. Skip it for code entirely. Consider it for docs only if you have measurable need for global multi-hop ADR/PRD questions.
 
@@ -194,21 +197,32 @@ The RAG-vs-agentic-search debate is a false dichotomy. Cursor's Nov 2025 A/B tes
 - Current retrievers fail on harder tasks (DS-1000, ODEX, SWE-Bench); repo-level is where the gap is widest.
 - External docs add little to repo-level code completion — **local repo context dominates**. Spend retrieval effort on the local codebase first.
 
-### Tool comparison matrix
+```mermaid
+graph TD
+    Q[Code Query] --> RM[Repo Map<br/>tree-sitter + PageRank]
+    Q --> SS[Semantic Search<br/>voyage-code-3 + Qdrant]
+    Q --> G[Grep<br/>ripgrep direct]
+    RM -->|structural context| CTX[LLM Context Window]
+    SS -->|semantic matches| RR[Cohere Rerank 3.5]
+    G -->|exact matches| CTX
+    RR -->|re-ranked| CTX
+```
 
-| Tool | Setup (hrs) | Maintenance | Code quality | Doc quality | Self-host | Agentic fit | Recommendation |
-|---|---|---|---|---|---|---|---|
-| Sourcegraph Cody + code graph | 16–40 | Low | ⭐⭐⭐⭐⭐ | ⭐⭐ | Enterprise only | ⭐⭐⭐ | Skip — Cody discontinued July 2025, Amp spin-out creates vendor uncertainty |
-| **Aider repo map (standalone or RepoMapper)** | **1–2** | **Very low** | ⭐⭐⭐⭐ | N/A | Yes | ⭐⭐⭐⭐ | **Use as primary code-structure tool** |
-| Continue.dev indexing | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐ | Yes | ⭐⭐ | Skip — IDE-coupled, pivoting to CI/PR checks; steal the architecture instead |
-| **LlamaIndex + CodeSplitter** | **4–8** | **Medium** | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐ | **Use as doc backbone** |
-| Haystack 2.x | 8–16 | Medium | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐ | Viable enterprise alternative if already a deepset shop |
-| **LangChain + LangGraph** | **4–8** | **Medium** | ⭐⭐ (for chunking) | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐⭐ | **Use LangGraph for orchestration; not for code splitting** |
-| Microsoft GraphRAG (full) | 16–40 | High | ⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐ | Skip — $10–50 indexing, $0.10–0.40/query; use LazyGraphRAG if any graph layer |
-| Self-built tree-sitter + Qdrant/pgvector | 16–40 | You own it | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐⭐ | Strong option if team has capacity |
-| Cognee | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐ | Yes | ⭐⭐⭐ | Skip for indexing; revisit for cross-session agent memory |
-| Mem0 | 2–4 | Low | N/A | N/A | Yes | ⭐⭐⭐⭐ (wrong problem) | **Skip** — 97.8% junk rate in a public production audit; not a RAG tool |
-| LightRAG | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐ | Maybe for docs if global multi-hop queries matter; skip for code |
+??? example "Tool comparison matrix"
+
+    | Tool | Setup (hrs) | Maintenance | Code quality | Doc quality | Self-host | Agentic fit | Recommendation |
+    |---|---|---|---|---|---|---|---|
+    | Sourcegraph Cody + code graph | 16–40 | Low | ⭐⭐⭐⭐⭐ | ⭐⭐ | Enterprise only | ⭐⭐⭐ | Skip — Cody discontinued July 2025, Amp spin-out creates vendor uncertainty |
+    | **Aider repo map (standalone or RepoMapper)** | **1–2** | **Very low** | ⭐⭐⭐⭐ | N/A | Yes | ⭐⭐⭐⭐ | **Use as primary code-structure tool** |
+    | Continue.dev indexing | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐ | Yes | ⭐⭐ | Skip — IDE-coupled, pivoting to CI/PR checks; steal the architecture instead |
+    | **LlamaIndex + CodeSplitter** | **4–8** | **Medium** | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐ | **Use as doc backbone** |
+    | Haystack 2.x | 8–16 | Medium | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐ | Viable enterprise alternative if already a deepset shop |
+    | **LangChain + LangGraph** | **4–8** | **Medium** | ⭐⭐ (for chunking) | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐⭐ | **Use LangGraph for orchestration; not for code splitting** |
+    | Microsoft GraphRAG (full) | 16–40 | High | ⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐ | Skip — $10–50 indexing, $0.10–0.40/query; use LazyGraphRAG if any graph layer |
+    | Self-built tree-sitter + Qdrant/pgvector | 16–40 | You own it | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐⭐⭐ | Strong option if team has capacity |
+    | Cognee | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐ | Yes | ⭐⭐⭐ | Skip for indexing; revisit for cross-session agent memory |
+    | Mem0 | 2–4 | Low | N/A | N/A | Yes | ⭐⭐⭐⭐ (wrong problem) | **Skip** — 97.8% junk rate in a public production audit; not a RAG tool |
+    | LightRAG | 4–8 | Medium | ⭐⭐⭐ | ⭐⭐⭐⭐ | Yes | ⭐⭐⭐ | Maybe for docs if global multi-hop queries matter; skip for code |
 
 ### POC recommendation with trade-offs for leadership
 
@@ -260,7 +274,7 @@ LangGraph outer spine orchestrator
 - Self-hosted Qdrant on t3.medium: **~$30/month**
 - Query embedding: ~$0.54/month
 - Reranking (Cohere 3.5 at ~$0.002/query): ~$60/month
-- LLM inference (Claude Sonnet 4.5, dominant cost): **$300–1,500/month** depending on model
+- LLM inference (Claude Sonnet 4.6, dominant cost): **$300–1,500/month** depending on model
 - Total infra ex-LLM: **~$100/month**
 
 LLM inference dominates by 10–50×. The RAG layer itself is not where cost lives. Compare this honestly against GraphRAG: full Microsoft GraphRAG would add ~$47 one-time indexing plus $100–400/day in query costs at 1000 q/day — **an additional $3,000–12,000/month for marginal gains on code that are not measurable in published benchmarks**.
@@ -277,7 +291,7 @@ LLM inference dominates by 10–50×. The RAG layer itself is not where cost liv
 
 **Weeks 5–6 — spine integration.** Clarifier → Architect → Implementer → Reviewer spine in LangGraph with typed channels, checkpointers, and interrupt-based HITL at phase boundaries. Git worktree isolation for parallel tasks. Reviewer subagent pattern. Test/type/lint gates. ~10 days.
 
-**Sequencing:** See `roadmap.md` for the phased rollout plan with exit criteria and decision gates per phase.
+**Sequencing:** See [roadmap.md](roadmap.md) for the phased rollout plan with exit criteria and decision gates per phase.
 
 ### Upgrade paths from POC to production
 
@@ -298,7 +312,7 @@ LLM inference dominates by 10–50×. The RAG layer itself is not where cost liv
 
 ## Part 3: Conversational clarification agents
 
-The clarifier is AgentForge's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up.
+The clarifier is CHIP's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up.
 
 ### Smart question-asking patterns
 
@@ -320,7 +334,7 @@ These translate into concrete engineering rules:
 
 ### EPIC/Story generation best practices
 
-Output schema is non-negotiable and should match the EARS + INVEST + codebase-refs structure shown in Part 1. The production rule: **every AC must be testable, every Story must pass INVEST, every Epic must have explicit success metrics, and every codebase reference must be validated against the actual repo before emission**.
+Output schema is fixed and should match the EARS + INVEST + codebase-refs structure shown in Part 1. The production rule: **every AC must be testable, every Story must pass INVEST, every Epic must have explicit success metrics, and every codebase reference must be validated against the actual repo before emission**.
 
 The critic pass should use both rule-based (AQUSA-style structural linting) and LLM-based (QUS semantic critic) checks. The 2025 extended study (Sharma & Tripathi; Springer 2026) shows hybrid beats either alone: rules win on structural defects, LLMs win on context-sensitive defects. Budget bounded retries (≤2) before escalating to human.
 
@@ -344,7 +358,7 @@ The **assumption ledger threads through every stage**. Clarifier emits assumptio
 
 ## Part 4: Gap analysis of the current CHIP design
 
-The baseline design — PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs Agents with event-bus orchestration and YAML state — makes four structural choices that the evidence now argues against.
+CHIP's original baseline design — PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs Agents with event-bus orchestration and YAML state — made four structural choices that the evidence argued against.
 
 ### What should be redesigned
 
@@ -388,43 +402,41 @@ The baseline design jumps from PRD to Architecture. The evidence (Devin's failur
 - Any existing prompt assets, CLAUDE.md/AGENTS.md conventions, and codebase wiki content. These all carry forward.
 - The specialist role definitions (Design, DevOps, Security, Docs). They remain — just as invoked tools rather than peer agents on a bus.
 
-### What is missing
+### What was missing (status as of 2026-05)
 
-- **Durable checkpointing with time-travel.** No recovery after LLM outage; no fork-alternative-path capability; no audit replay.
-- **Typed state with reducers.** Concurrent agent writes currently undefined behavior.
-- **RAG layer integrated into agent reasoning.** Agents likely operate blind to codebase patterns today.
-- **Assumption ledger.** The most cost-effective anti-drift mechanism.
-- **EARS-formatted acceptance criteria.** Kiro's structural rigor belongs in any spec-driven framework.
-- **Reviewer subagent with fresh context.** The Implementer's context-rotted attention cannot self-review reliably.
-- **Visual validation for UI work.** Playwright MCP integration.
-- **Git worktrees for parallel implementation.** Prevents shared-filesystem conflicts.
-- **Sandboxed execution with egress controls.** GitHub Copilot coding agent's firewall + MCP gateway + API proxy pattern is the reference.
-- **Explicit phase gates with human approval.** Currently unclear how HITL is structured.
-- **Budget caps per task.** `max_iter`, token budget, wall-clock timeout — fail-loud discipline.
-- **`audit.md` trail.** AWS AI-DLC's per-run decision log for traceability.
-
----
-
-## Part 4.5: Why the POC sketch is structurally simple but operationally complex
-
-A 30-line spine sketch (Clarify -> Architect -> Implement -> Review with specialists as tools) captures the *structural* commitment. Production adds ten additive operational areas:
-
-1. Functions are 10-50x bigger (tools, budgets, error categorization, telemetry, cost tracking, timeout handling, artifact extraction).
-2. Context engineering is the actual product (60-80% of real effort).
-3. LLM calls fail in ways the sketch doesn't model (timeouts, content filters, refusals, semantic errors, grounding failures, drift).
-4. Review is structurally much harder (deterministic gates + LLM review + spec-conformance + assumption-drift + blast-radius + visual regression + contract tests + migration validation).
-5. HITL is a real product surface (approval UIs, diff UIs, question UIs, escalation UIs, async approvals, timeout handling, auth).
-6. Durable execution is substantial (checkpointing, storage, crash recovery, side-effect reconciliation, idempotency, time-travel, versioning, GC).
-7. Sandboxing is non-optional at scale (containers, network allowlist, secrets management, prompt-injection scanning, destructive-op approval).
-8. Observability is survival (tracing, prompt versioning, replay, metrics, alerting, logs, cost attribution).
-9. Evaluation is how you know if you're improving (golden sets, automated eval, regression, A/B, human eval loop).
-10. Org-level process (on-call, runbooks, cost governance, compliance, legal, vendor management, budget).
-
-Structure is ~10% of the work. It's the 10% that makes the other 90% possible.
+- **Durable checkpointing with time-travel.** *(Implemented — Postgres LangGraph checkpointer wired into Clarifier graph. See [state-persistence.md](concepts/state-persistence.md).)*
+- **Typed state with reducers.** *(Implemented — LangGraph typed channels with Zod schemas. See [coordination-and-state.md](concepts/coordination-and-state.md).)*
+- **RAG layer integrated into agent reasoning.** *(Partially implemented — Clarifier uses retrieval for gap detection. See [rag-context.md](concepts/rag-context.md).)*
+- **Assumption ledger.** The most cost-effective anti-drift mechanism. *(Implemented — Clarifier emits assumptions with evidence and blast radius.)*
+- **EARS-formatted acceptance criteria.** Kiro's structural rigor belongs in any spec-driven framework. *(Not yet implemented.)*
+- **Reviewer subagent with fresh context.** The Implementer's context-rotted attention cannot self-review reliably. *(Not yet implemented — Reviewer spine stage planned.)*
+- **Visual validation for UI work.** Playwright MCP integration. *(Partially implemented — design pipeline uses vision evaluator.)*
+- **Git worktrees for parallel implementation.** Prevents shared-filesystem conflicts. *(Not yet implemented.)*
+- **Sandboxed execution with egress controls.** GitHub Copilot coding agent's firewall + MCP gateway + API proxy pattern is the reference. *(Not yet implemented.)*
+- **Explicit phase gates with human approval.** *(Implemented — Clarifier uses LangGraph interrupts for HITL gates. See [hitl-governance.md](concepts/hitl-governance.md).)*
+- **Budget caps per task.** `max_iter`, token budget, wall-clock timeout — fail-loud discipline. *(Not yet implemented.)*
+- **`audit.md` trail.** AWS AI-DLC's per-run decision log for traceability. *(Not yet implemented.)*
 
 ---
 
 ## Part 5: Recommended POC roadmap
+
+!!! tip "Structure is ~10% of the work"
+
+    A 30-line spine sketch (Clarify → Architect → Implement → Review with specialists as tools) captures the *structural* commitment. Production adds ten additive operational areas:
+
+    1. Functions are 10–50× bigger (tools, budgets, error categorization, telemetry, cost tracking, timeout handling, artifact extraction).
+    2. Context engineering is the actual product (60–80% of real effort).
+    3. LLM calls fail in ways the sketch doesn't model (timeouts, content filters, refusals, semantic errors, grounding failures, drift).
+    4. Review is structurally much harder (deterministic gates + LLM review + spec-conformance + assumption-drift + blast-radius + visual regression + contract tests + migration validation).
+    5. HITL is a real product surface (approval UIs, diff UIs, question UIs, escalation UIs, async approvals, timeout handling, auth).
+    6. Durable execution is substantial (checkpointing, storage, crash recovery, side-effect reconciliation, idempotency, time-travel, versioning, GC).
+    7. Sandboxing is non-optional at scale (containers, network allowlist, secrets management, prompt-injection scanning, destructive-op approval).
+    8. Observability is survival (tracing, prompt versioning, replay, metrics, alerting, logs, cost attribution).
+    9. Evaluation is how you know if you're improving (golden sets, automated eval, regression, A/B, human eval loop).
+    10. Org-level process (on-call, runbooks, cost governance, compliance, legal, vendor management, budget).
+
+    It's the 10% that makes the other 90% possible.
 
 ### What to build first (weeks 1–6)
 
@@ -486,37 +498,42 @@ The ordering below prioritizes demonstrable value per week and front-loads the d
 
 ## Conclusion
 
-The evidence from 2025–2026 is unusually consistent across otherwise-competing sources. Cognition's argument that coordinated parallel writes break, Anthropic's argument that parallel reads work, EPAM's emphasis on evaluation over delivery, AWS's phase-gated AI-DLC, GitHub's sandboxed-agent security architecture, Cursor's hybrid-retrieval A/B data, and the academic stack (MARE, SAGE, ClarifyGPT, UA-Multi) all point in the same direction: **durable orchestration, thin-spine plus specialist-tool taxonomy, grounded clarification, spec-driven artifacts, structural HITL gates, and context engineering as the primary discipline**.
+CHIP's architecture is built from these findings: Cognition's argument that coordinated parallel writes break, Anthropic's argument that parallel reads work, EPAM's emphasis on evaluation over delivery, AWS's phase-gated AI-DLC, GitHub's sandboxed-agent security architecture, Cursor's hybrid-retrieval A/B data, and the academic stack (MARE, SAGE, ClarifyGPT, UA-Multi). They converge on: **durable orchestration, thin-spine plus specialist-tool taxonomy, grounded clarification, spec-driven artifacts, structural HITL gates, and context engineering as the primary discipline**.
 
-AgentForge's baseline — a flat ten-agent event bus — was a defensible 2024 design. In 2026 it is out of step with the empirical record. The redesign proposed here is not incremental; it rethinks the coordination model while preserving the functional decomposition the user already understands. The Clarifier pipeline is the strongest single differentiation bet in the space, because every commercial tool from Linear AI to Devin has left this layer underbuilt. The RAG stack is deliberately boring: Aider's repo map plus hybrid vector retrieval plus a reranker, no GraphRAG, no Mem0, no speculative memory infrastructure — production-grade in 6 weeks with one senior engineer, and with clean upgrade paths when scale demands them.
+CHIP's original baseline — a flat ten-agent event bus — was a defensible 2024 design. The redesign replaces the coordination model while preserving the functional decomposition: four spine stages own sequential writes, six specialists handle parallel reads, typed channels replace the event bus for coordination, and structural gates replace advisory approvals. The Clarifier pipeline is the strongest single differentiation bet in the space, because every commercial tool from Linear AI to Devin has left this layer underbuilt. The RAG stack is deliberately conservative: Aider's repo map plus hybrid vector retrieval plus a reranker, no GraphRAG, no Mem0 — with clean upgrade paths when scale demands them.
 
 The framework's durable advantage will not come from having more agents than the next tool. It will come from having fewer agents, better context, gated phases, and honest traceability. That is the shape of the ideal 2026 multi-agent SDLC framework, and it is within reach as a POC this quarter.
 
 ---
 
-## Primary source index
+??? quote "Primary source index"
 
-For follow-up reading or when decisions need to be questioned:
+    For follow-up reading or when decisions need to be questioned:
 
-**Multi-agent architecture:**
-- Anthropic: https://www.anthropic.com/engineering/multi-agent-research-system
-- Cognition: https://cognition.ai/blog/dont-build-multi-agents
+    **Multi-agent architecture:**
 
-**Agentic coding in production:**
-- Cursor semantic search A/B: https://cursor.com/blog/semsearch
-- Devin performance review: https://cognition.ai/blog/devin-annual-performance-review-2025
-- Answer.AI Devin evaluation: https://www.answer.ai/posts/2025-01-08-devin.html
+    - Anthropic: https://www.anthropic.com/engineering/multi-agent-research-system
+    - Cognition: https://cognition.ai/blog/dont-build-multi-agents
 
-**Clarification research:**
-- ClarifyGPT: https://dl.acm.org/doi/10.1145/3660810
+    **Agentic coding in production:**
 
-**RAG over code:**
-- cAST: https://arxiv.org/html/2506.15655v1
-- Aider repo map: (Aider's source code and blog posts)
-- Voyage code-3: https://blog.voyageai.com/2025/01/07/voyage-3-large/
+    - Cursor semantic search A/B: https://cursor.com/blog/semsearch
+    - Devin performance review: https://cognition.ai/blog/devin-annual-performance-review-2025
+    - Answer.AI Devin evaluation: https://www.answer.ai/posts/2025-01-08-devin.html
 
-**Enterprise SDLC:**
-- AWS AI-DLC: https://aws.amazon.com/blogs/devops/building-with-ai-dlc-using-amazon-q-developer/
-- EPAM ADLC: https://www.epam.com/insights/ai/blogs/agentic-development-lifecycle-explained
-- GitHub Copilot agent security: https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/
-- ISO/IEC 5338:2023 catalog entry: https://oecd.ai/en/catalogue/tools/
+    **Clarification research:**
+
+    - ClarifyGPT: https://dl.acm.org/doi/10.1145/3660810
+
+    **RAG over code:**
+
+    - cAST: https://arxiv.org/html/2506.15655v1
+    - Aider repo map: (Aider's source code and blog posts)
+    - Voyage code-3: https://blog.voyageai.com/2025/01/07/voyage-3-large/
+
+    **Enterprise SDLC:**
+
+    - AWS AI-DLC: https://aws.amazon.com/blogs/devops/building-with-ai-dlc-using-amazon-q-developer/
+    - EPAM ADLC: https://www.epam.com/insights/ai/blogs/agentic-development-lifecycle-explained
+    - GitHub Copilot agent security: https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/
+    - ISO/IEC 5338:2023 catalog entry: https://oecd.ai/en/catalogue/tools/

@@ -103,6 +103,7 @@ export interface PipelineStageRecord {
   readonly threadId: string;
   readonly inputFile: string;
   readonly outputFile: string;
+  readonly durationMs?: number;
 }
 
 /** Q&A log entry — focused view for analysis. */

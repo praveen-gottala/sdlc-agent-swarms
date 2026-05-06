@@ -14,8 +14,8 @@ import {
 import { createTracedProvider, initLangfuseTracing } from '@agentforge/telemetry';
 import { runClarifierPipelineStream } from '@agentforge/agents-clarifier';
 import type { ClarifierInput } from '@agentforge/agents-clarifier';
-import { createCheckpointer, MemorySaver } from '@agentforge/core';
 import { getActiveProjectRoot, MONOREPO_ROOT } from '../../_lib/project-reader';
+import { getSharedCheckpointer } from '../../_lib/checkpointer';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -24,12 +24,24 @@ const STAGE_LABELS: Record<string, string> = {
   prdAnalyzer: 'Analyzing requirements with Claude Opus...',
   gapDetector: 'Detecting gaps and ambiguities...',
   questionPrioritizer: 'Prioritizing clarification questions...',
-  prdUpdater: 'Updating PRD with your answers...',
   storyWriter: 'Writing user stories...',
   critic: 'Reviewing story quality...',
+  prdUpdater: 'Updating PRD with your answers...',
   escalationGate: 'Awaiting your decision...',
-  emitComplete: 'Finalizing requirements...',
 };
+
+const PIPELINE_STEP_ORDER = [
+  'contextRetriever',
+  'prdAnalyzer',
+  'gapDetector',
+  'questionPrioritizer',
+  'storyWriter',
+  'critic',
+  'prdUpdater',
+  'emitComplete',
+] as const;
+
+const TOTAL_STEPS = PIPELINE_STEP_ORDER.length;
 
 interface RespondBody {
   threadId?: string;
@@ -80,12 +92,7 @@ export async function POST(request: NextRequest) {
     createClaudeProvider('claude-opus-4-6', authConfig),
   );
 
-  let checkpointer;
-  try {
-    checkpointer = await createCheckpointer();
-  } catch {
-    checkpointer = new MemorySaver();
-  }
+  const checkpointer = await getSharedCheckpointer();
 
   const baseCatalogPath = join(MONOREPO_ROOT, 'packages', 'core', 'src', 'catalogs', 'base-component-catalog.yaml');
   let baseCatalog: string | undefined;
@@ -115,15 +122,12 @@ export async function POST(request: NextRequest) {
   };
 
   const encoder = new TextEncoder();
-  const stages = Object.keys(STAGE_LABELS);
 
   const stream = new ReadableStream({
     async start(controller) {
       function send(event: string, data: unknown): void {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
-
-      let nodeIndex = 0;
 
       try {
         for await (const event of runClarifierPipelineStream(input)) {
@@ -134,13 +138,13 @@ export async function POST(request: NextRequest) {
                 send('stage', {
                   stage: event.node,
                   label: stageLabel,
-                  index: nodeIndex,
-                  total: stages.length,
+                  index: PIPELINE_STEP_ORDER.indexOf(event.node as typeof PIPELINE_STEP_ORDER[number]),
+                  total: TOTAL_STEPS,
+                  durationMs: event.durationMs,
                 });
-                nodeIndex++;
               }
 
-              if (event.node === 'prdAnalyzer' && event.state.prdDraft) {
+              if ((event.node === 'prdAnalyzer' || event.node === 'prdUpdater') && event.state.prdDraft) {
                 send('prd-draft', { prdDraft: event.state.prdDraft });
               }
               if (event.node === 'gapDetector' && event.state.gaps) {
@@ -153,8 +157,8 @@ export async function POST(request: NextRequest) {
               send('stage', {
                 stage: 'questionPrioritizer',
                 label: 'Questions ready!',
-                index: stages.indexOf('questionPrioritizer'),
-                total: stages.length,
+                index: PIPELINE_STEP_ORDER.indexOf('questionPrioritizer'),
+                total: TOTAL_STEPS,
               });
 
               send('result', {
@@ -180,8 +184,8 @@ export async function POST(request: NextRequest) {
               send('stage', {
                 stage: 'emitComplete',
                 label: 'Requirements complete!',
-                index: stages.length - 1,
-                total: stages.length,
+                index: PIPELINE_STEP_ORDER.indexOf('emitComplete'),
+                total: TOTAL_STEPS,
               });
 
               send('result', {

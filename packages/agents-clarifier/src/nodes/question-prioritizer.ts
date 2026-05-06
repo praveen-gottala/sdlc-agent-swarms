@@ -176,7 +176,10 @@ function gapsToAssumptions(
  */
 export function createQuestionPrioritizer(_deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`question-prioritizer: ENTER gaps=${state.gaps.length} round=${state.round}`);
     if (!state.gaps.length) {
+      debugLog(`question-prioritizer: EXIT no gaps ${Date.now() - _t0}ms`);
       return { questions: [], assumptions: state.assumptions };
     }
 
@@ -201,6 +204,7 @@ export function createQuestionPrioritizer(_deps: ClarifierDeps): ClarifierNodeFn
       ? gapsToAssumptions(assumptionGaps, state.assumptions)
       : state.assumptions;
 
+    debugLog(`question-prioritizer: EXIT questions=${questions.length} assumptions=${assumptions?.entries?.length ?? 0} ${Date.now() - _t0}ms`);
     return { questions, assumptions };
   };
 }

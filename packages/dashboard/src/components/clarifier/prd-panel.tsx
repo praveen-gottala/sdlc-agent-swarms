@@ -65,7 +65,6 @@ export function PrdPanel({
           title={title}
           confidence={confidence}
           isComplete={isComplete}
-          onApprove={onApprove}
         />
         <div className="border-b border-border px-5 pb-3 pt-1">
           <SegmentedControl

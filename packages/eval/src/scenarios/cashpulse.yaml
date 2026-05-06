@@ -1,0 +1,41 @@
+id: cashpulse
+name: CashPulse Personal Expense Tracker
+description: >
+  Detailed UX screen specification PRD (421 lines, 3 screens). Tests
+  Clarifier on a highly specified input — gap detection on an already
+  thorough document rather than a vague seed. Bootstrap mode with
+  max 1 round for ground truth capture (M0).
+rawInput: |
+  # CASHPULSE
+  ## Personal Expense Tracker — UX Screen Specification PRD
+
+  I want a personal expense tracking app called CashPulse with three screens:
+  1. Dashboard — daily view of recent expenses, budget status with progress
+     bar, category breakdown donut chart, and filterable expense list with
+     detail popovers.
+  2. Add Expense — focused form with large amount input, category grid
+     selector, date picker, payment method chips, optional note, and
+     quick-add suggestions from past expenses.
+  3. Spending Insights — analytical view with period summary stats,
+     daily spending bar/line chart toggle, top categories with stacked
+     bar, biggest expenses ranked list, month-over-month comparison.
+
+  Design system: Inter font, blue-600 primary, emerald for positive,
+  red for warnings, 4px base unit, 16px card radius. Desktop-first
+  with responsive breakpoints at 768px and 1024px.
+
+  Key interactions: month navigation with animated transitions, inline
+  delete confirmation with auto-revert, chart hover tooltips, category
+  filtering, quick-add auto-fill cascade. Full keyboard navigation
+  and WCAG AA accessibility.
+
+  Budget tracking with three status levels: On Track (<80%), Heads Up
+  (80-100%), Over Budget (>100%). Settings dialog for currency, monthly
+  budget, and category management.
+mode: bootstrap
+maxRounds: 1
+expectedBehavior:
+  minQuestions: 1
+  maxQuestions: 15
+  expectEscalation: false
+  expectMultiRound: false

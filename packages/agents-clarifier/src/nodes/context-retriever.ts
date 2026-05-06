@@ -125,6 +125,8 @@ async function gatherEvolutionContext(
  */
 export function createContextRetriever(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`context-retriever: ENTER mode=${state.mode} round=${state.round}`);
     if (state.mode === 'bootstrap') {
       const catalog = deps.baseCatalog ?? yamlStringify(loadBaseCatalog());
       const tokens = loadDesignTokensIfAvailable(deps.projectRoot);
@@ -133,16 +135,19 @@ export function createContextRetriever(deps: ClarifierDeps): ClarifierNodeFn {
         platformConstraints: PLATFORM_CONSTRAINTS,
         ...(tokens ? { patternLibrary: tokens } : {}),
       };
+      debugLog(`context-retriever: EXIT bootstrap ${Date.now() - _t0}ms`);
       return { context };
     }
 
     if (!deps.retrievalTools) {
+      debugLog(`context-retriever: EXIT no retrieval tools ${Date.now() - _t0}ms`);
       return {
         error: 'Evolution mode requires retrieval tools but none were provided',
       };
     }
 
     const context = await gatherEvolutionContext(state, deps);
+    debugLog(`context-retriever: EXIT evolution ${Date.now() - _t0}ms`);
     return { context };
   };
 }

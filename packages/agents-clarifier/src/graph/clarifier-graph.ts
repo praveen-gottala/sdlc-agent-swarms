@@ -2,8 +2,9 @@
  * @module @agentforge/agents-clarifier/graph/clarifier-graph
  *
  * LangGraph StateGraph assembly for the Clarifier pipeline (Task 1.7).
- * Sequential: contextRetriever → prdAnalyzer → gapDetector →
- *   questionPrioritizer → [HITL interrupt] → storyWriter → critic
+ * Sequential: contextRetriever → prdAnalyzer →
+ *   [if prdDraft] gapDetector → questionPrioritizer → [HITL interrupt] → storyWriter → critic
+ *   [if no prdDraft] emitComplete (preserves original prdAnalyzer error)
  *
  * Conditional routing after critic:
  *   - critic fails + retries < 2 → storyWriter (retry)
@@ -16,6 +17,7 @@
  */
 
 import { StateGraph, END } from '@langchain/langgraph';
+import { debugLog } from '@agentforge/core';
 import type { BaseCheckpointSaver } from '@agentforge/core';
 import { ClarifierStateAnnotation } from './state.js';
 import type { ClarifierDeps } from '../deps.js';
@@ -39,31 +41,64 @@ function hasUnresolvedGaps(state: ClarifierState): boolean {
 
 function routeAfterCritic(state: ClarifierState): string {
   if (!state.criticPassed && state.criticRetries < 2) {
+    debugLog(`route: critic→storyWriter (retry ${state.criticRetries})`);
     return 'storyWriter';
   }
-  if (state.round < state.maxRounds && hasUnresolvedGaps(state)) {
-    return 'prdUpdater';
-  }
   if (state.round >= state.maxRounds) {
+    debugLog(`route: critic→escalationGate (round=${state.round} >= max=${state.maxRounds})`);
     return 'escalationGate';
   }
+  if (hasUnresolvedGaps(state) || state.humanResponses.length > 0) {
+    debugLog(`route: critic→prdUpdater (unresolvedGaps=${hasUnresolvedGaps(state)} humanResponses=${state.humanResponses.length})`);
+    return 'prdUpdater';
+  }
+  debugLog('route: critic→emitComplete');
   return 'emitComplete';
 }
 
+function routeAfterPrdUpdater(state: ClarifierState): string {
+  if (state.round < state.maxRounds && hasUnresolvedGaps(state)) {
+    debugLog(`route: prdUpdater→gapDetector (round=${state.round} < max=${state.maxRounds})`);
+    return 'gapDetector';
+  }
+  debugLog('route: prdUpdater→emitComplete');
+  return 'emitComplete';
+}
+
+function routeAfterPrdAnalyzer(state: ClarifierState): string {
+  if (!state.prdDraft) {
+    debugLog('route: prdAnalyzer→emitComplete (no prdDraft)');
+    return 'emitComplete';
+  }
+  debugLog('route: prdAnalyzer→gapDetector');
+  return 'gapDetector';
+}
+
 function routeAfterEscalation(state: ClarifierState): string {
-  if (state.escalationDecision === 'accept') return 'emitComplete';
-  if (state.escalationDecision === 'restart') return 'prdUpdater';
+  if (state.escalationDecision === 'accept') {
+    debugLog('route: escalation→emitComplete (accept)');
+    return 'emitComplete';
+  }
+  if (state.escalationDecision === 'restart') {
+    debugLog('route: escalation→prdUpdater (restart)');
+    return 'prdUpdater';
+  }
+  debugLog('route: escalation→END');
   return END;
 }
 
 async function escalationGate(state: ClarifierState): Promise<Partial<ClarifierState>> {
+  debugLog(`escalationGate: ENTER decision=${state.escalationDecision ?? 'none'} round=${state.round}`);
   if (state.escalationDecision === 'restart') {
+    debugLog('escalationGate: EXIT restart');
     return { round: 0, criticRetries: 0, criticPassed: false };
   }
+  debugLog('escalationGate: EXIT');
   return {};
 }
 
-async function emitComplete(_state: ClarifierState): Promise<Partial<ClarifierState>> {
+async function emitComplete(state: ClarifierState): Promise<Partial<ClarifierState>> {
+  debugLog(`emitComplete: ENTER round=${state.round} confidence=${state.requirement?.confidence ?? 'n/a'} error=${state.error ?? 'none'}`);
   return {};
 }
 
@@ -84,8 +119,8 @@ export function buildClarifierGraph(deps: ClarifierDeps) {
     .addNode('emitComplete', emitComplete)
     .addEdge('__start__', 'contextRetriever')
     .addEdge('contextRetriever', 'prdAnalyzer')
-    .addEdge('prdAnalyzer', 'gapDetector')
-    .addEdge('prdUpdater', 'gapDetector')
+    .addConditionalEdges('prdAnalyzer', routeAfterPrdAnalyzer)
+    .addConditionalEdges('prdUpdater', routeAfterPrdUpdater)
     .addEdge('gapDetector', 'questionPrioritizer')
     .addEdge('questionPrioritizer', 'storyWriter')
     .addEdge('storyWriter', 'critic')
@@ -108,4 +143,4 @@ export function compileClarifierGraph(
   });
 }
 
-export { routeAfterCritic, routeAfterEscalation, hasUnresolvedGaps };
+export { routeAfterCritic, routeAfterEscalation, routeAfterPrdUpdater, routeAfterPrdAnalyzer, hasUnresolvedGaps };

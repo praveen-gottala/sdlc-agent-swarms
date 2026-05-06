@@ -10,7 +10,7 @@
 
 ### 1.1 Runtime: TypeScript LangGraph
 
-**Decision:** Use `@langchain/langgraph` (TypeScript) as the sole orchestration runtime for AgentForge's agent spine.
+**Decision:** Use `@langchain/langgraph` (TypeScript) as the sole orchestration runtime for CHIP's agent spine.
 
 **Reasoning:**
 - The codebase is TypeScript-first. Agents, renderer, dashboard, and monorepo all live there. Maintaining a Python-TypeScript split forces every feature to land in two places.
@@ -24,6 +24,8 @@
 - **Temporal / durable-execution platform**: overkill for POC. Viable upgrade path for production.
 
 **Revisit when:** multi-machine distributed orchestration becomes a requirement, or the team needs workflow durability beyond what LangGraph checkpointers provide.
+
+> See also: [CHIP's Spine](architecture/spine-implementation.md), [Vision Layer 1](vision.md#layer-1-orchestration-runtime)
 
 ### 1.2 Coordination: typed channels, not event bus
 
@@ -41,6 +43,8 @@
 
 **Revisit when:** never, in practice. This is a foundational commitment.
 
+> See also: [Coordination & State](concepts/coordination-and-state.md), [Vision Layer 2](vision.md#layer-2-coordination-substrate)
+
 ### 1.3 Topology: thin spine + specialist tools
 
 **Decision:** Four-stage vertical spine — Clarify → Architect → Implement → Review — with specialists invoked as tools by spine nodes. No flat multi-agent peer network.
@@ -56,6 +60,8 @@
 - **Peer handoff**: works for triage, fails beyond one hop.
 
 **Revisit when:** model capability improves to the point where parallel write-agents can reliably coordinate — Walden Yan's stated expectation is "someday" but not 2026.
+
+> See also: [The Spine Pattern](architecture/spine-pattern.md), [CHIP's Spine](architecture/spine-implementation.md), [Vision Layer 3](vision.md#layer-3-agent-taxonomy)
 
 ### 1.4 Single-threaded writer per artifact
 
@@ -117,6 +123,8 @@
 - **No assumptions, ask every question**: kills adoption via question fatigue.
 
 **Revisit when:** never. Foundational.
+
+> See also: [State Persistence](concepts/state-persistence.md), [CHIP's Spine §Assumption Ledger](architecture/spine-implementation.md#assumption-ledger-lifecycle)
 
 ---
 
@@ -227,6 +235,8 @@
 
 **Reasoning:** Full re-indexing on every commit is cost-prohibitive and slow.
 
+> See also: [RAG & Context](concepts/rag-context.md), [Vision Layer 6](vision.md#layer-6-rag--context-engineering)
+
 ---
 
 ## 5. Implementation
@@ -290,6 +300,8 @@
 **Reasoning:**
 - State survives process death.
 - Resume is a first-class operation.
+
+> See also: [HITL & Governance](concepts/hitl-governance.md), [Vision Layer 10](vision.md#layer-10-hitl-human-in-the-loop)
 
 ---
 
@@ -644,7 +656,7 @@ it differs from the rejection reason before proceeding.
 
 **Replacement:** Purpose-built code RAG for retrieval; LangGraph state for session continuity.
 
-**Revisit when:** If AgentForge needs cross-session agent memory beyond what LangGraph checkpoints provide.
+**Revisit when:** If CHIP needs cross-session agent memory beyond what LangGraph checkpoints provide.
 
 ### A.4 Sourcegraph Cody for code graph
 
@@ -705,6 +717,15 @@ it differs from the rejection reason before proceeding.
 **Replacement:** Repo-local memory only (`docs/lessons-learned.md`, `AGENTS.md`). Session state via LangGraph checkpoints. No cross-session user memory until demanded.
 
 **Revisit when:** POC demonstrably needs it (e.g., users complain about re-answering the same questions across projects).
+
+---
+
+## Known Limitations
+
+- §9 visual diversity decisions are design-phase only — not yet validated against the full spine pipeline
+- StyleProfile ADR not yet written (§9.6 forward-references it)
+- Domain bundles (§9.6) and effect packs (§9.7) are specified but not yet implemented
+- Several sections (§1.2-1.4, §2.1-2.3, §4, §6) lack corresponding ADRs — decisions are documented here but not formalized as individual ADRs
 
 ---
 

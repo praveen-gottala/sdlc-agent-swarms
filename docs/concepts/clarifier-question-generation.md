@@ -2,18 +2,20 @@
 
 > Authoritative source: [research/clarifier-question-generation.md](../research/clarifier-question-generation.md) and [research-report.md Part 3](../research-report.md#part-3-conversational-clarification-agents)
 
-When the clarifier detects a gap in a user's requirements — "the PRD doesn't specify where JWT tokens are stored" — it needs to do more than ask "what do you want?" It needs to present concrete, domain-aware options that a non-technical user can pick from in seconds: "HttpOnly cookies (like Stripe)", "localStorage with refresh rotation (like Firebase)", or "in-memory with silent refresh (like Auth0)."
+When the clarifier detects a gap in a user's requirements — "the PRD doesn't specify where JWT tokens are stored" — it needs to do more than ask "what do you want?" CHIP's gap detector produces divergent implementation approaches (via ClarifyGPT's consistency sampling), ranks them by EVPI score, and presents the top gaps as multiple-choice questions with domain-grounded options: "HttpOnly cookies (like Stripe)", "localStorage with refresh rotation (like Firebase)", or "in-memory with silent refresh (like Auth0)."
 
-This page explores how to generate those options — the strategies, the research, and the open questions. It is intentionally exploratory: read this to understand the design space before committing to an approach.
+## Why CHIP does this
+
+The [research report](../research-report.md#part-3-conversational-clarification-agents) finds that ClarifyGPT's divergence detection plus structured options improves GPT-4 Pass@1 by 10+ percentage points (FSE 2024) — but the generated options are generic without domain grounding. Most tools skip structured options entirely: Lovable, Bolt, and v0 use open-ended questions or iterate on output. Only Cursor and ClarifyGPT generate project-aware options. CHIP combines divergence detection with RAG retrieval and specialist LLM calls to produce domain-specific options that a non-technical user can pick from in seconds.
 
 ## The problem
 
 CHIP's current implementation generates questions in two steps:
 
 1. **ClarifyGPT divergence detection** — generate 3 implementation approaches, find where they disagree
-2. **Question prioritization** — rank gaps by EVPI score, convert top gaps to questions
+2. **Question prioritization** — rank gaps by EVPI score (Expected Value of Perfect Information — a measure of how much the final design would improve if this gap were resolved, computed as `blastRadius × answerability × confidenceGap`)
 
-The gap detector produces `divergentInterpretations` — the 3 approaches that disagreed. These are meant to become the options the user sees. But two problems make them insufficient:
+The gap detector produces `divergentInterpretations` — the three implementation approaches that disagreed on how to handle the gap. These are meant to become the options the user sees. But two problems make them insufficient:
 
 **Problem 1: Approaches are generic.** The LLM generates approaches from its training data without domain grounding. For a recipe app asking about auth, it produces "Approach 1 uses session-based auth" instead of "NextAuth.js with Google OAuth (like AllRecipes)" or "Magic links via Resend (like Substack)." The approaches are technically valid but don't help a non-developer make a confident decision.
 
@@ -31,10 +33,8 @@ The [research report](../research/clarifier-question-generation.md) surveyed 8 t
 | **Lovable** | User-initiated ("ask me questions") | No options |
 | **Bolt** | Prompt enhancer, no questions | N/A |
 | **v0** | Generate-then-iterate, no upfront questions | N/A |
-
-The research report concludes:
-
-> *"Most tools (Lovable, Bolt, v0) do NOT generate structured options — they use open-ended questions or iterate on output. This is a gap the CHIP clarifier can exploit."* — `docs/research/clarifier-question-generation.md`
+| **Sweep AI** | Plan-as-proposal via GitHub issue comments | No — humans correct the plan, no structured questions |
+| **Mutable.ai** | Auto-wiki + code understanding | No — documentation-focused, no clarification |
 
 Cursor 2.1 is the closest to what CHIP needs: context-aware questions that adapt to the specific project. But Cursor operates on code, not product requirements.
 
@@ -48,6 +48,10 @@ The LLM that detects the gap also generates options in the same prompt. This is 
 - **Con**: Options lack depth, no domain grounding, quality depends entirely on prompt quality
 - **When to use**: MVP, low-complexity domains, or when speed matters more than option quality
 
+??? question "Research question: specialist persona framing"
+
+    What system prompt produces the best options? Should the specialist be prompted as "a senior architect who has built 50 apps in this domain" or as "a product consultant explaining options to a non-technical founder"? The persona framing affects whether options lean technical or accessible.
+
 ### Strategy B: Specialist architect call
 
 A separate LLM call takes the gap + domain context + prior answers and generates options with pros/cons and real-world examples.
@@ -56,9 +60,9 @@ A separate LLM call takes the gap + domain context + prior answers and generates
 - **Con**: Extra LLM call per question (latency + cost), requires careful context assembly
 - **When to use**: Production clarifiers where option quality drives user trust
 
-!!! question "Research question"
+??? question "Research question: knowledge base design"
 
-    What system prompt produces the best options? Should the specialist be prompted as "a senior architect who has built 50 apps in this domain" or as "a product consultant explaining options to a non-technical founder"? The persona framing affects whether options lean technical or accessible.
+    What should the knowledge base contain? Options include: (a) curated articles about how specific products work, (b) architectural patterns extracted from open-source repos, (c) Stack Overflow/blog posts about common decisions, (d) a structured database of "domain → decision → options" triples. Each has different maintenance costs and freshness guarantees.
 
 ### Strategy C: RAG over domain patterns
 
@@ -68,10 +72,6 @@ Retrieve how real products handle this pattern from a curated knowledge base. "H
 - **Con**: Requires building/maintaining a knowledge base, cold-start for rare domains
 - **When to use**: Mature products with accumulated domain knowledge
 
-!!! question "Research question"
-
-    What should the knowledge base contain? Options include: (a) curated articles about how specific products work, (b) architectural patterns extracted from open-source repos, (c) Stack Overflow/blog posts about common decisions, (d) a structured database of "domain → decision → options" triples. Each has different maintenance costs and freshness guarantees.
-
 ### Strategy D: Template + LLM hybrid
 
 Pre-build option templates for common gap categories (auth, storage, error handling, state management) with real-world product examples. The LLM fills in project-specific details.
@@ -80,7 +80,7 @@ Pre-build option templates for common gap categories (auth, storage, error handl
 - **Con**: High upfront curation, poor coverage for novel domains
 - **When to use**: When 80% of questions are predictable (auth, storage, validation)
 
-!!! question "Research question"
+??? question "Research question: template coverage"
 
     How many templates are needed to cover 80% of bootstrap gaps? Analysis of the deterministic checklist suggests ~6 categories (auth, validation, error handling, data persistence, state management, accessibility). But ClarifyGPT gaps are domain-specific and harder to template.
 
@@ -96,19 +96,7 @@ When a user answers "single-user, no auth needed" in round 1, round 2 should not
 
 ### Pattern 1: Accumulated decision record
 
-Maintain a structured JSON object of all decisions made so far. Each round's question generation prompt includes the full record. The LLM is instructed: "Do not ask questions whose answers are already determined by the decision record."
-
-```typescript
-// Conceptual structure
-interface DecisionRecord {
-  decisions: Array<{
-    questionId: string;
-    topic: string;           // e.g., "authentication"
-    decision: string;        // e.g., "No auth — single-user app"
-    implications: string[];  // e.g., ["No JWT", "No session management", "No user table"]
-  }>;
-}
-```
+Maintain a structured JSON object of all decisions made so far. Each round's question generation prompt includes the full record. The LLM is instructed: "Do not ask questions whose answers are already determined by the decision record." Implications are LLM-generated: when the user answers a question, the system infers what other decisions are now determined (e.g., "no auth" implies no JWT, no session management, no user table).
 
 This is what Cursor does implicitly — clarification answers feed into the plan, and the plan constrains subsequent agent behavior.
 
@@ -122,7 +110,7 @@ The advantage: the PRD itself is the single source of truth. No separate state t
 
 Model questions as a DAG where some questions gate others. "Do you need user accounts?" gates "What auth provider?" and "How should sessions be stored?" If the gating question is answered "no," prune the entire subtree.
 
-!!! question "Research question"
+??? question "Research question: automatic dependency detection"
 
     Can the dependency graph be generated automatically from the gap structure, or does it need manual curation? If the gap detector's divergent interpretations can be analyzed for conditional dependencies, the graph could be auto-generated per run.
 
@@ -146,19 +134,36 @@ The same gap ("PRD doesn't specify error handling") needs different options for 
 
 The research suggests detecting expertise from the user's seed input language. Technical terms → architecture-level options. Plain English → product-level options.
 
-!!! question "Research question"
+??? question "Research question: expertise detection approach"
 
     Should expertise detection be a separate classifier, or should the option generator prompt itself adapt? A separate classifier adds complexity but could be reused across stages. An adaptive prompt is simpler but may be inconsistent.
 
 ## "I don't know" / "Let CHIP decide"
 
-Every question should have a sensible default. When the user selects "Let CHIP decide," the system should:
+The `storyWriter` node already records AI-selected defaults with `requiresConfirmation: true` in the Assumption Ledger (a structured record of every decision the system made on the user's behalf, with confidence levels). When a user selects "Let CHIP decide," the system:
 
-1. Apply the default
-2. Record it as an assumption: "AI-selected default: HttpOnly cookies. Reason: industry standard for web apps handling user sessions"
-3. Mark it with `requiresConfirmation: true` in the Assumption Ledger
+1. Applies the sensible default
+2. Records it as an assumption: "AI-selected default: HttpOnly cookies. Reason: industry standard for web apps handling user sessions"
+3. Marks it with `requiresConfirmation: true` so downstream stages know this decision was not explicitly approved
 
-This preserves traceability without blocking the user.
+The "Let CHIP decide" UI option is planned but not yet implemented — the recording mechanism exists, the user-facing flow does not.
+
+## Components
+
+| Component | File | Role |
+|-----------|------|------|
+| Gap detector | `packages/agents-clarifier/src/nodes/gap-detector.ts` | Generates divergent implementations, finds disagreement points |
+| Question prioritizer | `packages/agents-clarifier/src/nodes/question-prioritizer.ts` | Ranks gaps by EVPI score, selects top gaps for the current round |
+| Story writer | `packages/agents-clarifier/src/nodes/story-writer.ts` | Converts approved answers into PRD user stories, records assumptions |
+| EVPI score | `packages/agents-clarifier/src/schemas.ts` (line 42) | `blastRadius × answerability × confidenceGap` — priority ranking formula |
+| Divergent interpretations | `packages/agents-clarifier/src/schemas.ts` (line 30) | Zod schema for the 3 implementation approaches that disagreed |
+| Assumption Ledger | `packages/core/src/types/cross-boundary-artifacts.schemas.ts` | Cross-boundary artifact tracking every AI-made decision with confidence |
+
+## Known limitations
+
+- Options are generated in the same LLM call as gap detection (Strategy A) — no specialist call or RAG grounding yet.
+- No expertise detection — all users receive the same option depth regardless of technical background.
+- No cross-round contradiction detection (Pattern 4 is not implemented).
 
 ## Open questions for further research
 
@@ -176,7 +181,7 @@ This preserves traceability without blocking the user.
 
 ## Related
 
-- [Clarifier Pipeline](clarifier-pipeline.md) — how the six stages work end-to-end
+- [Clarifier Pipeline](clarifier-pipeline.md) — the nine-node pipeline end-to-end
 - [Research: Question Generation](../research/clarifier-question-generation.md) — detailed tool analysis and strategy comparison
 - [RAG & Context](rag-context.md) — the retrieval layer that could ground options
 - [Research Report Part 3](../research-report.md#part-3-conversational-clarification-agents) — academic foundations

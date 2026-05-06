@@ -524,6 +524,8 @@ async function runClarifyGPT(
   const implSystem = loadImplPrompt();
   const prdSummary = `Title: ${prd.title}\nDescription: ${prd.description}\n\nFeatures:\n${prd.features.map((f) => `- ${f.name}: ${f.description}`).join('\n')}\n\nScreens:\n${prd.screens.map((s) => `- ${s.name}: ${s.description}`).join('\n')}\n\nData Entities:\n${prd.dataEntities.map((e) => `- ${e.name}: fields=[${e.fields.map((f) => f.name).join(', ')}]`).join('\n')}`;
 
+  debugLog('gap-detector: LLM call 1/2 START (implementations, claude-sonnet-4-6)');
+  const _llm1 = Date.now();
   const implResult = await deps.provider.complete(
     {
       system: implSystem,
@@ -537,6 +539,7 @@ async function runClarifyGPT(
       promptVersion: implVersionCache,
     },
   );
+  debugLog(`gap-detector: LLM call 1/2 END ${Date.now() - _llm1}ms ok=${implResult.ok}`);
 
   if (!implResult.ok) {
     debugLog(`gap-detector: implementation generation failed: ${implResult.error.code}`);
@@ -574,6 +577,8 @@ async function runClarifyGPT(
     `\nIdentify where these approaches diverge in ways that affect the user experience. For each gap, provide 2-4 structured options with descriptions, tradeoffs, and a recommendation.`,
   ].filter(Boolean).join('\n');
 
+  debugLog('gap-detector: LLM call 2/2 START (divergence, claude-sonnet-4-6)');
+  const _llm2 = Date.now();
   const divergeResult = await deps.provider.complete(
     {
       system: divergeSystem,
@@ -587,6 +592,7 @@ async function runClarifyGPT(
       promptVersion: divergeVersionCache[mode],
     },
   );
+  debugLog(`gap-detector: LLM call 2/2 END ${Date.now() - _llm2}ms ok=${divergeResult.ok}`);
 
   if (!divergeResult.ok) {
     debugLog(`gap-detector: divergence analysis failed: ${divergeResult.error.code}`);
@@ -653,6 +659,8 @@ function filterAskedGaps(
  */
 export function createGapDetector(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`gap-detector: ENTER round=${state.round} existingGaps=${state.gaps.length} humanResponses=${state.humanResponses.length}`);
     if (!state.prdDraft) {
       return { error: 'Gap Detector: no PRD draft available', round: state.round + 1 };
     }
@@ -691,6 +699,7 @@ export function createGapDetector(deps: ClarifierDeps): ClarifierNodeFn {
     const enrichedLlmGaps = dedupedLlmGaps.map((g) => ensureGapHasOptions(g));
     const allGaps = [...enrichedDetGaps, ...enrichedLlmGaps];
 
+    debugLog(`gap-detector: EXIT deterministic=${enrichedDetGaps.length} llm=${enrichedLlmGaps.length} total=${allGaps.length} ${Date.now() - _t0}ms`);
     return { gaps: allGaps, round: state.round + 1 };
   };
 }

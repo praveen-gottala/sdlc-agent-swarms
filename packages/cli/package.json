@@ -25,6 +25,7 @@
     "@agentforge/agents-design": "0.1.0",
     "@agentforge/agents-ux": "0.1.0",
     "@agentforge/telemetry": "0.1.0",
+    "@agentforge/eval": "0.1.0",
     "commander": "^12.1.0",
     "yaml": "^2.7.0",
     "chalk": "^5.4.1"

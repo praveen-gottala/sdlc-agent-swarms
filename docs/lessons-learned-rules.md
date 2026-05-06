@@ -35,6 +35,8 @@
 - [TechDocs Markdown Rendering — Python-Markdown vs CommonMark](#techdocs-markdown-rendering--python-markdown-vs-commonmark) — RULE
 - [ASCII Box Diagrams Don't Render in MkDocs — Use Mermaid](#ascii-box-diagrams-dont-render-in-mkdocs--use-mermaid) — RULE
 - [Collapsible Admonitions for Rationale Sections](#collapsible-admonitions-for-rationale-sections) — RULE
+- [Clarifier: Known v0 Trade-Offs and Coverage Gaps](#clarifier-known-v0-trade-offs-and-coverage-gaps) — RULE
+- [LangGraph Resume: updateState + stream(null)](#langgraph-resume-updatestate--streamnull) — RULE
 
 ---
 
@@ -517,3 +519,43 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** Convert rationale sections to collapsible admonitions (`???` syntax) instead of `###` headings. Use `??? danger` for architectural debt, `??? warning` for missing-but-planned, `??? info` for deferred items.
 **Why:** vision.md had 15 "Why the current state is wrong" `###` headings taking ~200 lines. As always-visible headings they cluttered the ToC and made scanning for decisions harder. Collapsible admonitions let readers expand rationale on demand.
 **How to apply:** `??? danger "Title"` followed by 4-space indented content. Don't use `???+` (expanded by default) — the point is reducing visual noise. Keep original content verbatim.
+
+---
+
+## Clarifier: Known v0 Trade-Offs and Coverage Gaps
+
+**Context:** `packages/agents-clarifier/` — v0 clarifier pipeline review (2026-05-02). Four findings from a pipeline review, all interconnected: FB2's speculative artifacts are bounded by FB1's Q&A awareness; FB3's structure-only critic connects to FB4's untested priority branch because both are limits on the v0 quality bar.
+
+### 1. Primary Defense in Prompt, Filter as Safety Net (FB1 — FIXED)
+
+**Rule:** When preventing re-asking in multi-round LLM loops, the SYSTEM prompt must contain an explicit instruction about already-clarified topics. Runtime filters (like `filterAskedGaps` in `gap-detector.ts:638`) are the safety net, not the primary defense.
+**Why:** The gap detector's `filterAskedGaps` matches by gap ID. LLM-generated gap IDs are SHA-256 of `topic::description` — two semantically identical gaps with different wording produce different hashes and slip through. The prompt instruction handles semantic duplicates the hash can't see; the hash filter handles cases where the prompt instruction was ignored. Belt and suspenders.
+**How to apply:** Both divergence prompts (`gap-divergence-bootstrap.md` v3.1.0, `gap-divergence-evolution.md` v2.1.0) now contain an "Already-Clarified Topics" section. The runtime `qaSection` at `gap-detector.ts:560-565` injects the data into the user message. Both layers are required.
+
+### 2. Speculative PRD Artifacts (FB2 — Documented Trade-Off)
+
+**Rule:** The PRD Analyzer intentionally over-produces features, screens, entities, and NFRs for vague inputs (`prd-analyzer-system.md` line 31: "Be thorough"). The `could-have` priority on inferred features and the divergence prompt's ban on asking about LLM-generated artifacts are the mitigations. The user never validates speculative `could-have` features directly.
+**Why:** Under-producing misses real requirements the user forgot to mention. Over-producing with `could-have` is safer because these items can be dropped later. The risk is scope creep if downstream agents treat `could-have` as committed scope.
+**How to apply:** Do NOT reduce the analyzer's thoroughness. Track with eval metric `unvalidated-artifact-survival`: count of `could-have` features/entities/screens in the final PRD that were never referenced by any answer. See execution plan future work.
+
+### 3. Critic Passed Means Well-Formed, Not Good (FB3 — Documented Limitation)
+
+**Rule:** The Critic node runs only deterministic checks (EARS compliance, INVEST compliance, DAG consistency). `criticPassed: true` means the feature plan is structurally well-formed — it does NOT mean the requirements are high-quality, complete, or aligned with user intent. The LLM quality review (`critic-system.md`) is scaffolded but not wired.
+**Why:** Deterministic checks catch real structural bugs (missing acceptance criteria, dependency cycles, descriptions too short to estimate). LLM-based quality review adds cost and latency for uncertain benefit at this stage.
+**How to apply:** Do not interpret `criticPassed: true` as a quality seal. When reporting critic results, label the check as "Structure validation" not "Quality review." Future: wire `critic-system.md` when eval data shows structural checks are insufficient.
+
+### 4. PRD Updater Priority Logic Untested (FB4 — Documented Coverage Gap)
+
+**Rule:** The PRD Updater prompt instructs the LLM to update feature priorities when users say "must have", "nice to have", or "don't need" (`prd-updater-system.md` line 20). The cooperative eval simulator always picks `recommended: true` options with descriptive answers — it never uses priority language. This means the priority-update branch is not exercised in automated testing.
+**Why:** The cooperative simulator validates the happy path. Priority language requires an opinionated or evasive user persona that does not exist yet.
+**How to apply:** Do NOT remove the priority-update instruction — it is correct behavior. Track as a coverage gap. When adding eval personality variants (opinionated, evasive, contradictory), include at least one that uses explicit priority language and verify the updater changes priorities accordingly.
+
+---
+
+## LangGraph Resume: updateState + stream(null)
+
+**RULE** (2026-05-02)
+
+**Rule:** To resume a LangGraph graph from an `interruptBefore` checkpoint, call `graph.updateState(config, newState)` then `graph.stream(null, config)`. Do NOT pass input to `stream()` — `graph.stream(input, config)` restarts the graph from `__start__` instead of resuming from the interrupted node.
+**Why:** Discovered during eval harness development. Calling `stream({ humanResponses }, config)` re-ran all nodes (contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer) from scratch on every resume, never reaching the storyWriter node past the interrupt. Cost 4 debugging cycles and ~$3 in wasted Vertex AI calls. The `updateState` approach merges new state into the checkpoint, then `stream(null)` resumes from the exact interrupt point.
+**How to apply:** Any code that resumes a LangGraph graph after an interrupt (eval runner, dashboard HITL, future orchestrator resume) must use the two-step pattern. The `runClarifierPipelineStream` convenience wrapper in `packages/agents-clarifier/src/run.ts` uses `stream(invokeInput)` — this may need updating if the dashboard exhibits the same restart behavior (currently untested).

@@ -12,7 +12,7 @@ CHIP is a four-stage agent spine (**Clarify → Architect → Implement → Revi
 
 **What's operational today:**
 
-- **Clarifier** — 6-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling
+- **Clarifier** — 9-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling
 - **Design pipeline** — 4-stage Research → Planning → Design → Evaluator with vision correction
 - **RAG layer** — hybrid search (BM25 + dense + rerank) for code, docs, and designs; repo map; 5 MCP tools
 - **Dashboard** — 15 routes, Mantine v9, serves both design and clarifier workflows
@@ -34,7 +34,9 @@ This is the architectural authority for CHIP. Every layer has current-state,
 target-vision, and locked-vs-open decisions explicit.
 
 For other reading modes:
-- Evidence behind these decisions → `research-report.md`
+- Why the spine pattern wins → `architecture/spine-pattern.md` (24 citations)
+- How CHIP applies the spine → `architecture/spine-implementation.md`
+- Evidence behind these decisions → `research/architect-design.md`, `research/clarifier-research.md`
 - Why we rejected alternatives → `design-decisions.md` (appendix)
 - How decisions are sequenced into work → `roadmap.md`
 
@@ -101,7 +103,7 @@ CHIP is an autonomous multi-agent SDLC framework that takes a product idea and p
 | 2 | Coordination substrate | Partial | Clarifier uses typed channels. Older code still uses EventEmitter for some control flow. | Typed LangGraph channels for control; event bus relegated to telemetry |
 | 3 | Agent taxonomy | Partial | Clarifier + Design pipeline operational as spine stages. Architect/Implementer/Reviewer not built. | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
 | 4 | State persistence | Partial | YAML artifacts operational. Checkpointer factory built (MemorySaver/PostgresSaver). Not yet wired into all pipelines. | YAML for artifacts + Postgres LangGraph checkpointer for run state |
-| 5 | Clarifier / input | Done | Six-stage LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling. | Six-stage conversational clarifier with assumption ledger |
+| 5 | Clarifier / input | Done | Nine-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling. | Nine-node conversational clarifier with assumption ledger |
 | 6 | RAG / context | Done | Hybrid search (BM25+dense+rerank) for code/docs/designs. Repo map. 5 MCP tools. Wired into Clarifier. | Aider-style repo map + voyage-code-3 + Qdrant for code; LlamaIndex + voyage-3-large for docs |
 | 7 | Design pipeline | Partial | Per-screen pipeline works (Research→Planning→Design→Evaluator). Cross-screen coherence is post-hoc. | In-loop cross-screen coherence with shared running context |
 | 8 | Implementation | Not started | Architecture specified (single-threaded, sequential write order). No code. | Single-threaded tool-loop implementer with sequential write order |
@@ -223,20 +225,12 @@ The `CLAUDE.md` rule at repo root that mandates event-bus-only communication is 
     For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
-Ten peer agents in PRD v2.0:
 
-| Role | Status |
-|---|---|
-| PM Agent | Orchestrator + task graph |
-| Product Agent | PRD generation |
-| Architect Agent | TDD + ADRs |
-| Design Agent | DesignSpec + screens |
-| Implementation Agent | Code generation |
-| Testing Agent | Tests |
-| Review Agent | Code review |
-| DevOps Agent | CI/CD |
-| Security Agent | SAST/DAST |
-| Docs Agent | API docs |
+!!! info "Historical context"
+
+    The original PRD v2.0 described ten peer agents (PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs) communicating via event bus. This design was rejected during research before any code was written. The spine architecture was the first and only implementation. The ten-agent taxonomy is preserved here as context for why the spine was chosen.
+
+Four-stage spine with the Clarifier operational (9-node LangGraph StateGraph, Tasks 1.0–1.7 complete). RAG layer wired into Clarifier's Context Retriever. Architect, Implementer, and Reviewer specified but not yet built. Six specialist tools defined, two operational (RAG, Design).
 
 ### Target vision
 **Four-stage spine with specialists as tools:**
@@ -256,28 +250,14 @@ Ten peer agents in PRD v2.0:
 - **Documentation generator** — invoked during Implementer phase.
 
 ```mermaid
-graph LR
-    subgraph "Current: 10 Peer Agents"
-        PM[PM Agent]
-        Prod[Product Agent]
-        Arch[Architect Agent]
-        Des[Design Agent]
-        Impl[Implementation Agent]
-        Test[Testing Agent]
-        Rev[Review Agent]
-        DevOps[DevOps Agent]
-        Sec[Security Agent]
-        Docs[Docs Agent]
+graph TD
+    subgraph Spine ["Sequential Spine (single writer per stage)"]
+        C[Clarifier] -->|EnrichedRequirement + AssumptionLedger| A[Architect]
+        A -->|ArchitectureSpec + TaskPlan| I[Implementer]
+        I -->|CodeDiff| R[Reviewer]
     end
 
-    subgraph "Target: 4-Stage Spine + Specialists"
-        direction TB
-        C[Clarifier] --> A[Architect]
-        A --> I[Implementer]
-        I --> R[Reviewer]
-    end
-
-    subgraph Specialists
+    subgraph Specialists ["Specialist Tools (invoked by spine stages)"]
         RS[Research Subagent]
         DS[Design Subagent]
         TG[Test Generator]
@@ -286,26 +266,20 @@ graph LR
         DG[Doc Generator]
     end
 
-    PM -.->|absorbed into| C
-    Prod -.->|absorbed into| C
-    Arch -.->|becomes| A
-    Des -.->|becomes specialist| DS
-    Impl -.->|becomes| I
-    Test -.->|becomes specialist| TG
-    Rev -.->|becomes| R
-    DevOps -.->|becomes specialist| SS
-    Sec -.->|becomes specialist| SS
-    Docs -.->|becomes specialist| DG
+    C -.-> RS
+    A -.-> RS
+    A -.-> DS
+    I -.-> RS
+    I -.-> DS
+    I -.-> TG
+    I -.-> DG
+    R -.-> SS
+    R -.-> VV
 
-    I -.->|invokes| RS
-    I -.->|invokes| DS
-    I -.->|invokes| TG
-    R -.->|invokes| SS
-
-    style C fill:#2ECC71,color:#fff
-    style A fill:#95A5A6,color:#fff
-    style I fill:#95A5A6,color:#fff
-    style R fill:#95A5A6,color:#fff
+    style C fill:#4A90D9,color:#fff
+    style A fill:#7B68EE,color:#fff
+    style I fill:#2ECC71,color:#fff
+    style R fill:#E67E22,color:#fff
 ```
 
 ### Locked decisions
@@ -367,10 +341,11 @@ Three tiers of persistence, each with the right substrate:
 
 !!! abstract "Expanded overview"
 
-    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
+    For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md).
+    For the research-backed design with 24 citations, see [CHIP's Spine — Clarifier](architecture/spine-implementation.md#stage-1-clarifier).
 
 ### Current state
-- `packages/agents-clarifier/` implements all 6 Clarifier stages as a LangGraph `StateGraph` with typed `Annotation.Root()` channels (first LangGraph graph in the monorepo).
+- `packages/agents-clarifier/` implements all 9 Clarifier nodes as a LangGraph `StateGraph` with typed `Annotation.Root()` channels (first LangGraph graph in the monorepo).
 - **Context Retriever** (Task 1.1): bootstrap loads base catalog + tokens; evolution calls all 5 RAG tools (`searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`) via `Promise.allSettled` with partial failure tolerance.
 - **PRD/Request Analyzer** (Task 1.2): `claude-opus-4-6`, forced-JSON via `responseSchema`, mode-aware prompts, `PRDSchema.safeParse()` validation.
 - **Gap/Conflict Detector** (Task 1.3): deterministic checklist (auth, validation, errors, NFR targets, accessibility, orphan screens) + ClarifyGPT (2 LLM calls with `claude-sonnet-4-6` — 3 implementations at temp 0.7, divergence analysis at temp 0). Round>1 filters addressed gaps.
@@ -380,7 +355,7 @@ Three tiers of persistence, each with the right substrate:
 - **Graph topology**: `__start__` → contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer → [HITL interrupt] → storyWriter → critic → conditional routing (retry/new round/escalation/complete). Two HITL interrupt points: `storyWriter` (human answers questions) and `escalationGate` (accept/restart/abandon after max rounds).
 - **Escalation resolved**: after 3 rounds without convergence, user gets accept (best-effort PRD, low confidence), restart (reset rounds), or abandon (exit). Implemented via `escalationGate` node with `interruptBefore`.
 - **Not yet wired**: `RequirementsClarified` event emission in `emitComplete` node (Task 1.7 remaining). Dashboard integration at `/new` and `/evolve` (Task 1.8).
-- **108 tests** across 7 test suites in `packages/agents-clarifier/`.
+- **114+ tests** across 7 test suites in `packages/agents-clarifier/`.
 
 ```mermaid
 graph TD
@@ -415,7 +390,7 @@ graph TD
 ```
 
 ### Target vision
-Six-stage conversational clarifier, symmetric across bootstrap (new app) and evolution (change to existing app) modes:
+Nine-node conversational clarifier, symmetric across bootstrap (new app) and evolution (change to existing app) modes:
 
 1. **Context Retriever** — mode-dependent. Bootstrap: component catalog, pattern library, platform constraints. Evolution: codebase via RAG, existing designs, ADRs, PRD.
 2. **PRD / Request Analyzer** — extracts structured intent into forced-JSON schema. Features, personas, data entities, screens, NFRs, success metrics, out-of-scope items.
@@ -460,7 +435,7 @@ Six-stage conversational clarifier, symmetric across bootstrap (new app) and evo
 - Qdrant vector store (3 collections: `agentforge_code`, `agentforge_docs`, `agentforge_designs`). Docker Compose at `docker/docker-compose.agentforge.yml`.
 - 5 MCP-compatible tool definitions in `createRetrievalTools()` factory.
 - Golden query evaluation framework with precision@5 gate.
-- Not yet wired into LangGraph spine stages (Phase 1 — Clarifier — will be first consumer).
+- Wired into Clarifier's Context Retriever node (5 tools called via `Promise.allSettled` in both bootstrap and evolution modes). Architect, Implementer, and Reviewer will consume retrieval when built.
 
 ### Target vision
 Three retrieval pipelines feeding a single `RetrievedContext` artifact:
@@ -726,7 +701,7 @@ graph TD
 - **Bounded retry (≤2) before escalation.**
 
 ### Open decisions
-- **Reviewer model choice.** Claude Sonnet 4.5 or Opus 4 for higher quality at higher cost. Sonnet for POC.
+- **Reviewer model choice.** `claude-sonnet-4-6` or `claude-opus-4-6` for higher quality at higher cost. Sonnet for POC.
 - **Whether reviewer findings need their own schema for downstream consumption.** Probably yes — the UI displays them, Implementer parses them.
 - **How to scope "the diff" for large changes.** If the diff is >1000 lines, reviewer by hunk? By file? Likely per-file with a final cross-file integration review.
 
@@ -1082,9 +1057,9 @@ The discipline already in `CLAUDE.md` (no stub fallbacks, ADR every PRD deviatio
 
 ## 18. What this document is not
 
-- It is not a PRD. PRD-v2.md is the PRD. This document is the architectural vision.
+- It is not a PRD. `docs/specs/PRD.md` is the PRD. This document is the architectural vision.
 - It is not an implementation plan. The plan is `roadmap.md`.
-- It is not a research report. The research report (`research-report.md`) contains the evidence; this document states the decisions derived from it.
+- It is not a research report. The research files (`research/architect-design.md`, `research/clarifier-research.md`, `research/architect-codebase-grounded-design.md`) contain the evidence; this document states the decisions derived from it. The spine architecture pages (`architecture/spine-pattern.md`, `architecture/spine-implementation.md`) synthesize the research into consolidated references.
 - It is not immutable. Every "locked decision" has a revisit trigger. Every "open decision" is explicitly open. New evidence changes the document.
 
 ---

@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.1.0
 purpose: Divergence analysis for evolution mode — options grounded in existing codebase patterns.
 ---
 
@@ -24,6 +24,10 @@ For each gap:
    - **recommended**: true for exactly ONE option — prefer existing codebase patterns
    - **source**: "codebase" when matching an existing pattern (include citation), "llm" otherwise
    - **citation**: file:line reference when source is "codebase" (e.g. "src/auth/session.ts:45")
+
+## Already-Clarified Topics
+
+If an "Already Clarified" section appears in the user message below, those topics have been answered. Do NOT generate gaps that ask about the same topic — even rephrased. If the user already answered "just for me" to a users/auth question, do not ask about authentication strategy, multi-tenancy, or user management.
 
 ## Grounding rules
 

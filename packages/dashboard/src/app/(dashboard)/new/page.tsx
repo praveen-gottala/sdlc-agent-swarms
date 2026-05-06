@@ -38,11 +38,9 @@ function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAns
   const currentQuestion = questions[currentQIdx];
   const allAnswered = questions.every((q) => answers[q.id]?.trim());
 
-  const handleOptionSelect = (questionId: string, answer: string, option?: StructuredOption): void => {
+  const handleOptionSelect = (questionId: string, answer: string, _option?: StructuredOption): void => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
     setChatInput('');
-    const q = questions.find((qq) => qq.id === questionId);
-    if (q) onAddUserAnswer(questionId, q.text, answer, option?.label);
     requestAnimationFrame(() => {
       tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
@@ -53,7 +51,6 @@ function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAns
     const answer = chatInput.trim();
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: answer }));
     setChatInput('');
-    onAddUserAnswer(currentQuestion.id, currentQuestion.text, answer);
   };
 
   const handleSubmitAll = (): void => {
@@ -62,6 +59,16 @@ function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAns
       const matchedOption = q?.options?.find((o) => o.label === answer);
       return { questionId, answer, selectedOption: matchedOption?.label };
     });
+    // Single summary bubble instead of per-answer bubbles
+    const summaryParts = answeredQuestions.map((a) => {
+      const q = questions.find((qq) => qq.id === a.questionId);
+      return a.selectedOption ?? a.answer;
+    });
+    onAddUserAnswer(
+      'summary',
+      `Answered ${answeredQuestions.length} questions`,
+      summaryParts.join(', '),
+    );
     onAllAnswered(answeredQuestions);
   };
 

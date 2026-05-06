@@ -131,9 +131,9 @@ export const PRDSchema = z.object({
   personas: z.array(PersonaSchema),
   dataEntities: z.array(DataEntitySchema),
   screens: z.array(ScreenRefSchema),
-  nfrs: z.array(NFRSchema),
-  successMetrics: z.array(SuccessMetricSchema),
-  outOfScope: z.array(z.string()),
+  nfrs: z.array(NFRSchema).default([]),
+  successMetrics: z.array(SuccessMetricSchema).default([]),
+  outOfScope: z.array(z.string()).default([]),
   version: z.string(),
   status: z.enum(['draft', 'reviewed', 'approved']),
 });

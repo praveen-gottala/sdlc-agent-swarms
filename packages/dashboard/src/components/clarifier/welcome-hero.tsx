@@ -3,6 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAutoResize } from '@/lib/hooks/use-auto-resize';
 
+const MAX_FILE_SIZE_BYTES = 512 * 1024;
+const ACCEPTED_EXTENSIONS = new Set(['.md', '.txt', '.yaml', '.yml']);
+
+interface AttachedFile {
+  readonly name: string;
+  readonly content: string;
+}
+
 const BLOB_COLORS = [
   'var(--color-gradient-1)',
   'var(--color-gradient-2)',
@@ -20,7 +28,7 @@ const PLACEHOLDER_SUGGESTIONS = [
 ] as const;
 
 interface WelcomeHeroProps {
-  readonly onSubmit: (text: string) => void;
+  readonly onSubmit: (text: string, attachment?: { name: string; displayText?: string }) => void;
 }
 
 export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
@@ -29,7 +37,9 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
   const [placeholderVisible, setPlaceholderVisible] = useState(true);
   const [blobColor1, setBlobColor1] = useState(0);
   const [blobColor2, setBlobColor2] = useState(2);
+  const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const prefersReducedMotion = useRef(false);
 
   useEffect(() => {
@@ -66,11 +76,37 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
 
   useAutoResize(inputRef, value);
 
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!ACCEPTED_EXTENSIONS.has(ext)) return;
+    if (file.size > MAX_FILE_SIZE_BYTES || file.size === 0) return;
+
+    const content = await file.text();
+    setAttachedFile({ name: file.name, content });
+  }, []);
+
   const handleSubmit = useCallback(() => {
-    if (!value.trim()) return;
-    onSubmit(value.trim());
+    const hasFile = attachedFile !== null;
+    const hasText = value.trim().length > 0;
+    if (!hasFile && !hasText) return;
+
+    let rawInput: string;
+    if (hasFile && hasText) {
+      rawInput = `${attachedFile.content}\n\n---\n\nAdditional context:\n${value.trim()}`;
+    } else if (hasFile) {
+      rawInput = attachedFile.content;
+    } else {
+      rawInput = value.trim();
+    }
+
+    onSubmit(rawInput, hasFile ? { name: attachedFile.name, displayText: hasText ? value.trim() : undefined } : undefined);
     setValue('');
-  }, [value, onSubmit]);
+    setAttachedFile(null);
+  }, [value, attachedFile, onSubmit]);
 
   return (
     <div className="flex flex-1 flex-col items-center pt-[18vh] px-6">
@@ -129,19 +165,43 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
           {/* Bottom toolbar row */}
           <div className="flex items-center justify-between border-t border-border/30 pt-2.5">
             <div className="flex items-center gap-1">
-              {/* Attachment button */}
-              <button type="button" className="rounded-lg p-1.5 text-text-muted/50 transition-colors hover:text-text-muted hover:bg-bg-elevated/50">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg p-1.5 text-text-muted/50 transition-colors hover:text-text-muted hover:bg-bg-elevated/50">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
               </button>
+              {attachedFile && (
+                <div className="flex items-center gap-1.5 rounded-lg bg-bg-elevated/60 border border-border/40 px-2.5 py-1 text-[12px] text-text-secondary animate-[fadeSlideUp_0.2s_ease-out]">
+                  <svg className="h-3.5 w-3.5 text-text-muted/70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                  </svg>
+                  <span className="max-w-[160px] truncate">{attachedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAttachedFile(null)}
+                    className="ml-0.5 rounded p-0.5 text-text-muted/50 transition-colors hover:text-text-muted hover:bg-bg-elevated"
+                    aria-label="Remove attached file"
+                  >
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".md,.txt,.yaml,.yml"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] text-text-muted/40 mr-1">Opus</span>
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!value.trim()}
+                disabled={!value.trim() && attachedFile === null}
                 className="flex-shrink-0 rounded-xl bg-accent-indigo p-2 transition-all hover:bg-accent-indigo/85 active:scale-[0.95] disabled:opacity-20 disabled:pointer-events-none"
               >
                 <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

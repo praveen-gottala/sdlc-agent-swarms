@@ -235,11 +235,14 @@ function buildUserMessage(state: ClarifierState): string {
  */
 export function createPrdAnalyzer(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`prd-analyzer: ENTER round=${state.round}`);
     const systemPrompt = loadSystemPrompt();
     const promptVersion = getPromptVersion();
 
     const userMessage = buildUserMessage(state);
 
+    debugLog('prd-analyzer: LLM call START (claude-opus-4-6)');
     const result = await deps.provider.complete(
       {
         system: systemPrompt,
@@ -254,6 +257,7 @@ export function createPrdAnalyzer(deps: ClarifierDeps): ClarifierNodeFn {
       },
     );
 
+    debugLog(`prd-analyzer: LLM call END ${Date.now() - _t0}ms ok=${result.ok}`);
     if (!result.ok) {
       debugLog(`prd-analyzer: LLM call failed: ${result.error.code}`);
       return { error: `PRD Analyzer LLM call failed: ${result.error.code}` };
@@ -284,6 +288,7 @@ export function createPrdAnalyzer(deps: ClarifierDeps): ClarifierNodeFn {
       return { error: `PRD Analyzer: invalid response: ${issues}` };
     }
 
+    debugLog(`prd-analyzer: EXIT features=${parsed.data.features.length} screens=${parsed.data.screens.length} ${Date.now() - _t0}ms`);
     return { prdDraft: parsed.data };
   };
 }

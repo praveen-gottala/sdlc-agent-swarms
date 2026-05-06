@@ -1,6 +1,6 @@
 # Design Pipeline Architecture & Data Flow
 
-> End-to-end trace of the AgentForge UX design pipeline — from project
+> End-to-end trace of the CHIP UX design pipeline — from project
 > initialization through design generation to code output.
 
 ---

@@ -2,60 +2,71 @@
 
 > Authoritative source: [vision.md Layer 4](../vision.md#layer-4-state-and-persistence)
 
-CHIP persists state in three tiers, each matched to its access pattern. Design artifacts (PRDs, design specs, tokens) live as YAML/JSON files in `agentforge/spec/` — human-readable, git-tracked, diffable. Run state (which node is executing, what's in each channel, interrupt status) lives in a Postgres checkpointer that survives process crashes. Ephemeral state (tool call results, intermediate outputs) lives in memory and is discarded after each run.
+CHIP separates its persistence into three tiers: human-editable YAML files tracked in git for design artifacts, a Postgres-backed LangGraph checkpointer (a component that saves pipeline state after every node boundary for crash recovery and pause/resume) that persists run state including [channel contents](coordination-and-state.md) and interrupt status, and in-memory storage for temporary tool outputs. Each tier is optimized for its access pattern — YAML for human readability and git history, Postgres for crash recovery and resume, in-memory for speed on disposable outputs.
 
-This separation exists because a single persistence backend is wrong for at least one of these use cases. YAML is ideal for artifacts humans read and edit but wrong for resumable run state. A database is ideal for crash recovery but wrong for artifacts that need git-tracked version history (Design Decisions, Section 2.2; Research Report, §"Inter-agent communication," pattern 2: "Blackboard via git — the right default for code itself").
+## Why CHIP does this
+
+The Research Report's [inter-agent communication analysis](../research-report.md#inter-agent-communication) identifies five ranked patterns for how agents exchange data. Pattern 2 — "Blackboard via git — the right default for code itself" — directly motivates Tier 1: design artifacts live as files that humans can read, edit, and version alongside code. The [document system](../research-report.md#document-system-living-docs-specs-artifacts-ephemeral) further defines a four-tier artifact hierarchy (living documents, immutable specs, generated artifacts, ephemeral context) that maps onto CHIP's three persistence tiers ([Design Decisions §2.1](../design-decisions.md#21-four-tier-artifact-hierarchy)).
+
+Run state needs a different backend entirely. The Clarifier's HITL interrupts — where the pipeline pauses for human answers and resumes hours later — require durable checkpoints that survive process crashes. YAML files can't do this; a transactional database can. Ephemeral outputs (tool call results, raw subagent responses) need neither git history nor crash recovery — they're consumed once and discarded.
 
 ## How it works
 
 ```mermaid
 graph TD
-    subgraph Artifacts ["Tier 1: YAML/JSON in Git"]
-        PT[pages.yaml] --> Spec["agentforge/spec/"]
-        MT[models.yaml] --> Spec
-        DT[design-tokens.yaml] --> Spec
-        DS[designs/*.json] --> Designs["agentforge/designs/"]
+    subgraph Spine ["Spine Stages"]
+        C[Clarifier]
+        A[Architect]
+        I[Implementer]
+        R[Reviewer]
     end
 
-    subgraph RunState ["Tier 2: Postgres Checkpointer"]
-        CP[LangGraph checkpoints] --> PG[(Postgres 16)]
-        CP2[Channel contents] --> PG
-        CP3[Interrupt status] --> PG
-    end
+    T1["Tier 1: YAML/JSON in Git\npages.yaml · design-tokens.yaml\ndesigns/*.json"]
+    T2["Tier 2: Postgres Checkpointer\ncheckpoints · channel state\ninterrupt status"]
+    T3["Tier 3: In-Memory\ntool results · subagent outputs"]
 
-    subgraph Ephemeral ["Tier 3: In-Memory"]
-        TC[Tool call results]
-        SA[Subagent outputs]
-    end
+    A -->|"write design specs"| T1
+    I -->|"write code artifacts"| T1
+    C -->|"HITL interrupts"| T2
+    A & I & R -->|"run state"| T2
+    C & A & I & R -.->|"ephemeral"| T3
 
-    style PG fill:#4A90D9,color:#fff
-    style Spec fill:#2ECC71,color:#fff
+    style T1 fill:#2ECC71,color:#fff
+    style T2 fill:#4A90D9,color:#fff
+    style T3 fill:#95A5A6,color:#fff
 ```
+
+*Diagram legend: green = filesystem (git-tracked), blue = database (Postgres), gray = volatile (in-memory).*
 
 <details><summary>Mermaid source (paste into mermaid.live)</summary>
 
-```mermaid
+```text
 graph TD
-    subgraph Artifacts ["Tier 1: YAML/JSON in Git"]
-        PT[pages.yaml] --> Spec["agentforge/spec/"]
-        MT[models.yaml] --> Spec
-        DT[design-tokens.yaml] --> Spec
-        DS[designs/*.json] --> Designs["agentforge/designs/"]
+    subgraph Spine ["Spine Stages"]
+        C[Clarifier]
+        A[Architect]
+        I[Implementer]
+        R[Reviewer]
     end
 
-    subgraph RunState ["Tier 2: Postgres Checkpointer"]
-        CP[LangGraph checkpoints] --> PG[(Postgres 16)]
-        CP2[Channel contents] --> PG
-        CP3[Interrupt status] --> PG
-    end
+    T1["Tier 1: YAML/JSON in Git\npages.yaml · design-tokens.yaml\ndesigns/*.json"]
+    T2["Tier 2: Postgres Checkpointer\ncheckpoints · channel state\ninterrupt status"]
+    T3["Tier 3: In-Memory\ntool results · subagent outputs"]
 
-    subgraph Ephemeral ["Tier 3: In-Memory"]
-        TC[Tool call results]
-        SA[Subagent outputs]
-    end
+    A -->|"write design specs"| T1
+    I -->|"write code artifacts"| T1
+    C -->|"HITL interrupts"| T2
+    A & I & R -->|"run state"| T2
+    C & A & I & R -.->|"ephemeral"| T3
+
+    style T1 fill:#2ECC71,color:#fff
+    style T2 fill:#4A90D9,color:#fff
+    style T3 fill:#95A5A6,color:#fff
 ```
 
 </details>
+
+**Spine stage → tier mapping:** The Clarifier is the heaviest Tier 2 consumer — its HITL interrupts persist full channel state so the dashboard can resume hours later. Architect and Implementer are the primary Tier 1 writers — design specs, tokens, and task plans flow into `agentforge/spec/` as human-readable YAML. All four stages use Tier 3 for tool call results that are consumed and discarded within a single node execution.
 
 ### Tier 1: YAML/JSON artifacts
 
@@ -88,7 +99,7 @@ const saver = PostgresSaver.fromConnString(process.env.DATABASE_URL);
 await saver.setup();  // creates checkpoint tables if missing
 ```
 
-Checkpoints fire on every node boundary — not just phase boundaries — giving fine-grained resumption. When a HITL interrupt fires (e.g., the Clarifier waits for human answers at `storyWriter`), the full channel state is persisted. The dashboard resumes by invoking the compiled graph with the same `threadId`.
+Checkpoints fire on every node boundary — not just phase boundaries — giving fine-grained resumption. When a HITL interrupt fires (e.g., the Clarifier waits for human answers at [`storyWriter`](clarifier-pipeline.md)), the full [channel state](coordination-and-state.md) is persisted. The dashboard resumes by invoking the compiled graph with the same `threadId`.
 
 Docker Compose at `docker/docker-compose.agentforge.yml` provides Postgres 16 on port 5433.
 
@@ -105,7 +116,7 @@ Tool call results and subagent intermediate outputs live in memory per run. Afte
 | `loadTasks()` / `saveTasks()` | `packages/core/src/state/task-manager.ts` | Task state YAML persistence |
 | Lock manager | `packages/core/src/state/lock-manager.ts` | TTL locks with content hash human-edit detection |
 | Learnings manager | `packages/core/src/state/learnings-manager.ts` | Per-agent learning persistence in `.agentforge/learnings/` |
-| File event bridge | `packages/core/src/events/file-event-bridge.ts` | Cross-runtime telemetry via `.agentforge/events.jsonl` |
+| File event bridge | `packages/core/src/events/file-event-bridge.ts` | Cross-runtime telemetry via `.agentforge/events.jsonl` (deprecated — ADR-043) |
 
 ## Current implementation
 
@@ -117,14 +128,19 @@ Tool call results and subagent intermediate outputs live in memory per run. Afte
 
 ## Known limitations
 
-- Checkpointer fallback is silent — when `DATABASE_URL` is unset, both the CLI runner and dashboard routes fall back to `MemorySaver` without warning. Crash recovery is unavailable in this mode.
+!!! warning "Silent fallback"
+
+    When `DATABASE_URL` is unset, both the CLI runner and dashboard routes fall back to `MemorySaver` without warning. Crash recovery is unavailable in this mode.
+
 - Retention policy for checkpoints is undefined — kept indefinitely during POC. Production needs a TTL (vision Layer 4, open decision).
 - No SQLite checkpointer option for local development — LangGraph has one, but it's not wired into the factory (vision Layer 4, open decision).
-- The file event bridge (`.agentforge/events.jsonl`) is a workaround for cross-runtime telemetry between TypeScript and the deprecated Python engine — it should be removed after ADR-043 migration completes.
+- The file event bridge (`.agentforge/events.jsonl`) is a workaround for cross-runtime telemetry between TypeScript and the deprecated Python engine — scheduled for removal after ADR-043 migration completes.
 
 ## Related
 
-- [Coordination & State](coordination-and-state.md) — how agents coordinate through channels
+- [Coordination & State](coordination-and-state.md) — the logical view: what flows through channels and how agents coordinate (this page covers the physical view: where state is stored)
 - [Vision Layer 4](../vision.md#layer-4-state-and-persistence) — persistence authority
+- [Spine Implementation](../architecture/spine-implementation.md) — how spine stages interact with persistence tiers
+- [Design Decisions §2.1](../design-decisions.md#21-four-tier-artifact-hierarchy) — four-tier artifact hierarchy rationale
 - [Observability](observability.md) — telemetry persistence via Langfuse
 - [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) — LangGraph adoption

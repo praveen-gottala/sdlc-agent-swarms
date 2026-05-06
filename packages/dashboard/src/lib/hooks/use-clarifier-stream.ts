@@ -35,7 +35,7 @@ interface UseClarifierStreamReturn {
   readonly activeNode: string | null;
   readonly completedNodes: ReadonlySet<string>;
   readonly interruptedAt: string | null;
-  readonly startClarifier: (rawInput: string) => void;
+  readonly startClarifier: (rawInput: string, attachment?: { name: string; displayText?: string }) => void;
   readonly submitAnswers: (answers: ReadonlyArray<{ questionId: string; answer: string; selectedOption?: string }>) => void;
   readonly submitEscalation: (decision: 'accept' | 'restart' | 'abandon') => void;
   readonly addUserAnswer: (questionId: string, questionText: string, answer: string, selectedOption?: string) => void;
@@ -48,6 +48,8 @@ const NEXT_NODE: Record<string, string> = {
   gapDetector: 'questionPrioritizer',
   questionPrioritizer: 'storyWriter',
   storyWriter: 'critic',
+  critic: 'prdUpdater',
+  prdUpdater: 'emitComplete',
 };
 
 const STAGE_ACTIVITY_LABEL: Record<string, string> = {
@@ -56,7 +58,8 @@ const STAGE_ACTIVITY_LABEL: Record<string, string> = {
   gapDetector: 'Prioritizing clarification questions...',
   questionPrioritizer: 'Preparing questions for you...',
   storyWriter: 'Reviewing and refining...',
-  critic: 'Finalizing...',
+  critic: 'Updating your PRD...',
+  prdUpdater: 'Finalizing requirements...',
 };
 
 const STAGE_DESCRIPTION: Record<string, string> = {
@@ -121,6 +124,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
   const [completedNodes, setCompletedNodes] = useState<Set<string>>(new Set());
   const [interruptedAt, setInterruptedAt] = useState<string | null>(null);
   const seedRef = useRef<string>('');
+  const nodeStartTimesRef = useRef<Map<string, number>>(new Map());
 
   const appendMessage = useCallback((payload: ChatMessagePayload) => {
     setMessages((prev) => [...prev, createMessage(payload)]);
@@ -129,6 +133,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
   const handleClarifierResult = useCallback((data: ClarifierResponse) => {
     setThreadId(data.threadId);
     setClarifierState(data.state);
+    setMessages((prev) => prev.filter((m) => m.payload.kind !== 'agent-thinking'));
 
     if (data.state.prdDraft) setPrdDraft(data.state.prdDraft);
     if (data.state.featurePlan) setFeaturePlan(data.state.featurePlan);
@@ -177,24 +182,35 @@ export function useClarifierStream(): UseClarifierStreamReturn {
     switch (eventType) {
       case 'stage': {
         const stageData = d as unknown as StageEvent;
+        const now = Date.now();
+        const clientStartTime = nodeStartTimesRef.current.get(stageData.stage);
+        const durationMs = stageData.durationMs ?? (clientStartTime ? now - clientStartTime : undefined);
         setStage(stageData);
         setCompletedNodes((prev) => { const next = new Set(prev); next.add(stageData.stage); return next; });
-        setActiveNode(NEXT_NODE[stageData.stage] ?? null);
+        const nextNode = NEXT_NODE[stageData.stage] ?? null;
+        setActiveNode(nextNode);
+        if (nextNode) {
+          nodeStartTimesRef.current.set(nextNode, now);
+        }
         appendMessage({
           kind: 'tool-result',
           node: stageData.stage,
           label: stageData.label,
           summary: `Step ${stageData.index + 1} of ${stageData.total}`,
           status: 'completed',
+          durationMs,
           details: STAGE_DESCRIPTION[stageData.stage]
             ? { description: STAGE_DESCRIPTION[stageData.stage] }
             : undefined,
         });
+        if (stageData.stage === 'emitComplete') {
+          setMessages(prev => prev.filter(m => m.payload.kind !== 'agent-thinking'));
+        }
         const nextActivity = STAGE_ACTIVITY_LABEL[stageData.stage];
         if (nextActivity) {
           setMessages(prev => prev.map(m =>
             m.payload.kind === 'agent-thinking'
-              ? { ...m, payload: { ...m.payload, label: nextActivity } }
+              ? { ...m, payload: { ...m.payload, label: nextActivity, startedAt: now } }
               : m
           ));
         }
@@ -223,6 +239,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
         break;
       }
       case 'error': {
+        setMessages((prev) => prev.filter((m) => m.payload.kind !== 'agent-thinking'));
         setError((d.error as string) ?? 'Pipeline error');
         setPhase('error');
         appendMessage({ kind: 'error', message: (d.error as string) ?? 'Pipeline error' });
@@ -235,7 +252,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
     }
   }, [appendMessage, handleClarifierResult]);
 
-  const startClarifier = useCallback((rawInput: string) => {
+  const startClarifier = useCallback((rawInput: string, attachment?: { name: string; displayText?: string }) => {
     seedRef.current = rawInput;
     setPhase('running');
     setError(null);
@@ -247,8 +264,14 @@ export function useClarifierStream(): UseClarifierStreamReturn {
     setActiveNode('contextRetriever');
     setCompletedNodes(new Set());
     setInterruptedAt(null);
-    appendMessage({ kind: 'user-seed', text: rawInput });
-    appendMessage({ kind: 'agent-thinking', stage: 'start', label: 'Starting analysis...', index: 0, total: 8 });
+    nodeStartTimesRef.current = new Map([['contextRetriever', Date.now()]]);
+    appendMessage({
+      kind: 'user-seed',
+      text: rawInput,
+      attachment: attachment ? { name: attachment.name } : undefined,
+      displayText: attachment?.displayText,
+    });
+    appendMessage({ kind: 'agent-thinking', stage: 'start', label: 'Starting analysis...', index: 0, total: 8, startedAt: Date.now() });
 
     (async () => {
       try {
@@ -280,7 +303,8 @@ export function useClarifierStream(): UseClarifierStreamReturn {
     setPhase('running');
     setInterruptedAt(null);
     setActiveNode('storyWriter');
-    appendMessage({ kind: 'agent-thinking', stage: 'processing', label: 'Processing your answers...', index: 0, total: 8 });
+    nodeStartTimesRef.current.set('storyWriter', Date.now());
+    appendMessage({ kind: 'agent-thinking', stage: 'processing', label: 'Processing your answers...', index: 0, total: 8, startedAt: Date.now() });
 
     (async () => {
       try {

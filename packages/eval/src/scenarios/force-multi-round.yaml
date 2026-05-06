@@ -1,0 +1,18 @@
+id: force-multi-round
+name: Forced Multi-Round
+description: |
+  Uses maxAnswersPerRound=2 so the simulator only answers 2 questions per round,
+  leaving remaining gaps unresolved. This forces routing through prdUpdater,
+  guaranteeing prd-diff-bytes and prd-hash-equal-across-rounds produce real values.
+  The Phase 3 acceptance test (gap dedup across rounds) lives here.
+rawInput: |
+  Build a project management tool with kanban boards, time tracking,
+  team collaboration, and reporting dashboards.
+mode: bootstrap
+maxRounds: 3
+maxAnswersPerRound: 2
+expectedBehavior:
+  minQuestions: 1
+  maxQuestions: 45
+  expectEscalation: false
+  expectMultiRound: true

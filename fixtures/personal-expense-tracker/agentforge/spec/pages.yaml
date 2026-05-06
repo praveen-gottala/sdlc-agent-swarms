@@ -176,3 +176,33 @@ pages:
     designStatus: rendered
     correctionIteration: 2
     designScore: null
+  - id: page-e2e-test-page-for-design-generation-flow-mooqu4bi
+    name: E2E test page for design generation flow
+    description: E2E test page for design generation flow
+    route: /e2e-test-page-for-design-generation-flow
+    status: draft
+    designStatus: draft
+  - id: page-draft-test-1777750651257-mooqu5j2
+    name: Draft test 1777750651257
+    description: Draft test 1777750651257
+    route: /draft-test-1777750651257
+    status: draft
+    designStatus: draft
+  - id: page-pipeline-test-1777750652682-mooqu6mn
+    name: Pipeline test 1777750652682
+    description: Pipeline test 1777750652682
+    route: /pipeline-test-1777750652682
+    status: draft
+    designStatus: draft
+  - id: page-draft-test-1777752345053-mooruggy
+    name: Draft test 1777752345053
+    description: Draft test 1777752345053
+    route: /draft-test-1777752345053
+    status: draft
+    designStatus: draft
+  - id: page-pipeline-test-1777752346486-mooruhkr
+    name: Pipeline test 1777752346486
+    description: Pipeline test 1777752346486
+    route: /pipeline-test-1777752346486
+    status: draft
+    designStatus: draft

@@ -52,6 +52,8 @@ export {
   ClarifierStateAnnotation,
   routeAfterCritic,
   routeAfterEscalation,
+  routeAfterPrdUpdater,
+  routeAfterPrdAnalyzer,
   hasUnresolvedGaps,
 } from './graph/index.js';
 export type { ClarifierStateType } from './graph/index.js';

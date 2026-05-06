@@ -280,4 +280,28 @@ describe('createPrdUpdater', () => {
     expect(result.prdDraft).toBeDefined();
     expect(result.prdDraft!.version).toBe('1.0.1');
   });
+
+  // FB4: The prompt contains the priority-update instruction. The cooperative
+  // eval simulator never exercises this branch (it uses descriptive answers,
+  // not priority language like "must have" or "don't need"), but the instruction
+  // must remain present for when opinionated eval personas are added.
+  it('prompt contains priority-update instruction', () => {
+    _resetPromptCache();
+    const { readFileSync: realReadFile } = jest.requireActual('node:fs') as typeof import('node:fs');
+    const { fileURLToPath: realFileUrl } = jest.requireActual('node:url') as typeof import('node:url');
+    const { join: realJoin, dirname: realDirname } = jest.requireActual('node:path') as typeof import('node:path');
+
+    let promptText: string;
+    try {
+      const promptDir = realJoin(realDirname(realFileUrl(import.meta.url)), '..', '..', 'prompts');
+      promptText = realReadFile(realJoin(promptDir, 'prd-updater-system.md'), 'utf-8');
+    } catch {
+      return;
+    }
+
+    expect(promptText).toContain('Update priorities');
+    expect(promptText).toContain('must-have');
+    expect(promptText).toContain('could-have');
+    expect(promptText).toContain('wont-have');
+  });
 });

@@ -13,6 +13,8 @@ import {
   ClarifierStateAnnotation,
   routeAfterCritic,
   routeAfterEscalation,
+  routeAfterPrdUpdater,
+  routeAfterPrdAnalyzer,
   hasUnresolvedGaps,
 } from '../index.js';
 import type { ClarifierDeps } from '../deps.js';
@@ -156,9 +158,30 @@ describe('agents-clarifier scaffold', () => {
       expect(routeAfterCritic(state)).toBe('escalationGate');
     });
 
-    it('routeAfterCritic routes to emitComplete when critic passes and no unresolved gaps', () => {
+    it('routeAfterCritic routes to emitComplete when no gaps and no human responses', () => {
       const state = makeState({ criticPassed: true, round: 1, maxRounds: 3, gaps: [] });
       expect(routeAfterCritic(state)).toBe('emitComplete');
+    });
+
+    it('routeAfterCritic routes to prdUpdater when all gaps resolved but human responses exist', () => {
+      const state = makeState({
+        criticPassed: true, round: 1, maxRounds: 3, gaps: [],
+        humanResponses: [{ questionId: 'q1', answer: 'yes' }],
+      });
+      expect(routeAfterCritic(state)).toBe('prdUpdater');
+    });
+
+    it('routeAfterPrdUpdater routes to gapDetector when unresolved gaps remain', () => {
+      const state = makeState({
+        round: 1, maxRounds: 3,
+        gaps: [{ id: 'g1', description: 'test', category: 'missing', confidence: 0.3, deterministic: true }],
+      });
+      expect(routeAfterPrdUpdater(state)).toBe('gapDetector');
+    });
+
+    it('routeAfterPrdUpdater routes to emitComplete when all gaps resolved', () => {
+      const state = makeState({ round: 1, maxRounds: 3, gaps: [] });
+      expect(routeAfterPrdUpdater(state)).toBe('emitComplete');
     });
 
     it('routeAfterEscalation routes to emitComplete on accept', () => {
@@ -174,6 +197,27 @@ describe('agents-clarifier scaffold', () => {
     it('routeAfterEscalation routes to END on abandon', () => {
       const state = makeState({ escalationDecision: 'abandon' });
       expect(routeAfterEscalation(state)).toBe('__end__');
+    });
+
+    it('routeAfterPrdAnalyzer routes to emitComplete when prdDraft is null', () => {
+      const state = makeState({ prdDraft: null });
+      expect(routeAfterPrdAnalyzer(state)).toBe('emitComplete');
+    });
+
+    it('routeAfterPrdAnalyzer routes to gapDetector when prdDraft exists', () => {
+      const state = makeState({
+        prdDraft: {
+          id: 'prd-001', title: 'App', description: 'Test',
+          features: [], personas: [], dataEntities: [], screens: [],
+          nfrs: [], successMetrics: [], outOfScope: [], version: '1.0.0', status: 'draft',
+        },
+      });
+      expect(routeAfterPrdAnalyzer(state)).toBe('gapDetector');
+    });
+
+    it('routeAfterPrdAnalyzer routes to emitComplete when error set and prdDraft null', () => {
+      const state = makeState({ prdDraft: null, error: 'PRD Analyzer LLM call failed: RATE_LIMITED' });
+      expect(routeAfterPrdAnalyzer(state)).toBe('emitComplete');
     });
 
     it('hasUnresolvedGaps returns false when all gaps are high confidence', () => {

@@ -6,7 +6,6 @@ nav:
   - Overview:
       - Home: index.md
       - Roadmap: roadmap.md
-      - Research Report: research-report.md
   - Concepts:
       - What is CHIP: concepts/overview.md
       - Current Status: concepts/current-status.md
@@ -21,10 +20,12 @@ nav:
       - Clarifier Pipeline: concepts/clarifier-pipeline.md
       - Question Generation: concepts/clarifier-question-generation.md
   - Architecture:
-      - Vision: vision.md
+      - Overview: architecture/README.md
+      - Architecture at a Glance: architecture/vision-overview.md
+      - The Spine Pattern: architecture/spine-pattern.md
+      - CHIP's Spine: architecture/spine-implementation.md
       - System Architecture: architecture/architecture.md
       - Design Decisions: design-decisions.md
-      - Architecture Overview: architecture/README.md
       - Agent Contracts: architecture/agent-contracts.md
       - Component Catalog: architecture/component-catalog.md
       - Design Evaluator: architecture/design-evaluator.md
@@ -169,10 +170,63 @@ nav:
       - Prototype Limitations: reference/prototype-limitations.md
       - V2 Readiness Certification: reference/v2-readiness-certification.md
   - Research:
+      - Research Report: research-report.md
+      - Architect Design: research/architect-design.md
+      - Architect Codebase-Grounded Design: research/architect-codebase-grounded-design.md
+      - Clarifier Research: research/clarifier-research.md
       - Planning Methodology Investigation: research/planning-methodology-investigation.md
       - Planning Methodology Counter-Analysis: research/planning-methodology-counter-analysis.md
       - Visual Diversity Investigation: research/visual-diversity-investigation.md
+      - Research Briefs:
+          - R1 Orchestrator: research/briefs/R1-orchestrator-multi-agent.md
+          - R2 Task Decomposition: research/briefs/R2-task-decomposition.md
+          - R3 Inter-Task Context: research/briefs/R3-inter-task-context.md
+          - R4 Styling & Stack: research/briefs/R4-styling-stack-decision.md
+          - R5 Design Bootstrap: research/briefs/R5-design-system-bootstrap.md
+          - R6 Spec-Driven Dev: research/briefs/R6-spec-driven-development.md
   - Internal:
+      - Governance:
+          - CLAUDE.md: internal/claude-md.md
+          - AGENTS.md: internal/agents-md.md
+          - Vision (Canonical): vision.md
+      - Rules:
+          - Honesty: internal/rules/honesty.md
+          - Karpathy Guidelines: internal/rules/karpathy-guidelines.md
+          - Prompt Structure: internal/rules/prompt-structure.md
+          - Testing: internal/rules/testing.md
+          - PRD Compliance: internal/rules/prd-compliance.md
+          - E2E Coverage: internal/rules/e2e-coverage.md
+          - Docs Formatting: internal/rules/docs-formatting.md
+          - TypeScript: internal/rules/typescript.md
+          - YAML Config: internal/rules/yaml-config.md
+          - Design Pipeline: internal/rules/design-pipeline.md
+          - Domain Events: internal/rules/domain-events.md
+          - CLI Commands: internal/rules/cli-commands.md
+          - New Agent: internal/rules/new-agent.md
+          - New Package: internal/rules/new-package.md
+          - Python Orchestrator: internal/rules/python-orchestrator.md
+      - Skills:
+          - Overview: internal/skills/README.md
+          - Session Start: internal/skills/session-start.md
+          - Create Plan: internal/skills/create-plan.md
+          - Challenge Plan: internal/skills/challenge-plan.md
+          - Implement Feature: internal/skills/implement-feature.md
+          - Analyze Codebase: internal/skills/analyze-codebase.md
+          - Sprint Plan: internal/skills/sprint-plan.md
+          - Verify Done: internal/skills/verify-done.md
+          - Verify Docs: internal/skills/verify-docs.md
+          - Mid-Session Drift Check: internal/skills/mid-session-drift-check.md
+          - Review PRD Compliance: internal/skills/review-prd-compliance.md
+          - Demo Readiness: internal/skills/demo-readiness.md
+          - Write ADR: internal/skills/write-adr.md
+          - Update Skill: internal/skills/update-skill.md
+          - Backstage: internal/skills/backstage.md
+          - Improvise UX: internal/skills/improvise-ux.md
+          - Verify Design Render: internal/skills/verify-design-render.md
+          - Prepare Handoff: internal/skills/prepare-handoff.md
+          - Receive Handoff: internal/skills/receive-handoff.md
+          - Langfuse: internal/skills/langfuse.md
+          - Langfuse Password Reset: internal/skills/langfuse-password-reset.md
       - Pending Evaluation:
           - Claude Code Migration: pending-evaluation/claude-code-migration.md
           - Codebase Context Brief: pending-evaluation/codebase-context-brief.md

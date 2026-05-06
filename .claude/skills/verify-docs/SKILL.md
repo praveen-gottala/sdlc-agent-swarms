@@ -48,6 +48,7 @@ Run `git diff --name-only HEAD` and `git diff --diff-filter=AD --name-only HEAD`
 | `docs/vision.md` in diff AND diff touches `### Locked decisions` content | SPEC-GREP (locked decision subset) |
 | Any non-trivial change (>3 production files or >50 lines changed) | LESSONS-LEARNED |
 | Any plan-tracked task, or CLAUDE.md `## Current State` touched | POINTER-CHECK |
+| `docs/**/*.md` (any doc file in diff) | VOICE-FLOW |
 
 **Exclusions from trigger analysis:** Ignore files matching `__tests__/`, `*.test.*`, `*.spec.*`, `fixtures/`, `dist/`, `node_modules/`.
 
@@ -264,6 +265,26 @@ For each pair, read both sections and flag contradictions:
 **Pass:** All pointers are current.
 **Fail:** Stale pointer found. Cite the specific field and what it should say.
 **n/a (task-scoped):** The task is a standalone fix not part of any tracked plan, and doesn't warrant a "Last session" update.
+
+---
+
+#### CHECK: VOICE-FLOW
+**Rule:** `.claude/rules/docs-formatting.md` Voice and Page flow sections.
+
+**Protocol:**
+1. For each doc file in the diff, read the changed sections (not the whole file — scope to the diff hunks).
+2. Check for:
+   - Defensive framing in section titles or opening paragraphs ("Why X fails", "Doesn't this mean...?", "But what about...?")
+   - Redundant sections that restate diagram content in list form
+   - Abstract concepts (invariants, properties) introduced before the reader has context to understand them
+   - Sections that mirror the sidebar navigation (a "Documentation Sections" table listing all nav entries)
+   - Orphaned paragraphs floating between sections without heading or visual connection
+   - Status labels in conceptual diagrams (Built/Planned/checkmarks belong on status pages, not concept or home pages)
+3. For each violation, quote the text and suggest a concrete rewrite.
+
+**Pass:** No defensive framing, no redundancy, no orphaned content in the changed sections.
+**Fail:** Quote the violating text and the rule it violates. Suggest a rewrite.
+**n/a:** No `docs/**/*.md` files changed, or changes are purely structural (nav ordering, formatting fixes).
 
 ---
 

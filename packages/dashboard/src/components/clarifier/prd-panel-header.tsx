@@ -4,7 +4,6 @@ interface PrdPanelHeaderProps {
   readonly title: string;
   readonly confidence?: number;
   readonly isComplete: boolean;
-  readonly onApprove?: () => void;
 }
 
 function confidenceLabel(c: number): { text: string; color: string } {
@@ -13,7 +12,7 @@ function confidenceLabel(c: number): { text: string; color: string } {
   return { text: 'Low', color: 'text-red-400' };
 }
 
-export function PrdPanelHeader({ title, confidence, isComplete, onApprove }: PrdPanelHeaderProps): React.JSX.Element {
+export function PrdPanelHeader({ title, confidence, isComplete }: PrdPanelHeaderProps): React.JSX.Element {
   const cl = confidence !== undefined ? confidenceLabel(confidence) : null;
 
   return (
@@ -34,16 +33,6 @@ export function PrdPanelHeader({ title, confidence, isComplete, onApprove }: Prd
             )}
           </div>
         </div>
-
-        {isComplete && onApprove && (
-          <button
-            type="button"
-            onClick={onApprove}
-            className="flex-shrink-0 rounded-lg bg-gradient-to-r from-accent-blue to-accent-purple px-4 py-2 text-[13px] font-medium text-white transition-all hover:opacity-90 active:scale-[0.98]"
-          >
-            Build in CHIP
-          </button>
-        )}
       </div>
     </div>
   );

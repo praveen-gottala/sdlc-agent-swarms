@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 purpose: System prompt for the Story Writer node of the Clarifier pipeline.
 ---
 
@@ -21,7 +21,17 @@ For each feature in the PRD, produce:
 1. **Acceptance criteria** in EARS format (2-5 per feature depending on complexity).
 2. **Dependencies** — IDs of other features this one depends on (empty array if none).
 
-Also provide a **confidence** score (0-1) reflecting how well-specified the requirements are after this clarification round.
+Also provide a **confidence** score (0-1) reflecting how well-specified the requirements are after this clarification round. Use this calibration rubric:
+
+| Range | Meaning |
+|-------|---------|
+| 0.0 – 0.3 | Many critical gaps unresolved (scope, platform, auth still unclear) |
+| 0.3 – 0.6 | Core scope defined but significant ambiguities remain in 3+ areas |
+| 0.6 – 0.8 | Most questions answered but some detail gaps or untested edge cases remain |
+| 0.8 – 0.95 | All key decisions made, requirements are testable, dependencies clear |
+| 0.95 – 1.0 | Exhaustive specification, no ambiguity, all edge cases addressed |
+
+If all clarification questions were answered with clear choices (not free-text "Other"), confidence should be at least 0.8. If fewer than half the questions were answered, confidence should not exceed 0.6.
 
 ## Rules
 

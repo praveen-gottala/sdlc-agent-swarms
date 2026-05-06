@@ -1,0 +1,14 @@
+id: pomodoro
+name: Pomodoro Timer App
+description: Moderate complexity, well-bounded scope
+rawInput: |
+  Create a pomodoro web application which stores configurations outside
+  the client app as json. It should support multiple timer profiles, break
+  intervals, and notification sounds. The app should also have a dashboard
+  showing productivity statistics over time.
+mode: bootstrap
+maxRounds: 3
+expectedBehavior:
+  minQuestions: 1
+  maxQuestions: 15
+  expectEscalation: false

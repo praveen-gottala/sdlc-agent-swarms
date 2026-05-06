@@ -6,10 +6,10 @@ Every agent in CHIP operates on context retrieved from the project's codebase, d
 
 ## Why CHIP does this
 
-Research Report Part 2 identifies context engineering as "the single largest quality lever" for agent systems. CHIP's retrieval architecture reflects two findings:
+[Research Report Part 2](../research-report.md) identifies context engineering as "the single largest quality lever" for agent systems. CHIP's retrieval architecture reflects two findings:
 
-- "Aider-style repo map (tree-sitter + PageRank, no embeddings) as the default code-context tool" — structural context is deterministic and cheap, providing the stable foundation every agent call needs (Research Report, §"Build the RAG layer on deterministic structure first, semantic search second").
-- Rare tokens, error codes, and identifiers need keyword search — dense embeddings alone miss exact-match queries. CHIP uses hybrid BM25 + dense search with Reciprocal Rank Fusion (k=60) to cover both cases (Design Decisions, Section 4).
+- "Aider-style repo map (tree-sitter + PageRank, no embeddings) as the default code-context tool" — structural context is deterministic and cheap, providing the stable foundation every agent call needs ([Research Report Part 2](../research-report.md), §"Build the RAG layer on deterministic structure first, semantic search second").
+- Rare tokens, error codes, and identifiers need keyword search — dense embeddings alone miss exact-match queries. CHIP uses hybrid BM25 (keyword matching) + dense search with Reciprocal Rank Fusion (merges rankings from keyword and semantic search; k=60 balances precision and coverage) to cover both cases ([Design Decisions §4](../design-decisions.md)).
 
 ## How it works
 
@@ -34,40 +34,15 @@ graph TD
     end
 ```
 
-<details><summary>Mermaid source (paste into mermaid.live)</summary>
-
-```mermaid
-graph TD
-    subgraph Indexing ["Indexing (incremental via Merkle tree)"]
-        Code[Codebase files] -->|AST-aware chunking| CI[Code Indexer]
-        Docs[Markdown/YAML docs] -->|Header-aware splitting| DI[Doc Indexer]
-        Designs[DesignSpec JSON + Catalog] -->|Node/entry splitting| DSI[Design Indexer]
-        CI --> Q[(Qdrant: agentforge_code)]
-        DI --> Q2[(Qdrant: agentforge_docs)]
-        DSI --> Q3[(Qdrant: agentforge_designs)]
-    end
-
-    subgraph Search ["Search (hybrid + rerank)"]
-        Query[Agent query] --> BM25[BM25 sparse vectors]
-        Query --> Voyage[Voyage embeddings]
-        BM25 --> RRF[Reciprocal Rank Fusion]
-        Voyage --> RRF
-        RRF --> Cohere[Cohere Rerank 3.5]
-        Cohere --> Results[Ranked results]
-    end
-```
-
-</details>
-
 ### Indexing
 
-Three indexers (`packages/retrieval/src/indexing/`) convert project files into vectors stored in Qdrant. Each uses a Merkle tree (`merkle-tree.ts`) to detect which files changed since the last index — only changed files are re-embedded, keeping cost proportional to changes rather than project size.
+Three indexers (`packages/retrieval/src/indexing/`) convert project files into vectors stored in Qdrant. Each uses a Merkle tree (content hashing for change detection, `merkle-tree.ts`) to detect which files changed since the last index — only changed files are re-embedded, keeping cost proportional to changes rather than project size.
 
-**Code indexer:** AST-aware chunking (`code-chunker.ts`) splits at function and class boundaries rather than arbitrary line counts. Each chunk gets both a dense vector (Voyage `voyage-code-3`, 1024 dimensions) and a sparse BM25 vector with camelCase-aware tokenization.
+**Code indexer:** AST-aware chunking (splits at function/class boundaries, not arbitrary lines; `code-chunker.ts`). Each chunk gets both a dense vector (Voyage `voyage-code-3`, 1024 dimensions) and a sparse BM25 vector with camelCase-aware tokenization.
 
 **Doc indexer:** Header-aware splitting (`doc-chunker.ts`) respects Markdown heading hierarchy and YAML top-level keys. Uses `voyage-3-large` for dense embeddings.
 
-**Design indexer:** Splits DesignSpec JSON by node and component catalog by entry (`design-chunker.ts`). Each chunk is independently searchable by screen or component.
+**Design indexer:** Splits DesignSpec JSON by node and component catalog by entry (`design-chunker.ts`). Each node is indexed independently — a nested button can be retrieved without its parent container.
 
 ### Search
 
@@ -84,7 +59,7 @@ The repo map (`packages/retrieval/src/repo-map/`) provides structural context wi
 
 1. **Parse** — extracts function/class/type symbols and imports from TypeScript/JavaScript files
 2. **Build symbol graph** — directed graph where imports create edges between files
-3. **PageRank** — ranks symbols by structural importance, optionally personalized to seed files
+3. **PageRank** (ranks files by how often they're imported — widely-imported files score higher) — optionally personalized to seed files
 4. **Render** — token-budgeted text output listing ranked files and their key symbols
 
 ## Five retrieval tools
@@ -116,16 +91,16 @@ All tools are MCP-compatible with JSON Schema definitions, created by `createRet
 - Three search pipelines operational: code, docs, designs — all with hybrid BM25+dense and Cohere rerank.
 - Incremental indexing via Merkle trees prevents full re-indexing on every change.
 - Five MCP-compatible tools created by `createRetrievalTools()`.
-- Golden query evaluation framework with precision@5 gate (`packages/retrieval/src/eval/`).
+- Golden query evaluation framework with precision@5 metric (`packages/retrieval/src/eval/`).
 - First consumer: the Clarifier's `contextRetriever` node calls all 5 tools via `Promise.allSettled` with partial failure tolerance.
-- Qdrant runs via Docker Compose at `docker/docker-compose.agentforge.yml`.
+- Qdrant runs via Docker Compose at `docker/docker-compose.agentforge.yml`. Collection names (`agentforge_code`, `agentforge_docs`, `agentforge_designs`) retain the `agentforge_` prefix from the codebase's initial setup.
 
 ## Known limitations
 
-- Repo map parser uses regex-based symbol extraction rather than full Tree-sitter AST parsing — the `web-tree-sitter` dependency is declared but not yet wired into the parsing pipeline.
+- The repo map parser extracts symbols via regex, not full Tree-sitter AST parsing — `web-tree-sitter` is declared but not yet wired into the pipeline.
 - Only `packages/agents-clarifier` consumes retrieval tools — other spine stages (Architect, Implementer, Reviewer) are not yet wired.
-- No CLI command to run the golden query evaluation framework — `computePrecisionAtK` exists but has no command-line entry point.
-- Qdrant vs pgvector is an open decision — Qdrant is recommended but not locked (vision Layer 6).
+- The golden query evaluation framework (`computePrecisionAtK`) has no CLI entry point.
+- Qdrant is recommended but not locked — pgvector remains a viable alternative (vision Layer 6).
 
 ## Related
 

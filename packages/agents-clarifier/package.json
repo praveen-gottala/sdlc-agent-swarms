@@ -9,6 +9,10 @@
     ".": {
       "@agentforge/source": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./pipeline-trace.js": {
+      "@agentforge/source": "./src/pipeline-trace.ts",
+      "default": "./dist/pipeline-trace.js"
     }
   },
   "scripts": {

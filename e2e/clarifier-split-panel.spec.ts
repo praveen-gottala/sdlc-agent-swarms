@@ -1,3 +1,12 @@
+/**
+ * E2E tests for the Clarifier /new page — split panel layout & state transitions.
+ * Uses mocked SSE responses (real LLM calls are too slow for CI).
+ *
+ * Note: The /new page renders responsive split panels (ChatPanel + PrdPanel)
+ * which may duplicate elements in the DOM. All text selectors use .first()
+ * to avoid strict-mode violations.
+ */
+
 import { test, expect, PET_ROOT } from './fixtures/test-base';
 
 function buildSSE(events: Array<{ event: string; data: Record<string, unknown> }>): string {
@@ -43,18 +52,18 @@ test.describe('Clarifier Split Panel', () => {
 
   test.describe('Welcome state', () => {
     test('shows welcome hero with heading and centered input', async ({ page }) => {
-      await expect(page.getByRole('heading', { name: 'What do you want to build?' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'What do you want to build?' }).first()).toBeVisible();
       const input = page.locator('textarea').first();
       await expect(input).toBeVisible();
     });
 
-    test('animated placeholder cycles through suggestions', async ({ page }) => {
-      const placeholder = page.locator('[aria-hidden="true"]').filter({ hasText: /Build|Design|Create/ });
+    test('shows placeholder suggestion in input', async ({ page }) => {
+      const placeholder = page.locator('span[aria-hidden="true"]').filter({ hasText: /expense tracker|e-commerce|project management/ }).first();
       await expect(placeholder).toBeVisible({ timeout: 5000 });
     });
 
     test('no right panel visible in welcome state', async ({ page }) => {
-      await expect(page.getByText('Pipeline')).not.toBeVisible();
+      await expect(page.getByText('Pipeline').first()).not.toBeVisible();
     });
   });
 
@@ -81,8 +90,8 @@ test.describe('Clarifier Split Panel', () => {
     });
 
     test('right panel appears with PRD header', async ({ page }) => {
-      await expect(page.getByText('Expense Tracker PRD')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('Draft')).toBeVisible();
+      await expect(page.getByText('Expense Tracker PRD').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Draft').first()).toBeVisible();
     });
 
     test('chat shows user seed and tool result messages', async ({ page }) => {
@@ -92,22 +101,23 @@ test.describe('Clarifier Split Panel', () => {
     });
 
     test('question flow appears with options', async ({ page }) => {
-      await expect(page.getByText('How should expense data be stored?')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('SQLite')).toBeVisible();
-      await expect(page.getByText('Cloud sync')).toBeVisible();
-      await expect(page.getByText('Recommended')).toBeVisible();
+      await expect(page.getByText('How should expense data be stored?').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('SQLite').first()).toBeVisible();
+      await expect(page.getByText('Cloud sync').first()).toBeVisible();
+      await expect(page.getByText('Recommended').first()).toBeVisible();
     });
 
-    test('question shows round counter', async ({ page }) => {
-      await expect(page.getByText(/Question 1 of 1/i)).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText(/Round 1\/3/i)).toBeVisible();
+    test('question shows round counter and tab', async ({ page }) => {
+      await expect(page.getByText(/Round 1\/3/i).first()).toBeVisible({ timeout: 10000 });
+      const tabs = page.locator('button[role="tab"]');
+      await expect(tabs.first()).toBeVisible();
     });
 
     test('PRD sections render in document view', async ({ page }) => {
-      await expect(page.getByText('Overview')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('Features')).toBeVisible();
-      await expect(page.getByText('Expense Logging')).toBeVisible();
-      await expect(page.getByText('must-have')).toBeVisible();
+      await expect(page.getByText('Overview').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Features').first()).toBeVisible();
+      await expect(page.getByText('Expense Logging').first()).toBeVisible();
+      await expect(page.getByText('must-have').first()).toBeVisible();
     });
   });
 
@@ -132,29 +142,29 @@ test.describe('Clarifier Split Panel', () => {
     });
 
     test('shows approval actions on completion', async ({ page }) => {
-      await expect(page.getByRole('button', { name: /Approve/ })).toBeVisible({ timeout: 10000 });
-      await expect(page.getByRole('button', { name: /Request Changes/ })).toBeVisible();
+      await expect(page.getByRole('button', { name: /Approve/ }).first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('button', { name: /Request Changes/ }).first()).toBeVisible();
     });
 
     test('shows confidence score in header', async ({ page }) => {
-      await expect(page.getByText('92%')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('92%').first()).toBeVisible({ timeout: 10000 });
     });
 
     test('request changes resets to welcome', async ({ page }) => {
-      await expect(page.getByRole('button', { name: /Request Changes/ })).toBeVisible({ timeout: 10000 });
-      await page.getByRole('button', { name: /Request Changes/ }).click();
-      await expect(page.getByRole('heading', { name: 'What do you want to build?' })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole('button', { name: /Request Changes/ }).first()).toBeVisible({ timeout: 10000 });
+      await page.getByRole('button', { name: /Request Changes/ }).first().click();
+      await expect(page.getByRole('heading', { name: 'What do you want to build?' }).first()).toBeVisible({ timeout: 5000 });
     });
 
     test('all PRD sections render', async ({ page }) => {
-      await expect(page.getByText('Expense Tracker PRD')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('Overview')).toBeVisible();
-      await expect(page.getByText('Features')).toBeVisible();
-      await expect(page.getByText('Personas')).toBeVisible();
-      await expect(page.getByText('Data Model')).toBeVisible();
-      await expect(page.getByText('Screens')).toBeVisible();
-      await expect(page.getByText('Non-Functional Requirements')).toBeVisible();
-      await expect(page.getByText('Success Metrics')).toBeVisible();
+      await expect(page.getByText('Expense Tracker PRD').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Overview').first()).toBeVisible();
+      await expect(page.getByText('Features').first()).toBeVisible();
+      await expect(page.getByText('Personas').first()).toBeVisible();
+      await expect(page.getByText('Data Model').first()).toBeVisible();
+      await expect(page.getByText('Screens').first()).toBeVisible();
+      await expect(page.getByText('Non-Functional Requirements').first()).toBeVisible();
+      await expect(page.getByText('Success Metrics').first()).toBeVisible();
     });
   });
 
@@ -171,8 +181,8 @@ test.describe('Clarifier Split Panel', () => {
       await page.locator('textarea').first().fill('Test');
       await page.keyboard.press('Enter');
 
-      await expect(page.getByText(/No Claude API authentication/)).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('Try again')).toBeVisible();
+      await expect(page.getByText(/No Claude API authentication/).first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Try again').first()).toBeVisible();
     });
   });
 

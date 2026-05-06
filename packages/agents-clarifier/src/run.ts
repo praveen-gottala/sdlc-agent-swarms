@@ -53,7 +53,7 @@ export interface ClarifierError {
  */
 /** Event emitted by the streaming variant of the Clarifier pipeline. */
 export type ClarifierStreamEvent =
-  | { readonly type: 'node-complete'; readonly node: string; readonly state: Partial<GraphState> }
+  | { readonly type: 'node-complete'; readonly node: string; readonly state: Partial<GraphState>; readonly durationMs: number }
   | { readonly type: 'interrupt'; readonly state: GraphState; readonly threadId: string }
   | { readonly type: 'complete'; readonly state: GraphState; readonly threadId: string }
   | { readonly type: 'error'; readonly error: { code: string; message: string } };
@@ -161,15 +161,36 @@ export async function* runClarifierPipelineStream(
   }
 
   try {
-    const stream = await compiled.stream(invokeInput, {
-      ...config,
-      streamMode: 'updates' as const,
-    });
+    // Timing must start BEFORE stream creation: on resume, compiled.stream(null)
+    // executes the first node (storyWriter) during the await. Initializing after
+    // the stream is created would record 0ms for the first resumed node.
+    const pipelineStart = Date.now();
+    let nodeStartTime = Date.now();
+    const nodeDurations = new Map<string, number>();
+
+    let stream;
+    if (isResume) {
+      // Update checkpoint state then resume from interrupt point.
+      // stream(input) restarts from __start__ — see lessons-learned §"LangGraph Resume".
+      const stateUpdate: Record<string, unknown> = {};
+      if (input.humanResponses?.length) {
+        stateUpdate.humanResponses = input.humanResponses;
+      }
+      if (input.escalationDecision) {
+        stateUpdate.escalationDecision = input.escalationDecision;
+      }
+      await compiled.updateState(config, stateUpdate);
+      stream = await compiled.stream(null, { ...config, streamMode: 'updates' as const });
+    } else {
+      stream = await compiled.stream(invokeInput, { ...config, streamMode: 'updates' as const });
+    }
 
     for await (const update of stream) {
       const nodeNames = Object.keys(update as Record<string, unknown>);
       for (const node of nodeNames) {
         const nodeState = (update as Record<string, unknown>)[node] as Partial<GraphState>;
+        const durationMs = Date.now() - nodeStartTime;
+        nodeDurations.set(node, (nodeDurations.get(node) ?? 0) + durationMs);
 
         // Record stage I/O to execution trace
         try {
@@ -179,6 +200,7 @@ export async function* runClarifierPipelineStream(
             sequenceNumber: sequence,
             input: accumulated,
             output: nodeState,
+            durationMs,
           });
           sequence++;
         } catch (err: unknown) {
@@ -188,9 +210,16 @@ export async function* runClarifierPipelineStream(
         // Merge node output delta into accumulated state
         Object.assign(accumulated, nodeState);
 
-        yield { type: 'node-complete', node, state: nodeState };
+        yield { type: 'node-complete', node, state: nodeState, durationMs };
+        nodeStartTime = Date.now();
       }
     }
+
+    const totalMs = Date.now() - pipelineStart;
+    const breakdown = [...nodeDurations.entries()]
+      .map(([n, ms]) => `${n}=${(ms / 1000).toFixed(1)}s`)
+      .join(' ');
+    debugLog(`clarifier: pipeline completed in ${(totalMs / 1000).toFixed(1)}s | ${breakdown}`);
 
     const graphState = await compiled.getState(config);
     const interrupted = (graphState.next?.length ?? 0) > 0;
@@ -198,7 +227,9 @@ export async function* runClarifierPipelineStream(
     if (interrupted) {
       yield { type: 'interrupt', state: graphState.values, threadId };
     } else {
-      emitRequirementsClarified(input.projectRoot, graphState.values);
+      if (!graphState.values.error) {
+        emitRequirementsClarified(input.projectRoot, graphState.values);
+      }
       yield { type: 'complete', state: graphState.values, threadId };
     }
   } catch (error: unknown) {
@@ -247,21 +278,29 @@ export async function runClarifierPipeline(
       maxRounds: input.maxRounds ?? 3,
       threadId,
     };
-    if (input.humanResponses?.length) {
-      invokeInput.humanResponses = input.humanResponses;
+    const isResume = !!(input.humanResponses?.length || input.escalationDecision);
+    if (isResume) {
+      // Update checkpoint state then resume from interrupt point.
+      // invoke(input) restarts from __start__ — see lessons-learned §"LangGraph Resume".
+      const stateUpdate: Record<string, unknown> = {};
+      if (input.humanResponses?.length) {
+        stateUpdate.humanResponses = input.humanResponses;
+      }
+      if (input.escalationDecision) {
+        stateUpdate.escalationDecision = input.escalationDecision;
+      }
+      await compiled.updateState(config, stateUpdate);
+      await compiled.invoke(null, config);
+    } else {
+      await compiled.invoke(invokeInput, config);
     }
-    if (input.escalationDecision) {
-      invokeInput.escalationDecision = input.escalationDecision;
-    }
-
-    await compiled.invoke(invokeInput, config);
 
     // LangGraph interruptBefore returns normally (no throw).
     // Check getState().next to detect if the graph is interrupted.
     const graphState = await compiled.getState(config);
     const interrupted = (graphState.next?.length ?? 0) > 0;
 
-    if (!interrupted) {
+    if (!interrupted && !graphState.values.error) {
       emitRequirementsClarified(input.projectRoot, graphState.values);
     }
 

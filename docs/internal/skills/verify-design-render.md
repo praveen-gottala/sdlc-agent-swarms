@@ -1,0 +1,1 @@
+../../../.claude/skills/verify-design-render//SKILL.md

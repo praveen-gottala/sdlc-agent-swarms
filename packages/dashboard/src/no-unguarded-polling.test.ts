@@ -53,6 +53,10 @@ const WHITELIST: Array<{ file: string; justification: string }> = [
     file: 'components/clarifier/welcome-hero.tsx',
     justification: 'Animated placeholder cycling — 3.5s interval, UI-only, stops when user types',
   },
+  {
+    file: 'components/clarifier/chat-message.tsx',
+    justification: 'ElapsedTimer — 1s interval, UI-only, tracks stage elapsed time with cleanup',
+  },
 ];
 
 describe('No unguarded polling', () => {

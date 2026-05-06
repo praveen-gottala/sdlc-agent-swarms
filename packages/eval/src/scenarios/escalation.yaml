@@ -1,0 +1,12 @@
+id: escalation
+name: Forced Escalation
+description: Complex input with maxRounds=1 — guaranteed to hit escalation gate
+rawInput: |
+  Build a real-time collaborative document editing platform with version
+  control, commenting, and offline support.
+mode: bootstrap
+maxRounds: 1
+expectedBehavior:
+  minQuestions: 1
+  maxQuestions: 15
+  expectEscalation: true

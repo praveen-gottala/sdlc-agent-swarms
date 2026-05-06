@@ -1,8 +1,8 @@
-# CHIP Architecture
+# CHIP System Architecture
 
 ## System Overview
 
-AgentForge is a multi-agent framework that orchestrates the full software development lifecycle (SDLC) — from design through deployment — using coordinated AI agents governed by human-in-the-loop (HITL) policies, budget controls, and permission boundaries.
+CHIP orchestrates SDLC work through a four-stage sequential spine (Clarifier → Architect → Implementer → Reviewer), where each stage owns a typed artifact and hands off through Zod-typed LangGraph channels. Specialists (research, design, test, security, visual, docs) are invoked as tools by spine stages, never as parallel writers. Governance wraps every agent execution as middleware, and human-in-the-loop gates sit at stage boundaries.
 
 ## Layer Diagram
 
@@ -11,18 +11,19 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 │  CLI Layer (TypeScript / Commander.js)                               │
 │  packages/cli                                                        │
 │  Commands: init, start, status, approve, abort, migrate, config,     │
-│            design                                                    │
+│            design, design-system, doctor, setup, eval                │
 ├──────────────────────────────────────────────────────────────────────┤
-│  Orchestration Layer — @langchain/langgraph (TypeScript)             │
-│  Target: packages/core + @langchain/langgraph (see ADR-043)         │
+│  Spine — @langchain/langgraph (TypeScript)                           │
+│  Sequential stages, typed Zod state channels, HITL interrupt nodes,  │
+│  MemorySaver/PostgresSaver checkpointing                             │
 │                                                                      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ │
-│  │  Design   │ │   Spec   │ │   Code   │ │   CICD   │ │  Observe  │ │
-│  │  Phase    │ │  Phase   │ │   Gen    │ │  Phase   │ │  Phase    │ │
-│  │  Graph    │ │  Graph   │ │  Graph   │ │  Graph   │ │  Graph    │ │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └───────────┘ │
-│  StateGraph topology, typed Zod state channels, HITL interrupt      │
-│  nodes, MemorySaver/PostgresSaver checkpointing, concurrency        │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────┐  ┌────────────┐  │
+│  │ Clarifier  │→ │ Architect  │→ │ Implementer  │→ │  Reviewer  │  │
+│  │ (built)    │  │ (planned)  │  │  (planned)   │  │ (planned)  │  │
+│  └────────────┘  └────────────┘  └──────────────┘  └────────────┘  │
+│       ↑               ↑               ↑                ↑            │
+│  Specialists: research, design, test, security, visual, docs        │
+│  (invoked as tools by spine stages — never as parallel writers)      │
 ├───────────────┬──────────────────────┬───────────────────────────────┤
 │ Agent Runtime │  Governance Layer    │  Integration Layer            │
 │ packages/core │  packages/governance │  packages/channels            │
@@ -41,13 +42,13 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 │               │                      │  stack: auth, rate limit,     │
 │               │                      │  cache, retry, observability) │
 ├───────────────┴──────────────────────┴───────────────────────────────┤
-│  Event Bus (telemetry plane only — NOT coordination substrate)        │
+│  Event Bus (telemetry plane only — NOT coordination substrate)       │
 │  In-memory EventEmitter (v1) / Redis Streams (v2)                    │
 │  31 typed domain events, flat payloads (ADR-002)                     │
 │  Coordination uses typed LangGraph channels (ADR-043, vision L2)     │
 ├──────────────────────────────────────────────────────────────────────┤
 │  State Store                                                         │
-│  YAML files in git (v1) / PostgreSQL (v2)                            │
+│  YAML files in git (artifacts) / Postgres checkpointer (run state)   │
 │  agentforge.yaml  — project manifest & configuration                 │
 │  agentforge.tasks.yaml — task entries with status, cost, deps        │
 │  spec/*.yaml — living spec (components, api, models)                 │
@@ -59,19 +60,25 @@ AgentForge is a multi-agent framework that orchestrates the full software develo
 ## Directory Structure
 
 ```
-agentforge/
+chip/
 ├── packages/
-│   ├── core/                  # Types, event bus, state management, agent runtime,
-│   │                          # MCP client, config loader, spec sync, lock manager
+│   ├── core/                  # Types, event bus (telemetry), state management, agent runtime,
+│   │                          # MCP client, config loader, spec sync, LLM wrapper
 │   ├── governance/            # Middleware: permission, budget, HITL, audit
 │   ├── providers/             # LLM adapters (Claude, OpenAI), cost tables
 │   ├── channels/              # HITL channels (Slack, Telegram, CLI), channel router
-│   ├── cli/                   # Commander.js CLI (8 commands)
+│   ├── cli/                   # Commander.js CLI
+│   ├── telemetry/             # OpenTelemetry + Langfuse observability (ADR-046)
+│   ├── retrieval/             # Tree-sitter + voyage-code-3 + Qdrant + Cohere Rerank
+│   ├── eval/                  # Evaluation framework for agent quality
+│   ├── agents-clarifier/      # Clarifier spine stage (9-node LangGraph StateGraph)
 │   ├── agents-design/         # Design agent (UX research, wireframe, visual)
+│   ├── agents-ux/             # Design pipeline orchestration + DesignPhaseState
 │   ├── agents-spec/           # Spec writer (components, API, models)
-│   ├── agents-code/           # Code generator (frontend, backend, tests)
+│   ├── agents-code/           # Code generator
 │   ├── agents-cicd/           # CI/CD agent (lint, security, build fix, deploy)
-│   ├── agents-observe/        # Observability agent (logs, metrics, health)
+│   ├── designspec-renderer/   # Browser-based design spec renderer (Vite + React)
+│   ├── dashboard/             # Next.js dashboard UI (port 3000)
 │   ├── integration-tests/     # End-to-end tests against real server endpoints
 │   ├── e2e-test/              # E2E test harness
 │   └── stacks/
@@ -80,50 +87,65 @@ agentforge/
 │   └── engine/                # DEPRECATED — Python LangGraph prototype (stub agents only)
 │                              # Scheduled for deletion per ADR-043. Do not extend.
 └── docs/
-    ├── PRD-v2.md              # Product requirements (source of truth)
-    ├── architecture.md        # This file
+    ├── specs/PRD.md           # Product requirements (source of truth for product)
+    ├── vision.md              # Architectural vision (source of truth for architecture)
+    ├── architecture/          # Architecture docs (this file, spine, error handling)
+    ├── concepts/              # Concept pages (agent taxonomy, clarifier, coordination)
     └── adrs/                  # Architecture Decision Records
 ```
 
 ## Package Dependency Graph
 
 ```
-core (zero external deps beyond yaml, eventemitter3)
+core (yaml, zod, eventemitter3 [telemetry only], @langchain/core,
+      @langchain/langgraph-checkpoint, @langchain/langgraph-checkpoint-postgres)
   ├── governance (depends on core)
   ├── providers (depends on core)
   ├── channels (depends on core)
+  ├── telemetry (depends on core; peers: agents-ux, providers — ADR-046)
+  ├── retrieval (depends on core, voyageai, cohere-ai, @qdrant/js-client-rest, web-tree-sitter)
   ├── agents-design (depends on core, governance, providers)
   ├── agents-spec (depends on core, governance, providers)
   ├── agents-code (depends on core, governance, providers)
   ├── agents-cicd (depends on core, governance, providers)
-  ├── agents-observe (depends on core, governance, providers)
-  └── cli (depends on core, governance, providers, channels)
+  ├── agents-ux (depends on core, governance, providers)
+  ├── agents-clarifier (depends on core, providers, retrieval, telemetry,
+  │                      @langchain/langgraph, @langchain/core, zod)
+  ├── designspec-renderer (depends on core — type-only devDependency, zero runtime deps)
+  ├── eval (depends on core, providers, agents-clarifier, yaml, zod)
+  ├── dashboard (Next.js — imports core, agents-ux, designspec-renderer, providers)
+  └── cli (depends on core, governance, providers, channels, telemetry, eval)
 ```
 
-Build order: `core` → `governance`, `providers` (parallel) → `channels` → `agents-*` (parallel) → `cli`
+Build order: `core` → `governance`, `providers`, `telemetry`, `retrieval` (parallel) → `channels` → `agents-*`, `designspec-renderer`, `eval` (parallel) → `cli`, `dashboard`
 
 ## API Contracts Between Layers
 
-### Orchestrator Interface (@langchain/langgraph TypeScript — ADR-043)
+### Spine Stage Interface (@langchain/langgraph)
+
+Each spine stage is a LangGraph `StateGraph` with Zod-typed state channels. Stages communicate through typed channel handoffs, not events.
 
 ```typescript
-interface Orchestrator {
-  startPhase(phase: SDLCPhase, config: PhaseConfig): Promise<Result<void>>;
-  getStatus(): Promise<ProjectState>;
-  pausePhase(phase: SDLCPhase): Promise<Result<void>>;
-  resumePhase(phase: SDLCPhase): Promise<Result<void>>;
-  approveGate(gateId: string, decision: HITLDecision): Promise<Result<void>>;
-}
+// Each stage defines its own StateGraph with typed annotation
+const ClarifierAnnotation = Annotation.Root({
+  userInput: Annotation<string>,
+  questions: Annotation<Question[]>({ reducer: (a, b) => [...a, ...b] }),
+  answers: Annotation<Record<string, string>>,
+  prdDraft: Annotation<string>,
+  iteration: Annotation<number>,
+  // ... stage-specific channels
+});
 
-type SDLCPhase = 'design' | 'spec' | 'code' | 'cicd' | 'observe';
+// Stages use interrupt nodes for HITL gates
+// Three structural gates at stage boundaries:
+// 1. Clarification gate — after Clarifier produces questions
+// 2. Design/API approval gate — after Architect produces spec
+// 3. Code merge gate — after Reviewer approves changes
 
-interface PhaseConfig {
-  agents: AgentContract[];
-  hitlPolicy: HITLPolicy;
-  budget: BudgetConfig;
-  concurrency: number;
-}
+// Run state persisted via Postgres checkpointer (MemorySaver for dev)
 ```
+
+See [CHIP's Spine Implementation](spine-implementation.md) for per-stage node sequences, context handoffs, and HITL mechanics.
 
 ### Agent Runtime Interface (packages/core)
 
@@ -144,7 +166,7 @@ interface AgentContext {
 
 interface AgentOutput {
   files: FileChange[];       // created/modified files
-  events: DomainEvent[];     // events to emit
+  events: DomainEvent[];     // events to emit (telemetry)
   cost: CostRecord;          // tokens + USD spent
   learnings?: Learning[];    // new observations to record
 }
@@ -184,7 +206,11 @@ type HITLResult =
 // This prevents orphaned approval requests when budget would deny anyway.
 ```
 
-### Event Bus Interface (packages/core)
+### Telemetry Events (packages/core)
+
+!!! note "Telemetry plane only"
+
+    Events are for observability, audit, and dashboard updates. Coordination between spine stages uses typed LangGraph channels — see [vision.md Layer 2](../vision.md) and ADR-043.
 
 ```typescript
 interface EventBus {
@@ -232,6 +258,12 @@ interface MCPClient {
 
 ### HITL Channel Interface (packages/channels)
 
+Three structural HITL gates sit at spine stage boundaries (see [vision.md Layer 10](../vision.md)):
+
+1. **Clarification gate** — after Clarifier produces questions, human answers before proceeding
+2. **Design/API approval gate** — after Architect produces architecture spec, human approves before implementation
+3. **Code merge gate** — after Reviewer validates changes, human approves merge
+
 ```typescript
 interface HITLChannel {
   readonly type: ChannelType;       // 'slack' | 'telegram' | 'cli'
@@ -249,189 +281,41 @@ interface HITLChannel {
 // Channel router supports 'all' vs 'primary' routing, first-response-wins for approvals
 ```
 
-## Typical Workflow: Feature from Design to Deploy
+## Typical Workflow: Feature Through the Spine
 
-The following walkthrough traces a single feature — e.g., "add a user settings page" — through the entire AgentForge pipeline.
+A feature — e.g., "add a user settings page" — flows through the four-stage spine. Each stage produces a typed artifact and hands off through Zod-typed LangGraph channels.
 
-### 1. Project Initialization
+### Stage 1: Clarifier (built)
 
-```
-$ agentforge init
-```
+The Clarifier takes a natural-language requirement and runs a 9-node LangGraph StateGraph: gap detection, question generation, critic review, answer integration, and PRD drafting. It produces an enriched requirement and assumption ledger. The human answers clarifying questions at HITL gate 1 (LangGraph interrupt) before the pipeline proceeds.
 
-Interactive wizard creates `agentforge.yaml` (project manifest), configures stack, channels, budget limits, and HITL policies. The project is now ready for agent orchestration.
+See [Clarifier Pipeline](../concepts/clarifier-pipeline.md) for node-level detail.
 
-### 2. Design Phase
+### Stage 2: Architect
 
-```
-$ agentforge design "user settings page with profile editing and notification preferences"
-```
+!!! note "Planned"
 
-```
-                         ┌──────────────┐
-                         │ PageRequested│
-                         │    event     │
-                         └──────┬───────┘
-                                │
-                         ┌──────▼───────┐
-                         │  UX Research │ Agent analyzes requirements,
-                         │    Agent     │ produces recommendations
-                         └──────┬───────┘
-                                │ UXResearchComplete event
-                         ┌──────▼───────┐
-                         │  Wireframe   │ Agent generates wireframe
-                         │    Agent     │ layout from recommendations
-                         └──────┬───────┘
-                                │ WireframeComplete event
-                     ┌──────────▼──────────┐
-                     │   HITL Gate:        │ Human reviews wireframe
-                     │   human_review      │ via Slack / Telegram / CLI
-                     └──────────┬──────────┘
-                       ┌────────┼────────┐
-                       │        │        │
-                  approved  changes   rejected
-                       │    requested    │
-                       │        │        └──→ abort
-                       │        └──→ back to Wireframe Agent
-                       │
-                ┌──────▼───────┐
-                │Visual Design │ Agent applies design tokens,
-                │    Agent     │ produces final visual design
-                └──────┬───────┘
-                       │ VisualDesignComplete event
-                ┌──────▼───────┐
-                │Design Review │ Automated review for
-                │    Agent     │ consistency & accessibility
-                └──────┬───────┘
-                       │ DesignReviewComplete event
-            ┌──────────▼──────────┐
-            │   HITL Gate:        │ Final human approval
-            │   human_approve     │
-            └──────────┬──────────┘
-                       │ approved
-                       │
-                DesignPhaseComplete event
-                → spec/*.yaml updated with design refs
-```
+    The Architect stage is designed but not yet implemented. See [vision.md Layer 7](../vision.md) for the target design.
 
-### 3. Spec Phase
+The Architect reads the enriched requirement from Stage 1 and produces an architecture spec, ADRs, and a task plan with dependency graph. The human approves the architecture at HITL gate 2 before implementation begins.
 
-```
-$ agentforge start spec
-```
+### Stage 3: Implementer
 
-```
-    DesignPhaseComplete event triggers spec phase
-                       │
-                ┌──────▼───────┐
-                │  Spec Writer │ Reads design output, generates:
-                │    Agent     │   spec/components.yaml
-                │              │   spec/api.yaml
-                │              │   spec/models.yaml
-                └──────┬───────┘
-                       │ SpecComplete event
-                ┌──────▼───────┐
-                │ Task Planner │ Decomposes spec into tasks
-                │              │ with dependency graph
-                └──────┬───────┘
-                       │ TasksCreated event
-                       │ → agentforge.tasks.yaml populated
-```
+!!! note "Planned"
 
-### 4. Code Generation Phase
+    The Implementer stage is designed but not yet implemented. See [vision.md Layer 8](../vision.md) for the target design.
 
-```
-$ agentforge start code
-```
+The Implementer executes tasks from the Architect's plan in sequence — one task at a time, single-threaded per artifact. It reads spec, generates code, runs tests, and pushes to a feature branch. Task-level parallelism uses git worktrees, not concurrent agents writing to the same files.
 
-```
-    TasksCreated event triggers code phase
-    Task resolver identifies runnable tasks (deps satisfied)
-                       │
-         ┌─────────────┼─────────────┐  (concurrent execution
-         │             │             │   up to max_concurrent_agents)
-  ┌──────▼──────┐┌────▼────┐┌──────▼──────┐
-  │  Frontend   ││ Backend ││   Test      │  Each agent:
-  │  Coder      ││ Coder   ││  Writer     │  1. Reads spec from spec/*.yaml
-  │  Agent      ││ Agent   ││  Agent      │  2. Generates code on feature branch
-  └──────┬──────┘└────┬────┘└──────┬──────┘  3. Emits CodeGenComplete / TestsComplete
-         │            │            │
-         └─────────┬──┘            │
-                   │               │
-         ┌─────────▼───────────────▼─┐
-         │  For each completed task: │
-         │  1. Push to feature branch│
-         │  2. CI triggered          │
-         │  3. CIResult event        │
-         └─────────┬─────────────────┘
-                   │
-            ┌──────▼──────┐
-            │ CI Passed?  │
-            └──────┬──────┘
-              yes  │  no → coding agent retries (max 3 attempts)
-                   │
-            ┌──────▼──────┐
-            │  PR Created │ PRCreated event
-            └──────┬──────┘
-                   │
-            ┌──────▼──────┐
-            │  Reviewer   │ Code review agent
-            │  Agent      │
-            └──────┬──────┘
-                   │ ReviewComplete event
-        ┌──────────▼──────────┐
-        │   HITL Gate:        │ Human reviews PR
-        │   approval_request  │
-        └──────────┬──────────┘
-              approved → PRMerged event
-```
+### Stage 4: Reviewer
 
-### 5. CI/CD Phase
+!!! note "Planned"
 
-```
-$ agentforge start cicd
-```
+    The Reviewer stage is designed but not yet implemented. See [vision.md Layer 9](../vision.md) for the target design.
 
-```
-    PRMerged events trigger CI/CD phase
-                       │
-         ┌─────────────┼─────────────┐
-         │             │             │
-  ┌──────▼──────┐┌────▼────┐┌──────▼───────┐
-  │    Lint     ││Security ││    Build     │
-  │   Check     ││  Scan   ││   & Test     │
-  └──────┬──────┘└────┬────┘└──────┬───────┘
-         │            │            │
-         │    SecurityScanComplete │
-         │            │            │
-         └─────────┬──┘────────────┘
-                   │
-            ┌──────▼──────┐
-            │ All passed? │
-            └──────┬──────┘
-              yes  │  no → BuildFixComplete (auto-fix agent, max retries)
-                   │
-            ┌──────▼──────────┐
-            │ Deploy Staging  │ DeployComplete event
-            └──────┬──────────┘
-                   │
-        ┌──────────▼──────────┐
-        │   HITL Gate:        │ Human approves prod deploy
-        │   deploy_approval   │
-        └──────────┬──────────┘
-                   │
-            ┌──────▼──────────┐
-            │Deploy Production│ DeployComplete event
-            └─────────────────┘
-```
+The Reviewer performs a fresh-context diff review: deterministic gates first (type check, lint, test pass), then LLM review for logic, security, and spec compliance. The human approves the merge at HITL gate 3.
 
-### 6. Observe Phase
-
-```
-$ agentforge start observe
-```
-
-Post-deployment monitoring: the observe agent watches logs, metrics, and health endpoints, emitting alerts if anomalies are detected. Spec drift detection compares live behavior against the Living Spec.
+See [CHIP's Spine Implementation](spine-implementation.md) for per-stage internals, context handoffs, and HITL gate mechanics.
 
 ## Cross-Cutting Concerns
 
@@ -466,12 +350,12 @@ Agent task ready to execute
 
 ### Error Handling
 
-All public APIs use the Result pattern — never throw. See `docs/architecture/error-handling.md`.
+All public APIs use the Result pattern — never throw. See [Error Handling](error-handling.md).
 
 ```typescript
-type Result<T> = { ok: true; value: T } | { ok: false; error: AgentForgeError };
+type Result<T> = { ok: true; value: T } | { ok: false; error: ChipError };
 
-interface AgentForgeError {
+interface ChipError {
   code: string;              // e.g., 'PERMISSION_DENIED', 'BUDGET_EXCEEDED_TASK'
   message: string;
   context?: Record<string, unknown>;
@@ -485,8 +369,27 @@ interface AgentForgeError {
 
 | ADR | Decision |
 |-----|----------|
-| [ADR-002](adrs/ADR-002-event-payload-structure.md) | Flat event payloads (no nested `payload` field) |
-| [ADR-003](adrs/ADR-003-event-bus-method-naming.md) | Both `publish()` and `emit()` on event bus |
-| [ADR-004](adrs/ADR-004-governance-middleware-ordering.md) | Governance ordering: permission → budget → HITL (budget before HITL) |
-| [ADR-022](adrs/ADR-022-typescript-only-orchestration-engine.md) | TypeScript-only orchestration (Phase 1). Superseded by ADR-043. |
-| [ADR-043](adrs/ADR-043-typescript-only-orchestration.md) | Deprecate Python engine, commit to @langchain/langgraph (TypeScript) |
+| [ADR-002](../adrs/ADR-002-event-payload-structure.md) | Flat event payloads (no nested `payload` field) |
+| [ADR-003](../adrs/ADR-003-event-bus-method-naming.md) | Both `publish()` and `emit()` on event bus |
+| [ADR-004](../adrs/ADR-004-governance-middleware-ordering.md) | Governance ordering: permission → budget → HITL |
+| [ADR-022](../adrs/ADR-022-typescript-only-orchestration-engine.md) | TypeScript-only orchestration (Phase 1). Superseded by ADR-043 |
+| [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) | Deprecate Python engine, commit to @langchain/langgraph (TypeScript) |
+| [ADR-044](../adrs/ADR-044-design-phase-state-in-agents-ux.md) | DesignPhaseState lives in agents-ux, not core |
+| [ADR-045](../adrs/ADR-045-evaluator-deferred-to-phase-2.md) | evaluatorNode returns undefined in Phase 1 |
+| [ADR-046](../adrs/ADR-046-langfuse-observability.md) | Langfuse observability — Phase 7 pull-forward |
+| [ADR-047](../adrs/ADR-047-browser-default-design-tool.md) | Browser as default design tool |
+| [ADR-048](../adrs/ADR-048-feedback-loop-strategy.md) | Feedback loop strategy |
+| [ADR-049](../adrs/ADR-049-stage-7-dashboard-deferral.md) | Stage 7 dashboard deferral |
+| [ADR-050](../adrs/ADR-050-runs-page-vision-deviations.md) | Runs page — deferred vision Layer 14 decisions |
+| [ADR-051](../adrs/ADR-051-backstage-developer-portal.md) | Backstage developer portal |
+
+For the complete list, see the [ADR index](../_generated/adr-index.md).
+
+## Related
+
+- [The Spine Pattern](spine-pattern.md) — why single-writer sequential
+- [CHIP's Spine Implementation](spine-implementation.md) — per-stage node sequences and context handoffs
+- [Architecture at a Glance](vision-overview.md) — layer summary
+- [Agent Taxonomy](../concepts/agent-taxonomy.md) — spine + specialist roles
+- [Clarifier Pipeline](../concepts/clarifier-pipeline.md) — first stage detail
+- [Error Handling](error-handling.md) — Result pattern and error codes

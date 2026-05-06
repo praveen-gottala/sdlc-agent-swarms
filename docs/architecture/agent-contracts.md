@@ -1,6 +1,15 @@
 # CHIP Agent Contracts
 
-Every agent in AgentForge is defined by a YAML contract. This document specifies the contract schema, lifecycle, and examples.
+!!! warning "Scope: Design agent contracts only"
+
+    This document defines the YAML contract schema used by design pipeline
+    agents (ux-researcher, wireframe-generator, visual-designer,
+    design-reviewer). The ten-agent model from PRD v2.0 was
+    [rejected during research](../concepts/agent-taxonomy.md). Spine stages
+    (Clarifier, Architect, Implementer, Reviewer) use LangGraph StateGraphs,
+    not YAML contracts — see [CHIP's Spine](spine-implementation.md).
+
+Every agent in CHIP is defined by a YAML contract. This document specifies the contract schema, lifecycle, and design agent definitions.
 
 ## Contract Schema
 
@@ -70,9 +79,9 @@ Error states:
 - `ABORTED` -> Manual abort via `agentforge abort`
 - `BUDGET_EXCEEDED` -> Budget limit hit mid-execution
 
-## Phase 1 Agent Definitions
+## Design Agent Definitions
 
-### Design Agents
+### Design Agents (operational)
 
 ```yaml
 # agents/design/ux-researcher.yaml
@@ -174,7 +183,17 @@ context:
   include_conventions: true
 ```
 
-### Spec & Planning Agents
+### Planned Agents (not implemented)
+
+!!! warning "Historical — rejected architecture"
+
+    The following agent contracts were defined in PRD v2.0 as part of the ten-agent
+    model. This model was [rejected during research](../concepts/agent-taxonomy.md)
+    in favor of the four-stage spine. These contracts are preserved for reference but
+    do not represent the current architecture. Spine stages use LangGraph StateGraphs
+    with typed channels, not YAML contracts.
+
+#### Spec & Planning Agents
 
 ```yaml
 # agents/spec/spec-writer.yaml
@@ -227,7 +246,7 @@ context:
   include_conventions: true
 ```
 
-### Code Generation Agents
+#### Code Generation Agents
 
 ```yaml
 # agents/code/frontend-coder.yaml
@@ -329,7 +348,7 @@ context:
   include_conventions: true
 ```
 
-### CI/CD Agents
+#### CI/CD Agents
 
 ```yaml
 # agents/cicd/build-agent.yaml
@@ -413,3 +432,17 @@ context:
 3. Register the agent in the project manifest
 4. Write tests that verify: permissions are checked, budget is enforced, HITL is triggered, events are emitted
 5. Add to the package's index.ts barrel export
+
+## Known Limitations
+
+- Contract schema applies to design agents only — spine stages (Clarifier, Architect, Implementer, Reviewer) use LangGraph StateGraphs with typed channels
+- Spec & Planning, Code Generation, and CI/CD agent contracts are aspirational (from rejected ten-agent model, not implemented)
+- No runtime validation of YAML contracts against the TypeScript `AgentContract` interface in `packages/core/src/types/agent-contract.ts`
+- The `on_complete` / `on_error` event bus coordination pattern is superseded by typed LangGraph channels for spine stages
+
+## Related
+
+- [CHIP's Spine](spine-implementation.md) — current architecture (LangGraph StateGraphs for spine stages)
+- [Agent Taxonomy](../concepts/agent-taxonomy.md) — spine stages vs specialist tools, historical context on rejected ten-agent model
+- [Vision Layer 3](../vision.md#layer-3-agent-taxonomy) — locked architectural decisions for agent taxonomy
+- [Dashboard Spec](../specs/dashboard.md) — Agent Configuration UI (references this contract schema)

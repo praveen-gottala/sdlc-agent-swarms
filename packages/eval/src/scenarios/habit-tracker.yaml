@@ -1,0 +1,10 @@
+id: habit-tracker
+name: Habit Tracker
+description: Vague seed — tests gap detection depth under ambiguity
+rawInput: Build me a thing for tracking habits
+mode: bootstrap
+maxRounds: 3
+expectedBehavior:
+  minQuestions: 3
+  maxQuestions: 15
+  expectEscalation: false

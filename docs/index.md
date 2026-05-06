@@ -1,41 +1,49 @@
 # CHIP Documentation
 
-**CHIP** (Crafted Human Intelligence Platform) is a multi-agent SDLC framework. AI agents handle design, specification, implementation, and review -- with human-in-the-loop oversight at every critical decision point.
+**CHIP** (Crafted Human Intelligence Platform) turns a product idea into working, reviewed software. Four AI-driven stages -- clarify, architect, implement, review -- pass typed artifacts through a sequential spine, with humans approving at structural boundaries.
 
-## Reading Order
+```mermaid
+graph LR
+    A[Product Idea] --> C[Clarifier]
+    C -->|"Structured Requirements<br/>+ Assumption Ledger"| AR[Architect]
+    AR -->|"Architecture + Contracts<br/>+ Task Plan"| IM[Implementer]
+    IM -->|"Code Diff"| RV[Reviewer]
+    RV -->|"Review Result"| D[Working Software]
 
-Start here, in this order:
+    C -.->|HITL| H1[Human]
+    AR -.->|HITL| H2[Human]
+    RV -.->|HITL| H3[Human]
 
-| # | Document | Purpose |
-|---|----------|---------|
-| 1 | [Vision](vision.md) | Architectural authority. 15 layers with locked/open decisions, current vs target state. **When vision and codebase disagree, the vision wins.** |
-| 2 | [PRD](specs/PRD.md) | Product spec. Source of truth for product scope, interfaces, API contracts, enums. |
-| 3 | [Roadmap](roadmap.md) | Eight-phase dependency-ordered rollout with demoable outcomes per phase. |
-| 4 | [Design Decisions](design-decisions.md) | Decisions by topic with reasoning, alternatives considered, and revisit criteria. |
-| 5 | [Lessons Learned](lessons-learned-rules.md) | Active rules -- what to follow and what has been superseded. |
+    style C fill:#4A90D9,color:#fff
+    style AR fill:#7B68EE,color:#fff
+    style IM fill:#2ECC71,color:#fff
+    style RV fill:#E67E22,color:#fff
+```
 
-## Architecture
+- **[Single-writer discipline](architecture/spine-pattern.md#1-single-writer-per-artifact)** -- each stage owns its artifact. No parallel writers to shared code. Every production coding agent that shipped (Devin, Claude Code, Cursor, Aider) converged on this independently.
+- **[Typed handoffs](architecture/spine-pattern.md#3-typed-channels-between-stages)** -- every artifact crossing a stage boundary has a Zod schema. Typed contracts prevent the context blindness that free-form handoffs cause.
+- **[Parallel where it's safe](architecture/spine-implementation.md#concurrency-model)** -- independent features run in parallel worktrees. Evidence-gathering spawns parallel read-only subagents. Writes to shared artifacts stay single-threaded.
+- **[Research-backed](architecture/spine-pattern.md#the-single-invariant)** -- 24 citations from Cognition, Anthropic, MetaGPT, and the 2024--2026 academic literature. Not opinion -- convergent evidence from teams that shipped.
 
-CHIP follows a **four-stage vertical spine** with specialist tools:
+## Start Here
 
-1. **Clarifier** -- reads input, runs clarification pipeline, emits enriched requirement + assumption ledger
-2. **Architect** -- produces architecture spec, ADRs, task plan
-3. **Implementer** -- single-threaded tool-loop; writes all code for a task in sequence
-4. **Reviewer** -- fresh-context diff review with deterministic gates first, LLM review second
+| # | Document | What you'll learn |
+|---|----------|-------------------|
+| 1 | [The Spine Pattern](architecture/spine-pattern.md) | Why a sequential spine wins -- the five load-bearing properties and the evidence behind them. |
+| 2 | [CHIP's Spine](architecture/spine-implementation.md) | How CHIP applies the pattern -- stage details, typed contracts, implementation status. |
+| 3 | [Architecture at a Glance](architecture/vision-overview.md) | All 15 layers, status dashboard, locked vs open decisions. |
 
-The single invariant: **context quality and write-coupling are the axes**. Get good context into each LLM call. Keep writes single-threaded per artifact.
+??? info "Full reading order for contributors"
 
-## Documentation Sections
-
-| Section | What's in it | When to read |
-|---------|-------------|--------------|
-| [Architecture](architecture/README.md) | Vision, system design, dataflows, contracts, design decisions. | Understanding how components connect. |
-| [Specs](specs/README.md) | Product requirements. PRD + domain specs. | Understanding what we're building. |
-| [How-To Guides](guides/README.md) | CLI reference + operational guides (design generation, Langfuse, model selection). | Learning how to use a specific capability. |
-| [ADRs](adrs/ADR-002-event-payload-structure.md) | Architecture Decision Records (ADR-002 through ADR-051). | Before making architectural choices. |
-| [Operations](plans/active/visual-diversity/execution-plan.md) | Active/backlog/completed plans + known issues. | Planning or resuming work on any initiative. |
-| [Reference](reference/README.md) | Lessons learned, status docs, known limitations. | Checking current state or constraints. |
-| [Research](research/planning-methodology-investigation.md) | Investigation reports and methodology analysis. | Understanding why decisions were made. |
+    | # | Document | Purpose |
+    |---|----------|---------|
+    | 1 | [Vision](vision.md) | Canonical architectural authority. 15 layers with locked/open decisions. **When vision and codebase disagree, the vision wins.** |
+    | 2 | [The Spine Pattern](architecture/spine-pattern.md) | Why a four-stage sequential spine wins. 24 research citations. |
+    | 3 | [CHIP's Spine](architecture/spine-implementation.md) | How CHIP applies the spine. Every decision traced to research + codebase. |
+    | 4 | [PRD](specs/PRD.md) | Product spec. Source of truth for scope, interfaces, API contracts, enums. |
+    | 5 | [Roadmap](roadmap.md) | Eight-phase dependency-ordered rollout with demoable outcomes per phase. |
+    | 6 | [Design Decisions](design-decisions.md) | Decisions by topic with reasoning, alternatives considered, and revisit criteria. |
+    | 7 | [Lessons Learned](lessons-learned-rules.md) | Active rules -- what to follow and what has been superseded. |
 
 ## Tech Stack
 
@@ -46,6 +54,4 @@ The single invariant: **context quality and write-coupling are the axes**. Get g
 - **Observability:** OpenTelemetry + Langfuse self-hosted
 - **RAG:** Tree-sitter + Voyage embeddings + Qdrant + Cohere Rerank
 
-## Developer Portal
-
-This documentation is rendered via [Backstage TechDocs](https://backstage.io/docs/features/techdocs/). See the [Developer Portal Guide](guides/backstage-developer-portal.md) for setup and contribution instructions.
+> **The single invariant:** context quality and write-coupling are the axes. Get good context into each LLM call. Keep writes single-threaded per artifact. Everything else is downstream. [Why this matters →](architecture/spine-pattern.md#the-single-invariant)

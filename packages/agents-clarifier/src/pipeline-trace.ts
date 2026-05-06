@@ -41,6 +41,7 @@ export function appendStageRecord(
     readonly sequenceNumber: number;
     readonly input: unknown;
     readonly output: unknown;
+    readonly durationMs?: number;
   },
 ): void {
   const dir = stagesDir(projectRoot, threadId);
@@ -61,6 +62,7 @@ export function appendStageRecord(
     threadId,
     inputFile,
     outputFile,
+    ...(opts.durationMs !== undefined ? { durationMs: opts.durationMs } : {}),
   };
 
   const logPath = join(traceDir(projectRoot, threadId), 'execution-log.jsonl');

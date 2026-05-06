@@ -1,0 +1,1 @@
+../../../.claude/rules/new-package.md

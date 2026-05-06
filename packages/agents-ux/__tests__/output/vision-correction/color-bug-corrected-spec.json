@@ -25,7 +25,7 @@
         "align": "center",
         "justify": "space-between",
         "px": 32,
-        "gap": 42,
+        "gap": 32,
         "mx": 11
       },
       "shadow": "sm",
@@ -265,7 +265,8 @@
       "order": 2,
       "catalog": "badge-success",
       "label": "✓ On Track",
-      "radius": 9999
+      "radius": 9999,
+      "width": "fit-content"
     },
     "category-donut-card": {
       "parent": "left-column",
@@ -634,7 +635,8 @@
           "Health",
           "Other"
         ]
-      }
+      },
+      "background": "#10172a"
     },
     "recent-expenses-list": {
       "parent": "right-column",

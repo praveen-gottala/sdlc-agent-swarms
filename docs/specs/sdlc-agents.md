@@ -1,8 +1,8 @@
 # SDLC Agents, Spec Sync, and Onboarding
 
-> Part of the [AgentForge PRD](./PRD.md). Covers spec sync lifecycle, application
-> onboarding, agent taxonomy, agent contracts, and all five SDLC phase details
-> (design, spec, code gen, CI/CD, observability, research).
+> Part of the [CHIP PRD](./PRD.md). Covers spec sync lifecycle, application
+> onboarding, agent taxonomy, agent contracts, and SDLC phase details
+> (design, spec, code gen, CI/CD, observability).
 
 **8. Context Resolution and Spec Sync**
 
@@ -34,7 +34,7 @@ Trigger: Developer runs agentforge init. The CLI wizard has a quick-start mode w
 
 > \$ agentforge init
 >
-> Welcome to AgentForge!
+> Welcome to CHIP!
 >
 > Project name: TaskFlow
 >
@@ -54,7 +54,7 @@ Trigger: Developer runs agentforge init. The CLI wizard has a quick-start mode w
 >
 > Scaffolding project\... done
 >
-> AgentForge is ready. Run: agentforge start design
+> CHIP is ready. Run: agentforge start design
 >
 > *Updated per ADR-005: Init records channel preferences but does not establish live connections. Connection happens at runtime.*
 >
@@ -72,7 +72,7 @@ Trigger: Developer runs agentforge init. The CLI wizard has a quick-start mode w
 
 > *Updated per ADR-011: Agent contracts are stored in agentforge/agents.yaml, not embedded in agentforge.yaml.*
 
-**9.3 Post-Init: AgentForge as Persistent Tooling**
+**9.3 Post-Init: CHIP as Persistent Tooling**
 
 > agentforge start \<phase\> \# begin a phase
 >
@@ -96,7 +96,7 @@ Deferred to Phase 3. When implemented, it will start with a narrow claim: the an
 
 **10. Agent Taxonomy**
 
-AgentForge uses a four-stage sequential spine with specialist tools invoked by each stage (see `vision.md` Layer 3 — locked decision). Every agent has a defined role, permissions, input/output contract, and HITL policy.
+CHIP uses a four-stage sequential spine with specialist tools invoked by each stage (see `vision.md` Layer 3 — locked decision). Every agent has a defined role, permissions, input/output contract, and HITL policy.
 
 **Spine stages (sequential, single writer per stage):**
 
@@ -140,7 +140,7 @@ AgentForge uses a four-stage sequential spine with specialist tools invoked by e
   Observability agents      Post-deploy (Phase 5)       Metrics, drift detection, cost         `claude-haiku-4-5` (cost)
   -----------------------------------------------------------------------------------------------------------
 
-  > *Previous taxonomy (five categories with 20+ peer agents) is superseded. See `vision.md` Layer 3 for rationale.*
+  > *Previous taxonomy (five categories with 20+ peer agents) superseded by the spine + specialist model. See `vision.md` Layer 3 for rationale.*
 
 **10.1 Agent Contract Definition**
 
@@ -209,14 +209,16 @@ After the browser renderer produces a screenshot, the correction pipeline runs i
 
 **Cost per correction cycle:** ~$0.06 per iteration (screenshot ~1,500 tokens + DOM layout ~3,000 tokens + DesignSpec JSON ~8,000 tokens + response ~1,500 tokens). Maximum $0.18 for 3 iterations per screen.
 
-**Phase B: Integration with existing pipeline (keep self-correction)**
+??? note "Historical — Phase B (superseded by Phase C)"
 
-Phase B connects the standalone correction pipeline to the existing design workflow:
+    **Phase B: Integration with existing pipeline (keep self-correction)**
 
--   The existing Penpot self-evaluation loop (which improves DesignSpec JSON from ~32/100 to ~65/100) continues to run. It patches the JSON for structural issues it can detect.
--   After the Penpot loop produces its corrected JSON, the browser renderer takes over: renders with real shadcn components, runs DOM extraction, applies mechanical fixes, and presents the interactive preview for user feedback.
--   The pipeline becomes: LLM → JSON → Penpot self-correction (3 attempts) → corrected JSON → Browser render → DOM extraction → mechanical fixes → interactive preview → vision-assisted correction → user approval.
--   Both correction stages operate on the same DesignSpec JSON — the Penpot loop improves it first, then the browser-based pipeline improves it further.
+    Phase B connects the standalone correction pipeline to the existing design workflow:
+
+    -   The existing Penpot self-evaluation loop (which improves DesignSpec JSON from ~32/100 to ~65/100) continues to run. It patches the JSON for structural issues it can detect.
+    -   After the Penpot loop produces its corrected JSON, the browser renderer takes over: renders with real shadcn components, runs DOM extraction, applies mechanical fixes, and presents the interactive preview for user feedback.
+    -   The pipeline becomes: LLM → JSON → Penpot self-correction (3 attempts) → corrected JSON → Browser render → DOM extraction → mechanical fixes → interactive preview → vision-assisted correction → user approval.
+    -   Both correction stages operate on the same DesignSpec JSON — the Penpot loop improves it first, then the browser-based pipeline improves it further.
 
 **Phase C: Remove self-correction, browser-only pipeline**
 
@@ -240,37 +242,27 @@ The DesignSpec JSON is the contract between design and code generation. The code
 
 > **DesignSpec v2 (current):** The renderer uses a v2 schema that separates structure (WHAT — JSON node tree with layout, typography, color references) from rendering (HOW — CSS generation, token resolution, shadow/typography computation). See `packages/designspec-renderer/src/types/design-spec-v2.ts` for the authoritative schema.
 
-**Interoperability:** DesignSpec can be exported to json-render format (Vercel's Generative UI framework) for teams that want to use json-render's multi-framework renderers (React, Vue, Svelte, React Native) or progressive streaming infrastructure. The export maps DesignSpec layout nodes to json-render element types and catalog references to json-render component entries. This is a one-way export — AgentForge's design pipeline generates DesignSpec natively; json-render is a downstream consumer option.
+**Interoperability:** DesignSpec can be exported to json-render format (Vercel's Generative UI framework) for teams that want to use json-render's multi-framework renderers (React, Vue, Svelte, React Native) or progressive streaming infrastructure. The export maps DesignSpec layout nodes to json-render element types and catalog references to json-render component entries. This is a one-way export — CHIP's design pipeline generates DesignSpec natively; json-render is a downstream consumer option.
 
 **11.1.4 Design Tool Integration (Optional)**
 
 Penpot serve as optional collaboration surfaces where human designers can visually tweak approved designs. Changes sync back to DesignSpec JSON via a bidirectional adapter. Design tools are NOT in the verification path — the browser renderer is the source of truth for layout fidelity.
 
-AgentForge defines a DesignToolAdapter interface: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(). Penpot is the primary adapter (CSS-native, free webhooks, W3C DTCG token support, MCP Server Support). Figma support removed.
+CHIP defines a DesignToolAdapter interface: createWorkspace(), readDesign(), writeDesign(), getTokens(), onUserEdit(). Penpot is the primary adapter (CSS-native, free webhooks, W3C DTCG token support, MCP Server Support). Figma support removed.
 
 > *Updated per ADR-015: Storybook adapter is Phase 2.*
 
 **11.2 Phase 2: Specification and Planning Agents**
 
-AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec agent consumes finalized design output and produces: component specs, API specs (OpenAPI 3.1), data model specs, task decomposition, and Architecture Decision Records (ADRs). The estimation agent provides effort estimates based on complexity and historical data.
+CHIP adopts spec-driven development (SDD) as its core paradigm. The spec agent consumes finalized design output and produces: component specs, API specs (OpenAPI 3.1), data model specs, task decomposition, and Architecture Decision Records (ADRs). The estimation agent provides effort estimates based on complexity and historical data.
 
 **11.3 Phase 3: Code Generation Agents**
 
-**11.3.1 Multi-Agent Coding Architecture**
+**11.3.1 Implementer Workflow**
 
-  --------------------------------------------------------------------------------------------------------------------
-  **Agent**        **Responsibility**                                            **Output**
-  ---------------- ------------------------------------------------------------- -------------------------------------
-  Frontend coder   Generates UI components from DesignSpec JSON + design tokens   React components with TypeScript
+The Implementer is a single-threaded tool-loop that writes all code for a task in sequence: frontend components, backend services, tests, and migrations. It invokes specialist tools (test generator, security scanner, documentation generator) as needed during the sequence. See Section 10 for the authoritative spine stage and specialist tool taxonomy.
 
-  Backend coder    Generates API endpoints, business logic, data access layers   Node.js services, Prisma migrations
-
-  Test writer      Generates unit, integration, and e2e tests from specs         Jest, Playwright test suites
-
-  PR reviewer      Reviews generated code for quality, security, architecture    Review comments, requested changes
-
-  Refactorer       Improves existing code without changing behavior              Refactored files with passing tests
-  --------------------------------------------------------------------------------------------------------------------
+Within a single task, the Implementer does not parallelize across frontend/backend/test concerns. This is a locked decision (see `vision.md` Layer 8 and Section 11.3.4). Cross-task parallelism is supported via git worktrees.
 
 **11.3.2 LLM Provider Routing**
 
@@ -283,7 +275,7 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
 
   Test generation             `claude-sonnet-4-6` or equivalent tier       High volume, pattern-based
 
-  Code review                 `claude-haiku-4-5` or equivalent tier        Fast, cost-effective
+  Code review                 `claude-sonnet-4-6` or equivalent tier       Balanced reasoning for review quality
 
   Boilerplate / scaffolding   Local model (Llama/Mistral)                  Zero API cost
   --------------------------------------------------------------------------------------------------
@@ -292,19 +284,17 @@ AgentForge adopts spec-driven development (SDD) as its core paradigm. The spec a
 
 **11.3.3 Code Generation Workflow**
 
--   Orchestrator distributes decomposed tasks to coding agents based on task type.
+-   Architect produces a task plan with decomposed implementation tasks, each referencing relevant spec sections, DesignSpec JSON, and architectural constraints.
 
--   Each agent receives: relevant spec section, DesignSpec JSON for the target screen (from agentforge/designs/), existing code context, architectural constraints, and agent learnings.
-
--   Agent generates code in a feature branch following project coding standards.
+-   Implementer receives a task and writes code in a feature branch: frontend components, backend services, tests, and migrations in sequence. Specialist tools (test generator, documentation generator) are invoked as needed.
 
 -   Code is pushed to GitHub. GitHub Actions sandbox runs build and tests.
 
--   If CI passes, PR is created. CIResult and PRCreated events are emitted.
+-   If CI passes, a PR is created. CIResult and PRCreated events are emitted.
 
--   PR reviewer agent performs initial review for quality, security, and architecture compliance.
+-   Reviewer stage performs fresh-context review: deterministic gates first (lint, type-check, test pass, security scan), then LLM-based review for architecture compliance and code quality.
 
--   Based on HITL config, PR either requires human approval, auto-merges with notification, or auto-merges silently. PRMerged event emitted on merge.
+-   Based on HITL config, the PR either requires human approval, auto-merges with notification, or auto-merges silently. PRMerged event emitted on merge.
 
 **11.3.4 Concurrency Model**
 
@@ -317,7 +307,9 @@ Cross-task parallelism is supported via git worktrees: independent tasks can exe
 
 **11.4 Phase 4: CI/CD Agents**
 
-AgentForge does not replace existing CI/CD infrastructure. It layers agent intelligence on top of the team's existing pipeline.
+!!! note "Planned — not yet implemented"
+
+CHIP does not replace existing CI/CD infrastructure. It layers agent intelligence on top of the team's existing pipeline.
 
 -   Build agent: Monitors build failures, analyzes error logs, fixes known patterns automatically or creates tasks with diagnostic context.
 
@@ -328,6 +320,8 @@ AgentForge does not replace existing CI/CD infrastructure. It layers agent intel
 -   Rollback agent: Monitors post-deployment health metrics. Initiates automatic rollback if error rates spike, with root cause analysis.
 
 **11.5 Phase 5: Observability Agents**
+
+!!! note "Planned — not yet implemented"
 
 **11.5.1 Application Observability**
 
@@ -354,6 +348,8 @@ AgentForge does not replace existing CI/CD infrastructure. It layers agent intel
 When the observability layer detects a production issue, it can create a feedback event that triggers the design phase for the affected feature.
 
 **12. Research and Continuous Improvement Agents (Phase 3)**
+
+!!! note "Planned — Phase 3"
 
 Research agents periodically analyze the deployed application and suggest improvements that feed back into the design phase. Adding research agents later is a new agent contract plus prompts, not an architecture change.
 

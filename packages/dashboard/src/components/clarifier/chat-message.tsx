@@ -1,7 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ChatMessage as ChatMessageType, ToolResultMessage } from '@/lib/clarifier-chat-types';
+
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function ElapsedTimer({ startedAt }: { startedAt: number }): React.JSX.Element {
+  const [elapsed, setElapsed] = useState(() => Date.now() - startedAt);
+
+  useEffect(() => {
+    const interval = setInterval(() => setElapsed(Date.now() - startedAt), 1000);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+
+  return <span className="text-[10px] text-text-muted/60 tabular-nums">{formatDuration(elapsed)}</span>;
+}
 
 interface ChatMessageProps {
   readonly message: ChatMessageType;
@@ -40,10 +59,13 @@ function ToolResultCard({ payload }: { payload: ToolResultMessage }): React.JSX.
           <ToolIcon node={payload.node} />
         </div>
         <span className="text-[12px] font-medium text-text-secondary">{payload.label}</span>
-        <span className={`ml-auto text-[10px] font-semibold ${
+        <span className={`ml-auto flex items-center gap-1.5 text-[10px] font-semibold ${
           payload.status === 'completed' ? 'text-green-500' : 'text-accent-blue'
         }`}>
           {payload.status === 'completed' ? 'Completed' : 'Running'}
+          {payload.durationMs != null && (
+            <span className="font-normal text-text-muted/50 tabular-nums">{formatDuration(payload.durationMs)}</span>
+          )}
         </span>
         {hasDetails && (
           <svg
@@ -81,16 +103,34 @@ export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
 
   switch (payload.kind) {
     case 'user-seed':
+      return (
+        <div className="flex justify-end mb-3 animate-[fadeSlideUp_0.2s_ease-out]">
+          <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent-blue/8 border border-accent-blue/15 px-4 py-2.5">
+            {payload.attachment ? (
+              <>
+                <div className="flex items-center gap-2 rounded-lg bg-bg-elevated/40 border border-border/30 px-3 py-2">
+                  <svg className="h-4 w-4 text-accent-blue/70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  <span className="text-[13px] font-medium text-text-primary truncate">{payload.attachment.name}</span>
+                </div>
+                {payload.displayText && (
+                  <p className="mt-2 text-[14px] leading-relaxed text-text-primary">{payload.displayText}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-[14px] leading-relaxed text-text-primary">{payload.text}</p>
+            )}
+          </div>
+        </div>
+      );
+
     case 'user-answer':
       return (
         <div className="flex justify-end mb-3 animate-[fadeSlideUp_0.2s_ease-out]">
           <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent-blue/8 border border-accent-blue/15 px-4 py-2.5">
-            <p className="text-[14px] leading-relaxed text-text-primary">
-              {payload.kind === 'user-seed' ? payload.text : payload.answer}
-            </p>
-            {payload.kind === 'user-answer' && (
-              <p className="mt-1 text-[11px] text-text-muted">Re: {payload.questionText}</p>
-            )}
+            <p className="text-[14px] leading-relaxed text-text-primary">{payload.answer}</p>
+            <p className="mt-1 text-[11px] text-text-muted">Re: {payload.questionText}</p>
           </div>
         </div>
       );
@@ -107,6 +147,7 @@ export function ChatMessage({ message }: ChatMessageProps): React.JSX.Element {
               <div className="relative h-3.5 w-3.5 rounded-full bg-accent-blue" />
             </div>
             <span className="text-[12px] text-text-muted">{payload.label}</span>
+            {payload.startedAt && <ElapsedTimer startedAt={payload.startedAt} />}
           </div>
         </div>
       );

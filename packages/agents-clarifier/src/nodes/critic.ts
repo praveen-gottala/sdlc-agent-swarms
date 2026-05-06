@@ -14,7 +14,11 @@ import type { ClarifierDeps, ClarifierNodeFn } from '../deps.js';
 import type { ClarifierState } from '../types.js';
 
 export function _resetPromptCache(): void {
-  // no-op — prompt loading deferred until LLM review is implemented
+  // CONSTRAINT (FB3): Prompt loading deferred until LLM review is wired.
+  // critic-system.md exists but is NOT loaded. Only deterministic INVEST/EARS/DAG
+  // checks run. criticPassed means "well-formed" not "good". This is intentional
+  // for v0. The evaluator-challenger pipeline fills the quality gap.
+  // See: docs/lessons-learned-rules.md "Clarifier: Known v0 Trade-Offs"
 }
 
 // ---------------------------------------------------------------------------
@@ -128,14 +132,22 @@ function runDeterministicChecks(plan: FeaturePlan): CriticIssue[] {
 // Node factory
 // ---------------------------------------------------------------------------
 
-const MAX_RETRIES = 2;
+// Retries route back to storyWriter which triggers interruptBefore,
+// causing the user to see the same questions in an infinite loop.
+// Until critic has LLM-based quality review (v1), pass with warnings.
+const MAX_RETRIES = 0;
 
 /**
  * Create a Critic node function for the Clarifier StateGraph.
- * Validates output quality and triggers bounded retry.
+ * Validates output STRUCTURE (INVEST, EARS, DAG) only — not semantic quality.
+ * `criticPassed: true` means well-formed, not good. LLM quality review is
+ * scaffolded (critic-system.md) but not wired until eval data shows
+ * structural checks are insufficient.
  */
 export function createCritic(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`critic: ENTER round=${state.round} criticRetries=${state.criticRetries} hasFeaturePlan=${!!state.featurePlan}`);
     if (!state.featurePlan) {
       return {
         criticPassed: state.criticRetries >= MAX_RETRIES,
@@ -156,15 +168,16 @@ export function createCritic(deps: ClarifierDeps): ClarifierNodeFn {
           debugLog(`critic: passing with ${warningDescriptions.length} warning(s)`);
         }
       }
+      debugLog(`critic: EXIT passed=true ${Date.now() - _t0}ms`);
       return { criticPassed: true, criticRetries: state.criticRetries };
     }
 
     if (state.criticRetries >= MAX_RETRIES) {
-      debugLog(`critic: max retries reached (${MAX_RETRIES}), passing with ${errors.length} error(s) as warnings`);
+      debugLog(`critic: EXIT max-retries passed=true ${Date.now() - _t0}ms`);
       return { criticPassed: true, criticRetries: state.criticRetries + 1 };
     }
 
-    debugLog(`critic: ${errors.length} error(s) found, retry ${state.criticRetries + 1}/${MAX_RETRIES}`);
+    debugLog(`critic: EXIT failed retry=${state.criticRetries + 1}/${MAX_RETRIES} ${Date.now() - _t0}ms`);
     return {
       criticPassed: false,
       criticRetries: state.criticRetries + 1,

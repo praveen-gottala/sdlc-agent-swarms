@@ -1,10 +1,11 @@
 ---
 name: backstage
 description: |
-  Backstage documentation toolkit. Two subcommands:
+  Backstage documentation toolkit. Three subcommands:
   `/backstage create <type> <topic>` — create or revise an internal CHIP backstage documentation page in `docs/`. Types: concept, tutorial, guide, architecture, status.
   `/backstage sync` — regenerate Tier 3 auto-generated pages and check Tier 2 concept pages for drift against their authoritative sources.
-argument-hint: "create <type> <topic> | sync"
+  `/backstage review <page>` — deep review of an existing page against voice, flow, and quality rules. Gathers context, identifies issues, suggests concrete rewrites, and creates a prioritized plan.
+argument-hint: "create <type> <topic> | sync | review <page>"
 ---
 
 # /backstage
@@ -17,6 +18,7 @@ Parse the first token of `$ARGUMENTS`:
 
 - If `create` — shift it off, parse the remaining tokens as `<type> <topic>`, and follow the **create protocol** below (Steps 1-6).
 - If `sync` — follow the **sync protocol** below.
+- If `review` — shift it off, parse the remaining token as `<page>` (a file path, nav heading, URL path, or description), and follow the **review protocol** below.
 - If the first token is one of the five doc types (`concept`, `tutorial`, `guide`, `architecture`, `status`) — treat as `create <type> <topic>` for backward compatibility.
 - If empty or unrecognized — stop and ask. Do not guess.
 
@@ -31,7 +33,10 @@ Parse the first token of `$ARGUMENTS`:
 - User flags a page as generic, marketing-y, blog-post tone, or jargon-dense for the audience → `create`
 - User asks to add a missing concept, tutorial, guide, architecture, or status page → `create`
 - User asks to check docs freshness, sync backstage, or detect drift → `sync`
-- Before a release, demo, or stakeholder review → `sync`
+- Before a release, demo, or stakeholder review → `sync` (freshness) then `review` (quality) on key pages
+- User asks to review, audit, or improve an existing doc page → `review`
+- User says a page "could be better" or "needs work" → `review`
+- Before a demo or stakeholder presentation → `review` on landing/overview pages
 
 Do **not** use this skill for: ADRs (use the ADR template in `docs/adrs/`), `CLAUDE.md`, README files, package-level READMEs, or external marketing copy.
 
@@ -449,6 +454,13 @@ Before declaring done, run all seven checks:
 5. **Mechanical competitor-swap test.** Identify the three sentences in the finished doc most at risk of surviving the swap test (typically: section openers, the "Why CHIP does this" paragraph, anything that sounds like marketing). Quote each verbatim in the output report. For each, either defend it with a fact only true of CHIP, or rewrite it inline before declaring the doc done. The three quotes must appear in the run report regardless of whether they passed or were rewritten — visibility is the point.
 6. **Length check.** Count lines in the finished file. If above the ceiling for the type, either split into linked sub-pages per the splitting guidance, or justify why the content genuinely belongs on one page in the run report. Never trim substantive content to hit a target.
 7. Confirm zero occurrences of: test counts ("116 tests"), suite counts, line counts, "battle-tested," "production-grade," "non-negotiable," "every AI tool today," "we believe," "robust," "enterprise-ready," "seamlessly."
+8. **Voice and flow check.** Read the finished page against `.claude/rules/docs-formatting.md` Voice and Page flow rules. Verify:
+   - No section titles frame tradeoffs defensively ("Why X fails?", "But what about...?")
+   - The page leads with what the system does, not what competitors fail at
+   - No section repeats content the reader just saw (diagram content restated as a list = redundancy)
+   - Abstract principles appear after the reader has context, not before
+   - No section duplicates the sidebar navigation
+   - No paragraphs float between sections without heading or visual connection
 
 If any check fails, fix and re-verify. Do not hand off a draft that doesn't build, doesn't link, hasn't been swap-tested with quoted evidence, or exceeds the length ceiling without splitting or justification.
 
@@ -560,6 +572,85 @@ When the sync subcommand completes, report:
 4. **Structural check results** — nav completeness, citation path validity, registry consistency.
 
 5. **Action items** — prioritized list of pages to update, ordered by severity (major first), with the specific `/backstage create <type> <topic>` invocation to fix each one.
+
+---
+
+## Review protocol
+
+### Inputs
+
+`/backstage review <page>`
+
+- `page` — a file path (`docs/index.md`), nav heading ("Home"), URL path (`/architecture/spine-pattern`), or description ("the home page"). If ambiguous, list candidates and ask.
+
+### Step 1 — Locate the page
+
+Parse `<page>` and resolve to the actual `.md` file path. Check `mkdocs.yml` for nav entries matching the argument. If the argument is a description, grep `mkdocs.yml` nav for close matches. If multiple matches, present options and ask.
+
+### Step 2 — Gather context
+
+Read the target page in full. Then read:
+
+- **Linked pages** — the first 30 lines of each page the target links to (understanding what the reader encounters next)
+- **Inbound links** — grep for the target's filename across `docs/` to find pages that link TO it (understanding how readers arrive)
+- **Nav context** — what comes before and after in the `mkdocs.yml` nav (understanding reading flow)
+- **Quality rules** — `.claude/rules/docs-formatting.md` Voice and Page flow sections
+
+### Step 3 — Apply quality checks
+
+Evaluate the page against each rule:
+
+| Check | What to look for |
+|-------|-----------------|
+| **Voice: strengths not defenses** | Section titles or paragraphs framing tradeoffs as answering imagined objections ("Why X?", "Doesn't this mean...?", "But what about...?") |
+| **Flow: lead with what it does** | Does the page open with what the system/feature does, or with what competitors get wrong? |
+| **Flow: don't repeat** | Sections that restate content the reader just saw (e.g., a numbered list repeating a diagram's content) |
+| **Flow: earn insider concepts** | Abstract principles introduced before the reader has context to understand them |
+| **Flow: don't duplicate nav** | Sections that mirror the sidebar navigation |
+| **Flow: no orphaned paragraphs** | Paragraphs floating between sections without a heading or visual connection |
+| **Competitor-swap test** | The three highest-risk sentences — would they survive replacing CHIP with Cursor/Devin/Claude Code? |
+| **Aspirational present tense** | Claims about unbuilt features stated as if they exist today |
+| **Diagram effectiveness** | Do diagrams show status labels when they shouldn't (conceptual pages)? Do they add information or repeat the text? |
+| **Reading momentum** | Does each section create a reason to read the next, or could the reader stop anywhere without missing something? |
+
+### Step 4 — Produce findings
+
+For each issue found:
+
+- Quote the specific text
+- Name the rule it violates
+- Suggest a concrete rewrite (not "make this better" — show the better version)
+
+### Step 5 — Create a plan
+
+If 3+ issues found, produce a prioritized plan:
+
+1. **Critical** — would mislead the reader or lose them
+2. **Important** — weakens the page but doesn't break it
+3. **Polish** — would improve but fine without
+
+Ask the user which items to implement.
+
+### Review output format
+
+```
+## Review: <page name>
+
+### Summary
+<1-2 sentences: overall assessment>
+
+### Findings
+
+| # | Severity | Rule | Current text | Suggested rewrite |
+|---|----------|------|-------------|-------------------|
+| 1 | Critical | Voice: defensive framing | "Why Most Agent Architectures Fail" | "From idea to working software" |
+| ... | ... | ... | ... | ... |
+
+### Plan
+1. [Critical] ...
+2. [Important] ...
+3. [Polish] ...
+```
 
 ---
 

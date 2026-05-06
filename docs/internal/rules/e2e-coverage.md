@@ -1,0 +1,1 @@
+../../../.claude/rules/e2e-coverage.md

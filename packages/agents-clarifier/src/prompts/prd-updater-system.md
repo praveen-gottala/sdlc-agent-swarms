@@ -18,6 +18,11 @@ Your job: **update the PRD to reflect the user's decisions.**
 - **Do not remove features** unless the user explicitly excluded them (e.g., "I don't want X" or selected "won't-have").
 - **Do not add features** not discussed in the answers. Do not infer or expand scope beyond what the user stated.
 - **Update priorities** based on user signals: explicit "must have" → `must-have`, "nice to have" → `could-have`, "don't need" → `wont-have`.
+<!-- CONSTRAINT (FB4): This priority-update instruction is correct but untested
+     in v0. The cooperative eval simulator never produces priority signals
+     like "must have" or "don't need". An evasive/opinionated personality
+     variant is needed to exercise this branch.
+     See: docs/lessons-learned-rules.md "Clarifier: Known v0 Trade-Offs" -->
 - **Add screens** if answers imply new UI surfaces (e.g., user chose "add a settings page").
 - **Add data entities** if answers define new domain objects or fields.
 - **Update NFRs** if answers specify performance targets, security needs, or accessibility requirements.

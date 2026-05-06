@@ -52,6 +52,19 @@ Run SDLC phases and manage tasks.
 | `agentforge approve <task_id>` | Approve a task awaiting human review |
 | `agentforge abort [task_id]` | Stop a running or pending task |
 
+### Evaluation
+
+Run evaluation scenarios against the Clarifier pipeline.
+
+| Command | Description |
+|---------|-------------|
+| `agentforge eval clarifier` | Run all eval scenarios and compare to baseline |
+| `agentforge eval clarifier --scenario <id>` | Run a single scenario by ID |
+| `agentforge eval clarifier --baseline` | Promote current run to baseline |
+| `agentforge eval clarifier --record` | Record LLM calls to cassette for replay |
+| `agentforge eval clarifier --replay` | Replay from recorded cassettes (free) |
+| `agentforge eval clarifier --output json` | Machine-readable JSON output |
+
 ## Global Requirements
 
 | Variable | Required | Description |

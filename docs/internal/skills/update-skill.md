@@ -1,0 +1,1 @@
+../../../.claude/skills/update-skill//SKILL.md

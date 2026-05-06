@@ -19,7 +19,7 @@
 4. **Vercel AI SDK** — `ai` package with `@ai-sdk/anthropic`. Hook: **`useChat`** for SSE streaming, token-by-token rendering.
    - `docs/plans/active/chip-ux-overhaul/execution-plan.md` → Feature-to-Library Mapping table
 
-5. **153 seconds of typing dots** with no stage visibility. The API waited for the entire 6-node pipeline before responding. Fix: **SSE streaming** — emit stage progress events per node, streaming text for AI messages. `ReadableStream` in the API route, custom `useClarifierStream` hook on the frontend.
+5. **153 seconds of typing dots** with no stage visibility. The API waited for the entire 9-node pipeline before responding. Fix: **SSE streaming** — emit stage progress events per node, streaming text for AI messages. `ReadableStream` in the API route, custom `useClarifierStream` hook on the frontend.
    - `docs/plans/active/chip-ux-overhaul/execution-plan.md` → Phase 3.1
    - `docs/plans/active/clarifier-initiative/execution-plan.md` → Task 1.8 progress note
 

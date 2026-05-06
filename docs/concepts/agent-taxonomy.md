@@ -2,7 +2,11 @@
 
 > Authoritative source: [vision.md Layers 3, 5, 8, 9](../vision.md#layer-3-agent-taxonomy)
 
-CHIP uses a four-stage sequential spine with specialist tools, replacing the original ten-agent peer network. Each spine stage owns a typed artifact, enforces single-writer discipline, and hands off through Zod-typed LangGraph channels.
+CHIP organizes its AI agents into two roles: **spine stages** that own and produce artifacts in sequence, and **specialist tools** that gather information on demand. This separation keeps writes single-threaded (one agent writes at a time) while reads can parallelize freely — specialists never modify shared artifacts.
+
+Each spine stage owns a typed artifact and hands off to the next through Zod-typed LangGraph channels.
+
+## How it works
 
 ```mermaid
 graph TD
@@ -35,40 +39,45 @@ graph TD
     style A fill:#7B68EE,color:#fff
     style I fill:#2ECC71,color:#fff
     style R fill:#E67E22,color:#fff
+    %% Blue = Clarifier, Purple = Architect, Green = Implementer, Orange = Reviewer
 ```
+
+Solid arrows show the sequential handoff — each stage produces a typed artifact that the next stage consumes. Dashed arrows show specialist invocation — spine stages call specialists as tools during their execution, but specialists never write to shared artifacts directly.
 
 ## Spine Stages
 
 ### Clarifier (`packages/agents-clarifier`)
 
-LangGraph `StateGraph` with `Annotation.Root()` typed channels. Six nodes processing in sequence: `contextRetriever` → `prdAnalyzer` → `gapDetector` → `questionPrioritizer` → `storyWriter` → `critic`. Two HITL interrupt points: before `storyWriter` (human answers questions) and at `escalationGate` (after max rounds).
+The front door of CHIP. A nine-node LangGraph `StateGraph` that transforms a vague product idea into a structured PRD through 1-3 rounds of focused questions. Two HITL interrupt points pause for human input: once for answering prioritized questions, once at the escalation gate if max rounds are reached.
 
-- **Bootstrap mode:** Loads base catalog + design tokens. Produces initial PRD.
-- **Evolution mode:** Retrieves codebase via all 5 RAG tools (`searchCode`, `searchDocs`, `searchDesigns`, `getRepoMap`, `findSimilarPatterns`). Produces change request with impact analysis.
-- **Gap detection:** Deterministic checklist (auth, validation, errors, NFRs, accessibility, orphan screens) + ClarifyGPT consistency sampling (3 implementations at temp 0.7, divergence analysis at temp 0).
-- **Question budget:** Micro features 0-2, standard epics 3-7, cross-cutting max 15 per round, max 3 rounds.
-- **Escalation:** After max rounds, user chooses accept (best-effort PRD, confidence capped at 0.5), restart, or abandon.
+Supports bootstrap mode (greenfield projects with initial PRD generation) and evolution mode (existing codebases with RAG-powered change analysis). For node-level detail, routing, and gap detection mechanics, see [Clarifier Pipeline](clarifier-pipeline.md).
 
-### Architect (specified, not yet implemented)
+### Architect
 
-Consumes `EnrichedRequirement`. Produces `ArchitectureSpec`, ADRs, and `TaskPlan` (DAG of scoped implementation tasks). Invokes design subagent for screen-level UI proposals.
+!!! note "Planned"
 
-### Implementer (specified, not yet implemented)
+    The Architect will consume `EnrichedRequirement` and produce `ArchitectureSpec`, ADRs, and a `TaskPlan` (DAG of scoped implementation tasks). It will invoke the design subagent for screen-level UI proposals.
 
-Single-threaded tool loop. Within-task write order: DB migration → backend + service layer → backend tests → frontend component → frontend tests → integration test. Each step appends to LLM context so later steps see earlier decisions.
+### Implementer
 
-Deterministic gates own "done" — the LLM never self-declares completion. Hard caps: 5 iteration limit, 200K token budget, 15-minute wall clock. Cross-task parallelism via git worktrees.
+!!! note "Planned"
 
-### Reviewer (specified, not yet implemented)
+    The Implementer will use a single-threaded tool loop with a fixed write order: DB migration → backend + service layer → backend tests → frontend component → frontend tests → integration test. Each step appends to LLM context so later steps see earlier decisions.
 
-Fresh LangGraph context (does not inherit Implementer's conversation). Four passes:
+    Deterministic gates will own "done" — the LLM never self-declares completion. Hard caps: 5 iteration limit, 200K token budget, 15-minute wall clock. Cross-task parallelism via git worktrees.
 
-1. Deterministic gates: `typecheck`, `lint`, tests, Semgrep security scan, license check
-2. LLM reviewer: failure-mode checklist prompt, scoped to diff, with architecture + AssumptionLedger as context
-3. Assumption validator: compares diff against AssumptionLedger, flags contradictions
-4. Triage: blocking / suggestion / false-positive with evidence
+### Reviewer
 
-Bounded retry: max 2 revisions before escalation to human.
+!!! note "Planned"
+
+    The Reviewer will operate with fresh LangGraph context (does not inherit Implementer's conversation). Four passes:
+
+    1. Deterministic gates: `typecheck`, `lint`, tests, Semgrep security scan, license check
+    2. LLM reviewer: failure-mode checklist prompt, scoped to diff, with architecture + AssumptionLedger as context
+    3. Assumption validator: compares diff against AssumptionLedger, flags contradictions
+    4. Triage: blocking / suggestion / false-positive with evidence
+
+    Bounded retry: max 2 revisions before escalation to human.
 
 ## Specialist Tools
 
@@ -83,22 +92,32 @@ Specialists are invoked by spine stages as tools — never as parallel writers t
 | Visual validator | Reviewer | Playwright browser verification |
 | Doc generator | Implementer | API docs, user guides |
 
-## Collapsed Roles
+??? info "Historical context: from ten agents to four stages"
 
-The original ten-agent model mapped to a human org chart. Four of those agents are absorbed; four are demoted to specialists:
+    The original ten-agent model from PRD v2.0 mapped each role to a separate agent in a peer network. This design was rejected during research before any code was written ([vision.md Layer 3](../vision.md#layer-3-agent-taxonomy)). The spine architecture was the first and only implementation — four stages absorbed the critical roles while six were demoted to specialist tools.
 
-| Original Agent | Disposition |
-|---------------|------------|
-| PM Agent | Absorbed into Clarifier |
-| Product Agent | Absorbed into Clarifier |
-| Architect Agent | Spine stage 2 |
-| Design Agent | Specialist tool (invoked by Architect, Implementer) |
-| Implementation Agent | Spine stage 3 |
-| Testing Agent | Specialist tool (invoked by Implementer) |
-| Review Agent | Spine stage 4 |
-| DevOps Agent | Specialist tool (invoked by Implementer) |
-| Security Agent | Specialist tool (invoked by Reviewer) |
-| Docs Agent | Specialist tool (invoked by Implementer) |
+    | Original Agent | Disposition |
+    |---------------|------------|
+    | PM Agent | Absorbed into Clarifier |
+    | Product Agent | Absorbed into Clarifier |
+    | Architect Agent | Spine stage 2 |
+    | Design Agent | Specialist tool (invoked by Architect, Implementer) |
+    | Implementation Agent | Spine stage 3 |
+    | Testing Agent | Specialist tool (invoked by Implementer) |
+    | Review Agent | Spine stage 4 |
+    | DevOps Agent | Specialist tool (invoked by Implementer) |
+    | Security Agent | Specialist tool (invoked by Reviewer) |
+    | Docs Agent | Specialist tool (invoked by Implementer) |
+
+## Current implementation
+
+The Clarifier is the only spine stage built and operational — a nine-node LangGraph StateGraph with typed channels, HITL interrupts, and Postgres checkpointing. The design pipeline operates as a specialist tool invoked manually. The remaining spine stages (Architect, Implementer, Reviewer) are specified in vision.md but not yet implemented.
+
+## Known limitations
+
+- **Three of four spine stages are unbuilt.** The Clarifier is operational; Architect, Implementer, and Reviewer are specified but have no code.
+- **Specialist invocation is manual.** The design pipeline runs as a standalone CLI command, not as a tool automatically invoked by a spine stage.
+- **No cross-stage context carryover.** Each stage will start with fresh LangGraph context by design, but the mechanism for injecting upstream artifacts (e.g., passing EnrichedRequirement to Architect) is not yet implemented.
 
 ## Related Docs
 
@@ -106,4 +125,5 @@ The original ten-agent model mapped to a human org chart. Four of those agents a
 - [Vision Layer 5](../vision.md#layer-5-clarifier-front-door) — clarifier specification
 - [Vision Layer 8](../vision.md#layer-8-implementation) — implementer specification
 - [Vision Layer 9](../vision.md#layer-9-review) — reviewer specification
+- [Clarifier Pipeline](clarifier-pipeline.md) — nine-node pipeline detail, routing, gap detection
 - [Clarifier Initiative](../plans/active/clarifier-initiative/execution-plan.md) — implementation plan

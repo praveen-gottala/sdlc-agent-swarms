@@ -202,7 +202,7 @@ describe('createCritic', () => {
     expect(result.criticPassed).toBe(true);
   });
 
-  it('fails on first error with retry available', async () => {
+  it('passes with warnings when errors found (MAX_RETRIES=0, no retry loop)', async () => {
     const badPlan: FeaturePlan = {
       id: 'plan-1',
       features: [{
@@ -214,30 +214,15 @@ describe('createCritic', () => {
     const node = createCritic(mockDeps);
     const result = await node(makeState({ featurePlan: badPlan, criticRetries: 0 }));
 
-    expect(result.criticPassed).toBe(false);
+    expect(result.criticPassed).toBe(true);
     expect(result.criticRetries).toBe(1);
   });
 
-  it('passes after max retries even with errors', async () => {
-    const badPlan: FeaturePlan = {
-      id: 'plan-1',
-      features: [{
-        id: 'f1', name: 'Bad', description: 'Feature',
-        acceptanceCriteria: [], priority: 'must-have', dependencies: [], status: 'planned',
-      }],
-    };
-
-    const node = createCritic(mockDeps);
-    const result = await node(makeState({ featurePlan: badPlan, criticRetries: 2 }));
-
-    expect(result.criticPassed).toBe(true);
-  });
-
-  it('handles null featurePlan with retry logic', async () => {
+  it('handles null featurePlan by passing (MAX_RETRIES=0)', async () => {
     const node = createCritic(mockDeps);
     const result = await node(makeState({ featurePlan: null, criticRetries: 0 }));
 
-    expect(result.criticPassed).toBe(false);
+    expect(result.criticPassed).toBe(true);
     expect(result.criticRetries).toBe(1);
   });
 
@@ -246,5 +231,40 @@ describe('createCritic', () => {
     const result = await node(makeState({ featurePlan: null, criticRetries: 2 }));
 
     expect(result.criticPassed).toBe(true);
+  });
+
+  // FB3: Documents that criticPassed is a structural check, not a quality check.
+  // This plan has valid structure (EARS format, DAG, adequate descriptions) but
+  // semantically poor content — the critic still passes it.
+  it('criticPassed true on semantically poor but structurally valid plan', async () => {
+    const poorQualityPlan: FeaturePlan = {
+      id: 'plan-poor',
+      features: [
+        {
+          id: 'feat-001',
+          name: 'Thing',
+          description: 'Does the thing that needs to be done with the stuff',
+          acceptanceCriteria: [
+            { id: 'ears-0', condition: 'user does action', behavior: 'system responds', formatted: 'WHEN user does action THE SYSTEM SHALL respond' },
+          ],
+          priority: 'must-have',
+          dependencies: [],
+          status: 'planned',
+        },
+      ],
+    };
+
+    const node = createCritic(mockDeps);
+    const result = await node(makeState({ featurePlan: poorQualityPlan }));
+
+    expect(result.criticPassed).toBe(true);
+  });
+
+  // FB3: Critic is deterministic-only — no LLM calls are made.
+  it('does not make any LLM calls', async () => {
+    const node = createCritic(mockDeps);
+    await node(makeState());
+
+    expect(mockDeps.provider.complete).not.toHaveBeenCalled();
   });
 });

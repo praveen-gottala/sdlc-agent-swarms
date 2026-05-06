@@ -53,6 +53,8 @@ export interface Gap {
 interface UserSeedMessage {
   readonly kind: 'user-seed';
   readonly text: string;
+  readonly attachment?: { readonly name: string };
+  readonly displayText?: string;
 }
 
 export interface ToolResultMessage {
@@ -61,6 +63,7 @@ export interface ToolResultMessage {
   readonly label: string;
   readonly summary: string;
   readonly status: 'completed' | 'running' | 'error';
+  readonly durationMs?: number;
   readonly details?: Record<string, unknown>;
 }
 
@@ -70,6 +73,7 @@ interface AgentThinkingMessage {
   readonly label: string;
   readonly index: number;
   readonly total: number;
+  readonly startedAt?: number;
 }
 
 interface AgentQuestionMessage {
@@ -169,4 +173,5 @@ export interface StageEvent {
   label: string;
   index: number;
   total: number;
+  durationMs?: number;
 }

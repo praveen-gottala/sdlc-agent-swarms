@@ -96,6 +96,8 @@ function buildUserMessage(state: ClarifierState): string {
  */
 export function createPrdUpdater(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`prd-updater: ENTER round=${state.round} humanResponses=${state.humanResponses.length} features=${state.prdDraft?.features?.length ?? 0}`);
     if (!state.prdDraft) {
       debugLog('prd-updater: no prdDraft to update, skipping');
       return {};
@@ -110,6 +112,7 @@ export function createPrdUpdater(deps: ClarifierDeps): ClarifierNodeFn {
     const promptVersion = getPromptVersion();
     const userMessage = buildUserMessage(state);
 
+    debugLog('prd-updater: LLM call START (claude-sonnet-4-6)');
     const result = await deps.provider.complete(
       {
         system: systemPrompt,
@@ -124,6 +127,7 @@ export function createPrdUpdater(deps: ClarifierDeps): ClarifierNodeFn {
       },
     );
 
+    debugLog(`prd-updater: LLM call END ${Date.now() - _t0}ms ok=${result.ok}`);
     if (!result.ok) {
       debugLog(`prd-updater: LLM call failed: ${result.error.code}, keeping old prdDraft`);
       return {};
@@ -154,6 +158,7 @@ export function createPrdUpdater(deps: ClarifierDeps): ClarifierNodeFn {
       return {};
     }
 
+    debugLog(`prd-updater: EXIT features=${parsed.data.features.length} ${Date.now() - _t0}ms`);
     return { prdDraft: parsed.data };
   };
 }

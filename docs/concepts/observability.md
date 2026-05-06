@@ -2,14 +2,22 @@
 
 > Authoritative source: [vision.md Layer 11](../vision.md#layer-11-observability) and [Langfuse Setup Guide](../guides/langfuse-setup.md)
 
-OpenTelemetry spans for every LLM call, tool call, and pipeline stage. Langfuse self-hosted as trace backend. Prompt versioning via git frontmatter with pre-commit enforcement. Graceful no-op when `LANGFUSE_SECRET_KEY` is unset — pipeline runs identically without telemetry infrastructure.
+Every LLM call, tool call, and pipeline stage is traced with OpenTelemetry — and every trace is tagged with the exact prompt version that produced it, enforced by a pre-commit hook. Langfuse self-hosted as trace backend; budget governance middleware can abort runs that exceed cost thresholds. Graceful no-op when `LANGFUSE_SECRET_KEY` is unset — pipeline runs identically without telemetry infrastructure.
+
+## Why CHIP does this
+
+Three locked decisions from [ADR-046](../adrs/ADR-046-langfuse-observability.md) shape CHIP's observability:
+
+- **Self-hosted traces.** All telemetry data stays on infrastructure you control — no prompt content or model outputs leave your network.
+- **Prompt versioning with pre-commit enforcement.** Every prompt file carries a version in its frontmatter. A pre-commit hook blocks content changes without a version bump. Every Langfuse trace records which version produced it, so regression analysis traces quality changes to specific prompt edits.
+- **Per-call cost tracking.** Every LLM call records input/output token counts and cost. Governance middleware uses these to enforce budget thresholds per run — the same data that powers observability also powers budget governance.
 
 ## Architecture
 
 ```mermaid
 graph TB
-    subgraph App ["packages/telemetry"]
-        TP[TracedProvider] -->|LLM spans| OTel[OTel SDK]
+    subgraph App ["CHIP Telemetry Layer"]
+        TP[TracedProvider] -->|LLM spans| OTel[OpenTelemetry SDK]
         MCP[createTracedMCPClient] -->|Tool spans| OTel
         LS[LangfuseSink] -->|Pipeline stage spans| OTel
         CS[CompositeSink] --> LS
@@ -17,7 +25,7 @@ graph TB
 
     OTel --> LF[Langfuse Self-Hosted]
 
-    subgraph LF ["docker/docker-compose.langfuse.yml"]
+    subgraph LF ["Langfuse Backend"]
         PG[(PostgreSQL)]
         CH[(ClickHouse)]
         RD[(Redis)]
@@ -26,6 +34,7 @@ graph TB
 
     style TP fill:#4A90D9,color:#fff
     style LS fill:#2ECC71,color:#fff
+    %% Blue (#4A90D9) = LLM tracing, Green (#2ECC71) = pipeline lifecycle
 ```
 
 ## Span Types
@@ -36,7 +45,16 @@ graph TB
 | Tool call | `createTracedMCPClient` wrapping `MCPClient.callTool()` | Tool name, arguments (sanitized), response size, latency. Uses `@opentelemetry/api` for post-hoc span lifecycle. |
 | Pipeline stage | `LangfuseSink` | Stage name (`stage:research`, `stage:planning`, etc.), duration, cost/token aggregates. `dispose()` for orphan cleanup. |
 
-`CompositeSink` combines transport sinks (CLI stdout for terminal output, dashboard SSE for real-time UI updates) with `LangfuseSink` for trace persistence.
+CompositeSink routes telemetry to multiple destinations: terminal output for CLI users, real-time dashboard updates (via server-sent events), and Langfuse for persistent traces.
+
+## Components
+
+| Component | Source | Purpose |
+|-----------|--------|---------|
+| TracedProvider | `packages/telemetry/src/traced-provider.ts` | Wraps LLM calls with OpenTelemetry spans |
+| createTracedMCPClient | `packages/telemetry/src/traced-mcp-client.ts` | Wraps tool calls with OpenTelemetry spans |
+| LangfuseSink | `packages/telemetry/src/langfuse-sink.ts` | Pipeline stage lifecycle spans with cost/token attributes |
+| CompositeSink | `packages/telemetry/src/composite-sink.ts` | Routes telemetry to multiple destinations |
 
 ## Prompt Versioning
 
@@ -69,7 +87,7 @@ docker compose -f docker/docker-compose.langfuse.yml up -d
 
 export LANGFUSE_SECRET_KEY=sk-lf-...
 export LANGFUSE_PUBLIC_KEY=pk-lf-...
-export LANGFUSE_HOST=http://localhost:3001
+export LANGFUSE_BASE_URL=http://localhost:3001
 ```
 
 Full setup, verification, and troubleshooting: [Langfuse Setup Guide](../guides/langfuse-setup.md).
@@ -81,7 +99,12 @@ Full setup, verification, and troubleshooting: [Langfuse Setup Guide](../guides/
 - **LangfuseSink:** Pipeline stage lifecycle spans with cost/token attributes. Orphan cleanup via `dispose()`.
 - **Prompt versioning:** Frontmatter parser + TracedProvider metadata + pre-commit hook. All operational.
 - **Langfuse self-hosted:** Docker Compose (Postgres, ClickHouse, Redis, MinIO). UI at port 3001.
-- **Not built:** Cost aggregation in CHIP dashboard (visible in Langfuse UI). Evaluation hooks for regression detection (Layer 12, deferred).
+
+## Known limitations
+
+- **Cost aggregation in CHIP dashboard.** Cost data surfaces in the Langfuse UI today; CHIP dashboard integration is planned.
+- **Evaluation hooks for regression detection.** Planned as part of Layer 12 (evaluation infrastructure); deferred until observability Phase 5.
+- **Sampling strategy at scale.** POC uses 100% sampling. Production sampling (head-based for successful runs, 100% for failures) is an open decision per [vision.md Layer 11](../vision.md#layer-11-observability).
 
 ## Related Docs
 

@@ -1,0 +1,1 @@
+../../../.claude/rules/design-pipeline.md

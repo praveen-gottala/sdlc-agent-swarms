@@ -32,6 +32,7 @@ import { describeCommand } from './commands/describe.js';
 import { designPreviewCommand } from './commands/design-preview.js';
 import { designPageReviewCommand } from './commands/design-page-review.js';
 import { designListCommand } from './commands/design-list.js';
+import { evalCommand } from './commands/eval.js';
 
 /**
  * Create the AgentForge CLI program with all commands registered.
@@ -296,6 +297,39 @@ export function createProgram(): Command {
     .action(async () => {
       const rootDir = findProjectRoot();
       await setupCommand(rootDir);
+    });
+
+  program
+    .command('eval')
+    .description('Run Clarifier evaluation harness')
+    .argument('[target]', 'Eval target (clarifier)', 'clarifier')
+    .option('--scenario <id>', 'Run a single scenario by ID')
+    .option('--baseline', 'Promote current run to baseline')
+    .option('--record', 'Record LLM calls to cassette for replay')
+    .option('--replay', 'Replay from recorded cassettes')
+    .option('--output <format>', 'Output format: text or json', 'text')
+    .option('--threshold <pct>', 'Regression threshold percentage', '20')
+    .option('--cassette-dir <path>', 'Directory for cassette files')
+    .action(async (_target: string, opts: {
+      scenario?: string;
+      baseline?: boolean;
+      record?: boolean;
+      replay?: boolean;
+      output?: string;
+      threshold?: string;
+      cassetteDir?: string;
+    }) => {
+      const rootDir = findProjectRoot();
+      loadDotEnv(rootDir);
+      await evalCommand({
+        scenario: opts.scenario,
+        baseline: opts.baseline,
+        record: opts.record,
+        replay: opts.replay,
+        output: (opts.output as 'text' | 'json') ?? 'text',
+        threshold: opts.threshold,
+        cassetteDir: opts.cassetteDir,
+      }, rootDir);
     });
 
   return program;

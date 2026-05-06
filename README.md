@@ -170,6 +170,16 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 | `agentforge approve <task_id>` | Approve a task awaiting human review |
 | `agentforge abort [task_id] [--all]` | Stop a running or pending task |
 
+### Evaluation
+
+| Command | Description |
+|---|---|
+| `agentforge eval clarifier` | Run all clarifier eval scenarios |
+| `agentforge eval clarifier --scenario <id>` | Run a single scenario |
+| `agentforge eval clarifier --baseline` | Promote current run to baseline |
+| `agentforge eval clarifier --record` | Record LLM calls for deterministic replay |
+| `agentforge eval clarifier --replay` | Replay from recorded cassettes (free) |
+
 See [docs/cli/](docs/cli/) for detailed command reference.
 
 ## Architecture
@@ -182,6 +192,7 @@ packages/
   providers/    LLM provider adapters (Anthropic, OpenAI, Vertex AI)
   channels/     Notification channels (Slack, Telegram)
   agents-ux/    UX design agents (Figma + Penpot pipelines)
+  eval/          Evaluation harness (scenarios, metrics, recording/replay)
   dashboard/    Next.js monitoring dashboard
 
 services/

@@ -12,11 +12,13 @@ import { MemorySaver } from '@agentforge/core';
 // Mock the graph compilation to avoid real LLM calls
 const mockStream = jest.fn<() => AsyncIterable<Record<string, unknown>>>();
 const mockGetState = jest.fn<() => Promise<{ values: Record<string, unknown>; next: string[] }>>();
+const mockUpdateState = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
 jest.mock('../graph/clarifier-graph.js', () => ({
   compileClarifierGraph: () => ({
     stream: mockStream,
     getState: mockGetState,
+    updateState: mockUpdateState,
   }),
 }));
 
@@ -67,6 +69,7 @@ describe('runClarifierPipelineStream', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockReadLastSequence.mockReturnValue(-1);
+    mockUpdateState.mockResolvedValue(undefined);
   });
 
   it('yields node-complete events for each graph node', async () => {
@@ -189,7 +192,7 @@ describe('runClarifierPipelineStream', () => {
     expect(interruptEvent).toBeDefined();
   });
 
-  it('passes humanResponses to graph input when provided', async () => {
+  it('resumes via updateState + stream(null) when humanResponses provided', async () => {
     async function* fakeStream(): AsyncGenerator<Record<string, unknown>> {
       yield { storyWriter: { requirement: { prd: { title: 'App' }, confidence: 0.9 } } };
     }
@@ -214,11 +217,50 @@ describe('runClarifierPipelineStream', () => {
     const events = await collectEvents(input);
     expect(events.some((e) => e.type === 'complete')).toBe(true);
 
-    // Verify stream was called with humanResponses in input
-    expect(mockStream).toHaveBeenCalledWith(
+    // Verify updateState was called with humanResponses
+    expect(mockUpdateState).toHaveBeenCalledWith(
+      expect.objectContaining({ configurable: { thread_id: 'existing-thread' } }),
       expect.objectContaining({ humanResponses: [{ questionId: 'q1', answer: 'Yes' }] }),
-      expect.any(Object),
     );
+
+    // Verify stream was called with null (resume pattern, not invokeInput)
+    expect(mockStream).toHaveBeenCalledWith(null, expect.any(Object));
+  });
+
+  it('node-complete event for prdUpdater includes prdDraft in state', async () => {
+    const updatedPrd = { title: 'App v2', features: [{ name: 'Auth', priority: 'must-have' }] };
+
+    async function* fakeStream(): AsyncGenerator<Record<string, unknown>> {
+      yield { prdUpdater: { prdDraft: updatedPrd } };
+      yield { emitComplete: {} };
+    }
+
+    mockStream.mockReturnValue(fakeStream());
+    mockGetState.mockResolvedValue({
+      values: {
+        mode: 'bootstrap', round: 1, maxRounds: 3,
+        questions: [], gaps: [], humanResponses: [{ questionId: 'q1', answer: 'Yes' }],
+        requirement: { prd: updatedPrd, confidence: 0.9 },
+        assumptions: { entries: [] },
+        prdDraft: updatedPrd, featurePlan: null, error: null,
+      },
+      next: [],
+    });
+
+    const input = createBaseInput({
+      threadId: 'prd-updater-thread',
+      humanResponses: [{ questionId: 'q1', answer: 'Yes' }],
+    });
+
+    const events = await collectEvents(input);
+
+    const prdUpdaterEvent = events.find(
+      (e) => e.type === 'node-complete' && e.node === 'prdUpdater',
+    );
+    expect(prdUpdaterEvent).toBeDefined();
+    if (prdUpdaterEvent?.type === 'node-complete') {
+      expect(prdUpdaterEvent.state.prdDraft).toEqual(updatedPrd);
+    }
   });
 
   describe('execution trace recording', () => {
@@ -331,6 +373,41 @@ describe('runClarifierPipelineStream', () => {
       );
       expect(storyWriterCall).toBeDefined();
       expect((storyWriterCall![2] as { sequenceNumber: number }).sequenceNumber).toBe(5);
+    });
+
+    it('yields durationMs > 0 for first node on resume', async () => {
+      // Regression test: storyWriter durationMs was 0 because timing started
+      // after compiled.stream(null) had already executed the node.
+      async function* delayedStream(): AsyncGenerator<Record<string, unknown>> {
+        await new Promise((r) => setTimeout(r, 60));
+        yield { storyWriter: { requirement: { prd: { title: 'App' }, confidence: 0.9 } } };
+      }
+
+      mockStream.mockReturnValue(delayedStream());
+      mockGetState.mockResolvedValue({
+        values: {
+          mode: 'bootstrap', round: 1, maxRounds: 3,
+          questions: [], gaps: [], humanResponses: [{ questionId: 'q1', answer: 'Yes' }],
+          requirement: { prd: { title: 'App' }, confidence: 0.9 },
+          assumptions: { entries: [] },
+          prdDraft: { title: 'App' }, featurePlan: null, error: null,
+        },
+        next: [],
+      });
+
+      const input = createBaseInput({
+        threadId: 'duration-test-thread',
+        humanResponses: [{ questionId: 'q1', answer: 'Yes' }],
+      });
+
+      const events = await collectEvents(input);
+      const storyEvent = events.find(
+        (e) => e.type === 'node-complete' && e.node === 'storyWriter',
+      );
+      expect(storyEvent).toBeDefined();
+      if (storyEvent?.type === 'node-complete') {
+        expect(storyEvent.durationMs).toBeGreaterThanOrEqual(40);
+      }
     });
 
     it('continues recording even when appendStageRecord throws', async () => {

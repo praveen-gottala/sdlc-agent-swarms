@@ -9,6 +9,8 @@ export {
   compileClarifierGraph,
   routeAfterCritic,
   routeAfterEscalation,
+  routeAfterPrdUpdater,
+  routeAfterPrdAnalyzer,
   hasUnresolvedGaps,
 } from './clarifier-graph.js';
 export { ClarifierStateAnnotation } from './state.js';

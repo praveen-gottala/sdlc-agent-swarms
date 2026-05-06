@@ -10,6 +10,7 @@ import type { PRD } from '@agentforge/core';
 import {
   createGapDetector,
   runDeterministicChecklist,
+  runClarifyGPT,
   filterAddressedGaps,
   filterAskedGaps,
   gapContentId,
@@ -776,5 +777,125 @@ describe('filterAskedGaps', () => {
 
     const result = filterAskedGaps(gaps, questions);
     expect(result).toHaveLength(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FB1: Q&A awareness in divergence prompts
+// ---------------------------------------------------------------------------
+
+describe('ClarifyGPT qaSection injection (FB1)', () => {
+  beforeEach(() => {
+    _resetPromptCache();
+    readFileSync.mockReturnValue(MOCK_PROMPT);
+  });
+
+  it('includes qaSection in user message when previousQA exists (round > 0)', async () => {
+    const deps = makeMockDeps();
+    const completeMock = deps.provider.complete as jest.Mock;
+
+    completeMock.mockResolvedValue({
+      ok: true,
+      value: {
+        content: '',
+        structured: {
+          implementations: [
+            { approach: 'A', keyDecisions: ['d1'] },
+            { approach: 'B', keyDecisions: ['d2'] },
+            { approach: 'C', keyDecisions: ['d3'] },
+          ],
+        },
+        toolCalls: [],
+        usage: { inputTokens: 100, outputTokens: 200 },
+        cost: { inputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() },
+        model: 'claude-sonnet-4-6',
+        latencyMs: 500,
+        finishReason: 'stop',
+      },
+    });
+
+    const previousQA = [
+      { question: 'Is this just for you?', answer: 'Just for me' },
+    ];
+
+    await runClarifyGPT(deps, BASE_PRD, 'Build expense tracker', {}, 'bootstrap', previousQA);
+
+    // The second call is the divergence analysis — that's where qaSection is injected
+    expect(completeMock).toHaveBeenCalledTimes(2);
+    const divergeCallArgs = completeMock.mock.calls[1];
+    const userMessage = divergeCallArgs[0].messages[0].content;
+    expect(userMessage).toContain('Already Clarified');
+    expect(userMessage).toContain('Is this just for you?');
+    expect(userMessage).toContain('Just for me');
+  });
+
+  it('qaSection is absent in round 0 with no previousQA', async () => {
+    const deps = makeMockDeps();
+    const completeMock = deps.provider.complete as jest.Mock;
+
+    completeMock.mockResolvedValue({
+      ok: true,
+      value: {
+        content: '',
+        structured: {
+          implementations: [
+            { approach: 'A', keyDecisions: ['d1'] },
+            { approach: 'B', keyDecisions: ['d2'] },
+            { approach: 'C', keyDecisions: ['d3'] },
+          ],
+        },
+        toolCalls: [],
+        usage: { inputTokens: 100, outputTokens: 200 },
+        cost: { inputCostUsd: 0, outputCostUsd: 0, totalCostUsd: 0, model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() },
+        model: 'claude-sonnet-4-6',
+        latencyMs: 500,
+        finishReason: 'stop',
+      },
+    });
+
+    await runClarifyGPT(deps, BASE_PRD, 'Build expense tracker', {}, 'bootstrap');
+
+    expect(completeMock).toHaveBeenCalledTimes(2);
+    const divergeCallArgs = completeMock.mock.calls[1];
+    const userMessage = divergeCallArgs[0].messages[0].content;
+    expect(userMessage).not.toContain('Already Clarified');
+  });
+
+  // Documents known limitation: SHA-256(topic::description) cannot catch
+  // semantic duplicates with different wording. The prompt instruction is the
+  // primary defense. Remove skip when embedding-based dedup is implemented
+  // (see execution plan: Semantic Deduplication for LLM Gaps).
+  it.skip('semantic duplicates produce different content hashes (known limitation)', () => {
+    const id1 = gapContentId('Auth', 'Do you need user login?');
+    const id2 = gapContentId('Auth', 'Should the app require authentication?');
+    expect(id1).not.toBe(id2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FB2: Divergence prompt protects against asking about LLM-generated artifacts
+// ---------------------------------------------------------------------------
+
+describe('divergence prompt artifact protection (FB2)', () => {
+  it('divergence prompt forbids asking about LLM-generated artifacts', () => {
+    _resetPromptCache();
+    // Load the real bootstrap prompt to verify it contains the anti-pattern instruction
+    const { readFileSync: realReadFile } = jest.requireActual('node:fs') as typeof import('node:fs');
+    const { fileURLToPath: realFileUrl } = jest.requireActual('node:url') as typeof import('node:url');
+    const { join: realJoin, dirname: realDirname } = jest.requireActual('node:path') as typeof import('node:path');
+
+    let promptText: string;
+    try {
+      const promptDir = realJoin(realDirname(realFileUrl(import.meta.url)), '..', '..', 'prompts');
+      promptText = realReadFile(realJoin(promptDir, 'gap-divergence-bootstrap.md'), 'utf-8');
+    } catch {
+      // If we can't read the real file in test env, skip gracefully
+      return;
+    }
+
+    // Assert stable concepts, not verbatim phrases — survives prompt rewording
+    const lowerPrompt = promptText.toLowerCase();
+    expect(lowerPrompt).toContain('anti-pattern');
+    expect(lowerPrompt).toMatch(/screen names|entity names|nfr/i);
   });
 });

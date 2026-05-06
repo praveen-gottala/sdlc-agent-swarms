@@ -488,6 +488,30 @@
             "env": {
                 "DEBUG": "true"
             }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: eval clarifier",
+            "program": "${workspaceFolder}/.vscode/debug-launcher.js",
+            "args": [
+                "eval",
+                "clarifier",
+                "--scenario",
+                "${input:evalScenario}"
+            ],
+            "cwd": "${workspaceFolder}/${input:projectDir}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "nx: build @agentforge/cli",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/*/dist/**/*.js"
+            ],
+            "env": {
+                "DEBUG": "true"
+            }
         }
     ],
     "inputs": [
@@ -612,6 +636,17 @@
             "options": [
                 { "label": "No", "value": "" },
                 { "label": "Yes (--all)", "value": "--all" }
+            ]
+        },
+        {
+            "id": "evalScenario",
+            "type": "pickString",
+            "description": "Eval scenario to run",
+            "options": [
+                "pomodoro",
+                "habit-tracker",
+                "force-multi-round",
+                "escalation"
             ]
         },
         {

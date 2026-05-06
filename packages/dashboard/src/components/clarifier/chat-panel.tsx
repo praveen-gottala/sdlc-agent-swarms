@@ -10,7 +10,7 @@ interface ChatPanelProps {
   readonly messages: readonly ChatMessageType[];
   readonly phase: PagePhase;
   readonly isRunning: boolean;
-  readonly onSubmitSeed: (text: string) => void;
+  readonly onSubmitSeed: (text: string, attachment?: { name: string; displayText?: string }) => void;
   readonly onSubmitAnswer?: (text: string) => void;
   readonly children?: React.ReactNode;
 }

@@ -9,7 +9,7 @@
 
 ## Context
 
-The Clarifier is the first spine stage (vision Layer 3). Today, `/new` is a text box with no gap analysis, question loop, or assumption handling. This initiative builds the full six-stage Clarifier with both bootstrap and evolution modes, backed by real RAG retrieval.
+The Clarifier is the first spine stage (vision Layer 3). This initiative built the nine-node Clarifier with both bootstrap and evolution modes, backed by real RAG retrieval. Tasks 1.0–1.7 are complete (2026-04-28): gap analysis (2-pass deterministic + ClarifyGPT), multi-round question loop with HITL interrupts, assumption ledger, and EARS/INVEST critic. Dashboard `/new` page exists but UX needs redesign (CHIP UX Overhaul Phase 3).
 
 **Resequenced roadmap:** Phase 0 -> Phase 2 (RAG) -> Phase 1 (Clarifier), instead of Phase 0 -> 1 -> 2. Rationale: evolution mode needs real semantic search, not stubs. RAG built first so the Clarifier demo shows grounded questions from day one.
 
@@ -371,3 +371,44 @@ Graph topology, conditional routing, escalation edges, and `runClarifierPipeline
 **Phase 1 (roadmap exit criteria):** User submits seed at `/new`, clarifier asks <=7 questions in <=3 rounds, produces structured PRD YAML with assumption ledger, dashboard shows PRD for approval. Both modes work.
 
 **Decision gate (after Phase 1):** "Demo the clarifier. If it doesn't feel obviously better than the text box, reconsider."
+
+---
+
+## Known Trade-Offs and Future Work (v0 Pipeline Review, 2026-05-02)
+
+Findings from the v0 pipeline review. See `docs/lessons-learned-rules.md` § "Clarifier: Known v0 Trade-Offs and Coverage Gaps" for the consolidated rule.
+
+### Future: Semantic Deduplication for LLM Gaps (FB1)
+
+**Context:** SHA-256 content hashing of `topic::description` misses semantic duplicates with different wording.
+**Current mitigation:** System prompt instruction (gap-divergence-bootstrap.md v3.1.0, gap-divergence-evolution.md v2.1.0) + `qaSection` in user message + `filterAskedGaps` by ID.
+**Future work:** Embed gap descriptions with the same Voyage model used for code search, compute cosine similarity between new gaps and prior Q&A topics, reject gaps above a similarity threshold (e.g., 0.85). Requires the retrieval package to be available at gap-detection time.
+
+### Known Trade-Off: PRD Over-Production (FB2)
+
+The PRD Analyzer in bootstrap mode deliberately over-produces features, screens, and entities to avoid missing real requirements. The `could-have` priority and divergence prompt constraints are the mitigations.
+
+**Eval metric (future):** `unvalidated-artifact-survival` — count of `could-have` features/entities/screens/NFRs in the final PRD that were never referenced by any human answer. High survival rate (>60%) indicates the analyzer is too speculative or the question pipeline is not validating enough scope decisions.
+
+**Future mitigation:** Post-clarification pruning step — after max rounds, remove `could-have` features with zero answer references and move them to `outOfScope` with a note.
+
+### Known Limitation: Critic is Structure-Only (FB3)
+
+The Critic node runs ONLY deterministic checks (EARS compliance, INVEST compliance, DAG consistency). `criticPassed: true` means the plan has valid structure — it does NOT mean the requirements are good, complete, or user-aligned.
+
+`critic-system.md` is scaffolded but not loaded. Wiring the LLM review is dependent on eval data showing structural checks are insufficient.
+
+**Future eval metric:** Track false-positive rate — how often `criticPassed: true` correlates with plans the evaluator-challenger pipeline later scores below 60/100.
+
+### Future: Eval Personality Variants (FB4)
+
+**Context:** The cooperative eval simulator always picks `recommended: true` and gives descriptive answers. It never says "must have" or "don't need," so the PRD updater's priority-update logic is untested.
+
+**Future work:** Add personality variants to the eval simulator:
+
+- **Cooperative** (current): agrees with recommendations, descriptive answers.
+- **Opinionated**: disagrees with recommendations, uses priority language ("this is critical", "skip this").
+- **Evasive**: gives vague or off-topic answers, tests assumption fallback.
+- **Contradictory**: gives answers that conflict with prior answers, tests PRD consistency.
+
+Each personality should have at least one eval run with the test prompt.

@@ -259,6 +259,8 @@ function finalizeAssumptions(
  */
 export function createStoryWriter(deps: ClarifierDeps): ClarifierNodeFn {
   return async (state: ClarifierState): Promise<Partial<ClarifierState>> => {
+    const _t0 = Date.now();
+    debugLog(`story-writer: ENTER round=${state.round} maxRounds=${state.maxRounds} humanResponses=${state.humanResponses.length} features=${state.prdDraft?.features?.length ?? 0}`);
     if (!state.prdDraft) {
       return { error: 'Story Writer: no PRD draft available' };
     }
@@ -268,6 +270,7 @@ export function createStoryWriter(deps: ClarifierDeps): ClarifierNodeFn {
 
     const userMessage = buildUserMessage(state);
 
+    debugLog('story-writer: LLM call START (claude-sonnet-4-6)');
     const result = await deps.provider.complete(
       {
         system: systemPrompt,
@@ -282,6 +285,7 @@ export function createStoryWriter(deps: ClarifierDeps): ClarifierNodeFn {
       },
     );
 
+    debugLog(`story-writer: LLM call END ${Date.now() - _t0}ms ok=${result.ok}`);
     if (!result.ok) {
       debugLog(`story-writer: LLM call failed: ${result.error.code}`);
       return { error: `Story Writer LLM call failed: ${result.error.code}` };
@@ -298,6 +302,7 @@ export function createStoryWriter(deps: ClarifierDeps): ClarifierNodeFn {
     const assumptions = finalizeAssumptions(state, isMaxRounds);
     const requirement = assembleEnrichedRequirement(state, confidence, assumptions);
 
+    debugLog(`story-writer: EXIT confidence=${confidence} features=${featurePlan.features.length} ${Date.now() - _t0}ms`);
     return { requirement, featurePlan, assumptions };
   };
 }

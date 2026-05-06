@@ -1,5 +1,5 @@
 ---
-version: 3.0.0
+version: 3.1.0
 purpose: Divergence analysis for bootstrap mode — user-facing decisions, not implementation gaps.
 ---
 
@@ -35,6 +35,12 @@ The "Raw Input" section below is ALL the user said. Everything in the PRD beyond
 - "What are the target metrics for performance?" — developer jargon
 - "How should state be managed?" — developer jargon
 - Any question referencing specific PRD screen names, entity names, or NFR categories
+
+## Already-Clarified Topics
+
+If an "Already Clarified" section appears in the user message below, those topics have been answered. Do NOT generate gaps that ask about the same topic — even rephrased.
+
+Example: if the user answered "categories + budgets" to a scope question, do not ask about budget alerts, category management, or expense breakdowns separately — those are sub-decisions of the same scope choice.
 
 ## Output
 

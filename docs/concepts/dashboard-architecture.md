@@ -13,13 +13,15 @@ Vision Layer 14 identifies three primary surfaces the dashboard must provide: a 
 ```mermaid
 graph TD
     subgraph Dashboard ["Next.js App Router (port 3000)"]
-        Pages[15 page routes] --> API[67 API routes]
+        Pages[15 page routes] --> API[63 API routes]
         API --> Packages["@agentforge/* packages (pre-built dist/)"]
     end
 
     subgraph UI ["UI Stack"]
-        Mantine[Mantine v9] --> Tabler[Tabler Icons]
-        ReactFlow[React Flow] --> Dagre[Dagre layout]
+        Mantine[Mantine v9]
+        Tabler[Tabler Icons]
+        ReactFlow[React Flow]
+        Dagre[Dagre layout]
         Zustand[Zustand state]
     end
 
@@ -34,13 +36,15 @@ graph TD
 ```mermaid
 graph TD
     subgraph Dashboard ["Next.js App Router (port 3000)"]
-        Pages[15 page routes] --> API[67 API routes]
+        Pages[15 page routes] --> API[63 API routes]
         API --> Packages["@agentforge/* packages (pre-built dist/)"]
     end
 
     subgraph UI ["UI Stack"]
-        Mantine[Mantine v9] --> Tabler[Tabler Icons]
-        ReactFlow[React Flow] --> Dagre[Dagre layout]
+        Mantine[Mantine v9]
+        Tabler[Tabler Icons]
+        ReactFlow[React Flow]
+        Dagre[Dagre layout]
         Zustand[Zustand state]
     end
 
@@ -75,13 +79,15 @@ The dashboard has 15 routes organized in two layout groups:
 | `/audit` | Design Audit | Cross-screen design quality audit |
 | `/traces` | Traces | Agent trace viewer |
 
+The `/audit` and `/traces` routes are accessible by direct URL but do not appear in the sidebar navigation.
+
 **`(standalone)` group** — no shared shell:
 
 | Route | Page | Purpose |
 |-------|------|---------|
 | `/onboarding` | Onboarding | First-time project setup wizard |
 
-The sidebar navigation (`packages/dashboard/src/components/layout/sidebar-nav.tsx`) groups pages into five sections: **Build** (Runs, Design Studio, Spec), **Execute** (Tasks, Agents, Approvals), **Govern** (Trust, Budget), **Configure** (Integrations), and **External** (Langfuse link at `http://localhost:3001`).
+The sidebar navigation (`packages/dashboard/src/components/layout/sidebar-nav.tsx`) groups pages into five sections: **Build** (Runs, Design Studio, Spec), **Execute** (Tasks, Agents, Approvals), **Govern** (Trust, Budget), **Configure** (Integrations), and **External** (Observability — opens Langfuse at `http://localhost:3001`).
 
 ### Backend communication
 
@@ -89,7 +95,7 @@ Two patterns connect the dashboard to agent code:
 
 **Pattern 1: API routes import monorepo packages server-side.** `next.config.js` lists `@agentforge/*` packages as `serverExternalPackages` so webpack does not bundle them — Node.js loads the pre-built `dist/` files at runtime. API route handlers directly call functions like `runDesignPipeline()`, `runClarifierPipeline()`, and `generateAppSpec()`.
 
-**Pattern 2: Client components fetch API routes.** React components call `fetch('/api/...')` for data. Real-time updates use event streaming via `use-event-feed.ts` and `use-run-progress.ts` hooks.
+**Pattern 2: Client components fetch API routes.** React components call `fetch('/api/...')` for data. Real-time updates use event streaming via `packages/dashboard/src/lib/hooks/use-event-feed.ts` and `packages/dashboard/src/lib/hooks/use-run-progress.ts`.
 
 ### Build requirements
 
@@ -110,14 +116,7 @@ cd packages/dashboard && npm run dev   # start dashboard on port 3000
 | Pipeline input builder | `packages/dashboard/src/app/api/_lib/pipeline-input-builder.ts` | Constructs `PipelineInput` for dashboard API routes |
 | Dashboard SSE sink | `packages/dashboard/src/app/api/_lib/dashboard-sink.ts` | Telemetry sink for real-time UI updates |
 | Theme | `packages/dashboard/src/theme.ts` | `chipTheme` Mantine configuration |
-
-## Current implementation
-
-- 15 page routes, 67 API route files covering the full pipeline lifecycle.
-- UI built on Mantine v9, React Flow for graph visualization, Zustand for state management, Recharts for cost charts.
-- API routes import `@agentforge/*` packages server-side — the same `runDesignPipeline()` runs from both CLI and dashboard.
-- Design Studio at `/design` provides per-screen generation, approval, and prototype preview with a live browser renderer on port 4100.
-- CHIP UX Overhaul (active initiative) is redesigning pages following a state-aware, spine-oriented layout pattern.
+| Cost charts | Recharts | Budget and cost tracking visualizations on `/costs` |
 
 ## Known limitations
 
