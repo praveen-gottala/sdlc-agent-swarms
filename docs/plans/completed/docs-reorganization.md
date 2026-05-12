@@ -273,7 +273,7 @@ All pages created or revised via `/create-backstage-doc <type> <topic>`. The ski
 
 | # | Invocation | Target | Status |
 |---|-----------|--------|--------|
-| 1 | `/create-backstage-doc concept overview` | `docs/concepts/overview.md` | ✅ Rewritten with "why CHIP" positioning citing research-report.md + design-decisions.md |
+| 1 | `/create-backstage-doc concept overview` | `docs/concepts/overview.md` | ✅ Rewritten with "why CHIP" positioning citing research/research-report.md + design-decisions.md |
 | 2 | `/create-backstage-doc architecture design-evaluator` | `docs/architecture/design-evaluator.md` | ✅ Added sample evaluations (pass/fail), 80/100 threshold explanation, correction loop walkthrough |
 | 3 | `/create-backstage-doc status current-status` | `docs/concepts/current-status.md` | ✅ Narrative callouts for "Partial" layers, dependency flow, "Tests" → "Role" column rename |
 

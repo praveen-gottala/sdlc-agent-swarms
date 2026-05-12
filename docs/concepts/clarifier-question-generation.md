@@ -1,12 +1,12 @@
 # Clarifier Question Generation
 
-> Authoritative source: [research/clarifier-question-generation.md](../research/clarifier-question-generation.md) and [research-report.md Part 3](../research-report.md#part-3-conversational-clarification-agents)
+> Authoritative source: [research/clarifier-question-generation.md](../research/clarifier-question-generation.md) and [research-report.md Part 3](../research/research-report.md#part-3-conversational-clarification-agents)
 
 When the clarifier detects a gap in a user's requirements — "the PRD doesn't specify where JWT tokens are stored" — it needs to do more than ask "what do you want?" CHIP's gap detector produces divergent implementation approaches (via ClarifyGPT's consistency sampling), ranks them by EVPI score, and presents the top gaps as multiple-choice questions with domain-grounded options: "HttpOnly cookies (like Stripe)", "localStorage with refresh rotation (like Firebase)", or "in-memory with silent refresh (like Auth0)."
 
 ## Why CHIP does this
 
-The [research report](../research-report.md#part-3-conversational-clarification-agents) finds that ClarifyGPT's divergence detection plus structured options improves GPT-4 Pass@1 by 10+ percentage points (FSE 2024) — but the generated options are generic without domain grounding. Most tools skip structured options entirely: Lovable, Bolt, and v0 use open-ended questions or iterate on output. Only Cursor and ClarifyGPT generate project-aware options. CHIP combines divergence detection with RAG retrieval and specialist LLM calls to produce domain-specific options that a non-technical user can pick from in seconds.
+The [research report](../research/research-report.md#part-3-conversational-clarification-agents) finds that ClarifyGPT's divergence detection plus structured options improves GPT-4 Pass@1 by 10+ percentage points (FSE 2024) — but the generated options are generic without domain grounding. Most tools skip structured options entirely: Lovable, Bolt, and v0 use open-ended questions or iterate on output. Only Cursor and ClarifyGPT generate project-aware options. CHIP combines divergence detection with RAG retrieval and specialist LLM calls to produce domain-specific options that a non-technical user can pick from in seconds.
 
 ## The problem
 
@@ -184,4 +184,4 @@ The "Let CHIP decide" UI option is planned but not yet implemented — the recor
 - [Clarifier Pipeline](clarifier-pipeline.md) — the nine-node pipeline end-to-end
 - [Research: Question Generation](../research/clarifier-question-generation.md) — detailed tool analysis and strategy comparison
 - [RAG & Context](rag-context.md) — the retrieval layer that could ground options
-- [Research Report Part 3](../research-report.md#part-3-conversational-clarification-agents) — academic foundations
+- [Research Report Part 3](../research/research-report.md#part-3-conversational-clarification-agents) — academic foundations

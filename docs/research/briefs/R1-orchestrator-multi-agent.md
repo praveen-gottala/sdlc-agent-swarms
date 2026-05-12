@@ -1,5 +1,10 @@
 # R1: Orchestrator & Multi-Agent Coordination
 
+!!! info "Full research report"
+
+    For the detailed industry survey with 7-tool comparison, see
+    [Orchestrator & Multi-Agent Coordination](../R1-orchestrator-management.md).
+
 **Question:** How does the Orchestrator manage multiple Implementer agents executing tasks in parallel across git worktrees? What is the coordination protocol for task dispatch, merge, conflict resolution, and failure handling?
 
 **Blocks:** M4 (Full Spine — Implementer + Reviewer + backward compat cleanup)

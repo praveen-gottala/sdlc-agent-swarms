@@ -25,7 +25,7 @@ These scenarios trace real CashPulse fixture data through both the existing pipe
 
 ### Scenario 1: Greenfield — CashPulse (real data from M0 ground truth capture)
 
-**Input:** The CashPulse PRD (`fixtures/personal-expense-tracker/docs/prd.md`) — 421 lines, 3 screens, full design system tokens.
+**Input:** The CashPulse PRD (`fixtures/personal-expense-tracker/docs/prd.md`) — 420 lines, 3 screens, full design system tokens.
 
 **Path A — What the Clarifier produces** (actual run, 2026-05-04):
 
@@ -95,8 +95,12 @@ The Clarifier produces structured requirements; init produces implementation spe
 **Change Classifier output** (Architect Node 0.5):
 ```typescript
 {
-  scopeAxes: { ui: true, component: true, designSystem: false, api: true, dataModel: true },
-  blastRadius: 'module'
+  id: 'cc-001',
+  changeRequestId: 'req-budget-tracking',
+  scopeAxes: ['ui', 'component', 'api', 'data-model'],  // Array of ScopeAxis enums (kebab-case)
+  blastRadius: 'medium',                                  // 'low'|'medium'|'high'|'critical'
+  affectedModules: ['dashboard', 'budget-overview'],
+  confidence: 0.85,
 }
 ```
 
@@ -153,6 +157,9 @@ The research treats the Clarifier as emitting an "enriched PRD + assumption ledg
 **PRD** (`cross-boundary-artifacts.schemas.ts → PRDSchema`) — already structured JSON, not prose:
 ```typescript
 {
+  id: string,
+  title: string,
+  description: string,
   features: [{id, name, description, priority: 'must-have'|'should-have'|'could-have'|'wont-have'}],
   personas: [{id, name, role, goals: string[]}],
   dataEntities: [{id, name, fields: [{name, type, required?, description?}], relationships?: string[]}],
@@ -220,14 +227,12 @@ The research assumes a "Classifier" stage that produces `ChangeClassification`. 
 
 ```typescript
 ChangeClassificationSchema = z.object({
-  scopeAxes: z.object({
-    ui: z.boolean(),
-    component: z.boolean(),
-    designSystem: z.boolean(),
-    api: z.boolean(),
-    dataModel: z.boolean(),
-  }),
-  blastRadius: z.enum(['isolated', 'module', 'cross-cutting', 'system-wide']),
+  id: z.string(),
+  changeRequestId: z.string(),
+  scopeAxes: z.array(ScopeAxisSchema).min(1),  // ScopeAxis = 'ui'|'component'|'design-system'|'api'|'data-model'
+  blastRadius: BlastRadiusSchema,               // 'low'|'medium'|'high'|'critical'
+  affectedModules: z.array(z.string()),
+  confidence: z.number().min(0).max(1),
 })
 ```
 
@@ -413,7 +418,7 @@ Root cause: `design-page.ts` constructs `prdRequirements = [description]` — th
 |---|---|---|---|
 | Container diversity | Yes | Yes | **YES** |
 | Catalog adoption | Yes | Yes | **YES** |
-| Vision (5-dim LLM) | Yes | No | **NO** (ADR-045) |
+| Vision (5-dim LLM) | Yes | No | **NO** (ADR-045; also conditional on `isVisionLLMEnabled()` — returns score 0 when flag is off) |
 | Token compliance | Yes (optional) | No | **NO** |
 | NavigateTo count | Yes (optional) | No | **NO** |
 
@@ -472,9 +477,9 @@ if (prdContent) prdRequirements.push(prdContent);
 After:
 ```typescript
 interface PipelineInput {
-  enrichedRequirement?: EnrichedRequirement;  // structured Clarifier output
-  featurePlan?: FeaturePlan;                  // feature DAG
-  prdRequirements?: string[];                 // fallback for standalone mode
+  enrichedRequirement: EnrichedRequirement;    // structured Clarifier output (required in spine mode)
+  featurePlan: FeaturePlan;                    // feature DAG (required in spine mode)
+  prdRequirements?: string[];                  // migration-period compatibility only, removed after spine is stable
 }
 ```
 
@@ -512,15 +517,15 @@ flowchart TB
 
 !!! question "Decision 1: Should the Architect receive the Clarifier's structured PRD?"
 
-    **Recommendation: Yes.** Thread `EnrichedRequirement` into `PipelineInput`. When present, Research skips re-derivation. When absent, standalone mode unchanged. This is the M1 milestone gate.
+    **Recommendation: Yes.** Thread `EnrichedRequirement` into `PipelineInput`. All design generation goes through the spine — `enrichedRequirement` is required, not optional. This is the M1 milestone gate.
 
 !!! question "Decision 2: Should Planning survive as a standalone stage?"
 
-    **Recommendation: Slim standalone for dev, authoritative through Architect.** Planning's component composition logic becomes the Architect Node 4 specialist. The standalone `design:page` path keeps a slim Research+Planning for developer iteration.
+    **Recommendation: Full spine integration, no standalone mode.** All design generation goes through the spine (Architect → Implementer). The current 4-stage standalone pipeline (Research → Planning → Design → Evaluator) is the migration source, not a permanent parallel path. Dashboard and CLI both invoke the spine. Planning's component composition logic becomes the Architect Node 4 specialist; the standalone `design:page` path is retired after spine migration.
 
 !!! question "Decision 3: Where does the token validation loop live?"
 
-    **Recommendation: Shared module in `packages/core/src/architect/`.** Currently in `packages/agents-ux/src/ux-planning/token-validation.ts`. Both Architect Node 4 and the standalone pipeline need it.
+    **Recommendation: Shared module in `packages/core/src/architect/`.** Currently in `packages/agents-ux/src/ux-planning/token-validation.ts`. Both Architect Node 4 and the Implementer's design specialist tool need it.
 
 ??? info "Decision 4: When to wire vision evaluation into pipeline?"
 
@@ -553,18 +558,20 @@ The Implementer is the best-specified unbuilt stage. From `vision.md → Layer 8
 
 **Tools:** workspace (read/write/patch, scoped to worktree), gates (test/typecheck/lint), context (search/repo-map), research subagent, report-assumption-violation.
 
-**Model:** `claude-sonnet-4-6` (balanced).
+**Model:** Not yet specified in vision.md. Design pipeline currently defaults to `claude-opus-4-6` for the design stage. Open decision.
 
 ### 5.2 Design pipeline integration — the key adaptation
 
 ```mermaid
 flowchart TB
-    subgraph "Spine Mode (2 stages)"
-        S1[Design Stage<br/>receives ScreenPlan +<br/>ComponentComposition] --> S2[Evaluator Stage]
-    end
-    subgraph "Standalone Mode (4 stages)"
+    subgraph "Current Pipeline (migration source)"
         A1[Research] --> A2[Planning] --> A3[Design] --> A4[Evaluator]
     end
+    subgraph "Target: Spine Integration (2 stages)"
+        S1[Design Stage<br/>receives ScreenPlan +<br/>ComponentComposition] --> S2[Evaluator Stage]
+    end
+    A1 -.->|absorbed by Architect Node 1| S1
+    A2 -.->|absorbed by Architect Node 4| S1
 ```
 
 When the Implementer reaches a frontend task:
@@ -598,7 +605,7 @@ The Reviewer is the most complete stage design. From `vision.md → Layer 9: Rev
 
 **Post-review:** Approved → HITL merge gate. Rejected → return (max 2 revisions). After 2 failures → human escalation.
 
-**Model:** `claude-sonnet-4-6` for POC; possibly Opus for production.
+**Model:** Open decision per vision.md. `claude-sonnet-4-6` for POC; possibly Opus for production (not locked).
 
 ??? info "Open decisions from vision"
 
@@ -637,17 +644,15 @@ flowchart LR
 
 | Module | Source | Consumers |
 |--------|--------|-----------|
-| `constraint-assembler.ts` | New, from `ux-research.ts` patterns | Architect Node 1, standalone design pipeline |
-| `component-composition.ts` | Extract from `ux-planning.ts` | Architect Node 4, design pipeline planning |
-| `token-validation.ts` | Move from `agents-ux/src/ux-planning/` | Architect Node 4, design pipeline planning |
+| `constraint-assembler.ts` | New, from `ux-research.ts` patterns | Architect Node 1 |
+| `component-composition.ts` | Extract from `ux-planning.ts` | Architect Node 4 |
+| `token-validation.ts` | Move from `agents-ux/src/ux-planning/` | Architect Node 4 |
 | `screen-spec-builder.ts` | New, using `ScreenPlanSchema` | Architect Node 4 |
 | `design-system-context.ts` | Already in `agents-ux/src/ux-design/` | Architect Node 1, design stage |
 
 ### 7.2 Design pipeline after extraction
 
-**Spine mode** (invoked by Implementer): Design + Evaluator only — receives Architect contracts.
-
-**Standalone mode** (CLI `design:page`): Research → Planning → Design → Evaluator unchanged. Uses shared modules.
+All design generation goes through the spine. The current 4-stage pipeline (Research → Planning → Design → Evaluator) is the migration source — Research and Planning are absorbed into the Architect, Design and Evaluator become Implementer specialist tools. After migration, the standalone `design:page` CLI path and Dashboard "Generate All" both invoke the spine.
 
 ---
 
@@ -736,6 +741,98 @@ Building order, optimized for earliest testable output:
 | 4 | **Impact Analysis** | M3 (brownfield) | Part of Architect Node 0.5 |
 | 5 | **Structured PRD Threading** | M1 | Wiring in `design-page.ts` + `PipelineInput` |
 | 6 | **Architect Eval Harness** | M2 | Golden bundles, schema validation, regression baseline |
+
+---
+
+## Part 11: Gaps Requiring Further Research
+
+!!! warning "Added 2026-05-12 — codebase review"
+
+    This section was added after a codebase review revealed that the original document does not address how the existing design pipeline trigger points (Dashboard UI, CLI batch mode, Chrome Pass) integrate with the spine architecture. All design generation must go through the spine — there is no standalone mode.
+
+### Gap 1 — Dashboard → Spine Integration (HIGH PRIORITY, blocks M1)
+
+The Dashboard "Design Studio" is the primary user-facing trigger for design generation, but this document does not address it.
+
+**What exists today:**
+
+- Per-page "Generate Design" button → `POST /api/pages/[pageId]/design` → `buildDashboardPipelineInput()` → `runDesignPipeline()`
+- "Generate All" batch button → `POST /api/design/generate-all` → CLI's `designPageAllCommand()`
+- Run tracking via `startRun()` + polling, telemetry via `DashboardSseSink` + `LangfuseSink`
+
+**What needs research (→ R7):**
+
+- How do Dashboard generate buttons invoke the spine (Architect → Implementer)?
+- Does the Dashboard call a new `/api/spine/run` endpoint, or does it call `runDesignPipeline()` with Architect output pre-computed?
+- How does `buildDashboardPipelineInput()` (in `packages/dashboard/src/app/api/_lib/pipeline-input-builder.ts`) transition to spine input?
+- Run tracking and progress UI in spine mode — the current per-page polling model may not fit multi-stage spine execution
+
+**Key files:**
+
+- `packages/dashboard/src/app/(dashboard)/design/page.tsx` — Design Studio UI
+- `packages/dashboard/src/app/api/pages/[pageId]/design/route.ts` — per-page API
+- `packages/dashboard/src/app/api/design/generate-all/route.ts` — batch API
+- `packages/dashboard/src/app/api/_lib/pipeline-input-builder.ts` — input builder
+
+### Gap 2 — Chrome Pass in Spine Mode (HIGH PRIORITY, blocks M1)
+
+The Chrome Pass mechanism (`shared-chrome.json`, generate/consume modes) ensures multi-screen visual consistency. The spine's per-task Implementer invocation model doesn't address this.
+
+**What exists today:**
+
+- `design-page-all.ts` resolves shared components across pages, designs a reference page first with `chromePass: { mode: 'generate' }`, then designs each subsequent page with `chromePass: { mode: 'consume', spec: sharedChromeSpec }`
+- Frozen chrome is injected into each page's design prompt so headers/footers/nav are visually identical
+
+**What needs research (→ R8):**
+
+- Who generates shared chrome in spine mode — the Architect (as a contract in `ContractBundle`) or the Implementer (as a pre-task before the task DAG)?
+- How does frozen chrome thread across tasks in the Implementer's task DAG?
+- Does the Architect's `ScreenPlan[]` need a `sharedComponents` field?
+
+**Key files:**
+
+- `packages/cli/src/commands/design-page-all.ts` — Chrome Pass orchestration (lines 301-370)
+- `packages/agents-ux/src/design-pipeline/browser-design-work.ts` — chrome consume mode
+
+### Gap 3 — Full PipelineInput → ContractBundle Mapping (MEDIUM, blocks M1 design)
+
+The current `PipelineInput` interface has ~20 fields. This document's "Thread structured PRD" solution (Section 3.2) only addresses adding `enrichedRequirement` and `featurePlan`. The remaining fields need mapping.
+
+**Fields requiring mapping:**
+
+| PipelineInput field | Spine equivalent | Owner |
+|---|---|---|
+| `prdRequirements` | `EnrichedRequirement.prd` | Architect |
+| `pageContext` | `ScreenPlan` + navigation from `ContractBundle` | Architect |
+| `designTokensSpec` | Part of `ContractBundle.designSystemDiff`? | Architect or runtime |
+| `designConfig` | Runtime config, not Architect output | Runtime |
+| `rendererTokens` | Derived from `designTokensSpec` | Runtime |
+| `catalogMap` | Part of `ContractBundle.componentComposition`? | Architect |
+| `componentCatalogPrompt` | Derived from catalog | Runtime |
+| `chromePass` | See Gap 2 | TBD |
+| `viewportWidth` | From `ScreenPlan` or runtime config | TBD |
+
+**Key file:** `packages/agents-ux/src/design-pipeline/types.ts` — `PipelineInput` interface
+
+### Gap 4 — Caching/Resume Strategy in Spine Mode (MEDIUM, blocks M2)
+
+**What exists today:** Per-stage artifact caching in `runDesignPipeline()` — research briefs, planning specs, design specs cached to disk. `--resume` skips cached stages, `--fresh` forces re-run.
+
+**What needs research (part of R8):**
+
+- Does LangGraph checkpointing replace per-stage artifact caching?
+- When the Implementer invokes design as a specialist tool, does it still cache the DesignSpec to disk?
+- What happens to existing cached artifacts (`agentforge/designs/*.json`) during migration?
+
+**Key file:** `packages/agents-ux/src/design-pipeline/pipeline.ts` — caching logic (lines 66-89)
+
+### Gap 5 — Model Selection in Spine Mode (LOW)
+
+Current per-stage model defaults: research=`claude-sonnet-4-6`, planning=`claude-opus-4-7`, design=`claude-opus-4-6`, evaluator=`claude-opus-4-7`. The Implementer vision spec doesn't specify a model for the design specialist tool. The design stage's current default (`claude-opus-4-6`) may need to be preserved.
+
+### Gap 6 — Penpot Path Deprecation (LOW)
+
+The design node dispatches on `designTool` ('browser' vs 'penpot'). The spine integration assumes browser rendering. The Penpot path (`penpotDesignWork()` via MCP client) should be explicitly deprecated for spine mode.
 
 ---
 

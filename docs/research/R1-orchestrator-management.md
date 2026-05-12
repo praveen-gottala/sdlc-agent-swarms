@@ -1,5 +1,10 @@
 # Orchestrator → Implementer Across Git Worktrees: Industry Survey and a Concrete Design for CHIP
 
+!!! info "Compact version available"
+
+    For a self-contained LLM research brief covering this topic, see
+    [R1: Orchestrator & Multi-Agent Coordination](briefs/R1-orchestrator-multi-agent.md).
+
 ## TL;DR
 
 - **The industry has converged on a single pattern for coding agents in 2025-2026: a single-writer "spine" (the orchestrator/main agent) decomposes work into scoped tasks, dispatches each to an isolated worker that runs in its own git worktree (or VM), and integrates results through git rather than through shared in-memory state.** Cursor 2.0, Claude Code's Agent Teams, Codex, Devin's Managed Devins, GitHub Copilot's `/fleet`, Replit Agent 4, and Augment's Intent all instantiate this pattern. CHIP's spine + worktree commitments are aligned with the consensus, not against it.

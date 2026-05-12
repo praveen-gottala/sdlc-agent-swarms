@@ -1,5 +1,12 @@
 # Architecting the Design Phase of an AI‑Driven SDLC Platform: A Critical Review of the §9.5–9.7 Visual Effects Plan
 
+!!! warning "Point-in-time snapshot (2026-04-30)"
+
+    Market analysis (v0, Lovable, Subframe, Stitch, Google Polmet, MagicPath)
+    reflects the state as of April 2026. Design pipeline decisions informed by
+    this analysis are now settled. For current state, see the
+    [Visual Diversity execution plan](../plans/active/visual-diversity/execution-plan.md).
+
 ## Executive verdict
 
 The §9.5–9.7 plan is **mostly right but mis‑sequenced and over‑scoped for a single shipping unit**. The strongest pieces — domain‑adaptive treatment palette (§9.5) and plug‑and‑play effect packs with targeted regeneration (§9.7) — are well aligned with where the leading AI design tools actually converged in 2025–2026 (shadcn registry + DTCG tokens + Lovable Themes + v0 Design Mode). The weakest piece is the four‑channel convergence story in §9.6: **Channel 2 (competitor screenshot analysis) is a research‑grade problem dressed as a feature**, and **Channel 4 (live refinement via vision‑LLM critique) is the wrong default** — every shipping competitor has moved away from "ask an LLM to nudge styles" toward direct, AST‑level visual editing that costs zero tokens.

@@ -8,7 +8,7 @@ Systematic doc quality improvements across the CHIP documentation site, driven b
 
 - Concept pages (`docs/concepts/`)
 - Architecture pages (`docs/architecture/`)
-- Research pages (`docs/research-report.md`, `docs/research/`)
+- Research pages (`docs/research/research-report.md`, `docs/research/`)
 - Home page (`docs/index.md`)
 - Guide pages (`docs/guides/`) — as needed
 
@@ -20,7 +20,7 @@ Out of scope: ADRs, CLAUDE.md, package READMEs. Specs are generally out of scope
 |---|------|--------|--------|----------|
 | 1 | Concepts Overview + Section Review | `docs/concepts/overview.md` + broader concepts section | **COMPLETE** (2026-05-04) | 9 overview findings applied: opener rewritten (competitor-swap test), "How it works" promoted to first heading, "Why CHIP does this differently" → "What the Clarifier does differently" (strength statement), EVPI/ClarifyGPT jargon removed (D2: 2 paragraphs + link), HITL gate details slimmed to 1 paragraph + link (D11: verified Plan 8 gate-focused diagram), "Current implementation" → 4-sentence "Current state" + link, Related expanded (+clarifier-pipeline.md, +hitl-governance.md). B3: current-status.md authoritative source citation added. |
 | 2 | Agent Taxonomy Review | `docs/concepts/agent-taxonomy.md` | **COMPLETE** (2026-05-04) | 9 findings applied: phantom predecessor removed (ten-agent → collapsible historical context with vision.md citation), node count fixed 6→9 (D3, slimmed to taxonomy level per D2 with link to clarifier-pipeline.md), mental model paragraph added, planned stages wrapped in admonitions (future tense), diagram legend added (D1), duplicate "single-writer" removed, Current implementation + Known limitations sections added |
-| 3 | Research Report Review | `docs/research-report.md` | Complete | 13 findings (3 critical, 6 important, 4 polish): brand rename, voice rewrite, gap analysis update, 2 Mermaid diagrams, admonitions, collapsibles, Part 4.5 absorbed |
+| 3 | Research Report Review | `docs/research/research-report.md` | Complete | 13 findings (3 critical, 6 important, 4 polish): brand rename, voice rewrite, gap analysis update, 2 Mermaid diagrams, admonitions, collapsibles, Part 4.5 absorbed |
 | 4 | Clarifier Pipeline Review | `docs/concepts/clarifier-pipeline.md` | **COMPLETE** (2026-05-04) | 13 findings applied: page restructured (competitive content → collapsible), diagram updated (6→9 nodes with prdUpdater/escalationGate/emitComplete), 3 new node descriptions, stale limitation qualified, ClarifyGPT citation fixed, EVPI reworded, Components table expanded (14 rows), downstream D3 fix in clarifier-question-generation.md |
 | 5 | Coordination & State Review | `docs/concepts/coordination-and-state.md` | **COMPLETE** (2026-05-04) | 10 findings applied: opener rewritten (channels/reducers defined, CHIP-specific), Clarifier topology diagram replaced with generic channels pattern, Components table 8→9 nodes + routeAfterPrdUpdater added, negative framing reduced to Telemetry section + Known Limitations only, duplicate migration note merged, Related links expanded (research-report Part 1, design-decisions §1.2), D13 crosslink to state-persistence.md |
 | 6 | Architecture Review | `docs/architecture/architecture.md` | **COMPLETE** (2026-05-04) | 17 findings applied: 4-stage spine, 19 packages, ADR-044–051, telemetry reframing (D8), 6 cross-references, planned admonitions for unbuilt stages |
@@ -63,7 +63,7 @@ After Plan 1 slims overview and Plan 2 fixes agent-taxonomy, three pages will de
 
 ### D1 addendum: Research report diagrams
 
-Plan 3 (research diagrams) should follow the D1 decision for any new Mermaid diagrams added to research-report.md. Research diagrams are conceptual — uniform fills are likely correct. Use neutral fills initially and update when D1 resolves.
+Plan 3 (research diagrams) should follow the D1 decision for any new Mermaid diagrams added to research/research-report.md. Research diagrams are conceptual — uniform fills are likely correct. Use neutral fills initially and update when D1 resolves.
 
 ### D3: Stale "6 nodes" across docs
 
@@ -78,12 +78,12 @@ The Clarifier has 9 nodes (verified in `clarifier-graph.ts`). The stale "6 nodes
 
 ### D4: Brand rename and citation chain
 
-Plan 3 renames ARCHON/AgentForge → CHIP in research-report.md (7+ occurrences). Two concept pages directly quote research-report.md text containing "AgentForge":
+Plan 3 renames ARCHON/AgentForge → CHIP in research/research-report.md (7+ occurrences). Two concept pages directly quote research/research-report.md text containing "AgentForge":
 
-- `clarifier-pipeline.md` line 15 (direct quote of research-report.md line 301)
+- `clarifier-pipeline.md` line 15 (direct quote of research/research-report.md line 301)
 - `clarifier-pipeline.md` lines 3, 101 and `clarifier-question-generation.md` lines 3, 182 cite `#part-3-conversational-clarification-agents` anchor — safe if Part 3 heading text stays identical
 
-**Decision:** Plan 3 updates both the source (research-report.md) AND the downstream quote (`clarifier-pipeline.md` line 15). Plans 1 and 2 verify their target pages don't introduce new stale brand references. Plan 4 does NOT touch line 15 brand fix (already scoped in Plan 3). No other stale brand references found in `clarifier-pipeline.md`.
+**Decision:** Plan 3 updates both the source (research/research-report.md) AND the downstream quote (`clarifier-pipeline.md` line 15). Plans 1 and 2 verify their target pages don't introduce new stale brand references. Plan 4 does NOT touch line 15 brand fix (already scoped in Plan 3). No other stale brand references found in `clarifier-pipeline.md`.
 
 ### D5: Execution order re-sequencing for Plan 4
 

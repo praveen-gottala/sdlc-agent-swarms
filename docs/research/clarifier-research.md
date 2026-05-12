@@ -1,5 +1,12 @@
 # How Production AI Coding Tools Handle Clarification: A Synthesis Report
 
+!!! warning "Point-in-time snapshot (2026-05-02)"
+
+    Tool landscape analysis (Cursor, Devin, Bolt, Lovable, v0, etc.) reflects
+    the state as of May 2026. Individual tools may have shipped new clarification
+    features since. For current CHIP Clarifier decisions, see
+    [vision.md Layer 5](../vision.md#layer-5-clarifier-front-door).
+
 ## Executive summary
 
 Across ten production systems and the 2024–2026 academic literature, a clear pattern emerges: **prompt-only LLM clarification works well enough for single-function code-generation benchmarks, but every team building a real bootstrap-or-brownfield product has either (a) added grounding mechanisms on top of the LLM call, or (b) acknowledged failure modes that look exactly like missing grounding.** The grounding takes three recurring forms — *steering/rule files* (CLAUDE.md, AGENTS.md, Cursor rules, Kiro steering), *retrieval over the user's codebase* (Sourcegraph Cody's context engine, Augment's Context Engine, Cursor's grep+semantic search), and *structured spec artifacts* (Kiro's EARS requirements, ChatPRD's PM templates, Augment Intent's living specs).

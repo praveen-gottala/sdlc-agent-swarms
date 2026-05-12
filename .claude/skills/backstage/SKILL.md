@@ -209,7 +209,7 @@ Pull only facts the reader can independently verify by opening a file:
 
 If a fact you want to include cannot be verified in the codebase right now, either find a different fact or move the claim to a future-tagged callout: `!!! note "Planned"`. Aspirational present tense is the single most damaging editorial failure for a doc that will be read during a leadership demo — a leader who catches one will distrust the whole site.
 
-**Citations must be opened, not remembered.** If your draft cites `docs/research-report.md`, `docs/design-decisions.md`, or any ADR — **open that file in this run** before writing the citation, and quote the specific finding (~1–2 sentences with file and section). Do not cite from training memory or summarize from prior conversation. Vague paraphrases ("research shows our approach is better") are worse than no citation; they look authoritative while being unverifiable. A good citation reads:
+**Citations must be opened, not remembered.** If your draft cites `docs/research/research-report.md`, `docs/design-decisions.md`, or any ADR — **open that file in this run** before writing the citation, and quote the specific finding (~1–2 sentences with file and section). Do not cite from training memory or summarize from prior conversation. Vague paraphrases ("research shows our approach is better") are worse than no citation; they look authoritative while being unverifiable. A good citation reads:
 
 > *"Research Report Part 1, §"The agent taxonomy problem", finds that parallel write-agents produce incompatible outputs; Cognition, Devin, and Claude Code are all single-threaded in production for this reason."*
 

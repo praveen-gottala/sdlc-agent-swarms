@@ -6,9 +6,9 @@ Every agent in CHIP operates on context retrieved from the project's codebase, d
 
 ## Why CHIP does this
 
-[Research Report Part 2](../research-report.md) identifies context engineering as "the single largest quality lever" for agent systems. CHIP's retrieval architecture reflects two findings:
+[Research Report Part 2](../research/research-report.md) identifies context engineering as "the single largest quality lever" for agent systems. CHIP's retrieval architecture reflects two findings:
 
-- "Aider-style repo map (tree-sitter + PageRank, no embeddings) as the default code-context tool" — structural context is deterministic and cheap, providing the stable foundation every agent call needs ([Research Report Part 2](../research-report.md), §"Build the RAG layer on deterministic structure first, semantic search second").
+- "Aider-style repo map (tree-sitter + PageRank, no embeddings) as the default code-context tool" — structural context is deterministic and cheap, providing the stable foundation every agent call needs ([Research Report Part 2](../research/research-report.md), §"Build the RAG layer on deterministic structure first, semantic search second").
 - Rare tokens, error codes, and identifiers need keyword search — dense embeddings alone miss exact-match queries. CHIP uses hybrid BM25 (keyword matching) + dense search with Reciprocal Rank Fusion (merges rankings from keyword and semantic search; k=60 balances precision and coverage) to cover both cases ([Design Decisions §4](../design-decisions.md)).
 
 ## How it works

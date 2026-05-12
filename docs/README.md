@@ -7,7 +7,7 @@ Start with [CLAUDE.md](../CLAUDE.md) for the reading order and development rules
 | Document | Purpose |
 |---|---|
 | [vision.md](vision.md) | Architectural authority. 15 layers with locked/open decisions, current vs target state. |
-| [research-report.md](research-report.md) | Evidence base. Deep-dive research supporting vision decisions. |
+| [Research](research/index.md) | Evidence base. Reading guide + deep-dive research supporting vision decisions. |
 | [design-decisions.md](design-decisions.md) | Decisions by topic with reasoning, alternatives considered, and revisit criteria. |
 | [roadmap.md](roadmap.md) | Eight-phase dependency-ordered rollout with demoable outcomes per phase. |
 | [lessons-learned.md](lessons-learned.md) | Do Not Repeat list. Append-only record of what worked and what didn't. |

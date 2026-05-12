@@ -1,8 +1,16 @@
 # The Ideal Autonomous SDLC Framework for 2026
 
+!!! warning "Historical baseline document"
+
+    This was the original research report that seeded CHIP's architecture (2026-04).
+    Many findings have been superseded by later research and implementation.
+    For current decisions, see [vision.md](../vision.md). For the synthesized
+    architecture, see [The Spine Pattern](../architecture/spine-pattern.md).
+    For evidence-based deep dives, see the [Research Reading Guide](index.md).
+
 !!! info "How to use this report"
 
-    This document captures the research that informed CHIP's architecture. Read it linearly when you want to understand a topic in full. Part 4 gap analysis reflects the state at time of writing; see [vision.md](vision.md) for current architectural decisions and [design-decisions.md](design-decisions.md) for rejected alternatives.
+    Read it linearly when you want to understand a topic in full. Part 4 gap analysis reflects the state at time of writing; see [vision.md](../vision.md) for current architectural decisions and [design-decisions.md](../design-decisions.md) for rejected alternatives.
 
 ## Executive summary
 
@@ -404,16 +412,16 @@ The baseline design jumps from PRD to Architecture. The evidence (Devin's failur
 
 ### What was missing (status as of 2026-05)
 
-- **Durable checkpointing with time-travel.** *(Implemented — Postgres LangGraph checkpointer wired into Clarifier graph. See [state-persistence.md](concepts/state-persistence.md).)*
-- **Typed state with reducers.** *(Implemented — LangGraph typed channels with Zod schemas. See [coordination-and-state.md](concepts/coordination-and-state.md).)*
-- **RAG layer integrated into agent reasoning.** *(Partially implemented — Clarifier uses retrieval for gap detection. See [rag-context.md](concepts/rag-context.md).)*
+- **Durable checkpointing with time-travel.** *(Implemented — Postgres LangGraph checkpointer wired into Clarifier graph. See [state-persistence.md](../concepts/state-persistence.md).)*
+- **Typed state with reducers.** *(Implemented — LangGraph typed channels with Zod schemas. See [coordination-and-state.md](../concepts/coordination-and-state.md).)*
+- **RAG layer integrated into agent reasoning.** *(Partially implemented — Clarifier uses retrieval for gap detection. See [rag-context.md](../concepts/rag-context.md).)*
 - **Assumption ledger.** The most cost-effective anti-drift mechanism. *(Implemented — Clarifier emits assumptions with evidence and blast radius.)*
 - **EARS-formatted acceptance criteria.** Kiro's structural rigor belongs in any spec-driven framework. *(Not yet implemented.)*
 - **Reviewer subagent with fresh context.** The Implementer's context-rotted attention cannot self-review reliably. *(Not yet implemented — Reviewer spine stage planned.)*
 - **Visual validation for UI work.** Playwright MCP integration. *(Partially implemented — design pipeline uses vision evaluator.)*
 - **Git worktrees for parallel implementation.** Prevents shared-filesystem conflicts. *(Not yet implemented.)*
 - **Sandboxed execution with egress controls.** GitHub Copilot coding agent's firewall + MCP gateway + API proxy pattern is the reference. *(Not yet implemented.)*
-- **Explicit phase gates with human approval.** *(Implemented — Clarifier uses LangGraph interrupts for HITL gates. See [hitl-governance.md](concepts/hitl-governance.md).)*
+- **Explicit phase gates with human approval.** *(Implemented — Clarifier uses LangGraph interrupts for HITL gates. See [hitl-governance.md](../concepts/hitl-governance.md).)*
 - **Budget caps per task.** `max_iter`, token budget, wall-clock timeout — fail-loud discipline. *(Not yet implemented.)*
 - **`audit.md` trail.** AWS AI-DLC's per-run decision log for traceability. *(Not yet implemented.)*
 

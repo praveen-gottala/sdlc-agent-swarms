@@ -1,5 +1,11 @@
 # Balanced Analysis: Planning Methodology for CHIP
 
+!!! warning "Point-in-time snapshot (2026-04-30)"
+
+    Pressure test of the [Planning Methodology Investigation](planning-methodology-investigation.md).
+    Methodology decisions are settled. For current planning patterns,
+    see [vision.md Layer 8](../vision.md#layer-8-implementation).
+
 This analysis verifies the cited sources, pressure-tests the arXiv mapping, surfaces planning models the doc ignores, assesses `future-roadmap.md` honestly against its own arguments, and lays out the trade-offs without recommending. Where the methodology doc is right, that's stated. Where it overreaches, that's stated too.
 
 ---

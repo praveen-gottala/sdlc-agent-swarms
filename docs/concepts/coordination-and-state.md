@@ -6,7 +6,7 @@ Each spine stage reads from shared state, does its work, and writes back the fie
 
 A **channel** is a named typed slot in the shared state (e.g., `gaps: readonly Gap[]`). A **reducer** is the merge rule that decides how a channel update combines with its previous value. CHIP uses 14 last-write-wins channels (newest value replaces the old) and 1 accumulator channel (`humanResponses` — each HITL round appends answers without losing previous rounds). This combination, together with telemetry separated onto its own plane and a checkpointer that enables HITL resume across interrupts, is what makes CHIP's coordination concrete rather than a generic LangGraph default.
 
-Research Report Part 1, ["Inter-agent communication,"](../research-report.md#part-1-ideal-sdlc-framework-architecture) ranks five coordination patterns and concludes: "Shared typed state (channels + reducers) — the right default for spine-level artifacts." Event buses lose type information at boundaries, producing silent drift bugs that are expensive to debug in production agent pipelines ([Design Decisions, Section 1.2](../design-decisions.md#12-coordination-typed-channels-not-event-bus)).
+Research Report Part 1, ["Inter-agent communication,"](../research/research-report.md#part-1-ideal-sdlc-framework-architecture) ranks five coordination patterns and concludes: "Shared typed state (channels + reducers) — the right default for spine-level artifacts." Event buses lose type information at boundaries, producing silent drift bugs that are expensive to debug in production agent pipelines ([Design Decisions, Section 1.2](../design-decisions.md#12-coordination-typed-channels-not-event-bus)).
 
 ## How it works
 
@@ -116,5 +116,5 @@ The Clarifier's only event emission is `writeBridgeEvent()` after successful com
 - [Vision Layer 4](../vision.md#layer-4-state-and-persistence) — persistence authority
 - [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) — LangGraph adoption
 - [Observability](observability.md) — telemetry plane details
-- [Research Report Part 1](../research-report.md#part-1-ideal-sdlc-framework-architecture) — coordination pattern analysis
+- [Research Report Part 1](../research/research-report.md#part-1-ideal-sdlc-framework-architecture) — coordination pattern analysis
 - [Design Decisions §1.2](../design-decisions.md#12-coordination-typed-channels-not-event-bus) — why channels over event bus

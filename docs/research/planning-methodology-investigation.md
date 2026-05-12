@@ -1,5 +1,12 @@
 # Planning Methodology for an Agentic SDLC Framework
 
+!!! warning "Point-in-time snapshot (2026-04-27)"
+
+    Methodology decisions documented here are settled. See the
+    [counter-analysis](planning-methodology-counter-analysis.md) for a
+    pressure test of the sources cited. For current planning patterns,
+    see [vision.md Layer 8](../vision.md#layer-8-implementation).
+
 > Date: 2026-04-27
 > Status: Investigation complete. Decisions made. See §6 for outcomes.
 

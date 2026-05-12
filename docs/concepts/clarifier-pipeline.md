@@ -1,6 +1,6 @@
 # Clarifier Pipeline
 
-> Authoritative source: [vision.md Layer 5](../vision.md#layer-5-clarifier-front-door) and [research-report.md Part 3](../research-report.md#part-3-conversational-clarification-agents)
+> Authoritative source: [vision.md Layer 5](../vision.md#layer-5-clarifier-front-door) and [research-report.md Part 3](../research/research-report.md#part-3-conversational-clarification-agents)
 
 The clarifier is the front door of CHIP. Before any architecture, code, or design is generated, every idea passes through a nine-node pipeline that transforms a vague seed ("recipe sharing app with search and ratings") into a structured PRD (Product Requirements Document) with explicit assumptions, acceptance criteria, and a feature dependency graph. The clarifier asks questions before building — not after.
 
@@ -98,7 +98,7 @@ The core differentiator. Runs two passes to find what's missing, ambiguous, or c
 
 Each divergence point becomes a `Gap` with `divergentInterpretations` — the concrete approaches that disagreed. This technique comes from the ClarifyGPT paper (Mu et al., ACM PACMSE 2024), which demonstrated that **behavioral divergence detects ambiguity more reliably than text analysis**.
 
-> *"Consistency sampling is the cheapest high-value ambiguity signal. Generate 3–5 plausible implementations; any material divergence is a gap; questions target the divergence."* — `docs/research-report.md`, Part 3
+> *"Consistency sampling is the cheapest high-value ambiguity signal. Generate 3–5 plausible implementations; any material divergence is a gap; questions target the divergence."* — `docs/research/research-report.md`, Part 3
 
 ### Question Prioritizer
 
@@ -205,7 +205,7 @@ State persists across interrupts via the LangGraph checkpointer (MemorySaver or 
 
     The research report, Part 3, documents why this matters:
 
-    > *"The clarifier is CHIP's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up."* — `docs/research-report.md`, Part 3
+    > *"The clarifier is CHIP's highest-leverage differentiation opportunity because no commercial product has integrated the necessary pieces. The academic foundation is sound; the commercial space has not caught up."* — `docs/research/research-report.md`, Part 3
 
     The vision document states the consequence of skipping clarification:
 
