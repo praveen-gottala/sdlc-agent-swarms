@@ -1,4 +1,4 @@
-# ADR-046: Langfuse Observability — Phase 7 Pull-Forward
+# ADR-052: Langfuse Observability — Phase 7 Pull-Forward
 
 ## Status
 

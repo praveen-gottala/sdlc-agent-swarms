@@ -23,7 +23,7 @@
 
 6. Tasks **1.2** (PRD Analyzer), **1.3** (Gap Detector), **1.5** (Story Writer/Synthesizer) make LLM calls. Every LLM call must use **`createTracedProvider()`** from `@agentforge/telemetry` per **ADR-046**.
    - `docs/plans/active/clarifier-initiative/execution-plan.md` → "Context for Phase 1 implementers" block
-   - `docs/adrs/ADR-046-langfuse-observability.md`
+   - `docs/adrs/ADR-052-langfuse-observability.md`
 
 7. `screenId` is derived via **`basename(filePath, '.json')`** — e.g., `agentforge/designs/dashboard.json` → `dashboard`. It is NOT stored in the spec JSON because the filename IS the screen identifier in the `agentforge/designs/` convention.
    - `docs/plans/active/clarifier-initiative/execution-plan.md` → "Context for Phase 1 implementers" block

@@ -20,7 +20,12 @@ export async function getSharedCheckpointer(): Promise<BaseCheckpointSaver> {
   if (g.__clarifierCheckpointer) return g.__clarifierCheckpointer;
   try {
     g.__clarifierCheckpointer = await createCheckpointer();
-  } catch {
+  } catch (err) {
+    console.warn(
+      'Failed to create Postgres checkpointer, falling back to in-memory MemorySaver.',
+      'Checkpoints will NOT survive process restarts.',
+      err instanceof Error ? err.message : String(err),
+    );
     g.__clarifierCheckpointer = new MemorySaver();
   }
   return g.__clarifierCheckpointer;

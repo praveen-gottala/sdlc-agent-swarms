@@ -2,7 +2,7 @@
 
 ## Related Documents
 
-- **ADR:** [`docs/adrs/ADR-046-langfuse-observability.md`](../../adrs/ADR-046-langfuse-observability.md)
+- **ADR:** [`docs/adrs/ADR-052-langfuse-observability.md`](../../adrs/ADR-052-langfuse-observability.md)
 - **Vision:** [`docs/vision.md`](../../vision.md) → Layer 11 (Observability)
 - **Setup guide:** [`docs/guides/langfuse-setup.md`](../../guides/langfuse-setup.md)
 - **Package:** `packages/telemetry/` (TracedProvider, LangfuseSink, CompositeSink, otel-init)
@@ -62,4 +62,4 @@ Vision Layer 11 prescribes OpenTelemetry + Langfuse self-hosted for LLM observab
 | `packages/telemetry/src/otel-init.ts` | NodeSDK + LangfuseSpanProcessor |
 | `docker/docker-compose.langfuse.yml` | Self-hosted Langfuse v3 stack |
 | `docs/guides/langfuse-setup.md` | Setup, verification, troubleshooting |
-| `docs/adrs/ADR-046-langfuse-observability.md` | Decision record |
+| `docs/adrs/ADR-052-langfuse-observability.md` | Decision record |

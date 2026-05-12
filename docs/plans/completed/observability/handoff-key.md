@@ -8,7 +8,7 @@
 
 3. Wraps any **`LLMProvider`**. Creates an OTel span with **`asType: 'generation'`** for every `complete()` call. Captures: **system prompt, user message** (input), **response content, toolCalls, finishReason** (output), **usageDetails** (input/output/total/cacheRead/cacheWrite tokens), **costDetails** (input/output/total USD), **model name**, **modelParameters** (temperature, maxTokens). Returns provider unchanged when Langfuse not configured. Cite: `packages/telemetry/src/traced-provider.ts`.
 
-4. Widening the sink interface would **couple it to Langfuse's needs** and require updates for each new trace type. Instead, **OTel at provider level** was chosen — `TracedProvider` wraps `provider.complete()` so **every LLM call everywhere is auto-traced** without per-stage wiring. No sink interface changes needed. Cite: `docs/adrs/ADR-046-langfuse-observability.md` → Decision §2.
+4. Widening the sink interface would **couple it to Langfuse's needs** and require updates for each new trace type. Instead, **OTel at provider level** was chosen — `TracedProvider` wraps `provider.complete()` so **every LLM call everywhere is auto-traced** without per-stage wiring. No sink interface changes needed. Cite: `docs/adrs/ADR-052-langfuse-observability.md` → Decision §2.
 
 5. **`design:page`**, **`design:page:all`**, **`design:generate`**, **`generate-design-options`**, **Dashboard design route**. Cite: `docs/guides/langfuse-setup.md` → Traced Commands table.
 
@@ -32,4 +32,4 @@ Cite: `docs/guides/langfuse-setup.md` → "Verify traces programmatically".
 
 11. **Blind subagent test.** Spawn an Explore agent with NO context from the current conversation and ask it to accomplish a task using only the project's own files. If it can't find what it needs, docs have gaps — fix before declaring done. Cite: `CLAUDE.md` → Documentation → "Blind Subagent Test (MANDATORY)"; `docs/lessons-learned-rules.md` → "Blind Subagent Test for Documentation".
 
-12. **`CLAUDE.md`** (auto-loaded, contains pointer to setup guide) → **`docs/guides/langfuse-setup.md`** (setup, verification, troubleshooting, traced commands) → **`docs/adrs/ADR-046-langfuse-observability.md`** (architectural rationale). Optionally: `docs/active-plan/observability/execution-plan.md` for progress tracking. Cite: `CLAUDE.md` → Tech Stack → Observability line.
+12. **`CLAUDE.md`** (auto-loaded, contains pointer to setup guide) → **`docs/guides/langfuse-setup.md`** (setup, verification, troubleshooting, traced commands) → **`docs/adrs/ADR-052-langfuse-observability.md`** (architectural rationale). Optionally: `docs/active-plan/observability/execution-plan.md` for progress tracking. Cite: `CLAUDE.md` → Tech Stack → Observability line.

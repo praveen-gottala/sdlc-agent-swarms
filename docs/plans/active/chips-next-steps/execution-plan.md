@@ -71,7 +71,7 @@ The document must open (after TL;DR) with two numbered scenario walkthroughs tha
 
 ### E. Clear path forward (stage fate decisions) with concrete solutions
 - Each problem gets a before/after code sketch, not just a recommendation
-- Pipeline architecture diagram showing both modes (spine integration + standalone)
+- Pipeline architecture diagram showing migration from current 4-stage pipeline to spine integration
 
 ### F. Key architectural questions requiring human decisions
 
@@ -451,9 +451,9 @@ if (prdContent) prdRequirements.push(prdContent);
 After:
 ```typescript
 interface PipelineInput {
-  enrichedRequirement?: EnrichedRequirement;  // structured Clarifier output
-  featurePlan?: FeaturePlan;                  // feature DAG
-  prdRequirements?: string[];                 // fallback for standalone mode
+  enrichedRequirement: EnrichedRequirement;   // structured Clarifier output (required in spine mode)
+  featurePlan: FeaturePlan;                   // feature DAG (required in spine mode)
+  prdRequirements?: string[];                 // migration-period compatibility only
 }
 ```
 
@@ -514,7 +514,7 @@ flowchart TB
 5 decisions as admonitions with options and recommendations:
 
 1. **Should the Architect receive the Clarifier's structured PRD?** → Recommendation: Yes
-2. **Should Planning survive as a standalone stage?** → Recommendation: Slim standalone for dev, authoritative through Architect
+2. **Should Planning survive as a standalone stage?** → Recommendation: Full spine integration, no standalone mode
 3. **Where does the token validation loop live?** → Recommendation: Shared module in `packages/core/src/architect/`
 4. **When to wire vision evaluation into pipeline?** → Recommendation: Opt-in flag, default off for iteration
 5. **Shared module location?** → Recommendation: `packages/core/src/architect/`
@@ -644,7 +644,7 @@ SYSTEM 3: Architect (proposed, not built)
 
 **Finding 4: Planning does work that belongs BETWEEN init and design.** Init produces the WHAT (14 component names); Planning produces the HOW (34-node tree with props, defaults, children). This is genuine value, but it's architectural work — it belongs in the Architect, not in the design pipeline.
 
-**Finding 5: Design pipeline overlaps with init, not the Architect directly.** The Architect replaces init, so Research and Planning become redundant in spine mode. In standalone mode (no Architect), they're still needed.
+**Finding 5: Design pipeline overlaps with init, not the Architect directly.** The Architect replaces init, so Research and Planning become redundant once the spine is active. The current 4-stage pipeline is the migration source, not a permanent parallel path.
 
 ### The Merge Path
 
@@ -734,7 +734,7 @@ Structural validation (Critic): DAG acyclic, single-writer, PRD coverage. But ex
 | 10+ lessons-learned rules | `docs/lessons-learned-rules.md` | DesignSpec v2, NodeSpec field budget, screen type before design, renderer verification, evaluator token budget | Months of design pipeline work |
 | ADR-045 (evaluator deferral) | `docs/adrs/` | Structural-only in pipeline, vision opt-in. Don't reintroduce without addressing cost. | OOM + cost incidents |
 
-**Migration invariant:** At every phase boundary, `nx run-many -t test` and `nx run-many -t typecheck` pass. The standalone `design:page` CLI command produces valid DesignSpec at every step.
+**Migration invariant:** At every phase boundary, `nx run-many -t test` and `nx run-many -t typecheck` pass. The `design:page` CLI command (transitioning from standalone to spine-backed) produces valid DesignSpec at every step.
 
 ---
 
@@ -744,18 +744,22 @@ Every gap needs a decision. Every decision needs research. Each TODO produces a 
 
 Each brief contains: Question, CHIP Architecture Context (relevant layers only), Relevant Schemas (copied verbatim), Real Data Examples (from fixtures), Settled Decisions (don't re-litigate), Desired Output Format, Constraints.
 
-| # | Research Topic | Question | Blocks | Output |
-|---|---------------|----------|--------|--------|
-| R1 | Orchestrator & Multi-Agent Coordination | How does the Orchestrator manage multiple Implementer agents across git worktrees? | M4 | `docs/research/orchestrator-multi-agent.md` |
-| R2 | Task Decomposition & Granularity | How should Node 5 decompose architecture into tasks right-sized for a single agent? | M3 | `docs/research/task-decomposition.md` |
-| R3 | Context Management Between Tasks | When T2 depends on T1, what context does T2 receive? Contracts or code? | M3 | `docs/research/inter-task-context.md` |
-| R4 | Styling Library & Stack Decision | Where in the pipeline does styling library / tech stack get decided? | M2 | ADR |
-| R5 | Design System Bootstrapping Order | In greenfield, what happens BEFORE the Clarifier? | M1 | Updated greenfield flow diagram |
-| R6 | Spec-Driven Development Methodology | How specific do Architect contracts need to be for independent agents to produce compatible code? | M3 | `docs/research/spec-driven-development.md` |
+| # | Research Topic | Question | Blocks | Priority | Output |
+|---|---------------|----------|--------|----------|--------|
+| R1 | Orchestrator & Multi-Agent Coordination | How does the Orchestrator manage multiple Implementer agents across git worktrees? | M4 | P2 | `docs/research/orchestrator-multi-agent.md` |
+| R2 | Task Decomposition & Granularity | How should Node 5 decompose architecture into tasks right-sized for a single agent? | M3 | P1 | `docs/research/task-decomposition.md` |
+| R3 | Context Management Between Tasks | When T2 depends on T1, what context does T2 receive? Contracts or code? | M3 | P1 | `docs/research/inter-task-context.md` |
+| R4 | Styling Library & Stack Decision | Where in the pipeline does styling library / tech stack get decided? | M2 | P1 | ADR |
+| R5 | Design System Bootstrapping Order | In greenfield, what happens BEFORE the Clarifier? | M1 | P1 | Updated greenfield flow diagram |
+| R6 | Spec-Driven Development Methodology | How specific do Architect contracts need to be for independent agents to produce compatible code? | M3 | P1 | `docs/research/spec-driven-development.md` |
+| **R7** | **Dashboard → Spine Integration** | **How should CLI/Dashboard invocation be unified, and how does the unified layer integrate with the spine? What replaces `buildDashboardPipelineInput()` and the separate CLI input construction?** BRIEF COMPLETE (2026-05-12). Scope expanded to include flow unification (4 inconsistent paths) + spine integration. 9 open questions (4 unification, 5 spine). 8 desired outputs. | **M1** | **P0** | `docs/research/briefs/R7-dashboard-spine-integration.md` |
+| **R8** | **Multi-Screen Design Coordination** | **Who owns shared chrome generation in spine mode? How does frozen chrome thread across the Implementer's task DAG? How does caching work with LangGraph checkpointing?** | **M1** | **P0** | `docs/research/briefs/R8-multi-screen-coordination.md` |
 
 **Dependency map:**
 ```
-R5 (bootstrap order) ──→ M1 (Connect)
+R7 (dashboard integration) ┐
+R8 (multi-screen coord.)   ├→ M1 (Connect) — P0 blockers
+R5 (bootstrap order) ──────┘
 R4 (styling decision) ─→ M2 (Architect Foundation)
 R2 (task decomposition) ┐
 R3 (context management) ├→ M3 (Architect Core)
@@ -763,14 +767,22 @@ R6 (spec methodology)  ┘
 R1 (orchestrator) ──────→ M4 (Full Spine)
 ```
 
+**P0 (must resolve before M1 design):** R7 + R8. Without knowing the Dashboard integration shape and Chrome Pass coordination strategy, M1 risks building the wrong wiring.
+
 R5+R4 can be done in parallel. R2+R3+R6 should be done together. R1 can wait until M3 is stable.
 
 ---
 
 ## Migration Phases (M1-M7, incremental, backward-compatible at every step)
 
-### M1 Phase 1: Connect (no extraction, no breakage)
-Thread Clarifier's structured PRD into design pipeline input. Add `enrichedRequirement?: EnrichedRequirement` to `PipelineInput`. When present, Research stage skips re-derivation. When absent, standalone mode unchanged. **Blocked by R5.**
+### M1 Phase 1: Connect (spine-only, no standalone mode)
+Thread Clarifier's structured PRD into design pipeline input. All design generation goes through the spine — there is no standalone mode. Dashboard "Generate All" and per-page buttons, CLI `design:page` and `design:page:all` all invoke the spine path. Key design decisions before implementation:
+
+- How Dashboard API routes transition from `runDesignPipeline()` to spine invocation (R7)
+- How Chrome Pass coordination works across the Implementer's task DAG (R8)
+- Full `PipelineInput` → `ContractBundle` field mapping (~20 fields, see research doc Part 11 Gap 3)
+
+**Blocked by R5, R7, R8.**
 
 ### M2 Phase 2: Architect typed contracts (new schemas only)
 Create `ConstraintSet`, `OptionsBundle`, `ArchitectureSpec`, `TaskPlan`, `ContractBundle` Zod schemas in `packages/core/src/types/`. No code moves. **Blocked by R4.**
@@ -802,7 +814,7 @@ The spine is battle-tested when ALL of:
 - Architect produces valid `ContractBundle` for at least 3 different project types (e.g., expense tracker, dashboard app, CRUD API)
 - Implementer consumes `ContractBundle` and produces working code for at least 1 full project
 - Reviewer approves at least 1 complete implementation cycle
-- The standalone `design:page` path has been unused for 2+ weeks (no one reaches for it over the spine)
+- Dashboard and CLI both invoke the spine (no standalone `design:page` path remains)
 - All eval scenarios pass through the full spine (Clarifier → Architect → Design) with scores >= standalone baseline
 
 ### What gets cleaned up
@@ -814,7 +826,7 @@ The spine is battle-tested when ALL of:
 | Standalone Research stage | Phase 1 | Mark as `@deprecated`, keep for debugging only |
 | Standalone Planning stage | Phase 1 | Mark as `@deprecated`, keep for debugging only |
 | `agentforge init` single-LLM-call path | Phase 5+ | Replace with thin wrapper around Architect, or keep as "quick-start template" mode |
-| Design pipeline's 4-stage sequential loop (`pipeline.ts:68`) | Phase 7 | Replace with 2-stage loop (Design + Evaluator) that receives Architect output, OR keep as standalone dev mode |
+| Design pipeline's 4-stage sequential loop (`pipeline.ts:68`) | Phase 7 | Replace with 2-stage loop (Design + Evaluator) that receives Architect output — no standalone mode retained |
 
 ### Cleanup verification
 
@@ -839,6 +851,34 @@ diff standalone-output.json spine-output.json
 ```
 
 This diff is the evidence that the spine produces equivalent results. Keep the diff artifacts in `fixtures/personal-expense-tracker/agentforge/migration-verification/` as proof of equivalence. Only after this evidence exists should the compat code be removed.
+
+---
+
+## Research Consolidation Task (M1 or M2 priority)
+
+**Goal:** A reader should understand the full spine architecture from one document (or a clear reading order), not by piecing together 15+ files.
+
+**Current research docs:**
+
+| Doc | Lines | Content |
+|-----|-------|---------|
+| `architect-codebase-grounded-design.md` | ~900 | Codebase-grounded analysis (definitive bridge) |
+| `architect-design.md` | ~600 | Theoretical companion (Cognition, Anthropic, MetaGPT, Kiro, Spec Kit) |
+| `clarifier-research.md` | ~400 | Clarifier design research |
+| `clarifier-question-generation.md` | ~300 | Question generation approach |
+| `planning-methodology-investigation.md` | ~300 | Planning approach analysis |
+| `planning-methodology-counter-analysis.md` | ~200 | Counter-analysis to above |
+| `visual-diversity-investigation.md` | ~200 | Visual diversity approach |
+| `chip-vs-openui-comparison.md` | new | CHIP vs OpenUI comparison |
+| R1-R6 briefs | 586 | Self-contained LLM research briefs |
+| R7-R8 briefs (planned) | TBD | Dashboard integration + multi-screen coordination |
+
+**Deliverable:** A consolidated architecture narrative that:
+
+- Provides a clear reading order for someone new to the codebase
+- References (not duplicates) the R1-R8 briefs for deep dives
+- Resolves contradictions between older research and current decisions
+- Marks which older docs are superseded vs still authoritative
 
 ---
 

@@ -102,7 +102,7 @@ CHIP is an autonomous multi-agent SDLC framework that takes a product idea and p
 | 1 | Orchestration runtime | Done | TypeScript LangGraph adopted (ADR-043). Python engine deprecated. | TypeScript LangGraph only |
 | 2 | Coordination substrate | Partial | Clarifier uses typed channels. Older code still uses EventEmitter for some control flow. | Typed LangGraph channels for control; event bus relegated to telemetry |
 | 3 | Agent taxonomy | Partial | Clarifier + Design pipeline operational as spine stages. Architect/Implementer/Reviewer not built. | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
-| 4 | State persistence | Partial | YAML artifacts operational. Checkpointer factory built (MemorySaver/PostgresSaver). Not yet wired into all pipelines. | YAML for artifacts + Postgres LangGraph checkpointer for run state |
+| 4 | State persistence | Partial | YAML artifacts operational. Checkpointer factory built (MemorySaver/PostgresSaver). Wired into Clarifier pipeline; design pipeline uses imperative caching. | YAML for artifacts + Postgres LangGraph checkpointer for run state |
 | 5 | Clarifier / input | Done | Nine-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling. | Nine-node conversational clarifier with assumption ledger |
 | 6 | RAG / context | Done | Hybrid search (BM25+dense+rerank) for code/docs/designs. Repo map. 5 MCP tools. Wired into Clarifier. | Aider-style repo map + voyage-code-3 + Qdrant for code; LlamaIndex + voyage-3-large for docs |
 | 7 | Design pipeline | Partial | Per-screen pipeline works (Research→Planning→Design→Evaluator). Cross-screen coherence is post-hoc. | In-loop cross-screen coherence with shared running context |
@@ -309,7 +309,7 @@ graph TD
 - YAML files in `agentforge/spec/` as the living spec (project.yaml, pages.yaml, api.yaml, models.yaml, components/).
 - In-memory dict for pipeline state during a run.
 - YAML in `agentforge.tasks.yaml` for task tracker.
-- Checkpointer factory in `packages/core/src/checkpointer/`: `MemorySaver` for dev, `PostgresSaver` via `@langchain/langgraph-checkpoint-postgres` when `DATABASE_URL` is set. Docker Compose at `docker/docker-compose.agentforge.yml` (Postgres 16, port 5433). Not yet wired into any pipeline — waiting for LangGraph StateGraph adoption (ADR-043 Phase M-2+).
+- Checkpointer factory in `packages/core/src/checkpointer/`: `MemorySaver` for dev, `PostgresSaver` via `@langchain/langgraph-checkpoint-postgres` when `DATABASE_URL` is set. Docker Compose at `docker/docker-compose.agentforge.yml` (Postgres 16, port 5433). Wired into the Clarifier pipeline (`agents-clarifier/src/run.ts`) and dashboard Clarifier route (`dashboard/src/app/api/_lib/checkpointer.ts` via `getSharedCheckpointer()` singleton). Design pipeline uses imperative file-based caching — checkpointer adoption for remaining pipelines follows ADR-043 Phase M-2+.
 
 ### Target vision
 Three tiers of persistence, each with the right substrate:

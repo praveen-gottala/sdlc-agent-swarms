@@ -376,7 +376,7 @@ interface ChipError {
 | [ADR-043](../adrs/ADR-043-typescript-only-orchestration.md) | Deprecate Python engine, commit to @langchain/langgraph (TypeScript) |
 | [ADR-044](../adrs/ADR-044-design-phase-state-in-agents-ux.md) | DesignPhaseState lives in agents-ux, not core |
 | [ADR-045](../adrs/ADR-045-evaluator-deferred-to-phase-2.md) | evaluatorNode returns undefined in Phase 1 |
-| [ADR-046](../adrs/ADR-046-langfuse-observability.md) | Langfuse observability — Phase 7 pull-forward |
+| [ADR-052](../adrs/ADR-052-langfuse-observability.md) | Langfuse observability — Phase 7 pull-forward |
 | [ADR-047](../adrs/ADR-047-browser-default-design-tool.md) | Browser as default design tool |
 | [ADR-048](../adrs/ADR-048-feedback-loop-strategy.md) | Feedback loop strategy |
 | [ADR-049](../adrs/ADR-049-stage-7-dashboard-deferral.md) | Stage 7 dashboard deferral |

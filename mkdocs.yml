@@ -101,7 +101,7 @@ nav:
       - ADR-043 TypeScript-Only Orchestration: adrs/ADR-043-typescript-only-orchestration.md
       - ADR-044 Design Phase State in Agents-UX: adrs/ADR-044-design-phase-state-in-agents-ux.md
       - ADR-045 Evaluator Deferred to Phase 2: adrs/ADR-045-evaluator-deferred-to-phase-2.md
-      - ADR-046 Langfuse Observability: adrs/ADR-046-langfuse-observability.md
+      - ADR-052 Langfuse Observability: adrs/ADR-052-langfuse-observability.md
       - ADR-046 Unified Design Pipeline: adrs/ADR-046-unified-design-pipeline.md
       - ADR-047 Browser Default Design Tool: adrs/ADR-047-browser-default-design-tool.md
       - ADR-048 Feedback Loop Strategy: adrs/ADR-048-feedback-loop-strategy.md
@@ -170,13 +170,24 @@ nav:
       - Prototype Limitations: reference/prototype-limitations.md
       - V2 Readiness Certification: reference/v2-readiness-certification.md
   - Research:
-      - Research Report: research-report.md
-      - Architect Design: research/architect-design.md
-      - Architect Codebase-Grounded Design: research/architect-codebase-grounded-design.md
-      - Clarifier Research: research/clarifier-research.md
-      - Planning Methodology Investigation: research/planning-methodology-investigation.md
-      - Planning Methodology Counter-Analysis: research/planning-methodology-counter-analysis.md
-      - Visual Diversity Investigation: research/visual-diversity-investigation.md
+      - Reading Guide: research/index.md
+      - Foundational:
+          - Research Report (Historical): research/research-report.md
+          - Architect Design: research/architect-design.md
+          - Architect Codebase-Grounded Design: research/architect-codebase-grounded-design.md
+      - Clarifier:
+          - Clarifier Competitive Analysis: research/clarifier-research.md
+          - Question Generation Approaches: research/clarifier-question-generation.md
+      - Design Pipeline:
+          - Visual Diversity Investigation: research/visual-diversity-investigation.md
+          - CHIP vs OpenUI Comparison: research/chip-vs-openui-comparison.md
+      - Planning:
+          - Planning Methodology Investigation: research/planning-methodology-investigation.md
+          - Planning Methodology Counter-Analysis: research/planning-methodology-counter-analysis.md
+      - Orchestration:
+          - Orchestrator & Multi-Agent Coordination: research/R1-orchestrator-management.md
+      - Dashboard Integration:
+          - Dashboard Spine Integration: research/R7-dashboard-spine-integration.md
       - Research Briefs:
           - R1 Orchestrator: research/briefs/R1-orchestrator-multi-agent.md
           - R2 Task Decomposition: research/briefs/R2-task-decomposition.md
@@ -184,6 +195,7 @@ nav:
           - R4 Styling & Stack: research/briefs/R4-styling-stack-decision.md
           - R5 Design Bootstrap: research/briefs/R5-design-system-bootstrap.md
           - R6 Spec-Driven Dev: research/briefs/R6-spec-driven-development.md
+          - R7 Dashboard Spine: research/briefs/R7-dashboard-spine-integration.md
   - Internal:
       - Governance:
           - CLAUDE.md: internal/claude-md.md

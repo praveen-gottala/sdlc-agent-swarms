@@ -6,7 +6,7 @@ Every LLM call, tool call, and pipeline stage is traced with OpenTelemetry — a
 
 ## Why CHIP does this
 
-Three locked decisions from [ADR-046](../adrs/ADR-046-langfuse-observability.md) shape CHIP's observability:
+Three locked decisions from [ADR-052](../adrs/ADR-052-langfuse-observability.md) shape CHIP's observability:
 
 - **Self-hosted traces.** All telemetry data stays on infrastructure you control — no prompt content or model outputs leave your network.
 - **Prompt versioning with pre-commit enforcement.** Every prompt file carries a version in its frontmatter. A pre-commit hook blocks content changes without a version bump. Every Langfuse trace records which version produced it, so regression analysis traces quality changes to specific prompt edits.
@@ -110,5 +110,5 @@ Full setup, verification, and troubleshooting: [Langfuse Setup Guide](../guides/
 
 - [Vision Layer 11](../vision.md#layer-11-observability) — observability authority
 - [Langfuse Setup Guide](../guides/langfuse-setup.md) — setup and troubleshooting
-- [ADR-046](../adrs/ADR-046-langfuse-observability.md) — architectural decision
+- [ADR-052](../adrs/ADR-052-langfuse-observability.md) — architectural decision
 - [Observability Plan](../plans/active/observability/execution-plan.md) — Phases 1-4 complete

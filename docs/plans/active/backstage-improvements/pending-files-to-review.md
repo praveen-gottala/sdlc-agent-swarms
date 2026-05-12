@@ -480,7 +480,7 @@ Infrastructure setup and operations guides. Lower traffic but critical when user
 
 ### 47. `docs/guides/design-studio-logging.md` — design studio logging guide
 
-May reference pre-Langfuse logging patterns (ADR-046 introduced Langfuse observability).
+May reference pre-Langfuse logging patterns (ADR-052 introduced Langfuse observability).
 
 ```
 /backstage review docs/guides/design-studio-logging.md
@@ -748,7 +748,7 @@ Within each group, start any batch — order does not matter. Cross-plan conflic
 |---|------|-----------|
 | 1 | `docs/concepts/overview.md` | concepts-overview-review.md |
 | 2 | `docs/concepts/agent-taxonomy.md` | agent-taxonomy-review.md |
-| 3 | `docs/research-report.md` | research-report-review.md |
+| 3 | `docs/research/research-report.md` | research-report-review.md |
 | 4 | `docs/concepts/clarifier-pipeline.md` | clarifier-pipeline-review.md |
 | 5 | `docs/concepts/coordination-and-state.md` | coordination-state-review.md |
 
