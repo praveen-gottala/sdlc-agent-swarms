@@ -1,0 +1,687 @@
+{
+  "id": "cashpulse-prd-001",
+  "title": "CashPulse — Personal Expense Tracker",
+  "description": "CashPulse is a clean, desktop-first personal expense tracking application with three core screens: a daily dashboard showing recent expenses and budget status, an add/edit expense flow with category selection, and a spending insights view with charts and breakdowns. The design language is sharp, structured, and confident — financial data presented with clarity and zero clutter. Built with Inter font, a blue-600 primary accent, and a card-based layout system.",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Budget Summary Dashboard",
+      "description": "Display a budget summary card showing total spent vs monthly budget with a progress bar, status badge (On Track / Heads Up / Over Budget), and remaining amount. Progress bar color changes based on spend percentage (blue under 80%, amber 80-100%, red over 100%). Amounts animate with a counter effect on month change.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-002",
+      "name": "Category Breakdown Donut Chart",
+      "description": "A 160px donut chart on the dashboard left column showing spending distribution across categories with colored segments. Center displays total transaction count. Below the chart, a legend lists each category with colored dot, name, and amount. Segments expand on hover with tooltip showing category name, amount, and percentage.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-003",
+      "name": "Recent Expenses List",
+      "description": "A scrollable list of expense items in the dashboard right column. Each row is a white card with category-colored left border, category icon circle, merchant/description name, category label, date, amount (prefixed with –), and payment method. Rows are hoverable and clickable to open a detail popover. Includes a category filter dropdown to filter the list.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-004",
+      "name": "Expense Detail Popover",
+      "description": "A 320px popover card anchored to a clicked expense row showing amount, category (with colored dot), date, payment method, and optional note. Includes Edit button (navigates to Add Expense screen pre-filled) and Delete button with inline confirmation (text changes to 'Confirm delete?' with 3-second auto-revert).",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-005",
+      "name": "Add/Edit Expense Form",
+      "description": "A focused, single-column form (max-width 520px) for logging expenses. Includes a hero amount input (32px, auto-focused, numeric-only with decimal auto-formatting), category selector grid (3x2 chips with colored selection states), date picker with mini calendar (no future dates), payment method selector (Cash, Debit Card, Credit Card, UPI/Other chips), optional note input (100 char max with counter at 80+), and a full-width Save button. Disabled state when amount is $0 or no category selected. On save, button shows '✓ Saved!' with emerald background then navigates to dashboard.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-006",
+      "name": "Quick Entry Suggestions",
+      "description": "A horizontal scrollable row of 3-4 suggestion chips below the save button on the Add Expense screen, based on frequent past expenses (e.g., '☕ Starbucks $4.50'). Clicking a chip auto-fills the entire form with a cascade animation (50ms per field). Hidden entirely when no frequent expenses exist.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-007",
+      "name": "Spending Insights Period Summary",
+      "description": "A full-width card with three stat cells (Total Spent, Daily Average, Transactions) separated by vertical dividers. Each stat shows value, label, and trend indicator (up/down arrow with percentage comparing to last month). Green for decrease (good), red for increase (bad).",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-008",
+      "name": "Daily Spending Chart (Bar/Line Toggle)",
+      "description": "A chart card showing daily spending for the selected month with a Bar/Line toggle. Bar chart shows vertical bars per day (blue-600, red-500 for 2x+ average). Line chart shows smooth curve with filled area. Both support hover tooltips (date, amount, transaction count). Includes a dashed amber average line. Charts animate on first render with staggered entry.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-009",
+      "name": "Top Categories Breakdown",
+      "description": "A card with a horizontal stacked bar showing proportional category segments, followed by a sorted list of categories with colored dot, name, individual progress bar, amount, and percentage. Stacked bar segments lift on hover with tooltip.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-010",
+      "name": "Biggest Expenses List",
+      "description": "A card listing the top 5 individual expenses sorted by amount. Each row shows a rank number in a circle (#1 highlighted in blue-600), merchant name, category, date, and amount.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-011",
+      "name": "Month-over-Month Comparison",
+      "description": "A card with side-by-side vertical bars comparing this month vs last month spending. Bars grow from bottom on load. Below the bars, a badge shows the difference (e.g., 'You spent $142 less' in emerald or 'You spent $142 more' in red).",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-012",
+      "name": "Month Navigation",
+      "description": "A month/year selector pill in the top bar showing current month (e.g., 'Mar 2026') with left/right chevron icons to navigate months. Changing months triggers counter animations on amounts and re-renders charts with fresh animations.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-013",
+      "name": "Top Navigation Bar",
+      "description": "A 64px top bar with CashPulse logo (pulse icon + text, clickable to dashboard), three navigation tabs (Dashboard, Add Expense, Insights) with sliding underline indicator, month selector, and settings gear icon.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-014",
+      "name": "Settings Dialog",
+      "description": "A centered modal dialog (max-width 420px) with dark scrim overlay containing: currency selector dropdown (USD, EUR, GBP, INR, JPY), monthly budget numeric input with currency prefix (default $2,000), category manager with colored dot list, trash icons, and '+ Add category' link. Dismissible via close button, scrim click, or Escape.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-015",
+      "name": "Inline Category Creation",
+      "description": "On the Add Expense screen, a '+ New Category' link below the category grid that opens an inline row with text input, 6-color picker circles, and a Save mini-button. Saving adds the new category chip to the grid and auto-selects it.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-016",
+      "name": "Export CSV",
+      "description": "A secondary button on the Insights screen ('Export CSV' with download icon) that exports spending data. On click, button text changes to '✓ Exported' with emerald text for 1.5 seconds then reverts.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-017",
+      "name": "Empty & Error States",
+      "description": "Comprehensive empty states: no expenses for selected month shows receipt icon with 'No expenses yet' message and Add Expense CTA; no spending data on Insights shows 'Not enough data yet' with chart icon; no frequent expenses hides Quick Add section. Budget card shows $0.00 with empty progress bar. Donut shows gray ring with 0 transactions.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-018",
+      "name": "Currency Change Toast Notification",
+      "description": "When currency is changed in Settings, a small toast appears at bottom-center ('Currency updated to EUR') with white background and card shadow, auto-dismissing after 2 seconds.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-019",
+      "name": "Responsive Layout Breakpoints",
+      "description": "Desktop-first responsive behavior: 768-1024px stacks dashboard to single column with reduced chart heights; 1024-1440px uses standard two-column dashboard; >1440px maximizes whitespace and shows 10+ expense items without scroll.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-020",
+      "name": "Reduced Motion Support",
+      "description": "Respect prefers-reduced-motion media query: replace chart animations with instant renders, disable bounce and cascade effects, replace slide transitions with instant cuts.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-021",
+      "name": "Keyboard Navigation & Accessibility",
+      "description": "Full keyboard navigation with Tab, Enter, Space, Escape. 2px blue-600 focus rings with 2px offset on all interactive elements. Chart tooltips accessible via keyboard focus. Minimum 36x36px click targets. ARIA roles and labels on charts and interactive elements. Color never sole indicator.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-022",
+      "name": "Multi-Currency Support",
+      "description": "Support for 5 currencies (USD, EUR, GBP, INR, JPY) selectable in Settings. Changing currency updates all displayed amounts with appropriate currency symbol prefix.",
+      "priority": "could-have"
+    },
+    {
+      "id": "feat-023",
+      "name": "Recurring Expense Templates",
+      "description": "Allow users to save recurring expenses (e.g., monthly subscriptions) that can be auto-logged or quickly added each period.",
+      "priority": "could-have"
+    },
+    {
+      "id": "feat-024",
+      "name": "Search Expenses",
+      "description": "A search input to find expenses by merchant name, note, or amount across all months.",
+      "priority": "could-have"
+    },
+    {
+      "id": "feat-025",
+      "name": "Per-Category Budget Limits",
+      "description": "Allow users to set individual budget limits per category in addition to the overall monthly budget, with category-level progress tracking.",
+      "priority": "could-have"
+    }
+  ],
+  "personas": [
+    {
+      "id": "persona-001",
+      "name": "Alex",
+      "role": "Budget-Conscious Individual",
+      "goals": [
+        "Track daily expenses quickly with minimal friction",
+        "Stay within a monthly budget and get visual feedback on spending progress",
+        "Understand spending patterns across categories to make better financial decisions",
+        "Compare spending month-over-month to identify trends"
+      ]
+    },
+    {
+      "id": "persona-002",
+      "name": "Priya",
+      "role": "Frequent Expense Logger",
+      "goals": [
+        "Log expenses rapidly using quick-add suggestions from past entries",
+        "Categorize every expense for accurate breakdowns",
+        "Review recent expenses at a glance from the dashboard",
+        "Edit or delete incorrectly logged expenses easily"
+      ]
+    },
+    {
+      "id": "persona-003",
+      "name": "Jordan",
+      "role": "Data-Driven Saver",
+      "goals": [
+        "Analyze spending insights with charts and breakdowns",
+        "Identify biggest expenses and top spending categories",
+        "Export spending data to CSV for external analysis or tax purposes",
+        "Track daily spending averages and compare against budget targets"
+      ]
+    }
+  ],
+  "dataEntities": [
+    {
+      "id": "entity-001",
+      "name": "Expense",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the expense"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "description": "Expense amount, max $99,999.99, 2 decimal places"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "description": "Merchant or expense description (e.g., 'Starbucks Coffee')"
+        },
+        {
+          "name": "categoryId",
+          "type": "reference",
+          "required": true,
+          "description": "Reference to the Category entity"
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "description": "Date of the expense, cannot be in the future"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "enum",
+          "required": true,
+          "description": "Payment method: Cash, Debit Card, Credit Card, UPI/Other"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "required": false,
+          "description": "Optional note, max 100 characters"
+        },
+        {
+          "name": "createdAt",
+          "type": "date",
+          "required": true,
+          "description": "Timestamp when the expense was created"
+        }
+      ],
+      "relationships": [
+        "entity-002"
+      ]
+    },
+    {
+      "id": "entity-002",
+      "name": "Category",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the category"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Category display name (e.g., 'Food & Dining')"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "required": true,
+          "description": "Hex color code for the category (e.g., '#F97316')"
+        },
+        {
+          "name": "icon",
+          "type": "string",
+          "required": false,
+          "description": "Icon identifier for the category"
+        },
+        {
+          "name": "isDefault",
+          "type": "boolean",
+          "required": true,
+          "description": "Whether this is one of the 6 default categories"
+        }
+      ]
+    },
+    {
+      "id": "entity-003",
+      "name": "Budget",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the budget"
+        },
+        {
+          "name": "monthlyLimit",
+          "type": "number",
+          "required": true,
+          "description": "Monthly budget limit, default $2,000"
+        },
+        {
+          "name": "currency",
+          "type": "enum",
+          "required": true,
+          "description": "Selected currency: USD, EUR, GBP, INR, JPY"
+        },
+        {
+          "name": "month",
+          "type": "string",
+          "required": true,
+          "description": "Month-year identifier (e.g., '2026-03')"
+        }
+      ]
+    },
+    {
+      "id": "entity-004",
+      "name": "UserSettings",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for user settings"
+        },
+        {
+          "name": "currency",
+          "type": "enum",
+          "required": true,
+          "description": "Preferred currency: USD, EUR, GBP, INR, JPY"
+        },
+        {
+          "name": "defaultMonthlyBudget",
+          "type": "number",
+          "required": true,
+          "description": "Default monthly budget amount"
+        }
+      ],
+      "relationships": [
+        "entity-003"
+      ]
+    },
+    {
+      "id": "entity-005",
+      "name": "MonthSummary",
+      "fields": [
+        {
+          "name": "month",
+          "type": "string",
+          "required": true,
+          "description": "Month-year identifier (e.g., '2026-03')"
+        },
+        {
+          "name": "totalSpent",
+          "type": "number",
+          "required": true,
+          "description": "Total amount spent in the month"
+        },
+        {
+          "name": "transactionCount",
+          "type": "number",
+          "required": true,
+          "description": "Total number of transactions in the month"
+        },
+        {
+          "name": "dailyAverage",
+          "type": "number",
+          "required": true,
+          "description": "Average daily spending"
+        },
+        {
+          "name": "budgetLimit",
+          "type": "number",
+          "required": true,
+          "description": "Budget limit for the month"
+        },
+        {
+          "name": "budgetStatus",
+          "type": "enum",
+          "required": true,
+          "description": "Budget status: On Track, Heads Up, Over Budget"
+        },
+        {
+          "name": "remainingAmount",
+          "type": "number",
+          "required": true,
+          "description": "Remaining budget or over-budget amount"
+        }
+      ],
+      "relationships": [
+        "entity-001",
+        "entity-003"
+      ]
+    },
+    {
+      "id": "entity-006",
+      "name": "CategorySpending",
+      "fields": [
+        {
+          "name": "categoryId",
+          "type": "reference",
+          "required": true,
+          "description": "Reference to the Category entity"
+        },
+        {
+          "name": "month",
+          "type": "string",
+          "required": true,
+          "description": "Month-year identifier"
+        },
+        {
+          "name": "totalAmount",
+          "type": "number",
+          "required": true,
+          "description": "Total spent in this category for the month"
+        },
+        {
+          "name": "percentage",
+          "type": "number",
+          "required": true,
+          "description": "Percentage of total monthly spending"
+        },
+        {
+          "name": "transactionCount",
+          "type": "number",
+          "required": true,
+          "description": "Number of transactions in this category"
+        }
+      ],
+      "relationships": [
+        "entity-002",
+        "entity-005"
+      ]
+    },
+    {
+      "id": "entity-007",
+      "name": "DailySpending",
+      "fields": [
+        {
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "description": "The specific day"
+        },
+        {
+          "name": "totalAmount",
+          "type": "number",
+          "required": true,
+          "description": "Total spent on this day"
+        },
+        {
+          "name": "transactionCount",
+          "type": "number",
+          "required": true,
+          "description": "Number of transactions on this day"
+        }
+      ],
+      "relationships": [
+        "entity-001"
+      ]
+    },
+    {
+      "id": "entity-008",
+      "name": "QuickAddSuggestion",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "description": "Merchant/description label with emoji"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "description": "Suggested amount"
+        },
+        {
+          "name": "categoryId",
+          "type": "reference",
+          "required": true,
+          "description": "Reference to the Category entity"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "enum",
+          "required": true,
+          "description": "Suggested payment method"
+        },
+        {
+          "name": "frequency",
+          "type": "number",
+          "required": true,
+          "description": "How often this expense has been logged"
+        }
+      ],
+      "relationships": [
+        "entity-002"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "id": "screen-001",
+      "name": "Dashboard",
+      "description": "The home screen with a two-column layout. Left column (360px) contains the Budget Summary Card (total spent vs budget with progress bar and status badge) and Category Breakdown Donut Chart (with legend). Right column (flexible) contains the Recent Expenses List with category filter dropdown. Each expense row shows category icon, merchant name, category/date, amount, and payment method. Clicking a row opens the Expense Detail Popover. Includes empty state with receipt icon and Add Expense CTA when no expenses exist. Background: gray-100, outer padding: 32px.",
+      "screenType": "page"
+    },
+    {
+      "id": "screen-002",
+      "name": "Add Expense",
+      "description": "A focused single-column form (max-width 520px, centered) for logging new expenses. Contains: hero amount input (32px, auto-focused, numeric-only), category selector grid (3x2 chips with colored selection), date picker with mini calendar dropdown (no future dates), payment method selector (4 horizontal chips: Cash, Debit Card, Credit Card, UPI/Other), optional note input (100 char max), full-width Save button (disabled when invalid), and Quick Add suggestion chips at bottom. Supports edit mode when navigated from expense detail popover with pre-filled data. Background: gray-100.",
+      "screenType": "page"
+    },
+    {
+      "id": "screen-003",
+      "name": "Spending Insights",
+      "description": "An analytical single-column view (max-width 720px, centered) with stacked cards: Period Summary Header (3 stats: Total Spent, Daily Average, Transactions with trend indicators), Daily Spending Chart (bar/line toggle with hover tooltips and average line), Top Categories Breakdown (stacked bar + sorted category list with progress bars), Biggest Expenses (top 5 ranked list), Month Comparison Card (side-by-side bars with difference badge), and Export CSV button. Background: gray-100.",
+      "screenType": "page"
+    },
+    {
+      "id": "screen-004",
+      "name": "Settings Dialog",
+      "description": "A centered modal dialog (max-width 420px) with dark scrim overlay. Contains currency selector dropdown (USD, EUR, GBP, INR, JPY), monthly budget numeric input with currency prefix (default $2,000), and category manager showing list of categories with colored dots, names, and delete (trash) icons. Includes '+ Add category' text link. Dismissible via close (×) button, scrim click, or Escape key.",
+      "screenType": "modal"
+    },
+    {
+      "id": "screen-005",
+      "name": "Expense Detail Popover",
+      "description": "A 320px popover card anchored to the right of a clicked expense row on the Dashboard. Shows merchant name header with close button, detail rows (Amount, Category with colored dot, Date, Payment), optional note in italic, and action buttons: Edit (blue-600 text, navigates to Add Expense pre-filled) and Delete (red-500 text with inline 'Confirm delete?' confirmation and 3-second auto-revert). Elevated shadow, 12px radius.",
+      "screenType": "drawer"
+    },
+    {
+      "id": "screen-006",
+      "name": "Date Picker Calendar Dropdown",
+      "description": "A 280px mini calendar dropdown that appears below the date input on the Add Expense screen. Shows month/year header with left/right chevrons for navigation, 7-column day grid (S M T W T F S), today highlighted with blue-100 circle, selected day with blue-600 filled circle. Future dates disabled (gray-300, not-allowed cursor). Elevated shadow, 12px radius. Closes on day selection or click outside.",
+      "screenType": "sheet"
+    },
+    {
+      "id": "screen-007",
+      "name": "Category Filter Dropdown",
+      "description": "A dropdown menu on the Dashboard Recent Expenses header that lists all categories plus 'All Categories' option. Single select. Selecting a category filters the expense list with a 200ms fade transition. Styled as a chip trigger with down chevron.",
+      "screenType": "sheet"
+    }
+  ],
+  "nfrs": [
+    {
+      "id": "nfr-001",
+      "category": "Performance",
+      "description": "All micro-interactions (hover states, chip selections, popover open/close) must complete within 150ms. Layout transitions within 250ms. Chart renders within 600ms with staggered entry.",
+      "target": "Micro-interactions ≤150ms, layout transitions ≤250ms, chart renders ≤600ms",
+      "measurement": "Animation frame timing via browser performance API"
+    },
+    {
+      "id": "nfr-002",
+      "category": "Performance",
+      "description": "Screen transitions between Dashboard, Add Expense, and Insights must complete within 350ms with smooth slide animations.",
+      "target": "≤350ms per screen transition",
+      "measurement": "Transition duration measurement"
+    },
+    {
+      "id": "nfr-003",
+      "category": "Accessibility",
+      "description": "WCAG 2.1 AA compliance. All interactive elements have minimum 36×36px click targets. 2px blue-600 focus rings with 2px offset. Full keyboard navigation (Tab, Enter, Space, Escape). Charts include role='img' with descriptive aria-labels. Color is never the sole indicator — text labels accompany all color-coded statuses.",
+      "target": "Zero critical or serious accessibility violations",
+      "measurement": "Automated accessibility audit (axe-core) and manual keyboard testing"
+    },
+    {
+      "id": "nfr-004",
+      "category": "Accessibility",
+      "description": "Respect prefers-reduced-motion media query. Replace all chart animations with instant renders, disable bounce and cascade effects, replace slide transitions with instant cuts.",
+      "target": "All animations disabled when prefers-reduced-motion is set",
+      "measurement": "Manual testing with reduced motion preference enabled"
+    },
+    {
+      "id": "nfr-005",
+      "category": "Responsiveness",
+      "description": "Desktop-first responsive design supporting three breakpoints: 768-1024px (single column, 560px max-width, reduced chart heights), 1024-1440px (two-column dashboard, standard spacing), >1440px (expanded layout, 10+ expense items visible).",
+      "target": "Fully functional and visually correct at all three breakpoints",
+      "measurement": "Visual regression testing across breakpoints"
+    },
+    {
+      "id": "nfr-006",
+      "category": "Browser Compatibility",
+      "description": "Support modern evergreen browsers (Chrome, Firefox, Safari, Edge latest 2 versions). CSS Grid/Flexbox layout. No IE11 support required.",
+      "target": "Consistent rendering across Chrome, Firefox, Safari, Edge",
+      "measurement": "Cross-browser testing"
+    },
+    {
+      "id": "nfr-007",
+      "category": "Design Consistency",
+      "description": "Strict adherence to the design system tokens: Inter font family, 4px base spacing unit, 16px card radius, 10px button radius, 20px badge radius, 8px input radius. Card shadow: 0 1px 3px rgba(0,0,0,0.06). Elevated shadow: 0 8px 24px rgba(0,0,0,0.10).",
+      "target": "100% adherence to defined design tokens",
+      "measurement": "Design review and visual regression testing"
+    },
+    {
+      "id": "nfr-008",
+      "category": "Usability",
+      "description": "The Add Expense form should be optimized for frequent daily use. Amount input auto-focuses on load, numeric-only with decimal auto-formatting. Form should be completable in under 15 seconds for repeat expenses using Quick Add suggestions.",
+      "target": "Average expense entry ≤15 seconds with Quick Add, ≤30 seconds manual entry",
+      "measurement": "User task completion time testing"
+    },
+    {
+      "id": "nfr-009",
+      "category": "Data Integrity",
+      "description": "Amount input validates to max $99,999.99 with 2 decimal places. Non-numeric characters silently rejected. Future dates cannot be selected. Delete requires explicit confirmation with 3-second auto-revert safety.",
+      "target": "Zero invalid data entries possible through the UI",
+      "measurement": "Input validation testing"
+    }
+  ],
+  "successMetrics": [
+    {
+      "id": "metric-001",
+      "name": "Expense Entry Speed",
+      "description": "Average time to log a new expense from screen load to successful save",
+      "target": "Under 15 seconds for Quick Add, under 30 seconds for manual entry",
+      "measurement": "Time from Add Expense screen load to save confirmation, tracked via analytics events"
+    },
+    {
+      "id": "metric-002",
+      "name": "Daily Active Usage",
+      "description": "Percentage of users who log at least one expense per day",
+      "target": "60% of active users log expenses daily",
+      "measurement": "Daily unique users with at least one expense creation event"
+    },
+    {
+      "id": "metric-003",
+      "name": "Quick Add Adoption Rate",
+      "description": "Percentage of expenses logged using Quick Add suggestion chips vs manual entry",
+      "target": "30% of all expenses logged via Quick Add after 2 weeks of use",
+      "measurement": "Ratio of Quick Add chip click events to total save events"
+    },
+    {
+      "id": "metric-004",
+      "name": "Insights Engagement",
+      "description": "Percentage of users who visit the Spending Insights screen at least once per week",
+      "target": "50% weekly engagement with Insights screen",
+      "measurement": "Weekly unique visitors to Insights screen / total active users"
+    },
+    {
+      "id": "metric-005",
+      "name": "Budget Awareness",
+      "description": "Percentage of users who set a custom monthly budget (changed from default $2,000)",
+      "target": "40% of users customize their budget within first week",
+      "measurement": "Count of users with non-default budget settings / total users"
+    },
+    {
+      "id": "metric-006",
+      "name": "Category Utilization",
+      "description": "Average number of categories used per user per month",
+      "target": "Users utilize at least 3 different categories per month",
+      "measurement": "Distinct category count per user per month from expense records"
+    },
+    {
+      "id": "metric-007",
+      "name": "CSV Export Usage",
+      "description": "Number of CSV exports per month across all users",
+      "target": "10% of active users export data at least once per month",
+      "measurement": "Export CSV button click events per unique user per month"
+    }
+  ],
+  "outOfScope": [
+    "Backend API development — this PRD is scoped to visual and interaction design only",
+    "User authentication and account management (login, signup, password reset)",
+    "Multi-user or shared household expense tracking",
+    "Bank account or credit card integration / automatic transaction import",
+    "Mobile-native app (iOS/Android) — desktop web only",
+    "Receipt scanning or OCR functionality",
+    "Income tracking and net savings calculations",
+    "Bill reminders or scheduled payment notifications",
+    "Multi-language / internationalization support",
+    "Dark mode theme",
+    "Data backup, sync, or cloud storage",
+    "Expense approval workflows or team/business expense management",
+    "Tax categorization or tax report generation",
+    "Real-time currency conversion between different currencies",
+    "Push notifications or email alerts for budget thresholds"
+  ],
+  "version": "1.0.0",
+  "status": "draft"
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "questionId": "q-1-0",
+    "answer": "Budget Summary Dashboard, Category Breakdown Donut Chart, Spending Insights Period Summary, Daily Spending Chart (Bar/Line Toggle), Month Navigation, Top Navigation Bar, Export CSV, Empty & Error States, Responsive Layout Breakpoints, Reduced Motion Support, Keyboard Navigation & Accessibility",
+    "selectedOption": "Reports & insights"
+  },
+  {
+    "questionId": "q-1-1",
+    "answer": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+    "selectedOption": "Quick entry"
+  },
+  {
+    "questionId": "q-1-2",
+    "answer": "The app ships with 6 preset categories (Food, Transport, Shopping, etc.) and users cannot add, rename, or remove them.",
+    "selectedOption": "Fixed categories only"
+  },
+  {
+    "questionId": "q-1-3",
+    "answer": "All expenses are saved in the browser on the current device. No sign-up or login required — open the app and start tracking.",
+    "selectedOption": "Device only (no account needed)"
+  },
+  {
+    "questionId": "q-1-4",
+    "answer": "The app notices which expenses you log most often and shows them as one-tap shortcuts at the bottom of the Add Expense screen. No manual setup required.",
+    "selectedOption": "Smart suggestions based on past entries"
+  },
+  {
+    "questionId": "q-1-5",
+    "answer": "A button on the Insights screen lets users download all their expenses as a spreadsheet file for use in Excel or Google Sheets.",
+    "selectedOption": "Export to CSV only"
+  },
+  {
+    "questionId": "q-1-6",
+    "answer": "Include all charts: daily spending (bar and line toggle), category breakdown with percentages, top 5 biggest expenses, and a this-month vs last-month comparison.",
+    "selectedOption": "Full insights dashboard"
+  },
+  {
+    "questionId": "q-1-0",
+    "answer": "Budget Summary Dashboard, Category Breakdown Donut Chart, Spending Insights Period Summary, Daily Spending Chart (Bar/Line Toggle), Month Navigation, Top Navigation Bar, Export CSV, Empty & Error States, Responsive Layout Breakpoints, Reduced Motion Support, Keyboard Navigation & Accessibility",
+    "selectedOption": "Reports & insights"
+  },
+  {
+    "questionId": "q-1-1",
+    "answer": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+    "selectedOption": "Quick entry"
+  },
+  {
+    "questionId": "q-1-2",
+    "answer": "The app ships with 6 preset categories (Food, Transport, Shopping, etc.) and users cannot add, rename, or remove them.",
+    "selectedOption": "Fixed categories only"
+  },
+  {
+    "questionId": "q-1-3",
+    "answer": "All expenses are saved in the browser on the current device. No sign-up or login required — open the app and start tracking.",
+    "selectedOption": "Device only (no account needed)"
+  },
+  {
+    "questionId": "q-1-4",
+    "answer": "The app notices which expenses you log most often and shows them as one-tap shortcuts at the bottom of the Add Expense screen. No manual setup required.",
+    "selectedOption": "Smart suggestions based on past entries"
+  },
+  {
+    "questionId": "q-1-5",
+    "answer": "A button on the Insights screen lets users download all their expenses as a spreadsheet file for use in Excel or Google Sheets.",
+    "selectedOption": "Export to CSV only"
+  },
+  {
+    "questionId": "q-1-6",
+    "answer": "Include all charts: daily spending (bar and line toggle), category breakdown with percentages, top 5 biggest expenses, and a this-month vs last-month comparison.",
+    "selectedOption": "Full insights dashboard"
+  },
+  {
+    "questionId": "q-1-0",
+    "answer": "Budget Summary Dashboard, Category Breakdown Donut Chart, Spending Insights Period Summary, Daily Spending Chart (Bar/Line Toggle), Month Navigation, Top Navigation Bar, Export CSV, Empty & Error States, Responsive Layout Breakpoints, Reduced Motion Support, Keyboard Navigation & Accessibility",
+    "selectedOption": "Reports & insights"
+  },
+  {
+    "questionId": "q-1-1",
+    "answer": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+    "selectedOption": "Quick entry"
+  },
+  {
+    "questionId": "q-1-2",
+    "answer": "The app ships with 6 preset categories (Food, Transport, Shopping, etc.) and users cannot add, rename, or remove them.",
+    "selectedOption": "Fixed categories only"
+  },
+  {
+    "questionId": "q-1-3",
+    "answer": "All expenses are saved in the browser on the current device. No sign-up or login required — open the app and start tracking.",
+    "selectedOption": "Device only (no account needed)"
+  },
+  {
+    "questionId": "q-1-4",
+    "answer": "The app notices which expenses you log most often and shows them as one-tap shortcuts at the bottom of the Add Expense screen. No manual setup required.",
+    "selectedOption": "Smart suggestions based on past entries"
+  },
+  {
+    "questionId": "q-1-5",
+    "answer": "A button on the Insights screen lets users download all their expenses as a spreadsheet file for use in Excel or Google Sheets.",
+    "selectedOption": "Export to CSV only"
+  },
+  {
+    "questionId": "q-1-6",
+    "answer": "Include all charts: daily spending (bar and line toggle), category breakdown with percentages, top 5 biggest expenses, and a this-month vs last-month comparison.",
+    "selectedOption": "Full insights dashboard"
+  }
+]

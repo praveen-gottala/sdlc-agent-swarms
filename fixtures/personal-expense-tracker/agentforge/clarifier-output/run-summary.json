@@ -1,0 +1,13 @@
+{
+  "threadId": "m0-cashpulse-1777930593330",
+  "mode": "bootstrap",
+  "maxRounds": 1,
+  "actualRounds": 1,
+  "totalQuestions": 7,
+  "totalAnswers": 21,
+  "criticPassed": false,
+  "criticRetries": 2,
+  "error": null,
+  "durationMs": 412599,
+  "timestamp": "2026-05-04T21:43:25.938Z"
+}

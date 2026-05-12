@@ -1,0 +1,820 @@
+{
+  "id": "plan-1777931005921",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Budget Summary Dashboard",
+      "description": "Display a budget summary card showing total spent vs monthly budget with a progress bar, status badge (On Track / Heads Up / Over Budget), and remaining amount. Progress bar color changes based on spend percentage (blue under 80%, amber 80-100%, red over 100%). Amounts animate with a counter effect on month change.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-0",
+          "condition": "WHEN the dashboard loads for the current month",
+          "behavior": "THE SYSTEM SHALL display a budget summary card showing total amount spent, the monthly budget limit, remaining amount, a progress bar, and a status badge reading 'On Track' (under 80% spent), 'Heads Up' (80–100% spent), or 'Over Budget' (over 100% spent)",
+          "formatted": "WHEN WHEN the dashboard loads for the current month THE SYSTEM SHALL THE SYSTEM SHALL display a budget summary card showing total amount spent, the monthly budget limit, remaining amount, a progress bar, and a status badge reading 'On Track' (under 80% spent), 'Heads Up' (80–100% spent), or 'Over Budget' (over 100% spent)"
+        },
+        {
+          "id": "ears-1",
+          "condition": "WHEN total spending is below 80% of the monthly budget",
+          "behavior": "THE SYSTEM SHALL render the progress bar in blue-600",
+          "formatted": "WHEN WHEN total spending is below 80% of the monthly budget THE SYSTEM SHALL THE SYSTEM SHALL render the progress bar in blue-600"
+        },
+        {
+          "id": "ears-2",
+          "condition": "WHEN total spending is between 80% and 100% of the monthly budget",
+          "behavior": "THE SYSTEM SHALL render the progress bar in amber and display the 'Heads Up' status badge",
+          "formatted": "WHEN WHEN total spending is between 80% and 100% of the monthly budget THE SYSTEM SHALL THE SYSTEM SHALL render the progress bar in amber and display the 'Heads Up' status badge"
+        },
+        {
+          "id": "ears-3",
+          "condition": "WHEN total spending exceeds 100% of the monthly budget",
+          "behavior": "THE SYSTEM SHALL render the progress bar in red-500, allow it to visually cap at full width, and display the 'Over Budget' status badge",
+          "formatted": "WHEN WHEN total spending exceeds 100% of the monthly budget THE SYSTEM SHALL THE SYSTEM SHALL render the progress bar in red-500, allow it to visually cap at full width, and display the 'Over Budget' status badge"
+        },
+        {
+          "id": "ears-4",
+          "condition": "WHEN the selected month changes via the month navigator",
+          "behavior": "THE SYSTEM SHALL animate all monetary amounts in the budget summary card using a numeric counter effect transitioning from the previous value to the new value",
+          "formatted": "WHEN WHEN the selected month changes via the month navigator THE SYSTEM SHALL THE SYSTEM SHALL animate all monetary amounts in the budget summary card using a numeric counter effect transitioning from the previous value to the new value"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-012",
+        "feat-014"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-002",
+      "name": "Category Breakdown Donut Chart",
+      "description": "A 160px donut chart on the dashboard left column showing spending distribution across categories with colored segments. Center displays total transaction count. Below the chart, a legend lists each category with colored dot, name, and amount. Segments expand on hover with tooltip showing category name, amount, and percentage.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-5",
+          "condition": "WHEN the dashboard loads and at least one expense exists for the selected month",
+          "behavior": "THE SYSTEM SHALL render a 160px donut chart with colored segments proportional to each category's share of total spending, and display the total transaction count in the center",
+          "formatted": "WHEN WHEN the dashboard loads and at least one expense exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL render a 160px donut chart with colored segments proportional to each category's share of total spending, and display the total transaction count in the center"
+        },
+        {
+          "id": "ears-6",
+          "condition": "WHEN the user hovers over a donut chart segment",
+          "behavior": "THE SYSTEM SHALL expand that segment outward and display a tooltip showing the category name, total amount spent, and percentage of total spending",
+          "formatted": "WHEN WHEN the user hovers over a donut chart segment THE SYSTEM SHALL THE SYSTEM SHALL expand that segment outward and display a tooltip showing the category name, total amount spent, and percentage of total spending"
+        },
+        {
+          "id": "ears-7",
+          "condition": "WHEN the dashboard loads",
+          "behavior": "THE SYSTEM SHALL render a legend below the donut chart listing each category that has at least one expense, with a colored dot, category name, and total amount for that category",
+          "formatted": "WHEN WHEN the dashboard loads THE SYSTEM SHALL THE SYSTEM SHALL render a legend below the donut chart listing each category that has at least one expense, with a colored dot, category name, and total amount for that category"
+        },
+        {
+          "id": "ears-8",
+          "condition": "WHEN no expenses exist for the selected month",
+          "behavior": "THE SYSTEM SHALL render a single gray ring donut chart with '0 transactions' in the center and no legend entries",
+          "formatted": "WHEN WHEN no expenses exist for the selected month THE SYSTEM SHALL THE SYSTEM SHALL render a single gray ring donut chart with '0 transactions' in the center and no legend entries"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001",
+        "feat-012",
+        "feat-017"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-003",
+      "name": "Recent Expenses List",
+      "description": "A scrollable list of expense items in the dashboard right column. Each row is a white card with category-colored left border, category icon circle, merchant/description name, category label, date, amount (prefixed with –), and payment method. Rows are hoverable and clickable to open a detail popover. Includes a category filter dropdown to filter the list.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-9",
+          "condition": "WHEN the dashboard loads and expenses exist for the selected month",
+          "behavior": "THE SYSTEM SHALL display a scrollable list of expense cards each showing a category-colored left border, category icon, merchant/description name, category label, date, amount prefixed with '–', and payment method",
+          "formatted": "WHEN WHEN the dashboard loads and expenses exist for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display a scrollable list of expense cards each showing a category-colored left border, category icon, merchant/description name, category label, date, amount prefixed with '–', and payment method"
+        },
+        {
+          "id": "ears-10",
+          "condition": "WHEN the user selects a category from the filter dropdown",
+          "behavior": "THE SYSTEM SHALL filter the expense list to show only expenses matching the selected category within 200ms using a fade transition, or show all expenses when 'All Categories' is selected",
+          "formatted": "WHEN WHEN the user selects a category from the filter dropdown THE SYSTEM SHALL THE SYSTEM SHALL filter the expense list to show only expenses matching the selected category within 200ms using a fade transition, or show all expenses when 'All Categories' is selected"
+        },
+        {
+          "id": "ears-11",
+          "condition": "WHEN the user clicks an expense row",
+          "behavior": "THE SYSTEM SHALL open the Expense Detail Popover anchored to that row",
+          "formatted": "WHEN WHEN the user clicks an expense row THE SYSTEM SHALL THE SYSTEM SHALL open the Expense Detail Popover anchored to that row"
+        },
+        {
+          "id": "ears-12",
+          "condition": "WHEN no expenses exist for the selected month or active filter",
+          "behavior": "THE SYSTEM SHALL display the empty state defined in feat-017 in place of the expense list",
+          "formatted": "WHEN WHEN no expenses exist for the selected month or active filter THE SYSTEM SHALL THE SYSTEM SHALL display the empty state defined in feat-017 in place of the expense list"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-004",
+        "feat-012",
+        "feat-017"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-004",
+      "name": "Expense Detail Popover",
+      "description": "A 320px popover card anchored to a clicked expense row showing amount, category (with colored dot), date, payment method, and optional note. Includes Edit button (navigates to Add Expense screen pre-filled) and Delete button with inline confirmation (text changes to 'Confirm delete?' with 3-second auto-revert).",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-13",
+          "condition": "WHEN the user clicks an expense row in the Recent Expenses list",
+          "behavior": "THE SYSTEM SHALL display a 320px popover card anchored to that row showing the merchant name, amount, category with colored dot, date, payment method, and optional note in italic if present",
+          "formatted": "WHEN WHEN the user clicks an expense row in the Recent Expenses list THE SYSTEM SHALL THE SYSTEM SHALL display a 320px popover card anchored to that row showing the merchant name, amount, category with colored dot, date, payment method, and optional note in italic if present"
+        },
+        {
+          "id": "ears-14",
+          "condition": "WHEN the user clicks the Edit button in the Expense Detail Popover",
+          "behavior": "THE SYSTEM SHALL navigate to the Add Expense screen with all fields pre-filled with the selected expense's data",
+          "formatted": "WHEN WHEN the user clicks the Edit button in the Expense Detail Popover THE SYSTEM SHALL THE SYSTEM SHALL navigate to the Add Expense screen with all fields pre-filled with the selected expense's data"
+        },
+        {
+          "id": "ears-15",
+          "condition": "WHEN the user clicks the Delete button in the Expense Detail Popover",
+          "behavior": "THE SYSTEM SHALL change the button label to 'Confirm delete?' and if the user clicks again within 3 seconds THE SYSTEM SHALL permanently delete the expense and close the popover; if 3 seconds elapse without confirmation THE SYSTEM SHALL revert the button label to 'Delete'",
+          "formatted": "WHEN WHEN the user clicks the Delete button in the Expense Detail Popover THE SYSTEM SHALL THE SYSTEM SHALL change the button label to 'Confirm delete?' and if the user clicks again within 3 seconds THE SYSTEM SHALL permanently delete the expense and close the popover; if 3 seconds elapse without confirmation THE SYSTEM SHALL revert the button label to 'Delete'"
+        },
+        {
+          "id": "ears-16",
+          "condition": "WHEN the user clicks outside the popover or presses Escape",
+          "behavior": "THE SYSTEM SHALL close the Expense Detail Popover without making any changes",
+          "formatted": "WHEN WHEN the user clicks outside the popover or presses Escape THE SYSTEM SHALL THE SYSTEM SHALL close the Expense Detail Popover without making any changes"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-003",
+        "feat-005"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-005",
+      "name": "Add/Edit Expense Form",
+      "description": "A focused, single-column form (max-width 520px) for logging expenses. Includes a hero amount input (32px, auto-focused, numeric-only with decimal auto-formatting), category selector grid (3x2 chips with colored selection states), date picker with mini calendar (no future dates), payment method selector (Cash, Debit Card, Credit Card, UPI/Other chips), optional note input (100 char max with counter at 80+), and a full-width Save button. Disabled state when amount is $0 or no category selected. On save, button shows '✓ Saved!' with emerald background then navigates to dashboard.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-17",
+          "condition": "WHEN the Add Expense screen loads",
+          "behavior": "THE SYSTEM SHALL display a single-column form (max-width 520px) with an auto-focused numeric amount input, a 6-option preset category selector grid, a date picker defaulting to today, a payment method selector, an optional note field (100 character maximum), and a full-width Save button; the Save button SHALL be disabled when amount is $0.00 or no category is selected",
+          "formatted": "WHEN WHEN the Add Expense screen loads THE SYSTEM SHALL THE SYSTEM SHALL display a single-column form (max-width 520px) with an auto-focused numeric amount input, a 6-option preset category selector grid, a date picker defaulting to today, a payment method selector, an optional note field (100 character maximum), and a full-width Save button; the Save button SHALL be disabled when amount is $0.00 or no category is selected"
+        },
+        {
+          "id": "ears-18",
+          "condition": "WHEN the user enters a numeric value in the amount field",
+          "behavior": "THE SYSTEM SHALL accept only numeric input and automatically format it with two decimal places",
+          "formatted": "WHEN WHEN the user enters a numeric value in the amount field THE SYSTEM SHALL THE SYSTEM SHALL accept only numeric input and automatically format it with two decimal places"
+        },
+        {
+          "id": "ears-19",
+          "condition": "WHEN the user attempts to select a future date in the date picker",
+          "behavior": "THE SYSTEM SHALL display future dates as disabled (gray-300, not-allowed cursor) and prevent their selection",
+          "formatted": "WHEN WHEN the user attempts to select a future date in the date picker THE SYSTEM SHALL THE SYSTEM SHALL display future dates as disabled (gray-300, not-allowed cursor) and prevent their selection"
+        },
+        {
+          "id": "ears-20",
+          "condition": "WHEN the user types in the note field and the character count reaches 80",
+          "behavior": "THE SYSTEM SHALL display a character counter showing remaining characters until the 100-character limit is reached, and prevent input beyond 100 characters",
+          "formatted": "WHEN WHEN the user types in the note field and the character count reaches 80 THE SYSTEM SHALL THE SYSTEM SHALL display a character counter showing remaining characters until the 100-character limit is reached, and prevent input beyond 100 characters"
+        },
+        {
+          "id": "ears-21",
+          "condition": "WHEN the user clicks Save on a valid form",
+          "behavior": "THE SYSTEM SHALL save the expense to browser localStorage, change the Save button label to '✓ Saved!' with an emerald background for 1.5 seconds, then navigate to the Dashboard",
+          "formatted": "WHEN WHEN the user clicks Save on a valid form THE SYSTEM SHALL THE SYSTEM SHALL save the expense to browser localStorage, change the Save button label to '✓ Saved!' with an emerald background for 1.5 seconds, then navigate to the Dashboard"
+        },
+        {
+          "id": "ears-22",
+          "condition": "WHEN the Add Expense screen is opened via the Edit action from the Expense Detail Popover",
+          "behavior": "THE SYSTEM SHALL pre-fill all form fields with the existing expense's data and update the existing expense record on save rather than creating a new one",
+          "formatted": "WHEN WHEN the Add Expense screen is opened via the Edit action from the Expense Detail Popover THE SYSTEM SHALL THE SYSTEM SHALL pre-fill all form fields with the existing expense's data and update the existing expense record on save rather than creating a new one"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-015"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-006",
+      "name": "Quick Entry Suggestions",
+      "description": "A horizontal scrollable row of 3-4 suggestion chips below the save button on the Add Expense screen, based on frequent past expenses (e.g., '☕ Starbucks $4.50'). Clicking a chip auto-fills the entire form with a cascade animation (50ms per field). Hidden entirely when no frequent expenses exist.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-23",
+          "condition": "WHEN the Add Expense screen loads and the user has at least one frequently recurring expense stored in localStorage",
+          "behavior": "THE SYSTEM SHALL display a horizontally scrollable row of up to 4 suggestion chips below the Save button, each showing the expense icon, merchant name, and amount",
+          "formatted": "WHEN WHEN the Add Expense screen loads and the user has at least one frequently recurring expense stored in localStorage THE SYSTEM SHALL THE SYSTEM SHALL display a horizontally scrollable row of up to 4 suggestion chips below the Save button, each showing the expense icon, merchant name, and amount"
+        },
+        {
+          "id": "ears-24",
+          "condition": "WHEN the user taps a Quick Entry suggestion chip",
+          "behavior": "THE SYSTEM SHALL auto-fill the amount, category, and payment method fields with a cascade animation of 50ms delay per field",
+          "formatted": "WHEN WHEN the user taps a Quick Entry suggestion chip THE SYSTEM SHALL THE SYSTEM SHALL auto-fill the amount, category, and payment method fields with a cascade animation of 50ms delay per field"
+        },
+        {
+          "id": "ears-25",
+          "condition": "WHEN no frequent expenses exist in localStorage",
+          "behavior": "THE SYSTEM SHALL hide the Quick Entry suggestion row entirely with no placeholder or empty space",
+          "formatted": "WHEN WHEN no frequent expenses exist in localStorage THE SYSTEM SHALL THE SYSTEM SHALL hide the Quick Entry suggestion row entirely with no placeholder or empty space"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-005"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-007",
+      "name": "Spending Insights Period Summary",
+      "description": "A full-width card with three stat cells (Total Spent, Daily Average, Transactions) separated by vertical dividers. Each stat shows value, label, and trend indicator (up/down arrow with percentage comparing to last month). Green for decrease (good), red for increase (bad).",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-26",
+          "condition": "WHEN the Insights screen loads for the selected month",
+          "behavior": "THE SYSTEM SHALL display a full-width card with three stat cells — Total Spent, Daily Average, and Transactions — separated by vertical dividers, each showing its value and label",
+          "formatted": "WHEN WHEN the Insights screen loads for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display a full-width card with three stat cells — Total Spent, Daily Average, and Transactions — separated by vertical dividers, each showing its value and label"
+        },
+        {
+          "id": "ears-27",
+          "condition": "WHEN the Insights screen loads and prior-month data exists",
+          "behavior": "THE SYSTEM SHALL display a trend indicator on each stat cell showing an up or down arrow with the percentage change compared to the previous month, colored green for a decrease and red for an increase",
+          "formatted": "WHEN WHEN the Insights screen loads and prior-month data exists THE SYSTEM SHALL THE SYSTEM SHALL display a trend indicator on each stat cell showing an up or down arrow with the percentage change compared to the previous month, colored green for a decrease and red for an increase"
+        },
+        {
+          "id": "ears-28",
+          "condition": "WHEN no expense data exists for the selected month",
+          "behavior": "THE SYSTEM SHALL display all three stat cells with zero values and no trend indicators",
+          "formatted": "WHEN WHEN no expense data exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display all three stat cells with zero values and no trend indicators"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-012"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-008",
+      "name": "Daily Spending Chart (Bar/Line Toggle)",
+      "description": "A chart card showing daily spending for the selected month with a Bar/Line toggle. Bar chart shows vertical bars per day (blue-600, red-500 for 2x+ average). Line chart shows smooth curve with filled area. Both support hover tooltips (date, amount, transaction count). Includes a dashed amber average line. Charts animate on first render with staggered entry.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-29",
+          "condition": "WHEN the Insights screen loads",
+          "behavior": "THE SYSTEM SHALL display a daily spending chart defaulting to Bar mode, showing one vertical bar per calendar day of the selected month in blue-600, with bars for days where spending is 2× or more the daily average rendered in red-500, and a dashed amber line indicating the daily average",
+          "formatted": "WHEN WHEN the Insights screen loads THE SYSTEM SHALL THE SYSTEM SHALL display a daily spending chart defaulting to Bar mode, showing one vertical bar per calendar day of the selected month in blue-600, with bars for days where spending is 2× or more the daily average rendered in red-500, and a dashed amber line indicating the daily average"
+        },
+        {
+          "id": "ears-30",
+          "condition": "WHEN the user toggles to Line mode",
+          "behavior": "THE SYSTEM SHALL replace the bar chart with a smooth curve line chart with a filled area beneath it, retaining the dashed amber average line",
+          "formatted": "WHEN WHEN the user toggles to Line mode THE SYSTEM SHALL THE SYSTEM SHALL replace the bar chart with a smooth curve line chart with a filled area beneath it, retaining the dashed amber average line"
+        },
+        {
+          "id": "ears-31",
+          "condition": "WHEN the user hovers over a bar or point on the chart",
+          "behavior": "THE SYSTEM SHALL display a tooltip showing the date, total amount spent, and transaction count for that day",
+          "formatted": "WHEN WHEN the user hovers over a bar or point on the chart THE SYSTEM SHALL THE SYSTEM SHALL display a tooltip showing the date, total amount spent, and transaction count for that day"
+        },
+        {
+          "id": "ears-32",
+          "condition": "WHEN the chart first renders or the selected month changes",
+          "behavior": "THE SYSTEM SHALL animate chart elements with a staggered entry animation unless the user's device has prefers-reduced-motion enabled",
+          "formatted": "WHEN WHEN the chart first renders or the selected month changes THE SYSTEM SHALL THE SYSTEM SHALL animate chart elements with a staggered entry animation unless the user's device has prefers-reduced-motion enabled"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-007",
+        "feat-012",
+        "feat-020"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-009",
+      "name": "Top Categories Breakdown",
+      "description": "A card with a horizontal stacked bar showing proportional category segments, followed by a sorted list of categories with colored dot, name, individual progress bar, amount, and percentage. Stacked bar segments lift on hover with tooltip.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-33",
+          "condition": "WHEN the Insights screen loads and expense data exists for the selected month",
+          "behavior": "THE SYSTEM SHALL display a horizontal stacked bar where each segment represents a category's proportional share of total spending, followed by a sorted list of categories each showing a colored dot, category name, individual progress bar, total amount, and percentage",
+          "formatted": "WHEN WHEN the Insights screen loads and expense data exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display a horizontal stacked bar where each segment represents a category's proportional share of total spending, followed by a sorted list of categories each showing a colored dot, category name, individual progress bar, total amount, and percentage"
+        },
+        {
+          "id": "ears-34",
+          "condition": "WHEN the user hovers over a segment in the stacked bar",
+          "behavior": "THE SYSTEM SHALL lift that segment and display a tooltip showing the category name, amount, and percentage",
+          "formatted": "WHEN WHEN the user hovers over a segment in the stacked bar THE SYSTEM SHALL THE SYSTEM SHALL lift that segment and display a tooltip showing the category name, amount, and percentage"
+        },
+        {
+          "id": "ears-35",
+          "condition": "WHEN no expense data exists for the selected month",
+          "behavior": "THE SYSTEM SHALL display the empty state defined in feat-017 in place of the category breakdown",
+          "formatted": "WHEN WHEN no expense data exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display the empty state defined in feat-017 in place of the category breakdown"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-007",
+        "feat-012",
+        "feat-017"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-010",
+      "name": "Biggest Expenses List",
+      "description": "A card listing the top 5 individual expenses sorted by amount. Each row shows a rank number in a circle (#1 highlighted in blue-600), merchant name, category, date, and amount.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-36",
+          "condition": "WHEN the Insights screen loads and at least one expense exists for the selected month",
+          "behavior": "THE SYSTEM SHALL display a card listing up to 5 expenses sorted by amount descending, each row showing a rank circle (rank #1 highlighted in blue-600), merchant name, category, date, and amount",
+          "formatted": "WHEN WHEN the Insights screen loads and at least one expense exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display a card listing up to 5 expenses sorted by amount descending, each row showing a rank circle (rank #1 highlighted in blue-600), merchant name, category, date, and amount"
+        },
+        {
+          "id": "ears-37",
+          "condition": "WHEN fewer than 5 expenses exist for the selected month",
+          "behavior": "THE SYSTEM SHALL display only the available expenses ranked by amount with no empty rank placeholders",
+          "formatted": "WHEN WHEN fewer than 5 expenses exist for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display only the available expenses ranked by amount with no empty rank placeholders"
+        },
+        {
+          "id": "ears-38",
+          "condition": "WHEN no expenses exist for the selected month",
+          "behavior": "THE SYSTEM SHALL display the empty state defined in feat-017 in place of the biggest expenses list",
+          "formatted": "WHEN WHEN no expenses exist for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display the empty state defined in feat-017 in place of the biggest expenses list"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-007",
+        "feat-012",
+        "feat-017"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-011",
+      "name": "Month-over-Month Comparison",
+      "description": "A card with side-by-side vertical bars comparing this month vs last month spending. Bars grow from bottom on load. Below the bars, a badge shows the difference (e.g., 'You spent $142 less' in emerald or 'You spent $142 more' in red).",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-39",
+          "condition": "WHEN the Insights screen loads",
+          "behavior": "THE SYSTEM SHALL display a card with two side-by-side vertical bars representing total spending for the current month and the previous month, with bars growing from the bottom on load",
+          "formatted": "WHEN WHEN the Insights screen loads THE SYSTEM SHALL THE SYSTEM SHALL display a card with two side-by-side vertical bars representing total spending for the current month and the previous month, with bars growing from the bottom on load"
+        },
+        {
+          "id": "ears-40",
+          "condition": "WHEN the current month's total spending is less than the previous month's",
+          "behavior": "THE SYSTEM SHALL display a badge below the bars in emerald reading 'You spent $[X] less'",
+          "formatted": "WHEN WHEN the current month's total spending is less than the previous month's THE SYSTEM SHALL THE SYSTEM SHALL display a badge below the bars in emerald reading 'You spent $[X] less'"
+        },
+        {
+          "id": "ears-41",
+          "condition": "WHEN the current month's total spending is greater than the previous month's",
+          "behavior": "THE SYSTEM SHALL display a badge below the bars in red reading 'You spent $[X] more'",
+          "formatted": "WHEN WHEN the current month's total spending is greater than the previous month's THE SYSTEM SHALL THE SYSTEM SHALL display a badge below the bars in red reading 'You spent $[X] more'"
+        },
+        {
+          "id": "ears-42",
+          "condition": "WHEN no data exists for the previous month",
+          "behavior": "THE SYSTEM SHALL render the previous month bar at zero height and omit the difference badge",
+          "formatted": "WHEN WHEN no data exists for the previous month THE SYSTEM SHALL THE SYSTEM SHALL render the previous month bar at zero height and omit the difference badge"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-007",
+        "feat-012"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-012",
+      "name": "Month Navigation",
+      "description": "A month/year selector pill in the top bar showing current month (e.g., 'Mar 2026') with left/right chevron icons to navigate months. Changing months triggers counter animations on amounts and re-renders charts with fresh animations.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-43",
+          "condition": "WHEN the top bar renders",
+          "behavior": "THE SYSTEM SHALL display a month/year selector pill showing the currently selected month and year (e.g., 'Mar 2026') with left and right chevron icons",
+          "formatted": "WHEN WHEN the top bar renders THE SYSTEM SHALL THE SYSTEM SHALL display a month/year selector pill showing the currently selected month and year (e.g., 'Mar 2026') with left and right chevron icons"
+        },
+        {
+          "id": "ears-44",
+          "condition": "WHEN the user clicks the right chevron",
+          "behavior": "THE SYSTEM SHALL advance the selected month by one and re-render all dashboard and insights data for the new month with counter animations on monetary amounts and fresh chart animations",
+          "formatted": "WHEN WHEN the user clicks the right chevron THE SYSTEM SHALL THE SYSTEM SHALL advance the selected month by one and re-render all dashboard and insights data for the new month with counter animations on monetary amounts and fresh chart animations"
+        },
+        {
+          "id": "ears-45",
+          "condition": "WHEN the user clicks the left chevron",
+          "behavior": "THE SYSTEM SHALL move the selected month back by one and re-render all dashboard and insights data for the new month with counter animations on monetary amounts and fresh chart animations",
+          "formatted": "WHEN WHEN the user clicks the left chevron THE SYSTEM SHALL THE SYSTEM SHALL move the selected month back by one and re-render all dashboard and insights data for the new month with counter animations on monetary amounts and fresh chart animations"
+        },
+        {
+          "id": "ears-46",
+          "condition": "WHEN the selected month is the current calendar month",
+          "behavior": "THE SYSTEM SHALL disable the right chevron to prevent navigation to future months",
+          "formatted": "WHEN WHEN the selected month is the current calendar month THE SYSTEM SHALL THE SYSTEM SHALL disable the right chevron to prevent navigation to future months"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-013",
+      "name": "Top Navigation Bar",
+      "description": "A 64px top bar with CashPulse logo (pulse icon + text, clickable to dashboard), three navigation tabs (Dashboard, Add Expense, Insights) with sliding underline indicator, month selector, and settings gear icon.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-47",
+          "condition": "WHEN any screen loads",
+          "behavior": "THE SYSTEM SHALL display a 64px top navigation bar containing the CashPulse logo (pulse icon + text), three navigation tabs (Dashboard, Add Expense, Insights), the month selector pill, and a settings gear icon",
+          "formatted": "WHEN WHEN any screen loads THE SYSTEM SHALL THE SYSTEM SHALL display a 64px top navigation bar containing the CashPulse logo (pulse icon + text), three navigation tabs (Dashboard, Add Expense, Insights), the month selector pill, and a settings gear icon"
+        },
+        {
+          "id": "ears-48",
+          "condition": "WHEN the user clicks a navigation tab",
+          "behavior": "THE SYSTEM SHALL navigate to the corresponding screen and animate a sliding underline indicator to the active tab",
+          "formatted": "WHEN WHEN the user clicks a navigation tab THE SYSTEM SHALL THE SYSTEM SHALL navigate to the corresponding screen and animate a sliding underline indicator to the active tab"
+        },
+        {
+          "id": "ears-49",
+          "condition": "WHEN the user clicks the CashPulse logo",
+          "behavior": "THE SYSTEM SHALL navigate to the Dashboard screen",
+          "formatted": "WHEN WHEN the user clicks the CashPulse logo THE SYSTEM SHALL THE SYSTEM SHALL navigate to the Dashboard screen"
+        },
+        {
+          "id": "ears-50",
+          "condition": "WHEN the user clicks the settings gear icon",
+          "behavior": "THE SYSTEM SHALL open the Settings Dialog",
+          "formatted": "WHEN WHEN the user clicks the settings gear icon THE SYSTEM SHALL THE SYSTEM SHALL open the Settings Dialog"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [],
+      "status": "planned"
+    },
+    {
+      "id": "feat-014",
+      "name": "Settings Dialog",
+      "description": "A centered modal dialog (max-width 420px) with dark scrim overlay containing: currency selector dropdown (USD, EUR, GBP, INR, JPY), monthly budget numeric input with currency prefix (default $2,000), category manager with colored dot list, trash icons, and '+ Add category' link. Dismissible via close button, scrim click, or Escape.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-51",
+          "condition": "WHEN the Settings Dialog opens",
+          "behavior": "THE SYSTEM SHALL display a centered modal (max-width 420px) with a dark scrim overlay containing a currency selector (USD, EUR, GBP, INR, JPY), a monthly budget numeric input with currency symbol prefix defaulting to $2,000, and a list of the 6 preset categories with colored dots and names (no delete or rename controls, since categories are fixed per human clarification)",
+          "formatted": "WHEN WHEN the Settings Dialog opens THE SYSTEM SHALL THE SYSTEM SHALL display a centered modal (max-width 420px) with a dark scrim overlay containing a currency selector (USD, EUR, GBP, INR, JPY), a monthly budget numeric input with currency symbol prefix defaulting to $2,000, and a list of the 6 preset categories with colored dots and names (no delete or rename controls, since categories are fixed per human clarification)"
+        },
+        {
+          "id": "ears-52",
+          "condition": "WHEN the user changes the monthly budget value and closes the dialog",
+          "behavior": "THE SYSTEM SHALL persist the new budget limit to localStorage and immediately reflect it in the Budget Summary Card",
+          "formatted": "WHEN WHEN the user changes the monthly budget value and closes the dialog THE SYSTEM SHALL THE SYSTEM SHALL persist the new budget limit to localStorage and immediately reflect it in the Budget Summary Card"
+        },
+        {
+          "id": "ears-53",
+          "condition": "WHEN the user clicks the close (×) button, clicks the scrim, or presses Escape",
+          "behavior": "THE SYSTEM SHALL close the Settings Dialog without applying unsaved changes",
+          "formatted": "WHEN WHEN the user clicks the close (×) button, clicks the scrim, or presses Escape THE SYSTEM SHALL THE SYSTEM SHALL close the Settings Dialog without applying unsaved changes"
+        },
+        {
+          "id": "ears-54",
+          "condition": "WHEN the user selects a different currency from the dropdown",
+          "behavior": "THE SYSTEM SHALL update all displayed monetary amounts across the app to use the new currency symbol and trigger the Currency Change Toast Notification defined in feat-018",
+          "formatted": "WHEN WHEN the user selects a different currency from the dropdown THE SYSTEM SHALL THE SYSTEM SHALL update all displayed monetary amounts across the app to use the new currency symbol and trigger the Currency Change Toast Notification defined in feat-018"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-013",
+        "feat-018"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-015",
+      "name": "Inline Category Creation",
+      "description": "On the Add Expense screen, a '+ New Category' link below the category grid that opens an inline row with text input, 6-color picker circles, and a Save mini-button. Saving adds the new category chip to the grid and auto-selects it.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-55",
+          "condition": "WHEN the human clarification specifies that users cannot add, rename, or remove categories",
+          "behavior": "THE SYSTEM SHALL NOT render the '+ New Category' link or inline category creation row on the Add Expense screen; the category selector grid SHALL display only the 6 fixed preset categories",
+          "formatted": "WHEN WHEN the human clarification specifies that users cannot add, rename, or remove categories THE SYSTEM SHALL THE SYSTEM SHALL NOT render the '+ New Category' link or inline category creation row on the Add Expense screen; the category selector grid SHALL display only the 6 fixed preset categories"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-005"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-016",
+      "name": "Export CSV",
+      "description": "A secondary button on the Insights screen ('Export CSV' with download icon) that exports spending data. On click, button text changes to '✓ Exported' with emerald text for 1.5 seconds then reverts.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-56",
+          "condition": "WHEN the user clicks the 'Export CSV' button on the Insights screen",
+          "behavior": "THE SYSTEM SHALL generate a CSV file containing all expense records from localStorage (id, amount, description, category, date, payment method, note) and trigger a browser file download",
+          "formatted": "WHEN WHEN the user clicks the 'Export CSV' button on the Insights screen THE SYSTEM SHALL THE SYSTEM SHALL generate a CSV file containing all expense records from localStorage (id, amount, description, category, date, payment method, note) and trigger a browser file download"
+        },
+        {
+          "id": "ears-57",
+          "condition": "WHEN the CSV export is triggered",
+          "behavior": "THE SYSTEM SHALL change the button label to '✓ Exported' with emerald-colored text for 1.5 seconds then revert to 'Export CSV'",
+          "formatted": "WHEN WHEN the CSV export is triggered THE SYSTEM SHALL THE SYSTEM SHALL change the button label to '✓ Exported' with emerald-colored text for 1.5 seconds then revert to 'Export CSV'"
+        },
+        {
+          "id": "ears-58",
+          "condition": "WHEN no expenses exist in localStorage",
+          "behavior": "THE SYSTEM SHALL still allow the export action but download an empty CSV file containing only the header row",
+          "formatted": "WHEN WHEN no expenses exist in localStorage THE SYSTEM SHALL THE SYSTEM SHALL still allow the export action but download an empty CSV file containing only the header row"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-007"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-017",
+      "name": "Empty & Error States",
+      "description": "Comprehensive empty states: no expenses for selected month shows receipt icon with 'No expenses yet' message and Add Expense CTA; no spending data on Insights shows 'Not enough data yet' with chart icon; no frequent expenses hides Quick Add section. Budget card shows $0.00 with empty progress bar. Donut shows gray ring with 0 transactions.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-59",
+          "condition": "WHEN no expenses exist for the selected month on the Dashboard",
+          "behavior": "THE SYSTEM SHALL display a receipt icon with the message 'No expenses yet' and a CTA button linking to the Add Expense screen in place of the expense list; the Budget Summary Card SHALL show $0.00 spent with an empty progress bar and 'On Track' badge; the Donut Chart SHALL render a single gray ring with '0 transactions' in the center",
+          "formatted": "WHEN WHEN no expenses exist for the selected month on the Dashboard THE SYSTEM SHALL THE SYSTEM SHALL display a receipt icon with the message 'No expenses yet' and a CTA button linking to the Add Expense screen in place of the expense list; the Budget Summary Card SHALL show $0.00 spent with an empty progress bar and 'On Track' badge; the Donut Chart SHALL render a single gray ring with '0 transactions' in the center"
+        },
+        {
+          "id": "ears-60",
+          "condition": "WHEN the Insights screen loads and no expense data exists for the selected month",
+          "behavior": "THE SYSTEM SHALL display a chart icon with the message 'Not enough data yet' in place of the insights charts and category breakdown",
+          "formatted": "WHEN WHEN the Insights screen loads and no expense data exists for the selected month THE SYSTEM SHALL THE SYSTEM SHALL display a chart icon with the message 'Not enough data yet' in place of the insights charts and category breakdown"
+        },
+        {
+          "id": "ears-61",
+          "condition": "WHEN no frequent expenses exist in localStorage",
+          "behavior": "THE SYSTEM SHALL hide the Quick Entry suggestion row on the Add Expense screen with no visible placeholder",
+          "formatted": "WHEN WHEN no frequent expenses exist in localStorage THE SYSTEM SHALL THE SYSTEM SHALL hide the Quick Entry suggestion row on the Add Expense screen with no visible placeholder"
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001",
+        "feat-002",
+        "feat-003",
+        "feat-006",
+        "feat-007"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-018",
+      "name": "Currency Change Toast Notification",
+      "description": "When currency is changed in Settings, a small toast appears at bottom-center ('Currency updated to EUR') with white background and card shadow, auto-dismissing after 2 seconds.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-62",
+          "condition": "WHEN the user changes the currency in the Settings Dialog",
+          "behavior": "THE SYSTEM SHALL display a toast notification at the bottom-center of the viewport with a white background and card shadow reading 'Currency updated to [currency code]'",
+          "formatted": "WHEN WHEN the user changes the currency in the Settings Dialog THE SYSTEM SHALL THE SYSTEM SHALL display a toast notification at the bottom-center of the viewport with a white background and card shadow reading 'Currency updated to [currency code]'"
+        },
+        {
+          "id": "ears-63",
+          "condition": "WHEN the currency change toast appears",
+          "behavior": "THE SYSTEM SHALL auto-dismiss it after 2 seconds without requiring user interaction",
+          "formatted": "WHEN WHEN the currency change toast appears THE SYSTEM SHALL THE SYSTEM SHALL auto-dismiss it after 2 seconds without requiring user interaction"
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-014"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-019",
+      "name": "Responsive Layout Breakpoints",
+      "description": "Desktop-first responsive behavior: 768-1024px stacks dashboard to single column with reduced chart heights; 1024-1440px uses standard two-column dashboard; >1440px maximizes whitespace and shows 10+ expense items without scroll.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-64",
+          "condition": "WHEN the viewport width is between 768px and 1024px",
+          "behavior": "THE SYSTEM SHALL stack the dashboard layout to a single column and reduce chart heights to fit the narrower viewport",
+          "formatted": "WHEN WHEN the viewport width is between 768px and 1024px THE SYSTEM SHALL THE SYSTEM SHALL stack the dashboard layout to a single column and reduce chart heights to fit the narrower viewport"
+        },
+        {
+          "id": "ears-65",
+          "condition": "WHEN the viewport width is between 1024px and 1440px",
+          "behavior": "THE SYSTEM SHALL display the standard two-column dashboard layout with the 360px left column and flexible right column",
+          "formatted": "WHEN WHEN the viewport width is between 1024px and 1440px THE SYSTEM SHALL THE SYSTEM SHALL display the standard two-column dashboard layout with the 360px left column and flexible right column"
+        },
+        {
+          "id": "ears-66",
+          "condition": "WHEN the viewport width exceeds 1440px",
+          "behavior": "THE SYSTEM SHALL maximize whitespace margins and display 10 or more expense items in the Recent Expenses list without requiring vertical scroll",
+          "formatted": "WHEN WHEN the viewport width exceeds 1440px THE SYSTEM SHALL THE SYSTEM SHALL maximize whitespace margins and display 10 or more expense items in the Recent Expenses list without requiring vertical scroll"
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-001",
+        "feat-002",
+        "feat-003",
+        "feat-013"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-020",
+      "name": "Reduced Motion Support",
+      "description": "Respect prefers-reduced-motion media query: replace chart animations with instant renders, disable bounce and cascade effects, replace slide transitions with instant cuts.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-67",
+          "condition": "WHEN the user's operating system or browser has prefers-reduced-motion enabled and any chart renders or re-renders",
+          "behavior": "THE SYSTEM SHALL display chart data instantly without staggered entry, grow, or sweep animations",
+          "formatted": "WHEN WHEN the user's operating system or browser has prefers-reduced-motion enabled and any chart renders or re-renders THE SYSTEM SHALL THE SYSTEM SHALL display chart data instantly without staggered entry, grow, or sweep animations"
+        },
+        {
+          "id": "ears-68",
+          "condition": "WHEN the user's operating system or browser has prefers-reduced-motion enabled and the user navigates between screens",
+          "behavior": "THE SYSTEM SHALL use instant cuts instead of slide or fade transitions",
+          "formatted": "WHEN WHEN the user's operating system or browser has prefers-reduced-motion enabled and the user navigates between screens THE SYSTEM SHALL THE SYSTEM SHALL use instant cuts instead of slide or fade transitions"
+        },
+        {
+          "id": "ears-69",
+          "condition": "WHEN the user's operating system or browser has prefers-reduced-motion enabled and the Save button is clicked",
+          "behavior": "THE SYSTEM SHALL skip the cascade fill animation on Quick Entry chips and skip the counter animation on monetary amounts, displaying final values immediately",
+          "formatted": "WHEN WHEN the user's operating system or browser has prefers-reduced-motion enabled and the Save button is clicked THE SYSTEM SHALL THE SYSTEM SHALL skip the cascade fill animation on Quick Entry chips and skip the counter animation on monetary amounts, displaying final values immediately"
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-008",
+        "feat-011",
+        "feat-012"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-021",
+      "name": "Keyboard Navigation & Accessibility",
+      "description": "Full keyboard navigation with Tab, Enter, Space, Escape. 2px blue-600 focus rings with 2px offset on all interactive elements. Chart tooltips accessible via keyboard focus. Minimum 36x36px click targets. ARIA roles and labels on charts and interactive elements. Color never sole indicator.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-70",
+          "condition": "WHEN the user navigates the application using only the keyboard (Tab, Shift+Tab, Enter, Space, Escape)",
+          "behavior": "THE SYSTEM SHALL move focus through all interactive elements in a logical DOM order, activate buttons and links with Enter or Space, and close modals and popovers with Escape",
+          "formatted": "WHEN WHEN the user navigates the application using only the keyboard (Tab, Shift+Tab, Enter, Space, Escape) THE SYSTEM SHALL THE SYSTEM SHALL move focus through all interactive elements in a logical DOM order, activate buttons and links with Enter or Space, and close modals and popovers with Escape"
+        },
+        {
+          "id": "ears-71",
+          "condition": "WHEN any interactive element receives keyboard focus",
+          "behavior": "THE SYSTEM SHALL display a 2px blue-600 focus ring with 2px offset around that element",
+          "formatted": "WHEN WHEN any interactive element receives keyboard focus THE SYSTEM SHALL THE SYSTEM SHALL display a 2px blue-600 focus ring with 2px offset around that element"
+        },
+        {
+          "id": "ears-72",
+          "condition": "WHEN a chart tooltip is triggered by hovering",
+          "behavior": "THE SYSTEM SHALL also make the same tooltip content accessible when the corresponding chart element receives keyboard focus",
+          "formatted": "WHEN WHEN a chart tooltip is triggered by hovering THE SYSTEM SHALL THE SYSTEM SHALL also make the same tooltip content accessible when the corresponding chart element receives keyboard focus"
+        },
+        {
+          "id": "ears-73",
+          "condition": "WHEN any interactive element is rendered",
+          "behavior": "THE SYSTEM SHALL ensure its clickable/tappable area is at least 36×36px and include appropriate ARIA roles and labels so screen readers can announce the element's purpose and state",
+          "formatted": "WHEN WHEN any interactive element is rendered THE SYSTEM SHALL THE SYSTEM SHALL ensure its clickable/tappable area is at least 36×36px and include appropriate ARIA roles and labels so screen readers can announce the element's purpose and state"
+        },
+        {
+          "id": "ears-74",
+          "condition": "WHEN color is used to convey status information (e.g., progress bar color, trend arrows, status badges)",
+          "behavior": "THE SYSTEM SHALL also convey the same information through text labels or icons so that color is never the sole indicator",
+          "formatted": "WHEN WHEN color is used to convey status information (e.g., progress bar color, trend arrows, status badges) THE SYSTEM SHALL THE SYSTEM SHALL also convey the same information through text labels or icons so that color is never the sole indicator"
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-022",
+      "name": "Multi-Currency Support",
+      "description": "Support for 5 currencies (USD, EUR, GBP, INR, JPY) selectable in Settings. Changing currency updates all displayed amounts with appropriate currency symbol prefix.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-75",
+          "condition": "WHEN the user selects a currency (USD, EUR, GBP, INR, JPY) in the Settings Dialog",
+          "behavior": "THE SYSTEM SHALL update every displayed monetary amount across all screens to use the appropriate currency symbol for the selected currency",
+          "formatted": "WHEN WHEN the user selects a currency (USD, EUR, GBP, INR, JPY) in the Settings Dialog THE SYSTEM SHALL THE SYSTEM SHALL update every displayed monetary amount across all screens to use the appropriate currency symbol for the selected currency"
+        },
+        {
+          "id": "ears-76",
+          "condition": "WHEN the currency is changed and the app is reloaded",
+          "behavior": "THE SYSTEM SHALL persist the selected currency from localStorage and display all amounts with the previously selected currency symbol",
+          "formatted": "WHEN WHEN the currency is changed and the app is reloaded THE SYSTEM SHALL THE SYSTEM SHALL persist the selected currency from localStorage and display all amounts with the previously selected currency symbol"
+        }
+      ],
+      "priority": "could-have",
+      "dependencies": [
+        "feat-014"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-023",
+      "name": "Recurring Expense Templates",
+      "description": "Allow users to save recurring expenses (e.g., monthly subscriptions) that can be auto-logged or quickly added each period.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-77",
+          "condition": "WHEN the system detects that an expense with the same description and amount has been logged more than once across different months",
+          "behavior": "THE SYSTEM SHALL surface that expense as a recurring template in the Quick Entry suggestions on the Add Expense screen",
+          "formatted": "WHEN WHEN the system detects that an expense with the same description and amount has been logged more than once across different months THE SYSTEM SHALL THE SYSTEM SHALL surface that expense as a recurring template in the Quick Entry suggestions on the Add Expense screen"
+        }
+      ],
+      "priority": "could-have",
+      "dependencies": [
+        "feat-006"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-024",
+      "name": "Search Expenses",
+      "description": "A search input to find expenses by merchant name, note, or amount across all months.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-78",
+          "condition": "WHEN the user types in the search input",
+          "behavior": "THE SYSTEM SHALL filter and display matching expenses from all months in localStorage where the merchant name, note, or amount contains the search string, updating results within 300ms of the last keystroke",
+          "formatted": "WHEN WHEN the user types in the search input THE SYSTEM SHALL THE SYSTEM SHALL filter and display matching expenses from all months in localStorage where the merchant name, note, or amount contains the search string, updating results within 300ms of the last keystroke"
+        },
+        {
+          "id": "ears-79",
+          "condition": "WHEN the search query returns no results",
+          "behavior": "THE SYSTEM SHALL display a 'No expenses found' message with a suggestion to try a different search term",
+          "formatted": "WHEN WHEN the search query returns no results THE SYSTEM SHALL THE SYSTEM SHALL display a 'No expenses found' message with a suggestion to try a different search term"
+        }
+      ],
+      "priority": "could-have",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-025",
+      "name": "Per-Category Budget Limits",
+      "description": "Allow users to set individual budget limits per category in addition to the overall monthly budget, with category-level progress tracking.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-80",
+          "condition": "WHEN the user sets a budget limit for a specific category in Settings",
+          "behavior": "THE SYSTEM SHALL persist that limit to localStorage and display a per-category progress bar on the Category Breakdown showing spending against that category's limit",
+          "formatted": "WHEN WHEN the user sets a budget limit for a specific category in Settings THE SYSTEM SHALL THE SYSTEM SHALL persist that limit to localStorage and display a per-category progress bar on the Category Breakdown showing spending against that category's limit"
+        },
+        {
+          "id": "ears-81",
+          "condition": "WHEN spending in a category reaches or exceeds its individual budget limit",
+          "behavior": "THE SYSTEM SHALL display the category's progress bar in red-500 and show an 'Over limit' indicator next to the category name",
+          "formatted": "WHEN WHEN spending in a category reaches or exceeds its individual budget limit THE SYSTEM SHALL THE SYSTEM SHALL display the category's progress bar in red-500 and show an 'Over limit' indicator next to the category name"
+        }
+      ],
+      "priority": "could-have",
+      "dependencies": [
+        "feat-014",
+        "feat-002",
+        "feat-009"
+      ],
+      "status": "planned"
+    }
+  ]
+}

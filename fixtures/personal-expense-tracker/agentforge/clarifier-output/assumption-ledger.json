@@ -1,0 +1,55 @@
+{
+  "id": "ledger-1777930810582",
+  "entries": [
+    {
+      "id": "assumption-det-phantom-a11y-4",
+      "statement": "Assumed reasonable default for: WCAG 2.1 AA compliance with keyboard navigation and screen reader support.",
+      "evidence": "Low divergence (score: 0) — implementations converged.",
+      "confidence": 1,
+      "blastRadius": "high",
+      "requiresConfirmation": false
+    },
+    {
+      "id": "assumption-det-phantom-validation-2",
+      "statement": "Assumed reasonable default for: Instant validation with clear error messages for all form inputs.",
+      "evidence": "Low divergence (score: 0) — implementations converged.",
+      "confidence": 1,
+      "blastRadius": "high",
+      "requiresConfirmation": false
+    },
+    {
+      "id": "assumption-det-phantom-errors-3",
+      "statement": "Assumed reasonable default for: Toast messages for minor errors, inline messages for form errors.",
+      "evidence": "Low divergence (score: 0) — implementations converged.",
+      "confidence": 1,
+      "blastRadius": "high",
+      "requiresConfirmation": false
+    },
+    {
+      "id": "assumption-unresolved-det-phantom-validation-2",
+      "statement": "Unresolved after max rounds: Instant validation with clear error messages for all form inputs.",
+      "evidence": "Max clarification rounds exhausted without human answer.",
+      "confidence": 0.3,
+      "blastRadius": "high",
+      "requiresConfirmation": true
+    },
+    {
+      "id": "assumption-unresolved-det-phantom-errors-3",
+      "statement": "Unresolved after max rounds: Toast messages for minor errors, inline messages for form errors.",
+      "evidence": "Max clarification rounds exhausted without human answer.",
+      "confidence": 0.3,
+      "blastRadius": "high",
+      "requiresConfirmation": true
+    },
+    {
+      "id": "assumption-unresolved-det-phantom-a11y-4",
+      "statement": "Unresolved after max rounds: WCAG 2.1 AA compliance with keyboard navigation and screen reader support.",
+      "evidence": "Max clarification rounds exhausted without human answer.",
+      "confidence": 0.3,
+      "blastRadius": "high",
+      "requiresConfirmation": true
+    }
+  ],
+  "createdAt": "2026-05-04T21:40:10.582Z",
+  "lastUpdatedAt": "2026-05-04T21:43:25.921Z"
+}

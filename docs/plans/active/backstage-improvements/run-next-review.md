@@ -11,7 +11,7 @@ The order below follows the execution-plan.md dependency chain (D1-D14).
 
 ### Step 1 — Plan 3: Research Report
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/research-report-review.md (child plan 3). This is the first plan to execute — it fixes source material that downstream concept pages cite and quote.
@@ -28,7 +28,7 @@ After applying fixes:
 
 ### Step 2 — Plan 6: Architecture
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/architecture-review.md (child plan 6). This rewrites the system architecture page from stale 5-phase model to 4-stage spine.
@@ -45,7 +45,7 @@ After applying fixes:
 
 ### Step 3 — Plan 4: Clarifier Pipeline
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/clarifier-pipeline-review.md (child plan 4). This fixes the canonical Clarifier page — node count, structure, stale limitations.
@@ -62,7 +62,7 @@ After applying fixes:
 
 ### Step 4 — Plan 5: Coordination & State
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/coordination-state-review.md (child plan 5). This rewrites the opener, replaces the Clarifier topology diagram with a generic channels pattern, and fixes jargon.
@@ -79,7 +79,7 @@ After applying fixes:
 
 ### Step 5 — Plan 10: State Persistence
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/state-persistence-review.md (child plan 10). This adds missing template sections, fixes incorrect citation, defines jargon, and adds spine context.
@@ -96,7 +96,7 @@ After applying fixes:
 
 ### Step 6 — Plan 11: Observability
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/observability-review.md (child plan 11). This fixes wrong env var (LANGFUSE_HOST → LANGFUSE_BASE_URL), adds template sections, and fixes diagram labels.
@@ -113,7 +113,7 @@ After applying fixes:
 
 ### Step 7 — Plan 2: Agent Taxonomy
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/agent-taxonomy-review.md (child plan 2). This fixes stale node count (6→9), removes phantom predecessor framing, and fixes aspirational tense.
@@ -130,7 +130,7 @@ After applying fixes:
 
 ### Step 8 — Plan 7: SDLC Agents Spec
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/sdlc-agents-review.md (child plan 7). This fixes the internal contradiction (5 parallel agents vs single-threaded mandate), stale brand, and aspirational tense.
@@ -147,7 +147,7 @@ After applying fixes:
 
 ### Step 9 — Plan 8: HITL Governance
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/hitl-governance-review.md (child plan 8). This rewrites the opener for non-engineer readers, replaces the spine-replica diagram with a gate-focused diagram, and consolidates LangGraph details.
@@ -164,7 +164,7 @@ After applying fixes:
 
 ### Step 10 — Plan 9: Design Pipeline
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/design-pipeline-review.md (child plan 9). This restructures the opener (purpose before function refs), adds spine integration context, and updates the Three-Layer diagram.
@@ -181,7 +181,7 @@ After applying fixes:
 
 ### Step 11 — Plan 1: Concepts Overview
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/concepts-overview-review.md (child plan 1). This restructures and slims the overview page. Depends on Plans 2-11 being complete.
@@ -198,7 +198,7 @@ After applying fixes:
 
 ### Step 12 — Plan 1 Part 2: Cross-Section De-duplication
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/concepts-overview-review.md (child plan 1, Part 2 section). This handles remaining cross-section de-duplication.
@@ -232,7 +232,7 @@ After applying fixes:
 
 ### Step 14 — Plan 14: Clarifier Question Generation
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/clarifier-question-generation-review.md (child plan 14). This fixes the fabricated blockquote, grounds jargon, removes defensive framing, and adds missing template sections.
@@ -249,7 +249,7 @@ After applying fixes:
 
 ### Step 15 — Plan 15: Vision Overview
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/vision-overview-review.md (child plan 15). This relocates the Single Invariant section, removes banned test counts, and eliminates locked decisions table duplication.
@@ -266,7 +266,7 @@ After applying fixes:
 
 ### Step 16 — Plan 16: Architecture README
 
-- [ ] Copy this prompt:
+- [x] Copy this prompt:
 
 ```
 Read docs/plans/active/backstage-improvements/architecture-readme-review.md (child plan 16). This rewrites the section landing page with CHIP-specific opener, reading path, and nav position promotion (D14).

@@ -1,0 +1,340 @@
+[
+  {
+    "id": "q-1-0",
+    "gapId": "det-scope-0",
+    "topic": "Scope",
+    "text": "We're planning these capabilities: Reports & insights, Categories & organization, Core features, Budgets & goals, Settings & preferences, Search & filtering. Which of these matter to you?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Reports & insights",
+        "description": "Budget Summary Dashboard, Category Breakdown Donut Chart, Spending Insights Period Summary, Daily Spending Chart (Bar/Line Toggle), Month Navigation, Top Navigation Bar, Export CSV, Empty & Error States, Responsive Layout Breakpoints, Reduced Motion Support, Keyboard Navigation & Accessibility",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Categories & organization",
+        "description": "Recent Expenses List, Expense Detail Popover, Add/Edit Expense Form, Top Categories Breakdown, Biggest Expenses List, Inline Category Creation",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Core features",
+        "description": "Quick Entry Suggestions, Month-over-Month Comparison, Recurring Expense Templates",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Budgets & goals",
+        "description": "Settings Dialog, Per-Category Budget Limits",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Settings & preferences",
+        "description": "Currency Change Toast Notification, Multi-Currency Support",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Search & filtering",
+        "description": "Search Expenses",
+        "rationale": "Directly related to what you described.",
+        "tradeoffs": [
+          "+ Core to your idea"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 1,
+    "evpiScore": 0.7695
+  },
+  {
+    "id": "q-1-1",
+    "gapId": "det-dataentry-1",
+    "topic": "Adding expenses",
+    "text": "How do you want to add expenses — quick entry with just the basics, or detailed with all the info?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Quick entry",
+        "description": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+        "rationale": "Best when speed matters more than detail.",
+        "tradeoffs": [
+          "+ Fast to enter",
+          "+ Low friction",
+          "- Less detail per expense"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Detailed entry",
+        "description": "Full details — id, amount, description, categoryId, date, paymentMethod, note, createdAt. More info captured per expense.",
+        "rationale": "Best when you want comprehensive records.",
+        "tradeoffs": [
+          "+ Rich expense data",
+          "+ Better for reports",
+          "- More effort per entry"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Flexible",
+        "description": "Start with the basics, optionally add more details like note.",
+        "rationale": "Best of both — quick when you want, detailed when you need.",
+        "tradeoffs": [
+          "+ Adapts to the moment",
+          "+ No forced fields",
+          "- Slightly more complex form"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 2,
+    "evpiScore": 0.378
+  },
+  {
+    "id": "q-1-2",
+    "gapId": "llm-75f29fca",
+    "topic": "Category Flexibility",
+    "text": "Should users be able to create their own spending categories, or is a fixed set of built-in categories enough for you?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Fixed categories only",
+        "description": "The app ships with 6 preset categories (Food, Transport, Shopping, etc.) and users cannot add, rename, or remove them.",
+        "rationale": "Simpler to use — no setup required, and most personal expenses fit the defaults.",
+        "tradeoffs": [
+          "+ Ready to use immediately with no configuration",
+          "- Users with unique spending habits (e.g., freelance costs, pet expenses) can't organize their data the way they think about it"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Add custom categories",
+        "description": "Users can create new categories with a name and color, in addition to the 6 defaults. They can also delete categories they don't use.",
+        "rationale": "Covers the most common customization need without overwhelming the interface.",
+        "tradeoffs": [
+          "+ Fits a much wider range of personal spending patterns",
+          "- Adds a small amount of setup work before the app feels personalized",
+          "- Deleting a category raises questions about what happens to expenses already tagged with it"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Fully custom category system",
+        "description": "Users can create, rename, reorder, and delete all categories — including the defaults — and assign custom icons.",
+        "rationale": "Maximum flexibility, but most personal finance users don't need this level of control.",
+        "tradeoffs": [
+          "+ Complete control over how spending is organized",
+          "- Significantly more setup time before the app is useful",
+          "- More complex to build and maintain"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 3,
+    "evpiScore": 0.252
+  },
+  {
+    "id": "q-1-3",
+    "gapId": "llm-c1df070c",
+    "topic": "Data Storage",
+    "text": "Should your expense data be saved only on the device you're using, or should it sync across devices so you can access it anywhere?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Device only (no account needed)",
+        "description": "All expenses are saved in the browser on the current device. No sign-up or login required — open the app and start tracking.",
+        "rationale": "The fastest path to a working app. Ideal if this is a single-device personal tool.",
+        "tradeoffs": [
+          "+ Zero friction — no account, no password, works instantly",
+          "- Data is lost if the browser is cleared or the device changes",
+          "- Can't access expenses from a phone or another computer"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Synced across devices (account required)",
+        "description": "Expenses are saved to the cloud and accessible from any device after logging in. Data is never lost if you switch devices.",
+        "rationale": "Best for users who want to log expenses on their phone and review them on a desktop.",
+        "tradeoffs": [
+          "+ Access your data from anywhere, never lose it",
+          "- Requires building a login system and backend, which adds significant time and cost",
+          "- Users must create an account before they can start"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 4,
+    "evpiScore": 0.252
+  },
+  {
+    "id": "q-1-4",
+    "gapId": "llm-3879ca0b",
+    "topic": "Quick Add & Recurring",
+    "text": "Should the app help you re-log expenses you make regularly (like a daily coffee or monthly subscription), and if so, how?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "No shortcuts — manual entry only",
+        "description": "Every expense is entered from scratch each time. Simple and predictable.",
+        "rationale": "Works well if most expenses vary in amount or description.",
+        "tradeoffs": [
+          "+ No setup needed, no suggestions to manage",
+          "- Logging the same coffee every morning takes the same effort every time"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Smart suggestions based on past entries",
+        "description": "The app notices which expenses you log most often and shows them as one-tap shortcuts at the bottom of the Add Expense screen. No manual setup required.",
+        "rationale": "The most natural way to speed up repeat entries — the app learns from what you actually do.",
+        "tradeoffs": [
+          "+ Speeds up daily logging with zero configuration",
+          "+ Suggestions improve automatically as you use the app",
+          "- Requires enough past data before suggestions appear (new users see nothing)"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Saved recurring templates",
+        "description": "Users manually save templates for recurring expenses (e.g., 'Netflix $15.99 monthly'). Templates can be logged with one tap at any time.",
+        "rationale": "Best for predictable fixed expenses like subscriptions, rent, or gym memberships.",
+        "tradeoffs": [
+          "+ Works from day one — no history needed",
+          "+ Great for fixed monthly bills",
+          "- Requires upfront setup to create each template",
+          "- Less useful for variable everyday expenses like meals"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 5,
+    "evpiScore": 0.252
+  },
+  {
+    "id": "q-1-5",
+    "gapId": "llm-6657bd32",
+    "topic": "Search & Export",
+    "text": "Do you need to search through past expenses or export your data to a spreadsheet?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Neither — browse by month only",
+        "description": "Users navigate expenses month by month using the month selector. No search or export.",
+        "rationale": "Keeps the app focused and simple. Works well for most personal tracking needs.",
+        "tradeoffs": [
+          "+ Simpler interface with no extra features to explain",
+          "- Finding a specific expense from 3 months ago requires clicking through months manually"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Export to CSV only",
+        "description": "A button on the Insights screen lets users download all their expenses as a spreadsheet file for use in Excel or Google Sheets.",
+        "rationale": "Gives power users a way to do their own analysis without adding complexity to the main app.",
+        "tradeoffs": [
+          "+ Easy backup and external analysis in familiar tools",
+          "+ Simple to add without changing the main interface",
+          "- Doesn't help users find a specific past expense quickly"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Search + Export",
+        "description": "A search bar lets users find any expense by merchant name, note, or amount across all months. Plus CSV export.",
+        "rationale": "Most useful once a user has 3+ months of data and needs to find something specific.",
+        "tradeoffs": [
+          "+ Quickly find any past expense without browsing month by month",
+          "+ Full data portability via export",
+          "- Adds UI complexity (search bar placement, results display) that may feel unnecessary early on"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 6,
+    "evpiScore": 0.252
+  },
+  {
+    "id": "q-1-6",
+    "gapId": "llm-cbb557df",
+    "topic": "Spending Insights",
+    "text": "How much analytical detail do you want in the Insights section — just the basics, or a richer set of charts and comparisons?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Basic summary only",
+        "description": "Show total spent, daily average, and a simple bar chart of daily spending. Clean and fast to scan.",
+        "rationale": "Covers the core 'how am I doing this month?' question without overwhelming the user.",
+        "tradeoffs": [
+          "+ Very easy to read at a glance",
+          "- Doesn't show category breakdowns or month-over-month trends"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Full insights dashboard",
+        "description": "Include all charts: daily spending (bar and line toggle), category breakdown with percentages, top 5 biggest expenses, and a this-month vs last-month comparison.",
+        "rationale": "Gives users the full picture of their spending habits, which is the main reward for consistent tracking.",
+        "tradeoffs": [
+          "+ Reveals patterns that motivate better spending habits",
+          "+ Makes the app feel worth using consistently",
+          "- More complex screen that requires a month or two of data to feel meaningful"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Full insights + year-long trend",
+        "description": "Everything in the full dashboard, plus a 12-month rolling chart so users can see their spending trajectory over the whole year.",
+        "rationale": "Powerful for users who track long-term, but overkill for someone just starting out.",
+        "tradeoffs": [
+          "+ Shows long-term patterns and seasonal spending shifts",
+          "- Requires at least several months of data before it's useful",
+          "- Adds more visual complexity to an already information-dense screen"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 7,
+    "evpiScore": 0.19599999999999998
+  }
+]
