@@ -8,7 +8,7 @@ Decisions made 2026-05-12 based on [R7 research report](R7-dashboard-spine-integ
 |---|----------|--------|-----------|
 | D1 | Feature-to-screen mapping | **Defer FeaturePlan to M2.** Thread only `EnrichedRequirement` in M1. | Simplest M1 scope. `ScreenPlan.featureId` (Architect output) provides clean mapping in M2. No schema changes or heuristic matching needed in M1. |
 | D2 | Structured artifact persistence | **Both disk + checkpointer.** Write `enriched-requirement.yaml` to disk on approval. Keep in LangGraph checkpointer for continuity. Disk is primary source for M1. | Offline-capable, testable, consistent with existing YAML patterns. Checkpointer preserved for M2+ LangGraph graph continuity. |
-| D3 | CreateProjectSchema extension | **Single wrapper field:** `clarifierOutput: { enrichedRequirement, assumptionLedger, threadId }` | Groups related data. `threadId` saved to project config for M2 but not used for data retrieval in M1. |
+| D3 | CreateProjectSchema extension | **Single wrapper field:** `clarifierOutput: { enrichedRequirement, threadId }`. `EnrichedRequirementSchema` already embeds `assumptionLedger`; on-disk `assumption-ledger.yaml` is derived from `enrichedRequirement.assumptionLedger`, not passed as a parallel field. | Groups related data. `threadId` saved to project config for M2 but not used for data retrieval in M1. |
 
 ## Recommendations (6 decisions)
 

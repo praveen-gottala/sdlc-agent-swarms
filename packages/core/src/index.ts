@@ -200,6 +200,9 @@ export {
 // State: PRD reader
 export { loadPRD, prdExists } from './state/prd-reader.js';
 
+// PRD rendering (ADR-053)
+export { renderPrdToMarkdown } from './prd/render-prd-markdown.js';
+
 // State: design system reader
 export {
   loadDesignTokens,
