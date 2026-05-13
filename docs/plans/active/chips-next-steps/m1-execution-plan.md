@@ -88,8 +88,10 @@ export function buildPipelineInput(opts: BuildPipelineInputOptions): PipelineInp
 
 - `nx run-many -t typecheck` — clean
 - `nx run-many -t test` — all pass (no behavioral changes)
-- New unit test: `packages/agents-ux/src/design-pipeline/__tests__/pipeline-context.test.ts` — verify AgentContext creation with/without mcpClient, with/without providerFactory (Err path)
+- New unit test: `packages/agents-ux/src/design-pipeline/__tests__/pipeline-context.test.ts` — verify AgentContext creation with/without mcpClient, with/without providerFactory (Err path), verify mcpClient threaded through
 - New unit test: `packages/agents-ux/src/design-pipeline/__tests__/pipeline-input-builder.test.ts` — verify PipelineInput construction from temp fixture dir with `pages.yaml` + `design-tokens.yaml`
+- New regression test: CLI delegation test in `packages/cli/src/utils/__tests__/pipeline-context.test.ts` — verify CLI's thin wrapper returns AgentContext with mcpClient set, providerFactory absent → Err on `resolveProvider()`
+- New parity test: in builder test, create the same fixture and compare output from old `buildDashboardPipelineInput` vs new shared `buildPipelineInput` — assert `prdRequirements`, `viewportWidth`, `pageContext` are field-identical
 - Grep: no remaining callers of the old factory signatures except thin delegating wrappers
 
 ### Risk
@@ -135,6 +137,9 @@ Derive `STAGE_INDEX`, `VISIBLE_STAGE_COUNT`, `HIDDEN_STAGES` from the descriptor
 
 - `nx run dashboard:test` — existing sink tests pass unchanged
 - New test: construct sink with custom 5-stage descriptor, verify correct `visibleIndex` and `VISIBLE_STAGE_COUNT`
+- New test: backward-compat — `new DashboardSseSink(runId, pipeline, taskId)` (no stages param) behaves identically to current tests (indices 0/1/2, count 3, evaluator hidden)
+- New test: hidden stage filtering — custom descriptor with `{ name: 'clarifier-precheck', hidden: true }`, call `onStageStart` for that stage, assert no SSE event emitted
+- New test: unknown stage name — call `onStageStart` with a name not in the descriptor array, verify safe default (no crash)
 - `nx run-many -t typecheck` — clean
 
 ### Risk
@@ -205,8 +210,13 @@ Encapsulates the Chrome Pass → sequential per-page pipeline loop currently inl
 
 - `nx run-many -t typecheck` — clean
 - `nx run-many -t test` — all pass
-- New test: `packages/agents-ux/src/design-pipeline/__tests__/run-pages.test.ts` — verify Chrome Pass → per-page loop with mock pipeline, verify callbacks called per page
-- Dashboard route E2E: **blocked by Dashboard Pipeline Fix** — code and unit test, but defer E2E validation
+- New test: `packages/agents-ux/src/design-pipeline/__tests__/run-pages.test.ts`:
+  - Chrome Pass → per-page loop with mock pipeline, verify callbacks called per page
+  - 3-page fixture with 2 sharing a component — assert reference page runs with `chromePass: { mode: 'generate' }`, remaining with `{ mode: 'consume' }`
+  - Partial failure — one page fails, assert others still complete, `onPageFail` called for failed page only
+- New test: dashboard route handler unit test — mock `runPagesWithChromePass` to return mixed results, verify: `startRun` called once, `completeRun`/`failRun` called per page, 200 response with per-page statuses
+- Dashboard route E2E: **blocked by Dashboard Pipeline Fix**. When unblocked, E2E must verify: navigate to `/design`, click "Generate All", see per-page progress bars in Activity sidebar, see run appear in Runs page. Until then, unit tests above provide coverage.
+- **Browser verification (when unblocked):** Chrome DevTools MCP — navigate to design page, click Generate All, take_screenshot to verify progress bars, take_snapshot to verify SSE events update stage labels
 
 ### Risk
 
@@ -258,12 +268,16 @@ High. Largest refactor in M1. Chrome Pass logic (`design-page-all.ts:301-370`) i
 
 - `nx run-many -t typecheck` — clean (field is optional, all existing callers valid)
 - `nx run-many -t test` — all pass (field absent = old behavior)
-- New test: verify `renderPrdToMarkdown()` is used as compat fallback
+- New test in `pipeline.test.ts`: create `PipelineInput` with `enrichedRequirement`, call `initState()`, assert `state.enrichedRequirement` is defined (catches the "added to type but not propagated" bug)
+- New test: verify `renderPrdToMarkdown()` is used as compat fallback — assert `prdRequirements[0] === renderPrdToMarkdown(enrichedReq.prd)`
 - New test: verify precedence — explicit `prdRequirements` wins over derived
+- New test: CashPulse PRD fixture through `renderPrdToMarkdown` — assert output contains entity names (`Expense`, `Category`), NFR targets, persona goals
 
 ### Risk
 
 Low. Purely additive optional field. Compat fallback has clear precedence rule.
+
+**Critical implementation note:** `initState()` at `pipeline.ts:44-54` only copies explicitly named fields. Phase 4 MUST add `enrichedRequirement` to `initState()` — the type change alone is insufficient. The `initState()` propagation test above catches this.
 
 **Dependencies:** None structurally (interface extension is additive). Logically follows Phase 1 since `buildPipelineInput()` may contribute to the fallback.
 
@@ -325,8 +339,14 @@ In `packages/dashboard/src/app/(dashboard)/new/page.tsx`, replace `onApprove={()
 
 - `nx run-many -t typecheck` — clean
 - `nx run dashboard:test` — existing project creation tests pass (field optional)
-- New test: `project-creation-clarifier.test.ts` — verify disk artifacts written when `clarifierOutput` present, verify backward compat when absent
-- New test: `render-prd-markdown.test.ts` — verify markdown output from CashPulse PRD structure
+- New test: `project-creation-clarifier.test.ts`:
+  - When `clarifierOutput` present: `enriched-requirement.yaml` written, `assumption-ledger.yaml` written, `docs/prd.md` written by scaffold, `agentforge.yaml` contains `clarifier.threadId`
+  - When `clarifierOutput` absent: no clarifier-specific files created (backward compat)
+  - Invalid `clarifierOutput` data → 400 response with schema validation error (not 500 crash)
+  - `threadId` read back from created `agentforge.yaml` matches input
+- New test: `render-prd-markdown.test.ts` — verify markdown output from CashPulse PRD structure (already created in this task — 13 tests passing)
+- **E2E test** (Playwright): `e2e/clarifier-approval.spec.ts` — mock `POST /api/projects` → 201, click "Approve & Continue", verify navigation to project page, verify error toast on 500 response
+- **Browser verification:** Chrome DevTools MCP — navigate to `/new`, complete Clarifier flow, see Approve button, click it, verify navigation and project appears in sidebar
 
 ### Risk
 
@@ -372,7 +392,12 @@ When `enrichedRequirement` is defined, `buildPipelineInput` leaves `prdRequireme
 
 - `nx run-many -t typecheck` — clean
 - `nx run-many -t test` — all pass
-- Updated builder test: verify `enrichedRequirement` present when YAML exists, absent when missing, absent when schema invalid (graceful degradation)
+- Updated builder test:
+  - `enrichedRequirement` present when valid YAML exists
+  - `enrichedRequirement` absent when YAML missing (backward compat)
+  - `enrichedRequirement` absent when schema invalid — assert `telemetry.onLog` called with `'warn'` level and `'schema-invalid'` in message
+  - `enrichedRequirement` absent when YAML is malformed syntax (e.g., `{invalid: [}`) — no crash
+  - Precedence test: fixture with BOTH `enriched-requirement.yaml` AND `docs/prd.md` — assert `prdRequirements` is undefined (so `initState()` derives from enriched, not flat PRD)
 
 ### Risk
 
@@ -397,11 +422,12 @@ Low. Reading YAML + Zod validation is established pattern. Graceful degradation 
    - `docs/prd.md`
 
 2. Integration test at `packages/agents-ux/__tests__/m1-connect.integration.test.ts`:
-   - Call `buildPipelineInput()` with CashPulse fixture
-   - Assert `enrichedRequirement` present with correct screen count
-   - Assert byte-exact equality: `state.prdRequirements?.[0] === renderPrdToMarkdown(cashPulseEnriched.prd)`. Deterministic check — no fuzzy "richer than flat description" comparison.
-   - Assert `enrichedRequirement.confidence` is valid number
-   - Smoke: call `initState()` (pipeline.ts:44) and verify `enrichedRequirement` threads through to state
+   - **Happy path:** Call `buildPipelineInput()` with CashPulse fixture → assert `enrichedRequirement` present with correct screen count
+   - **Determinism:** Assert byte-exact equality: `state.prdRequirements?.[0] === renderPrdToMarkdown(cashPulseEnriched.prd)`
+   - **Confidence:** Assert `enrichedRequirement.confidence` is valid number
+   - **State propagation:** Call `initState()` and verify `enrichedRequirement` threads through to state
+   - **Fallback path:** Same fixture minus `enriched-requirement.yaml` → assert `enrichedRequirement` is undefined, `prdRequirements` contains flat `[description, prdContent]`
+   - **Cross-phase disk path parity:** Call `createProject()` with `clarifierOutput`, then `buildPipelineInput()` on the created project dir → assert `enrichedRequirement` from disk matches the one passed to `createProject`. This catches write-path/read-path mismatches (e.g., different subdirectory).
 
 ### Files modified
 
@@ -516,9 +542,75 @@ Additionally:
 
 ---
 
+## Worktree Parallelization Strategy
+
+The dependency graph allows 2 parallel worktrees for the first wave of work. After they merge, a second wave can also parallelize.
+
+### Wave 1 (3 worktrees, independent)
+
+| Worktree | Branch | Phases | Touches |
+|----------|--------|--------|---------|
+| **WT-A** | `m1/unified-factories` | Phase 1 (factories) + Phase 4 (PipelineInput extension) | `agents-ux/`, `cli/`, `dashboard/api/_lib/` |
+| **WT-B** | `m1/stage-descriptor` | Phase 2 (StageDescriptor) | `dashboard/api/_lib/dashboard-sink.ts` only |
+| **WT-C** | `m1/approval-flow` | Phase 5 (Clarifier approval) | `dashboard/api/_lib/project-creation.ts`, `dashboard/new/page.tsx`, `dashboard/lib/clarifier-chat-types.ts` |
+
+**Why these are safe in parallel:**
+- WT-A and WT-B touch different files — no merge conflicts
+- WT-C touches `project-creation.ts` and `new/page.tsx` — neither touched by WT-A or WT-B
+- WT-A touches `dashboard/api/_lib/pipeline-input-builder.ts` and `pipeline-context.ts` — WT-C does not
+
+**Merge order:** WT-B first (smallest, cleanest). Then WT-A. Then WT-C. Run full test suite after each merge.
+
+### Wave 2 (sequential, on merged main)
+
+| Phase | Branch | Depends on |
+|-------|--------|------------|
+| Phase 3 (dashboard all-pages) | `m1/dashboard-loop` | WT-A + WT-B merged |
+| Phase 6 (bridge) | `m1/clarifier-bridge` | WT-A + WT-C merged |
+| Phase 7 (integration test) | `m1/integration-test` | All above merged |
+| Phase 8 (docs) | — | On main after Phase 7 |
+
+Phase 3 and Phase 6 could ALSO run in parallel worktrees (they touch different files), but Phase 6 logically depends on Phase 5's disk artifacts existing, so testing them together is safer.
+
+### Worktree commands
+
+```bash
+# Wave 1 — create 3 worktrees from main
+git worktree add .claude/worktrees/m1-factories m1/unified-factories
+git worktree add .claude/worktrees/m1-stages m1/stage-descriptor
+git worktree add .claude/worktrees/m1-approval m1/approval-flow
+
+# Merge sequence
+git merge m1/stage-descriptor         # smallest, cleanest
+nx run-many -t typecheck && nx run-many -t test
+git merge m1/unified-factories
+nx run-many -t typecheck && nx run-many -t test
+git merge m1/approval-flow
+nx run-many -t typecheck && nx run-many -t test
+
+# Cleanup
+git worktree remove .claude/worktrees/m1-factories
+git worktree remove .claude/worktrees/m1-stages
+git worktree remove .claude/worktrees/m1-approval
+```
+
+### Session strategy
+
+Each worktree can be assigned to a separate Claude Code session. The key constraint: **do not start Wave 2 until Wave 1 is fully merged and tested.** Phase 6 reads from disk paths that Phase 5 writes — if the paths diverge, the cross-phase disk path test (Phase 7) catches it, but only after merge.
+
+---
+
 ## Eval Gate (from execution-plan.md)
 
 M1 eval: verify that threading `EnrichedRequirement` produces equivalent or better DesignSpec output.
-- Run `design:page` on CashPulse fixture with and without `enrichedRequirement`
+
+**Reproducible eval test** (not manual — runs in CI):
+- Run `runDesignPipeline` on CashPulse fixture with spy provider, with `enrichedRequirement` set
+- Run `runDesignPipeline` on CashPulse fixture with spy provider, without `enrichedRequirement` (flat description only)
+- Assert the enriched version's research prompt contains entity names (`Expense`, `Category`, `Budget`), NFR targets, and persona goals that the flat version lacks
+- This proves "Connect" actually connects — structured data reaches LLM prompts
+
+**Manual eval** (per session):
+- Run `design:page` on CashPulse with and without enriched requirement
 - Diff the two DesignSpec outputs — document differences
 - Existing design pipeline tests must pass unchanged
