@@ -8,7 +8,7 @@
 import { createHash } from 'node:crypto';
 import type { ClarifierState, Question } from '@agentforge/agents-clarifier';
 import type { PRD } from '@agentforge/core';
-import type { ClarifierMetrics, MetricDefinition, RunCostSummary } from '../types.js';
+import type { ClarifierMetrics, ClarifierMetricDefinition, RunCostSummary } from '../types.js';
 
 /**
  * Compute all clarifier metrics from the final graph state and cost data.
@@ -71,8 +71,8 @@ function computePrdHashEqual(
   return firstHash === finalHash;
 }
 
-/** Metric definitions with direction for regression detection. */
-export const METRIC_DEFINITIONS: readonly MetricDefinition[] = [
+/** Clarifier metric definitions with direction for regression detection. */
+export const CLARIFIER_METRIC_DEFINITIONS: readonly ClarifierMetricDefinition[] = [
   {
     name: 'total-questions',
     direction: 'lower-is-better',
@@ -98,4 +98,12 @@ export const METRIC_DEFINITIONS: readonly MetricDefinition[] = [
     direction: 'lower-is-better',
     compute: (m) => m.totalCostUsd,
   },
+  {
+    name: 'prd-hash-equal-across-rounds',
+    direction: 'lower-is-better',
+    compute: (m) => m.prdHashEqualAcrossRounds === null ? null : (m.prdHashEqualAcrossRounds ? 1 : 0),
+  },
 ];
+
+/** @deprecated Use CLARIFIER_METRIC_DEFINITIONS */
+export const METRIC_DEFINITIONS = CLARIFIER_METRIC_DEFINITIONS;

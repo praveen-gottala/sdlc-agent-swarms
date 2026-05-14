@@ -20,7 +20,7 @@ import type { ClarifierDeps, ClarifierState } from '@agentforge/agents-clarifier
 import type { LLMProvider } from '@agentforge/providers';
 import { simulateCooperativeAnswers } from './simulator.js';
 import { computeMetrics } from './metrics/clarifier-metrics.js';
-import type { EvalScenario, ClarifierMetrics, EvalError } from './types.js';
+import type { ClarifierEvalScenario, ClarifierMetrics, EvalError } from './types.js';
 import { createRecordingProvider } from './recording-provider.js';
 
 const RUN_TIMEOUT_MS = 600_000;
@@ -36,7 +36,7 @@ type CompiledGraph = ReturnType<typeof compileClarifierGraph>;
  * Compiles the graph once and reuses it for interrupt/resume cycles.
  */
 export async function runScenario(
-  scenario: EvalScenario,
+  scenario: ClarifierEvalScenario,
   provider: LLMProvider,
   timeoutMs: number = RUN_TIMEOUT_MS,
   onProgress?: ProgressCallback,

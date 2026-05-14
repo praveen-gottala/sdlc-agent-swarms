@@ -50,6 +50,68 @@ export type { DesignTool, DesignOutput } from './types/index.js';
 export { ScaffoldProjectInputSchema } from './types/index.js';
 export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
 
+// Architect utilities (M2 — Critic validation)
+export { validateContractBundle } from './architect/index.js';
+
+// Architect Zod schemas (vision Layer 3)
+export {
+  ConstraintTypeSchema,
+  ProjectModeSchema,
+  TaskTypeSchema,
+  ADRStatusSchema,
+  ConstraintSchema,
+  GapSchema,
+  ConstraintSetSchema,
+  AlternativeSchema,
+  OptionMemoSchema,
+  OptionsBundleSchema,
+  MigrationSpecSchema,
+  ArchitectStackConfigSchema,
+  ArchitectureDecisionSchema,
+  ArchitectureSpecSchema,
+  TaskNodeSchema,
+  TaskPlanSchema,
+  ADRSchema,
+  DataModelFieldSchema,
+  DataModelEntitySchema,
+  DataModelSpecSchema,
+  ComponentTreeNodeSchema,
+  ComponentCompositionSchema,
+  DesignSystemDiffSchema,
+  CriticGateSchema,
+  CriticReportSchema,
+  ContractBundleSchema,
+} from './types/index.js';
+
+export type {
+  ConstraintType,
+  ProjectMode,
+  TaskType,
+  ADRStatus,
+  Constraint,
+  Gap,
+  ConstraintSet,
+  Alternative,
+  OptionMemo,
+  OptionsBundle,
+  MigrationSpec,
+  ArchitectStackConfig,
+  ArchitectureDecision,
+  ArchitectureSpec,
+  TaskNode,
+  TaskPlan,
+  ADR,
+  DataModelField,
+  DataModelEntity,
+  DataModelSpec,
+  ComponentTreeNode,
+  ComponentComposition,
+  DesignSystemDiff,
+  CriticGate,
+  CriticReport,
+  ContractBundle,
+} from './types/index.js';
+
 // Cross-boundary artifact schemas (vision Layer 2)
 export {
   EnrichedRequirementSchema,

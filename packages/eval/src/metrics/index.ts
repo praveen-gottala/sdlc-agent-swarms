@@ -2,4 +2,5 @@
  * @module @agentforge/eval/metrics
  */
 
-export { computeMetrics, METRIC_DEFINITIONS } from './clarifier-metrics.js';
+export { computeMetrics, CLARIFIER_METRIC_DEFINITIONS, METRIC_DEFINITIONS } from './clarifier-metrics.js';
+export { computeArchitectMetrics, ARCHITECT_METRIC_DEFINITIONS } from './architect-metrics.js';

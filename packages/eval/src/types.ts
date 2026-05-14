@@ -12,9 +12,9 @@ export type MetricDirection = 'higher-is-better' | 'lower-is-better';
 
 export const MetricDirectionSchema = z.enum(['higher-is-better', 'lower-is-better']);
 
-// ── Eval Scenario ─────────────────────────────────────────────────────
+// ── Clarifier Eval Scenario ───────────────────────────────────────────
 
-export const ExpectedBehaviorSchema = z.object({
+export const ClarifierExpectedBehaviorSchema = z.object({
   minQuestions: z.number().int().min(0),
   maxQuestions: z.number().int().min(0),
   expectEscalation: z.boolean(),
@@ -22,7 +22,7 @@ export const ExpectedBehaviorSchema = z.object({
   expectedTopics: z.array(z.string()).optional(),
 });
 
-export const EvalScenarioSchema = z.object({
+export const ClarifierEvalScenarioSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
@@ -30,10 +30,17 @@ export const EvalScenarioSchema = z.object({
   mode: z.enum(['bootstrap', 'evolution']),
   maxRounds: z.number().int().min(1),
   maxAnswersPerRound: z.number().int().min(1).optional(),
-  expectedBehavior: ExpectedBehaviorSchema,
+  expectedBehavior: ClarifierExpectedBehaviorSchema,
 });
 
-export type EvalScenario = z.infer<typeof EvalScenarioSchema>;
+export type ClarifierEvalScenario = z.infer<typeof ClarifierEvalScenarioSchema>;
+
+/** @deprecated Use ClarifierEvalScenarioSchema */
+export const EvalScenarioSchema = ClarifierEvalScenarioSchema;
+/** @deprecated Use ClarifierEvalScenario */
+export type EvalScenario = ClarifierEvalScenario;
+/** @deprecated Use ClarifierExpectedBehaviorSchema */
+export const ExpectedBehaviorSchema = ClarifierExpectedBehaviorSchema;
 
 // ── Run Cost Summary ──────────────────────────────────────────────────
 
@@ -64,11 +71,13 @@ export type ClarifierMetrics = z.infer<typeof ClarifierMetricsSchema>;
 
 // ── Metric Definition ─────────────────────────────────────────────────
 
-export interface MetricDefinition {
+export interface MetricDefinition<TMetrics> {
   readonly name: string;
   readonly direction: MetricDirection;
-  readonly compute: (metrics: ClarifierMetrics) => number | null;
+  readonly compute: (metrics: TMetrics) => number | null;
 }
+
+export type ClarifierMetricDefinition = MetricDefinition<ClarifierMetrics>;
 
 // ── Recorded Call (cassette entry) ────────────────────────────────────
 
@@ -139,3 +148,39 @@ export interface EvalError {
   readonly code: 'GRAPH_ERROR' | 'CHECKPOINTER_ERROR' | 'TIMEOUT' | 'CASSETTE_MISS' | 'SCENARIO_LOAD_ERROR';
   readonly message: string;
 }
+
+// ── Architect Eval Types ─────────────────────────────────────────────
+
+export const ArchitectExpectedBehaviorSchema = z.object({
+  criticShouldPass: z.boolean(),
+  expectedFailedGates: z.array(z.string()).optional(),
+});
+
+export type ArchitectExpectedBehavior = z.infer<typeof ArchitectExpectedBehaviorSchema>;
+
+export const ArchitectEvalScenarioSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  contractBundle: z.record(z.unknown()),
+  enrichedRequirement: z.record(z.unknown()),
+  expectedBehavior: ArchitectExpectedBehaviorSchema,
+});
+
+export type ArchitectEvalScenario = z.infer<typeof ArchitectEvalScenarioSchema>;
+
+export const ArchitectMetricsSchema = z.object({
+  scenarioId: z.string(),
+  criticPassed: z.boolean(),
+  expectedPass: z.boolean(),
+  isCorrectVerdict: z.boolean(),
+  gateResults: z.array(z.object({
+    name: z.string(),
+    passed: z.boolean(),
+    findings: z.array(z.string()),
+  })),
+  falsePositive: z.boolean(),
+  falseNegative: z.boolean(),
+});
+
+export type ArchitectMetrics = z.infer<typeof ArchitectMetricsSchema>;

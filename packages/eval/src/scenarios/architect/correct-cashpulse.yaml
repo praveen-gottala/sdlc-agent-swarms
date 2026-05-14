@@ -1,0 +1,206 @@
+id: correct-cashpulse
+name: CashPulse — valid contract bundle
+description: >
+  Valid ContractBundle derived from CashPulse enriched requirement.
+  All 9 Critic gates should pass.
+
+expectedBehavior:
+  criticShouldPass: true
+
+enrichedRequirement:
+  id: er-cashpulse
+  rawInput: Build a personal finance tracker called CashPulse
+  mode: bootstrap
+  prd:
+    id: prd-cashpulse
+    title: CashPulse
+    description: Personal finance tracker with expense categorization, budget tracking, and financial insights
+    features:
+      - id: feat-dashboard
+        name: Dashboard
+        description: Main dashboard showing financial overview
+        priority: must-have
+      - id: feat-transactions
+        name: Transactions
+        description: Transaction list with filtering and search
+        priority: must-have
+      - id: feat-budgets
+        name: Budget Management
+        description: Create and track budgets by category
+        priority: must-have
+      - id: feat-reports
+        name: Financial Reports
+        description: Monthly and yearly financial reports
+        priority: should-have
+      - id: feat-settings
+        name: Settings
+        description: User preferences and account settings
+        priority: could-have
+    personas:
+      - id: persona-user
+        name: Budget-Conscious User
+        role: Primary end user
+        goals:
+          - Track daily expenses
+          - Stay within budget
+          - Understand spending patterns
+    dataEntities:
+      - id: entity-transaction
+        name: Transaction
+        fields:
+          - { name: id, type: string }
+          - { name: amount, type: number, required: true }
+          - { name: category, type: string, required: true }
+          - { name: date, type: string, required: true }
+          - { name: description, type: string }
+        relationships:
+          - belongs_to:Account
+          - belongs_to:Category
+      - id: entity-account
+        name: Account
+        fields:
+          - { name: id, type: string }
+          - { name: name, type: string, required: true }
+          - { name: balance, type: number, required: true }
+      - id: entity-category
+        name: Category
+        fields:
+          - { name: id, type: string }
+          - { name: name, type: string, required: true }
+          - { name: budgetLimit, type: number }
+    screens:
+      - { id: screen-dashboard, name: Dashboard, description: Financial overview }
+      - { id: screen-transactions, name: Transactions, description: Transaction list }
+      - { id: screen-budgets, name: Budgets, description: Budget management }
+    nfrs: []
+    successMetrics: []
+    outOfScope: []
+    version: "1.0.0"
+    status: draft
+  assumptionLedger:
+    id: al-cashpulse
+    entries:
+      - id: assumption-1
+        statement: Users will primarily use the app on desktop
+        evidence: Requirement mentions dashboard and reports
+        confidence: 0.8
+        blastRadius: low
+        requiresConfirmation: false
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  clarificationRounds:
+    - { round: 1, questionsAsked: 5, questionsAnswered: 5, timestamp: "2026-01-01T00:01:00Z" }
+  confidence: 0.9
+  createdAt: "2026-01-01T00:00:00Z"
+
+contractBundle:
+  projectId: cashpulse
+  constraintSet:
+    projectId: cashpulse
+    constraints:
+      - { id: c-1, type: hard, category: stack, description: Must use React + Node.js + PostgreSQL, source: requirement }
+      - { id: c-2, type: soft, category: ux, description: Mobile-responsive design preferred, source: assumption }
+    gaps:
+      - { id: gap-styling, axis: styling, description: Which CSS framework to use?, resolvedValue: tailwind }
+      - { id: gap-orm, axis: data-access, description: Which ORM to use?, resolvedValue: prisma }
+    mode: greenfield
+  optionsBundle:
+    projectId: cashpulse
+    memos:
+      - gapId: gap-styling
+        axis: styling
+        alternatives:
+          - { id: alt-tailwind, name: Tailwind CSS, description: Utility-first CSS framework, tradeoffs: [verbose class names], blastRadius: low, references: [tailwindcss.com] }
+          - { id: alt-css-modules, name: CSS Modules, description: Scoped CSS with module system, tradeoffs: [less reusable patterns], blastRadius: low, references: [] }
+        recommendation: alt-tailwind
+        rationale: Better developer experience and design system consistency
+      - gapId: gap-orm
+        axis: data-access
+        alternatives:
+          - { id: alt-prisma, name: Prisma, description: Type-safe ORM, tradeoffs: [build step required], blastRadius: medium, references: [prisma.io] }
+          - { id: alt-drizzle, name: Drizzle, description: Lightweight SQL-first ORM, tradeoffs: [less mature ecosystem], blastRadius: medium, references: [] }
+        recommendation: alt-prisma
+        rationale: Best TypeScript integration and migration tooling
+  architectureSpec:
+    projectId: cashpulse
+    decisions:
+      - { gapId: gap-styling, chosenAlternativeId: alt-tailwind, rationale: Best DX for utility-first }
+      - { gapId: gap-orm, chosenAlternativeId: alt-prisma, rationale: Type safety and migration support }
+    stackConfig:
+      frontend: React
+      backend: Node.js
+      database: PostgreSQL
+      styling: Tailwind
+    assumptionLedgerUpdates: []
+    migrations:
+      - { id: mig-001, sql: "CREATE TABLE transactions (id SERIAL PRIMARY KEY, amount DECIMAL NOT NULL, category VARCHAR(255), date TIMESTAMP NOT NULL);" }
+      - { id: mig-002, sql: "CREATE TABLE accounts (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, balance DECIMAL DEFAULT 0);" }
+  adrs:
+    - { id: adr-cashpulse-001, title: Use Tailwind CSS for styling, status: accepted, decision: Adopt Tailwind CSS as the styling solution, rationale: Best developer experience for utility-first CSS }
+  apiChangeSets:
+    - id: acs-1
+      changeRequestId: cr-cashpulse
+      additions:
+        - { method: GET, path: /api/transactions, description: List transactions with filtering, breaking: false }
+        - { method: POST, path: /api/transactions, description: Create a new transaction, breaking: false }
+        - { method: GET, path: /api/accounts, description: List user accounts, breaking: false }
+        - { method: GET, path: /api/budgets, description: List budgets, breaking: false }
+        - { method: POST, path: /api/budgets, description: Create a budget, breaking: false }
+      modifications: []
+      removals: []
+  screenPlans:
+    - id: sp-dashboard
+      featureId: feat-dashboard
+      screenType: page
+      route: /dashboard
+      components: [DashboardOverview, SpendingChart, RecentTransactions]
+      dataBindings:
+        - { entityId: entity-transaction, field: amount, source: api }
+        - { entityId: entity-account, field: balance, source: api }
+      navigationTargets:
+        - { target: /transactions, trigger: View All Transactions }
+    - id: sp-transactions
+      featureId: feat-transactions
+      screenType: page
+      route: /transactions
+      components: [TransactionList, TransactionFilter, TransactionForm]
+      dataBindings:
+        - { entityId: entity-transaction, field: amount, source: api }
+        - { entityId: entity-category, field: name, source: api }
+      navigationTargets: []
+    - id: sp-budgets
+      featureId: feat-budgets
+      screenType: page
+      route: /budgets
+      components: [BudgetList, BudgetForm, BudgetProgress]
+      dataBindings:
+        - { entityId: entity-category, field: budgetLimit, source: api }
+      navigationTargets: []
+  taskPlan:
+    projectId: cashpulse
+    tasks:
+      - { id: t-scaffold, title: Project scaffolding, description: Initialize project structure, filePaths: [package.json, tsconfig.json], dependencies: [], writeOrder: 0, type: scaffold }
+      - { id: t-db-schema, title: Database schema, description: Prisma schema and migrations, filePaths: [prisma/schema.prisma], dependencies: [t-scaffold], writeOrder: 1, type: backend }
+      - { id: t-api-transactions, title: Transaction API, description: CRUD endpoints for transactions, filePaths: [src/api/transactions.ts], dependencies: [t-db-schema], writeOrder: 2, type: backend }
+      - { id: t-api-accounts, title: Account API, description: Account endpoints, filePaths: [src/api/accounts.ts], dependencies: [t-db-schema], writeOrder: 3, type: backend }
+      - { id: t-api-budgets, title: Budget API, description: Budget CRUD endpoints, filePaths: [src/api/budgets.ts], dependencies: [t-db-schema], writeOrder: 4, type: backend }
+      - { id: t-dashboard-page, title: Dashboard page, description: Main dashboard UI, filePaths: [src/pages/dashboard.tsx], dependencies: [t-api-transactions, t-api-accounts], writeOrder: 5, type: frontend }
+      - { id: t-transactions-page, title: Transactions page, description: Transaction list UI, filePaths: [src/pages/transactions.tsx], dependencies: [t-api-transactions], writeOrder: 6, type: frontend }
+      - { id: t-budgets-page, title: Budgets page, description: Budget management UI, filePaths: [src/pages/budgets.tsx], dependencies: [t-api-budgets], writeOrder: 7, type: frontend }
+      - { id: t-tests, title: Integration tests, description: API and UI tests, filePaths: [src/__tests__/integration.test.ts], dependencies: [t-dashboard-page, t-transactions-page, t-budgets-page], writeOrder: 8, type: test }
+    featureCoverage:
+      feat-dashboard: [t-dashboard-page]
+      feat-transactions: [t-transactions-page, t-api-transactions]
+      feat-budgets: [t-budgets-page, t-api-budgets]
+  assumptionLedger:
+    id: al-cashpulse-merged
+    entries:
+      - id: assumption-1
+        statement: Users will primarily use the app on desktop
+        evidence: Requirement mentions dashboard and reports
+        confidence: 0.8
+        blastRadius: low
+        requiresConfirmation: false
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  version: "1.0.0"

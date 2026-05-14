@@ -8,27 +8,27 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
-import { EvalScenarioSchema } from '../types.js';
-import type { EvalScenario } from '../types.js';
+import { ClarifierEvalScenarioSchema } from '../types.js';
+import type { ClarifierEvalScenario } from '../types.js';
 
 const SCENARIO_FILES = ['pomodoro.yaml', 'habit-tracker.yaml', 'force-multi-round.yaml', 'escalation.yaml', 'cashpulse.yaml'];
 
 /**
  * Load all scenarios from YAML files in the scenarios directory.
  */
-export function loadScenarios(scenariosDir?: string): readonly EvalScenario[] {
+export function loadScenarios(scenariosDir?: string): readonly ClarifierEvalScenario[] {
   const dir = scenariosDir ?? defaultScenariosDir();
   return SCENARIO_FILES.map((file) => {
     const content = readFileSync(join(dir, file), 'utf-8');
     const parsed = parseYaml(content) as unknown;
-    return EvalScenarioSchema.parse(parsed);
+    return ClarifierEvalScenarioSchema.parse(parsed);
   });
 }
 
 /**
  * Load a single scenario by ID.
  */
-export function loadScenario(id: string, scenariosDir?: string): EvalScenario | undefined {
+export function loadScenario(id: string, scenariosDir?: string): ClarifierEvalScenario | undefined {
   const scenarios = loadScenarios(scenariosDir);
   return scenarios.find((s) => s.id === id);
 }

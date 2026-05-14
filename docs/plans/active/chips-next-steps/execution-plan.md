@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 next
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 next
 
 ## Plan Structure
 

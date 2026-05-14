@@ -1,5 +1,6 @@
 import type { ClarifierMetrics } from '../types.js';
 import { compareToBaseline, hasRegressions } from './compare.js';
+import { CLARIFIER_METRIC_DEFINITIONS } from '../metrics/clarifier-metrics.js';
 
 const BASELINE: ClarifierMetrics = {
   scenarioId: 'pomodoro',
@@ -20,7 +21,7 @@ describe('compareToBaseline', () => {
       totalQuestions: 8,
       totalCostUsd: 0.55,
     };
-    const results = compareToBaseline(BASELINE, current, 20);
+    const results = compareToBaseline(BASELINE, current, 20, CLARIFIER_METRIC_DEFINITIONS);
     expect(hasRegressions(results)).toBe(false);
   });
 
@@ -29,7 +30,7 @@ describe('compareToBaseline', () => {
       ...BASELINE,
       totalQuestions: 12,
     };
-    const results = compareToBaseline(BASELINE, current, 20);
+    const results = compareToBaseline(BASELINE, current, 20, CLARIFIER_METRIC_DEFINITIONS);
     const tqResult = results.find((r) => r.metricName === 'total-questions');
     expect(tqResult).toBeDefined();
     expect(tqResult!.regressed).toBe(true);
@@ -40,7 +41,7 @@ describe('compareToBaseline', () => {
       ...BASELINE,
       prdDiffBytes: 200,
     };
-    const results = compareToBaseline(BASELINE, current, 20);
+    const results = compareToBaseline(BASELINE, current, 20, CLARIFIER_METRIC_DEFINITIONS);
     const prdResult = results.find((r) => r.metricName === 'prd-diff-bytes');
     expect(prdResult).toBeDefined();
     expect(prdResult!.regressed).toBe(true);
@@ -51,7 +52,7 @@ describe('compareToBaseline', () => {
       ...BASELINE,
       prdHashEqualAcrossRounds: true,
     };
-    const results = compareToBaseline(BASELINE, current, 20);
+    const results = compareToBaseline(BASELINE, current, 20, CLARIFIER_METRIC_DEFINITIONS);
     const hashResult = results.find((r) => r.metricName === 'prd-hash-equal-across-rounds');
     expect(hashResult).toBeDefined();
     expect(hashResult!.regressed).toBe(true);
@@ -59,10 +60,11 @@ describe('compareToBaseline', () => {
 
   it('no regression on prd-hash-equal boolean (false → false)', () => {
     const current: ClarifierMetrics = { ...BASELINE };
-    const results = compareToBaseline(BASELINE, current, 20);
+    const results = compareToBaseline(BASELINE, current, 20, CLARIFIER_METRIC_DEFINITIONS);
     const hashResult = results.find((r) => r.metricName === 'prd-hash-equal-across-rounds');
-    expect(hashResult).toBeDefined();
-    expect(hashResult!.regressed).toBe(false);
+    // Both baseline and current are false (0), so both values are 0 → skipped by the 0===0 shortcut
+    expect(hashResult).toBeUndefined();
+    expect(hasRegressions(results)).toBe(false);
   });
 
   it('excludes null metrics from comparison', () => {
@@ -72,7 +74,7 @@ describe('compareToBaseline', () => {
       prdDiffBytes: null,
       prdHashEqualAcrossRounds: null,
     };
-    const results = compareToBaseline(baselineWithPrd, currentNull, 20);
+    const results = compareToBaseline(baselineWithPrd, currentNull, 20, CLARIFIER_METRIC_DEFINITIONS);
 
     const prdResult = results.find((r) => r.metricName === 'prd-diff-bytes');
     expect(prdResult).toBeUndefined();
@@ -86,7 +88,7 @@ describe('compareToBaseline', () => {
   it('both null metrics are excluded', () => {
     const baseNull: ClarifierMetrics = { ...BASELINE, prdDiffBytes: null, prdHashEqualAcrossRounds: null };
     const curNull: ClarifierMetrics = { ...BASELINE, prdDiffBytes: null, prdHashEqualAcrossRounds: null };
-    const results = compareToBaseline(baseNull, curNull, 20);
+    const results = compareToBaseline(baseNull, curNull, 20, CLARIFIER_METRIC_DEFINITIONS);
 
     const prdResult = results.find((r) => r.metricName === 'prd-diff-bytes');
     expect(prdResult).toBeUndefined();

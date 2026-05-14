@@ -19,8 +19,9 @@ import {
   buildReport,
   renderMarkdown,
   renderJson,
+  CLARIFIER_METRIC_DEFINITIONS,
 } from '@agentforge/eval';
-import type { ClarifierMetrics, EvalScenario, RegressionResult } from '@agentforge/eval';
+import type { ClarifierMetrics, ClarifierEvalScenario, RegressionResult } from '@agentforge/eval';
 import type { LLMProvider } from '@agentforge/providers';
 
 export interface EvalCommandOptions {
@@ -42,7 +43,7 @@ export async function evalCommand(
   output: NodeJS.WritableStream = process.stdout,
 ): Promise<void> {
   const scenarios = options.scenario
-    ? [loadScenario(options.scenario)].filter((s): s is EvalScenario => s !== undefined)
+    ? [loadScenario(options.scenario)].filter((s): s is ClarifierEvalScenario => s !== undefined)
     : loadScenarios();
 
   if (scenarios.length === 0) {
@@ -86,7 +87,7 @@ export async function evalCommand(
 
     const scenarioBaseline = baseline?.find((b) => b.scenarioId === scenario.id);
     const regressions = scenarioBaseline
-      ? compareToBaseline(scenarioBaseline, metrics, thresholdPct)
+      ? compareToBaseline(scenarioBaseline, metrics, thresholdPct, CLARIFIER_METRIC_DEFINITIONS)
       : [];
 
     scenarioResults.push({ scenarioId: scenario.id, metrics, regressions });

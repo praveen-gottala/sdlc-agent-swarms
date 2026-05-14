@@ -1,0 +1,122 @@
+id: missing-field
+name: Missing fields — gates 4 + 5 + 9
+description: >
+  ContractBundle with missing feature tasks, dangling entityId,
+  and high-blast-radius decision without adrId.
+  Critic must fail gates 4 (PRD criterion coverage),
+  5 (entity reference integrity), and 9 (ADR completeness).
+
+expectedBehavior:
+  criticShouldPass: false
+  expectedFailedGates:
+    - prd-criterion-coverage
+    - entity-reference-integrity
+    - adr-completeness
+
+enrichedRequirement:
+  id: er-missing
+  rawInput: Build a task manager
+  mode: bootstrap
+  prd:
+    id: prd-missing
+    title: TaskManager
+    description: Simple task manager
+    features:
+      - id: feat-tasks
+        name: Task List
+        description: View and manage tasks
+        priority: must-have
+      - id: feat-calendar
+        name: Calendar View
+        description: Calendar view of tasks
+        priority: must-have
+      - id: feat-notifications
+        name: Notifications
+        description: Task reminders
+        priority: should-have
+    personas:
+      - { id: p-1, name: User, role: End user, goals: [Manage tasks] }
+    dataEntities:
+      - id: entity-task
+        name: Task
+        fields:
+          - { name: id, type: string }
+          - { name: title, type: string, required: true }
+          - { name: dueDate, type: string }
+    screens:
+      - { id: screen-tasks, name: Tasks, description: Task list }
+    nfrs: []
+    successMetrics: []
+    outOfScope: []
+    version: "1.0.0"
+    status: draft
+  assumptionLedger:
+    id: al-missing
+    entries: []
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  clarificationRounds: []
+  confidence: 0.85
+  createdAt: "2026-01-01T00:00:00Z"
+
+contractBundle:
+  projectId: task-manager
+  constraintSet:
+    projectId: task-manager
+    constraints:
+      - { id: c-1, type: hard, category: stack, description: Must use React, source: requirement }
+    gaps:
+      - { id: gap-db, axis: database, description: Which database?, resolvedValue: sqlite }
+    mode: greenfield
+  optionsBundle:
+    projectId: task-manager
+    memos:
+      - gapId: gap-db
+        axis: database
+        alternatives:
+          - { id: alt-sqlite, name: SQLite, description: Embedded database, tradeoffs: [single-writer], blastRadius: low, references: [] }
+          - { id: alt-pg, name: PostgreSQL, description: Full RDBMS, tradeoffs: [ops overhead], blastRadius: high, references: [] }
+        recommendation: alt-sqlite
+        rationale: Simpler for single-user app
+  architectureSpec:
+    projectId: task-manager
+    decisions:
+      # Gate 9 fail: alt-pg has blastRadius 'high' but no adrId
+      - { gapId: gap-db, chosenAlternativeId: alt-pg, rationale: Better long-term }
+    stackConfig:
+      frontend: React
+      backend: Node.js
+      database: PostgreSQL
+      styling: CSS
+    assumptionLedgerUpdates: []
+  adrs: []
+  apiChangeSets:
+    - id: acs-1
+      changeRequestId: cr-1
+      additions:
+        - { method: GET, path: /api/tasks, description: List tasks, breaking: false }
+      modifications: []
+      removals: []
+  screenPlans:
+    - id: sp-tasks
+      featureId: feat-tasks
+      screenType: page
+      route: /tasks
+      components: [TaskList]
+      dataBindings:
+        # Gate 5 fail: entity-project does not exist in prd.dataEntities
+        - { entityId: entity-project, field: name, source: api }
+      navigationTargets: []
+  taskPlan:
+    projectId: task-manager
+    tasks:
+      - { id: t-1, title: Task list page, description: Build task list, filePaths: [src/tasks.tsx], dependencies: [], writeOrder: 0, type: frontend }
+    # Gate 4 fail: feat-calendar (must-have) has no tasks in featureCoverage
+    featureCoverage:
+      feat-tasks: [t-1]
+  assumptionLedger:
+    id: al-merged
+    entries: []
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  version: "1.0.0"

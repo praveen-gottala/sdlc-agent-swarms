@@ -2,10 +2,11 @@
  * @module @agentforge/eval/baseline/compare
  *
  * Compare current metrics against a baseline for regression detection.
+ * Generic over metric types — works with Clarifier, Architect, or any
+ * future eval domain.
  */
 
-import type { ClarifierMetrics, MetricDefinition, RegressionResult } from '../types.js';
-import { METRIC_DEFINITIONS } from '../metrics/clarifier-metrics.js';
+import type { MetricDefinition, RegressionResult } from '../types.js';
 
 const DEFAULT_THRESHOLD_PCT = 20;
 
@@ -13,11 +14,11 @@ const DEFAULT_THRESHOLD_PCT = 20;
  * Compare current metrics against baseline, checking for regressions.
  * Null metrics are excluded from comparison.
  */
-export function compareToBaseline(
-  baseline: ClarifierMetrics,
-  current: ClarifierMetrics,
+export function compareToBaseline<TMetrics>(
+  baseline: TMetrics,
+  current: TMetrics,
   thresholdPct: number = DEFAULT_THRESHOLD_PCT,
-  metricDefs: readonly MetricDefinition[] = METRIC_DEFINITIONS,
+  metricDefs: readonly MetricDefinition<TMetrics>[],
 ): readonly RegressionResult[] {
   const results: RegressionResult[] = [];
 
@@ -43,19 +44,6 @@ export function compareToBaseline(
       current: currentVal,
       regressed,
       deltaPct: Math.round(deltaPct * 100) / 100,
-    });
-  }
-
-  // prd-hash-equal-across-rounds: boolean check
-  if (baseline.prdHashEqualAcrossRounds !== null && current.prdHashEqualAcrossRounds !== null) {
-    const regressed = !baseline.prdHashEqualAcrossRounds && current.prdHashEqualAcrossRounds;
-    results.push({
-      metricName: 'prd-hash-equal-across-rounds',
-      direction: 'lower-is-better',
-      baseline: baseline.prdHashEqualAcrossRounds ? 1 : 0,
-      current: current.prdHashEqualAcrossRounds ? 1 : 0,
-      regressed,
-      deltaPct: regressed ? 100 : 0,
     });
   }
 

@@ -1,0 +1,131 @@
+id: contradictory
+name: Contradictory — gates 2 + 3 + 6 + 7 + 9
+description: >
+  ContractBundle with cyclic task dependencies, duplicate filePaths,
+  unresolved gap with no recommendation, duplicate API routes,
+  and high-blast-radius decision with empty adrId.
+  Critic must fail gates 2 (DAG acyclic), 3 (single-writer),
+  6 (gap resolution), 7 (OpenAPI lint), and 9 (ADR completeness).
+
+expectedBehavior:
+  criticShouldPass: false
+  expectedFailedGates:
+    - dag-acyclic
+    - single-writer
+    - gap-resolution-completeness
+    - openapi-lint
+    - adr-completeness
+
+enrichedRequirement:
+  id: er-contra
+  rawInput: Build a blog platform
+  mode: bootstrap
+  prd:
+    id: prd-contra
+    title: BlogPlatform
+    description: A simple blogging platform
+    features:
+      - id: feat-posts
+        name: Blog Posts
+        description: Create and publish blog posts
+        priority: must-have
+      - id: feat-comments
+        name: Comments
+        description: Reader comments on posts
+        priority: should-have
+    personas:
+      - { id: p-1, name: Author, role: Content creator, goals: [Write posts] }
+    dataEntities:
+      - id: entity-post
+        name: Post
+        fields:
+          - { name: id, type: string }
+          - { name: title, type: string, required: true }
+          - { name: content, type: string, required: true }
+    screens:
+      - { id: screen-editor, name: Editor, description: Post editor }
+    nfrs: []
+    successMetrics: []
+    outOfScope: []
+    version: "1.0.0"
+    status: draft
+  assumptionLedger:
+    id: al-contra
+    entries: []
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  clarificationRounds: []
+  confidence: 0.7
+  createdAt: "2026-01-01T00:00:00Z"
+
+contractBundle:
+  projectId: blog-platform
+  constraintSet:
+    projectId: blog-platform
+    constraints:
+      - { id: c-1, type: hard, category: stack, description: Must use Next.js, source: requirement }
+    gaps:
+      - { id: gap-auth, axis: authentication, description: Which auth provider? }
+      # Gate 6 fail: gap-auth has no resolvedValue and no recommendation in optionsBundle
+      - { id: gap-hosting, axis: hosting, description: Which hosting provider?, resolvedValue: vercel }
+    mode: greenfield
+  optionsBundle:
+    projectId: blog-platform
+    memos:
+      # No memo for gap-auth → gate 6 fails
+      - gapId: gap-hosting
+        axis: hosting
+        alternatives:
+          - { id: alt-vercel, name: Vercel, description: Edge hosting, tradeoffs: [vendor lock-in], blastRadius: high, references: [] }
+          - { id: alt-aws, name: AWS, description: Cloud hosting, tradeoffs: [complexity], blastRadius: critical, references: [] }
+        recommendation: alt-vercel
+        rationale: Best Next.js integration
+  architectureSpec:
+    projectId: blog-platform
+    decisions:
+      # Gate 9 fail: alt-vercel has blastRadius 'high' but no adrId
+      - { gapId: gap-hosting, chosenAlternativeId: alt-vercel, rationale: Best Next.js DX }
+    stackConfig:
+      frontend: Next.js
+      backend: Node.js
+      database: PostgreSQL
+      styling: Tailwind
+    assumptionLedgerUpdates: []
+  adrs: []
+  apiChangeSets:
+    - id: acs-1
+      changeRequestId: cr-1
+      additions:
+        # Gate 7 fail: duplicate (POST, /api/expenses)
+        - { method: POST, path: /api/expenses, description: Create expense, breaking: false }
+        - { method: GET, path: /api/posts, description: List posts, breaking: false }
+      modifications:
+        - { method: POST, path: /api/expenses, description: Update expense, breaking: false }
+      removals: []
+  screenPlans:
+    - id: sp-editor
+      featureId: feat-posts
+      screenType: page
+      route: /editor
+      components: [PostEditor]
+      dataBindings:
+        - { entityId: entity-post, field: content, source: api }
+      navigationTargets: []
+  taskPlan:
+    projectId: blog-platform
+    tasks:
+      # Gate 2 fail: cyclic dependency t-3 → t-5 → t-3
+      - { id: t-1, title: Setup, description: Scaffold, filePaths: [package.json], dependencies: [], writeOrder: 0, type: scaffold }
+      - { id: t-2, title: DB Schema, description: Prisma, filePaths: [prisma/schema.prisma], dependencies: [t-1], writeOrder: 1, type: backend }
+      # Gate 3 fail: t-3 and t-4 both write src/api/posts.ts
+      - { id: t-3, title: Posts API, description: CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2, t-5], writeOrder: 2, type: backend }
+      - { id: t-4, title: Posts API v2, description: Enhanced CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2], writeOrder: 3, type: backend }
+      - { id: t-5, title: Editor page, description: Post editor, filePaths: [src/pages/editor.tsx], dependencies: [t-3], writeOrder: 4, type: frontend }
+    featureCoverage:
+      feat-posts: [t-3, t-5]
+  assumptionLedger:
+    id: al-merged
+    entries: []
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-01-01T00:00:00Z"
+  version: "1.0.0"
