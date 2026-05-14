@@ -1,13 +1,12 @@
 /**
  * @module pipeline-context
  *
- * Dashboard AgentContext factory for runDesignPipeline.
- * Mirrors CLI's createPipelineContext but without MCP client or prompt traces
- * (the dashboard doesn't connect to design tool MCP servers directly).
+ * Dashboard AgentContext factory — thin delegation to the shared
+ * createPipelineContext() in @agentforge/agents-ux (M1 Phase 1, D5).
  */
 
 import type { AgentContext, LLMProviderRef, ProjectManifest } from '@agentforge/core';
-import { Ok, createEventBus, createRealFs } from '@agentforge/core';
+import { createPipelineContext } from '@agentforge/agents-ux';
 
 /**
  * Create a minimal AgentContext for dashboard pipeline runs.
@@ -22,14 +21,10 @@ export function createDashboardPipelineContext(
   providerFactory: (model: string) => LLMProviderRef,
   manifest?: Pick<ProjectManifest, 'agents'>,
 ): AgentContext {
-  return {
+  return createPipelineContext({
     taskId,
     projectRoot,
-    eventBus: createEventBus(),
-    fs: createRealFs(),
+    providerFactory,
     manifest,
-    runGovernance: async () => Ok({ status: 'proceed' as const }),
-    resolveProvider: (model: string) => Ok(providerFactory(model)),
-    recordAudit: () => {},
-  };
+  });
 }

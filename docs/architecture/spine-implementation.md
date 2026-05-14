@@ -314,6 +314,21 @@ From `vision.md` Layer 8, still unresolved:
 
 **Model:** `claude-sonnet-4-6` (POC), possibly `claude-opus-4-6` (production). The 2025 DORA report and 2026 practitioner experience consistently report that review cost --- not generation cost --- is the binding constraint. This may warrant investing the most capable model in the Reviewer stage. Source: `planning-methodology-counter-analysis.md`.
 
+### Implementation Guidance
+
+**Package location:** `packages/agents-reviewer/` (not yet created).
+
+**LangGraph structure:** Four sequential nodes in a StateGraph: `deterministic-gates` → `llm-review` → `assumption-validator` → `triage`. Each node is a `ReviewPass` that takes `(diff, referenceDoc, rubric)` and produces `Finding[]`.
+
+**Pattern prototype:** The `/review-plan-impl` skill (`.claude/skills/review-plan-impl/`) validates two key patterns at the tool level before they are productionized in the LangGraph Reviewer:
+
+1. **Fresh-context review** — spawns a subagent with no inherited conversation history, matching the Reviewer's "does not inherit Implementer's reasoning trace" requirement.
+2. **Deterministic-first** — computes file-match, typecheck, and dead-code results before LLM judgment, matching the "deterministic gates run first" architecture.
+
+Examine the skill's rubric (`references/rubric.md`), prompt template (`references/portable-prompt.md.tmpl`), and subagent spawn flow before designing the LangGraph Reviewer node. The skill's 7-point rubric is plan-specific (implementation fidelity), but the mechanical patterns (tiered extraction, finding classification, portable prompt audit trail) transfer directly.
+
+**Shared components to extract:** `ReviewPass` interface, `ReviewFinding` Zod schema, deterministic gate runner. These should live in `packages/core/src/types/` or a shared review utilities module.
+
 ---
 
 ## Specialist Tools

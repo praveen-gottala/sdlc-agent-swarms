@@ -895,6 +895,34 @@ This diff is the evidence that the spine produces equivalent results. Keep the d
 
 ---
 
+## Deferred from M1
+
+### Cross-Screen Coherence (Vision Layer 7)
+
+**What:** Replace post-hoc coherence checking with in-loop coherence during batch generation.
+
+**Target (vision L7):**
+- Per-screen pipeline wrapped as LangGraph subgraph
+- Batch coordinator runs screens in topological order with shared running context
+- Running context threads: navigation routes, component usage, design tokens, data fields
+- Coherence check per-screen after design, cross-screen check before HITL approval
+- Incoherence triggers regeneration, not post-hoc fixing
+- Atomic HITL approval gate for all affected screens
+
+**Current state (post-M1):**
+- Chrome Pass injects shared headers/navs (works)
+- `runPagesWithChromePass()` extracted as shared helper (M1 Phase 3)
+- Post-hoc coherence checker exists but is informational only
+- No shared running context between screens
+
+**Prerequisite:** M1 `runPagesWithChromePass()` extraction
+
+**Not assigned to a milestone.** Design pipeline coherence is orthogonal to the Architect spine (M2-M4). Assign when design pipeline maturity is prioritized.
+
+**Reference:** `docs/concepts/cross-screen-coherence.md` (created in M1 Phase 8)
+
+---
+
 ## Files modified
 
 - `docs/research/architect-codebase-grounded-design.md` — significant rewrite/expansion

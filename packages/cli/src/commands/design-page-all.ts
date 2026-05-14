@@ -23,14 +23,12 @@ import {
   loadBrandSpec,
   loadComponentCatalog,
   loadProjectManifest,
-  resolveViewports,
   PREVIEW_DIR_REL,
   PIPELINE_ARTIFACTS,
 } from '@agentforge/core';
 import type {
   LLMProviderRef,
   PageEntry,
-  DesignConfig,
   DesignTokensSpec,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
@@ -38,19 +36,18 @@ import type { RendererTokens } from '@agentforge/designspec-renderer';
 import { loadCatalogForRenderer } from '@agentforge/designspec-renderer';
 import { requireClaudeAuth } from '../utils/require-claude-auth.js';
 import {
-  buildComponentCatalogPrompt,
   buildPrototypeManifest,
   extractNavigationFromSpecs,
   extractNavigationFromChromeSpec,
   extractScreenSummary,
   analyzeNavigation,
-  buildPageContext,
   resolveSharedComponents,
   buildSharedChromeFilePayload,
   deriveRegionsFromPageSpec,
   propagateNavigateToChromeTabs,
   runDesignPipeline,
   runBrowserCorrectionPipeline,
+  buildPipelineInput,
 } from '@agentforge/agents-ux';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type {
@@ -115,13 +112,6 @@ function normalizeDesignSpecShape(raw: unknown): DesignSpecV2 | null {
 // ============================================================================
 // Helpers
 // ============================================================================
-
-/** Build a rich description from page spec + design tokens for the LLM. */
-function buildPageDescription(page: PageSpec, designTokens: string): string {
-  const components = page.components?.join(', ') ?? '';
-  const componentsSuffix = components ? ` Components: ${components}.` : '';
-  return `${page.name} page (route: ${page.route}): ${page.description}.${componentsSuffix} ${designTokens}`;
-}
 
 /** Load design tokens as a condensed string for prompts. */
 function loadDesignTokensSummary(projectRoot: string): string {
@@ -191,7 +181,7 @@ export async function designPageAllCommand(
   const manifestFs = createRealFs();
   const manifestResult = loadProjectManifest(projectRoot, manifestFs);
   const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
-  const designConfig: DesignConfig | undefined = projectManifest?.design;
+
 
   // Load pages.yaml
   const pagesPath = join(projectRoot, 'agentforge', 'spec', 'pages.yaml');
@@ -225,7 +215,7 @@ export async function designPageAllCommand(
   }
 
   // Load design tokens (summary for page descriptions)
-  const designTokens = loadDesignTokensSummary(projectRoot);
+  const designTokensBanner = loadDesignTokensSummary(projectRoot);
 
   // Load structured design tokens for prompt injection
   const realFs = createRealFs();
@@ -234,7 +224,7 @@ export async function designPageAllCommand(
   loadBrandSpec(projectRoot, realFs);
   const catalogResult = loadComponentCatalog(projectRoot, realFs);
   const componentCatalog = catalogResult.ok ? catalogResult.value : undefined;
-  const componentCatalogPromptStr = buildComponentCatalogPrompt(componentCatalog);
+
 
   // Load .env file so ANTHROPIC_API_KEY is available (project-local first)
   loadDotEnv(projectRoot);
@@ -252,8 +242,8 @@ export async function designPageAllCommand(
   output.write(infoMsg(`  Project: ${projectRoot}\n`));
   output.write(infoMsg(`  Screens: ${pages.map(p => p.id).join(', ')}\n`));
   output.write(infoMsg(`  Total: ${pages.length} pages\n`));
-  if (designTokens) {
-    output.write(infoMsg(`  ${designTokens.slice(0, 80)}...\n`));
+  if (designTokensBanner) {
+    output.write(infoMsg(`  ${designTokensBanner.slice(0, 80)}...\n`));
   }
   output.write(infoMsg('='.repeat(60) + '\n\n'));
 
@@ -290,8 +280,6 @@ export async function designPageAllCommand(
     return traced as unknown as LLMProviderRef;
   };
 
-  const componentCatalogPrompt = componentCatalogPromptStr;
-
   const createSink = (runId: string): import('@agentforge/agents-ux').PipelineTelemetrySink => {
     const cliSink = new CliStdoutSink(output);
     const langfuseSink = createLangfuseSink(runId, { projectName: projectRoot.split('/').pop() });
@@ -320,51 +308,37 @@ export async function designPageAllCommand(
     if (refPage) {
       output.write(infoMsg(`\n  Chrome Pass — ${sharedMeta.components.join(', ')} (ref: ${refPage.id})\n`));
 
-      const refViewport = resolveViewports({
-        cliWidth: options.width,
-        screenType: refPage.screen_type,
-        pageViewports: refPage.viewports,
-        designConfig,
-      })[0];
-
-      const refDescription = buildPageDescription(refPage, designTokens);
       const refModuleId = refPage.id;
       const refTaskId = `task_chrome_${refPage.id}_${Date.now()}`;
-      const refPageContext = buildPageContext(refPage, pages);
 
-      const chromeInput: PipelineInput = {
-        moduleId: refModuleId,
+      const chromeInput = buildPipelineInput({
+        pageId: refModuleId,
         taskId: refTaskId,
         projectRoot,
+        telemetry: createSink(refTaskId),
+        agentContext: createPipelineContext(refTaskId, undefined, projectRoot, providerFactory, projectManifest),
         designTool,
         providerString: resolveCLIModel(),
         resume: !!options.designOnly,
-        telemetry: createSink(refTaskId),
         chromePass: { mode: 'generate' },
-        agentContext: createPipelineContext(refTaskId, undefined, projectRoot, providerFactory, projectManifest),
-        prdRequirements: [refDescription],
-        pageContext: refPageContext,
-        designTokensSpec: structuredTokens,
-        designConfig,
-        description: refDescription,
-        viewportWidth: refViewport,
-        rendererTokens: rendererTokens as Record<string, unknown>,
-        catalogMap: catalogMapV2,
-        componentCatalogPrompt,
-      };
+        ...(options.width !== undefined ? { cliWidth: options.width } : {}),
+      });
+      if (chromeInput) {
+        const chromeResult = await runDesignPipeline(chromeInput);
 
-      const chromeResult = await runDesignPipeline(chromeInput);
-
-      if (chromeResult.ok && chromeResult.value.design?.spec) {
-        sharedChromeSpec = chromeResult.value.design.spec as unknown as DesignSpecV2;
-        const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
-        const designsDir = join(projectRoot, 'agentforge', 'designs');
-        if (!existsSync(designsDir)) mkdirSync(designsDir, { recursive: true });
-        writeFileSync(join(designsDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
-        output.write(successMsg(`    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`));
+        if (chromeResult.ok && chromeResult.value.design?.spec) {
+          sharedChromeSpec = chromeResult.value.design.spec as unknown as DesignSpecV2;
+          const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
+          const designsDir = join(projectRoot, 'agentforge', 'designs');
+          if (!existsSync(designsDir)) mkdirSync(designsDir, { recursive: true });
+          writeFileSync(join(designsDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
+          output.write(successMsg(`    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`));
+        } else {
+          const errMsg = chromeResult.ok ? 'no design spec returned' : ((chromeResult.error as { message?: string }).message ?? 'unknown');
+          output.write(warnMsg(`  Chrome Pass failed (${errMsg}) — per-page chrome will be unconstrained\n`));
+        }
       } else {
-        const errMsg = chromeResult.ok ? 'no design spec returned' : ((chromeResult.error as { message?: string }).message ?? 'unknown');
-        output.write(warnMsg(`  Chrome Pass failed (${errMsg}) — per-page chrome will be unconstrained\n`));
+        output.write(warnMsg(`  Chrome Pass — reference page ${refModuleId} not found in pages.yaml\n`));
       }
     }
   }
@@ -381,40 +355,32 @@ export async function designPageAllCommand(
 
     const moduleId = page.id;
     const taskId = `task_page_${page.id}_${Date.now()}`;
-    const description = buildPageDescription(page, designTokens);
-    const pageContext = buildPageContext(page, pages);
-    const viewportWidth = resolveViewports({
-      cliWidth: options.width,
-      screenType: page.screen_type,
-      pageViewports: page.viewports,
-      designConfig,
-    })[0];
 
-    output.write(infoMsg(`\n  [${i + 1}/${pages.length}] ${page.name} (${viewportWidth}px)...\n`));
-
-    const pageInput: PipelineInput = {
-      moduleId,
+    const pageInputBase = buildPipelineInput({
+      pageId: moduleId,
       taskId,
       projectRoot,
+      telemetry: createSink(taskId),
+      agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory, projectManifest),
       designTool,
       providerString: resolveCLIModel(),
       resume: !!options.designOnly,
       ...(options.designOnly ? { stage: 'design' as const } : {}),
-      telemetry: createSink(taskId),
-      agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory, projectManifest),
-      prdRequirements: [description],
-      pageContext,
-      designTokensSpec: structuredTokens,
-      designConfig,
-      description,
-      viewportWidth,
-      rendererTokens: rendererTokens as Record<string, unknown>,
-      catalogMap: catalogMapV2,
-      componentCatalogPrompt,
+      ...(options.width !== undefined ? { cliWidth: options.width } : {}),
       ...(sharedChromeSpec ? {
         chromePass: { mode: 'consume' as const, spec: sharedChromeSpec, activePageId: page.id },
       } : {}),
-    };
+    });
+
+    if (!pageInputBase) {
+      output.write(warnMsg(`  Page ${moduleId} not found in pages.yaml — skipping\n`));
+      continue;
+    }
+
+    const viewportWidth = pageInputBase.viewportWidth ?? 1440;
+    output.write(infoMsg(`\n  [${i + 1}/${pages.length}] ${page.name} (${viewportWidth}px)...\n`));
+
+    const pageInput: PipelineInput = pageInputBase;
 
     const t0 = Date.now();
     const pageResult = await runDesignPipeline(pageInput);

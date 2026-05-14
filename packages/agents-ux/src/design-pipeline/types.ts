@@ -8,7 +8,7 @@
  * OTel mapping deferred to roadmap Phase 7 / Langfuse.
  */
 
-import type { AgentContext, LLMProviderRef } from '@agentforge/core';
+import type { AgentContext, LLMProviderRef, EnrichedRequirement } from '@agentforge/core';
 import type { DesignTool, DesignOutput } from '@agentforge/core';
 import type { DesignTokensSpec, DesignConfig, PageContext } from '@agentforge/core';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
@@ -94,6 +94,8 @@ export interface PipelineInput {
   readonly catalogMap?: CatalogMap;
   readonly componentCatalogPrompt?: string;
   readonly designSystemPrompt?: string;
+  /** Structured Clarifier output. When present and prdRequirements absent, initState() derives prdRequirements via renderPrdToMarkdown. */
+  readonly enrichedRequirement?: EnrichedRequirement;
 }
 
 // ============================================================================
@@ -131,6 +133,7 @@ export interface DesignPhaseState {
   readonly catalogMap?: CatalogMap;
   readonly componentCatalogPrompt?: string;
   readonly designSystemPrompt?: string;
+  readonly enrichedRequirement?: EnrichedRequirement;
 }
 
 // ============================================================================

@@ -2,7 +2,6 @@
 
 Multi-agent framework for end-to-end SDLC orchestration.
 
-
 **Shared tooling:** See **`AGENTS.md`** for how this file fits with Cursor rules and episodic handoff docs (so the same practices apply in both tools).
 
 ---
@@ -12,7 +11,7 @@ Multi-agent framework for end-to-end SDLC orchestration.
 Before making any architectural decision, read in this order:
 
 1. **`docs/vision.md`** — the architectural vision. Covers 15 layers with locked and open decisions, current-vs-target explicit for every layer. **When this document and the current codebase disagree, the vision wins.** When this document and `docs/specs/PRD.md` disagree on architecture, the vision wins.
-2. **`docs/specs/PRD.md`** — the product spec. Source of truth for product scope, interfaces, API contracts, enum values, field lists. Do NOT treat the PRD as authoritative on architectural *patterns* — those are in the vision.
+2. **`docs/specs/PRD.md`** — the product spec. Source of truth for product scope, interfaces, API contracts, enum values, field lists. Do NOT treat the PRD as authoritative on architectural _patterns_ — those are in the vision.
 3. **This file (`CLAUDE.md`)** — the development discipline rules. Always in force.
 4. **`docs/lessons-learned-rules.md`** — Active rules only (~400 lines). For historical RESOLVED entries, see `docs/lessons-learned.md`.
 5. **`docs/adrs/`** — decision records that may amend or supersede sections of the PRD.
@@ -30,6 +29,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Plans:** `docs/plans/active/` (active), `docs/plans/backlog/` (paused/backlog), `docs/plans/completed/` (done)
 
 **Active plans (read these during session-start):**
+
 1. Visual Diversity — Phase 1-2, 4 COMPLETE. Prerequisite COMPLETE. Phase 3 (3.1-3.8) COMPLETE. Phase 3.7 COMPLETE (evaluator calibration, catalog bridge, docs, pipeline verification). Phase 3.8 COMPLETE (progressive evaluator, correction parity, pipeline verification). Next: Phase 5 (Domain + Effects Foundation). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
 2. CHIP's Next Steps — M0 (Ground Truth) COMPLETE (2026-05-04). Clarifier run on CashPulse (7 screens, 8 entities, 25 features, 4/4 schema validations). Research doc rewritten with real data from both paths (856 lines, 6 Mermaid diagrams). 6 self-contained LLM research briefs created (R1-R6). Next: M1 (Connect — thread Clarifier output into design pipeline). See `docs/plans/active/chips-next-steps/execution-plan.md`
 3. Dashboard Pipeline Fix — Planning stage fails from dashboard but works from CLI. Root cause confirmed: `import.meta.url` under webpack. Partial fix: `serverExternalPackages` for agents-clarifier. Full fix for agents-ux pending. See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
@@ -40,13 +40,15 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 8. ChatPRD Split Panel — Subplan of CHIP UX Overhaul Phase 3. Phases 1-7 COMPLETE. Phase 8 (visual polish) NOT STARTED. See `docs/plans/active/chatprd-split-panel/execution-plan.md`
 9. Clarifier E2E Browser Test — Phase 1 (resume fix) COMPLETE, Phase 2 (E2E tests, 9 passing) COMPLETE. Phases 3-4 (recording cassettes, eval harness verification) remaining. See `docs/plans/active/clarifier-e2e-browser-test/execution-plan.md`
 10. Clarifier Self-Correction — Phases 1-3 COMPLETE (2026-05-02). Phase 4 (self-correction pipeline: evaluator + challenger LLM) next. Phase 5 (verification) after. See `docs/plans/active/clarifier-self-correction/execution-plan.md`
-**Backlog plans (do NOT read during session-start — note status only):**
+    **Backlog plans (do NOT read during session-start — note status only):**
+
 - Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
 - Docs Tutorials — Phase 5 of Docs Reorganization (3 tutorial/guide pages). See `docs/plans/backlog/docs-tutorials.md`
 - Clarifier Streaming — Research COMPLETE, 0/4 implementation phases started. See `docs/plans/active/clarifier-streaming/execution-plan.md`
 - Eval Documentation — 5 doc pages planned, 0/5 started. See `docs/plans/active/eval-documentation/execution-plan.md`
 
 **Completed plans (do NOT read during session-start):**
+
 - Clarifier Initiative — Phase 0, Phase 2 (RAG), Phase 1 Tasks 1.0-1.7 ALL COMPLETE (2026-04-28). 9-node LangGraph StateGraph, 186 tests. Task 1.8 (dashboard UX) owned by CHIP UX Overhaul Phase 3. Forward-looking items (FB1-FB4) merged into CHIP's Next Steps. See `docs/plans/completed/clarifier-initiative/execution-plan.md`
 - Observability — Phases 1-4 COMPLETE (incl. 4.1-4.3 extended tracing). Phase 5 (evaluation infrastructure) deferred. See `docs/plans/completed/observability/execution-plan.md`
 - Clarifier Resume Approve — Phase 1 COMPLETE (2026-05-02): barrel export fix, routing tests, checkpointer singleton tests, prd-draft event test. Phase 2 extracted to Integrating Clarifier plan. See `docs/plans/completed/clarifier-resume-approve/execution-plan.md`
@@ -64,6 +66,7 @@ ADR-043 migration Phase M-4. Do not extend the Python engine or the legacy imper
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
 When the user reports a UI issue, is stuck, or something "isn't working":
+
 1. **Use browser tools first.** Launch the dev server (`npx next dev --port 3000`),
    navigate to the relevant page using Chrome DevTools MCP (`navigate_page`,
    `take_screenshot`, `take_snapshot`, `click`), and visually verify the state.
@@ -79,6 +82,7 @@ These rules are non-negotiable. They apply to every implementation task, bug fix
 and test written in this project.
 
 ### Full Ownership of All Tests
+
 - Every agent MUST run the FULL test suite and fix ALL failures — not just tests
   "related to" the change. No such thing as a "pre-existing" failure.
 - There is no "unrelated" failure: if a required check (`typecheck`, `test`, or
@@ -94,15 +98,17 @@ and test written in this project.
   config only starts the Next.js server.
 
 ### PRD is Source of Truth (for product)
+
 - PRD (`docs/specs/PRD.md`) defines product scope, interfaces, API contracts, enums,
   field lists. TypeScript interfaces in `packages/core/src/types/` are authoritative
   for field-level truth (ADR-038). When PRD and code diverge on field-level details,
   code wins and PRD is updated.
-- Do NOT treat the PRD as authoritative on architectural *patterns*. Those are in
+- Do NOT treat the PRD as authoritative on architectural _patterns_. Those are in
   the vision document.
 - Do not hardcode values the PRD defines as configurable.
 
 ### Vision is Source of Truth (for architecture)
+
 - `docs/vision.md` is the authority on architectural patterns: orchestration runtime,
   coordination substrate, agent taxonomy, state persistence, clarifier structure,
   RAG, implementation patterns, review patterns, HITL gates, observability,
@@ -118,18 +124,22 @@ and test written in this project.
   target pattern in new code.
 
 ### Interface Completeness
+
 - Include ALL fields from the TypeScript interface in `packages/core/src/types/`.
   The TypeScript interface is authoritative — not the PRD description. See ADR-038.
 
 ### Enum Coverage
+
 - Every enum member must have a working implementation, even if minimal.
   Returning 400/404 for a defined enum value is a spec violation.
 
 ### Testing Integrity
+
 - Tests must exercise the real server/API codepath, not internal functions.
   Never work around a server bug by calling internal methods — flag as deviation.
 
 ### Test Quality Gates
+
 Before adding ANY new test, verify all of:
 
 1. **Ownership.** Tests live in the package that owns the function under test.
@@ -156,6 +166,7 @@ Detail, examples, and the bug story live in `docs/lessons-learned.md`
 § Test Quality Gates — One Canonical Site Per Behavior.
 
 ### Event Registry Completeness
+
 - Every domain event referenced in the PRD (TaskStatusChanged, PhaseStarted,
   BudgetAlert, etc.) must be formally defined in the event model/registry with
   typed payloads. An event that is emitted but not in the registry, or in the
@@ -165,6 +176,7 @@ Detail, examples, and the bug story live in `docs/lessons-learned.md`
   mechanism between agents. See vision Layer 2.
 
 ### Typed Contracts for Cross-Agent Artifacts
+
 - Every artifact that crosses an agent boundary (PRD, EnrichedRequirement,
   AssumptionLedger, FeaturePlan, ChangeClassification, ScreenPlan, APIChangeSet,
   Diff, ReviewResult) has a Zod schema in `packages/core/src/types/`.
@@ -174,6 +186,7 @@ Detail, examples, and the bug story live in `docs/lessons-learned.md`
   payloads.
 
 ### Deviations from PRD or Vision
+
 - Document deviations with: ADR in `docs/adrs/`, code comment referencing it, and
   a test naming the deviation. Silent deviations are tech debt.
 - Ambiguous PRD: pick the safer interpretation, document in ADR.
@@ -186,10 +199,12 @@ Detail, examples, and the bug story live in `docs/lessons-learned.md`
 - Report PRD issues under "PRD Issues Found" at end of each prompt's output.
 
 ### Data-Driven Configuration
+
 - Per-entity configs must be data-driven (config dicts/YAML), never hardcoded
   as if-else chains or shared constants.
 
 ### Rejected Patterns — Check Before Proposing
+
 Before introducing an architectural pattern that feels novel, check
 `docs/lessons-learned.md`, the vision document, and the rejected alternatives
 appendix in `docs/design-decisions.md` for patterns that have been considered
@@ -209,12 +224,14 @@ and rejected with rejection reasoning. Notable rejected patterns:
   `runDesignPipeline` — Phases 0-4 execution plan)
 
 ### Self-Correction
+
 - Track failed approaches. Before retrying, verify the new attempt is
   materially different from what already failed.
 - After 2 failed attempts at the same problem: stop, restate the problem,
   list top 3 hypotheses, run the cheapest discriminating check first.
 
 ### Think Before Coding (Karpathy Guidelines)
+
 - Follow `.claude/rules/karpathy-guidelines.md` alongside the rules above:
   state assumptions, keep changes surgical, prefer the minimum code that
   solves the problem, and define verifiable success criteria before
@@ -222,12 +239,14 @@ and rejected with rejection reasoning. Notable rejected patterns:
   pass), project rules win.
 
 ### Session Continuity
+
 - **At session start, ALWAYS read `docs/lessons-learned-rules.md`** before writing code. Read the full `docs/lessons-learned.md` only when you need historical RESOLVED context for a specific topic.
 - Persist learnings to `docs/lessons-learned.md`. Keep entries short and actionable.
 - Auto memory (`~/.claude/projects/.../memory/MEMORY.md`) is used for cross-session
   context. It is auto-loaded every session — check it for active plans and pointers.
 
 ## Tech Stack
+
 - Monorepo: Nx with TypeScript
 - CLI: Commander.js (`packages/cli`)
 - Orchestration engine: **TypeScript LangGraph** (target — vision Layer 1).
@@ -252,6 +271,7 @@ and rejected with rejection reasoning. Notable rejected patterns:
 - Linting: ESLint + Prettier (config in root)
 
 ### Dependency & Model Versioning (CRITICAL)
+
 - ALWAYS use the latest stable version of ALL dependencies. LLM training data
   is stale — NEVER trust its version suggestions. Check npm/PyPI first.
 - When adding or upgrading any dependency, run the FULL test suite afterwards.
@@ -263,6 +283,7 @@ and rejected with rejection reasoning. Notable rejected patterns:
   instead of workarounds (e.g., tool_use hacks for JSON output).
 
 ## Architecture
+
 See `docs/vision.md` for the layered architecture authority.
 See `docs/architecture/architecture.md` for the layer diagram.
 See `docs/specs/PRD.md` for full product spec.
@@ -274,6 +295,7 @@ change helps either, it's probably right. If it hurts either, it's probably wron
 The system is a four-stage vertical spine with specialist tools (vision Layer 3):
 
 **Spine (sequential, single writer per stage):**
+
 1. Clarifier — reads input, runs clarification pipeline, emits enriched
    requirement + assumption ledger.
 2. Architect — produces architecture spec, ADRs, task plan.
@@ -283,6 +305,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
    review second.
 
 **Specialists (invoked as tools by spine stages):**
+
 - Research subagents (read-only codebase/docs exploration)
 - Design subagent (UI proposals, screen specs)
 - Test generator (failing tests before implementation)
@@ -296,6 +319,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 **Governance:** MIDDLEWARE wrapping agent execution, not a service.
 
 ## Package Dependencies
+
 - `core` depends on: `yaml`, `zod`, `eventemitter3` [telemetry only], `@langchain/core`, `@langchain/langgraph-checkpoint`, `@langchain/langgraph-checkpoint-postgres` [checkpointer]
 - `governance` depends on: `core`
 - `providers` depends on: `core`
@@ -310,6 +334,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
 
 ### Dashboard Dev Server (IMPORTANT)
+
 - The dashboard uses pre-built `dist/` from monorepo packages (NOT raw TypeScript source).
   This makes cold-start ~10x faster but means **you must rebuild packages before running the dashboard** if you changed package source code.
 - **Before starting the dashboard dev server:** `nx run-many -t build` (rebuilds all packages)
@@ -321,6 +346,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   TypeScript files (~65K lines) on every page load. The `dist/` approach compiles 0 extra files.
 
 ## Commands
+
 - Build all: `nx run-many -t build`
 - Test single package: `nx test core`
 - Test all: `nx run-many -t test`
@@ -332,6 +358,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   - Path registry at `docs/registry.yaml` maps logical doc names to physical paths (for future skill migration)
 
 ## Code Conventions
+
 - Strict TypeScript (`strict: true`, no `any`)
 - Functional style, avoid classes except where interfaces demand it
 - All public APIs must have JSDoc comments
@@ -347,6 +374,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   changed without version bump
 
 ## Documentation
+
 - When adding or modifying CLI commands, update docs in `docs/cli/`.
 - When adding a new feature, module, or public API, ensure documentation exists.
 - When making an architectural change that touches vision Layer N, update
@@ -357,12 +385,14 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
   - When adding new packages, create `catalog-info.yaml` + `README.md` in the package root
 
 ### Markdown Formatting for Backstage TechDocs
+
 - Follow `.claude/rules/docs-formatting.md` when writing docs under `docs/`.
   Key rules: use admonitions (`!!!`) for callouts, collapsible sections
   (`???`) for gotchas, blank line before lists. Tables/code/blockquotes
   get automatic styling via the `mdx_fix_list_spacing` extension.
 
 ### Blind Subagent Test (MANDATORY for new documentation)
+
 After documenting any new system, feature, or setup procedure, run a **blind
 subagent test** to verify the docs are self-sufficient. Spawn an Explore agent
 with NO context from the current conversation and ask it to accomplish a task
@@ -372,6 +402,7 @@ gaps — fix them before declaring done. Do NOT skip this step. A doc that only
 works when you already know the answer is not documentation.
 
 ### Spec Sync on Feature Completion
+
 - When completing a feature plan phase, update the relevant domain spec section
   in `docs/specs/` to reflect the implemented behavior.
 - When a `vision.md` locked decision changes, grep all domain specs for the
@@ -379,8 +410,10 @@ works when you already know the answer is not documentation.
 - Run `/verify-docs --full-sweep` before major releases to catch drift.
 
 ## Skills Library
+
 Available Claude Code skills (invoke with /slash command).
 See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership boundaries.
+
 - /session-start — Read key docs and produce a briefing before coding (use at every session start)
 - /create-plan [description] — Create an execution plan for any initiative (roadmap phase, feature, ad-hoc task). Explores codebase, scaffolds plan folder, auto-runs /challenge-plan.
 - /analyze-codebase — Full gap analysis + prioritized task roadmap
@@ -394,12 +427,14 @@ See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership bo
 - /verify-docs — Unified documentation verification: content accuracy, spec sync, vision layer currency, CLI docs, lessons-learned. Task-scoped (from verify-done) or full-sweep (pre-release). Absorbs former /review-spec-sync.
 - /mid-session-drift-check — Mid-session process compliance audit: mocks, tests, scope creep, honesty, rejected patterns, doc currency. Use before commits or when session feels long.
 - /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.
+- /review-plan-impl <plan> [--phase X] — Fresh-context review of diff against plan phase. Deterministic pre-checks + 7-point rubric + portable prompt audit trail. Use after implementing a plan phase.
 - /backstage create <type> <topic> — Create/revise backstage doc page (concept, tutorial, guide, architecture, status) with editorial protocol, competitor-swap test, and voice/flow check
 - /backstage sync — Regenerate Tier 3 auto-generated pages + LLM-powered Tier 2 concept page drift check against authoritative sources
 - /backstage review <page> — Deep review of an existing page against voice, flow, and quality rules. Gathers context, identifies issues, suggests concrete rewrites, and creates a prioritized plan
 - /improvise-ux [description] [reference URL or screenshot] — Improve existing UI component polish to match a reference design. 11-phase protocol with design system audit, mathematical contrast computation (WCAG ratios for text, L deltas for surfaces), strictly-additive token changes, all-state browser verification, and color-scheme verification.
 
 ## IMPORTANT
+
 - ALWAYS run `typecheck` after making changes across packages
 - NEVER modify `packages/stacks/react-node-prisma/prompts/` without asking
 - Test files go next to source files (`foo.ts` → `foo.test.ts`)
@@ -409,3 +444,27 @@ See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership bo
 - **Every LLM call must use typed structured output via Zod schemas. No free-text coordination between agents.**
 - **No secrets in LLM context.** Inject credentials at tool-call time, never in system/user prompts. (Vision Layer 13)
 - **No stub fallbacks when imports fail.** If a dependency is missing or an import doesn't resolve, stop and report the gap. Do not silently fall back to a stub or mock.
+
+<!-- nx configuration start-->
+<!-- Leave the start & end comments to automatically receive updates. -->
+
+## General Guidelines for working with Nx
+
+- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
+- You have access to the Nx MCP server and its tools, use them to help the user
+- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
+- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+
+## Scaffolding & Generators
+
+- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+
+## When to use nx_docs
+
+- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
+- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
+- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
+
+<!-- nx configuration end-->

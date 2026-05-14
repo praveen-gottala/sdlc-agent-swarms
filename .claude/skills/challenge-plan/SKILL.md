@@ -58,6 +58,7 @@ For each major decision in the plan, check:
 7. **Solving the wrong problem?** Is the plan fixing a symptom when the root cause is elsewhere? (e.g., patching spec JSON when the renderer has CSS bugs; adding workarounds when the LLM prompt needs fixing.)
 8. **Scope creep?** Does the plan add abstractions, features, or flexibility that no current consumer needs?
 9. **Missing simpler alternative?** Is there a way to achieve the same goal with less code, fewer moving parts, or by reusing existing infrastructure?
+10. **Untracked deferrals?** Does the plan defer work to a future milestone or plan? If so, verify the destination actually contains the deferred item. "Deferred to M2" is incomplete if M2 doesn't cover that scope. Every deferral needs both a note in the source phase AND a tracking artifact at the destination (backlog entry, standalone plan, or section in the destination's execution plan). See `docs/lessons-learned-rules.md` §"Deferrals Must Land in a Tracking Artifact."
 
 After evaluating, classify each challenge as one of:
 

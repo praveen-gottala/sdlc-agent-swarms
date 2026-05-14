@@ -93,6 +93,7 @@ export function buildPipelineInput(opts: BuildPipelineInputOptions): PipelineInp
 - New regression test: CLI delegation test in `packages/cli/src/utils/__tests__/pipeline-context.test.ts` — verify CLI's thin wrapper returns AgentContext with mcpClient set, providerFactory absent → Err on `resolveProvider()`
 - New parity test: in builder test, create the same fixture and compare output from old `buildDashboardPipelineInput` vs new shared `buildPipelineInput` — assert `prdRequirements`, `viewportWidth`, `pageContext` are field-identical
 - Grep: no remaining callers of the old factory signatures except thin delegating wrappers
+- **Acknowledged behavioral simplification:** `buildPipelineInput()` uses `page.description` as the description field, not the old CLI `buildPageDescription()` which concatenated route, components, and design-token summary. The rich data is carried in `pageContext` and `designTokensSpec` — the old string was redundant duplication.
 
 ### Risk
 
@@ -136,11 +137,11 @@ Derive `STAGE_INDEX`, `VISIBLE_STAGE_COUNT`, `HIDDEN_STAGES` from the descriptor
 ### Verification
 
 - `nx run dashboard:test` — existing sink tests pass unchanged
-- New test: construct sink with custom 5-stage descriptor, verify correct `visibleIndex` and `VISIBLE_STAGE_COUNT`
 - New test: backward-compat — `new DashboardSseSink(runId, pipeline, taskId)` (no stages param) behaves identically to current tests (indices 0/1/2, count 3, evaluator hidden)
-- New test: hidden stage filtering — custom descriptor with `{ name: 'clarifier-precheck', hidden: true }`, call `onStageStart` for that stage, assert no SSE event emitted
 - New test: unknown stage name — call `onStageStart` with a name not in the descriptor array, verify safe default (no crash)
 - `nx run-many -t typecheck` — clean
+- ~~Custom 5-stage descriptor~~ — CUT: no consumer exists, scope creep
+- ~~Hidden stage filtering~~ — CUT: already tested in `dashboard-sink.test.ts:157-167`
 
 ### Risk
 
@@ -153,6 +154,8 @@ Low. Purely additive; default parameter preserves all existing behavior.
 ## Phase 3: Dashboard All-Pages Loop (D6)
 
 **Goal:** Dashboard's `generate-all/route.ts` currently delegates to CLI's `designPageAllCommand()` with a no-op Writable sink — zero telemetry, zero SSE, zero run tracking. Give the dashboard its own loop with `DashboardSseSink` and run tracking.
+
+**Scope note:** This phase is a refactor — extract shared helpers, replace null sink, add run tracking. **In-loop cross-screen coherence (vision Layer 7) is deferred.** See `execution-plan.md` §Deferred from M1 for the tracked backlog item and `docs/concepts/cross-screen-coherence.md` for the target architecture.
 
 ### 3.1 Extract `runPagesWithChromePass()` shared helper
 
@@ -214,9 +217,8 @@ Encapsulates the Chrome Pass → sequential per-page pipeline loop currently inl
   - Chrome Pass → per-page loop with mock pipeline, verify callbacks called per page
   - 3-page fixture with 2 sharing a component — assert reference page runs with `chromePass: { mode: 'generate' }`, remaining with `{ mode: 'consume' }`
   - Partial failure — one page fails, assert others still complete, `onPageFail` called for failed page only
-- New test: dashboard route handler unit test — mock `runPagesWithChromePass` to return mixed results, verify: `startRun` called once, `completeRun`/`failRun` called per page, 200 response with per-page statuses
-- Dashboard route E2E: **blocked by Dashboard Pipeline Fix**. When unblocked, E2E must verify: navigate to `/design`, click "Generate All", see per-page progress bars in Activity sidebar, see run appear in Runs page. Until then, unit tests above provide coverage.
-- **Browser verification (when unblocked):** Chrome DevTools MCP — navigate to design page, click Generate All, take_screenshot to verify progress bars, take_snapshot to verify SSE events update stage labels
+- ~~Dashboard route handler unit test~~ — CUT: E2E already covers real behavior at `e2e/screen-types-plan-b.spec.ts:783`. Mock-call verification violates Test Quality Gate #3 ("No did-I-call-my-mock tests").
+- Dashboard route E2E: **blocked by Dashboard Pipeline Fix**. When unblocked, E2E must verify: navigate to `/design`, click "Generate All", see per-page progress bars in Activity sidebar, see run appear in Runs page.
 
 ### Risk
 
@@ -395,8 +397,7 @@ When `enrichedRequirement` is defined, `buildPipelineInput` leaves `prdRequireme
 - Updated builder test:
   - `enrichedRequirement` present when valid YAML exists
   - `enrichedRequirement` absent when YAML missing (backward compat)
-  - `enrichedRequirement` absent when schema invalid — assert `telemetry.onLog` called with `'warn'` level and `'schema-invalid'` in message
-  - `enrichedRequirement` absent when YAML is malformed syntax (e.g., `{invalid: [}`) — no crash
+  - `enrichedRequirement` absent when schema invalid or malformed — assert `telemetry.onLog` called with `'warn'` level and `'schema-invalid'` in message, no crash
   - Precedence test: fixture with BOTH `enriched-requirement.yaml` AND `docs/prd.md` — assert `prdRequirements` is undefined (so `initState()` derives from enriched, not flat PRD)
 
 ### Risk
@@ -421,13 +422,11 @@ Low. Reading YAML + Zod validation is established pattern. Graceful degradation 
    - `agentforge/spec/design-tokens.yaml`
    - `docs/prd.md`
 
-2. Integration test at `packages/agents-ux/__tests__/m1-connect.integration.test.ts`:
-   - **Happy path:** Call `buildPipelineInput()` with CashPulse fixture → assert `enrichedRequirement` present with correct screen count
-   - **Determinism:** Assert byte-exact equality: `state.prdRequirements?.[0] === renderPrdToMarkdown(cashPulseEnriched.prd)`
-   - **Confidence:** Assert `enrichedRequirement.confidence` is valid number
-   - **State propagation:** Call `initState()` and verify `enrichedRequirement` threads through to state
+2. Integration test at `packages/agents-ux/__tests__/m1-connect.integration.test.ts` (3 focused tests):
+   - **Happy path:** Call `buildPipelineInput()` with CashPulse fixture → assert `enrichedRequirement` present with correct screen count, entity names in `prdRequirements[0]`, `confidence` is valid number, `initState()` threads `enrichedRequirement` through to state
    - **Fallback path:** Same fixture minus `enriched-requirement.yaml` → assert `enrichedRequirement` is undefined, `prdRequirements` contains flat `[description, prdContent]`
    - **Cross-phase disk path parity:** Call `createProject()` with `clarifierOutput`, then `buildPipelineInput()` on the created project dir → assert `enrichedRequirement` from disk matches the one passed to `createProject`. This catches write-path/read-path mismatches (e.g., different subdirectory).
+   - ~~Determinism, confidence, state propagation~~ — consolidated into happy path test (subsets of the same data flow)
 
 ### Files modified
 
@@ -461,7 +460,8 @@ Low. Test-only phase. CashPulse data available from M0 run.
    - Q1 (PRD format): YAML in `enriched-requirement.yaml` + markdown in `docs/prd.md`
    - Q2 (Auto-trigger): Manual initiation from project page
    - Q3 (Project home): Not changed in M1
-4. **`docs/plans/active/chips-next-steps/execution-plan.md`** — Update M1 status from outline to COMPLETE, update CLAUDE.md current state
+4. **`docs/plans/active/chips-next-steps/execution-plan.md`** — Update M1 status from outline to COMPLETE, update CLAUDE.md current state, add "Deferred from M1" section with cross-screen coherence (vision L7) as tracked backlog item
+5. **`docs/concepts/cross-screen-coherence.md`** — **NEW.** Standalone backstage concept page: what cross-screen coherence means, current state (Chrome Pass), target state (vision L7 batch coordinator), 2 Mermaid diagrams (current flow, target flow), links to `docs/concepts/design-pipeline.md` §Cross-Screen Architecture and `docs/vision.md` Layer 7. Add to `mkdocs.yml` under Concepts nav.
 
 ### Files modified
 
@@ -470,7 +470,9 @@ Low. Test-only phase. CashPulse data available from M0 run.
 | `docs/architecture/design-pipeline-dataflow.md` | Add enriched requirement section |
 | `docs/vision.md` | Update Layer 4 |
 | `docs/plans/active/integrating-clarifier/execution-plan.md` | Mark SUPERSEDED |
-| `docs/plans/active/chips-next-steps/execution-plan.md` | Update M1 status |
+| `docs/plans/active/chips-next-steps/execution-plan.md` | Update M1 status + add "Deferred from M1" section |
+| `docs/concepts/cross-screen-coherence.md` | **NEW.** Backstage concept page with Mermaid diagrams |
+| `mkdocs.yml` | Add cross-screen-coherence.md to Concepts nav |
 | `CLAUDE.md` | Update Active Plans section |
 
 ### Verification

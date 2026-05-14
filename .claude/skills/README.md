@@ -9,14 +9,14 @@ Code prompt.
 Skills map to specific points in the development lifecycle:
 
 ```
-New initiative    Session start     Mid-session          End of task       Pre-release
-     |                 |                |                     |                |
-/create-plan     /session-start  /mid-session-drift-check /verify-done    /verify-docs
-     |                                                    |                 --full-sweep
-     +-> /challenge-plan (auto)                           +-> /verify-docs
-                                                         |    (task-scoped)
-                                                         /backstage sync
-                                                              (doc drift)
+New initiative    Session start     After implementing     Before commit     End of task       Pre-release
+     |                 |                |                     |                   |                |
+/create-plan     /session-start  /review-plan-impl     /mid-session-drift  /verify-done    /verify-docs
+     |                            (fidelity gate)        -check              |                 --full-sweep
+     +-> /challenge-plan (auto)                          (process gate)      +-> /verify-docs
+                                                                            |    (task-scoped)
+                                                                            /backstage sync
+                                                                                 (doc drift)
 ```
 
 ## Skills Reference
@@ -60,6 +60,7 @@ New initiative    Session start     Mid-session          End of task       Pre-r
 |-------|---------|-------------|
 | `/verify-done` | Pre-completion gate: test triad + headed E2E + visual verification + doc verification | Before declaring any dashboard/prototype/renderer task done |
 | `/verify-docs` | Documentation content accuracy: vision layers, specs, CLI docs, lessons-learned | From verify-done (task-scoped), before commit, or pre-release (full-sweep) |
+| `/review-plan-impl` | Fresh-context diff review against plan phase: 7-point rubric + deterministic pre-checks + portable prompt audit trail | After implementing a plan phase, before committing |
 | `/mid-session-drift-check` | Process compliance audit: mocks, tests, scope creep, honesty, rejected patterns | Mid-session, before commits, when session feels long |
 | `/verify-design-render` | Spec-to-renderer property fidelity check | After design spec or renderer changes |
 
@@ -118,6 +119,7 @@ one of them is doing it wrong.
 | Process rules followed during session | `/mid-session-drift-check` |
 | Code matches PRD product requirements | `/review-prd-compliance` |
 | Plans align with framework philosophy | `/challenge-plan` |
+| Diff matches plan phase specification | `/review-plan-impl` |
 | Spec-to-renderer visual fidelity | `/verify-design-render` |
 | Creating/revising doc pages | `/backstage create` |
 | Doc drift detection (concept pages) | `/backstage sync` |
@@ -130,9 +132,14 @@ Some skills invoke others:
 
 - `/verify-done` calls `/verify-docs` (task-scoped) as its documentation verification step
 - `/mid-session-drift-check` recommends running `/verify-docs` when >3 production files changed
+- `/review-plan-impl` recommends cross-skill follow-ups based on findings (e.g., `/verify-done` for test gaps, `/write-adr` for behavioral changes not in plan)
 
 No skill calls itself or creates circular invocations. `/verify-docs` never calls another
 skill — it reads files and produces a report.
+
+**Portable prompt pattern:** `/review-plan-impl` always writes a self-contained prompt file
+to `artifacts/plan-impl-review/<ts>/prompt.md` before spawning its subagent. This creates an
+audit trail and enables tool-agnostic re-runs. Other review skills may adopt this pattern.
 
 ## Adding a New Skill
 

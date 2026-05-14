@@ -7,7 +7,7 @@
  */
 
 import type { Result } from '@agentforge/core';
-import { Err, Ok, resolveModelForRole, debugLog } from '@agentforge/core';
+import { Err, Ok, resolveModelForRole, debugLog, renderPrdToMarkdown } from '@agentforge/core';
 import type { PipelineInput, DesignPhaseState, NodeContext, PipelineStageError } from './types.js';
 import { pipelineStageError } from './types.js';
 import { researchNode, planningNode, designNode, evaluatorNode } from './nodes.js';
@@ -42,15 +42,19 @@ const STAGES = [
 const STAGE_ORDER = STAGES.map(s => s.name);
 
 function initState(input: PipelineInput): DesignPhaseState {
+  const prdRequirements = input.prdRequirements ??
+    (input.enrichedRequirement ? [renderPrdToMarkdown(input.enrichedRequirement.prd)] : undefined);
+
   return {
     moduleId: input.moduleId, taskId: input.taskId,
     projectRoot: input.projectRoot, designTool: input.designTool,
-    chromePass: input.chromePass, prdRequirements: input.prdRequirements,
+    chromePass: input.chromePass, prdRequirements,
     pageContext: input.pageContext, designTokensSpec: input.designTokensSpec,
     designConfig: input.designConfig, description: input.description,
     viewportWidth: input.viewportWidth, rendererTokens: input.rendererTokens,
     catalogMap: input.catalogMap, componentCatalogPrompt: input.componentCatalogPrompt,
     designSystemPrompt: input.designSystemPrompt,
+    enrichedRequirement: input.enrichedRequirement,
   };
 }
 

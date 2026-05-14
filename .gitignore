@@ -223,3 +223,10 @@ e2e/screenshots/
 playwright-report/
 packages/dashboard/e2e/screenshots/
 packages/agents-ux/__tests__
+
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json
+
+# Skill artifacts (regenerable from plan + diff)
+artifacts/

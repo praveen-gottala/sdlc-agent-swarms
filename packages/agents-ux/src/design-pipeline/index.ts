@@ -22,6 +22,12 @@ export { promoteToCatalog } from './promote-to-catalog.js';
 
 export { runDesignPipeline } from './pipeline.js';
 
+export type { PipelineContextOptions } from './pipeline-context.js';
+export { createPipelineContext } from './pipeline-context.js';
+
+export type { BuildPipelineInputOptions } from './pipeline-input-builder.js';
+export { buildPipelineInput } from './pipeline-input-builder.js';
+
 export { loadCachedArtifact, saveCachedArtifact, artifactPath, artifactDir } from './cache.js';
 
 export type { PipelinePreset, PipelineRoleKey } from './model-presets.js';

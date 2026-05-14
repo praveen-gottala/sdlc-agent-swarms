@@ -6,8 +6,8 @@
  */
 
 import type { PipelineInput, PipelineTelemetrySink, PipelineStageError } from '../types.js';
-import type { AgentContext, LLMProviderRef } from '@agentforge/core';
-import { createRealFs } from '@agentforge/core';
+import type { AgentContext, LLMProviderRef, EnrichedRequirement } from '@agentforge/core';
+import { createRealFs, renderPrdToMarkdown } from '@agentforge/core';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -283,6 +283,187 @@ describe('runDesignPipeline', () => {
 
     expect(result.ok).toBe(true);
     expect(wrapStageCalls).toEqual(['research', 'planning', 'design', 'evaluator']);
+  });
+
+  // ── enrichedRequirement propagation (M1 Phase 4) ──
+
+  it('propagates enrichedRequirement to state via initState()', async () => {
+    const enrichedRequirement: EnrichedRequirement = {
+      id: 'er-1',
+      rawInput: 'Build a budget app',
+      mode: 'bootstrap',
+      prd: {
+        id: 'prd-1', title: 'CashPulse', description: 'Personal finance tracker',
+        version: '1.0', status: 'approved',
+        screens: [{ id: 'scr-1', name: 'Dashboard', description: 'Main view', screenType: 'page' }],
+        dataEntities: [{ id: 'de-1', name: 'Expense', fields: [{ name: 'amount', type: 'number', required: true }] }],
+        personas: [{ id: 'p-1', name: 'User', role: 'end user', goals: ['Track spending'] }],
+        features: [{ id: 'f-1', name: 'Add Expense', description: 'Record expenses', priority: 'must-have' }],
+        nfrs: [], successMetrics: [], outOfScope: [],
+      },
+      assumptionLedger: { id: 'al-1', entries: [], createdAt: '2026-05-13T00:00:00Z', lastUpdatedAt: '2026-05-13T00:00:00Z' },
+      clarificationRounds: [],
+      confidence: 0.85,
+      createdAt: '2026-05-13T00:00:00Z',
+    };
+
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const input = createInput({ enrichedRequirement });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.enrichedRequirement).toBeDefined();
+      expect(result.value.enrichedRequirement!.id).toBe('er-1');
+      expect(result.value.enrichedRequirement!.confidence).toBe(0.85);
+    }
+
+    const researchState = mockedResearch.mock.calls[0][0];
+    expect(researchState.enrichedRequirement).toBeDefined();
+    expect(researchState.enrichedRequirement!.prd.title).toBe('CashPulse');
+  });
+
+  it('derives prdRequirements from enrichedRequirement.prd via renderPrdToMarkdown when prdRequirements not set', async () => {
+    const enrichedRequirement: EnrichedRequirement = {
+      id: 'er-2',
+      rawInput: 'Build app',
+      mode: 'bootstrap',
+      prd: {
+        id: 'prd-2', title: 'TestApp', description: 'A test application',
+        version: '1.0', status: 'draft',
+        screens: [{ id: 'scr-1', name: 'Home', description: 'Landing page', screenType: 'page' }],
+        dataEntities: [{ id: 'de-1', name: 'Item', fields: [{ name: 'name', type: 'string', required: true }] }],
+        personas: [],
+        features: [{ id: 'f-1', name: 'List Items', description: 'View all items', priority: 'must-have' }],
+        nfrs: [], successMetrics: [], outOfScope: [],
+      },
+      assumptionLedger: { id: 'al-1', entries: [], createdAt: '2026-05-13T00:00:00Z', lastUpdatedAt: '2026-05-13T00:00:00Z' },
+      clarificationRounds: [],
+      confidence: 0.9,
+      createdAt: '2026-05-13T00:00:00Z',
+    };
+
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const input = createInput({ enrichedRequirement });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+
+    const researchState = mockedResearch.mock.calls[0][0];
+    expect(researchState.prdRequirements).toBeDefined();
+    expect(researchState.prdRequirements!.length).toBe(1);
+
+    const expected = renderPrdToMarkdown(enrichedRequirement.prd);
+    expect(researchState.prdRequirements![0]).toBe(expected);
+
+    expect(researchState.prdRequirements![0]).toContain('# TestApp');
+    expect(researchState.prdRequirements![0]).toContain('Item');
+    expect(researchState.prdRequirements![0]).toContain('List Items');
+  });
+
+  it('explicit prdRequirements takes precedence over enrichedRequirement derivation', async () => {
+    const enrichedRequirement: EnrichedRequirement = {
+      id: 'er-3',
+      rawInput: 'Build app',
+      mode: 'bootstrap',
+      prd: {
+        id: 'prd-3', title: 'ShouldNotAppear', description: 'This should not be used',
+        version: '1.0', status: 'draft',
+        screens: [], dataEntities: [], personas: [], features: [],
+        nfrs: [], successMetrics: [], outOfScope: [],
+      },
+      assumptionLedger: { id: 'al-1', entries: [], createdAt: '2026-05-13T00:00:00Z', lastUpdatedAt: '2026-05-13T00:00:00Z' },
+      clarificationRounds: [],
+      confidence: 0.9,
+      createdAt: '2026-05-13T00:00:00Z',
+    };
+
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const explicitPrd = ['My explicit PRD requirements'];
+    const input = createInput({ enrichedRequirement, prdRequirements: explicitPrd });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+
+    const researchState = mockedResearch.mock.calls[0][0];
+    expect(researchState.prdRequirements).toEqual(explicitPrd);
+    expect(researchState.prdRequirements![0]).not.toContain('ShouldNotAppear');
+  });
+
+  it('CashPulse PRD fixture renders entity names, NFR targets, and persona goals into prdRequirements', async () => {
+    const enrichedRequirement: EnrichedRequirement = {
+      id: 'er-cashpulse',
+      rawInput: 'Build a personal finance tracker',
+      mode: 'bootstrap',
+      prd: {
+        id: 'prd-cashpulse', title: 'CashPulse', description: 'Personal finance and budget tracking application',
+        version: '1.0', status: 'approved',
+        screens: [
+          { id: 'scr-dash', name: 'Dashboard', description: 'Financial overview', screenType: 'page' },
+          { id: 'scr-expenses', name: 'Expenses', description: 'Expense list and entry', screenType: 'page' },
+        ],
+        dataEntities: [
+          { id: 'de-expense', name: 'Expense', fields: [
+            { name: 'amount', type: 'number', required: true },
+            { name: 'date', type: 'string', required: true },
+            { name: 'category_id', type: 'string', required: true },
+          ]},
+          { id: 'de-category', name: 'Category', fields: [
+            { name: 'name', type: 'string', required: true },
+            { name: 'icon', type: 'string', required: false },
+          ]},
+        ],
+        personas: [
+          { id: 'p-tracker', name: 'Budget Tracker', role: 'end user', goals: ['Track daily spending', 'Set monthly budgets'] },
+        ],
+        features: [
+          { id: 'f-add-expense', name: 'Add Expense', description: 'Record a new expense with amount, category, and date', priority: 'must-have' },
+          { id: 'f-view-budget', name: 'View Budget', description: 'See remaining budget for the current month', priority: 'must-have' },
+        ],
+        nfrs: [
+          { id: 'nfr-perf', category: 'Performance', description: 'API response time under load', target: '100ms p95' },
+        ],
+        successMetrics: [
+          { id: 'sm-1', name: 'Daily Active Users', description: 'Users logging expenses daily', target: '1000 DAU', measurement: 'analytics' },
+        ],
+        outOfScope: ['Investment tracking', 'Tax preparation'],
+      },
+      assumptionLedger: { id: 'al-cashpulse', entries: [], createdAt: '2026-05-13T00:00:00Z', lastUpdatedAt: '2026-05-13T00:00:00Z' },
+      clarificationRounds: [{ round: 1, questionsAsked: 5, questionsAnswered: 5, timestamp: '2026-05-13T00:00:00Z' }],
+      confidence: 0.92,
+      createdAt: '2026-05-13T00:00:00Z',
+    };
+
+    mockedResearch.mockResolvedValue({ ok: true, value: { research: { briefId: 'p', moduleId: 'p', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] } } });
+    mockedPlanning.mockResolvedValue({ ok: true, value: { planning: { specRef: 'p', moduleId: 'p', componentTree: [], tokenBindings: {}, responsiveRules: [] } } });
+    mockedDesign.mockResolvedValue({ ok: true, value: { design: { spec: {} } } });
+    mockedEvaluator.mockResolvedValue({ ok: true, value: { evaluation: undefined } });
+
+    const input = createInput({ enrichedRequirement });
+    const result = await runDesignPipeline(input);
+
+    expect(result.ok).toBe(true);
+
+    const researchState = mockedResearch.mock.calls[0][0];
+    expect(researchState.prdRequirements).toBeDefined();
+    const prd = researchState.prdRequirements![0];
+
+    expect(prd).toContain('Expense');
+    expect(prd).toContain('Category');
+    expect(prd).toContain('100ms p95');
+    expect(prd).toContain('Track daily spending');
   });
 
   it('pipeline works without wrapStage (backward compatible)', async () => {

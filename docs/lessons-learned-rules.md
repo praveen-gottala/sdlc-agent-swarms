@@ -26,6 +26,7 @@
 - [No Shortcuts — Ever](#no-shortcuts--ever) — RULE
 - [Pseudo-Screen Directories Must Be Filtered at Build Time](#pseudo-screen-directories-must-be-filtered-at-build-time) — RULE
 - [Plans Must Trace Data Flows and Verify Claims](#plans-must-trace-data-flows-and-verify-claims) — RULE
+- [Deferrals Must Land in a Tracking Artifact](#deferrals-must-land-in-a-tracking-artifact) — RULE
 - [Vision Evaluation Token Budget — Compact Context Over Raw JSON](#vision-evaluation-token-budget--compact-context-over-raw-json) — RULE
 - [Dashboard Design Spec Reload — Use the Bundle Endpoint](#dashboard-design-spec-reload--use-the-bundle-endpoint) — RULE
 - [Renderer Staleness: Kill-and-Restart](#renderer-staleness-kill-and-restart-not-just-port-check-superseded-2026-04-20) — SUPERSEDED
@@ -399,6 +400,18 @@ The design LLM receives this width as a hard constraint and lays out all content
 **How to apply:** Before every plan submission, run a mental (or actual) grep for each claim. If you can't point to the line of code that proves the claim, the claim is unverified and should be flagged, not asserted.
 
 ---
+
+## Deferrals Must Land in a Tracking Artifact
+
+**RULE** (2026-05-13)
+
+**Context:** M1 "Connect" plan challenge. Phase 3 deferred cross-screen coherence (vision Layer 7) with the note "deferred to M2." But M2 is about Architect Foundation (typed contracts, Critic node, eval harness) — it has nothing to do with design pipeline coherence. The deferred item would have been lost without a tracking artifact.
+**Rule:** When deferring work from one plan or milestone to another, the deferral is only complete when a tracking artifact exists at the destination. "Deferred to M2" is incomplete if M2 doesn't contain the item.
+**How to apply:**
+1. Check if the destination milestone/plan actually covers the deferred scope.
+2. If it doesn't, create a backlog entry (§Deferred from X) in the source plan's execution-plan.md, or a standalone plan in `docs/plans/backlog/`.
+3. The deferral note in the source phase AND the tracking artifact in the destination are both required — neither alone is sufficient.
+4. `/challenge-plan` checks for this: any challenge that recommends deferral must verify the destination plan exists and contains the deferred item.
 
 ---
 

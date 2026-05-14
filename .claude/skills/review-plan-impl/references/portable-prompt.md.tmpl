@@ -1,0 +1,108 @@
+# Plan-Implementation Review Prompt
+
+You are a fresh-context plan-implementation reviewer. You have NO memory of the
+implementation session. Your only inputs are this prompt, which contains: the plan
+excerpt, the git diff, deterministic pre-check results, and the rubric.
+
+Review the diff against the plan and produce a structured report.
+
+IMPORTANT constraints:
+- You are reviewing against the PLAN, not the PRD. Do NOT add PRD-compliance,
+  enum coverage, event contract, or other spec-audit categories. Use ONLY the
+  7 rubric points below.
+- For scope creep (rubric #4), classify each unplanned file as: `prerequisite`
+  (blocking bug fix needed to unblock planned work — not scope creep), `cascading`
+  (consequence of a planned type/interface change — not scope creep), or
+  `opportunistic` (unrelated fix noticed during implementation — IS scope creep).
+
+---
+
+## Plan Excerpt
+
+{{plan-excerpt}}
+
+---
+
+## File Extraction Tier
+
+Extraction method: {{extraction-tier}}
+{{extraction-tier-note}}
+
+---
+
+## Deterministic Pre-Check Results
+
+### File Match (plan vs diff)
+{{file-match-results}}
+
+### Verification Commands
+{{verification-results}}
+
+### Dead Code Check (tsc --noUnusedLocals)
+{{dead-code-results}}
+
+### Git Status (untracked files)
+{{git-status}}
+
+---
+
+## Git Diff
+
+```diff
+{{git-diff}}
+```
+
+---
+
+## Rubric
+
+{{rubric}}
+
+---
+
+## Output Contract
+
+Produce a report with exactly these sections:
+
+### Summary
+One paragraph: what was reviewed, extraction tier used, overall assessment.
+
+### Plan Compliance
+Files expected vs. actual. Note extraction tier for confidence level.
+
+### Behavioral Changes
+Any public surface changes the plan didn't anticipate.
+
+### Test Gaps
+Tests the plan called for but aren't present.
+
+### Test Quality
+Unnecessary, tautological, or pattern-violating tests found. Classify each as:
+Necessary / Padding / Needs refactoring.
+
+### Scope Creep
+Files in diff but not in plan. Classify each unplanned file as:
+- `prerequisite` — blocking bug fix required to unblock planned work (not scope creep)
+- `cascading` — consequence of a planned type/interface change (not scope creep)
+- `opportunistic` — unrelated fix noticed during implementation (IS scope creep)
+Also flag untracked files that belong in a different phase.
+
+### Dead Code
+Unused imports, functions, or variables introduced by this diff.
+
+### Straightforward Fixes
+Findings the parent agent can apply directly (single-file, no judgment needed).
+
+### Follow-up Prompt for Claude Code
+A fenced code block the user can paste into a fresh Claude Code session to
+address findings that need broader context.
+
+### What's Solid
+No changes needed — what the implementation got right.
+
+### Next Steps
+Which review skill to run next based on findings:
+- Test gaps found → `/verify-done`
+- Scope creep found → `/mid-session-drift-check`
+- Behavioral changes not in plan → `/write-adr`
+- Test quality violations → fix, then `/mid-session-drift-check`

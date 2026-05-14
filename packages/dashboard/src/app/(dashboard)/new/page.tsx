@@ -60,10 +60,7 @@ function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAns
       return { questionId, answer, selectedOption: matchedOption?.label };
     });
     // Single summary bubble instead of per-answer bubbles
-    const summaryParts = answeredQuestions.map((a) => {
-      const q = questions.find((qq) => qq.id === a.questionId);
-      return a.selectedOption ?? a.answer;
-    });
+    const summaryParts = answeredQuestions.map((a) => a.selectedOption ?? a.answer);
     onAddUserAnswer(
       'summary',
       `Answered ${answeredQuestions.length} questions`,

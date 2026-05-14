@@ -1,21 +1,16 @@
 /**
  * @module @agentforge/cli/utils/pipeline-context
  *
- * Shared utilities for design pipeline CLI commands. Extracted to eliminate
- * duplication across design-page.ts, design-page-browser.ts, and design-page-all.ts.
+ * Shared utilities for design pipeline CLI commands. Agent context factory
+ * delegates to the shared createPipelineContext() in @agentforge/agents-ux
+ * (M1 Phase 1, D5). I/O helpers remain CLI-specific.
  */
 
 import { resolve, join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { MCPClient, AgentContext, LLMProviderRef, ProjectManifest } from '@agentforge/core';
-import {
-  Ok,
-  Err,
-  createEventBus,
-  createRealFs,
-  PREVIEW_DIR_REL,
-  debugLog,
-} from '@agentforge/core';
+import { PREVIEW_DIR_REL } from '@agentforge/core';
+import { createPipelineContext as createSharedPipelineContext } from '@agentforge/agents-ux';
 
 // ============================================================================
 // Agent context factory
@@ -24,13 +19,8 @@ import {
 /**
  * Create a minimal AgentContext for pipeline stages.
  *
- * Research and planning agents don't use MCP, so `mcpClient` is optional.
- * Governance is bypassed (CLI handles approval via interactive prompts).
- *
- * @param providerFactory When provided, enables `resolveProvider(model)` for
- *   use with `runDesignPipeline`. CLI callers pass
- *   `(model) => createClaudeProvider(model, providerConfig)`.
- * @param manifest Project manifest for per-stage model resolution (ADR-033).
+ * Thin CLI wrapper around the shared factory in agents-ux.
+ * Preserves the positional parameter signature for existing CLI callers.
  */
 export function createPipelineContext(
   taskId: string,
@@ -39,22 +29,13 @@ export function createPipelineContext(
   providerFactory?: (model: string) => LLMProviderRef,
   manifest?: Pick<ProjectManifest, 'agents'>,
 ): AgentContext {
-  if (!baseDir) {
-    debugLog('createPipelineContext: baseDir not provided → default: process.cwd()');
-  }
-  return {
+  return createSharedPipelineContext({
     taskId,
     projectRoot: baseDir ?? process.cwd(),
-    eventBus: createEventBus(),
-    fs: createRealFs(),
+    providerFactory,
     mcpClient,
     manifest,
-    runGovernance: async () => Ok({ status: 'proceed' as const }),
-    resolveProvider: providerFactory
-      ? (model: string) => Ok(providerFactory(model))
-      : () => Err({ code: 'MCP_UNAVAILABLE' as const, message: 'resolveProvider not wired — pass providerFactory to createPipelineContext', recoverable: false }),
-    recordAudit: () => {},
-  };
+  });
 }
 
 // ============================================================================

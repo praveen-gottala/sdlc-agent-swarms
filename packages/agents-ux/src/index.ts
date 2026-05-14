@@ -203,6 +203,12 @@ export {
 export type { PipelinePreset, PipelineRoleKey } from './design-pipeline/index.js';
 export { PIPELINE_PRESETS, PIPELINE_ROLE_KEYS, AVAILABLE_MODELS } from './design-pipeline/index.js';
 
+// Shared pipeline factories (M1 Phase 1 — D4, D5)
+export type { PipelineContextOptions } from './design-pipeline/index.js';
+export { createPipelineContext } from './design-pipeline/index.js';
+export type { BuildPipelineInputOptions } from './design-pipeline/index.js';
+export { buildPipelineInput } from './design-pipeline/index.js';
+
 // Feedback Adapters (Phase 2 Task 2.5 — unified feedback loop)
 export type { FeedbackAdapter, DesignSpecPatch } from './feedback/index.js';
 export { DesignSpecPatchSchema, BrowserFeedbackAdapter, PenpotFeedbackAdapter, BrowserCollaborationSession, mapBrowserSpecToDesignOutput } from './feedback/index.js';
