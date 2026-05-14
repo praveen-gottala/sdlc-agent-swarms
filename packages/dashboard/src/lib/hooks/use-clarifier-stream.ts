@@ -25,7 +25,7 @@ interface UseClarifierStreamReturn {
   readonly prdDraft: Record<string, unknown> | null;
   readonly featurePlan: Record<string, unknown> | null;
   readonly gaps: readonly Gap[];
-  readonly assumptions: { entries: AssumptionEntry[] } | null;
+  readonly assumptions: { readonly entries: readonly AssumptionEntry[] } | null;
   readonly clarifierState: ClarifierState | null;
   readonly stage: StageEvent | null;
   readonly phase: PagePhase;
@@ -114,7 +114,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
   const [prdDraft, setPrdDraft] = useState<Record<string, unknown> | null>(null);
   const [featurePlan, setFeaturePlan] = useState<Record<string, unknown> | null>(null);
   const [gaps, setGaps] = useState<Gap[]>([]);
-  const [assumptions, setAssumptions] = useState<{ entries: AssumptionEntry[] } | null>(null);
+  const [assumptions, setAssumptions] = useState<{ readonly entries: readonly AssumptionEntry[] } | null>(null);
   const [clarifierState, setClarifierState] = useState<ClarifierState | null>(null);
   const [stage, setStage] = useState<StageEvent | null>(null);
   const [phase, setPhase] = useState<PagePhase>('welcome');
@@ -163,7 +163,7 @@ export function useClarifierStream(): UseClarifierStreamReturn {
       appendMessage({
         kind: 'prd-complete',
         confidence: data.state.requirement.confidence,
-        featureCount: (data.state.requirement.prd as Record<string, unknown[]>).features?.length ?? 0,
+        featureCount: data.state.requirement.prd.features?.length ?? 0,
         assumptionCount: data.state.assumptions?.entries?.length ?? 0,
       });
     } else if (data.state.error) {

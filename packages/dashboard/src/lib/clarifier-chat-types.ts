@@ -5,6 +5,8 @@
  * These are UI-only types — not cross-agent artifacts.
  */
 
+import type { EnrichedRequirement, AssumptionLedger } from '@agentforge/core';
+
 export interface StructuredOption {
   readonly label: string;
   readonly description: string;
@@ -144,8 +146,8 @@ export interface ClarifierState {
   maxRounds: number;
   questions: Question[];
   gaps: Gap[];
-  requirement: { prd: Record<string, unknown>; confidence: number } | null;
-  assumptions: { entries: AssumptionEntry[] } | null;
+  requirement: EnrichedRequirement | null;
+  assumptions: AssumptionLedger | null;
   prdDraft: Record<string, unknown> | null;
   featurePlan: Record<string, unknown> | null;
   error: string | null;

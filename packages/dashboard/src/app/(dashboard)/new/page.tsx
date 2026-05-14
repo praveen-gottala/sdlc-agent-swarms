@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAutoResize } from '@/lib/hooks/use-auto-resize';
 import { Tabs } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useClarifierStream } from '@/lib/hooks/use-clarifier-stream';
 import { SplitPanelLayout } from '@/components/clarifier/split-panel-layout';
 import { ChatPanel } from '@/components/clarifier/chat-panel';
@@ -229,7 +231,7 @@ function QuestionFlow({ questions, round, maxRounds, onAllAnswered, onAddUserAns
 /* ------------------------------------------------------------------ */
 
 interface EscalationControlsProps {
-  readonly clarifierState: { round: number; maxRounds: number; assumptions: { entries: AssumptionEntry[] } | null };
+  readonly clarifierState: { round: number; maxRounds: number; assumptions: { readonly entries: readonly AssumptionEntry[] } | null };
   readonly onDecision: (decision: 'accept' | 'restart' | 'abandon') => void;
 }
 
@@ -268,6 +270,8 @@ function EscalationControls({ clarifierState, onDecision }: EscalationControlsPr
 
 export default function NewProjectPage(): React.JSX.Element {
   const clarifier = useClarifierStream();
+  const router = useRouter();
+  const approvingRef = useRef(false);
 
   const prdPanelVisible = useMemo(() =>
     !!clarifier.prdDraft || clarifier.isRunning || clarifier.phase === 'questions' || clarifier.phase === 'escalation' || clarifier.phase === 'complete',
@@ -282,6 +286,45 @@ export default function NewProjectPage(): React.JSX.Element {
   const handleRequestChanges = useCallback(() => {
     clarifier.reset();
   }, [clarifier]);
+
+  const handleApprove = useCallback(async () => {
+    const requirement = clarifier.clarifierState?.requirement;
+    const tid = clarifier.threadId;
+    if (!requirement || !tid || approvingRef.current) return;
+
+    approvingRef.current = true;
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: requirement.prd.title,
+          description: requirement.prd.description,
+          clarifierOutput: {
+            enrichedRequirement: requirement,
+            threadId: tid,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+
+      const data = await res.json() as { projectId: string };
+      router.push(`/design?project=${data.projectId}`);
+    } catch (err) {
+      notifications.show({
+        title: 'Project creation failed',
+        message: err instanceof Error ? err.message : 'Unknown error',
+        color: 'red',
+        autoClose: 5000,
+      });
+    } finally {
+      approvingRef.current = false;
+    }
+  }, [clarifier.clarifierState?.requirement, clarifier.threadId, router]);
 
   return (
     <div className="-m-[--mantine-spacing-md] h-[calc(100%+2*var(--mantine-spacing-md))]">
@@ -334,7 +377,7 @@ export default function NewProjectPage(): React.JSX.Element {
         activeNode={clarifier.activeNode}
         completedNodes={clarifier.completedNodes}
         interruptedAt={clarifier.interruptedAt}
-        onApprove={() => {}}
+        onApprove={handleApprove}
         onRequestChanges={handleRequestChanges}
       />
     </SplitPanelLayout>

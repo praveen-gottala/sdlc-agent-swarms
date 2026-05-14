@@ -9,7 +9,7 @@ import { OpenQuestionsSection } from './open-questions-section';
 interface LivePrdDocumentProps {
   readonly prdDraft: Record<string, unknown>;
   readonly gaps?: readonly Gap[];
-  readonly assumptions?: { entries: AssumptionEntry[] } | null;
+  readonly assumptions?: { readonly entries: readonly AssumptionEntry[] } | null;
   readonly confidence?: number;
 }
 

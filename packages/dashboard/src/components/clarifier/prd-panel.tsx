@@ -13,7 +13,7 @@ interface PrdPanelProps {
   readonly prdDraft: Record<string, unknown> | null;
   readonly featurePlan: Record<string, unknown> | null;
   readonly gaps: readonly Gap[];
-  readonly assumptions: { entries: AssumptionEntry[] } | null;
+  readonly assumptions: { readonly entries: readonly AssumptionEntry[] } | null;
   readonly confidence?: number;
   readonly isComplete: boolean;
   readonly isRunning?: boolean;

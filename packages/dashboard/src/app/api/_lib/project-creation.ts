@@ -17,6 +17,9 @@ import {
   createRealFs,
   saveComponentLibrary,
   scaffoldProject,
+  writeYaml,
+  renderPrdToMarkdown,
+  EnrichedRequirementSchema,
   type DesignArchetype,
   type ComponentCatalogSpec,
 } from '@agentforge/core';
@@ -56,6 +59,10 @@ export const CreateProjectSchema = z.object({
   targetAudience: z.string().max(200).optional(),
   componentLibrary: z.enum(VALID_COMPONENT_LIBRARIES).optional(),
   colorScheme: z.string().optional(),
+  clarifierOutput: z.object({
+    enrichedRequirement: EnrichedRequirementSchema,
+    threadId: z.string(),
+  }).optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
@@ -121,12 +128,17 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
   const {
     name,
     description,
-    prdContent,
+    prdContent: explicitPrdContent,
     designArchetype,
     designOption,
     targetAudience,
     componentLibrary,
+    clarifierOutput,
   } = input;
+
+  const prdContent = clarifierOutput
+    ? renderPrdToMarkdown(clarifierOutput.enrichedRequirement.prd)
+    : explicitPrdContent;
 
   const slug = slugify(name);
   const appsDir = join(MONOREPO_ROOT, 'apps');
@@ -186,7 +198,7 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
     }
 
     // Shared scaffold: dirs, agentforge.yaml, spec files, tokens, brand, tailwind, catalog, PRD
-    const projectConfig = {
+    const projectConfig: Record<string, unknown> = {
       version: '1.0',
       project: {
         name,
@@ -206,6 +218,13 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
       },
     };
 
+    if (clarifierOutput) {
+      projectConfig.clarifier = {
+        threadId: clarifierOutput.threadId,
+        lastRunAt: new Date().toISOString(),
+      };
+    }
+
     const scaffoldResult = scaffoldProject(
       {
         name,
@@ -223,6 +242,27 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
 
     if (!scaffoldResult.ok) {
       throw new ProjectCreationError(scaffoldResult.error.message, 500);
+    }
+
+    if (clarifierOutput) {
+      const specDir = join(projectDir, 'agentforge', 'spec');
+      const erResult = writeYaml(
+        join(specDir, 'enriched-requirement.yaml'),
+        clarifierOutput.enrichedRequirement,
+        realFs,
+      );
+      if (!erResult.ok) {
+        throw new ProjectCreationError(erResult.error.message, 500);
+      }
+
+      const alResult = writeYaml(
+        join(specDir, 'assumption-ledger.yaml'),
+        clarifierOutput.enrichedRequirement.assumptionLedger,
+        realFs,
+      );
+      if (!alResult.ok) {
+        throw new ProjectCreationError(alResult.error.message, 500);
+      }
     }
 
     // Dashboard-specific: set as active project
