@@ -13,15 +13,18 @@ import type { PipelineRunProgress } from '@agentforge/core';
 import { emitStageEvent, emitLLMCallEvent, emitAgentLogEvent } from './event-writer';
 import { updateRunStatus } from './run-manager';
 
-const STAGE_INDEX: Record<string, number> = {
-  research: 0,
-  planning: 1,
-  design: 2,
-};
+export interface StageDescriptor {
+  readonly name: string;
+  readonly visibleIndex: number;
+  readonly hidden: boolean;
+}
 
-const VISIBLE_STAGE_COUNT = 3;
-
-const HIDDEN_STAGES = new Set(['evaluator']);
+export const DESIGN_PIPELINE_STAGES: StageDescriptor[] = [
+  { name: 'research', visibleIndex: 0, hidden: false },
+  { name: 'planning', visibleIndex: 1, hidden: false },
+  { name: 'design', visibleIndex: 2, hidden: false },
+  { name: 'evaluator', visibleIndex: -1, hidden: true },
+];
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -38,31 +41,48 @@ export class DashboardSseSink implements PipelineTelemetrySink {
   private readonly log: SinkCallEntry[] = [];
   private accumulatedCostUsd = 0;
   private accumulatedTokens = 0;
+  private readonly stageIndex: Record<string, number>;
+  private readonly visibleStageCount: number;
+  private readonly hiddenStages: Set<string>;
 
   constructor(
     private readonly runId: string,
     private readonly pipeline: PipelineRunProgress['pipeline'],
     private readonly taskId: string,
-  ) {}
+    stages: StageDescriptor[] = DESIGN_PIPELINE_STAGES,
+  ) {
+    this.stageIndex = {};
+    this.hiddenStages = new Set();
+    let visibleCount = 0;
+    for (const s of stages) {
+      if (s.hidden) {
+        this.hiddenStages.add(s.name);
+      } else {
+        this.stageIndex[s.name] = s.visibleIndex;
+        visibleCount++;
+      }
+    }
+    this.visibleStageCount = visibleCount;
+  }
 
   onStageStart(stage: string, attrs: { agentRole: string; moduleId: string; taskId: string }): void {
     this.log.push({ method: 'onStageStart', stage, args: [attrs] });
 
-    if (HIDDEN_STAGES.has(stage)) return;
+    if (this.hiddenStages.has(stage)) return;
 
-    const idx = STAGE_INDEX[stage] ?? 0;
+    const idx = this.stageIndex[stage] ?? 0;
     const label = capitalize(stage);
 
     updateRunStatus(this.runId, {
       status: 'running',
       stage: label,
-      progress: { current: idx, total: VISIBLE_STAGE_COUNT, label },
+      progress: { current: idx, total: this.visibleStageCount, label },
       agentRole: attrs.agentRole,
       stageDescription: `Running ${label} stage`,
     });
 
     emitStageEvent(
-      this.runId, this.pipeline, label, idx, VISIBLE_STAGE_COUNT,
+      this.runId, this.pipeline, label, idx, this.visibleStageCount,
       'started', attrs.agentRole, undefined, this.taskId,
       `${label}: running`,
     );
@@ -74,16 +94,16 @@ export class DashboardSseSink implements PipelineTelemetrySink {
     if (result.costUsd) this.accumulatedCostUsd += result.costUsd;
     if (result.tokensUsed) this.accumulatedTokens += result.tokensUsed;
 
-    if (HIDDEN_STAGES.has(stage)) return;
+    if (this.hiddenStages.has(stage)) return;
 
-    const idx = STAGE_INDEX[stage] ?? 0;
+    const idx = this.stageIndex[stage] ?? 0;
     const label = capitalize(stage);
     const cost = result.costUsd || result.tokensUsed
       ? { totalCostUsd: result.costUsd ?? 0, tokensUsed: result.tokensUsed ?? 0 }
       : undefined;
 
     emitStageEvent(
-      this.runId, this.pipeline, label, idx, VISIBLE_STAGE_COUNT,
+      this.runId, this.pipeline, label, idx, this.visibleStageCount,
       'completed', undefined, cost, this.taskId,
       `${label} complete`,
     );
@@ -94,7 +114,7 @@ export class DashboardSseSink implements PipelineTelemetrySink {
 
     const label = capitalize(stage);
     emitStageEvent(
-      this.runId, this.pipeline, label, 0, VISIBLE_STAGE_COUNT,
+      this.runId, this.pipeline, label, 0, this.visibleStageCount,
       'failed', undefined, undefined, this.taskId,
       `${label} failed: ${error}`,
     );

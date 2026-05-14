@@ -9,7 +9,7 @@
  * (see lessons-learned §"Cross-Package ESM Imports Break Dashboard Jest").
  */
 
-import { DashboardSseSink } from '../dashboard-sink';
+import { DashboardSseSink, DESIGN_PIPELINE_STAGES } from '../dashboard-sink';
 import type { SinkCallEntry } from '../dashboard-sink';
 
 // ── Mock event-writer and run-manager to capture calls ──
@@ -218,5 +218,45 @@ describe('DashboardSseSink dashboard behavior', () => {
       'run-test-1', 'Research', undefined, 'task-test-1',
       'claude-sonnet-4-6', 1000, 500, 0.02, 2500,
     );
+  });
+});
+
+// ── StageDescriptor tests ──
+
+describe('StageDescriptor data-driven stages', () => {
+
+  it('default DESIGN_PIPELINE_STAGES matches legacy behavior (indices 0/1/2, count 3, evaluator hidden)', () => {
+    const sink = new DashboardSseSink('run-1', 'design-browser', 'task-1');
+
+    sink.onStageStart('research', TEST_ATTRS);
+    sink.onStageStart('planning', TEST_ATTRS);
+    sink.onStageStart('design', TEST_ATTRS);
+
+    const calls = mockUpdateRunStatus.mock.calls;
+    expect(calls[0][1].progress).toEqual({ current: 0, total: 3, label: 'Research' });
+    expect(calls[1][1].progress).toEqual({ current: 1, total: 3, label: 'Planning' });
+    expect(calls[2][1].progress).toEqual({ current: 2, total: 3, label: 'Design' });
+
+    mockUpdateRunStatus.mockClear();
+    mockEmitStageEvent.mockClear();
+    sink.onStageStart('evaluator', TEST_ATTRS);
+    expect(mockUpdateRunStatus).not.toHaveBeenCalled();
+    expect(mockEmitStageEvent).not.toHaveBeenCalled();
+
+    expect(DESIGN_PIPELINE_STAGES).toHaveLength(4);
+  });
+
+  it('unknown stage name defaults to index 0 without crashing', () => {
+    const sink = new DashboardSseSink('run-1', 'design-browser', 'task-1');
+
+    expect(() => {
+      sink.onStageStart('unknown-stage', TEST_ATTRS);
+      sink.onStageComplete('unknown-stage', { costUsd: 0.01 });
+      sink.onStageFail('unknown-stage', 'some error');
+    }).not.toThrow();
+
+    const startCall = mockUpdateRunStatus.mock.calls[0];
+    expect(startCall[1].progress.current).toBe(0);
+    expect(startCall[1].stage).toBe('Unknown-stage');
   });
 });
