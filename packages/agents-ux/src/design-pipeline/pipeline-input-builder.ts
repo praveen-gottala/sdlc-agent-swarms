@@ -8,8 +8,8 @@
  */
 
 import { join } from 'node:path';
-import type { AgentContext, DesignTokensSpec, DesignConfig, PageContext, PageEntry } from '@agentforge/core';
-import { readYaml, resolveViewports } from '@agentforge/core';
+import type { AgentContext, DesignTokensSpec, DesignConfig, PageContext, PageEntry, EnrichedRequirement } from '@agentforge/core';
+import { readYaml, resolveViewports, EnrichedRequirementSchema } from '@agentforge/core';
 import type { PipelineInput, PipelineTelemetrySink, ChromePassConfig } from './types.js';
 import type { DesignTool } from '@agentforge/core';
 import { buildComponentCatalogPrompt } from '../ux-design/design-system-context.js';
@@ -127,6 +127,22 @@ export function buildPipelineInput(opts: BuildPipelineInputOptions): PipelineInp
   const prdResult = fs.readFile(join(projectRoot, 'docs/prd.md'));
   const prdContent = prdResult.ok ? prdResult.value : undefined;
 
+  // Read enriched requirement (Phase 6: Clarifier→Design bridge)
+  let enrichedRequirement: EnrichedRequirement | undefined;
+  const enrichedRes = readYaml<unknown>(
+    join(projectRoot, 'agentforge/spec/enriched-requirement.yaml'),
+    fs,
+  );
+  if (enrichedRes.ok) {
+    const parsed = EnrichedRequirementSchema.safeParse(enrichedRes.value);
+    if (parsed.success) {
+      enrichedRequirement = parsed.data;
+    } else {
+      opts.telemetry?.onLog?.('init', 'warn',
+        `enriched-requirement.yaml schema-invalid: ${parsed.error.message}`);
+    }
+  }
+
   // Read design config
   const configResult = readYaml<DesignConfig>(
     join(projectRoot, 'agentforge/spec/design-config.yaml'),
@@ -134,9 +150,11 @@ export function buildPipelineInput(opts: BuildPipelineInputOptions): PipelineInp
   );
   const designConfig = configResult.ok ? configResult.value : undefined;
 
-  // Build prdRequirements
-  const prdRequirements: string[] = [description];
-  if (prdContent) prdRequirements.push(prdContent);
+  // Build prdRequirements — when enrichedRequirement is present, leave undefined
+  // so initState() derives via renderPrdToMarkdown (Phase 4 compat fallback).
+  const prdRequirements: string[] | undefined = enrichedRequirement
+    ? undefined
+    : [description, ...(prdContent ? [prdContent] : [])];
 
   // Resolve viewport (cliWidth takes precedence when CLI --width is set)
   const viewportWidth = resolveViewports({
@@ -183,6 +201,7 @@ export function buildPipelineInput(opts: BuildPipelineInputOptions): PipelineInp
     rendererTokens,
     catalogMap,
     componentCatalogPrompt,
+    ...(enrichedRequirement ? { enrichedRequirement } : {}),
     ...(opts.chromePass ? { chromePass: opts.chromePass } : {}),
   };
 }

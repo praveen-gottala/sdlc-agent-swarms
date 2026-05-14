@@ -208,6 +208,8 @@ export type { PipelineContextOptions } from './design-pipeline/index.js';
 export { createPipelineContext } from './design-pipeline/index.js';
 export type { BuildPipelineInputOptions } from './design-pipeline/index.js';
 export { buildPipelineInput } from './design-pipeline/index.js';
+export type { RunPagesOptions, PageRunResult, RunPagesResult } from './design-pipeline/index.js';
+export { runPagesWithChromePass } from './design-pipeline/index.js';
 
 // Feedback Adapters (Phase 2 Task 2.5 — unified feedback loop)
 export type { FeedbackAdapter, DesignSpecPatch } from './feedback/index.js';

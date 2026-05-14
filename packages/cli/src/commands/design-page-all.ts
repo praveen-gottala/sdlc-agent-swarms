@@ -42,19 +42,17 @@ import {
   extractScreenSummary,
   analyzeNavigation,
   resolveSharedComponents,
-  buildSharedChromeFilePayload,
   deriveRegionsFromPageSpec,
   propagateNavigateToChromeTabs,
-  runDesignPipeline,
   runBrowserCorrectionPipeline,
   buildPipelineInput,
+  runPagesWithChromePass,
 } from '@agentforge/agents-ux';
 import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
 import type {
   BrowserCorrectionOptions,
   BrowserCorrectionResult,
   PenpotDesignOutput,
-  PipelineInput,
 } from '@agentforge/agents-ux';
 import type { LLMProvider } from '@agentforge/providers';
 import { CliStdoutSink } from '../telemetry/cli-sink.js';
@@ -271,7 +269,7 @@ export async function designPageAllCommand(
 
   initLangfuseTracing();
 
-  // ── Provider factory for runDesignPipeline ──
+  // ── Provider factory for design pipeline ──
 
   const designTool = options.tool ?? 'browser';
   const providerFactory = (model: string): LLMProviderRef => {
@@ -286,139 +284,100 @@ export async function designPageAllCommand(
     return langfuseSink ? new CompositeSink([cliSink, langfuseSink]) : cliSink;
   };
 
-  // ── Chrome Pass (shared shell, reference page first) ──
+  // ── Chrome Pass preload (--design-only) ──
 
-  let sharedChromeSpec: DesignSpecV2 | undefined;
-  const sharedMeta = resolveSharedComponents(pages);
-
+  let preloadedChromeSpec: DesignSpecV2 | undefined;
   if (options.designOnly) {
     const chromePath = join(projectRoot, 'agentforge', 'designs', 'shared-chrome.json');
     if (existsSync(chromePath)) {
       try {
         const raw = JSON.parse(readFileSync(chromePath, 'utf-8')) as Record<string, unknown>;
         delete raw.regions;
-        sharedChromeSpec = raw as unknown as DesignSpecV2;
+        preloadedChromeSpec = raw as unknown as DesignSpecV2;
         output.write(infoMsg(`  Chrome — loaded ${chromePath}\n`));
       } catch {
         output.write(warnMsg('  Could not read shared-chrome.json; continuing without frozen chrome\n'));
       }
     }
-  } else if (sharedMeta) {
-    const refPage = pages.find(p => p.id === sharedMeta.referencePageId);
-    if (refPage) {
-      output.write(infoMsg(`\n  Chrome Pass — ${sharedMeta.components.join(', ')} (ref: ${refPage.id})\n`));
-
-      const refModuleId = refPage.id;
-      const refTaskId = `task_chrome_${refPage.id}_${Date.now()}`;
-
-      const chromeInput = buildPipelineInput({
-        pageId: refModuleId,
-        taskId: refTaskId,
-        projectRoot,
-        telemetry: createSink(refTaskId),
-        agentContext: createPipelineContext(refTaskId, undefined, projectRoot, providerFactory, projectManifest),
-        designTool,
-        providerString: resolveCLIModel(),
-        resume: !!options.designOnly,
-        chromePass: { mode: 'generate' },
-        ...(options.width !== undefined ? { cliWidth: options.width } : {}),
-      });
-      if (chromeInput) {
-        const chromeResult = await runDesignPipeline(chromeInput);
-
-        if (chromeResult.ok && chromeResult.value.design?.spec) {
-          sharedChromeSpec = chromeResult.value.design.spec as unknown as DesignSpecV2;
-          const payload = buildSharedChromeFilePayload(sharedChromeSpec, sharedMeta);
-          const designsDir = join(projectRoot, 'agentforge', 'designs');
-          if (!existsSync(designsDir)) mkdirSync(designsDir, { recursive: true });
-          writeFileSync(join(designsDir, 'shared-chrome.json'), JSON.stringify(payload, null, 2));
-          output.write(successMsg(`    shared-chrome.json written (${Object.keys(sharedChromeSpec.nodes).length} nodes)\n`));
-        } else {
-          const errMsg = chromeResult.ok ? 'no design spec returned' : ((chromeResult.error as { message?: string }).message ?? 'unknown');
-          output.write(warnMsg(`  Chrome Pass failed (${errMsg}) — per-page chrome will be unconstrained\n`));
-        }
-      } else {
-        output.write(warnMsg(`  Chrome Pass — reference page ${refModuleId} not found in pages.yaml\n`));
-      }
-    }
   }
 
-  // ── Sequential per-page pipeline (vision Layer 7: topological order) ──
+  // ── Chrome Pass + sequential per-page pipeline (vision Layer 7) ──
+
+  // Resolve shared components for prototype manifest post-processing
+  const sharedMeta = resolveSharedComponents(pages);
 
   interface PageResult { id: string; name: string; status: 'ok' | 'failed'; durationMs: number; stage: string }
   const results: PageResult[] = [];
 
-  for (let i = 0; i < pages.length; i++) {
-    const page = pages[i];
-    // Chrome Pass generates shared chrome only (header + nav); the reference page
-    // still needs a full design pass with chromePass: 'consume' for page content.
+  const runResult = await runPagesWithChromePass({
+    pages,
+    projectRoot,
+    skipChromeGeneration: !!options.designOnly,
+    preloadedChromeSpec,
+    buildInput: (pageId, chromePass) => {
+      const taskId = `task_page_${pageId}_${Date.now()}`;
+      return buildPipelineInput({
+        pageId,
+        taskId,
+        projectRoot,
+        telemetry: createSink(taskId),
+        agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory, projectManifest),
+        designTool,
+        providerString: resolveCLIModel(),
+        resume: !!options.designOnly,
+        ...(options.designOnly ? { stage: 'design' as const } : {}),
+        ...(options.width !== undefined ? { cliWidth: options.width } : {}),
+        ...(chromePass ? { chromePass } : {}),
+      });
+    },
+    onChromePassStart: (refPageId, components) => {
+      output.write(infoMsg(`\n  Chrome Pass — ${components.join(', ')} (ref: ${refPageId})\n`));
+    },
+    onChromePassComplete: (spec) => {
+      output.write(successMsg(`    shared-chrome.json written (${Object.keys(spec.nodes).length} nodes)\n`));
+    },
+    onChromePassFail: (errMsg) => {
+      output.write(warnMsg(`  Chrome Pass failed (${errMsg}) — per-page chrome will be unconstrained\n`));
+    },
+    onPageStart: (pageId, index, total) => {
+      const page = pages.find(p => p.id === pageId);
+      const name = page?.name ?? pageId;
+      output.write(infoMsg(`\n  [${index + 1}/${total}] ${name}...\n`));
+    },
+    onPageComplete: async (pageId, state, durationMs) => {
+      const page = pages.find(p => p.id === pageId);
+      const name = page?.name ?? pageId;
+      const idx = pages.findIndex(p => p.id === pageId);
 
-    const moduleId = page.id;
-    const taskId = `task_page_${page.id}_${Date.now()}`;
+      const pageSpec = state.design?.spec as DesignSpecV2 | undefined;
+      const meta = state.design?.designToolMetadata;
+      const outputDir = ensureOutputDir(pageId, projectRoot);
 
-    const pageInputBase = buildPipelineInput({
-      pageId: moduleId,
-      taskId,
-      projectRoot,
-      telemetry: createSink(taskId),
-      agentContext: createPipelineContext(taskId, undefined, projectRoot, providerFactory, projectManifest),
-      designTool,
-      providerString: resolveCLIModel(),
-      resume: !!options.designOnly,
-      ...(options.designOnly ? { stage: 'design' as const } : {}),
-      ...(options.width !== undefined ? { cliWidth: options.width } : {}),
-      ...(sharedChromeSpec ? {
-        chromePass: { mode: 'consume' as const, spec: sharedChromeSpec, activePageId: page.id },
-      } : {}),
-    });
-
-    if (!pageInputBase) {
-      output.write(warnMsg(`  Page ${moduleId} not found in pages.yaml — skipping\n`));
-      continue;
-    }
-
-    const viewportWidth = pageInputBase.viewportWidth ?? 1440;
-    output.write(infoMsg(`\n  [${i + 1}/${pages.length}] ${page.name} (${viewportWidth}px)...\n`));
-
-    const pageInput: PipelineInput = pageInputBase;
-
-    const t0 = Date.now();
-    const pageResult = await runDesignPipeline(pageInput);
-    const durationMs = Date.now() - t0;
-
-    if (pageResult.ok) {
-      const outputDir = ensureOutputDir(moduleId, projectRoot);
-      const pageSpec = pageResult.value.design?.spec as DesignSpecV2 | undefined;
-      const meta = pageResult.value.design?.designToolMetadata;
-
-      // Post-pipeline browser correction (batch is non-interactive by definition).
-      // Wrapped in try/catch so a Playwright failure on one page doesn't abort the loop.
+      // Post-pipeline browser correction (batch is non-interactive).
       let pageCorrectionResult: BrowserCorrectionResult | undefined;
       if (designTool === 'browser' && pageSpec) {
+        const viewportWidth = state.viewportWidth ?? 1440;
         const correctionOpts: BrowserCorrectionOptions = {
           width: viewportWidth,
           visionCorrection: true,
           interactive: false,
           outputDir: join(outputDir, PIPELINE_ARTIFACTS.corrections),
-          ...(pageResult.value.planning ? { planningOutput: pageResult.value.planning } : {}),
+          ...(state.planning ? { planningOutput: state.planning } : {}),
         };
         try {
           const provider = providerFactory(resolveCLIModel());
           pageCorrectionResult = await runBrowserCorrectionPipeline(
-            pageSpec,
-            rendererTokens,
-            catalogMapV2,
-            provider as unknown as LLMProvider,
-            correctionOpts,
+            pageSpec, rendererTokens, catalogMapV2,
+            provider as unknown as LLMProvider, correctionOpts,
           );
         } catch (correctionErr) {
-          output.write(warnMsg(`    Browser correction failed for ${page.id}: ${correctionErr instanceof Error ? correctionErr.message : String(correctionErr)}\n`));
+          output.write(warnMsg(`    Browser correction failed for ${pageId}: ${correctionErr instanceof Error ? correctionErr.message : String(correctionErr)}\n`));
           output.write(warnMsg(`    Continuing without correction for this page.\n`));
         }
       }
 
       const designOutput: PenpotDesignOutput = {
-        moduleId,
+        moduleId: pageId,
         breakpoints: [],
         ...(pageSpec ? { designSpec: pageSpec } : {}),
         ...(meta?.script ? { script: meta.script } : {}),
@@ -427,14 +386,19 @@ export async function designPageAllCommand(
         ...(pageCorrectionResult ? { browserCorrectionResult: pageCorrectionResult } : {}),
       };
       saveArtifact(outputDir, PIPELINE_ARTIFACTS.penpotDesign, designOutput);
-      output.write(successMsg(`  [${i + 1}/${pages.length}] ${page.name} — done (${(durationMs / 1000).toFixed(1)}s)\n`));
-      results.push({ id: page.id, name: page.name, status: 'ok', durationMs, stage: 'complete' });
-    } else {
-      const err = pageResult.error as { message?: string; stage?: string };
-      output.write(errorMsg(`  [${i + 1}/${pages.length}] ${page.name} — failed at ${err.stage ?? 'unknown'}\n`));
-      results.push({ id: page.id, name: page.name, status: 'failed', durationMs, stage: err.stage ?? 'unknown' });
-    }
-  }
+      output.write(successMsg(`  [${idx + 1}/${pages.length}] ${name} — done (${(durationMs / 1000).toFixed(1)}s)\n`));
+      results.push({ id: pageId, name, status: 'ok', durationMs, stage: 'complete' });
+    },
+    onPageFail: (pageId, error, durationMs) => {
+      const page = pages.find(p => p.id === pageId);
+      const name = page?.name ?? pageId;
+      const idx = pages.findIndex(p => p.id === pageId);
+      output.write(errorMsg(`  [${idx + 1}/${pages.length}] ${name} — failed at ${error.stage ?? 'unknown'}\n`));
+      results.push({ id: pageId, name, status: 'failed', durationMs, stage: error.stage ?? 'unknown' });
+    },
+  });
+
+  let sharedChromeSpec = runResult.sharedChromeSpec;
 
   // ── Summary ──
 

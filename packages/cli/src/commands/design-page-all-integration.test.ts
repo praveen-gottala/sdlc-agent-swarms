@@ -135,6 +135,79 @@ interface MockCallRecord {
   readonly projectRoot: string | undefined;
 }
 
+/**
+ * Build a mock runPagesWithChromePass that delegates to a mock runDesignPipeline.
+ * Since CLI now calls runPagesWithChromePass (M1 Phase 3), the integration test
+ * must mock both functions — runPagesWithChromePass for the CLI entry point,
+ * and the mock runDesignPipeline for recording calls and returning page states.
+ */
+function buildRunPagesWithChromeMock(
+  mockRunDesignPipeline: jest.Mock,
+): jest.Mock {
+  return jest.fn().mockImplementation(async (opts: Record<string, unknown>) => {
+    const pages = opts.pages as Array<{ id: string }>;
+    const buildInput = opts.buildInput as (pageId: string, chromePass?: Record<string, unknown>) => Record<string, unknown> | null;
+    const onPageStart = opts.onPageStart as ((pageId: string, idx: number, total: number) => void) | undefined;
+    const onPageComplete = opts.onPageComplete as ((pageId: string, state: Record<string, unknown>, durationMs: number) => void | Promise<void>) | undefined;
+    const onPageFail = opts.onPageFail as ((pageId: string, error: Record<string, unknown>, durationMs: number) => void) | undefined;
+    const onChromePassStart = opts.onChromePassStart as ((refId: string, comps: string[]) => void) | undefined;
+    const onChromePassComplete = opts.onChromePassComplete as ((spec: Record<string, unknown>) => void) | undefined;
+    const skipChromeGeneration = opts.skipChromeGeneration as boolean | undefined;
+    const preloadedChromeSpec = opts.preloadedChromeSpec as Record<string, unknown> | undefined;
+
+    const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+    const resolveShared = actual.resolveSharedComponents as (p: unknown[]) => { components: string[]; regions: unknown[]; referencePageId: string } | null;
+
+    let sharedChromeSpec: Record<string, unknown> | undefined = preloadedChromeSpec as Record<string, unknown> | undefined;
+
+    // Chrome Pass
+    if (!skipChromeGeneration && !sharedChromeSpec) {
+      const meta = resolveShared(pages);
+      if (meta) {
+        onChromePassStart?.(meta.referencePageId, meta.components);
+        const chromeInput = buildInput(meta.referencePageId, { mode: 'generate' });
+        if (chromeInput) {
+          const chromeResult = await mockRunDesignPipeline(chromeInput);
+          if (chromeResult.ok && chromeResult.value?.design?.spec) {
+            sharedChromeSpec = chromeResult.value.design.spec as Record<string, unknown>;
+            onChromePassComplete?.(sharedChromeSpec);
+          }
+        }
+      }
+    }
+
+    // Per-page loop
+    const results: Array<{ pageId: string; status: string; durationMs: number; state?: Record<string, unknown>; error?: Record<string, unknown> }> = [];
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      onPageStart?.(page.id, i, pages.length);
+
+      const chromePass = sharedChromeSpec
+        ? { mode: 'consume', spec: sharedChromeSpec, activePageId: page.id }
+        : undefined;
+      const pageInput = buildInput(page.id, chromePass);
+      if (!pageInput) {
+        results.push({ pageId: page.id, status: 'failed', durationMs: 0, error: { code: 'PIPELINE_STAGE_FAILED', stage: 'init', message: 'not found', recoverable: false } });
+        continue;
+      }
+
+      const t0 = Date.now();
+      const pageResult = await mockRunDesignPipeline(pageInput);
+      const durationMs = Date.now() - t0;
+
+      if (pageResult.ok) {
+        results.push({ pageId: page.id, status: 'ok', durationMs, state: pageResult.value });
+        await onPageComplete?.(page.id, pageResult.value, durationMs);
+      } else {
+        results.push({ pageId: page.id, status: 'failed', durationMs, error: pageResult.error });
+        onPageFail?.(page.id, pageResult.error, durationMs);
+      }
+    }
+
+    return { pages: results, sharedChromeSpec };
+  });
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -169,35 +242,37 @@ describe('design:page:all integration — sequential migration smoke', () => {
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      const mockPipeline = jest.fn().mockImplementation((input: Record<string, unknown>) => {
+        const chromePass = input.chromePass as { mode?: string } | undefined;
+        calls.push({
+          stage: chromePass?.mode === 'generate' ? 'chrome' : 'page',
+          moduleId: String(input.moduleId),
+          chromePassMode: chromePass?.mode,
+          resume: input.resume as boolean | undefined,
+          stageInput: input.stage as string | undefined,
+          designTool: input.designTool as string | undefined,
+          projectRoot: input.projectRoot as string | undefined,
+        });
+        return Promise.resolve({
+          ok: true,
+          value: {
+            moduleId: input.moduleId,
+            taskId: input.taskId,
+            projectRoot: input.projectRoot,
+            designTool: input.designTool,
+            research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+            planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+            design: {
+              spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
+              designToolMetadata: { tool: input.designTool },
+            },
+          },
+        });
+      });
       return {
         ...actual,
-        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          const chromePass = input.chromePass as { mode?: string } | undefined;
-          calls.push({
-            stage: chromePass?.mode === 'generate' ? 'chrome' : 'page',
-            moduleId: String(input.moduleId),
-            chromePassMode: chromePass?.mode,
-            resume: input.resume as boolean | undefined,
-            stageInput: input.stage as string | undefined,
-            designTool: input.designTool as string | undefined,
-            projectRoot: input.projectRoot as string | undefined,
-          });
-          return Promise.resolve({
-            ok: true,
-            value: {
-              moduleId: input.moduleId,
-              taskId: input.taskId,
-              projectRoot: input.projectRoot,
-              designTool: input.designTool,
-              research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
-              planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
-              design: {
-                spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
-                designToolMetadata: { tool: input.designTool },
-              },
-            },
-          });
-        }),
+        runDesignPipeline: mockPipeline,
+        runPagesWithChromePass: buildRunPagesWithChromeMock(mockPipeline),
         runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
           finalSpec: { screen: 'x', width: 1440, nodes: { root: { type: 'frame' } } },
           finalScore: 90,
@@ -236,23 +311,25 @@ describe('design:page:all integration — sequential migration smoke', () => {
   it('writes penpot-design.json envelope under projectRoot (not cwd) for --tool browser with browserCorrectionResult', async () => {
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      const mockPipeline = jest.fn().mockImplementation((input: Record<string, unknown>) => Promise.resolve({
+        ok: true,
+        value: {
+          moduleId: input.moduleId,
+          taskId: input.taskId,
+          projectRoot: input.projectRoot,
+          designTool: input.designTool,
+          research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+          planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+          design: {
+            spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
+            designToolMetadata: { tool: input.designTool },
+          },
+        },
+      }));
       return {
         ...actual,
-        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => Promise.resolve({
-          ok: true,
-          value: {
-            moduleId: input.moduleId,
-            taskId: input.taskId,
-            projectRoot: input.projectRoot,
-            designTool: input.designTool,
-            research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
-            planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
-            design: {
-              spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
-              designToolMetadata: { tool: input.designTool },
-            },
-          },
-        })),
+        runDesignPipeline: mockPipeline,
+        runPagesWithChromePass: buildRunPagesWithChromeMock(mockPipeline),
         runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
           finalSpec: { screen: 'home', width: 1440, nodes: { root: { type: 'frame' } } },
           finalScore: 88,
@@ -291,28 +368,30 @@ describe('design:page:all integration — sequential migration smoke', () => {
   it('preserves Penpot script/nodeIds/projectId in envelope for --tool penpot (2.1F.1 regression guard)', async () => {
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
-      return {
-        ...actual,
-        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => Promise.resolve({
-          ok: true,
-          value: {
-            moduleId: input.moduleId,
-            taskId: input.taskId,
-            projectRoot: input.projectRoot,
-            designTool: input.designTool,
-            research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
-            planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
-            design: {
-              spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
-              designToolMetadata: {
-                tool: 'penpot',
-                script: '// mock penpot script\nconsole.log("hi");',
-                nodeIds: { root: 'penpot-node-1' },
-                projectId: 'penpot-project-xyz',
-              },
+      const mockPipeline = jest.fn().mockImplementation((input: Record<string, unknown>) => Promise.resolve({
+        ok: true,
+        value: {
+          moduleId: input.moduleId,
+          taskId: input.taskId,
+          projectRoot: input.projectRoot,
+          designTool: input.designTool,
+          research: { briefId: 'b1', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+          planning: { specRef: 's1', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+          design: {
+            spec: { screen: String(input.moduleId), width: 1440, nodes: { root: { type: 'frame' } } },
+            designToolMetadata: {
+              tool: 'penpot',
+              script: '// mock penpot script\nconsole.log("hi");',
+              nodeIds: { root: 'penpot-node-1' },
+              projectId: 'penpot-project-xyz',
             },
           },
-        })),
+        },
+      }));
+      return {
+        ...actual,
+        runDesignPipeline: mockPipeline,
+        runPagesWithChromePass: buildRunPagesWithChromeMock(mockPipeline),
         // For --tool penpot we should NOT call browser correction.
         runBrowserCorrectionPipeline: jest.fn().mockRejectedValue(new Error('browser correction must not run for --tool penpot')),
       };
@@ -336,17 +415,19 @@ describe('design:page:all integration — sequential migration smoke', () => {
   it('warns and ignores deprecated --concurrency flag', async () => {
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      const mockPipeline = jest.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          moduleId: 'm', taskId: 't', projectRoot: tmpDir, designTool: 'browser',
+          research: { briefId: 'b', moduleId: 'm', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+          planning: { specRef: 's', moduleId: 'm', componentTree: [], tokenBindings: {}, responsiveRules: [] },
+          design: { spec: { screen: 'x', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+        },
+      });
       return {
         ...actual,
-        runDesignPipeline: jest.fn().mockResolvedValue({
-          ok: true,
-          value: {
-            moduleId: 'm', taskId: 't', projectRoot: tmpDir, designTool: 'browser',
-            research: { briefId: 'b', moduleId: 'm', requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
-            planning: { specRef: 's', moduleId: 'm', componentTree: [], tokenBindings: {}, responsiveRules: [] },
-            design: { spec: { screen: 'x', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
-          },
-        }),
+        runDesignPipeline: mockPipeline,
+        runPagesWithChromePass: buildRunPagesWithChromeMock(mockPipeline),
         runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
           finalSpec: { screen: 'x', width: 1440, nodes: {} },
           finalScore: 80, iterations: 1, thresholdMet: true, screenshot: Buffer.from(''),
@@ -374,29 +455,31 @@ describe('design:page:all integration — sequential migration smoke', () => {
 
     jest.doMock('@agentforge/agents-ux', () => {
       const actual = jest.requireActual('@agentforge/agents-ux') as Record<string, unknown>;
+      const mockPipeline = jest.fn().mockImplementation((input: Record<string, unknown>) => {
+        const chromePass = input.chromePass as { mode?: string } | undefined;
+        calls.push({
+          stage: chromePass?.mode === 'generate' ? 'chrome' : 'page',
+          moduleId: String(input.moduleId),
+          chromePassMode: chromePass?.mode,
+          resume: input.resume as boolean | undefined,
+          stageInput: input.stage as string | undefined,
+          designTool: input.designTool as string | undefined,
+          projectRoot: input.projectRoot as string | undefined,
+        });
+        return Promise.resolve({
+          ok: true,
+          value: {
+            moduleId: input.moduleId, taskId: input.taskId, projectRoot: input.projectRoot, designTool: input.designTool,
+            research: { briefId: 'b', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
+            planning: { specRef: 's', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
+            design: { spec: { screen: 'x', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
+          },
+        });
+      });
       return {
         ...actual,
-        runDesignPipeline: jest.fn().mockImplementation((input: Record<string, unknown>) => {
-          const chromePass = input.chromePass as { mode?: string } | undefined;
-          calls.push({
-            stage: chromePass?.mode === 'generate' ? 'chrome' : 'page',
-            moduleId: String(input.moduleId),
-            chromePassMode: chromePass?.mode,
-            resume: input.resume as boolean | undefined,
-            stageInput: input.stage as string | undefined,
-            designTool: input.designTool as string | undefined,
-            projectRoot: input.projectRoot as string | undefined,
-          });
-          return Promise.resolve({
-            ok: true,
-            value: {
-              moduleId: input.moduleId, taskId: input.taskId, projectRoot: input.projectRoot, designTool: input.designTool,
-              research: { briefId: 'b', moduleId: input.moduleId, requirementIds: [], designConstraints: [], referencePatterns: [], accessibilityRequirements: [], dataModelDependencies: [] },
-              planning: { specRef: 's', moduleId: input.moduleId, componentTree: [], tokenBindings: {}, responsiveRules: [] },
-              design: { spec: { screen: 'x', width: 1440, nodes: {} }, designToolMetadata: { tool: 'browser' } },
-            },
-          });
-        }),
+        runDesignPipeline: mockPipeline,
+        runPagesWithChromePass: buildRunPagesWithChromeMock(mockPipeline),
         runBrowserCorrectionPipeline: jest.fn().mockResolvedValue({
           finalSpec: { screen: 'x', width: 1440, nodes: {} },
           finalScore: 80, iterations: 1, thresholdMet: true, screenshot: Buffer.from(''),

@@ -28,6 +28,9 @@ export { createPipelineContext } from './pipeline-context.js';
 export type { BuildPipelineInputOptions } from './pipeline-input-builder.js';
 export { buildPipelineInput } from './pipeline-input-builder.js';
 
+export type { RunPagesOptions, PageRunResult, RunPagesResult } from './run-pages.js';
+export { runPagesWithChromePass } from './run-pages.js';
+
 export { loadCachedArtifact, saveCachedArtifact, artifactPath, artifactDir } from './cache.js';
 
 export type { PipelinePreset, PipelineRoleKey } from './model-presets.js';

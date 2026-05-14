@@ -11,6 +11,7 @@ import { stringify } from 'yaml';
 import type { AgentContext, LLMProviderRef } from '@agentforge/core';
 import { createRealFs, Ok } from '@agentforge/core';
 import { buildPipelineInput } from '../pipeline-input-builder.js';
+import type { PipelineTelemetrySink } from '../types.js';
 
 function createTempProjectDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'pipeline-input-test-'));
@@ -45,6 +46,55 @@ function writeDesignTokens(projectRoot: string): void {
 
 function writePrd(projectRoot: string, content: string): void {
   writeFileSync(join(projectRoot, 'docs/prd.md'), content);
+}
+
+function makeValidEnrichedRequirement(): Record<string, unknown> {
+  return {
+    id: 'er-cashpulse',
+    rawInput: 'Build a budget tracking app',
+    mode: 'bootstrap',
+    prd: {
+      id: 'prd-1',
+      title: 'CashPulse',
+      description: 'Budget tracking application',
+      features: [
+        { id: 'f1', name: 'Expense Tracking', description: 'Track daily expenses', priority: 'must-have' },
+      ],
+      personas: [
+        { id: 'p1', name: 'Budget-Conscious User', role: 'Consumer', goals: ['Save money'] },
+      ],
+      dataEntities: [
+        { id: 'de1', name: 'Expense', fields: [{ name: 'amount', type: 'number', required: true }] },
+        { id: 'de2', name: 'Category', fields: [{ name: 'name', type: 'string', required: true }] },
+      ],
+      screens: [
+        { id: 's1', name: 'Dashboard', description: 'Main overview' },
+      ],
+      nfrs: [
+        { id: 'nfr1', category: 'Performance', description: 'Page load < 2s', target: '< 2s' },
+      ],
+      successMetrics: [],
+      outOfScope: [],
+      version: '1.0',
+      status: 'approved',
+    },
+    assumptionLedger: {
+      id: 'al-1',
+      entries: [],
+      createdAt: '2026-05-01T00:00:00Z',
+      lastUpdatedAt: '2026-05-01T00:00:00Z',
+    },
+    clarificationRounds: [],
+    confidence: 0.85,
+    createdAt: '2026-05-01T00:00:00Z',
+  };
+}
+
+function writeEnrichedRequirement(projectRoot: string, data: Record<string, unknown>): void {
+  writeFileSync(
+    join(projectRoot, 'agentforge/spec/enriched-requirement.yaml'),
+    stringify(data),
+  );
 }
 
 function createMockAgentContext(projectRoot: string): AgentContext {
@@ -204,6 +254,106 @@ describe('buildPipelineInput', () => {
 
     expect(result).not.toBeNull();
     expect(result!.viewportWidth).toBe(1280);
+  });
+
+  // ── Phase 6: enriched-requirement.yaml bridge ──
+
+  it('reads enrichedRequirement when valid enriched-requirement.yaml exists', () => {
+    const projectRoot = createTempProjectDir();
+    writePagesYaml(projectRoot, [
+      { id: 'home', name: 'Home', description: 'Home page', route: '/', status: 'pending' },
+    ]);
+    writeEnrichedRequirement(projectRoot, makeValidEnrichedRequirement());
+
+    const result = buildPipelineInput({
+      pageId: 'home',
+      taskId: 'task-enriched',
+      projectRoot,
+      agentContext: createMockAgentContext(projectRoot),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.enrichedRequirement).toBeDefined();
+    expect(result!.enrichedRequirement!.prd.title).toBe('CashPulse');
+    expect(result!.enrichedRequirement!.prd.dataEntities[0].name).toBe('Expense');
+    // When enrichedRequirement present, prdRequirements should be undefined
+    // so initState() derives via renderPrdToMarkdown
+    expect(result!.prdRequirements).toBeUndefined();
+  });
+
+  it('enrichedRequirement absent when YAML missing (backward compat)', () => {
+    const projectRoot = createTempProjectDir();
+    writePagesYaml(projectRoot, [
+      { id: 'home', name: 'Home', description: 'Home page', route: '/', status: 'pending' },
+    ]);
+    writePrd(projectRoot, '# Test PRD');
+
+    const result = buildPipelineInput({
+      pageId: 'home',
+      taskId: 'task-no-enriched',
+      projectRoot,
+      agentContext: createMockAgentContext(projectRoot),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.enrichedRequirement).toBeUndefined();
+    expect(result!.prdRequirements).toBeDefined();
+    expect(result!.prdRequirements!.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('enrichedRequirement absent when YAML schema-invalid, logs warning', () => {
+    const projectRoot = createTempProjectDir();
+    writePagesYaml(projectRoot, [
+      { id: 'home', name: 'Home', description: 'Home page', route: '/', status: 'pending' },
+    ]);
+    // Write invalid enriched requirement (missing required fields)
+    writeFileSync(
+      join(projectRoot, 'agentforge/spec/enriched-requirement.yaml'),
+      stringify({ id: 'er-1', rawInput: 'test' }),
+    );
+
+    const mockOnLog = jest.fn();
+    const telemetry: PipelineTelemetrySink = {
+      onStageStart: jest.fn(),
+      onStageComplete: jest.fn(),
+      onStageFail: jest.fn(),
+      onLlmCall: jest.fn(),
+      onLog: mockOnLog,
+    };
+
+    const result = buildPipelineInput({
+      pageId: 'home',
+      taskId: 'task-invalid-enriched',
+      projectRoot,
+      agentContext: createMockAgentContext(projectRoot),
+      telemetry,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.enrichedRequirement).toBeUndefined();
+    expect(result!.prdRequirements).toBeDefined();
+    expect(mockOnLog).toHaveBeenCalledWith('init', 'warn', expect.stringContaining('schema-invalid'));
+  });
+
+  it('precedence: enrichedRequirement present with docs/prd.md → prdRequirements undefined', () => {
+    const projectRoot = createTempProjectDir();
+    writePagesYaml(projectRoot, [
+      { id: 'home', name: 'Home', description: 'Home page', route: '/', status: 'pending' },
+    ]);
+    writePrd(projectRoot, '# CashPulse PRD\nBudget tracking.');
+    writeEnrichedRequirement(projectRoot, makeValidEnrichedRequirement());
+
+    const result = buildPipelineInput({
+      pageId: 'home',
+      taskId: 'task-precedence',
+      projectRoot,
+      agentContext: createMockAgentContext(projectRoot),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.enrichedRequirement).toBeDefined();
+    // initState() will derive prdRequirements from enrichedRequirement.prd
+    expect(result!.prdRequirements).toBeUndefined();
   });
 
   it('builds rendererTokens and strips version/created_by when design tokens exist', () => {
