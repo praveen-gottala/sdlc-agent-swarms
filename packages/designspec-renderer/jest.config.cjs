@@ -1,5 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
+  forceExit: true,
   testPathIgnorePatterns: ["/dist/", "/node_modules/", "/__tests__/output/"],
   displayName: 'designspec-renderer',
   transform: {

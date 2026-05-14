@@ -1,5 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
+  forceExit: true,
   testPathIgnorePatterns: ["/dist/", "/node_modules/"],
   testMatch: ['**/*.test.ts'],
   displayName: 'e2e-test',

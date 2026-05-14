@@ -1,5 +1,5 @@
 // Penpot design script (v2 renderer) for module: test-settings
-// Generated at: 2026-05-14T03:57:41.276Z
+// Generated at: 2026-05-14T04:47:40.227Z
 // Chunks: 1
 
 try {

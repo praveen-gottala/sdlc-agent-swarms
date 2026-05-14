@@ -8,6 +8,7 @@ if (process.env.RUN_E2E_PROOF !== 'true') {
 }
 
 module.exports = {
+  forceExit: true,
   testPathIgnorePatterns: ignorePatterns,
   displayName: 'agents-ux',
   transform: {

@@ -1,4 +1,5 @@
 module.exports = {
+  forceExit: true,
   displayName: 'dashboard',
   testEnvironment: 'jsdom',
   transform: { '^.+\\.tsx?$': ['@swc/jest'] },
