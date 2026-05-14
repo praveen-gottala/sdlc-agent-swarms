@@ -197,6 +197,7 @@ export const FeaturePlanSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const DataBindingSchema = z.object({
+  entityId: z.string(),
   field: z.string(),
   source: z.string(),
   transform: z.string().optional(),

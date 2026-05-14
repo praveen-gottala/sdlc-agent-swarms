@@ -19,6 +19,7 @@ nav:
       - State Persistence: concepts/state-persistence.md
       - Clarifier Pipeline: concepts/clarifier-pipeline.md
       - Question Generation: concepts/clarifier-question-generation.md
+      - Cross-Screen Coherence: concepts/cross-screen-coherence.md
   - Architecture:
       - Overview: architecture/README.md
       - Architecture at a Glance: architecture/vision-overview.md
@@ -108,6 +109,8 @@ nav:
       - ADR-049 Stage 7 Dashboard Deferral: adrs/ADR-049-stage-7-dashboard-deferral.md
       - ADR-050 Runs Page Vision Deviations: adrs/ADR-050-runs-page-vision-deviations.md
       - ADR-051 Backstage Developer Portal: adrs/ADR-051-backstage-developer-portal.md
+      - ADR-053 PRD Markdown Renderer: adrs/ADR-053-prd-markdown-renderer-as-single-source.md
+      - ADR-054 Styling Library Architect Axis: adrs/ADR-054-styling-library-architect-axis.md
   - Operations:
       - Active Plans:
           - Visual Diversity: plans/active/visual-diversity/execution-plan.md

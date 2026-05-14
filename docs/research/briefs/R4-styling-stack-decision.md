@@ -1,5 +1,7 @@
 # R4: Styling Library & Stack Decision
 
+**Status:** RESOLVED — see [ADR-054](../../adrs/ADR-054-styling-library-architect-axis.md)
+
 **Question:** Where in the pipeline does the styling library (shadcn, Mantine, MUI, etc.) and tech stack (React/Vue, Node/Python, Postgres/SQLite) get decided? Is this a Clarifier concern, an Architect concern, or a pre-pipeline configuration?
 
 **Blocks:** M2 (Architect Foundation — typed contracts + Critic)
@@ -30,7 +32,7 @@ Node 2 researches open decision axes. Node 3 commits decisions and writes ADRs. 
 
 From `packages/cli/src/commands/init.ts`:
 - Stack: hardcoded React/Node/PostgreSQL/Tailwind (line ~120)
-- Component library: 6 presets in `component-library-presets.ts` (shadcn, Mantine, MUI, Radix, Headless, Custom)
+- Component library: 6 presets in `component-library-presets.ts` (`ComponentLibraryId`: shadcn, mui, chakra, antd, radix, mantine)
 - Each preset maps library → component catalog shape (anatomy, variants, states, token_bindings)
 - The selected preset generates `component-catalog.yaml` which the design pipeline consumes
 

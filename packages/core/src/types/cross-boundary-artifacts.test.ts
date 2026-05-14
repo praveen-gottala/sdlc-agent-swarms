@@ -138,7 +138,7 @@ const SCREEN_PLAN_FIXTURE = {
   route: '/tasks',
   components: ['TaskList', 'TaskForm', 'FilterBar'],
   dataBindings: [
-    { field: 'tasks', source: 'GET /api/tasks', transform: 'sortByDate' },
+    { entityId: 'e-task', field: 'tasks', source: 'GET /api/tasks', transform: 'sortByDate' },
   ],
   navigationTargets: [
     { target: 'task-detail', trigger: 'click on task row' },
@@ -315,6 +315,12 @@ describe('Cross-boundary artifact schemas', () => {
 
     it('rejects invalid screen type', () => {
       const result = ScreenPlanSchema.safeParse({ ...SCREEN_PLAN_FIXTURE, screenType: 'popup' });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects dataBindings missing required entityId', () => {
+      const badBinding = { ...SCREEN_PLAN_FIXTURE, dataBindings: [{ field: 'tasks', source: 'GET /api/tasks' }] };
+      const result = ScreenPlanSchema.safeParse(badBinding);
       expect(result.success).toBe(false);
     });
   });

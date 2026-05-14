@@ -974,37 +974,6 @@ function DesignStudioContent() {
     setShowPipelineChoice(true);
   }, [selectedId, hasUnsavedChanges]);
 
-  const handleQuickGenerate = useCallback(() => {
-    if (!selectedId) return;
-    log('INFO', 'studio', `Quick generate started for page ${selectedId} (model: ${selectedModel})`);
-    setShowPipelineChoice(false);
-    setPages((prev) =>
-      prev.map((p) =>
-        p.id === selectedId ? { ...p, designStatus: 'generating' } : p,
-      ),
-    );
-    fetch(`/api/pages/${selectedId}/design`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: selectedModel }),
-    })
-      .then((r) => {
-        refreshPage(selectedId);
-        if (!r.ok) {
-          r.json().then((data) => {
-            const msg = data.error ?? 'Design generation failed';
-            showToast(typeof msg === 'string' ? msg : 'Design generation failed');
-          }).catch(() => {
-            showToast('Design generation failed');
-          });
-        }
-      })
-      .catch(() => {
-        showToast('Network error — could not reach server');
-        refreshPage(selectedId);
-      });
-  }, [selectedId, selectedModel, refreshPage, showToast, log]);
-
   const handleFullPipeline = useCallback(() => {
     if (!selectedId) return;
     setShowPipelineChoice(false);
@@ -1534,7 +1503,7 @@ function DesignStudioContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl border border-border bg-sidebar p-6">
             <h2 className="text-lg font-semibold text-text-primary mb-1">Generate Design</h2>
-            <p className="text-sm text-text-muted mb-4">Choose a model and generation method:</p>
+            <p className="text-sm text-text-muted mb-4">Choose a model for the design pipeline:</p>
 
             {/* Model selector */}
             <div className="mb-4">
@@ -1555,30 +1524,24 @@ function DesignStudioContent() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleQuickGenerate}
-                className="flex flex-col items-start rounded-lg border border-border p-4 text-left hover:bg-bg-elevated/30 transition-colors"
-              >
-                <span className="text-sm font-medium text-text-primary">Quick Generate</span>
-                <span className="text-xs text-text-muted mt-0.5">Single LLM call for fast results (~30s)</span>
-              </button>
+            <p className="text-xs text-text-muted mb-4">
+              Research → Planning → Design (3 stages, ~2min)
+            </p>
+
+            <div className="flex gap-3">
               <button
                 onClick={handleFullPipeline}
-                className="flex flex-col items-start rounded-lg border border-accent-blue/50 bg-accent-blue/5 p-4 text-left hover:bg-accent-blue/10 transition-colors"
+                className="flex-1 rounded-md bg-accent-blue px-4 py-2 text-sm font-medium text-white hover:bg-accent-blue/90 transition-colors"
               >
-                <span className="text-sm font-medium text-text-primary">Full Pipeline</span>
-                <span className="text-xs text-text-muted mt-0.5">
-                  Research → Planning → Design (3 stages, ~2min, higher quality)
-                </span>
+                Generate
+              </button>
+              <button
+                onClick={() => setShowPipelineChoice(false)}
+                className="rounded-md border border-border px-4 py-2 text-sm text-text-secondary hover:bg-bg-elevated/50 transition-colors"
+              >
+                Cancel
               </button>
             </div>
-            <button
-              onClick={() => setShowPipelineChoice(false)}
-              className="mt-4 w-full rounded-md border border-border px-4 py-2 text-sm text-text-secondary hover:bg-bg-elevated/50 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
