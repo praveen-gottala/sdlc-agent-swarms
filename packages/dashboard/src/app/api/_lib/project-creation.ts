@@ -263,6 +263,34 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
       if (!alResult.ok) {
         throw new ProjectCreationError(alResult.error.message, 500);
       }
+
+      const screens = clarifierOutput.enrichedRequirement.prd.screens;
+      if (screens.length > 0) {
+        const toKebab = (s: string): string =>
+          s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 40).replace(/-$/, '');
+
+        const pagesFromScreens = {
+          version: '1.0',
+          pages: screens.map((s: { id: string; name: string; description: string; screenType?: string }) => ({
+            id: toKebab(s.name),
+            name: s.name,
+            description: s.description,
+            route: `/${toKebab(s.name)}`,
+            status: 'approved',
+            screen_type: s.screenType ?? 'page',
+            components: [],
+            viewports: [1440],
+          })),
+        };
+        const pagesResult = writeYaml(
+          join(specDir, 'pages.yaml'),
+          pagesFromScreens,
+          realFs,
+        );
+        if (!pagesResult.ok) {
+          throw new ProjectCreationError(pagesResult.error.message, 500);
+        }
+      }
     }
 
     // Dashboard-specific: set as active project

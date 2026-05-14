@@ -82,10 +82,17 @@ export async function GET(
 /* ------------------------------------------------------------------ */
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ pageId: string }> },
 ) {
   const { pageId } = await params;
+  let requestModel: string | undefined;
+  try {
+    const body = await request.json() as { model?: string };
+    requestModel = body.model;
+  } catch {
+    // no body or invalid JSON — use defaults
+  }
 
   const pagesFile = readYamlFile<PagesFile>('agentforge/spec/pages.yaml');
   const pages = pagesFile?.pages ?? [];
@@ -152,7 +159,7 @@ export async function POST(
     return createTracedProvider(provider) as unknown as LLMProviderRef;
   };
 
-  runPipelineAsync(runId, pageId, taskId, providerFactory).catch(() => {
+  runPipelineAsync(runId, pageId, taskId, providerFactory, requestModel).catch(() => {
     failRun(runId, 'Unexpected pipeline error');
   });
 
@@ -164,6 +171,7 @@ async function runPipelineAsync(
   pageId: string,
   taskId: string,
   providerFactory: (model: string) => LLMProviderRef,
+  requestModel?: string,
 ): Promise<void> {
   const projectRoot = getActiveProjectRoot();
 
@@ -175,7 +183,7 @@ async function runPipelineAsync(
   const manifestResult = loadProjectManifest(projectRoot, createRealFs());
   const projectManifest = manifestResult.ok ? manifestResult.value : undefined;
   const agentContext = createDashboardPipelineContext(taskId, projectRoot, providerFactory, projectManifest);
-  const pipelineInput = buildDashboardPipelineInput(pageId, taskId, sink, agentContext);
+  const pipelineInput = buildDashboardPipelineInput(pageId, taskId, sink, agentContext, { providerString: requestModel });
 
   if (!pipelineInput) {
     failRun(runId, `Page ${pageId} not found in pages.yaml`);

@@ -1,0 +1,416 @@
+id: req-cashpulse-m0
+rawInput: >-
+  Build a personal expense tracking app called CashPulse with three screens:
+  Dashboard, Add Expense, and Spending Insights. Inter font, blue-600 primary,
+  desktop-first with responsive breakpoints.
+mode: bootstrap
+prd:
+  id: cashpulse-prd-001
+  title: CashPulse — Personal Expense Tracker
+  description: >-
+    CashPulse is a clean, desktop-first personal expense tracking application
+    with three core screens: a daily dashboard, an add/edit expense flow, and
+    a spending insights view with charts. Built with Inter font and blue-600
+    primary accent.
+  features:
+    - id: feat-001
+      name: Budget Summary Dashboard
+      description: >-
+        Budget summary card with progress bar and status badge (On Track /
+        Heads Up / Over Budget).
+      priority: must-have
+    - id: feat-002
+      name: Category Breakdown Donut Chart
+      description: >-
+        160px donut chart showing spending distribution across categories with
+        hover tooltips.
+      priority: must-have
+    - id: feat-003
+      name: Recent Expenses List
+      description: >-
+        Scrollable expense list with category-colored borders, filter dropdown,
+        and clickable detail popovers.
+      priority: must-have
+    - id: feat-004
+      name: Expense Detail Popover
+      description: >-
+        320px popover with amount, category, date, payment, edit/delete actions.
+      priority: must-have
+    - id: feat-005
+      name: Add/Edit Expense Form
+      description: >-
+        Single-column form with hero amount input, category grid, date picker,
+        payment method chips, and save button.
+      priority: must-have
+    - id: feat-006
+      name: Quick Entry Suggestions
+      description: >-
+        Horizontal scrollable chips for frequent past expenses with auto-fill.
+      priority: must-have
+    - id: feat-007
+      name: Spending Insights Period Summary
+      description: >-
+        Three stat cells with trend indicators comparing to last month.
+      priority: must-have
+    - id: feat-008
+      name: Daily Spending Chart
+      description: >-
+        Bar/line toggle chart with hover tooltips and average line.
+      priority: must-have
+    - id: feat-009
+      name: Top Categories Breakdown
+      description: Stacked bar with sorted category list and progress bars.
+      priority: must-have
+    - id: feat-010
+      name: Biggest Expenses List
+      description: Top 5 expenses ranked by amount.
+      priority: must-have
+    - id: feat-011
+      name: Month Comparison
+      description: Side-by-side bars comparing this month vs last month.
+      priority: must-have
+    - id: feat-012
+      name: Month Navigation
+      description: Month/year selector with chevrons in top bar.
+      priority: must-have
+    - id: feat-013
+      name: Top Navigation Bar
+      description: 64px bar with logo, tabs, month selector, and settings.
+      priority: must-have
+    - id: feat-014
+      name: Settings Dialog
+      description: Modal with currency, budget, and category management.
+      priority: must-have
+    - id: feat-015
+      name: Inline Category Creation
+      description: Add new categories from the expense form.
+      priority: must-have
+    - id: feat-016
+      name: Export CSV
+      description: Export spending data from Insights screen.
+      priority: must-have
+    - id: feat-017
+      name: Empty & Error States
+      description: Comprehensive empty states for all screens.
+      priority: must-have
+    - id: feat-018
+      name: Currency Change Toast
+      description: Toast notification on currency change.
+      priority: should-have
+    - id: feat-019
+      name: Responsive Breakpoints
+      description: Desktop-first responsive at 768, 1024, 1440px.
+      priority: should-have
+    - id: feat-020
+      name: Reduced Motion Support
+      description: Respect prefers-reduced-motion media query.
+      priority: should-have
+    - id: feat-021
+      name: Keyboard Navigation
+      description: Full keyboard nav with focus rings and ARIA.
+      priority: should-have
+    - id: feat-022
+      name: Multi-Currency Support
+      description: 5 currencies selectable in Settings.
+      priority: could-have
+    - id: feat-023
+      name: Recurring Expense Templates
+      description: Save and auto-log recurring expenses.
+      priority: could-have
+    - id: feat-024
+      name: Search Expenses
+      description: Search by merchant, note, or amount.
+      priority: could-have
+    - id: feat-025
+      name: Per-Category Budget Limits
+      description: Individual budget limits per category.
+      priority: could-have
+  personas:
+    - id: persona-001
+      name: Alex
+      role: Budget-Conscious Individual
+      goals:
+        - Track daily expenses with minimal friction
+        - Stay within monthly budget with visual feedback
+        - Understand spending patterns across categories
+        - Compare month-over-month trends
+    - id: persona-002
+      name: Priya
+      role: Frequent Expense Logger
+      goals:
+        - Log expenses rapidly using quick-add suggestions
+        - Categorize every expense accurately
+        - Review recent expenses at a glance
+        - Edit or delete incorrectly logged expenses
+    - id: persona-003
+      name: Jordan
+      role: Data-Driven Saver
+      goals:
+        - Analyze spending with charts and breakdowns
+        - Identify biggest expenses and top categories
+        - Export data for external analysis
+        - Track daily averages against budget
+  dataEntities:
+    - id: entity-001
+      name: Expense
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: amount
+          type: number
+          required: true
+        - name: description
+          type: string
+          required: true
+        - name: categoryId
+          type: reference
+          required: true
+        - name: date
+          type: date
+          required: true
+        - name: paymentMethod
+          type: enum
+          required: true
+        - name: note
+          type: string
+          required: false
+        - name: createdAt
+          type: date
+          required: true
+      relationships:
+        - entity-002
+    - id: entity-002
+      name: Category
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: name
+          type: string
+          required: true
+        - name: color
+          type: string
+          required: true
+        - name: icon
+          type: string
+          required: false
+        - name: isDefault
+          type: boolean
+          required: true
+    - id: entity-003
+      name: Budget
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: monthlyLimit
+          type: number
+          required: true
+        - name: currency
+          type: enum
+          required: true
+        - name: month
+          type: string
+          required: true
+    - id: entity-004
+      name: UserSettings
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: currency
+          type: enum
+          required: true
+        - name: defaultMonthlyBudget
+          type: number
+          required: true
+      relationships:
+        - entity-003
+    - id: entity-005
+      name: MonthSummary
+      fields:
+        - name: month
+          type: string
+          required: true
+        - name: totalSpent
+          type: number
+          required: true
+        - name: transactionCount
+          type: number
+          required: true
+        - name: dailyAverage
+          type: number
+          required: true
+        - name: budgetLimit
+          type: number
+          required: true
+        - name: budgetStatus
+          type: enum
+          required: true
+        - name: remainingAmount
+          type: number
+          required: true
+      relationships:
+        - entity-001
+        - entity-003
+    - id: entity-006
+      name: CategorySpending
+      fields:
+        - name: categoryId
+          type: reference
+          required: true
+        - name: month
+          type: string
+          required: true
+        - name: totalAmount
+          type: number
+          required: true
+        - name: percentage
+          type: number
+          required: true
+        - name: transactionCount
+          type: number
+          required: true
+      relationships:
+        - entity-002
+        - entity-005
+    - id: entity-007
+      name: DailySpending
+      fields:
+        - name: date
+          type: date
+          required: true
+        - name: totalAmount
+          type: number
+          required: true
+        - name: transactionCount
+          type: number
+          required: true
+      relationships:
+        - entity-001
+    - id: entity-008
+      name: QuickAddSuggestion
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: description
+          type: string
+          required: true
+        - name: amount
+          type: number
+          required: true
+        - name: categoryId
+          type: reference
+          required: true
+        - name: paymentMethod
+          type: enum
+          required: true
+        - name: frequency
+          type: number
+          required: true
+      relationships:
+        - entity-002
+  screens:
+    - id: screen-001
+      name: Dashboard
+      description: >-
+        Home screen with budget summary, category donut, and expenses list.
+      screenType: page
+    - id: screen-002
+      name: Add Expense
+      description: Single-column form for logging expenses.
+      screenType: page
+    - id: screen-003
+      name: Spending Insights
+      description: Analytical view with charts and breakdowns.
+      screenType: page
+    - id: screen-004
+      name: Settings Dialog
+      description: Modal for currency, budget, and category management.
+      screenType: modal
+    - id: screen-005
+      name: Expense Detail Popover
+      description: Detail card for a selected expense.
+      screenType: drawer
+    - id: screen-006
+      name: Date Picker Calendar
+      description: Mini calendar dropdown.
+      screenType: sheet
+    - id: screen-007
+      name: Category Filter Dropdown
+      description: Dropdown for filtering expenses by category.
+      screenType: sheet
+  nfrs:
+    - id: nfr-001
+      category: Performance
+      description: Micro-interactions within 150ms, layout transitions within 250ms.
+      target: '≤150ms micro, ≤250ms layout'
+    - id: nfr-002
+      category: Performance
+      description: Screen transitions within 350ms.
+      target: '≤350ms'
+    - id: nfr-003
+      category: Accessibility
+      description: WCAG 2.1 AA with 36x36px targets and keyboard navigation.
+      target: Zero critical violations
+    - id: nfr-004
+      category: Accessibility
+      description: Respect prefers-reduced-motion.
+      target: All animations disabled when set
+    - id: nfr-005
+      category: Responsiveness
+      description: Desktop-first with breakpoints at 768, 1024, 1440px.
+      target: Functional at all breakpoints
+  successMetrics:
+    - id: metric-001
+      name: Expense Entry Speed
+      description: Average time to log a new expense
+      target: Under 15s with Quick Add, under 30s manual
+      measurement: Time from screen load to save confirmation
+    - id: metric-002
+      name: Daily Active Usage
+      description: Users logging at least one expense per day
+      target: 60% of active users
+      measurement: Daily unique users with expense creation events
+  outOfScope:
+    - Backend API development
+    - User authentication
+    - Mobile native app
+    - Receipt scanning / OCR
+    - Dark mode
+  version: '1.0.0'
+  status: draft
+assumptionLedger:
+  id: ledger-cashpulse-m0
+  entries:
+    - id: assumption-a11y
+      statement: >-
+        WCAG 2.1 AA compliance with keyboard navigation and screen reader
+        support.
+      evidence: Low divergence — implementations converged.
+      confidence: 1
+      blastRadius: high
+      requiresConfirmation: false
+    - id: assumption-validation
+      statement: Instant validation with clear error messages for form inputs.
+      evidence: Low divergence — implementations converged.
+      confidence: 1
+      blastRadius: high
+      requiresConfirmation: false
+    - id: assumption-errors
+      statement: Toast messages for minor errors, inline for form errors.
+      evidence: Low divergence — implementations converged.
+      confidence: 1
+      blastRadius: high
+      requiresConfirmation: false
+  createdAt: '2026-05-04T21:40:10.582Z'
+  lastUpdatedAt: '2026-05-04T21:43:25.921Z'
+clarificationRounds:
+  - round: 1
+    questionsAsked: 7
+    questionsAnswered: 14
+    timestamp: '2026-05-04T21:43:25.921Z'
+confidence: 0.85
+createdAt: '2026-05-04T21:43:25.921Z'

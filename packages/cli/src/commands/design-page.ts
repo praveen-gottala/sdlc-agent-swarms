@@ -29,6 +29,8 @@ import {
   loadProjectManifest,
   resolveViewports,
   readSpecs,
+  readYaml,
+  EnrichedRequirementSchema,
   PIPELINE_ARTIFACTS,
   debugLog,
   logDefaults,
@@ -41,6 +43,7 @@ import type {
   DesignConfig,
   PageContext,
   PageEntry,
+  EnrichedRequirement,
 } from '@agentforge/core';
 import { createClaudeProvider } from '@agentforge/providers';
 import { requireClaudeAuth } from '../utils/require-claude-auth.js';
@@ -527,8 +530,22 @@ export async function designPageCommand(
     pageViewports: resolvedPage?.viewports as number[] | undefined,
   })[0];
 
-  const prdRequirements: string[] = [description];
-  if (prdContent) prdRequirements.push(prdContent);
+  let enrichedRequirement: EnrichedRequirement | undefined;
+  const enrichedPath = join(baseDir, 'agentforge/spec/enriched-requirement.yaml');
+  const enrichedRes = readYaml<unknown>(enrichedPath, realFs);
+  if (enrichedRes.ok) {
+    const parsed = EnrichedRequirementSchema.safeParse(enrichedRes.value);
+    if (parsed.success) {
+      enrichedRequirement = parsed.data;
+      output.write(infoMsg(`  Enriched requirement loaded (${parsed.data.prd.screens.length} screens, ${parsed.data.prd.dataEntities.length} entities)\n`));
+    } else {
+      output.write(warnMsg(`  enriched-requirement.yaml schema-invalid: ${parsed.error.message}\n`));
+    }
+  }
+
+  const prdRequirements: string[] | undefined = enrichedRequirement
+    ? undefined
+    : [description, ...(prdContent ? [prdContent] : [])];
 
   initLangfuseTracing();
 
@@ -561,6 +578,7 @@ export async function designPageCommand(
     catalogMap: catalogMapV2,
     componentCatalogPrompt,
     designSystemPrompt: projectDesignSystemPrompt,
+    ...(enrichedRequirement ? { enrichedRequirement } : {}),
   };
 
   const t0 = Date.now();

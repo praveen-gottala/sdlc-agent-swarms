@@ -16,9 +16,10 @@ This skill exists because plans that pass technical review can still be architec
 ### Step 1: Find the active plan
 
 Check these locations in order:
-1. The plan file path from the most recent plan mode system message (if visible in conversation)
-2. The most recently modified `.md` file in `~/.claude/plans/`
-3. Ask the user which plan to review
+1. **An explicit plan path passed as the skill argument.** `/create-plan` Step 6 invokes this skill as `/challenge-plan docs/plans/active/<name>/execution-plan.md` (or `.../<parent>/m<N>-execution-plan.md` for child plans). If `$ARGUMENTS` resolves to a readable file, use it directly — do not fall back.
+2. The plan file path from the most recent plan mode system message (if visible in conversation).
+3. The most recently modified `.md` file in `~/.claude/plans/` (scratch only — prefer 1 or 2 if present).
+4. Ask the user which plan to review.
 
 Read the plan fully.
 

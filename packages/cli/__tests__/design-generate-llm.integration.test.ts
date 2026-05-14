@@ -6,7 +6,7 @@
  * correct page structure, and valid cross-page navigation targets.
  *
  * These tests make REAL LLM calls — skip when no API key is available.
- * Run with: npx nx test cli -- --testPathPattern=design-generate-llm
+ * Run with: RUN_LLM_TESTS=true npx nx test cli -- --testPathPattern=design-generate-llm
  */
 
 import { createClaudeProvider } from '@agentforge/providers';
@@ -105,7 +105,7 @@ Generate all pages, data models, and API endpoints needed for this app.`;
 // ── Tests ────────────────────────────────────────────────────
 
 const providerConfig = getProviderConfig();
-const describeIfLLM = providerConfig ? describe : describe.skip;
+const describeIfLLM = (providerConfig && process.env.RUN_LLM_TESTS === 'true') ? describe : describe.skip;
 
 describeIfLLM('design:generate LLM integration (CRITICAL-1 validation)', () => {
   let spec: GeneratedAppSpec | null = null;

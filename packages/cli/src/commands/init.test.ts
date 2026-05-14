@@ -231,7 +231,7 @@ function createWizardInput(answers: string[], delayMs = 500): PassThrough {
 }
 
 /** No-op config for tests. */
-const noOpConfig = { openBrowser: async () => false };
+const noOpConfig = { openBrowser: async () => false, mock: true };
 
 describe('initCommand', () => {
   it('runs the full skip-design wizard end-to-end (creates dir, scaffolds, prints describe hint, no errors)', async () => {
@@ -318,5 +318,5 @@ describe('initCommand', () => {
 
     expect(outputStr).toContain('Component catalog generated');
     expect(outputStr).toContain('Design system configured');
-  }, 120000);
+  }, 15000);
 });

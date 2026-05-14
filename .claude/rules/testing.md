@@ -70,3 +70,21 @@ Rules:
   picked up as test suites.
 - App-specific fixtures (real project data like YAML configs) go in named
   subfolders under `__tests__/fixtures/` (e.g., `test-app-splitwise/`).
+
+## LLM Test Gating
+
+Tests making real LLM API calls (Anthropic, Vertex AI) MUST gate behind
+`process.env.RUN_LLM_TESTS === 'true'` in addition to any auth checks.
+This ensures `nx run-many -t test` never incurs API costs by default.
+
+Pattern:
+```typescript
+const describeIfLLM = (providerConfig && process.env.RUN_LLM_TESTS === 'true')
+  ? describe : describe.skip;
+```
+
+When writing a new test that calls a live LLM:
+1. Add `RUN_LLM_TESTS` gate to the `describe`/`describeIfLLM` condition
+2. Keep auth checks as secondary guards (tests should also skip if no credentials)
+3. Document run instructions in the file's JSDoc header with the env var prefix
+4. Prefer `*.integration.test.ts` naming for these files

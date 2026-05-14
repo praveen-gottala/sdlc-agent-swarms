@@ -1,0 +1,18 @@
+version: '1.0'
+project:
+  name: CashPulse
+  description: Personal expense tracking application
+  platforms:
+    - web
+stack:
+  frontend: react
+  backend: node
+  database: postgresql
+  styling: tailwind
+budget:
+  per_task_max_usd: 2.0
+  per_phase_max_usd: 25.0
+  monthly_max_usd: 200.0
+clarifier:
+  threadId: thread-cashpulse-m0-001
+  lastRunAt: '2026-05-04T21:43:25.921Z'

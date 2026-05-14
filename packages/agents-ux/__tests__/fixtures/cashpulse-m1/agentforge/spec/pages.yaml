@@ -1,0 +1,75 @@
+pages:
+  - id: dashboard
+    name: Dashboard
+    description: >-
+      Home screen with budget summary, category donut chart, and recent
+      expenses list. Two-column layout with filter, detail popovers, and
+      budget health indicators.
+    route: /
+    status: approved
+    components:
+      - TopBar
+      - BudgetSummaryCard
+      - CategoryDonutChart
+      - RecentExpensesList
+      - ExpenseDetailPopover
+    viewports:
+      - 1440
+    navigates_to:
+      - target: add-expense
+        trigger: Click 'Add Expense' tab
+      - target: spending-insights
+        trigger: Click 'Insights' tab
+  - id: add-expense
+    name: Add Expense
+    description: >-
+      Focused single-column form for logging expenses. Hero amount input,
+      category grid, date picker, payment method chips, and quick-add
+      suggestions.
+    route: /add
+    status: approved
+    components:
+      - TopBar
+      - AmountHeroInput
+      - CategoryChipGrid
+      - DatePickerInput
+      - PaymentMethodChipRow
+      - SaveExpenseButton
+    viewports:
+      - 1440
+    navigates_to:
+      - target: dashboard
+        trigger: Click save or back
+  - id: spending-insights
+    name: Spending Insights
+    description: >-
+      Analytical view with period summary, daily spending chart, top
+      categories breakdown, biggest expenses, and month comparison.
+    route: /insights
+    status: approved
+    components:
+      - TopBar
+      - PeriodSummaryHeader
+      - DailySpendingChart
+      - TopCategoriesCard
+      - BiggestExpensesCard
+      - MonthComparisonCard
+    viewports:
+      - 1440
+    navigates_to:
+      - target: dashboard
+        trigger: Click 'Dashboard' tab
+      - target: add-expense
+        trigger: Click 'Add Expense' tab
+  - id: settings
+    name: Settings
+    description: Settings modal for currency, budget, and category management
+    route: /settings
+    status: approved
+    screen_type: modal
+  - id: confirm-delete
+    name: Confirm Delete
+    description: Confirmation dialog for deleting expense
+    route: /confirm-delete
+    status: approved
+    screen_type: modal

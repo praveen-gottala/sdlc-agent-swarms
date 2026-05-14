@@ -312,8 +312,8 @@ export default function NewProjectPage(): React.JSX.Element {
         throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
       }
 
-      const data = await res.json() as { projectId: string };
-      router.push(`/design?project=${data.projectId}`);
+      await res.json();
+      router.push('/');
     } catch (err) {
       notifications.show({
         title: 'Project creation failed',

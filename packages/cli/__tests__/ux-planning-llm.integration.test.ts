@@ -5,7 +5,7 @@
  * Validates whether navigateTo survives PLANNING_OUTPUT_SCHEMA,
  * and how the LLM handles NavigationBar components.
  *
- * Run with: npx nx test cli -- --testPathPattern=ux-planning-llm
+ * Run with: RUN_LLM_TESTS=true npx nx test cli -- --testPathPattern=ux-planning-llm
  */
 
 import { createClaudeProvider } from '@agentforge/providers';
@@ -174,7 +174,7 @@ interface PlanningOutput {
 }
 
 const providerConfig = getProviderConfig();
-const describeIfLLM = providerConfig ? describe : describe.skip;
+const describeIfLLM = (providerConfig && process.env.RUN_LLM_TESTS === 'true') ? describe : describe.skip;
 
 describeIfLLM('UX Planning LLM integration (CRITICAL-1 schema gap validation)', () => {
   let resultWithoutNav: PlanningOutput | null = null;

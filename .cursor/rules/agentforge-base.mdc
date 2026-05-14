@@ -9,3 +9,14 @@ alwaysApply: true
 2. Follow **`CLAUDE.md`** for full project rules (tests, PRD, commands, browser-first debugging).
 3. At session start, read **`docs/lessons-learned.md`** before writing code.
 4. For active design-review / renderer QA threads, use **`docs/design-review-session-handoff.md`** (episodic; do not duplicate into rules).
+5. When asked to plan substantive work, follow **`.claude/skills/create-plan/SKILL.md`** step by step (Cursor has no slash skills, but the protocol is identical). The threshold below is the same wording used in `CLAUDE.md` `## IMPORTANT` and `docs/guides/planning-docs.md` — keep all three in sync.
+
+**Plan threshold.** Run `/create-plan` (or follow `.claude/skills/create-plan/SKILL.md` step by step in Cursor) when ANY of these is true:
+
+- Work spans more than one session, OR
+- Touches more than one package under `packages/`, OR
+- Maps to a phase in `docs/roadmap.md`, OR
+- Introduces a new agent, pipeline stage, ADR, or public API, OR
+- The user explicitly asks for a "plan", "execution plan", "phased work", or similar.
+
+Below this threshold (single-file fix, doc-only edit, lint/typecheck cleanup), do the work directly.

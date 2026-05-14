@@ -102,6 +102,41 @@ chromePass?: {
 - `mode: 'consume'` — subsequent pages receive frozen chrome to inject.
 - Used by `design-page-all.ts` for cross-screen chrome consistency.
 
+### Enriched Requirement Ingestion (M1 Connect)
+
+When a project has been through the Clarifier pipeline, an `enriched-requirement.yaml`
+file exists at `agentforge/spec/enriched-requirement.yaml`. The shared
+`buildPipelineInput()` in `packages/agents-ux/src/design-pipeline/pipeline-input-builder.ts`
+reads this file and validates it against `EnrichedRequirementSchema` from `@agentforge/core`.
+
+```
+agentforge/spec/enriched-requirement.yaml
+    │
+    ▼
+buildPipelineInput()  ──── readYaml + EnrichedRequirementSchema.safeParse
+    │
+    ├── valid   → PipelineInput.enrichedRequirement = parsed data
+    │              PipelineInput.prdRequirements = undefined
+    │
+    └── missing/invalid → PipelineInput.enrichedRequirement = undefined
+                          PipelineInput.prdRequirements = [description, prdContent]
+```
+
+When `enrichedRequirement` is set and `prdRequirements` is undefined, `initState()`
+in `pipeline.ts` auto-populates `prdRequirements` via `renderPrdToMarkdown()` from
+`@agentforge/core`. This deterministic renderer is the single source of truth for the
+human-readable form of a structured PRD (ADR-053).
+
+| Field | Source | When enriched present | When enriched absent |
+|-------|--------|----------------------|---------------------|
+| `enrichedRequirement` | `enriched-requirement.yaml` | Structured PRD, entities, personas, NFRs | `undefined` |
+| `prdRequirements` | Derived or `docs/prd.md` | `[renderPrdToMarkdown(prd)]` via `initState()` | `[description, prdContent]` |
+
+The write path (Phase 5: `createProject` in `project-creation.ts`) and read path
+(Phase 6: `buildPipelineInput`) use the same disk location
+(`agentforge/spec/enriched-requirement.yaml`) — verified by the M1 integration test
+`m1-connect.integration.test.ts`.
+
 ---
 
 **Data flows left-to-right, top-to-bottom.** Each stage produces artifacts

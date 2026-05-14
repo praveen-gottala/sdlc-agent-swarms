@@ -23,6 +23,7 @@ import {
   readSpecs,
   safeParse,
   parsePromptFrontmatter,
+  debugLog,
 } from '@agentforge/core';
 import { UXResearchOutputSchema } from '../schemas.js';
 import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
@@ -163,6 +164,10 @@ export const uxResearchWork: AgentWorkFn<UXResearchInput, UXResearchOutput> = as
     `\nPRD Requirements:\n${prdRequirements.map((r, i) => `${i + 1}. ${r}`).join('\n')}`,
     ...(input.pageContext ? [formatPageContextPrompt(input.pageContext)] : []),
   ].join('\n');
+
+  debugLog(`[research] prdRequirements count: ${prdRequirements.length}`);
+  debugLog(`[research] prdRequirements[0] length: ${prdRequirements[0]?.length ?? 0} chars`);
+  debugLog(`[research] prdRequirements[0] preview: ${prdRequirements[0]?.substring(0, 500) ?? 'EMPTY'}`);
 
   const prompt = {
     system: [{ type: 'text' as const, text: systemPrompt, cache_control: { type: 'ephemeral' as const } }],

@@ -1,0 +1,24 @@
+id: ledger-cashpulse-m0
+entries:
+  - id: assumption-a11y
+    statement: >-
+      WCAG 2.1 AA compliance with keyboard navigation and screen reader
+      support.
+    evidence: Low divergence — implementations converged.
+    confidence: 1
+    blastRadius: high
+    requiresConfirmation: false
+  - id: assumption-validation
+    statement: Instant validation with clear error messages for form inputs.
+    evidence: Low divergence — implementations converged.
+    confidence: 1
+    blastRadius: high
+    requiresConfirmation: false
+  - id: assumption-errors
+    statement: Toast messages for minor errors, inline for form errors.
+    evidence: Low divergence — implementations converged.
+    confidence: 1
+    blastRadius: high
+    requiresConfirmation: false
+createdAt: '2026-05-04T21:40:10.582Z'
+lastUpdatedAt: '2026-05-04T21:43:25.921Z'

@@ -39,7 +39,7 @@ New initiative    Session start     After implementing     Before commit     End
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| `/create-plan` | Create an execution plan for any initiative — roadmap phase, feature, or ad-hoc task. Explores codebase, scaffolds plan folder, auto-runs `/challenge-plan`. | Starting any new body of work |
+| `/create-plan` | **Mandatory above the plan threshold** (see `docs/guides/planning-docs.md`). Explores codebase, scaffolds plan folder under `docs/plans/active/<name>/` (or as a child plan inside an existing parent folder), generates per-phase verification gates that auto-invoke `/review-plan-impl`, `/mid-session-drift-check`, and `/verify-done`, auto-runs `/challenge-plan` with the explicit plan path. | Any new initiative crossing the plan threshold |
 | `/analyze-codebase` | Deep gap analysis + prioritized task roadmap | When assessing project health or finding priorities |
 | `/sprint-plan` | Time-boxed sprint planning from task backlog | Planning sprints with daily goals |
 | `/challenge-plan` | Challenge a plan against framework intent (vision, PRD, ADRs) | Before approving any plan — get a second opinion |
@@ -112,7 +112,7 @@ one of them is doing it wrong.
 
 | Concern | Owned by |
 |---------|----------|
-| Creating execution plans for initiatives | `/create-plan` |
+| Creating execution plans for initiatives | `/create-plan` (**mandatory** above the plan threshold defined in `docs/guides/planning-docs.md`) |
 | Documentation content is accurate | `/verify-docs` |
 | Code passes tests, lint, typecheck | `/verify-done` (Steps 0-2) |
 | Browser behavior works correctly | `/verify-done` (Steps 3-4) |

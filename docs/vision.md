@@ -309,6 +309,7 @@ graph TD
 - YAML files in `agentforge/spec/` as the living spec (project.yaml, pages.yaml, api.yaml, models.yaml, components/).
 - In-memory dict for pipeline state during a run.
 - YAML in `agentforge.tasks.yaml` for task tracker.
+- **M1 Connect (2026-05-14):** `EnrichedRequirement` flows disk-based from Clarifier to Design pipeline. `createProject()` writes `enriched-requirement.yaml` and `assumption-ledger.yaml` to `agentforge/spec/`; `buildPipelineInput()` reads them back. `threadId` preserved in `agentforge.yaml` for M2 LangGraph continuity. `renderPrdToMarkdown()` is the single renderer for both `docs/prd.md` and `prdRequirements` derivation.
 - Checkpointer factory in `packages/core/src/checkpointer/`: `MemorySaver` for dev, `PostgresSaver` via `@langchain/langgraph-checkpoint-postgres` when `DATABASE_URL` is set. Docker Compose at `docker/docker-compose.agentforge.yml` (Postgres 16, port 5433). Wired into the Clarifier pipeline (`agents-clarifier/src/run.ts`) and dashboard Clarifier route (`dashboard/src/app/api/_lib/checkpointer.ts` via `getSharedCheckpointer()` singleton). Design pipeline uses imperative file-based caching — checkpointer adoption for remaining pipelines follows ADR-043 Phase M-2+.
 
 ### Target vision

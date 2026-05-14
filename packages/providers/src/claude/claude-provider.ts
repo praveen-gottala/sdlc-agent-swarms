@@ -160,7 +160,7 @@ function mapApiError(error: unknown): ProviderError {
       if (typeof rawRetryAfter !== 'string') {
         debugLog('claude.mapApiError: retry-after header missing → default: "60000ms"');
       }
-      return { code: 'RATE_LIMITED', retryAfterMs: retryAfter };
+      return { code: 'RATE_LIMITED', retryAfterMs: retryAfter, message: error.message };
     }
     if (error.status === 401 || error.status === 403) {
       return { code: 'AUTH_FAILED', message: error.message };

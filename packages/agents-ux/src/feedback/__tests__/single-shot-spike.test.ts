@@ -6,7 +6,7 @@
  * checks if valid patches are returned.
  *
  * Requires Vertex AI ADC or ANTHROPIC_API_KEY. Skipped in CI.
- * Run manually: npx jest --testPathPattern=single-shot-spike --no-cache
+ * Run manually: RUN_LLM_TESTS=true npx jest --testPathPattern=single-shot-spike --no-cache
  */
 
 import { readFileSync } from 'node:fs';
@@ -44,7 +44,7 @@ const hasAuth = (): boolean => {
   return auth !== null;
 };
 
-const describeIfAuth = hasAuth() ? describe : describe.skip;
+const describeIfAuth = (hasAuth() && process.env.RUN_LLM_TESTS === 'true') ? describe : describe.skip;
 
 describeIfAuth('Task 1.1s — single-shot patch spike (@spike)', () => {
   let spec: DesignSpecV2;

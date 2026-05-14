@@ -1,5 +1,15 @@
 # Integrating Clarifier — Execution Plan
 
+!!! warning "SUPERSEDED by M1 Connect (2026-05-14)"
+
+    This plan has been subsumed by **CHIP's Next Steps M1** (`docs/plans/active/chips-next-steps/m1-execution-plan.md`). All three open decisions are resolved:
+
+    - **Q1 (PRD format):** Structured YAML in `agentforge/spec/enriched-requirement.yaml` + rendered markdown in `docs/prd.md` via `renderPrdToMarkdown()`. Both written by `createProject()`.
+    - **Q2 (Auto-trigger):** Manual initiation from project page. No auto-trigger of design pipeline on approval.
+    - **Q3 (Project home):** Not changed in M1. User navigates to project page after approval.
+
+    The implementation lives in M1 Phases 5 (approval flow) and 6 (Clarifier→Design bridge). Do not implement this plan — follow M1 instead.
+
 ## Context
 
 After the Clarifier pipeline completes on `/new`, the user sees a finalized PRD with an "Approve & Continue" button that currently does nothing (`onApprove={() => {}}`). This plan wires the approval flow: creating a project from the approved PRD, saving artifacts, and navigating the user to the new project.
@@ -92,8 +102,8 @@ Add `[approving, setApproving]` state for button loading.
 
 ---
 
-## Open decisions
+## Open decisions (ALL RESOLVED — see M1)
 
-- [ ] PRD artifact format and path (pre-implementation Q1)
-- [ ] Auto-trigger vs. manual next-stage initiation (pre-implementation Q2)
-- [ ] Project home page content after creation (pre-implementation Q3)
+- [x] PRD artifact format and path → `enriched-requirement.yaml` (YAML) + `docs/prd.md` (markdown via `renderPrdToMarkdown`)
+- [x] Auto-trigger vs. manual next-stage initiation → Manual from project page
+- [x] Project home page content after creation → Not changed in M1

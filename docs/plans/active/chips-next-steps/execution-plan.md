@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 next
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 next
 
 ## Plan Structure
 
@@ -920,6 +920,33 @@ This diff is the evidence that the spine produces equivalent results. Keep the d
 **Not assigned to a milestone.** Design pipeline coherence is orthogonal to the Architect spine (M2-M4). Assign when design pipeline maturity is prioritized.
 
 **Reference:** `docs/concepts/cross-screen-coherence.md` (created in M1 Phase 8)
+
+### Telemetry Gap: Research and Planning LLM calls not traced in Langfuse
+
+**What:** Langfuse traces only capture the Design stage's LLM call. Research and Planning stage LLM calls are not recorded as separate generations in the trace. The `LangfuseSink` wraps pipeline stages as spans (`stage:research`, `stage:design`, `stage:evaluator`) but only the Design stage's `TracedProvider` LLM call appears as a generation within the trace. Planning's LLM call is invisible in Langfuse.
+
+**Impact:** Cannot verify via Langfuse that enriched PRD content flows into Research and Planning prompts. Verification requires DEBUG=1 logs or cached artifact inspection instead.
+
+**Root cause:** The `TracedProvider` wrapper records LLM calls as OpenTelemetry spans, which the `LangfuseSink` converts to Langfuse generations. But the pipeline creates a new provider per stage via `agentContext.resolveProvider()`, and only the Design stage's provider appears to propagate the trace context correctly.
+
+**Not blocking M1.** Enriched PRD flow was verified via: (1) DEBUG=1 logs showing `enrichedRequirement present: true`, `prdRequirements[0] length: 15201 chars`, (2) cached research brief containing entity-specific field names (`prepTime`, `cookTime`, `servings`, etc.) from the enriched PRD, (3) rendered design output grounded in PRD entities.
+
+**Assign to:** Dashboard Pipeline Fix plan or future telemetry improvement.
+
+### M1 Acceptance Test Findings (2026-05-14)
+
+Six bugs found and fixed during browser-verified end-to-end acceptance testing:
+
+| # | Bug | Root Cause | Fix | File |
+|---|-----|-----------|-----|------|
+| 1 | Post-approval navigated to Design Studio of old project | `router.push('/design?project=...')` — Design page ignores `project` param | Navigate to `/` (home auto-loads active project) | `new/page.tsx:316` |
+| 2 | CLI `design:page` didn't load enriched-requirement.yaml | Inline PipelineInput construction bypassed shared `buildPipelineInput()` factory | Load enriched-requirement.yaml with Zod validation, pass to pipeline | `design-page.ts:530` |
+| 3 | pages.yaml empty after Clarifier approval | `scaffoldProject()` always writes `pages: []`; no screen→page derivation | Derive pages from `enrichedRequirement.prd.screens` during project creation | `project-creation.ts:266` |
+| 4 | "Quick Generate" option in design modal | Confusing dual-path UX, Quick Generate produces lower quality | Removed — single "Generate" button runs full pipeline | `design/page.tsx:1558` |
+| 5 | 429 error message swallowed by provider | `mapApiError` 429 path didn't include `error.message` | Added `message` field to RATE_LIMITED error | `claude-provider.ts:163` |
+| 6 | User's model selection ignored by pipeline | `STAGE_DEFAULTS` always overrode `providerString` via `??` | Explicit model takes precedence over stage defaults; wired dashboard model selection through API route | `pipeline.ts:106`, `design/route.ts`, `pipeline-input-builder.ts` |
+
+**Acid test result:** prdRequirements[0] went from 14 chars (just page name) to 15,201 chars (full structured PRD via `renderPrdToMarkdown`). 1,086x improvement.
 
 ---
 

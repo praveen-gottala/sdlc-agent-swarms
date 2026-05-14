@@ -45,6 +45,14 @@ function initState(input: PipelineInput): DesignPhaseState {
   const prdRequirements = input.prdRequirements ??
     (input.enrichedRequirement ? [renderPrdToMarkdown(input.enrichedRequirement.prd)] : undefined);
 
+  debugLog(`[initState] enrichedRequirement present: ${!!input.enrichedRequirement}`);
+  debugLog(`[initState] prdRequirements source: ${input.prdRequirements ? 'explicit' : input.enrichedRequirement ? 'derived-from-enriched' : 'none'}`);
+  if (input.enrichedRequirement) {
+    debugLog(`[initState] enrichedRequirement screens: ${input.enrichedRequirement.prd.screens.length}`);
+    debugLog(`[initState] enrichedRequirement entities: ${input.enrichedRequirement.prd.dataEntities.length}`);
+    debugLog(`[initState] enrichedRequirement features: ${input.enrichedRequirement.prd.features.length}`);
+  }
+
   return {
     moduleId: input.moduleId, taskId: input.taskId,
     projectRoot: input.projectRoot, designTool: input.designTool,
@@ -93,9 +101,13 @@ export async function runDesignPipeline(
       }
     }
 
-    // Per-stage model resolution via ADR-033 priority chain
+    // Per-stage model resolution via ADR-033 priority chain.
+    // When the user explicitly selects a model (providerString), use it for all stages.
+    // STAGE_DEFAULTS only apply when no explicit model was provided.
     const role = STAGE_ROLES[stage.name] ?? stage.name;
-    const stageDefault = STAGE_DEFAULTS[stage.name] ?? input.providerString;
+    const stageDefault = input.providerString && input.providerString !== 'claude'
+      ? input.providerString
+      : (STAGE_DEFAULTS[stage.name] ?? input.providerString);
     const stageModel = resolveModelForRole(role, stageDefault, input.agentContext.manifest);
     debugLog(`[pipeline] ${stage.name}: resolved model ${stageModel} (role=${role})`);
 

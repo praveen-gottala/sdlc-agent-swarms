@@ -5,7 +5,7 @@
  * navigates_to entries, and merges them into existing pages.yaml files.
  *
  * This test WRITES to disk — it updates fixture/app pages.yaml files.
- * Run with: npx nx test cli -- --testPathPattern=backfill-navigates-to
+ * Run with: RUN_LLM_TESTS=true npx nx test cli -- --testPathPattern=backfill-navigates-to
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -139,7 +139,7 @@ const APPS_TO_BACKFILL: AppTarget[] = [
 ];
 
 const providerConfig = getProviderConfig();
-const describeIfLLM = providerConfig ? describe : describe.skip;
+const describeIfLLM = (providerConfig && process.env.RUN_LLM_TESTS === 'true') ? describe : describe.skip;
 
 describeIfLLM('Backfill navigates_to for stale apps', () => {
   for (const app of APPS_TO_BACKFILL) {

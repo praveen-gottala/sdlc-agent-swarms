@@ -10,7 +10,7 @@
  * Requires LLM auth (Vertex AI or API key). Skips when auth is unavailable.
  * Uses real LLM calls — expect ~$0.10-0.30 per test run.
  *
- * Run explicitly: npx nx test agents-ux -- --testPathPattern=vision-correction
+ * Run explicitly: RUN_LLM_TESTS=true npx nx test agents-ux -- --testPathPattern=vision-correction
  * These tests are tagged @vision-correction and excluded from default CI runs.
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -115,7 +115,7 @@ function introduceWidthBug(spec: DesignSpecV2): DesignSpecV2 {
 
 const auth = resolveClaudeAuth();
 const visionEnabled = isVisionLLMEnabled();
-const describeIfAuth = (auth && visionEnabled) ? describe : describe.skip;
+const describeIfAuth = (auth && visionEnabled && process.env.RUN_LLM_TESTS === 'true') ? describe : describe.skip;
 
 const OUTPUT_DIR = join(__dirname, 'output/vision-correction');
 

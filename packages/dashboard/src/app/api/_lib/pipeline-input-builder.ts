@@ -12,6 +12,7 @@ import { getActiveProjectRoot } from './project-reader';
 
 interface BuildInputOptions {
   readonly resume?: boolean;
+  readonly providerString?: string;
 }
 
 /**
@@ -34,5 +35,6 @@ export function buildDashboardPipelineInput(
     telemetry,
     agentContext,
     resume: opts?.resume,
+    providerString: opts?.providerString,
   });
 }

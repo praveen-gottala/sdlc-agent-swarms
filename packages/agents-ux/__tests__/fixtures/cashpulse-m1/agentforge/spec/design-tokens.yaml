@@ -1,0 +1,47 @@
+version: '1.0'
+created_by: clarifier
+colors:
+  primitive:
+    blue600: '#2563EB'
+    blue100: '#DBEAFE'
+    gray900: '#111827'
+    gray500: '#6B7280'
+    gray100: '#F3F4F6'
+    emerald500: '#10B981'
+    red500: '#EF4444'
+    amber500: '#F59E0B'
+    white: '#FFFFFF'
+  semantic:
+    primary: '#2563EB'
+    success: '#10B981'
+    warning: '#F59E0B'
+    error: '#EF4444'
+    background: '#F3F4F6'
+    surface: '#FFFFFF'
+    textPrimary: '#111827'
+    textSecondary: '#6B7280'
+typography:
+  font_families:
+    heading: Inter
+    body: Inter
+  sizes:
+    pageTitle: 24
+    sectionLabel: 16
+    body: 14
+    caption: 12
+    amountDisplay: 32
+spacing:
+  base: 4
+  scale:
+    - 4
+    - 8
+    - 12
+    - 16
+    - 24
+    - 32
+    - 48
+borderRadius:
+  card: 16
+  button: 10
+  badge: 20
+  input: 8

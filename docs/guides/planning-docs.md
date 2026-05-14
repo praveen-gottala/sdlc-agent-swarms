@@ -7,6 +7,36 @@
 
 ---
 
+## How to create a plan
+
+`/create-plan` (under `.claude/skills/create-plan/SKILL.md`) is the
+**mandatory entry point** for any new initiative that crosses the plan
+threshold below. Do not scaffold plan folders ad-hoc; do not start
+phased work without running it.
+
+**Plan threshold.** Run `/create-plan` (or follow `.claude/skills/create-plan/SKILL.md` step by step in Cursor) when ANY of these is true:
+
+- Work spans more than one session, OR
+- Touches more than one package under `packages/`, OR
+- Maps to a phase in `docs/roadmap.md`, OR
+- Introduces a new agent, pipeline stage, ADR, or public API, OR
+- The user explicitly asks for a "plan", "execution plan", "phased work", or similar.
+
+Below this threshold (single-file fix, doc-only edit, lint/typecheck cleanup), do the work directly.
+
+The skill scaffolds the plan folder under `docs/plans/active/<name>/`,
+generates per-phase verification gates, and auto-runs `/challenge-plan`
+with the explicit plan path before declaring the plan ready. The
+"Execution plan — always" section below stays in force; this box
+formalises **when** the plan must be created via the skill rather than
+ad-hoc.
+
+The matching CLAUDE.md `## IMPORTANT` mandate uses identical threshold
+wording — if you change the threshold here, update CLAUDE.md and
+`.claude/skills/create-plan/SKILL.md` Step 0 in the same edit.
+
+---
+
 ## The four document types
 
 | Document | Question it answers | Timescale | Location |
@@ -101,6 +131,8 @@ execution plan AND the roadmap.
 
 Every initiative that takes more than one session gets an execution plan.
 This is non-negotiable. Without it, the next session starts from zero.
+Use `/create-plan` (mandatory above the threshold defined in the
+"How to create a plan" box at the top of this doc).
 
 ### Decision record — when you choose between alternatives
 
@@ -179,5 +211,82 @@ If you're an AI agent starting a session on this codebase:
 2. CLAUDE.md's `**Active plans**` section tells you what's in progress
 3. Each active plan has an `execution-plan.md` with a progress checklist
 4. Work on unchecked tasks in the execution plan
-5. When done, run `/verify-done` before declaring complete
-6. The roadmap (`docs/roadmap.md`) shows what's next after the current plan
+5. Run the **per-phase gate** before checking each phase complete (see below)
+6. When done, run `/verify-done` before declaring complete
+7. The roadmap (`docs/roadmap.md`) shows what's next after the current plan
+
+---
+
+## Verification gate (canonical)
+
+This is the single source of truth for the gate model that
+`.claude/skills/create-plan/SKILL.md` bakes into every generated plan
+template. If the gate model changes, update this section first and
+regenerate plans from the skill.
+
+### Tiering
+
+Each work unit gets exactly the verification it needs — no more, no less.
+
+| Tier | When | Skill(s) | Time budget |
+|------|------|----------|-------------|
+| **Task** | After each file-level checkbox | none — just check the box | ~0 |
+| **Phase end** | Before checking a phase complete | `/review-plan-impl --phase N` then `/mid-session-drift-check` (plus conditional `/write-adr`, `/review-prd-compliance`) | ~5–15 min + ~2–5 min |
+| **Plan end / pre-commit** | Before the final `git commit` | `/verify-done` (test triad + headed E2E + visual + `/verify-docs`) | ~10–30 min |
+
+For a 5-phase plan: roughly 5 × (5–15 + 2–5) = 35–100 min of phase-gate
+time, plus one `/verify-done` at the end. Cost is bounded and tied to
+actual work units, not bureaucratic ceremony.
+
+### Per-phase gate (run in order; each writes a receipt)
+
+Inside each phase block in the generated plan:
+
+- [ ] `/review-plan-impl docs/plans/active/<name>/execution-plan.md --phase N`
+      Receipt: `artifacts/plan-impl-review/<ts>/report.md`
+- [ ] `/mid-session-drift-check`
+      Receipt: inline report in chat; cite `file:line` for any violation
+- [ ] If this phase introduced a deviation: `/write-adr <topic>`
+      Receipt: `docs/adrs/ADR-NNN-<slug>.md`
+- [ ] If this phase touched PRD-governed code: `/review-prd-compliance`
+      Receipt: inline matrix; cite PRD section + `file:line` for any drift
+- [ ] All gate findings resolved before checking the phase complete
+
+### End-of-plan gate (run after the last phase, before commit)
+
+- [ ] `/verify-done` — test triad + headed E2E + Chrome DevTools visual + `/verify-docs` task-scoped
+      Receipt: inline verification table + screenshots
+- [ ] `git commit` — only after `/verify-done` passes
+- [ ] `/prepare-handoff` — only if work continues in a new session
+      Receipt: `docs/plans/active/<name>/handoff-check.md` + answer key
+
+Single-phase plans collapse the per-phase block into the end-of-plan
+gate (the `.claude/skills/create-plan/SKILL.md` template shows both
+shapes).
+
+### Required ordering
+
+The lifecycle source of truth is `.claude/skills/README.md`. Required
+ordering — do **not** reorder:
+
+- After implementing → `/review-plan-impl --phase N`
+- Before commit → `/mid-session-drift-check`
+- End of task → `/verify-done`
+
+### Anti-shortcut rules
+
+- Each gate is a checkbox INSIDE the phase, not a global "Verification"
+  section at the bottom — a skipped gate is an unchecked box visible at
+  the top of the next session.
+- Each gate prints its expected **receipt artifact path** next to the
+  checkbox. A missing file is an obvious gap that
+  `/mid-session-drift-check` surfaces.
+- `/review-plan-impl` spawns a fresh-context subagent — the implementing
+  agent cannot coach it.
+- `/mid-session-drift-check` at every phase boundary catches a skipped
+  earlier gate within one phase, not at end-of-plan when fixes are
+  expensive.
+- Skipping a gate without an explicit user waiver is a **process
+  violation** surfaced by `/mid-session-drift-check`. Documented once
+  in `CLAUDE.md` `## IMPORTANT`; this section is the canonical
+  description of the gate it references.
