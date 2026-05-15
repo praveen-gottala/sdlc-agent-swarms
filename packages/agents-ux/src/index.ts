@@ -46,10 +46,10 @@ export {
   uxPlanningWork,
   executeUXPlanning,
   registerUXPlanning,
-  extractValidTokenNames,
-  validateTokenBindings,
-  filterNonTokenBindings,
 } from './ux-planning/ux-planning.js';
+
+// Prefer `@agentforge/core` for these; kept on the barrel for existing importers.
+export { extractValidTokenNames, validateTokenBindings, filterNonTokenBindings } from '@agentforge/core';
 
 // UX Dashboard Implementation
 export type {

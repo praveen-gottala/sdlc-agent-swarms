@@ -50,8 +50,18 @@ export type { DesignTool, DesignOutput } from './types/index.js';
 export { ScaffoldProjectInputSchema } from './types/index.js';
 export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
 
-// Architect utilities (M2 — Critic validation)
-export { validateContractBundle } from './architect/index.js';
+// Architect utilities (M2 — Critic validation; M3 — token validation)
+export {
+  validateContractBundle,
+  extractValidTokenNames,
+  buildTokenAllowlist,
+  filterNonTokenBindings,
+  validateTokenBindings,
+  MAX_TOKEN_BINDING_RETRIES,
+  parseTokenBindingsCorrection,
+  buildTokenCorrectionPrompt,
+  applyDotNotationFallback,
+} from './architect/index.js';
 
 // Architect Zod schemas (vision Layer 3)
 export {
@@ -142,6 +152,9 @@ export type {
   EARSCriterion,
   ClarificationRound,
   AssumptionEntry,
+  ChangeClassification,
+  ScreenPlan,
+  APIChangeSet,
 } from './types/index.js';
 
 // Scaffolding

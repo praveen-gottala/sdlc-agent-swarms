@@ -2,15 +2,18 @@ import {
   UX_PLANNING_CONTRACT,
   parsePlanningOutput,
   registerUXPlanning,
+  uxPlanningWork,
+} from './ux-planning.js';
+import type { AgentContext, LLMProviderRef, DesignTokensSpec } from '@agentforge/core';
+import {
+  Ok,
+  DEFAULT_MODEL,
   extractValidTokenNames,
   validateTokenBindings,
   parseTokenBindingsCorrection,
   applyDotNotationFallback,
   filterNonTokenBindings,
-  uxPlanningWork,
-} from './ux-planning.js';
-import type { AgentContext, LLMProviderRef, DesignTokensSpec } from '@agentforge/core';
-import { Ok, DEFAULT_MODEL } from '@agentforge/core';
+} from '@agentforge/core';
 
 // ============================================================================
 // Helpers

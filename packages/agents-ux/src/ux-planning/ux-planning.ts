@@ -26,12 +26,6 @@ import {
   logDefaults,
   extractJson,
   parsePromptFrontmatter,
-} from '@agentforge/core';
-import type { UXResearchOutput } from '../ux-research/ux-research.js';
-import type { ComponentTreeNode, ResponsiveRule, ScreenDefinition } from '../types.js';
-import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
-import { formatPageContextPrompt } from '../page-context-prompt.js';
-import {
   extractValidTokenNames,
   filterNonTokenBindings,
   validateTokenBindings,
@@ -40,16 +34,11 @@ import {
   MAX_TOKEN_BINDING_RETRIES,
   buildTokenAllowlist,
   buildTokenCorrectionPrompt,
-} from './token-validation.js';
-
-// Re-export token validation functions for backward compatibility
-export {
-  extractValidTokenNames,
-  filterNonTokenBindings,
-  validateTokenBindings,
-  parseTokenBindingsCorrection,
-  applyDotNotationFallback,
-} from './token-validation.js';
+} from '@agentforge/core';
+import type { UXResearchOutput } from '../ux-research/ux-research.js';
+import type { ComponentTreeNode, ResponsiveRule, ScreenDefinition } from '../types.js';
+import { diskDesignTokensRequiredErr, diskDesignTokensRequiredMessage } from '../disk-design-tokens-required.js';
+import { formatPageContextPrompt } from '../page-context-prompt.js';
 
 // ============================================================================
 // Types
