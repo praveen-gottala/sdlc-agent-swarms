@@ -164,6 +164,7 @@ export const ArchitectEvalScenarioSchema = z.object({
   description: z.string(),
   contractBundle: z.record(z.unknown()),
   enrichedRequirement: z.record(z.unknown()),
+  existingFiles: z.array(z.string()).optional(),
   expectedBehavior: ArchitectExpectedBehaviorSchema,
 });
 
@@ -181,6 +182,7 @@ export const ArchitectMetricsSchema = z.object({
   })),
   falsePositive: z.boolean(),
   falseNegative: z.boolean(),
+  taskNodeFieldFindings: z.array(z.string()).optional(),
 });
 
 export type ArchitectMetrics = z.infer<typeof ArchitectMetricsSchema>;

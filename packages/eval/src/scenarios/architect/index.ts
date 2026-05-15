@@ -15,6 +15,7 @@ const SCENARIO_FILES = [
   'correct-cashpulse.yaml',
   'missing-field.yaml',
   'contradictory.yaml',
+  'add-budgeting-brownfield.yaml',
 ];
 
 /** All architect scenario IDs. */
@@ -22,6 +23,7 @@ export const ARCHITECT_SCENARIO_IDS = [
   'correct-cashpulse',
   'missing-field',
   'contradictory',
+  'add-budgeting-brownfield',
 ] as const;
 
 export type ArchitectScenarioId = (typeof ARCHITECT_SCENARIO_IDS)[number];

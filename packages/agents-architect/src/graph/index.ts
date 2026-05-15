@@ -6,7 +6,7 @@
 
 export { ArchitectStateAnnotation } from './state.js';
 export type { ArchitectStateType } from './state.js';
-export { buildArchitectGraph, compileArchitectGraph } from './architect-graph.js';
+export { buildArchitectGraph, compileArchitectGraph, routeAfterCritic, getRetryTargetForGate } from './architect-graph.js';
 export {
   createChangeClassifier,
   createContextAssembler,

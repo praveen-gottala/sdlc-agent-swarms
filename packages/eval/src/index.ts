@@ -53,7 +53,7 @@ export type { ArchitectScenarioId } from './scenarios/architect/index.js';
 export { runScenario } from './runner.js';
 export type { ProgressCallback } from './runner.js';
 
-export { runArchitectScenario } from './architect-runner.js';
+export { runArchitectScenario, runArchitectScenarioDetailed } from './architect-runner.js';
 
 export { compareToBaseline, hasRegressions } from './baseline/compare.js';
 

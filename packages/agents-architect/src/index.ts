@@ -23,6 +23,8 @@ export {
   ArchitectStateAnnotation,
   buildArchitectGraph,
   compileArchitectGraph,
+  routeAfterCritic,
+  getRetryTargetForGate,
   createChangeClassifier,
   createContextAssembler,
   createOptionsExplorer,

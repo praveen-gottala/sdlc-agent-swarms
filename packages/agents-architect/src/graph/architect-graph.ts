@@ -1,14 +1,14 @@
 /**
  * @module @agentforge/agents-architect/graph/architect-graph
  *
- * LangGraph StateGraph assembly for the Architect pipeline (M3 Phase 3).
+ * LangGraph StateGraph assembly for the Architect pipeline.
  * Sequential: [brownfield? changeClassifier →] contextAssembler →
  *   optionsExplorer → architectureWriter → contractDesigner →
  *   taskPlanner → critic → [passed?] gate2Approval → END
  *
  * Conditional routing after critic:
  *   - passed → gate2Approval (HITL interrupt — vision Layer 10)
- *   - retryable → routeAfterCritic() per-gate target (Phase 7)
+ *   - retryable → routeAfterCritic() per-gate target (retry-routing.ts)
  *   - max retries → escalationGate (HITL interrupt)
  *
  * After gate2Approval:
@@ -34,8 +34,7 @@ import { createTaskPlanner } from './nodes/task-planner.js';
 import { createCritic } from './nodes/critic.js';
 import { gate2Approval } from './nodes/gate2-approval.js';
 import { escalationGate } from './nodes/escalation-gate.js';
-
-const MAX_CRITIC_RETRIES = 1;
+import { routeAfterCritic } from './retry-routing.js';
 
 function routeFromStart(state: ArchitectStateType): string {
   if (state.mode === 'brownfield') {
@@ -44,20 +43,6 @@ function routeFromStart(state: ArchitectStateType): string {
   }
   debugLog('route: __start__→contextAssembler (greenfield)');
   return 'contextAssembler';
-}
-
-function routeAfterCritic(state: ArchitectStateType): string {
-  if (state.criticPassed) {
-    debugLog('route: critic→gate2Approval (passed)');
-    return 'gate2Approval';
-  }
-  if (state.criticRetries > MAX_CRITIC_RETRIES) {
-    debugLog(`route: critic→escalationGate (retries=${state.criticRetries} > max=${MAX_CRITIC_RETRIES})`);
-    return 'escalationGate';
-  }
-  // Phase 7 will implement per-gate retry routing matrix
-  debugLog(`route: critic→taskPlanner (retry ${state.criticRetries})`);
-  return 'taskPlanner';
 }
 
 function routeAfterGate2(state: ArchitectStateType): string {
@@ -114,4 +99,5 @@ export function compileArchitectGraph(
   });
 }
 
-export { routeFromStart, routeAfterCritic, routeAfterGate2 };
+export { routeFromStart, routeAfterGate2 };
+export { routeAfterCritic, getRetryTargetForGate } from './retry-routing.js';

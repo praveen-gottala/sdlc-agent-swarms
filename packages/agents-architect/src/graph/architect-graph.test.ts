@@ -5,7 +5,7 @@
  */
 
 import { MemorySaver } from '@agentforge/core';
-import { compileArchitectGraph, routeFromStart, routeAfterCritic, routeAfterGate2 } from './architect-graph.js';
+import { compileArchitectGraph, routeFromStart, routeAfterGate2 } from './architect-graph.js';
 import { mockDeps, makeState } from '../test-utils.js';
 
 describe('buildArchitectGraph', () => {
@@ -24,20 +24,6 @@ describe('routing functions', () => {
 
     it('routes to contextAssembler in greenfield mode', () => {
       expect(routeFromStart(makeState({ mode: 'greenfield' }))).toBe('contextAssembler');
-    });
-  });
-
-  describe('routeAfterCritic', () => {
-    it('routes to gate2Approval when critic passed', () => {
-      expect(routeAfterCritic(makeState({ criticPassed: true }))).toBe('gate2Approval');
-    });
-
-    it('routes to escalationGate when max retries exceeded', () => {
-      expect(routeAfterCritic(makeState({ criticPassed: false, criticRetries: 2 }))).toBe('escalationGate');
-    });
-
-    it('routes to taskPlanner for retry', () => {
-      expect(routeAfterCritic(makeState({ criticPassed: false, criticRetries: 0 }))).toBe('taskPlanner');
     });
   });
 

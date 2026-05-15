@@ -18,6 +18,9 @@ module.exports = {
     '^@agentforge/agents-clarifier$': '<rootDir>/../agents-clarifier/src/index.ts',
     '^@agentforge/agents-clarifier/(.*)\\.js$': '<rootDir>/../agents-clarifier/src/$1',
     '^@agentforge/agents-clarifier/(.*)$': '<rootDir>/../agents-clarifier/src/$1',
+    '^@agentforge/agents-architect$': '<rootDir>/../agents-architect/src/index.ts',
+    '^@agentforge/agents-architect/(.*)\\.js$': '<rootDir>/../agents-architect/src/$1',
+    '^@agentforge/agents-architect/(.*)$': '<rootDir>/../agents-architect/src/$1',
     '^(\\..*)\\.js$': '$1',
   },
 };

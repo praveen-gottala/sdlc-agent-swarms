@@ -1,0 +1,394 @@
+id: add-budgeting-brownfield
+name: CashPulse brownfield — add Budgeting feature
+description: >
+  Brownfield scenario: existing CashPulse app with Transaction/Account/Category
+  entities and screens. Adding a Budgeting feature requires MODIFY tasks for
+  existing API/data-model/screens plus NEW tasks for budgeting-specific code.
+  Expects scopeAxes=['api','data-model','screens'], 4 MODIFY + 3 NEW tasks,
+  and all 14 Critic gates to pass (including gate 14 mode-consistency with
+  existingFiles snapshot).
+
+existingFiles:
+  - package.json
+  - tsconfig.json
+  - prisma/schema.prisma
+  - src/api/transactions.ts
+  - src/api/accounts.ts
+  - src/pages/dashboard.tsx
+  - src/pages/transactions.tsx
+  - src/components/NavigationBar.tsx
+  - src/lib/db.ts
+
+expectedBehavior:
+  criticShouldPass: true
+
+enrichedRequirement:
+  id: er-cashpulse-budgeting
+  rawInput: Add budgeting feature to existing CashPulse app
+  mode: evolution
+  prd:
+    id: prd-cashpulse-v2
+    title: CashPulse v2 — Budgeting
+    description: Add budget creation, tracking, and alerts to the existing CashPulse personal finance app
+    features:
+      - id: feat-budget-crud
+        name: Budget Management
+        description: Create, edit, and delete budgets per category
+        priority: must-have
+        acceptanceCriteria:
+          - id: ac-budget-create
+            condition: User creates a budget for a category
+            behavior: System persists budget with monthly limit
+            formatted: WHEN the user creates a budget for a category THE System SHALL persist budget with monthly limit
+          - id: ac-budget-edit
+            condition: User edits a budget
+            behavior: System updates budget limit
+            formatted: WHEN the user edits a budget THE System SHALL update budget limit
+      - id: feat-budget-tracking
+        name: Budget Tracking
+        description: Show spending vs budget per category with progress bars
+        priority: must-have
+        acceptanceCriteria:
+          - id: ac-budget-progress
+            condition: User views budgets page
+            behavior: System shows spending progress per category
+            formatted: WHEN the user views budgets page THE System SHALL show spending progress per category
+      # should-have: no tasks planned for MVP; gate 4 only checks must-have
+      - id: feat-budget-alerts
+        name: Budget Alerts
+        description: Notify user when approaching or exceeding budget
+        priority: should-have
+      - id: feat-dashboard-existing
+        name: Dashboard
+        description: Main dashboard showing financial overview (existing)
+        priority: must-have
+        acceptanceCriteria:
+          - id: ac-dash-budget-widget
+            condition: User opens the dashboard
+            behavior: System shows budget status widget
+            formatted: WHEN the user opens the dashboard THE System SHALL show budget status widget
+    personas:
+      - id: persona-user
+        name: Budget-Conscious User
+        role: Primary end user
+        goals:
+          - Track daily expenses
+          - Stay within budget
+          - Get alerts when overspending
+    dataEntities:
+      - id: entity-transaction
+        name: Transaction
+        fields:
+          - { name: id, type: string }
+          - { name: amount, type: number, required: true }
+          - { name: category, type: string, required: true }
+          - { name: date, type: string, required: true }
+          - { name: description, type: string }
+        relationships:
+          - belongs_to:Account
+          - belongs_to:Category
+      - id: entity-account
+        name: Account
+        fields:
+          - { name: id, type: string }
+          - { name: name, type: string, required: true }
+          - { name: balance, type: number, required: true }
+      - id: entity-category
+        name: Category
+        fields:
+          - { name: id, type: string }
+          - { name: name, type: string, required: true }
+          - { name: budgetLimit, type: number }
+      - id: entity-budget
+        name: Budget
+        fields:
+          - { name: id, type: string }
+          - { name: categoryId, type: string, required: true }
+          - { name: monthlyLimit, type: number, required: true }
+          - { name: period, type: string, required: true }
+        relationships:
+          - belongs_to:Category
+    screens:
+      - { id: screen-dashboard, name: Dashboard, description: Financial overview with budget widget }
+      - { id: screen-transactions, name: Transactions, description: Transaction list }
+      - { id: screen-budgets, name: Budgets, description: Budget management and tracking }
+    nfrs: []
+    successMetrics: []
+    outOfScope: []
+    version: "2.0.0"
+    status: draft
+  assumptionLedger:
+    id: al-cashpulse-v2
+    entries:
+      - id: assumption-budget-monthly
+        statement: Budgets are tracked on a monthly cycle
+        evidence: Common pattern for personal finance apps
+        confidence: 0.9
+        blastRadius: low
+        requiresConfirmation: false
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-02-01T00:00:00Z"
+  clarificationRounds:
+    - { round: 1, questionsAsked: 3, questionsAnswered: 3, timestamp: "2026-02-01T00:01:00Z" }
+  confidence: 0.88
+  createdAt: "2026-02-01T00:00:00Z"
+
+contractBundle:
+  projectId: cashpulse
+  constraintSet:
+    projectId: cashpulse
+    constraints:
+      - { id: c-1, type: hard, category: stack, description: Must use React + Node.js + PostgreSQL, source: requirement }
+      - { id: c-2, type: soft, category: ux, description: Mobile-responsive design preferred, source: assumption }
+    gaps:
+      - { id: gap-styling, axis: styling, description: Which CSS framework to use?, resolvedValue: tailwind }
+      - { id: gap-orm, axis: data-access, description: Which ORM to use?, resolvedValue: prisma }
+      - { id: gap-alerts, axis: notification, description: How to deliver budget alerts?, resolvedValue: in-app-toast }
+    mode: brownfield
+  optionsBundle:
+    projectId: cashpulse
+    memos:
+      - gapId: gap-styling
+        axis: styling
+        alternatives:
+          - { id: alt-tailwind, name: Tailwind CSS, description: Utility-first CSS framework, tradeoffs: [verbose class names], blastRadius: low, references: [tailwindcss.com] }
+        recommendation: alt-tailwind
+        rationale: Already in use
+      - gapId: gap-orm
+        axis: data-access
+        alternatives:
+          - { id: alt-prisma, name: Prisma, description: Type-safe ORM, tradeoffs: [build step required], blastRadius: low, references: [prisma.io] }
+        recommendation: alt-prisma
+        rationale: Already in use
+      - gapId: gap-alerts
+        axis: notification
+        alternatives:
+          - { id: alt-toast, name: In-app toast, description: Browser notification toast, tradeoffs: [requires app open], blastRadius: low, references: [] }
+          - { id: alt-email, name: Email alerts, description: Email notification, tradeoffs: [email infra needed], blastRadius: medium, references: [] }
+        recommendation: alt-toast
+        rationale: Simplest for MVP, no external infra
+  architectureSpec:
+    projectId: cashpulse
+    decisions:
+      - { gapId: gap-styling, chosenAlternativeId: alt-tailwind, rationale: Already adopted }
+      - { gapId: gap-orm, chosenAlternativeId: alt-prisma, rationale: Already adopted }
+      - { gapId: gap-alerts, chosenAlternativeId: alt-toast, rationale: Simplest MVP path }
+    stackConfig:
+      frontend: React
+      backend: Node.js
+      database: PostgreSQL
+      styling: Tailwind
+    assumptionLedgerUpdates: []
+    implementationPatterns:
+      - id: pat-errors-rfc7807
+        category: api
+        title: RFC 7807 problem responses
+        rule: HTTP APIs return application/problem+json for error conditions
+      - id: pat-tailwind-tokens
+        category: ui
+        title: Tailwind token discipline
+        rule: Use Tailwind design tokens; avoid arbitrary hex colors in components
+      - id: pat-budget-calc
+        category: domain
+        title: Budget calculation isolation
+        rule: Budget spending calculations live in a pure function, not inline in API handlers
+    migrations:
+      - { id: mig-003, sql: "CREATE TABLE budgets (id SERIAL PRIMARY KEY, category_id INTEGER REFERENCES categories(id), monthly_limit DECIMAL NOT NULL, period VARCHAR(7) NOT NULL);" }
+      - { id: mig-004, sql: "ALTER TABLE categories ADD COLUMN budget_limit DECIMAL;" }
+    changeClassification:
+      scopeAxes:
+        - api
+        - data-model
+        - screens
+      impactedFiles:
+        - prisma/schema.prisma
+        - src/api/accounts.ts
+        - src/pages/dashboard.tsx
+      estimatedBlastRadius: medium
+      requiresNewEntities: true
+  adrs:
+    - { id: adr-cashpulse-002, title: In-app toast for budget alerts, status: accepted, decision: Use in-app toast notifications for budget alerts, rationale: Simplest MVP path without email infrastructure }
+  apiChangeSets:
+    - id: acs-budget
+      changeRequestId: cr-budgeting
+      additions:
+        - { method: GET, path: /api/budgets, description: List budgets with spending, breaking: false }
+        - { method: POST, path: /api/budgets, description: Create a budget, breaking: false }
+        - { method: PUT, path: "/api/budgets/{id}", description: Update a budget, breaking: false }
+        - { method: DELETE, path: "/api/budgets/{id}", description: Delete a budget, breaking: false }
+      modifications:
+        - { method: GET, path: /api/transactions, description: Add budget-remaining field to response, breaking: false }
+      removals: []
+  dataModel:
+    projectId: cashpulse
+    entities:
+      - id: entity-transaction
+        name: Transaction
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: amount, type: number, required: true }
+          - { name: category, type: string, required: true }
+        tableName: transactions
+      - id: entity-account
+        name: Account
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: name, type: string, required: true }
+          - { name: balance, type: number, required: true }
+      - id: entity-category
+        name: Category
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: name, type: string, required: true }
+          - { name: budgetLimit, type: number, required: false }
+      - id: entity-budget
+        name: Budget
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: categoryId, type: string, required: true }
+          - { name: monthlyLimit, type: number, required: true }
+          - { name: period, type: string, required: true }
+        tableName: budgets
+  componentComposition:
+    screenId: sp-budgets
+    componentTree:
+      - { id: comp-budget-root, type: frame, children: [comp-budget-nav] }
+      - { id: comp-budget-nav, type: NavigationBar, catalogId: nav-bar }
+  screenPlans:
+    - id: sp-dashboard
+      featureId: feat-dashboard-existing
+      screenType: page
+      route: /dashboard
+      components: [DashboardOverview, SpendingChart, BudgetStatusWidget]
+      dataBindings:
+        - { entityId: entity-transaction, field: amount, source: api }
+        - { entityId: entity-account, field: balance, source: api }
+        - { entityId: entity-budget, field: monthlyLimit, source: api }
+      navigationTargets:
+        - { target: /budgets, trigger: View Budgets }
+    - id: sp-budgets
+      featureId: feat-budget-crud
+      screenType: page
+      route: /budgets
+      components: [BudgetList, BudgetForm, BudgetProgress]
+      dataBindings:
+        - { entityId: entity-budget, field: monthlyLimit, source: api }
+        - { entityId: entity-category, field: name, source: api }
+      navigationTargets: []
+  taskPlan:
+    projectId: cashpulse
+    tasks:
+      # MODIFY tasks — touch existing files
+      - id: t-schema-update
+        title: Update Prisma schema for budgets
+        description: Add Budget model and update Category with budgetLimit
+        filePaths: [prisma/schema.prisma]
+        dependencies: []
+        writeOrder: 0
+        type: backend
+        mode: MODIFY
+        estimatedTokenBudget: 15000
+        contextRefs:
+          - { kind: dataModel.entity, id: entity-budget }
+          - { kind: dataModel.entity, id: entity-category }
+        patternRefs: []
+        acceptanceCriteriaIds: []
+      - id: t-api-transactions-update
+        title: Update transaction API with budget remaining
+        description: Add budget-remaining field to transaction list response
+        filePaths: [src/api/transactions.ts]
+        dependencies: [t-schema-update]
+        writeOrder: 1
+        type: backend
+        mode: MODIFY
+        estimatedTokenBudget: 12000
+        contextRefs:
+          - { kind: apiChangeSet, id: acs-budget }
+          - { kind: dataModel.entity, id: entity-transaction }
+        patternRefs: [pat-errors-rfc7807]
+        acceptanceCriteriaIds: []
+      - id: t-dashboard-update
+        title: Add budget widget to dashboard
+        description: Add BudgetStatusWidget to existing dashboard page
+        filePaths: [src/pages/dashboard.tsx]
+        dependencies: [t-api-budgets]
+        writeOrder: 4
+        type: frontend
+        mode: MODIFY
+        estimatedTokenBudget: 15000
+        contextRefs:
+          - { kind: screenPlan, id: sp-dashboard }
+          - { kind: dataModel.entity, id: entity-budget }
+        patternRefs: [pat-tailwind-tokens]
+        acceptanceCriteriaIds: [ac-dash-budget-widget]
+      - id: t-nav-update
+        title: Add Budgets link to navigation
+        description: Update NavigationBar to include Budgets page link
+        filePaths: [src/components/NavigationBar.tsx]
+        dependencies: []
+        writeOrder: 0
+        type: frontend
+        mode: MODIFY
+        estimatedTokenBudget: 8000
+        contextRefs: []
+        patternRefs: [pat-tailwind-tokens]
+        acceptanceCriteriaIds: []
+      # NEW tasks — new files
+      - id: t-api-budgets
+        title: Budget CRUD API
+        description: Create budget endpoints
+        filePaths: [src/api/budgets.ts]
+        dependencies: [t-schema-update]
+        writeOrder: 2
+        type: backend
+        mode: NEW
+        estimatedTokenBudget: 18000
+        contextRefs:
+          - { kind: apiChangeSet, id: acs-budget }
+          - { kind: dataModel.entity, id: entity-budget }
+        patternRefs: [pat-errors-rfc7807, pat-budget-calc]
+        acceptanceCriteriaIds: [ac-budget-create, ac-budget-edit]
+      - id: t-budget-calc
+        title: Budget calculation module
+        description: Pure function for budget spending calculations
+        filePaths: [src/lib/budget-calc.ts]
+        dependencies: [t-schema-update]
+        writeOrder: 2
+        type: backend
+        mode: NEW
+        estimatedTokenBudget: 10000
+        contextRefs:
+          - { kind: dataModel.entity, id: entity-budget }
+          - { kind: pattern, id: pat-budget-calc }
+        patternRefs: [pat-budget-calc]
+        acceptanceCriteriaIds: []
+      - id: t-budgets-page
+        title: Budgets page
+        description: Budget management and tracking UI
+        filePaths: [src/pages/budgets.tsx]
+        dependencies: [t-api-budgets, t-budget-calc]
+        writeOrder: 3
+        type: frontend
+        mode: NEW
+        estimatedTokenBudget: 18000
+        contextRefs:
+          - { kind: screenPlan, id: sp-budgets }
+          - { kind: dataModel.entity, id: entity-budget }
+        patternRefs: [pat-tailwind-tokens]
+        acceptanceCriteriaIds: [ac-budget-progress]
+    featureCoverage:
+      feat-budget-crud: [t-api-budgets, t-budgets-page]
+      feat-budget-tracking: [t-budgets-page, t-budget-calc]
+      feat-dashboard-existing: [t-dashboard-update]
+  assumptionLedger:
+    id: al-cashpulse-v2-merged
+    entries:
+      - id: assumption-budget-monthly
+        statement: Budgets are tracked on a monthly cycle
+        evidence: Common pattern for personal finance apps
+        confidence: 0.9
+        blastRadius: low
+        requiresConfirmation: false
+    createdAt: "2026-01-01T00:00:00Z"
+    lastUpdatedAt: "2026-02-01T00:00:00Z"
+  version: "2.0.0"

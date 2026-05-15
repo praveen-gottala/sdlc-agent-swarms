@@ -28,7 +28,17 @@ test.describe('Runs page', () => {
   test('unimplemented stages show Upcoming badge', async ({ page }) => {
     const rail = page.getByTestId('spine-rail');
     const upcomingBadges = rail.getByText('Upcoming');
-    await expect(upcomingBadges).toHaveCount(3);
+    await expect(upcomingBadges).toHaveCount(2);
+  });
+
+  test('Architect stage renders as active (not greyed-out)', async ({ page }) => {
+    const rail = page.getByTestId('spine-rail');
+    const architectLabel = rail.getByText('Architect');
+    await expect(architectLabel).toBeVisible();
+
+    const architectStage = architectLabel.locator('..');
+    const stageContainer = architectStage.locator('..');
+    await expect(stageContainer).not.toHaveText('Upcoming');
   });
 
   test('emergency controls are visible', async ({ page }) => {

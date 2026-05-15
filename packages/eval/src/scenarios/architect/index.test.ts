@@ -1,9 +1,9 @@
 import { loadArchitectScenarios, loadArchitectScenario, ARCHITECT_SCENARIO_IDS } from './index.js';
 
 describe('loadArchitectScenarios', () => {
-  it('loads all 3 golden scenarios', () => {
+  it('loads all 4 golden scenarios', () => {
     const scenarios = loadArchitectScenarios();
-    expect(scenarios).toHaveLength(3);
+    expect(scenarios).toHaveLength(4);
   });
 
   it('each scenario has required fields', () => {
