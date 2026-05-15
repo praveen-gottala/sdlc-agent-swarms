@@ -12,6 +12,8 @@ export {
   createContextAssembler,
   createOptionsExplorer,
   createArchitectureWriter,
+  createContractDesigner,
+  createTaskPlanner,
   createCritic,
   gate2Approval,
   escalationGate,

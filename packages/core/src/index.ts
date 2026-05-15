@@ -53,6 +53,7 @@ export type { ScaffoldProjectInput, ScaffoldResult } from './types/index.js';
 // Architect utilities (M2 — Critic validation; M3 — token validation)
 export {
   validateContractBundle,
+  TASK_TOKEN_BUDGET_CEILING,
   extractValidTokenNames,
   buildTokenAllowlist,
   filterNonTokenBindings,
@@ -142,6 +143,12 @@ export {
   EARSCriterionSchema,
   ClarificationRoundSchema,
   AssumptionEntrySchema,
+  DataBindingSchema,
+  EndpointChangeSchema,
+  ChangeClassificationSchema,
+  ScreenPlanSchema,
+  APIChangeSetSchema,
+  ScopeAxisSchema,
 } from './types/index.js';
 export type {
   EnrichedRequirement,
@@ -155,6 +162,7 @@ export type {
   ChangeClassification,
   ScreenPlan,
   APIChangeSet,
+  ScopeAxis,
 } from './types/index.js';
 
 // Scaffolding

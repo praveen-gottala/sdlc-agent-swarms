@@ -5,7 +5,7 @@
  * shared token validation (M3).
  */
 
-export { validateContractBundle } from './critic.js';
+export { validateContractBundle, TASK_TOKEN_BUDGET_CEILING } from './critic.js';
 
 export {
   extractValidTokenNames,

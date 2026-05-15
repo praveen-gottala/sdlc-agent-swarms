@@ -1,6 +1,6 @@
 # M3: Architect Core — Execution Plan
 
-## Status: IN PROGRESS — Phase 5 next (Phase 4 COMPLETE 2026-05-14)
+## Status: IN PROGRESS — Phase 6 next (Phase 5 COMPLETE 2026-05-15)
 
 ## Related Documents
 
@@ -249,7 +249,7 @@ Pattern Designer folded in here. **Prompt rubric pointers (encode inline in prom
 - Unit tests: greenfield happy path, brownfield with ChangeClassification, prompt regression test asserting patterns reference Node 2 OptionsBundle decisions, failure-path tests (provider error, invalid JSON, Zod reject), Gate 2 edit slice in user message
 - **Verification gate:** `nx test agents-architect --testPathPattern="architecture-writer"`, golden-output snapshot test on CashPulse fixture, `/review-plan-impl --phase 4` (receipt: `artifacts/plan-impl-review/20260514T180000-m3-phase4/`)
 
-### Phase 5 — Node 4 (Contract Designer + context slicer)
+### Phase 5 — Node 4 (Contract Designer + context slicer) (COMPLETE 2026-05-15)
 
 **Prompt rubric pointers per specialist:**
 
@@ -274,7 +274,7 @@ Files:
 - Unit tests per specialist + integration test for full sequence + slicer unit tests
 - **Verification gate:** `nx test agents-architect --testPathPattern="contract-designer"`, `/review-plan-impl --phase 5`
 
-### Phase 6 — Node 5 (Task Planner with sizing + dry-Critic)
+### Phase 6 — Node 5 (Task Planner with sizing + dry-Critic) (COMPLETE 2026-05-15)
 
 **Prompt rubric pointers:** R2 §5 (granularity rubric), R2 §6 (TaskNode field population guide), R3 §4 (contextRef selection rules), `docs/lessons-learned-rules.md` § *Plans Must Trace Data Flows*.
 
@@ -282,7 +282,8 @@ Files:
 - `packages/agents-architect/src/sizing-heuristic.ts` — `estimateTaskTokenBudget(task, bundle)` returns budget per R3 estimation rules; fed back into Task Planner prompt as constraint
 - Dry-run Critic invocation: after Node 5 emits TaskPlan, run gates 10-14 (the new ones) immediately and feed any failures back into a single retry attempt before Node 6 final Critic
 - TaskNode field population: every task carries populated `mode`, `estimatedTokenBudget`, `contextRefs`, `patternRefs`, `acceptanceCriteriaIds`
-- Unit tests: token-budget sizing on 5 fixture tasks (uses Phase 1 budget table as oracle), context-ref population, acceptance-criteria coverage
+- **Deferred from Phase 5 — RESOLVED:** Singular/plural bridging code (`stateCompositionsToBundle()`) added to context-slicer.ts. Specialist dispatch wiring investigated and determined N/A: `sliceContractBundle()` filters by `contextRefs`, but contextRefs are populated by Node 5 (Task Planner) which runs AFTER Node 4 (Contract Designer). Specialists are the producers of contract artifacts, not consumers — they already scope input via per-specialist `buildUserMessage()` functions. The slicer's real consumer is the M4 Implementer, which uses `sliceContractBundle(task.contextRefs, bundle)` per R3 §3 to scope each task's context window.
+- Unit tests: token-budget sizing on 5 fixture tasks (uses Phase 1 budget table as oracle), context-ref population, acceptance-criteria coverage, golden-fixture dry-Critic test
 - **Verification gate:** `nx test agents-architect --testPathPattern="task-planner"`, golden-fixture test all CashPulse tasks pass dry-Critic, `/review-plan-impl --phase 6`
 
 ### Phase 7 — Brownfield wiring + retry routing matrix + brownfield eval scenario
