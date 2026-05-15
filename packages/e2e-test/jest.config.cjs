@@ -10,6 +10,8 @@ module.exports = {
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'js'],
   testTimeout: 60000,
+  // CLI pulls in @agentforge/eval → @agentforge/agents-clarifier; map to src so @swc/jest
+  // transforms them. package.json "exports" default points at dist/*.js (ESM), which Jest won't load raw.
   moduleNameMapper: {
     '^@agentforge/core$': '<rootDir>/../core/src/index.ts',
     '^@agentforge/governance$': '<rootDir>/../governance/src/index.ts',
@@ -24,6 +26,8 @@ module.exports = {
     '^@agentforge/telemetry$': '<rootDir>/../telemetry/src/index.ts',
     '^@agentforge/cli$': '<rootDir>/../cli/src/index.ts',
     '^@agentforge/cli/commands/(.*)$': '<rootDir>/../cli/src/commands/$1.ts',
+    '^@agentforge/eval$': '<rootDir>/../eval/src/index.ts',
+    '^@agentforge/agents-clarifier$': '<rootDir>/../agents-clarifier/src/index.ts',
     '^(\\..*)\\.js$': '$1',
   },
 };

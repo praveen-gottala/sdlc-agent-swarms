@@ -4,7 +4,7 @@ import { loadArchitectScenarios } from './scenarios/architect/index.js';
 describe('runArchitectScenario', () => {
   const scenarios = loadArchitectScenarios();
 
-  it('correct-cashpulse: all 9 gates pass', () => {
+  it('correct-cashpulse: all 14 gates pass', () => {
     const scenario = scenarios.find((s) => s.id === 'correct-cashpulse')!;
     const metrics = runArchitectScenario(scenario);
 

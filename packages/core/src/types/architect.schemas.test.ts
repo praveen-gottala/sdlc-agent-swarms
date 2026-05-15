@@ -76,9 +76,9 @@ const ARCHITECTURE_SPEC_FIXTURE = {
 const TASK_PLAN_FIXTURE = {
   projectId: 'cashpulse',
   tasks: [
-    { id: 'T1', title: 'Scaffold', description: 'Create project structure', filePaths: ['package.json'], dependencies: [], writeOrder: 0, type: 'scaffold' as const },
-    { id: 'T2', title: 'DB migration', description: 'Create tables', filePaths: ['migrations/001.sql'], dependencies: ['T1'], writeOrder: 1, type: 'backend' as const },
-    { id: 'T3', title: 'Expense API', description: 'CRUD endpoints', filePaths: ['api/expenses/route.ts'], dependencies: ['T2'], writeOrder: 2, type: 'backend' as const },
+    { id: 'T1', title: 'Scaffold', description: 'Create project structure', filePaths: ['package.json'], dependencies: [], writeOrder: 0, type: 'scaffold' as const, mode: 'NEW' as const, estimatedTokenBudget: 12_000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] },
+    { id: 'T2', title: 'DB migration', description: 'Create tables', filePaths: ['migrations/001.sql'], dependencies: ['T1'], writeOrder: 1, type: 'backend' as const, mode: 'NEW' as const, estimatedTokenBudget: 12_000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] },
+    { id: 'T3', title: 'Expense API', description: 'CRUD endpoints', filePaths: ['api/expenses/route.ts'], dependencies: ['T2'], writeOrder: 2, type: 'backend' as const, mode: 'NEW' as const, estimatedTokenBudget: 12_000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] },
   ],
   featureCoverage: {
     'f-expense-crud': ['T2', 'T3'],
@@ -140,9 +140,14 @@ const CRITIC_REPORT_FIXTURE = {
     { name: 'openapi-lint', passed: true, findings: [] },
     { name: 'migration-sql-parses', passed: true, findings: [] },
     { name: 'adr-completeness', passed: true, findings: [] },
+    { name: 'patternRef-resolution', passed: true, findings: [] },
+    { name: 'contextRef-resolution', passed: true, findings: [] },
+    { name: 'acceptanceCriteria-coverage', passed: true, findings: [] },
+    { name: 'tokenBudget-feasibility', passed: true, findings: [] },
+    { name: 'mode-consistency', passed: true, findings: [] },
   ],
   passed: true,
-  summary: 'All 9 gates passed',
+  summary: 'All 14 gates passed',
 };
 
 const ASSUMPTION_LEDGER_FIXTURE = {

@@ -118,12 +118,47 @@ export const ArchitectureDecisionSchema = z.object({
   adrId: z.string().optional(),
 });
 
+export const ImplementationPatternSchema = z.object({
+  id: z.string(),
+  category: z.string(),
+  title: z.string(),
+  rule: z.string(),
+  rationale: z.string().optional(),
+  example: z.string().optional(),
+  forbids: z.array(z.string()).optional(),
+  appliesTo: z.array(z.string()).optional(),
+});
+
+export const ContextRefKindSchema = z.enum([
+  'dataModel.entity',
+  'apiChangeSet',
+  'componentComposition',
+  'screenPlan',
+  'pattern',
+]);
+
+export const ContextRefSchema = z.object({
+  kind: ContextRefKindSchema,
+  id: z.string(),
+});
+
+export const TaskModeSchema = z.enum(['NEW', 'MODIFY']);
+
+export const TaskCompletionReportSchema = z.object({
+  taskId: z.string(),
+  filesWritten: z.array(z.string()),
+  interfacesExposed: z.array(z.string()),
+  patternsApplied: z.array(z.string()),
+  deviationsFromContract: z.array(z.string()),
+});
+
 export const ArchitectureSpecSchema = z.object({
   projectId: z.string(),
   decisions: z.array(ArchitectureDecisionSchema),
   stackConfig: ArchitectStackConfigSchema,
   assumptionLedgerUpdates: z.array(AssumptionEntrySchema),
   migrations: z.array(MigrationSpecSchema).optional(),
+  implementationPatterns: z.array(ImplementationPatternSchema).optional().default([]),
 });
 
 // ---------------------------------------------------------------------------
@@ -138,6 +173,11 @@ export const TaskNodeSchema = z.object({
   dependencies: z.array(z.string()),
   writeOrder: z.number().int().min(0),
   type: TaskTypeSchema,
+  mode: TaskModeSchema,
+  estimatedTokenBudget: z.number().int().min(0).max(120_000),
+  contextRefs: z.array(ContextRefSchema).default([]),
+  patternRefs: z.array(z.string()).default([]),
+  acceptanceCriteriaIds: z.array(z.string()).default([]),
 });
 
 export const TaskPlanSchema = z.object({
@@ -258,6 +298,11 @@ export type OptionsBundle = z.infer<typeof OptionsBundleSchema>;
 export type MigrationSpec = z.infer<typeof MigrationSpecSchema>;
 export type ArchitectStackConfig = z.infer<typeof ArchitectStackConfigSchema>;
 export type ArchitectureDecision = z.infer<typeof ArchitectureDecisionSchema>;
+export type ImplementationPattern = z.infer<typeof ImplementationPatternSchema>;
+export type ContextRefKind = z.infer<typeof ContextRefKindSchema>;
+export type ContextRef = z.infer<typeof ContextRefSchema>;
+export type TaskMode = z.infer<typeof TaskModeSchema>;
+export type TaskCompletionReport = z.infer<typeof TaskCompletionReportSchema>;
 export type ArchitectureSpec = z.infer<typeof ArchitectureSpecSchema>;
 export type TaskNode = z.infer<typeof TaskNodeSchema>;
 export type TaskPlan = z.infer<typeof TaskPlanSchema>;

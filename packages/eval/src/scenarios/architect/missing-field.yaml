@@ -89,6 +89,7 @@ contractBundle:
       database: PostgreSQL
       styling: CSS
     assumptionLedgerUpdates: []
+    implementationPatterns: []
   adrs: []
   apiChangeSets:
     - id: acs-1
@@ -110,7 +111,7 @@ contractBundle:
   taskPlan:
     projectId: task-manager
     tasks:
-      - { id: t-1, title: Task list page, description: Build task list, filePaths: [src/tasks.tsx], dependencies: [], writeOrder: 0, type: frontend }
+      - { id: t-1, title: Task list page, description: Build task list, filePaths: [src/tasks.tsx], dependencies: [], writeOrder: 0, type: frontend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
     # Gate 4 fail: feat-calendar (must-have) has no tasks in featureCoverage
     featureCoverage:
       feat-tasks: [t-1]

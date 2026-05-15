@@ -127,6 +127,7 @@ export const PRDSchema = z.object({
     name: z.string(),
     description: z.string(),
     priority: z.enum(['must-have', 'should-have', 'could-have', 'wont-have']).optional(),
+    acceptanceCriteria: z.array(EARSCriterionSchema).optional(),
   })),
   personas: z.array(PersonaSchema),
   dataEntities: z.array(DataEntitySchema),

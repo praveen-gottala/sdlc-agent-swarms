@@ -2,8 +2,8 @@
  * @module @agentforge/core/architect/critic
  *
  * Standalone Critic validation for Architect ContractBundle.
- * 9 deterministic gates — no LLM, no LangGraph dependency.
- * M3 Phase 5 wraps this as a LangGraph node.
+ * 14 deterministic gates — no LLM, no LangGraph dependency.
+ * M3 Phase 3 wraps this as a LangGraph node.
  */
 
 import {
@@ -11,6 +11,7 @@ import {
 } from '../types/architect.schemas.js';
 import type {
   ContractBundle,
+  ContextRef,
   CriticGate,
   CriticReport,
 } from '../types/architect.schemas.js';
@@ -24,13 +25,18 @@ const PATH_PATTERN = /^\/[A-Za-z0-9/_{}-]+$/;
 
 const SQL_VERBS = /\b(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|SELECT)\b/i;
 
+/** R3 ceiling: no task may exceed this estimated token budget. */
+export const TASK_TOKEN_BUDGET_CEILING = 120_000;
+
 /**
- * Validate a ContractBundle against 9 deterministic gates.
- * Returns a CriticReport with per-gate pass/fail and findings.
+ * Validate a ContractBundle against 14 deterministic gates.
+ * @param existingFiles — When set (brownfield), gate 14 enforces MODIFY tasks touch
+ *   at least one existing path. When omitted (greenfield), gate 14 is skipped.
  */
 export function validateContractBundle(
   bundle: ContractBundle,
   enrichedReq: EnrichedRequirement,
+  existingFiles?: ReadonlySet<string>,
 ): CriticReport {
   const gates: CriticGate[] = [
     runSchemaValidation(bundle),
@@ -42,12 +48,17 @@ export function validateContractBundle(
     runOpenApiLint(bundle),
     runMigrationSqlParses(bundle),
     runAdrCompleteness(bundle),
+    runPatternRefResolution(bundle),
+    runContextRefResolution(bundle),
+    runAcceptanceCriteriaCoverage(bundle, enrichedReq),
+    runTokenBudgetFeasibility(bundle),
+    runModeConsistency(bundle, existingFiles),
   ];
 
   const passed = gates.every((g) => g.passed);
   const failedGates = gates.filter((g) => !g.passed).map((g) => g.name);
   const summary = passed
-    ? 'All 9 gates passed.'
+    ? 'All 14 gates passed.'
     : `Failed gates: ${failedGates.join(', ')}`;
 
   return { gates, passed, summary };
@@ -270,4 +281,136 @@ function runAdrCompleteness(bundle: ContractBundle): CriticGate {
   }
 
   return { name: 'adr-completeness', passed: findings.length === 0, findings };
+}
+
+function patternIdsFromBundle(bundle: ContractBundle): ReadonlySet<string> {
+  return new Set(
+    (bundle.architectureSpec.implementationPatterns ?? []).map((p) => p.id),
+  );
+}
+
+function resolveContextRef(bundle: ContractBundle, ref: ContextRef): boolean {
+  const patterns = patternIdsFromBundle(bundle);
+
+  switch (ref.kind) {
+    case 'dataModel.entity':
+      return (bundle.dataModel?.entities ?? []).some((e) => e.id === ref.id);
+    case 'apiChangeSet':
+      return bundle.apiChangeSets.some((a) => a.id === ref.id);
+    case 'componentComposition':
+      return bundle.componentComposition?.screenId === ref.id;
+    case 'screenPlan':
+      return bundle.screenPlans.some((s) => s.id === ref.id);
+    case 'pattern':
+      return patterns.has(ref.id);
+    default: {
+      const _exhaustive: never = ref.kind;
+      return _exhaustive;
+    }
+  }
+}
+
+function runPatternRefResolution(bundle: ContractBundle): CriticGate {
+  const findings: string[] = [];
+  const patternIds = patternIdsFromBundle(bundle);
+
+  for (const task of bundle.taskPlan.tasks) {
+    for (const pref of task.patternRefs) {
+      if (!patternIds.has(pref)) {
+        findings.push(
+          `Task '${task.id}' references unknown implementation pattern id '${pref}'`,
+        );
+      }
+    }
+  }
+
+  return { name: 'patternRef-resolution', passed: findings.length === 0, findings };
+}
+
+function runContextRefResolution(bundle: ContractBundle): CriticGate {
+  const findings: string[] = [];
+
+  for (const task of bundle.taskPlan.tasks) {
+    for (const ref of task.contextRefs) {
+      if (!resolveContextRef(bundle, ref)) {
+        findings.push(
+          `Task '${task.id}' has unresolved contextRef { kind: '${ref.kind}', id: '${ref.id}' }`,
+        );
+      }
+    }
+  }
+
+  return { name: 'contextRef-resolution', passed: findings.length === 0, findings };
+}
+
+function runAcceptanceCriteriaCoverage(
+  bundle: ContractBundle,
+  enrichedReq: EnrichedRequirement,
+): CriticGate {
+  const findings: string[] = [];
+  const requiredIds = new Set<string>();
+
+  for (const feature of enrichedReq.prd.features) {
+    for (const ac of feature.acceptanceCriteria ?? []) {
+      requiredIds.add(ac.id);
+    }
+  }
+
+  if (requiredIds.size === 0) {
+    return { name: 'acceptanceCriteria-coverage', passed: true, findings: [] };
+  }
+
+  const covered = new Set<string>();
+  for (const task of bundle.taskPlan.tasks) {
+    for (const id of task.acceptanceCriteriaIds) {
+      covered.add(id);
+    }
+  }
+
+  for (const id of requiredIds) {
+    if (!covered.has(id)) {
+      findings.push(
+        `EARS acceptance criterion '${id}' is not referenced by any task (acceptanceCriteriaIds)`,
+      );
+    }
+  }
+
+  return { name: 'acceptanceCriteria-coverage', passed: findings.length === 0, findings };
+}
+
+function runTokenBudgetFeasibility(bundle: ContractBundle): CriticGate {
+  const findings: string[] = [];
+
+  for (const task of bundle.taskPlan.tasks) {
+    if (task.estimatedTokenBudget > TASK_TOKEN_BUDGET_CEILING) {
+      findings.push(
+        `Task '${task.id}' estimatedTokenBudget ${task.estimatedTokenBudget} exceeds ceiling ${TASK_TOKEN_BUDGET_CEILING}`,
+      );
+    }
+  }
+
+  return { name: 'tokenBudget-feasibility', passed: findings.length === 0, findings };
+}
+
+function runModeConsistency(
+  bundle: ContractBundle,
+  existingFiles?: ReadonlySet<string>,
+): CriticGate {
+  if (existingFiles === undefined) {
+    return { name: 'mode-consistency', passed: true, findings: [] };
+  }
+
+  const findings: string[] = [];
+  for (const task of bundle.taskPlan.tasks) {
+    if (task.mode !== 'MODIFY') continue;
+
+    const touchesExisting = task.filePaths.some((fp) => existingFiles.has(fp));
+    if (!touchesExisting) {
+      findings.push(
+        `Task '${task.id}' is MODIFY but none of its filePaths exist in the brownfield snapshot`,
+      );
+    }
+  }
+
+  return { name: 'mode-consistency', passed: findings.length === 0, findings };
 }

@@ -230,3 +230,4 @@ packages/agents-ux/__tests__
 
 # Skill artifacts (regenerable from plan + diff)
 artifacts/
+apps/recipe-sharing-app/

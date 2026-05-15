@@ -91,6 +91,7 @@ contractBundle:
       database: PostgreSQL
       styling: Tailwind
     assumptionLedgerUpdates: []
+    implementationPatterns: []
   adrs: []
   apiChangeSets:
     - id: acs-1
@@ -115,12 +116,12 @@ contractBundle:
     projectId: blog-platform
     tasks:
       # Gate 2 fail: cyclic dependency t-3 → t-5 → t-3
-      - { id: t-1, title: Setup, description: Scaffold, filePaths: [package.json], dependencies: [], writeOrder: 0, type: scaffold }
-      - { id: t-2, title: DB Schema, description: Prisma, filePaths: [prisma/schema.prisma], dependencies: [t-1], writeOrder: 1, type: backend }
+      - { id: t-1, title: Setup, description: Scaffold, filePaths: [package.json], dependencies: [], writeOrder: 0, type: scaffold, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
+      - { id: t-2, title: DB Schema, description: Prisma, filePaths: [prisma/schema.prisma], dependencies: [t-1], writeOrder: 1, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
       # Gate 3 fail: t-3 and t-4 both write src/api/posts.ts
-      - { id: t-3, title: Posts API, description: CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2, t-5], writeOrder: 2, type: backend }
-      - { id: t-4, title: Posts API v2, description: Enhanced CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2], writeOrder: 3, type: backend }
-      - { id: t-5, title: Editor page, description: Post editor, filePaths: [src/pages/editor.tsx], dependencies: [t-3], writeOrder: 4, type: frontend }
+      - { id: t-3, title: Posts API, description: CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2, t-5], writeOrder: 2, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
+      - { id: t-4, title: Posts API v2, description: Enhanced CRUD, filePaths: [src/api/posts.ts], dependencies: [t-2], writeOrder: 3, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
+      - { id: t-5, title: Editor page, description: Post editor, filePaths: [src/pages/editor.tsx], dependencies: [t-3], writeOrder: 4, type: frontend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [], patternRefs: [], acceptanceCriteriaIds: [] }
     featureCoverage:
       feat-posts: [t-3, t-5]
   assumptionLedger:

@@ -1,6 +1,20 @@
-import { validateContractBundle } from './critic.js';
+import { TASK_TOKEN_BUDGET_CEILING, validateContractBundle } from './critic.js';
 import type { ContractBundle } from '../types/architect.schemas.js';
 import type { EnrichedRequirement } from '../types/cross-boundary-artifacts.js';
+
+function tbForFiles(fileCount: number): number {
+  return Math.min(TASK_TOKEN_BUDGET_CEILING, Math.max(8000, fileCount * 12_000));
+}
+
+function baseTaskFields(filePaths: string[]) {
+  return {
+    mode: 'NEW' as const,
+    estimatedTokenBudget: tbForFiles(filePaths.length),
+    contextRefs: [],
+    patternRefs: [] as string[],
+    acceptanceCriteriaIds: [] as string[],
+  };
+}
 
 function makeEnrichedReq(overrides?: Partial<EnrichedRequirement>): EnrichedRequirement {
   return {
@@ -76,6 +90,7 @@ function makeValidBundle(overrides?: Partial<ContractBundle>): ContractBundle {
       ],
       stackConfig: { frontend: 'React', backend: 'Node.js', database: 'PostgreSQL', styling: 'Tailwind' },
       assumptionLedgerUpdates: [],
+      implementationPatterns: [],
     },
     adrs: [{ id: 'adr-1', title: 'Use Tailwind', status: 'accepted', decision: 'Use Tailwind CSS', rationale: 'Best DX' }],
     apiChangeSets: [
@@ -104,9 +119,9 @@ function makeValidBundle(overrides?: Partial<ContractBundle>): ContractBundle {
     taskPlan: {
       projectId: 'proj-1',
       tasks: [
-        { id: 't-1', title: 'Setup project', description: 'Scaffold', filePaths: ['package.json'], dependencies: [], writeOrder: 0, type: 'scaffold' },
-        { id: 't-2', title: 'Dashboard page', description: 'Build dashboard', filePaths: ['src/pages/dashboard.tsx'], dependencies: ['t-1'], writeOrder: 1, type: 'frontend' },
-        { id: 't-3', title: 'Transaction API', description: 'Build API', filePaths: ['src/api/transactions.ts'], dependencies: ['t-1'], writeOrder: 2, type: 'backend' },
+        { id: 't-1', title: 'Setup project', description: 'Scaffold', filePaths: ['package.json'], dependencies: [], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['package.json']) },
+        { id: 't-2', title: 'Dashboard page', description: 'Build dashboard', filePaths: ['src/pages/dashboard.tsx'], dependencies: ['t-1'], writeOrder: 1, type: 'frontend', ...baseTaskFields(['src/pages/dashboard.tsx']) },
+        { id: 't-3', title: 'Transaction API', description: 'Build API', filePaths: ['src/api/transactions.ts'], dependencies: ['t-1'], writeOrder: 2, type: 'backend', ...baseTaskFields(['src/api/transactions.ts']) },
       ],
       featureCoverage: {
         'feat-1': ['t-2'],
@@ -127,12 +142,12 @@ function makeValidBundle(overrides?: Partial<ContractBundle>): ContractBundle {
 describe('validateContractBundle', () => {
   const enrichedReq = makeEnrichedReq();
 
-  it('passes all 9 gates with a valid bundle', () => {
+  it('passes all 14 gates with a valid bundle', () => {
     const bundle = makeValidBundle();
     const report = validateContractBundle(bundle, enrichedReq);
 
     expect(report.passed).toBe(true);
-    expect(report.gates).toHaveLength(9);
+    expect(report.gates).toHaveLength(14);
     for (const gate of report.gates) {
       expect(gate.passed).toBe(true);
       expect(gate.findings).toHaveLength(0);
@@ -159,9 +174,9 @@ describe('validateContractBundle', () => {
         taskPlan: {
           projectId: 'proj-1',
           tasks: [
-            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: ['t-3'], writeOrder: 0, type: 'scaffold' },
-            { id: 't-2', title: 'B', description: 'B', filePaths: ['b.ts'], dependencies: ['t-1'], writeOrder: 1, type: 'backend' },
-            { id: 't-3', title: 'C', description: 'C', filePaths: ['c.ts'], dependencies: ['t-2'], writeOrder: 2, type: 'frontend' },
+            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: ['t-3'], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['a.ts']) },
+            { id: 't-2', title: 'B', description: 'B', filePaths: ['b.ts'], dependencies: ['t-1'], writeOrder: 1, type: 'backend', ...baseTaskFields(['b.ts']) },
+            { id: 't-3', title: 'C', description: 'C', filePaths: ['c.ts'], dependencies: ['t-2'], writeOrder: 2, type: 'frontend', ...baseTaskFields(['c.ts']) },
           ],
           featureCoverage: { 'feat-1': ['t-1'], 'feat-2': ['t-2'] },
         },
@@ -180,8 +195,8 @@ describe('validateContractBundle', () => {
         taskPlan: {
           projectId: 'proj-1',
           tasks: [
-            { id: 't-1', title: 'A', description: 'A', filePaths: ['shared.ts'], dependencies: [], writeOrder: 0, type: 'scaffold' },
-            { id: 't-2', title: 'B', description: 'B', filePaths: ['shared.ts'], dependencies: [], writeOrder: 1, type: 'backend' },
+            { id: 't-1', title: 'A', description: 'A', filePaths: ['shared.ts'], dependencies: [], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['shared.ts']) },
+            { id: 't-2', title: 'B', description: 'B', filePaths: ['shared.ts'], dependencies: [], writeOrder: 1, type: 'backend', ...baseTaskFields(['shared.ts']) },
           ],
           featureCoverage: { 'feat-1': ['t-1'], 'feat-2': ['t-2'] },
         },
@@ -202,7 +217,7 @@ describe('validateContractBundle', () => {
         taskPlan: {
           projectId: 'proj-1',
           tasks: [
-            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold' },
+            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['a.ts']) },
           ],
           featureCoverage: { 'feat-1': ['t-1'] },
         },
@@ -229,7 +244,7 @@ describe('validateContractBundle', () => {
         taskPlan: {
           projectId: 'proj-1',
           tasks: [
-            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold' },
+            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['a.ts']) },
           ],
           featureCoverage: { 'feat-1': ['t-1'] },
         },
@@ -256,7 +271,7 @@ describe('validateContractBundle', () => {
         taskPlan: {
           projectId: 'proj-1',
           tasks: [
-            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold' },
+            { id: 't-1', title: 'A', description: 'A', filePaths: ['a.ts'], dependencies: [], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['a.ts']) },
           ],
           featureCoverage: { 'feat-1': ['t-1'] },
         },
@@ -546,13 +561,175 @@ describe('validateContractBundle', () => {
     });
   });
 
+  describe('gate 10: patternRef-resolution', () => {
+    it('fails when a task references an unknown pattern id', () => {
+      const bundle = makeValidBundle({
+        taskPlan: {
+          projectId: 'proj-1',
+          tasks: [
+            {
+              id: 't-1',
+              title: 'A',
+              description: 'A',
+              filePaths: ['a.ts'],
+              dependencies: [],
+              writeOrder: 0,
+              type: 'scaffold',
+              ...baseTaskFields(['a.ts']),
+              patternRefs: ['nonexistent-pattern'],
+            },
+          ],
+          featureCoverage: { 'feat-1': ['t-1'], 'feat-2': ['t-1'] },
+        },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq);
+      const gate = report.gates.find((g) => g.name === 'patternRef-resolution')!;
+      expect(gate.passed).toBe(false);
+      expect(gate.findings.some((f) => f.includes('nonexistent-pattern'))).toBe(true);
+    });
+  });
+
+  describe('gate 11: contextRef-resolution', () => {
+    it('fails when contextRef points to missing apiChangeSet', () => {
+      const bundle = makeValidBundle({
+        taskPlan: {
+          projectId: 'proj-1',
+          tasks: [
+            {
+              id: 't-1',
+              title: 'A',
+              description: 'A',
+              filePaths: ['a.ts'],
+              dependencies: [],
+              writeOrder: 0,
+              type: 'scaffold',
+              ...baseTaskFields(['a.ts']),
+              contextRefs: [{ kind: 'apiChangeSet', id: 'acs-deadbeef' }],
+            },
+          ],
+          featureCoverage: { 'feat-1': ['t-1'], 'feat-2': ['t-1'] },
+        },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq);
+      const gate = report.gates.find((g) => g.name === 'contextRef-resolution')!;
+      expect(gate.passed).toBe(false);
+    });
+  });
+
+  describe('gate 12: acceptanceCriteria-coverage', () => {
+    it('fails when PRD lists EARS ids that no task covers', () => {
+      const reqWithEars = makeEnrichedReq({
+        prd: {
+          ...makeEnrichedReq().prd,
+          features: [
+            {
+              id: 'feat-1',
+              name: 'Dashboard',
+              description: 'Main dashboard',
+              priority: 'must-have',
+              acceptanceCriteria: [
+                {
+                  id: 'ac-1',
+                  condition: 'Open app',
+                  behavior: 'Show home',
+                  formatted: 'WHEN user opens THE System SHALL show home',
+                },
+              ],
+            },
+            { id: 'feat-2', name: 'Transactions', description: 'List', priority: 'must-have' },
+          ],
+        },
+      });
+
+      const bundle = makeValidBundle();
+      const report = validateContractBundle(bundle, reqWithEars);
+      const gate = report.gates.find((g) => g.name === 'acceptanceCriteria-coverage')!;
+      expect(gate.passed).toBe(false);
+      expect(gate.findings.some((f) => f.includes('ac-1'))).toBe(true);
+    });
+  });
+
+  describe('gate 13: tokenBudget-feasibility', () => {
+    it('fails when estimatedTokenBudget exceeds ceiling', () => {
+      const bundle = makeValidBundle({
+        taskPlan: {
+          projectId: 'proj-1',
+          tasks: [
+            {
+              id: 't-1',
+              title: 'A',
+              description: 'A',
+              filePaths: ['a.ts'],
+              dependencies: [],
+              writeOrder: 0,
+              type: 'scaffold',
+              mode: 'NEW',
+              estimatedTokenBudget: 200_000,
+              contextRefs: [],
+              patternRefs: [],
+              acceptanceCriteriaIds: [],
+            },
+          ],
+          featureCoverage: { 'feat-1': ['t-1'], 'feat-2': ['t-1'] },
+        },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq);
+      const gate = report.gates.find((g) => g.name === 'tokenBudget-feasibility')!;
+      expect(gate.passed).toBe(false);
+    });
+  });
+
+  describe('gate 14: mode-consistency', () => {
+    it('skips strict check when existingFiles is undefined (greenfield)', () => {
+      const base = makeValidBundle();
+      const tasks = base.taskPlan.tasks.map((t) => ({ ...t }));
+      tasks[0] = {
+        ...tasks[0],
+        mode: 'MODIFY',
+        filePaths: ['totally-new-file.ts'],
+        estimatedTokenBudget: tbForFiles(1),
+      };
+      const bundle = makeValidBundle({
+        taskPlan: { ...base.taskPlan, tasks },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq);
+      expect(report.gates.find((g) => g.name === 'mode-consistency')!.passed).toBe(true);
+    });
+
+    it('fails MODIFY tasks when no filePath exists in brownfield snapshot', () => {
+      const base = makeValidBundle();
+      const tasks = base.taskPlan.tasks.map((t) => ({ ...t }));
+      tasks[0] = {
+        ...tasks[0],
+        mode: 'MODIFY',
+        filePaths: ['src/brand-new-only.ts'],
+        estimatedTokenBudget: tbForFiles(1),
+      };
+      const bundle = makeValidBundle({
+        taskPlan: { ...base.taskPlan, tasks },
+      });
+
+      const report = validateContractBundle(
+        bundle,
+        enrichedReq,
+        new Set(['src/legacy/route.ts']),
+      );
+      const gate = report.gates.find((g) => g.name === 'mode-consistency')!;
+      expect(gate.passed).toBe(false);
+    });
+  });
+
   it('reports multiple failed gates in summary', () => {
     const bundle = makeValidBundle({
       taskPlan: {
         projectId: 'proj-1',
         tasks: [
-          { id: 't-1', title: 'A', description: 'A', filePaths: ['shared.ts'], dependencies: ['t-2'], writeOrder: 0, type: 'scaffold' },
-          { id: 't-2', title: 'B', description: 'B', filePaths: ['shared.ts'], dependencies: ['t-1'], writeOrder: 1, type: 'backend' },
+          { id: 't-1', title: 'A', description: 'A', filePaths: ['shared.ts'], dependencies: ['t-2'], writeOrder: 0, type: 'scaffold', ...baseTaskFields(['shared.ts']) },
+          { id: 't-2', title: 'B', description: 'B', filePaths: ['shared.ts'], dependencies: ['t-1'], writeOrder: 1, type: 'backend', ...baseTaskFields(['shared.ts']) },
         ],
         featureCoverage: { 'feat-1': ['t-1'] },
       },

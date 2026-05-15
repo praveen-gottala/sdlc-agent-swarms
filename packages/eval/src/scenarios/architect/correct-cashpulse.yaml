@@ -2,7 +2,7 @@ id: correct-cashpulse
 name: CashPulse — valid contract bundle
 description: >
   Valid ContractBundle derived from CashPulse enriched requirement.
-  All 9 Critic gates should pass.
+  All 14 Critic gates should pass.
 
 expectedBehavior:
   criticShouldPass: true
@@ -20,14 +20,29 @@ enrichedRequirement:
         name: Dashboard
         description: Main dashboard showing financial overview
         priority: must-have
+        acceptanceCriteria:
+          - id: ac-dash-overview
+            condition: User opens the dashboard
+            behavior: System shows financial overview
+            formatted: WHEN the user opens the dashboard THE System SHALL show financial overview
       - id: feat-transactions
         name: Transactions
         description: Transaction list with filtering and search
         priority: must-have
+        acceptanceCriteria:
+          - id: ac-tx-list
+            condition: User views transactions
+            behavior: System lists transactions with filters
+            formatted: WHEN the user views transactions THE System SHALL list filterable transactions
       - id: feat-budgets
         name: Budget Management
         description: Create and track budgets by category
         priority: must-have
+        acceptanceCriteria:
+          - id: ac-budget-crud
+            condition: User manages budgets
+            behavior: System supports creating and tracking budgets
+            formatted: WHEN the user manages budgets THE System SHALL support budget CRUD
       - id: feat-reports
         name: Financial Reports
         description: Monthly and yearly financial reports
@@ -132,6 +147,15 @@ contractBundle:
       database: PostgreSQL
       styling: Tailwind
     assumptionLedgerUpdates: []
+    implementationPatterns:
+      - id: pat-errors-rfc7807
+        category: api
+        title: RFC 7807 problem responses
+        rule: HTTP APIs return application/problem+json for error conditions
+      - id: pat-tailwind-tokens
+        category: ui
+        title: Tailwind token discipline
+        rule: Use Tailwind design tokens; avoid arbitrary hex colors in components
     migrations:
       - { id: mig-001, sql: "CREATE TABLE transactions (id SERIAL PRIMARY KEY, amount DECIMAL NOT NULL, category VARCHAR(255), date TIMESTAMP NOT NULL);" }
       - { id: mig-002, sql: "CREATE TABLE accounts (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, balance DECIMAL DEFAULT 0);" }
@@ -148,6 +172,33 @@ contractBundle:
         - { method: POST, path: /api/budgets, description: Create a budget, breaking: false }
       modifications: []
       removals: []
+  dataModel:
+    projectId: cashpulse
+    entities:
+      - id: entity-transaction
+        name: Transaction
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: amount, type: number, required: true }
+          - { name: category, type: string, required: true }
+        tableName: transactions
+      - id: entity-account
+        name: Account
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: name, type: string, required: true }
+          - { name: balance, type: number, required: true }
+      - id: entity-category
+        name: Category
+        fields:
+          - { name: id, type: string, required: true }
+          - { name: name, type: string, required: true }
+          - { name: budgetLimit, type: number, required: false }
+  componentComposition:
+    screenId: sp-dashboard
+    componentTree:
+      - { id: comp-root, type: frame, children: [comp-header] }
+      - { id: comp-header, type: NavigationBar, catalogId: nav-bar }
   screenPlans:
     - id: sp-dashboard
       featureId: feat-dashboard
@@ -179,15 +230,15 @@ contractBundle:
   taskPlan:
     projectId: cashpulse
     tasks:
-      - { id: t-scaffold, title: Project scaffolding, description: Initialize project structure, filePaths: [package.json, tsconfig.json], dependencies: [], writeOrder: 0, type: scaffold }
-      - { id: t-db-schema, title: Database schema, description: Prisma schema and migrations, filePaths: [prisma/schema.prisma], dependencies: [t-scaffold], writeOrder: 1, type: backend }
-      - { id: t-api-transactions, title: Transaction API, description: CRUD endpoints for transactions, filePaths: [src/api/transactions.ts], dependencies: [t-db-schema], writeOrder: 2, type: backend }
-      - { id: t-api-accounts, title: Account API, description: Account endpoints, filePaths: [src/api/accounts.ts], dependencies: [t-db-schema], writeOrder: 3, type: backend }
-      - { id: t-api-budgets, title: Budget API, description: Budget CRUD endpoints, filePaths: [src/api/budgets.ts], dependencies: [t-db-schema], writeOrder: 4, type: backend }
-      - { id: t-dashboard-page, title: Dashboard page, description: Main dashboard UI, filePaths: [src/pages/dashboard.tsx], dependencies: [t-api-transactions, t-api-accounts], writeOrder: 5, type: frontend }
-      - { id: t-transactions-page, title: Transactions page, description: Transaction list UI, filePaths: [src/pages/transactions.tsx], dependencies: [t-api-transactions], writeOrder: 6, type: frontend }
-      - { id: t-budgets-page, title: Budgets page, description: Budget management UI, filePaths: [src/pages/budgets.tsx], dependencies: [t-api-budgets], writeOrder: 7, type: frontend }
-      - { id: t-tests, title: Integration tests, description: API and UI tests, filePaths: [src/__tests__/integration.test.ts], dependencies: [t-dashboard-page, t-transactions-page, t-budgets-page], writeOrder: 8, type: test }
+      - { id: t-scaffold, title: Project scaffolding, description: Initialize project structure, filePaths: [package.json, tsconfig.json], dependencies: [], writeOrder: 0, type: scaffold, mode: NEW, estimatedTokenBudget: 24000, contextRefs: [], patternRefs: [pat-tailwind-tokens], acceptanceCriteriaIds: [] }
+      - { id: t-db-schema, title: Database schema, description: Prisma schema and migrations, filePaths: [prisma/schema.prisma], dependencies: [t-scaffold], writeOrder: 1, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: dataModel.entity, id: entity-transaction }], patternRefs: [], acceptanceCriteriaIds: [] }
+      - { id: t-api-transactions, title: Transaction API, description: CRUD endpoints for transactions, filePaths: [src/api/transactions.ts], dependencies: [t-db-schema], writeOrder: 2, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: apiChangeSet, id: acs-1 }, { kind: dataModel.entity, id: entity-transaction }], patternRefs: [pat-errors-rfc7807], acceptanceCriteriaIds: [ac-tx-list] }
+      - { id: t-api-accounts, title: Account API, description: Account endpoints, filePaths: [src/api/accounts.ts], dependencies: [t-db-schema], writeOrder: 3, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: apiChangeSet, id: acs-1 }, { kind: dataModel.entity, id: entity-account }], patternRefs: [pat-errors-rfc7807], acceptanceCriteriaIds: [] }
+      - { id: t-api-budgets, title: Budget API, description: Budget CRUD endpoints, filePaths: [src/api/budgets.ts], dependencies: [t-db-schema], writeOrder: 4, type: backend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: apiChangeSet, id: acs-1 }, { kind: dataModel.entity, id: entity-category }], patternRefs: [pat-errors-rfc7807], acceptanceCriteriaIds: [ac-budget-crud] }
+      - { id: t-dashboard-page, title: Dashboard page, description: Main dashboard UI, filePaths: [src/pages/dashboard.tsx], dependencies: [t-api-transactions, t-api-accounts], writeOrder: 5, type: frontend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: screenPlan, id: sp-dashboard }, { kind: componentComposition, id: sp-dashboard }], patternRefs: [pat-tailwind-tokens], acceptanceCriteriaIds: [ac-dash-overview] }
+      - { id: t-transactions-page, title: Transactions page, description: Transaction list UI, filePaths: [src/pages/transactions.tsx], dependencies: [t-api-transactions], writeOrder: 6, type: frontend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: screenPlan, id: sp-transactions }, { kind: dataModel.entity, id: entity-transaction }], patternRefs: [pat-tailwind-tokens], acceptanceCriteriaIds: [ac-tx-list] }
+      - { id: t-budgets-page, title: Budgets page, description: Budget management UI, filePaths: [src/pages/budgets.tsx], dependencies: [t-api-budgets], writeOrder: 7, type: frontend, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: screenPlan, id: sp-budgets }], patternRefs: [pat-tailwind-tokens], acceptanceCriteriaIds: [ac-budget-crud] }
+      - { id: t-tests, title: Integration tests, description: API and UI tests, filePaths: [src/__tests__/integration.test.ts], dependencies: [t-dashboard-page, t-transactions-page, t-budgets-page], writeOrder: 8, type: test, mode: NEW, estimatedTokenBudget: 12000, contextRefs: [{ kind: pattern, id: pat-errors-rfc7807 }], patternRefs: [], acceptanceCriteriaIds: [] }
     featureCoverage:
       feat-dashboard: [t-dashboard-page]
       feat-transactions: [t-transactions-page, t-api-transactions]
