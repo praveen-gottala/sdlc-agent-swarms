@@ -68,7 +68,8 @@ describe('interruptBefore integration', () => {
       { ...config, streamMode: 'updates' as const, recursionLimit: 50 },
     );
 
-    for await (const _update of stream) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- exhaust async iterator
+    for await (const _ of stream) {
       // consume all events until interrupt
     }
 
@@ -102,7 +103,8 @@ describe('interruptBefore integration', () => {
       { mode: 'greenfield', threadId },
       { ...config, streamMode: 'updates' as const, recursionLimit: 50 },
     );
-    for await (const _update of stream1) { /* consume */ }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- exhaust async iterator
+    for await (const _ of stream1) { /* consume */ }
 
     // Verify we're interrupted at escalationGate
     const state1 = await compiled.getState(config);
@@ -110,7 +112,8 @@ describe('interruptBefore integration', () => {
 
     // Resume from escalationGate — it's a no-op, routes to END
     const stream2 = await compiled.stream(null, { ...config, streamMode: 'updates' as const });
-    for await (const _update of stream2) { /* consume */ }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- exhaust async iterator
+    for await (const _ of stream2) { /* consume */ }
 
     const state2 = await compiled.getState(config);
     expect(state2.next?.length ?? 0).toBe(0);

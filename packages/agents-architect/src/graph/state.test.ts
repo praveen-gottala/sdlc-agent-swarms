@@ -1,14 +1,14 @@
 /**
- * Tests for ArchitectStateAnnotation — verifies 23-channel structure.
+ * Tests for ArchitectStateAnnotation — verifies 24-channel structure.
  */
 
 import { ArchitectStateAnnotation } from './state.js';
 
 describe('ArchitectStateAnnotation', () => {
-  it('has exactly 23 channels', () => {
+  it('has exactly 24 channels', () => {
     const spec = ArchitectStateAnnotation.spec;
     const channelNames = Object.keys(spec);
-    expect(channelNames).toHaveLength(23);
+    expect(channelNames).toHaveLength(24);
   });
 
   it('contains all expected channels', () => {
@@ -18,7 +18,7 @@ describe('ArchitectStateAnnotation', () => {
     const expected = [
       'enrichedRequirement', 'assumptionLedger', 'mode', 'existingFiles',
       'existingRepoSnapshot', 'retrievalContext',
-      'changeClassification', 'constraintSet', 'optionsBundle', 'architectureSpec',
+      'changeClassification', 'constraintSet', 'optionsBundle', 'architectureSpec', 'adrs',
       'dataModelSpec', 'apiChangeSets', 'componentCompositions', 'screenPlans', 'designSystemDiff',
       'taskPlan', 'criticReport', 'criticPassed', 'criticRetries',
       'lastFailedGate', 'gate2Decision', 'gate2Edits', 'threadId',

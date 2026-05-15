@@ -20,6 +20,7 @@ export {
   createChangeClassifier,
   createContextAssembler,
   createOptionsExplorer,
+  createArchitectureWriter,
   createCritic,
   gate2Approval,
   escalationGate,

@@ -28,6 +28,7 @@ import type { ArchitectDeps } from '../deps.js';
 import { createChangeClassifier } from './nodes/change-classifier.js';
 import { createContextAssembler } from './nodes/context-assembler.js';
 import { createOptionsExplorer } from './nodes/options-explorer.js';
+import { createArchitectureWriter } from './nodes/architecture-writer.js';
 import { createCritic } from './nodes/critic.js';
 import { gate2Approval } from './nodes/gate2-approval.js';
 import { escalationGate } from './nodes/escalation-gate.js';
@@ -68,21 +69,15 @@ function routeAfterGate2(state: ArchitectStateType): string {
 
 /**
  * Build the Architect StateGraph with typed channels and HITL interrupts.
- * Nodes 3 (architectureWriter), 4 (contractDesigner), 5 (taskPlanner)
- * are placeholder no-ops — implemented in Phases 4-6.
+ * Node 3 (architectureWriter) is implemented (Phase 4). Nodes 4–5 remain placeholders.
  */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function buildArchitectGraph(deps: ArchitectDeps) {
-  // Placeholder nodes for Phases 4-6 — implemented as identity functions
-  const architectureWriter = async (state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
-    debugLog('architectureWriter: ENTER (placeholder)');
-    return {};
-  };
-  const contractDesigner = async (state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
+  const architectureWriter = createArchitectureWriter(deps);
+  const contractDesigner = async (_state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
     debugLog('contractDesigner: ENTER (placeholder)');
     return {};
   };
-  const taskPlanner = async (state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
+  const taskPlanner = async (_state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
     debugLog('taskPlanner: ENTER (placeholder)');
     return {};
   };

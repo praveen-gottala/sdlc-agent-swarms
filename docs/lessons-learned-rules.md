@@ -26,6 +26,7 @@
 - [No Shortcuts — Ever](#no-shortcuts--ever) — RULE
 - [Pseudo-Screen Directories Must Be Filtered at Build Time](#pseudo-screen-directories-must-be-filtered-at-build-time) — RULE
 - [Plans Must Trace Data Flows and Verify Claims](#plans-must-trace-data-flows-and-verify-claims) — RULE
+- [Negative constraints in prompts (planner-level)](#negative-constraints-in-prompts-planner-level) — RULE
 - [Deferrals Must Land in a Tracking Artifact](#deferrals-must-land-in-a-tracking-artifact) — RULE
 - [Vision Evaluation Token Budget — Compact Context Over Raw JSON](#vision-evaluation-token-budget--compact-context-over-raw-json) — RULE
 - [Dashboard Design Spec Reload — Use the Bundle Endpoint](#dashboard-design-spec-reload--use-the-bundle-endpoint) — RULE
@@ -398,6 +399,17 @@ The design LLM receives this width as a hard constraint and lays out all content
 4. **Enumerate public API changes.** Any CLI flag added, removed, or made vestigial is a contract change needing explicit handling.
 5. **For each downstream consumer of changed code, verify compatibility.** If saying "special stages stay," list what they read/write and prove the new pipeline preserves those contracts.
 **How to apply:** Before every plan submission, run a mental (or actual) grep for each claim. If you can't point to the line of code that proves the claim, the claim is unverified and should be flagged, not asserted.
+
+---
+
+## Negative constraints in prompts (planner-level)
+
+**RULE** (2026-05-14)
+
+**Context:** Architect Node 3+ and other spine prompts that encode R6-style rubrics. Drift-check found plan references to a missing subsection; M3 Phase 4 ties negatives to R6 Q6.  
+**Rule:** Encode **negative** constraints sparingly at **project / planner** level: `constraintSet`, ADR text, pattern `forbids`, not long duplicated per-task lists inside every downstream worker prompt. Prefer **positive** pattern `rule` text. Cross-check R6 Q6 in `docs/research/architect-r2-r3-r6.md`.  
+**Why:** Duplicated negatives inflate tokens, fight positive instructions, and drift across tasks. Planner-level placement keeps one source of truth for “must not,” matching `docs/lessons-learned.md` narrative on planner-level negatives.  
+**How to apply:** Versioned prompts cite R6 Q6; Architect `architecture-writer.md` frontmatter lists this section. When adding a new spine prompt with prohibitions, grep for existing ADR/pattern homes before adding bullet lists to leaf nodes.
 
 ---
 

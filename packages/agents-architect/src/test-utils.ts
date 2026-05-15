@@ -49,6 +49,7 @@ export function makeState(overrides: Partial<ArchitectStateType> = {}): Architec
     constraintSet: null,
     optionsBundle: null,
     architectureSpec: null,
+    adrs: [],
     dataModelSpec: null,
     apiChangeSets: [],
     componentCompositions: [],

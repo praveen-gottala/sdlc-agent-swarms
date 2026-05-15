@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createArchitectureWriter (Node 3) CashPulse fixture snapshot: normalized architectureSpec output 1`] = `
+{
+  "adrTitles": [
+    "Adopt Drizzle for CashPulse persistence",
+  ],
+  "decisions": [
+    {
+      "adrId": "adr-orm-001",
+      "chosenAlternativeId": "alt-drizzle",
+      "gapId": "gap-orm",
+      "rationale": "Matches baseline data-access-drizzle-only and minimizes blast radius.",
+    },
+  ],
+  "patternIds": [
+    "api-error-rfc7807",
+    "auth-middleware-required",
+    "component-tailwind-tokens-only",
+    "data-access-drizzle-only",
+    "logging-structured-pino",
+    "state-server-only",
+    "validation-zod-at-boundary",
+  ],
+  "stackConfig": {
+    "backend": "node",
+    "database": "postgres",
+    "frontend": "react",
+    "styling": "tailwind",
+  },
+}
+`;

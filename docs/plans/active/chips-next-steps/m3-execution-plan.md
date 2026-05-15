@@ -1,6 +1,6 @@
 # M3: Architect Core — Execution Plan
 
-## Status: IN PROGRESS — Phase 4
+## Status: IN PROGRESS — Phase 5 next (Phase 4 COMPLETE 2026-05-14)
 
 ## Related Documents
 
@@ -14,7 +14,7 @@
 
 ## Overview
 
-Implement the Architect LangGraph stage: 7 nodes plus a mandatory HITL Gate 2 approval interrupt, all living in a new `packages/agents-architect/` package. Consumes the Clarifier's `EnrichedRequirement` and produces a `ContractBundle` ready for the M4 Implementer to pick up. Ships R2/R3/R6 schema additions, 5 new Critic gates (14 total) with `existingFiles`-aware gate 14, brownfield Change Classifier, gate→node retry routing matrix, full `ArchitectStateAnnotation` (23 channels), explicit `ArchitectDeps` interface, copy-then-redirect shared-module extraction, prompt rubric pointers per node, and migrated existing eval fixtures.
+Implement the Architect LangGraph stage: 7 nodes plus a mandatory HITL Gate 2 approval interrupt, all living in a new `packages/agents-architect/` package. Consumes the Clarifier's `EnrichedRequirement` and produces a `ContractBundle` ready for the M4 Implementer to pick up. Ships R2/R3/R6 schema additions, 5 new Critic gates (14 total) with `existingFiles`-aware gate 14, brownfield Change Classifier, gate→node retry routing matrix, full `ArchitectStateAnnotation` (**24 channels** — dedicated `adrs` channel mirrors root-level `ContractBundle.adrs`, separate from `ArchitectureSpec`), explicit `ArchitectDeps` interface, copy-then-redirect shared-module extraction, prompt rubric pointers per node, and migrated existing eval fixtures.
 
 ## Revision history
 
@@ -22,7 +22,7 @@ Implement the Architect LangGraph stage: 7 nodes plus a mandatory HITL Gate 2 ap
 
 1. **Package boundary fix.** Graph/nodes/run.ts/prompts move from `packages/core/src/architect/` to NEW `packages/agents-architect/`. Per `CLAUDE.md`, `core` depends on `@langchain/langgraph-checkpoint` only — NOT `@langchain/langgraph`. Schemas + critic stay in core (no langgraph deps). Mirrors `packages/agents-clarifier/`.
 2. **HITL Gate 2 mandatory.** Per [`docs/vision.md`](docs/vision.md) line 744, Gate 2 is a structural happy-path interrupt, not a retry-max fallback. Add `gate2Approval` no-op node + `interruptBefore: ['gate2Approval', 'escalationGate']`.
-3. **Explicit `ArchitectStateAnnotation`.** 23-channel table replaces high-level "input/output" wave (mirrors Clarifier's 16-channel state.ts).
+3. **Explicit `ArchitectStateAnnotation`.** 24-channel table replaces high-level "input/output" wave (mirrors Clarifier's 16-channel state.ts). The extra channel vs a naive "spec holds ADRs" layout is **`adrs`** at state root, matching `ContractBundle.adrs`.
 4. **Explicit `ArchitectDeps` interface.** Mirrors `ClarifierDeps` shape with Architect-specific additions.
 5. **Copy-then-redirect extraction** per parent plan [`execution-plan.md:793-794`](docs/plans/active/chips-next-steps/execution-plan.md). For token-validation: copy to core, agents-ux re-exports + `@deprecated`. For buildDesignSystemContext + assessCatalogAdoption: full extraction deferred (depends on agents-ux internals); agents-architect direct peer-imports for M3 (no circular because agents-architect ≠ core).
 6. **Migrate 3 existing eval fixtures.** After Phase 1 schema extension, `correct-cashpulse.yaml`, `missing-field.yaml`, `contradictory.yaml` need new TaskNode fields populated.
@@ -80,22 +80,23 @@ Mirrors [`packages/agents-clarifier/src/graph/state.ts`](packages/agents-clarifi
 | 7 | `changeClassification` | `ChangeClassification \| null` | last-write-wins | `null` | Node 0.5 |
 | 8 | `constraintSet` | `ConstraintSet \| null` | last-write-wins | `null` | Node 1 |
 | 9 | `optionsBundle` | `OptionsBundle \| null` | last-write-wins | `null` | Node 2 |
-| 10 | `architectureSpec` | `ArchitectureSpec \| null` | last-write-wins | `null` | Node 3 (incl. patterns + ADRs) |
-| 11 | `dataModelSpec` | `DataModelSpec \| null` | last-write-wins | `null` | Node 4.1 |
-| 12 | `apiChangeSets` | `readonly ApiChangeSet[]` | last-write-wins | `[]` | Node 4.2 |
-| 13 | `componentCompositions` | `readonly ComponentComposition[]` | last-write-wins | `[]` | Node 4.3 |
-| 14 | `screenPlans` | `readonly ScreenPlan[]` | last-write-wins | `[]` | Node 4.4 |
-| 15 | `designSystemDiff` | `DesignSystemDiff \| null` | last-write-wins | `null` | Node 4.5 |
-| 16 | `taskPlan` | `TaskPlan \| null` | last-write-wins | `null` | Node 5 |
-| 17 | `criticReport` | `CriticReport \| null` | last-write-wins | `null` | Node 6 |
-| 18 | `criticPassed` | `boolean` | last-write-wins | `false` | Node 6 |
-| 19 | `criticRetries` | `number` | last-write-wins | `0` | Node 6 |
-| 20 | `lastFailedGate` | `string \| null` | last-write-wins | `null` | routeAfterCritic |
-| 21 | `gate2Decision` | `'approved' \| 'rejected' \| null` | last-write-wins | `null` | gate2Approval interrupt |
-| 22 | `gate2Edits` | `Partial<ContractBundle> \| null` | last-write-wins | `null` | gate2Approval interrupt |
-| 23 | `threadId` | `string` | last-write-wins | `''` | input |
+| 10 | `architectureSpec` | `ArchitectureSpec \| null` | last-write-wins | `null` | Node 3 (decisions, `stackConfig`, patterns; not ADR bodies) |
+| 11 | `adrs` | `readonly ADR[]` | last-write-wins | `[]` | Node 3 |
+| 12 | `dataModelSpec` | `DataModelSpec \| null` | last-write-wins | `null` | Node 4.1 |
+| 13 | `apiChangeSets` | `readonly ApiChangeSet[]` | last-write-wins | `[]` | Node 4.2 |
+| 14 | `componentCompositions` | `readonly ComponentComposition[]` | last-write-wins | `[]` | Node 4.3 |
+| 15 | `screenPlans` | `readonly ScreenPlan[]` | last-write-wins | `[]` | Node 4.4 |
+| 16 | `designSystemDiff` | `DesignSystemDiff \| null` | last-write-wins | `null` | Node 4.5 |
+| 17 | `taskPlan` | `TaskPlan \| null` | last-write-wins | `null` | Node 5 |
+| 18 | `criticReport` | `CriticReport \| null` | last-write-wins | `null` | Node 6 |
+| 19 | `criticPassed` | `boolean` | last-write-wins | `false` | Node 6 |
+| 20 | `criticRetries` | `number` | last-write-wins | `0` | Node 6 |
+| 21 | `lastFailedGate` | `string \| null` | last-write-wins | `null` | routeAfterCritic |
+| 22 | `gate2Decision` | `'approved' \| 'rejected' \| null` | last-write-wins | `null` | gate2Approval interrupt |
+| 23 | `gate2Edits` | `Partial<ContractBundle> \| null` | last-write-wins | `null` | gate2Approval interrupt |
+| 24 | `threadId` | `string` | last-write-wins | `''` | input |
 
-23 channels total. Architect doesn't accumulate human input across rounds the way Clarifier does, so the `humanResponses`-style append reducer is intentionally omitted; Gate 2 either approves or rejects with optional edits.
+24 channels total. Architect doesn't accumulate human input across rounds the way Clarifier does, so the `humanResponses`-style append reducer is intentionally omitted; Gate 2 either approves or rejects with optional edits.
 
 ## ArchitectDeps (Phase 3)
 
@@ -223,7 +224,7 @@ Per parent plan [`execution-plan.md:793-794`](docs/plans/active/chips-next-steps
 
 - `deps.ts` — `ArchitectDeps` interface (table above)
 - `types.ts` — local types only (`RepoSnapshot`, `RetryTarget`). `ChangeClassification` already lives in [`packages/core/src/types/cross-boundary-artifacts.schemas.ts:167`](packages/core/src/types/cross-boundary-artifacts.schemas.ts) and is wired into `ContractBundleSchema.changeClassification` ([`architect.schemas.ts:240`](packages/core/src/types/architect.schemas.ts)) — import from core, do not redeclare.
-- `graph/state.ts` — `ArchitectStateAnnotation` (23-channel table above)
+- `graph/state.ts` — `ArchitectStateAnnotation` (24-channel table above)
 - `graph/nodes/change-classifier.ts` — Node 0.5 (brownfield, 1 Sonnet call → ChangeClassification + populates `existingFiles` channel)
 - `graph/nodes/context-assembler.ts` — Node 1 (greenfield deterministic; brownfield 1 Sonnet call capped 20K per R2 §7.6)
 - `graph/nodes/options-explorer.ts` — Node 2 (3-6 parallel Sonnet calls)
@@ -238,15 +239,15 @@ Unit tests per node factory using mock `ArchitectDeps` pattern (mirrors [`packag
 
 - **Verification gate:** typecheck, `nx test agents-architect --testPathPattern="graph"`, integration test that compiles graph + asserts `interruptBefore` fires for both gate2Approval and escalationGate, `/review-plan-impl --phase 3`
 
-### Phase 4 — Node 3 (Architecture & ADR Writer + ImplementationPatterns)
+### Phase 4 — Node 3 (Architecture & ADR Writer + ImplementationPatterns) (COMPLETE 2026-05-14)
 
 Pattern Designer folded in here. **Prompt rubric pointers (encode inline in prompt + cite in frontmatter):** R6 §5 (architecture decision rubric), R6 §7.1 (pattern emission criteria), `docs/lessons-learned-rules.md` § *Negative constraints in prompts*.
 
-- `graph/nodes/architecture-writer.ts` — 1 Opus call, structured output `{ decisions[], adrs[], implementationPatterns[] }`
-- `prompts/architecture-writer.md` (version 1) — encode R6 §5 + §7.1 rubrics inline; reference baseline pattern catalog as concrete examples; explicit "every emitted pattern must be derivable from a Decision in this same response" rule
+- `graph/nodes/architecture-writer.ts` — 1 Opus call, structured output `{ decisions[], adrs[], implementationPatterns[], stackConfig }`; state updates `{ architectureSpec, adrs }`
+- `prompts/architecture-writer.md` (version 2) — encode R6 Q5/Q6 + §7.1 rubrics inline; reference baseline pattern catalog as concrete examples; explicit "every emitted pattern must be derivable from a Decision in this same response" rule
 - `packages/agents-architect/src/patterns/baseline.ts` — seed catalog (5-8 patterns: `data-access-drizzle-only`, `api-error-rfc7807`, `component-tailwind-tokens-only`, `state-server-only`, `validation-zod-at-boundary`, etc.) merged with LLM-derived patterns at node exit
-- Unit tests: greenfield happy path, brownfield with ChangeClassification, prompt regression test asserting patterns reference Node 2 OptionsBundle decisions
-- **Verification gate:** `nx test agents-architect --testPathPattern="architecture-writer"`, golden-output snapshot test on CashPulse fixture, `/review-plan-impl --phase 4`
+- Unit tests: greenfield happy path, brownfield with ChangeClassification, prompt regression test asserting patterns reference Node 2 OptionsBundle decisions, failure-path tests (provider error, invalid JSON, Zod reject), Gate 2 edit slice in user message
+- **Verification gate:** `nx test agents-architect --testPathPattern="architecture-writer"`, golden-output snapshot test on CashPulse fixture, `/review-plan-impl --phase 4` (receipt: `artifacts/plan-impl-review/20260514T180000-m3-phase4/`)
 
 ### Phase 5 — Node 4 (Contract Designer + context slicer)
 
@@ -339,7 +340,7 @@ Files:
 | `packages/eval/src/scenarios/architect/{correct-cashpulse,missing-field,contradictory}.yaml` | Migrated existing fixtures | 1 |
 | `packages/agents-architect/{package.json,project.json,tsconfig*.json,jest.config.ts}` | New package scaffold | 3 |
 | `packages/agents-architect/src/deps.ts` | `ArchitectDeps` interface | 3 |
-| `packages/agents-architect/src/graph/state.ts` | `ArchitectStateAnnotation` (23 channels) | 3 |
+| `packages/agents-architect/src/graph/state.ts` | `ArchitectStateAnnotation` (24 channels incl. `adrs`) | 3–4 |
 | `packages/agents-architect/src/graph/nodes/change-classifier.ts` | Node 0.5 | 3 |
 | `packages/agents-architect/src/graph/nodes/context-assembler.ts` | Node 1 | 3 |
 | `packages/agents-architect/src/graph/nodes/options-explorer.ts` | Node 2 | 3 |
@@ -369,7 +370,7 @@ Files:
 ## Reference patterns (read before implementing)
 
 - [`packages/agents-clarifier/src/graph/clarifier-graph.ts`](packages/agents-clarifier/src/graph/clarifier-graph.ts) — graph assembly + `interruptBefore` pattern (line 141)
-- [`packages/agents-clarifier/src/graph/state.ts`](packages/agents-clarifier/src/graph/state.ts) — Annotation channel pattern (16 channels — Architect adds ~7 more)
+- [`packages/agents-clarifier/src/graph/state.ts`](packages/agents-clarifier/src/graph/state.ts) — Annotation channel pattern (16 channels — Architect state extends with 8 additional channels for bundle assembly + HITL)
 - [`packages/agents-clarifier/src/deps.ts`](packages/agents-clarifier/src/deps.ts) — dependency injection
 - [`packages/agents-clarifier/src/nodes/prd-analyzer.ts`](packages/agents-clarifier/src/nodes/prd-analyzer.ts) — node factory + structured output
 - [`packages/agents-ux/src/ux-design/design-system-context.ts`](packages/agents-ux/src/ux-design/design-system-context.ts) — design system context builder (used by Phase 5 specialist 5 via peer import)
@@ -382,7 +383,7 @@ Files:
 - [ ] `packages/agents-architect/` builds, tests, typechecks, lints clean
 - [ ] All 7 nodes + gate2Approval + escalationGate implemented with versioned prompts (carrying rubric pointers in frontmatter) and unit tests
 - [ ] `interruptBefore: ['gate2Approval', 'escalationGate']` verified to fire by integration test
-- [ ] `ArchitectStateAnnotation` channel count = 23 and matches the table above
+- [ ] `ArchitectStateAnnotation` channel count = 24 and matches the table above (incl. `adrs`)
 - [ ] `ArchitectDeps` interface matches the spec above
 - [ ] 14 Critic gates total (9 existing + 5 new); gate 14 honors `existingFiles?` semantics (skip if undefined, strict check if defined) — covered by greenfield-skip + brownfield-strict tests
 - [ ] All 4 eval scenarios pass (3 migrated + add-budgeting-brownfield)

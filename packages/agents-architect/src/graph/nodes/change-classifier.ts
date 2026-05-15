@@ -14,7 +14,7 @@ import type { ArchitectDeps, ArchitectNodeFn } from '../../deps.js';
 import type { ArchitectStateType } from '../state.js';
 
 /** Create the Change Classifier node (Node 0.5). */
-export function createChangeClassifier(deps: ArchitectDeps): ArchitectNodeFn {
+export function createChangeClassifier(_deps: ArchitectDeps): ArchitectNodeFn {
   return async (state: ArchitectStateType): Promise<Partial<ArchitectStateType>> => {
     debugLog('changeClassifier: ENTER');
 
