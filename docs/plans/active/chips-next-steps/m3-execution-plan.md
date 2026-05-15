@@ -1,6 +1,6 @@
 # M3: Architect Core — Execution Plan
 
-## Status: IN PROGRESS — Phase 3
+## Status: IN PROGRESS — Phase 4
 
 ## Related Documents
 
@@ -208,7 +208,7 @@ Per parent plan [`execution-plan.md:793-794`](docs/plans/active/chips-next-steps
 - **assessCatalogAdoption (extraction DEFERRED):** same treatment as buildDesignSystemContext.
 - **Verification gate:** typecheck + `nx run-many -t test --projects=core,agents-ux` zero failures, no new circular import warnings, `/review-plan-impl --phase 2`
 
-### Phase 3 — Scaffold agents-architect package + skeleton
+### Phase 3 — Scaffold agents-architect package + skeleton (COMPLETE)
 
 **Package scaffolding** (mirror `packages/agents-clarifier/`):
 
