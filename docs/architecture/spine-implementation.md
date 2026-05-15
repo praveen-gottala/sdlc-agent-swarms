@@ -144,78 +144,119 @@ Source: `packages/core/src/types/cross-boundary-artifacts.schemas.ts:121-161`.
 
 ## Stage 2: Architect
 
-!!! warning "Status: Research Complete, Not Yet Implemented"
+!!! success "Status: Built (M3)"
 
-    Two research documents totaling 863 lines ground the design. The research
-    recommends building Node 6 (Critic) first, then Node 4 (Contract Designer).
-    See [Architect Research](../research/architect-design.md).
+    `packages/agents-architect/` --- 7-node LangGraph StateGraph with Gate 2
+    HITL approval, 24-channel typed state, 14 deterministic Critic gates,
+    per-gate retry routing, brownfield support. Schemas + Critic in
+    `packages/core/`. See [ADR-055](../adrs/ADR-055-architect-node4-shape.md),
+    [ADR-056](../adrs/ADR-056-architect-package-boundary.md).
 
-The Architect consumes the Clarifier's output and produces the full contract bundle the Implementer needs before writing any code. This is "Approach B" (thick Architect) --- the research recommends it "unequivocally" because the Implementer's sequential write order requires all cross-cutting decisions upfront (`architect-design.md` Section 3).
+The Architect consumes the Clarifier's `EnrichedRequirement` and produces a `ContractBundle` — the full contract the Implementer needs before writing any code. This is "Approach B" (thick Architect) — the Implementer's sequential write order requires all cross-cutting decisions upfront (`architect-design.md` Section 3).
 
-### Three Codebase-Grounded Adjustments
+### Architecture
 
-The theoretical research (`architect-design.md`) was validated against the codebase (`architect-codebase-grounded-design.md`). Three structural adjustments emerged:
+7-node sequential pipeline with mandatory Gate 2 HITL approval and an escalation gate for retry exhaustion. Per [ADR-056](../adrs/ADR-056-architect-package-boundary.md), schemas and the Critic live in `packages/core/` (no LangGraph dependency); graph, nodes, and runtime live in `packages/agents-architect/`.
 
-**Adjustment 1: Clarifier output is richer than assumed.** The research assumed "enriched PRD + assumption ledger" as the Clarifier's output. The actual output includes structured `prd.dataEntities[]` with entity names, typed fields, required flags, and relationships, plus `prd.screens[]` with screen names, descriptions, and screen types. The Architect's Contract Designer refines these into concrete schemas --- it does not discover entities from scratch. Source: `architect-codebase-grounded-design.md` Part 1.1.
+```mermaid
+flowchart LR
+    start((__start__)) --> brownfieldCheck{brownfield?}
+    brownfieldCheck -->|yes| n05["Node 0.5<br/>Change Classifier"]
+    brownfieldCheck -->|no| n1
+    n05 --> n1["Node 1<br/>Context Assembler"]
+    n1 --> n2["Node 2<br/>Options Explorer<br/>(3-6 parallel)"]
+    n2 --> n3["Node 3<br/>Architecture &amp; ADR Writer<br/>(+ ImplementationPatterns)"]
+    n3 --> n4["Node 4<br/>Contract Designer<br/>(5 sequential specialists)"]
+    n4 --> n5["Node 5<br/>Task Planner<br/>(+ sizing + dry-Critic)"]
+    n5 --> n6["Node 6<br/>Critic<br/>(14 gates)"]
+    n6 --> retryGate{passed?}
+    retryGate -->|yes| g2["Gate 2 Approval<br/>(interruptBefore)"]
+    g2 -->|approved| endNode((__end__))
+    g2 -->|rejected with edits| n3
+    retryGate -->|no, retryable| routeBack["routeAfterCritic()<br/>per-gate target"]
+    routeBack --> n3
+    routeBack --> n4
+    routeBack --> n5
+    retryGate -->|max retries| escalation["Escalation Gate<br/>(interruptBefore)"]
+    escalation --> endNode
 
-**Adjustment 2: No Classifier stage exists.** The research assumes a "Classifier" that produces `ChangeClassification` before the Architect. The schema exists (`cross-boundary-artifacts.schemas.ts:167-174`) but has no producer. Recommended: a lightweight Node 0.5 inside the Architect graph. Why not the Clarifier: it would couple the Clarifier to brownfield concerns architecturally owned by the Architect. Why not a standalone stage: adds ceremony for a single LLM call. Source: `architect-codebase-grounded-design.md` Part 1.3.
+    style n05 fill:#95a5a6,color:#fff
+    style n1 fill:#3498db,color:#fff
+    style n2 fill:#3498db,color:#fff
+    style n3 fill:#9b59b6,color:#fff
+    style n4 fill:#9b59b6,color:#fff
+    style n5 fill:#9b59b6,color:#fff
+    style n6 fill:#e67e22,color:#fff
+    style g2 fill:#e74c3c,color:#fff
+```
 
-**Adjustment 3: Design pipeline overlap.** The design pipeline in `packages/agents-ux/` has research and planning stages already doing Architect-level work --- component composition, token validation, screen specs. These should be extracted into shared modules that both the Architect's Contract Designer and the design pipeline's visual stages can invoke. Source: `architect-codebase-grounded-design.md` Part 1.4.
+> Gray = conditional (brownfield only) · Blue = parallel readers · Purple = single-threaded writers · Orange = critic · Red = HITL gate
+
+Gate 2 Approval is a no-op pass-through node; the `interruptBefore` is the gate. Vision Layer 10 mandates Gate 2 on the happy path — not as a retry-max fallback. Pattern Designer is folded into Node 3 (preserves reasoning continuity: "use Drizzle" → `data-access-drizzle-only` pattern in the same call).
+
+### State (24 Channels)
+
+`ArchitectStateAnnotation` in `packages/agents-architect/src/graph/state.ts` defines 24 typed channels with explicit reducers and defaults. Key channels:
+
+| Channel | Type | Producer |
+|---------|------|----------|
+| `enrichedRequirement` | `EnrichedRequirement \| null` | input |
+| `mode` | `'greenfield' \| 'brownfield'` | input |
+| `existingFiles` | `ReadonlySet<string> \| null` | input or Node 0.5 |
+| `changeClassification` | `ChangeClassification \| null` | Node 0.5 |
+| `constraintSet` | `ConstraintSet \| null` | Node 1 |
+| `optionsBundle` | `OptionsBundle \| null` | Node 2 |
+| `architectureSpec` | `ArchitectureSpec \| null` | Node 3 |
+| `adrs` | `readonly ADR[]` | Node 3 |
+| `dataModelSpec`, `apiChangeSets`, `componentCompositions`, `screenPlans`, `designSystemDiff` | various | Node 4 specialists |
+| `taskPlan` | `TaskPlan \| null` | Node 5 |
+| `criticReport` / `criticPassed` / `criticRetries` | report + flags | Node 6 |
+| `gate2Decision` / `gate2Edits` | approval state | Gate 2 interrupt |
 
 ### The Seven Nodes
 
-```mermaid
-graph TD
-    N0["Node 0.5: Change Classifier<br/>(brownfield only)"]
-    N1["Node 1: Context Assembler<br/>(parallel reads)"]
-    N2["Node 2: Options Explorer<br/>(parallel reads)"]
-    N3["Node 3: Architecture & ADR Writer<br/>(single-threaded)"]
-    N4["Node 4: Contract Designer<br/>(single-threaded, thickest)"]
-    N5["Node 5: Task Planner<br/>(single-threaded)"]
-    N6["Node 6: Architect Critic<br/>(fresh context)"]
+**Node 0.5 — Change Classifier** (brownfield only). Single Sonnet call producing `ChangeClassification` (5 scope axes: UI, component, designSystem, API, dataModel; plus blast radius). Populates `existingFiles` channel. Greenfield: skipped, all axes implicitly `true`.
 
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
+**Node 1 — Context & Constraints Assembler.** Greenfield: deterministic (no LLM call). Brownfield: single Sonnet call capped at 20K tokens per R2 §7.6. Fuses evidence into `ConstraintSet`.
 
-    N6 -->|blocking findings| N3
-    N6 -->|green| OUT[ContractBundle to Implementer]
+**Node 2 — Options Explorer.** 3–6 parallel Sonnet calls, one per open decision axis. Each returns a structured `OptionMemo`. No commitments — evidence only.
 
-    style N0 fill:#95a5a6,color:#fff
-    style N1 fill:#3498db,color:#fff
-    style N2 fill:#3498db,color:#fff
-    style N3 fill:#9b59b6,color:#fff
-    style N4 fill:#9b59b6,color:#fff
-    style N5 fill:#9b59b6,color:#fff
-    style N6 fill:#e67e22,color:#fff
-```
+**Node 3 — Architecture & ADR Writer** (includes Implementation Patterns). Single Opus call producing `{ decisions[], adrs[], implementationPatterns[], stackConfig }`. Brownfield: `defaultToExistingPattern = true`, deviation requires explicit ADR. Seed pattern catalog (`packages/agents-architect/src/patterns/baseline.ts`) merged with LLM-derived patterns.
 
-> Gray = conditional (brownfield only) · Blue = parallel readers · Purple = single-threaded writers · Orange = critic
+**Node 4 — Contract Designer.** Five sequential specialists ([ADR-055](../adrs/ADR-055-architect-node4-shape.md)), each making one Sonnet call. Sequential order mirrors the Implementer's write order one level up:
 
-**Node 0.5 --- Change Classifier** (brownfield only). Single LLM call producing `ChangeClassification` (5 scope axes: UI, component, designSystem, API, dataModel; plus blast radius). Greenfield: skipped, all axes implicitly `true`.
+1. **Data model** — column-level `DataModelSpec` from `prd.dataEntities[]`
+2. **API contracts** — OpenAPI 3.1 `ApiChangeSet[]`, reads data model for field-shape consistency
+3. **Component composition** — `ComponentComposition[]` with prop signatures
+4. **Screen specs** — `ScreenPlan[]` with data bindings referencing entity IDs
+5. **Design system diff** — `DesignSystemDiff` via `buildDesignSystemContext()` (peer import from agents-ux)
 
-**Node 1 --- Context & Constraints Assembler.** Anthropic-style parallel reads --- safe because read-only. Spawns N subagents: repo-map digest (brownfield), ADR library retriever, steering-file loader, reference-pattern matcher, design system context builder (reuses `buildDesignSystemContext()` from `packages/agents-ux/src/ux-design/design-system-context.ts`). Deterministic merger fuses memos into `ConstraintSet`. Source: `architect-design.md` Node 1, validated in `architect-codebase-grounded-design.md` Part 1.6.
+Brownfield: `ChangeClassification.scopeAxes` controls which specialists run. Context scoping via `sliceContractBundle()` utility.
 
-**Node 2 --- Options Explorer.** Parallel reads per open decision axis. Each subagent researches one axis (e.g., "extend existing service vs. carve new module"), returns structured `OptionMemo`. No commitments --- evidence only. Source: `architect-design.md` Node 2.
+**Node 5 — Task Planner.** Single Opus call producing `TaskPlan` DAG. Every task carries `mode`, `estimatedTokenBudget` (via `estimateTaskTokenBudget()` sizing heuristic), `contextRefs[]`, `patternRefs[]`, `acceptanceCriteriaIds[]`. Dry-run Critic on gates 10–14 with single retry before final Node 6 invocation.
 
-**Node 3 --- Architecture & ADR Writer.** Single-threaded LLM writer (`claude-opus-4-6`). Writes `ArchitectureSpec` first, then ADRs. Brownfield: `defaultToExistingPattern = true`, deviation requires explicit ADR. Every decision updates the `AssumptionLedger`. Source: `architect-design.md` Node 3.
+**Node 6 — Architect Critic.** Wraps `validateContractBundle()` from `packages/core/src/architect/critic.ts`. 14 deterministic gates (9 original + 5 added in M3): schema validation, DAG acyclicity, single-writer, PRD-criterion-coverage, entity-reference-integrity, gap-resolution, openapi-lint, migration-sql-parses, adr-completeness, patternRef-resolution, contextRef-resolution, acceptanceCriteria-coverage, tokenBudget-feasibility, mode-consistency. Gate 14 (mode-consistency) honors `existingFiles` — skips when undefined (greenfield), enforces strict check when defined (brownfield).
 
-**Node 4 --- Contract Designer.** The thickest node. Sequential specialist invocation mirroring the Implementer's write order, one stage earlier:
+### Retry Routing Matrix
 
-1. **Data model** --- refines `prd.dataEntities[]` into concrete column types, indexes, constraints, migration plan. Only if `changeClassification.scopeAxes.dataModel === true` (brownfield).
-2. **API contracts** --- OpenAPI 3.1 fragments. Reads data model (just written) for field-shape consistency. Only if `scopeAxes.api === true`.
-3. **Component composition** --- reuses `ComponentTreeNode` building logic from `packages/agents-ux/src/ux-planning/`. Only if `scopeAxes.component === true`.
-4. **Screen specs** --- uses existing `ScreenPlan` schema. Reuses constraint analysis from `packages/agents-ux/src/ux-research/`. Only if `scopeAxes.ui === true`.
-5. **Design system diff** --- reuses `token-validation.ts` from `packages/agents-ux/src/ux-planning/`. Only if `scopeAxes.designSystem === true`.
+`routeAfterCritic()` in `packages/agents-architect/src/graph/retry-routing.ts` maps each failed gate to its retry target:
 
-Research basis for sequencing: "A screen spec written without the API contract settled will commit to an implicit data shape the API contract may contradict" (`architect-design.md` Section 4). This is why per-scope branches collapse from parallel spine nodes to sequential specialists inside one writer.
+- Gates 1–4, 10–13 → re-run Node 5 (Task Planner)
+- Gates 5, 8 → re-run Node 4 data-model specialist + downstream
+- Gates 6, 9 → re-run Node 3 (Architecture Writer)
+- Gate 7 → re-run Node 4 API specialist
+- Gate 14 → escalation gate (humans resolve invented file paths)
+- Max 1 retry per gate before escalation
 
-**Node 5 --- Task Planner.** Decomposes into `TaskPlan` DAG. Each task declares file paths it will write (single-writer rule enforceable downstream). Deterministic validators: PRD criterion coverage, DAG acyclicity, no two tasks write the same file. Source: `architect-design.md` Node 5.
+### Greenfield vs. Brownfield
 
-**Node 6 --- Architect Critic.** Fresh context --- loads outputs but NOT reasoning traces. Deterministic gates first (OpenAPI lints, migration SQL parses, ADR completeness, DAG acyclicity, PRD criterion coverage, single-writer check). LLM review second (contradictions, token gaps, assumption violations). Reuses `assess-catalog-adoption.ts` from `packages/agents-ux/`. Source: `architect-design.md` Node 6.
+| Parameter | Greenfield | Brownfield |
+|-----------|-----------|------------|
+| Node 0.5 | Skipped (all axes `true`) | Runs, produces `ChangeClassification` + `existingFiles` |
+| Node 1 | Deterministic (no LLM call) | Single Sonnet call with repo context |
+| Node 3 | Every pick gets an ADR | Default to existing patterns; deviation requires ADR |
+| Node 4 | All 5 specialists run | Only specialists for touched scope axes |
+| Gate 14 | Skipped (`existingFiles` undefined) | Enforces mode-consistency against real files |
 
 ### Greenfield vs. Brownfield
 
@@ -415,25 +456,25 @@ Every artifact that crosses a stage boundary has a Zod schema in `packages/core/
 
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| `ArchitectureSpec` | System overview, components, sequence diagrams | Needs creation |
-| `TaskPlan` | Implementation DAG with per-task file paths and write order | Needs creation |
-| `ContractBundle` | Full Architect output bundle | Needs creation |
-| `ConstraintSet` | Fused constraints from evidence streams | Needs creation |
-| `OptionsBundle` | Option memos per open decision axis | Needs creation |
-| `ArchitectCriticReport` | Triage of findings, gate status | Needs creation |
-| `ScreenPlan` | Screen component membership, data bindings, navigation | Exists, unused |
-| `ChangeClassification` | 5 scope axes + blast radius | Exists, no producer |
+| `ArchitectureSpec` | System overview, decisions, stack config, implementation patterns | **Exists, used** (M3) |
+| `TaskPlan` | Implementation DAG with per-task file paths, budgets, context refs | **Exists, used** (M3) |
+| `ContractBundle` | Full Architect output bundle | **Exists, used** (M3) |
+| `ConstraintSet` | Fused constraints from evidence streams | **Exists, used** (M3) |
+| `OptionsBundle` | Option memos per open decision axis | **Exists, used** (M3) |
+| `CriticReport` | 14-gate validation results | **Exists, used** (M3) |
+| `ScreenPlan` | Screen component membership, data bindings, navigation | **Exists, used** (M3) |
+| `ChangeClassification` | 5 scope axes + blast radius | **Exists, used** (M3 Node 0.5) |
 
-Source: `architect-codebase-grounded-design.md` Part 1.5.
+Source: `architect-codebase-grounded-design.md` Part 1.5. All schemas in `packages/core/src/types/architect.schemas.ts`.
 
 ### Implementer -> Reviewer
 
 | Contract | Purpose | Status |
 |----------|---------|--------|
 | `Diff` | Git diff of all changes | Exists |
-| `ArchitectureSpec` | Reviewer's reference (from Architect) | Needs creation |
+| `ArchitectureSpec` | Reviewer's reference (from Architect) | **Exists** (M3) |
 | `AssumptionLedger` | For Pass 3 assumption validation | Exists |
-| `TaskPlan` | Which tasks were executed | Needs creation |
+| `TaskPlan` | Which tasks were executed | **Exists** (M3) |
 
 ---
 
@@ -460,7 +501,7 @@ graph LR
 | Stage | Ledger Action | Implementation Status |
 |-------|--------------|----------------------|
 | Clarifier | Creates entries for unresolved gaps after maxRounds; marks resolved when human answers | **Built** (`story-writer.ts`) |
-| Architect | Nodes 3-4 add entries for every architecture and contract decision; Critic (Node 6) checks for internal contradictions | Not yet implemented |
+| Architect | Nodes 3-4 add entries for every architecture and contract decision; Critic (Node 6) checks for internal contradictions | **Built** (M3, `packages/agents-architect`) |
 | Implementer | Uses `report-assumption-violation` tool to flag conflicts with recorded assumptions | Not yet implemented |
 | Reviewer | Pass 3 validates diff against ledger; flags contradictions as blocking findings | Not yet implemented |
 
@@ -476,7 +517,7 @@ Three structural checkpoints positioned on the spine, implemented as LangGraph `
 |------|----------|----------|-----------|--------|
 | Gate 1 | After Clarifier `questionPrioritizer` | Human answers batched questions | `interruptBefore: ['storyWriter']` | **Built** |
 | Gate 1.5 | After Clarifier `critic` (max rounds) | Accept / restart / abandon | `interruptBefore: ['escalationGate']` | **Built** |
-| Gate 2 | After Architect Node 6 (Critic green) | Human reviews architecture, contracts, task plan | LangGraph interrupt | Not yet implemented |
+| Gate 2 | After Architect Node 6 (Critic green) | Human reviews architecture, contracts, task plan | `interruptBefore: ['gate2Approval', 'escalationGate']` | **Machinery built** (M3); dashboard UI deferred ([backlog](../plans/backlog/gate2-dashboard-ui.md)) |
 | Gate 3 | After Reviewer Pass 4 (triage) | Human reviews PR on GitHub | Git host integration | Not yet implemented |
 
 On interrupt, full graph state serializes to Postgres checkpointer. Dashboard polls for pending approvals. On decision, graph resumes from interrupt point.
@@ -508,7 +549,7 @@ Source: `vision.md` Layer 8:642-644.
 | Stage | Status | Package | Tests | Key Implementation Decision |
 |-------|--------|---------|-------|-----------------------------|
 | Clarifier | **Built** | `packages/agents-clarifier` | 114+ | 9-node LangGraph StateGraph, dual modes, HITL |
-| Architect | **Research complete** | Not yet created | --- | 7-node thick Architect (Approach B). Build Node 6 first, then Node 4. |
+| Architect | **Built** (M3) | `packages/agents-architect` | 28+ | 7-node LangGraph StateGraph, 24 channels, 14 Critic gates, Gate 2 HITL, brownfield support. [ADR-055](../adrs/ADR-055-architect-node4-shape.md), [ADR-056](../adrs/ADR-056-architect-package-boundary.md) |
 | Implementer | **Specified** | Not yet created | --- | Single-threaded tool loop, sequential write order |
 | Reviewer | **Specified** | Not yet created | --- | Fresh context, 4-pass, bounded retry |
 | Design pipeline | **Built** (as specialist) | `packages/agents-ux` | Yes | 4-stage pipeline, redistributes to Architect + Implementer in spine mode |
@@ -534,7 +575,7 @@ These are not yet resolved in the research or vision document. Each is flagged w
 
 7. **Reviewer model.** `claude-sonnet-4-6` for POC, possibly `claude-opus-4-6` for production. The 2025 DORA report and 2026 practitioner data say review cost dominates --- this may warrant Opus. Source: `planning-methodology-counter-analysis.md`.
 
-8. **Architect 7-node status.** The research recommends "Stage 1 --- Adopt Approach B and freeze the six-node Architect structure" (`architect-design.md` Recommendations). But `vision.md` Layer 3 only locks the 4-stage spine, not the internal node structure. Whether to promote this to a locked decision via a vision.md update is pending.
+8. ~~**Architect 7-node status.**~~ **Resolved (M3).** The 7-node structure is implemented in `packages/agents-architect/` with [ADR-055](../adrs/ADR-055-architect-node4-shape.md) documenting the Node 4 shape choice and [ADR-056](../adrs/ADR-056-architect-package-boundary.md) documenting the package boundary. The internal node structure is not promoted to a vision.md locked decision — it remains an implementation detail that can evolve (e.g., subgraph-per-specialist migration per ADR-055 trigger).
 
 ---
 
@@ -556,6 +597,8 @@ These are not yet resolved in the research or vision document. Each is flagged w
 - [The Spine Pattern](spine-pattern.md) --- universal principles with 24 citations
 - [Vision](../vision.md) --- 15-layer architectural authority
 - [Agent Taxonomy](../concepts/agent-taxonomy.md) --- spine stages and specialist tools
+- [Architect Pipeline](../concepts/architect-pipeline.md) --- seven-node pipeline detail, data flow, research grounding
+- [Clarifier Pipeline](../concepts/clarifier-pipeline.md) --- nine-node pipeline detail, routing, gap detection
 - [Coordination & State](../concepts/coordination-and-state.md) --- typed channels and persistence
 - [Design Pipeline](../concepts/design-pipeline.md) --- standalone pipeline concept, 4-stage mechanics, renderer separation
 - [State Persistence](../concepts/state-persistence.md) --- three-tier persistence (YAML, Postgres checkpointer, in-memory)

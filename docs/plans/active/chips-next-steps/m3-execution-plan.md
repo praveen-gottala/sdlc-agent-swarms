@@ -1,6 +1,6 @@
 # M3: Architect Core — Execution Plan
 
-## Status: IN PROGRESS — Phase 6 next (Phase 5 COMPLETE 2026-05-15)
+## Status: COMPLETE (2026-05-15) — All 8 phases done
 
 ## Related Documents
 
@@ -38,7 +38,7 @@ Implement the Architect LangGraph stage: 7 nodes plus a mandatory HITL Gate 2 ap
 
 ## Architectural shape
 
-7-node sequential LangGraph pipeline + Gate 2 approval + escalation gate. Lives in `packages/agents-architect/`. Hybrid Option A: linear specialists in Node 4 ship M3; Option B (subgraph-per-specialist) deferred per ADR-NNN.
+7-node sequential LangGraph pipeline + Gate 2 approval + escalation gate. Lives in `packages/agents-architect/`. Hybrid Option A: linear specialists in Node 4 ship M3; Option B (subgraph-per-specialist) deferred per ADR-055.
 
 ```mermaid
 flowchart LR
@@ -137,7 +137,7 @@ To keep M3 focused on the Architect machinery, the following are explicitly defe
 - **Gate 2 dashboard UI** — visual rendering of ContractBundle (architecture decisions, ADRs, task DAG, API contracts) + approve/reject/edit controls. Belongs in CHIP UX Overhaul Phase 4.6. M3 ships only the machinery: `gate2Approval` node, `gate2Decision` + `gate2Edits` channels, `interruptBefore: ['gate2Approval', 'escalationGate']`, eval-time deterministic responder, and CLI resume via `updateState({ gate2Decision: 'approved' }) + stream(null)` (mirrors Clarifier HITL resume pattern). Backlog plan: `docs/plans/backlog/gate2-dashboard-ui.md` (Phase 8).
 - **`buildDesignSystemContext` + `assessCatalogAdoption` full extraction** — depends on agents-ux internals; M3 uses direct peer import (no circular because `agents-architect` ≠ `core`). Tracked in ADR-045 addendum (Phase 8).
 - **Architect E2E browser tests** — Architect SSE endpoint, Gate 2 approval flow (browser-driven), Clarifier→Architect round-trip. M3 ships unit + integration + headless eval; browser-level E2E is `docs/plans/backlog/architect-e2e-tests.md` (Phase 8).
-- **Subgraph-per-specialist Node 4 (Option B)** — deferred per ADR-NNN with explicit migration trigger (gates 5-8 retry rate > 15% across 30 runs OR per-specialist P50 latency > 90s).
+- **Subgraph-per-specialist Node 4 (Option B)** — deferred per ADR-055 with explicit migration trigger (gates 5-8 retry rate > 15% across 30 runs OR per-specialist P50 latency > 90s).
 
 ## Per-node token + cost budget (CashPulse: 25 features, 8 entities, 7 screens)
 
@@ -316,8 +316,8 @@ Files:
 
 ### Phase 8 — ADRs + doc updates
 
-- `docs/adrs/ADR-NNN-architect-node4-shape.md` — Hybrid choice: Approach 1 (Sequential 7-node) ships M3, Option B (subgraph-per-specialist) deferred. Migration trigger: Critic gates 5-8 retry rate > 15% across 30 runs OR per-specialist P50 latency > 90s. Cites stonebraker truncation analysis as evidence against further collapsing.
-- `docs/adrs/ADR-NNN+1-architect-package-boundary.md` — schemas + critic in `packages/core/` (no langgraph dep), graph/nodes/run.ts in `packages/agents-architect/` (langgraph). Documents the v2 review correction. References `CLAUDE.md` package dep rules.
+- `docs/adrs/ADR-055-architect-node4-shape.md` — Hybrid choice: Approach 1 (Sequential 7-node) ships M3, Option B (subgraph-per-specialist) deferred. Migration trigger: Critic gates 5-8 retry rate > 15% across 30 runs OR per-specialist P50 latency > 90s. Cites stonebraker truncation analysis as evidence against further collapsing.
+- `docs/adrs/ADR-055+1-architect-package-boundary.md` — schemas + critic in `packages/core/` (no langgraph dep), graph/nodes/run.ts in `packages/agents-architect/` (langgraph). Documents the v2 review correction. References `CLAUDE.md` package dep rules.
 - `docs/adrs/ADR-045-addendum-deferred-extractions.md` (or inline addendum to ADR-045) — `buildDesignSystemContext` + `assessCatalogAdoption` full extraction still owed; sunset target post-M4 once Implementer's needs are fully known.
 - [`docs/architecture/spine-implementation.md`](docs/architecture/spine-implementation.md) — replace conceptual 6-node Architect description with actual 7-node + Gate 2 shape; link the new ADRs
 - [`CLAUDE.md`](CLAUDE.md) — update Active Plan #2 (CHIP's Next Steps) M3 progress + last-session line; add `agents-architect` to package dependency list
@@ -359,8 +359,8 @@ Files:
 | `packages/agents-architect/src/run.ts` | runArchitect entry | 3 |
 | `packages/agents-architect/src/prompts/**/*.md` | Versioned prompts with rubric pointers | 3-6 |
 | `packages/eval/src/scenarios/architect/add-budgeting-brownfield.yaml` | Brownfield scenario | 7 |
-| `docs/adrs/ADR-NNN-architect-node4-shape.md` | Hybrid Option A choice | 8 |
-| `docs/adrs/ADR-NNN+1-architect-package-boundary.md` | core vs agents-architect split | 8 |
+| `docs/adrs/ADR-055-architect-node4-shape.md` | Hybrid Option A choice | 8 |
+| `docs/adrs/ADR-055+1-architect-package-boundary.md` | core vs agents-architect split | 8 |
 | `docs/adrs/ADR-045-addendum-deferred-extractions.md` | Deferred extractions (or inline) | 8 |
 | [`docs/architecture/spine-implementation.md`](docs/architecture/spine-implementation.md) | Architect section update | 8 |
 | [`packages/dashboard/src/components/spine/spine-constants.ts`](packages/dashboard/src/components/spine/spine-constants.ts) | Flip `architect.implemented: true` | 7 |
@@ -377,7 +377,7 @@ Files:
 - [`packages/agents-ux/src/ux-design/design-system-context.ts`](packages/agents-ux/src/ux-design/design-system-context.ts) — design system context builder (used by Phase 5 specialist 5 via peer import)
 - [`docs/research/architect-r2-r3-r6.md`](docs/research/architect-r2-r3-r6.md) — R2/R3/R6 research (authoritative; cite §5, §6, §7.1, etc. in prompts)
 - [`docs/vision.md`](docs/vision.md) Layer 10 (lines 715-787) — HITL Gate 2 mandate
-- `~/.claude/plans/can-you-take-a-staged-stonebraker.md` — design memo with token math + truncation analysis (referenced by ADR-NNN)
+- `~/.claude/plans/can-you-take-a-staged-stonebraker.md` — design memo with token math + truncation analysis (referenced by ADR-055)
 
 ## Exit criteria
 
@@ -390,7 +390,7 @@ Files:
 - [ ] All 4 eval scenarios pass (3 migrated + add-budgeting-brownfield)
 - [ ] `routeAfterCritic()` matrix covered by unit tests per gate
 - [ ] `nx run-many -t typecheck`, `nx run-many -t test`, `nx run-many -t lint` all zero failures
-- [ ] ADR-NNN (node4-shape) + ADR-NNN+1 (package-boundary) merged
+- [ ] ADR-055 (node4-shape) + ADR-055+1 (package-boundary) merged
 - [ ] ADR-045 addendum on deferred buildDesignSystemContext + assessCatalogAdoption extraction
 - [ ] `spine-implementation.md`, `CLAUDE.md`, parent execution plan updated
 - [ ] `spine-constants.ts` flipped to `architect: { implemented: true }`; runs-page.spec.ts asserts Architect active-stage rendering

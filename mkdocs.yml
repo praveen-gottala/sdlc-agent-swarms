@@ -18,6 +18,7 @@ nav:
       - Dashboard & UX: concepts/dashboard-architecture.md
       - State Persistence: concepts/state-persistence.md
       - Clarifier Pipeline: concepts/clarifier-pipeline.md
+      - Architect Pipeline: concepts/architect-pipeline.md
       - Question Generation: concepts/clarifier-question-generation.md
       - Cross-Screen Coherence: concepts/cross-screen-coherence.md
   - Architecture:
@@ -111,6 +112,8 @@ nav:
       - ADR-051 Backstage Developer Portal: adrs/ADR-051-backstage-developer-portal.md
       - ADR-053 PRD Markdown Renderer: adrs/ADR-053-prd-markdown-renderer-as-single-source.md
       - ADR-054 Styling Library Architect Axis: adrs/ADR-054-styling-library-architect-axis.md
+      - ADR-055 Architect Node 4 Shape: adrs/ADR-055-architect-node4-shape.md
+      - ADR-056 Architect Package Boundary: adrs/ADR-056-architect-package-boundary.md
   - Operations:
       - Active Plans:
           - Visual Diversity: plans/active/visual-diversity/execution-plan.md

@@ -452,6 +452,8 @@ and rebuilt with Mantine. Not a component swap — a product rethink.
 
 ### 4.6 Approvals
 
+**Blocked by:** M3 Gate 2 channels (delivered M3 Phase 3, 2026-05-14). UI plan tracked at `docs/plans/backlog/gate2-dashboard-ui.md`. The Architect's `gate2Approval` node, `gate2Decision` + `gate2Edits` channels, and `interruptBefore` machinery are built — this phase builds the visual review + approve/reject/edit controls.
+
 **Question:** Currently an approval queue. This is a core differentiator (HITL gates). How do we make it feel premium, not like a basic form?
 
 **Research task:**
@@ -459,6 +461,7 @@ and rebuilt with Mantine. Not a component swap — a product rethink.
 - [ ] Check what approval data is available (gate type, artifact, agent, priority)
 - [ ] Study code review UIs (GitHub PR, GitLab MR) for approval patterns
 - [ ] Propose: review flow with inline artifact preview, not just approve/reject buttons
+- [ ] Design Gate 2 ContractBundle review page (architecture decisions, ADRs, task DAG, API contracts) per `docs/plans/backlog/gate2-dashboard-ui.md`
 
 ### 4.7 Trust
 

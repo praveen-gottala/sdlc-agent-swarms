@@ -21,10 +21,10 @@ graph TD
         H1 -->|abandon| X1[Run cancelled]
     end
 
-    subgraph "Gate 2: Design / API Approval"
-        D[Screen specs ready] --> H2{Human reviews design}
+    subgraph "Gate 2: Architecture / Contract Approval"
+        D[Contract bundle ready] --> H2{Human reviews contracts}
         H2 -->|approved| I[Implementation begins]
-        H2 -->|rejected| C[Correction round]
+        H2 -->|rejected with edits| C[Re-run from Node 3]
         C --> D
     end
 
@@ -47,7 +47,7 @@ graph TD
 |------|---------|----------------|-------------------|
 | **1. Clarification** | Clarifier produces prioritized questions | Answer questions, then approve PRD — or restart / abandon | Batched questions (multiple-choice where codebase patterns exist via RAG). Max 3 rounds, budget 15 questions/round. |
 | **1.5 Escalation**[^1] | Max clarification rounds reached | Accept (confidence capped 0.5) / restart / abandon | Assumption ledger with confidence scores |
-| **2. Design / API** | Design pipeline produces screen specs | Approve, reject, or correct per screen | Screen specs in Design Studio at `/design`. Cross-screen atomic approval planned but not yet implemented. |
+| **2. Architecture / Contracts** | Architect Critic passes (14 gates green) | Approve, reject with edits, or escalate | Full contract bundle: architecture decisions, ADRs, data model, API contracts, component compositions, screen plans, task DAG. Dashboard UI deferred ([backlog](../plans/backlog/gate2-dashboard-ui.md)). |
 | **3. Code Merge** | Reviewer produces ReviewResult | Approve or request changes on diff | Per-hunk diff review. Deterministic gates (typecheck, lint, tests, Semgrep) already passed. |
 
 [^1]: Gate 1.5 is a sub-gate within the Clarification phase. It fires when the clarifier reaches its maximum round count without converging. See [Clarifier Pipeline](clarifier-pipeline.md) for the full node graph. spine-implementation.md §9 enumerates this as a separate gate with its own checkpoint.
@@ -91,6 +91,7 @@ Agent autonomy can increase over time based on performance — if an agent's out
 ## Known Limitations
 
 - **Cross-screen atomic approval** — Design Studio currently approves screens individually. Atomic batch approval (reject one → batch drops to `in_correction`) is designed but not yet implemented.
+- **Gate 2 dashboard UI** — LangGraph interrupt machinery for Gate 2 is built (`packages/agents-architect`). Dashboard review page for visual ContractBundle inspection is deferred ([backlog](../plans/backlog/gate2-dashboard-ui.md)).
 - **Gate 3 (Code Merge)** — Requires Implementer + Reviewer stages, which are not yet built. Gate 3 is specified, not implemented.
 - **Timeout handling** — Vision specifies escalation rules (retry notification → secondary channel → recorded assumptions for non-critical questions). Not yet wired. The framework never auto-approves a gated action on timeout ([Governance Spec §13.3](../specs/governance-and-operations.md)).
 - **Progressive trust escalation** — Performance-based autonomy escalation ([Governance Spec §13.2](../specs/governance-and-operations.md)) is specified but not wired into the gate system.
@@ -101,7 +102,7 @@ Agent autonomy can increase over time based on performance — if an agent's out
 
     **Gate 1 implementation:** `interruptBefore: ['storyWriter']` in the Clarifier graph. The `escalationGate` node handles max-round escalation (Gate 1.5). See [Clarifier Pipeline](clarifier-pipeline.md) for node-level detail.
 
-    **Gate 2 implementation:** Design Studio UI at `/design` with per-screen accept/reject/correct.
+    **Gate 2 implementation:** Architect graph: `interruptBefore: ['gate2Approval', 'escalationGate']` in `packages/agents-architect`. LangGraph interrupt machinery is built. Dashboard review UI is deferred ([backlog](../plans/backlog/gate2-dashboard-ui.md)). Approval currently requires programmatic `graph.updateState({ gate2Decision: 'approved' })` call.
 
     **Resume semantics:** `graph.stream(null, { configurable: { thread_id } })` resumes from the interrupt checkpoint.
 
@@ -114,6 +115,7 @@ Agent autonomy can increase over time based on performance — if an agent's out
 - [ADR-004](../adrs/ADR-004-governance-middleware-ordering.md) — middleware ordering rationale
 - [spine-implementation.md §9](../architecture/spine-implementation.md) — gate implementation mechanics, LangGraph interrupt details
 - [Clarifier Pipeline](clarifier-pipeline.md) — Gate 1 node graph and escalation flow
+- [Architect Pipeline](architect-pipeline.md) — Gate 2 context, 7-node graph, retry routing
 - [Coordination & State](coordination-and-state.md) — coordination substrate (typed channels, not event bus)
 - [Concepts Overview](overview.md) — HITL summary in system context
 - [Clarifier Initiative](../plans/active/clarifier-initiative/execution-plan.md) — Gate 1 implementation plan

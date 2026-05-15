@@ -39,6 +39,8 @@
 - [Collapsible Admonitions for Rationale Sections](#collapsible-admonitions-for-rationale-sections) — RULE
 - [Clarifier: Known v0 Trade-Offs and Coverage Gaps](#clarifier-known-v0-trade-offs-and-coverage-gaps) — RULE
 - [LangGraph Resume: updateState + stream(null)](#langgraph-resume-updatestate--streamnull) — RULE
+- [Verification Gate = Full Gate, Not Just the Triad](#verification-gate--full-gate-not-just-the-triad) — RULE
+- [Validate Deferral Reasoning with Fresh-Context Subagent](#validate-deferral-reasoning-with-fresh-context-subagent) — RULE
 
 ---
 
@@ -584,3 +586,25 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** To resume a LangGraph graph from an `interruptBefore` checkpoint, call `graph.updateState(config, newState)` then `graph.stream(null, config)`. Do NOT pass input to `stream()` — `graph.stream(input, config)` restarts the graph from `__start__` instead of resuming from the interrupted node.
 **Why:** Discovered during eval harness development. Calling `stream({ humanResponses }, config)` re-ran all nodes (contextRetriever → prdAnalyzer → gapDetector → questionPrioritizer) from scratch on every resume, never reaching the storyWriter node past the interrupt. Cost 4 debugging cycles and ~$3 in wasted Vertex AI calls. The `updateState` approach merges new state into the checkpoint, then `stream(null)` resumes from the exact interrupt point.
 **How to apply:** Any code that resumes a LangGraph graph after an interrupt (eval runner, dashboard HITL, future orchestrator resume) must use the two-step pattern. The `runClarifierPipelineStream` convenience wrapper in `packages/agents-clarifier/src/run.ts` uses `stream(invokeInput)` — this may need updating if the dashboard exhibits the same restart behavior (currently untested).
+
+---
+
+## Verification Gate = Full Gate, Not Just the Triad
+
+**RULE** (2026-05-15)
+
+**Context:** M3 Phase 6 — Task Planner implementation. After typecheck/test/lint passed, the phase was declared complete without running `/review-plan-impl` and `/mid-session-drift-check`, both of which were listed in the plan's verification gate section.
+**Rule:** The verification triad (`nx run-many -t typecheck`, `test`, `lint`) is necessary but NOT the full gate. Every plan phase has a "Verification gate" section listing additional checks — typically `/review-plan-impl --phase N` and `/mid-session-drift-check`. Run EVERY item in that section before declaring done.
+**Why:** When `/review-plan-impl` ran on M3 Phase 6, it found 6 real issues that typecheck+test+lint missed: (1) `contextRefs`, `patternRefs`, `acceptanceCriteriaIds` missing from JSON Schema `required` array — LLM could silently omit R2/R3 fields; (2) `adrs: []` hardcoded instead of `[...state.adrs]` in bundle assembly; (3-5) three test cases the plan explicitly called for were absent (5-fixture oracle test, golden-fixture dry-Critic test, acceptance-criteria coverage test). All 6 were real bugs that would have shipped.
+**How to apply:** After typecheck+test+lint pass, open the plan's verification gate section and treat it as a checklist. Do not declare done until every item is checked off. The triad catches code correctness; the review skills catch plan-compliance gaps (missing tests, behavioral mismatches, scope creep) that tests structurally cannot detect.
+
+---
+
+## Validate Deferral Reasoning with Fresh-Context Subagent
+
+**RULE** (2026-05-15)
+
+**Context:** M3 Phase 6 — the plan required wiring `sliceContractBundle()` into the Node 4 specialist dispatch. The implementer reasoned this was N/A because contextRefs don't exist at Node 4 time.
+**Rule:** When closing or re-deferring a plan item with reasoning that it "doesn't apply," spawn a fresh-context `researcher` subagent to independently validate the reasoning before accepting it. The subagent should receive the claim, relevant file paths, and be asked for a verdict with file+line evidence.
+**Why:** Reasoning that leads to NOT doing something the plan asked for is higher-risk than doing what was asked — it's easy to rationalize a skip. In M3 Phase 6, the deferral reasoning turned out to be correct (subagent verdict: CLAIM CORRECT), but the fresh-context reviewer also discovered a related token-efficiency improvement that had been missed entirely: specialists were dumping full `enrichedRequirement` JSON (~2-4K wasted tokens per specialist, ~10-16K total across the Node 4 dispatch). That improvement was implemented as a direct result of the validation step.
+**How to apply:** When your reasoning concludes "this plan item doesn't apply as written," spawn `Agent({ subagent_type: 'researcher', prompt: 'Evaluate this claim: [claim]. Read these files: [paths]. Verdict: CORRECT / PARTIALLY CORRECT / INCORRECT with file+line evidence.' })`. Cost: ~60s and ~60K tokens. Value: catches rationalized skips and surfaces adjacent improvements.

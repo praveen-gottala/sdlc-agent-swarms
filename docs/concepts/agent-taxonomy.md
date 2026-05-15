@@ -52,11 +52,11 @@ The front door of CHIP. A nine-node LangGraph `StateGraph` that transforms a vag
 
 Supports bootstrap mode (greenfield projects with initial PRD generation) and evolution mode (existing codebases with RAG-powered change analysis). For node-level detail, routing, and gap detection mechanics, see [Clarifier Pipeline](clarifier-pipeline.md).
 
-### Architect
+### Architect (`packages/agents-architect`)
 
-!!! note "Planned"
+A seven-node LangGraph `StateGraph` that consumes the Clarifier's `EnrichedRequirement` and produces a full `ContractBundle` --- architecture decisions, ADRs, implementation patterns, data model, API contracts, component compositions, screen plans, design system diff, and a task DAG. 24 typed state channels, 14 deterministic Critic gates, Gate 2 HITL approval interrupt, and brownfield support (scope-axes filtering, mode-consistency validation). Absorbs the design pipeline's Research and Planning stages when running in spine mode.
 
-    The Architect will consume `EnrichedRequirement` and produce `ArchitectureSpec`, ADRs, and a `TaskPlan` (DAG of scoped implementation tasks). It will invoke the design subagent for screen-level UI proposals.
+For node-level detail, data flow, and research grounding, see [Architect Pipeline](architect-pipeline.md).
 
 ### Implementer
 
@@ -111,13 +111,13 @@ Specialists are invoked by spine stages as tools — never as parallel writers t
 
 ## Current implementation
 
-The Clarifier is the only spine stage built and operational — a nine-node LangGraph StateGraph with typed channels, HITL interrupts, and Postgres checkpointing. The design pipeline operates as a specialist tool invoked manually. The remaining spine stages (Architect, Implementer, Reviewer) are specified in vision.md but not yet implemented.
+The Clarifier and Architect are the two built spine stages. The Clarifier is a nine-node LangGraph StateGraph with typed channels, HITL interrupts, and Postgres checkpointing. The Architect is a seven-node LangGraph StateGraph with 24 typed channels, 14 deterministic Critic gates, Gate 2 HITL approval, and brownfield support. The Clarifier-to-Architect handoff via `EnrichedRequirement` is wired. The design pipeline operates as a specialist tool invoked manually. The remaining spine stages (Implementer, Reviewer) are specified in vision.md but not yet implemented.
 
 ## Known limitations
 
-- **Three of four spine stages are unbuilt.** The Clarifier is operational; Architect, Implementer, and Reviewer are specified but have no code.
+- **Two of four spine stages are unbuilt.** The Clarifier and Architect are operational; Implementer and Reviewer are specified but have no code.
 - **Specialist invocation is manual.** The design pipeline runs as a standalone CLI command, not as a tool automatically invoked by a spine stage.
-- **No cross-stage context carryover.** Each stage will start with fresh LangGraph context by design, but the mechanism for injecting upstream artifacts (e.g., passing EnrichedRequirement to Architect) is not yet implemented.
+- **Downstream handoffs not wired.** The Clarifier-to-Architect handoff (via `EnrichedRequirement`) works. Architect-to-Implementer and Implementer-to-Reviewer handoffs are not yet implemented (M4 scope).
 
 ## Related Docs
 
@@ -126,4 +126,6 @@ The Clarifier is the only spine stage built and operational — a nine-node Lang
 - [Vision Layer 8](../vision.md#layer-8-implementation) — implementer specification
 - [Vision Layer 9](../vision.md#layer-9-review) — reviewer specification
 - [Clarifier Pipeline](clarifier-pipeline.md) — nine-node pipeline detail, routing, gap detection
-- [Clarifier Initiative](../plans/active/clarifier-initiative/execution-plan.md) — implementation plan
+- [Architect Pipeline](architect-pipeline.md) — seven-node pipeline detail, data flow, research grounding
+- [ADR-055](../adrs/ADR-055-architect-node4-shape.md) — Contract Designer node shape
+- [ADR-056](../adrs/ADR-056-architect-package-boundary.md) — Architect package boundary

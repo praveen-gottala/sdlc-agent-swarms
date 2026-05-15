@@ -17,3 +17,13 @@ The result includes `structural: true` to distinguish from full vision evaluatio
 `evaluateDesign()` (the vision evaluator used by the correction pipeline and Dashboard audit) now also delegates to `runStructuralQualityGate()` for its structural deductions — one source of truth for deduction logic.
 
 The naming test is updated: `'returns structural evaluation with score for a clean spec (ADR-045 Phase 1.1)'` in `nodes.test.ts`.
+
+## Addendum: Deferred Shared Module Extractions (2026-05-15)
+
+Two functions referenced by this ADR — `assessCatalogAdoption()` and `buildDesignSystemContext()` — currently live in `packages/agents-ux/` and are consumed by the Architect (`packages/agents-architect/`) via direct peer import.
+
+**Full extraction to `packages/core/` is deferred.** Both functions depend on agents-ux internals (token resolution, catalog YAML parsing, design system token mapping) that would require significant refactoring to decouple. For M3, `agents-architect` imports them directly from `@agentforge/agents-ux` as a peer dependency. This is safe because `agents-architect` is not `core` — no circular dependency is introduced.
+
+**Sunset target:** Post-M4 (after the Implementer milestone), once the Implementer's usage patterns for these functions are fully known. At that point, the shared interface can be designed to serve all three consumers (agents-ux pipeline, agents-architect Node 4.5/Node 6, and agents-implementer design specialist tool).
+
+**Tracking:** This deferral is referenced by `docs/plans/active/chips-next-steps/m3-execution-plan.md` Phase 2 and Phase 8.

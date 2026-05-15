@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 next
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 next (Brownfield Design Delta Research) — M4 after
 
 ## Plan Structure
 
@@ -12,7 +12,8 @@ This is a large initiative spanning multiple months. It's broken into **5 milest
 | **M1: Connect** | Clarifier output threads into design pipeline | Existing design pipeline tests + new integration test | M0 |
 | **M2: Architect Foundation** | Typed contracts + Critic (Node 6) + eval harness | Architect eval: hand-crafted bundles scored by Critic | M1 |
 | **M3: Architect Core** | Nodes 1-5 + shared module extraction | Architect eval: end-to-end on 3 fixture projects | M2 |
-| **M4: Full Spine** | Implementer + Reviewer + backward compat cleanup | Full spine eval: Clarifier→Architect→Design→Review | M3 |
+| **M3.5: Brownfield Design Delta Research** | Research brief (R9): per-screen impact analysis, DesignSpec delta format, MODIFY task context wiring, design-info value analysis | N/A (research) | M3 |
+| **M4: Full Spine** | Implementer + Reviewer + backward compat cleanup | Full spine eval: Clarifier→Architect→Design→Review | M3.5 |
 
 Each milestone gets its own execution plan when it's time to start it. This document covers M0 in detail and M1-M4 at outline level.
 
@@ -799,8 +800,23 @@ Gate that defines "Architect done." Tested with hand-crafted bundles. **Blocked 
 ### M3 Phase 6: Architect nodes 1-5
 Contract Designer (Node 4, highest risk) → then Nodes 1, 2, 3, 5. Planning prompt's 214 lines of rules inform the specialist prompt — adapt, don't rewrite. **Blocked by R2, R3.**
 
+### M3.5: Brownfield Design Delta Research
+
+Research milestone (no code). Produces `docs/research/briefs/R9-brownfield-design-delta.md` — a self-contained LLM brief answering 4 questions that block M4's brownfield frontend task handling.
+
+**R9.1 — Per-screen impact analysis:** How should Node 0.5 (Change Classifier) identify which specific nodes in existing DesignSpec JSON are affected by a change request? Current `ChangeClassification.scopeAxes` is module-level; need screen-node-level granularity. What does the comparison workflow look like? (reads existing `agentforge/designs/*.json` via `readDesignSpec()` from `packages/core/src/design-spec-store.ts`, compares against new `EnrichedRequirement.prd.screens`)
+
+**R9.2 — DesignSpec delta format:** What schema extension to `DesignSpecV2` (flat adjacency list of `NodeSpec` objects in `packages/designspec-renderer/src/types/design-spec-v2.ts`) supports delta operations? Research doc sketches "unchanged nodes referenced by ID, new nodes fully specified, modified nodes with changed fields only, removed nodes listed by ID" — formalize into a Zod schema. How does the design specialist (`designNode` in agents-ux) produce a delta instead of a full spec?
+
+**R9.3 — MODIFY task context wiring:** How does the Implementer receive `existingDesignSpec + deltaTree` for MODIFY frontend tasks? What enters the task's context window? `sliceContractBundle()` already filters by `contextRefs` — extend to include existing design state? Or separate channel? Vision Layer 8 locked decision: "MODIFY tasks receive existingDesignSpec + deltaTree."
+
+**R9.4 — Design info in code generation tasks:** Does passing ScreenPlan + ComponentComposition + DesignSpec context into code-generation prompts improve implementation quality, or does it bloat the context window with information the LLM already infers from the component composition? What's the right token budget allocation? (R3 §5 hard cap: 76K input ceiling)
+
+**Output:** `docs/research/briefs/R9-brownfield-design-delta.md`
+**Blocks:** M4 brownfield frontend tasks
+
 ### M4 Phase 7: Implementer + Reviewer
-Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1.**
+Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1, M3.5 (for brownfield frontend).**
 
 ---
 
