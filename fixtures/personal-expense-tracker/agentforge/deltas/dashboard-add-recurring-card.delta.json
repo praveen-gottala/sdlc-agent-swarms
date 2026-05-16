@@ -1,0 +1,318 @@
+{
+  "screenId": "dashboard",
+  "baseWidth": 1440,
+  "added": {
+    "recurring-card": {
+      "parent": "left-column",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-primary",
+      "shadow": "sm",
+      "radius": 16,
+      "layout": {
+        "dir": "column",
+        "gap": 12,
+        "px": 24,
+        "py": 24
+      }
+    },
+    "recurring-card-header": {
+      "parent": "recurring-card",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "recurring-card-title": {
+      "parent": "recurring-card-header",
+      "order": 0,
+      "type": "text",
+      "content": "Upcoming Recurring",
+      "typography": "label",
+      "weight": 600,
+      "color": "text-primary"
+    },
+    "recurring-card-view-all": {
+      "parent": "recurring-card-header",
+      "order": 1,
+      "catalog": "link",
+      "label": "View All",
+      "color": "cta-primary"
+    },
+    "recurring-row-list": {
+      "parent": "recurring-card",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 0
+      }
+    },
+    "recurring-row-1": {
+      "parent": "recurring-row-list",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 10,
+        "gap": 8
+      },
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "recurring-row-1-left": {
+      "parent": "recurring-row-1",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "recurring-row-1-dot": {
+      "parent": "recurring-row-1-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 9999,
+      "background": "cta-primary"
+    },
+    "recurring-row-1-info": {
+      "parent": "recurring-row-1-left",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "recurring-row-1-merchant": {
+      "parent": "recurring-row-1-info",
+      "order": 0,
+      "type": "text",
+      "content": "Rent Payment",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "recurring-row-1-meta": {
+      "parent": "recurring-row-1-info",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "recurring-row-1-badge": {
+      "parent": "recurring-row-1-meta",
+      "order": 0,
+      "catalog": "badge-info",
+      "label": "Monthly"
+    },
+    "recurring-row-1-date": {
+      "parent": "recurring-row-1-meta",
+      "order": 1,
+      "type": "text",
+      "content": "Apr 1",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "recurring-row-1-amount": {
+      "parent": "recurring-row-1",
+      "order": 1,
+      "type": "text",
+      "content": "$1,200.00",
+      "typography": "body",
+      "weight": 600,
+      "color": "text-primary"
+    },
+    "recurring-row-2": {
+      "parent": "recurring-row-list",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 10,
+        "gap": 8
+      },
+      "overrides": {
+        "borderBottom": "1px solid var(--border-default)"
+      }
+    },
+    "recurring-row-2-left": {
+      "parent": "recurring-row-2",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "recurring-row-2-dot": {
+      "parent": "recurring-row-2-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 9999,
+      "background": "info"
+    },
+    "recurring-row-2-info": {
+      "parent": "recurring-row-2-left",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "recurring-row-2-merchant": {
+      "parent": "recurring-row-2-info",
+      "order": 0,
+      "type": "text",
+      "content": "Netflix",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "recurring-row-2-meta": {
+      "parent": "recurring-row-2-info",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "recurring-row-2-badge": {
+      "parent": "recurring-row-2-meta",
+      "order": 0,
+      "catalog": "badge-info",
+      "label": "Monthly"
+    },
+    "recurring-row-2-date": {
+      "parent": "recurring-row-2-meta",
+      "order": 1,
+      "type": "text",
+      "content": "Apr 8",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "recurring-row-2-amount": {
+      "parent": "recurring-row-2",
+      "order": 1,
+      "type": "text",
+      "content": "$15.99",
+      "typography": "body",
+      "weight": 600,
+      "color": "text-primary"
+    },
+    "recurring-row-3": {
+      "parent": "recurring-row-list",
+      "order": 2,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between",
+        "py": 10,
+        "gap": 8
+      }
+    },
+    "recurring-row-3-left": {
+      "parent": "recurring-row-3",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    "recurring-row-3-dot": {
+      "parent": "recurring-row-3-left",
+      "order": 0,
+      "type": "container",
+      "width": 10,
+      "height": 10,
+      "radius": 9999,
+      "background": "error"
+    },
+    "recurring-row-3-info": {
+      "parent": "recurring-row-3-left",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "column",
+        "gap": 2
+      }
+    },
+    "recurring-row-3-merchant": {
+      "parent": "recurring-row-3-info",
+      "order": 0,
+      "type": "text",
+      "content": "Gym Membership",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "recurring-row-3-meta": {
+      "parent": "recurring-row-3-info",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 6
+      }
+    },
+    "recurring-row-3-badge": {
+      "parent": "recurring-row-3-meta",
+      "order": 0,
+      "catalog": "badge-warning",
+      "label": "Monthly"
+    },
+    "recurring-row-3-date": {
+      "parent": "recurring-row-3-meta",
+      "order": 1,
+      "type": "text",
+      "content": "Apr 15",
+      "typography": "small",
+      "color": "text-secondary"
+    },
+    "recurring-row-3-amount": {
+      "parent": "recurring-row-3",
+      "order": 1,
+      "type": "text",
+      "content": "$30.00",
+      "typography": "body",
+      "weight": 600,
+      "color": "text-primary"
+    }
+  },
+  "modified": {},
+  "removed": [],
+  "reordered": [
+    {
+      "nodeId": "category-donut-card",
+      "newOrder": 2
+    }
+  ]
+}

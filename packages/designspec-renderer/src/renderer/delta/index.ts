@@ -118,7 +118,7 @@ export function renderDelta(
   let jsx = renderResult.jsx;
 
   // 5. Wrap nodes with highlight markup via post-processing
-  jsx = applyHighlightWrapping(jsx, addedIds, modifiedIds, removedIds, reorderedIds, showAnnotations);
+  jsx = applyHighlightWrapping(jsx, addedIds, modifiedIds, removedIds, reorderedIds, showAnnotations, combinedSpec.nodes);
 
   // 6. Build change regions
   const changeRegions = buildChangeRegions(existingSpec, delta, addedIds, modifiedIds, removedIds, reorderedIds);
@@ -143,6 +143,15 @@ export function renderDelta(
 
 /* ─── Highlight wrapping ─────────────────────────────── */
 
+function hasAncestorInSet(nodeId: string, opSet: Set<string>, nodes: Readonly<Record<string, NodeSpec>>): boolean {
+  let current = nodes[nodeId];
+  while (current?.parent) {
+    if (opSet.has(current.parent)) return true;
+    current = nodes[current.parent];
+  }
+  return false;
+}
+
 function applyHighlightWrapping(
   jsx: string,
   addedIds: Set<string>,
@@ -150,54 +159,71 @@ function applyHighlightWrapping(
   removedIds: Set<string>,
   reorderedIds: Set<string>,
   showAnnotations: boolean,
+  nodes: Readonly<Record<string, NodeSpec>>,
 ): string {
   // Find all data-node-id attributes and wrap their parent elements
   return jsx.replace(
     /(<\w+)([^>]*data-node-id="([^"]+)"[^>]*>)/g,
     (match, tagStart: string, rest: string, nodeId: string) => {
-      let highlightClass = '';
-      let badgeHtml = '';
+      let opSet: Set<string> | undefined;
       let dataOp = '';
 
       if (addedIds.has(nodeId)) {
-        highlightClass = 'r10-highlight r10-added';
+        opSet = addedIds;
         dataOp = 'added';
-        if (showAnnotations) badgeHtml = '<span class="r10-badge r10-badge-added">+ Added</span>';
       } else if (modifiedIds.has(nodeId)) {
-        highlightClass = 'r10-highlight r10-modified';
+        opSet = modifiedIds;
         dataOp = 'modified';
-        if (showAnnotations) badgeHtml = '<span class="r10-badge r10-badge-modified">~ Modified</span>';
       } else if (removedIds.has(nodeId)) {
-        highlightClass = 'r10-highlight r10-removed';
+        opSet = removedIds;
         dataOp = 'removed';
-        if (showAnnotations) badgeHtml = '<span class="r10-badge r10-badge-removed">&minus; Removed</span>';
       } else if (reorderedIds.has(nodeId)) {
-        highlightClass = 'r10-highlight r10-reordered';
+        opSet = reorderedIds;
         dataOp = 'reordered';
-        if (showAnnotations) badgeHtml = '<span class="r10-badge r10-badge-reordered">↕ Reordered</span>';
       }
 
-      if (!highlightClass) return match;
+      if (!opSet) return match;
 
-      // Inject highlight class and data-delta-op into the existing tag
-      const classMatch = rest.match(/className="([^"]*)"/);
+      // Nested-highlight collapse: if an ancestor is in the same op set,
+      // skip the visual highlight (keep data-delta-op for targeting).
+      const nested = hasAncestorInSet(nodeId, opSet, nodes);
+
       let modifiedRest = rest;
-      if (classMatch) {
-        modifiedRest = rest.replace(
-          `className="${classMatch[1]}"`,
-          `className="${classMatch[1]} ${highlightClass}"`,
-        );
-      } else {
-        modifiedRest = rest.replace('>', ` className="${highlightClass}">`);
-        // Re-insert the closing > since we consumed it
-        if (!modifiedRest.endsWith('>')) modifiedRest += '>';
-      }
 
-      // Add data-delta-op attribute
+      // Add data-delta-op attribute (always, even for nested nodes)
       modifiedRest = modifiedRest.replace(
         /data-node-id="/,
         `data-delta-op="${dataOp}" data-node-id="`,
       );
+
+      if (nested) {
+        return `${tagStart}${modifiedRest}`;
+      }
+
+      const highlightClass = `delta-highlight delta-${dataOp}`;
+      let badgeHtml = '';
+
+      if (showAnnotations) {
+        const badges: Record<string, string> = {
+          added: '<span class="delta-badge delta-badge-added">+ Added</span>',
+          modified: '<span class="delta-badge delta-badge-modified">~ Modified</span>',
+          removed: '<span class="delta-badge delta-badge-removed">&minus; Removed</span>',
+          reordered: '<span class="delta-badge delta-badge-reordered">↕ Reordered</span>',
+        };
+        badgeHtml = badges[dataOp] ?? '';
+      }
+
+      // Inject highlight class into the existing tag
+      const classMatch = modifiedRest.match(/className="([^"]*)"/);
+      if (classMatch) {
+        modifiedRest = modifiedRest.replace(
+          `className="${classMatch[1]}"`,
+          `className="${classMatch[1]} ${highlightClass}"`,
+        );
+      } else {
+        modifiedRest = modifiedRest.replace('>', ` className="${highlightClass}">`);
+        if (!modifiedRest.endsWith('>')) modifiedRest += '>';
+      }
 
       return `${tagStart}${modifiedRest}${badgeHtml ? `\n${badgeHtml}` : ''}`;
     },

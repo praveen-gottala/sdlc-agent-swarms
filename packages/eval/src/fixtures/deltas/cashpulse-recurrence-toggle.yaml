@@ -1,17 +1,18 @@
-# Delta Fixture: Add Recurrence Toggle to Add-Expense Form
+# Delta Fixture: Add Recurrence Toggle to Add Expense Form
 #
-# Scenario: Modify the add-expense form to include a "Make this recurring"
-# toggle that reveals frequency picker, start date, and optional end date.
-# The recurrence data maps to the RecurringTemplate entity.
+# Scenario: Brownfield change adding a "Recurring" toggle to the add-expense
+# form. When enabled, reveals frequency chip selector (Weekly/Monthly/Yearly)
+# and end date options (Never / On date + date picker).
 #
+# Source: Hand-crafted M3.6 delta (verified via deltaApply, 2026-05-16)
 # Target page: add-expense (157 nodes, fixtures/personal-expense-tracker/agentforge/designs/add-expense.json)
+# Applied result: 176 nodes (157 existing + 19 added, 1 reordered)
 
 metadata:
-  description: Add recurrence configuration section with toggle, frequency picker, and date fields
+  description: Add recurrence toggle with frequency chips and end date options to add-expense form
   targetPage: add-expense
   taskId: cashpulse-add-expense-modify-recurrence-toggle
 
-# DesignSpecDelta (R9 §6.2 schema)
 delta:
   screenId: add-expense
   baseWidth: 1440
@@ -19,72 +20,176 @@ delta:
   added:
     recurrence-section:
       parent: expense-form-card
-      order: 10
-      type: section
-      label: Recurrence
-      layout: { dir: column, gap: 12 }
+      order: 8
+      type: container
+      width: fill
+      layout: { dir: column, gap: 16, py: 16 }
 
-    recurrence-toggle:
+    recurrence-toggle-row:
       parent: recurrence-section
       order: 0
-      catalog: toggle
-      label: Make this recurring
+      type: container
+      width: fill
+      layout: { dir: row, align: center, justify: space-between }
 
-    recurrence-frequency:
+    recurrence-toggle-label:
+      parent: recurrence-toggle-row
+      order: 0
+      type: text
+      content: Recurring
+      typography: label
+      color: text-primary
+      weight: 600
+
+    recurrence-toggle:
+      parent: recurrence-toggle-row
+      order: 1
+      catalog: toggle
+      value: "on"
+      overrides: { aria-label: "Make this expense recurring" }
+
+    recurrence-config-panel:
       parent: recurrence-section
       order: 1
-      catalog: segmented-control
-      label: Frequency
-      options:
-        - { label: Weekly, selected: false }
-        - { label: Monthly, selected: true }
-        - { label: Yearly, selected: false }
+      type: container
+      width: fill
+      background: surface-secondary
+      radius: 10
+      layout: { dir: column, gap: 16, px: 16, py: 16 }
+      overrides: { border: "1px solid var(--border-default)" }
 
-    recurrence-start-date:
-      parent: recurrence-section
+    frequency-label:
+      parent: recurrence-config-panel
+      order: 0
+      type: text
+      content: Frequency
+      typography: label
+      color: text-secondary
+      weight: 500
+
+    frequency-chip-row:
+      parent: recurrence-config-panel
+      order: 1
+      type: container
+      width: fill
+      layout: { dir: row, gap: 8, align: center }
+
+    freq-chip-weekly:
+      parent: frequency-chip-row
+      order: 0
+      catalog: chip
+      label: Weekly
+      overrides: { borderRadius: "9999px" }
+
+    freq-chip-monthly:
+      parent: frequency-chip-row
+      order: 1
+      catalog: chip
+      label: Monthly
+      overrides: { borderRadius: "9999px", selected: true }
+
+    freq-chip-yearly:
+      parent: frequency-chip-row
+      order: 2
+      catalog: chip
+      label: Yearly
+      overrides: { borderRadius: "9999px" }
+
+    end-date-label:
+      parent: recurrence-config-panel
+      order: 2
+      type: text
+      content: Ends
+      typography: label
+      color: text-secondary
+      weight: 500
+
+    end-date-options:
+      parent: recurrence-config-panel
+      order: 3
+      type: container
+      width: fill
+      layout: { dir: column, gap: 10 }
+
+    end-date-never-row:
+      parent: end-date-options
+      order: 0
+      type: container
+      layout: { dir: row, align: center, gap: 8 }
+
+    end-date-never-radio:
+      parent: end-date-never-row
+      order: 0
+      type: container
+      width: 18
+      height: 18
+      radius: 9999
+      background: cta-primary
+      overrides: { border: "2px solid var(--cta-primary)" }
+
+    end-date-never-label:
+      parent: end-date-never-row
+      order: 1
+      type: text
+      content: Never
+      typography: body
+      color: text-primary
+
+    end-date-on-row:
+      parent: end-date-options
+      order: 1
+      type: container
+      layout: { dir: row, align: center, gap: 8 }
+
+    end-date-on-radio:
+      parent: end-date-on-row
+      order: 0
+      type: container
+      width: 18
+      height: 18
+      radius: 9999
+      overrides: { border: "2px solid var(--border-default)" }
+
+    end-date-on-label:
+      parent: end-date-on-row
+      order: 1
+      type: text
+      content: On date
+      typography: body
+      color: text-primary
+
+    end-date-picker:
+      parent: end-date-on-row
       order: 2
       catalog: date-picker
-      label: Start Date
-      placeholder: Select start date
-
-    recurrence-end-date:
-      parent: recurrence-section
-      order: 3
-      catalog: date-picker
-      label: "End Date (optional)"
-      placeholder: No end date
-
-    recurrence-summary:
-      parent: recurrence-section
-      order: 4
-      type: text
-      content: Repeats monthly starting today
-      typography: caption
-      color: text-secondary
+      label: ""
+      placeholder: Select end date
+      width: 200
+      overrides: { disabled: true, aria-label: "Recurrence end date" }
 
   modified: {}
-
   removed: []
 
-  reordered: []
+  reordered:
+    - nodeId: save-expense-btn
+      newOrder: 9
 
-# Highlight classifications for Design Studio preview
 highlightNodes:
   - nodeId: recurrence-section
     op: added
-    description: "Added section: Recurrence"
-  - nodeId: recurrence-toggle
+    description: "Recurrence configuration section"
+  - nodeId: recurrence-toggle-row
     op: added
-    description: "Added toggle: Make this recurring"
-  - nodeId: recurrence-frequency
+    description: "Toggle row: Recurring on/off"
+  - nodeId: recurrence-config-panel
     op: added
-    description: "Added segmented-control: Frequency"
-  - nodeId: recurrence-start-date
+    description: "Config panel with frequency chips and end date options"
+  - nodeId: frequency-chip-row
     op: added
-    description: "Added date-picker: Start Date"
-  - nodeId: recurrence-end-date
+    description: "Frequency selector: Weekly / Monthly (selected) / Yearly"
+  - nodeId: end-date-options
     op: added
-    description: "Added date-picker: End Date"
-  - nodeId: recurrence-summary
-    op: added
-    description: "Added text: Repeats monthly"
+    description: "End date: Never (selected) / On date with picker"
+  - nodeId: save-expense-btn
+    op: reordered
+    description: "Save button shifted down to accommodate recurrence section"

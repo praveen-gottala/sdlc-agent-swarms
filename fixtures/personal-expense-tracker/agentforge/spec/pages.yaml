@@ -206,24 +206,3 @@ pages:
     route: /pipeline-test-1777752346486
     status: draft
     designStatus: draft
-  - id: bf-dashboard-recurring-card
-    name: "[BF] Dashboard + Recurring Card"
-    description: Post-change dashboard with Upcoming Recurring Expenses card added
-    route: /dashboard-bf-card
-    status: approved
-    designStatus: rendered
-    components: []
-  - id: bf-add-expense-recurrence
-    name: "[BF] Add Expense + Recurrence"
-    description: Post-change add-expense form with recurrence configuration toggle
-    route: /add-expense-bf
-    status: approved
-    designStatus: rendered
-    components: []
-  - id: bf-dashboard-recurring-badge
-    name: "[BF] Dashboard + Recurring Badge"
-    description: Post-change dashboard with recurring badges on expense rows
-    route: /dashboard-bf-badge
-    status: approved
-    designStatus: rendered
-    components: []

@@ -1,76 +1,104 @@
 # Delta Fixture: Add Recurring Frequency Badges to Expense Rows
 #
 # Scenario: Modify the dashboard's expense list to show a recurring frequency
-# badge (Weekly/Monthly/Yearly) on each transaction row that has a
-# recurringTemplateId. Non-recurring expenses show no badge.
+# badge on expense rows that have a recurringTemplateId. Each badge is a small
+# pill with a repeat icon and frequency label inside the row's meta container.
+# Rows 1 (Rent) and 4 (Netflix) get badges; others remain unchanged.
 #
-# Implementation note: Badges are added as new catalog:'badge' child nodes
-# inside each expense row's right container. Modifying the parent row's
-# overrides does NOT render a visible badge — the renderer needs an actual
-# badge catalog node to produce a pill/chip component.
-#
+# Source: Hand-crafted M3.6 delta (verified via deltaApply, 2026-05-16)
 # Target page: dashboard (159 nodes, fixtures/personal-expense-tracker/agentforge/designs/dashboard.json)
+# Applied result: 165 nodes (159 existing + 6 added)
 
 metadata:
-  description: Add recurring frequency badge pills to 4 expense rows
+  description: Add recurring frequency badge pills to expense rows 1 (Rent) and 4 (Netflix)
   targetPage: dashboard
   taskId: cashpulse-transactions-list-modify-recurring-badge
 
-# DesignSpecDelta (R9 §6.2 schema)
 delta:
   screenId: dashboard
   baseWidth: 1440
 
   added:
-    recurring-badge-1:
-      parent: expense-row-1-right
+    expense-row-1-recurring-badge:
+      parent: expense-row-1-meta
       order: 2
-      catalog: badge
-      label: Monthly
+      type: container
+      layout: { dir: row, align: center, gap: 4 }
       overrides:
-        variant: secondary
+        background: "rgba(59,130,246,0.1)"
+        borderRadius: "9999px"
+        paddingLeft: "6px"
+        paddingRight: "6px"
+        paddingTop: "2px"
+        paddingBottom: "2px"
 
-    recurring-badge-3:
-      parent: expense-row-3-right
-      order: 2
-      catalog: badge
-      label: Weekly
+    expense-row-1-recurring-icon:
+      parent: expense-row-1-recurring-badge
+      order: 0
+      catalog: icon
       overrides:
-        variant: secondary
+        name: repeat
+        size: "12px"
+        color: "var(--info)"
 
-    recurring-badge-4:
-      parent: expense-row-4-right
-      order: 2
-      catalog: badge
-      label: Monthly
-      overrides:
-        variant: secondary
+    expense-row-1-recurring-label:
+      parent: expense-row-1-recurring-badge
+      order: 1
+      type: text
+      content: Monthly
+      typography: small
+      color: info
 
-    recurring-badge-6:
-      parent: expense-row-6-right
+    expense-row-4-recurring-badge:
+      parent: expense-row-4-meta
       order: 2
-      catalog: badge
-      label: Yearly
+      type: container
+      layout: { dir: row, align: center, gap: 4 }
       overrides:
-        variant: secondary
+        background: "rgba(59,130,246,0.1)"
+        borderRadius: "9999px"
+        paddingLeft: "6px"
+        paddingRight: "6px"
+        paddingTop: "2px"
+        paddingBottom: "2px"
+
+    expense-row-4-recurring-icon:
+      parent: expense-row-4-recurring-badge
+      order: 0
+      catalog: icon
+      overrides:
+        name: repeat
+        size: "12px"
+        color: "var(--info)"
+
+    expense-row-4-recurring-label:
+      parent: expense-row-4-recurring-badge
+      order: 1
+      type: text
+      content: Monthly
+      typography: small
+      color: info
 
   modified: {}
-
   removed: []
-
   reordered: []
 
-# Highlight classifications for Design Studio preview
 highlightNodes:
-  - nodeId: recurring-badge-1
+  - nodeId: expense-row-1-recurring-badge
     op: added
-    description: "Added badge: Monthly (Rent Payment row)"
-  - nodeId: recurring-badge-3
+    description: "Recurring badge on Rent Payment row (Monthly)"
+  - nodeId: expense-row-1-recurring-icon
     op: added
-    description: "Added badge: Weekly (Uber row)"
-  - nodeId: recurring-badge-4
+    description: "Repeat icon in Rent badge"
+  - nodeId: expense-row-1-recurring-label
     op: added
-    description: "Added badge: Monthly (Netflix row)"
-  - nodeId: recurring-badge-6
+    description: "Frequency label: Monthly"
+  - nodeId: expense-row-4-recurring-badge
     op: added
-    description: "Added badge: Yearly (Starbucks row)"
+    description: "Recurring badge on Netflix row (Monthly)"
+  - nodeId: expense-row-4-recurring-icon
+    op: added
+    description: "Repeat icon in Netflix badge"
+  - nodeId: expense-row-4-recurring-label
+    op: added
+    description: "Frequency label: Monthly"

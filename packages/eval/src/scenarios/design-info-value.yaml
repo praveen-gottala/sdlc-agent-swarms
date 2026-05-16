@@ -14,9 +14,12 @@
 #
 # Design specs sourced from:
 #   NEW tasks:    fixtures/personal-expense-tracker/agentforge/designs/*.json (M0 baseline)
-#   MODIFY tasks: Same files serve as existingDesignSpec (pre-change). No post-change
-#                 design specs exist yet — the design pipeline hasn't been re-run after
-#                 brownfield changes. designSpecPath = existingDesignSpecPath for MODIFY.
+#   MODIFY tasks: existingDesignSpecPath = pre-change spec from designs/*.json
+#                 designSpecPath = same as existingDesignSpecPath (pre-change baseline)
+#                 deltaPath = hand-crafted DesignSpecDelta JSON in deltas/*.delta.json
+#                 Post-change spec is derived at eval time via deltaApply(existing, delta).
+#                 The LLM-regenerated "post-change" specs in designs-brownfield-after/ were
+#                 contaminated (full-screen regeneration, not delta) — archived as exhibit.
 
 id: design-info-value
 name: M3.6 Design Info Value Eval
@@ -210,8 +213,9 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-001
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/dashboard-recurring-card.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/dashboard-add-recurring-card.delta.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
 
   - id: cashpulse-add-expense-modify-recurrence-toggle
@@ -256,8 +260,9 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-002
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/add-expense-recurrence.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/add-expense-recurrence-toggle.delta.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
 
   - id: cashpulse-transactions-list-modify-recurring-badge
@@ -301,6 +306,7 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-006
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/dashboard-recurring-badge.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/transactions-list-recurring-badge.delta.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate

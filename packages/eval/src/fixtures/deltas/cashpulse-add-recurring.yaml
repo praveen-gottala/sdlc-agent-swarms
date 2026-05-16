@@ -2,87 +2,283 @@
 #
 # Scenario: Brownfield change "Add recurring transactions — let users mark
 # a transaction as recurring and see upcoming recurrence on the dashboard."
-# This delta adds an "Upcoming Recurring" section to the dashboard's left
-# column between the budget summary card and the spending categories card.
+# This delta adds an "Upcoming Recurring" card with 3 upcoming items to the
+# dashboard's left column between the budget summary card and the categories card.
 #
-# Source: M3.5 CashPulse brownfield fixture (R9 worked example)
+# Source: Hand-crafted M3.6 delta (verified via deltaApply, 2026-05-16)
 # Target page: dashboard (159 nodes, fixtures/personal-expense-tracker/agentforge/designs/dashboard.json)
+# Applied result: 191 nodes (159 existing + 32 added, 1 reordered)
 
 metadata:
-  description: Add "Upcoming Recurring" card with 3 list items to dashboard left column
+  description: Add "Upcoming Recurring" card with 3 recurring expense rows to dashboard left column
   targetPage: dashboard
   taskId: cashpulse-dashboard-modify-add-recurring-card
 
-# DesignSpecDelta (R9 §6.2 schema)
 delta:
   screenId: dashboard
   baseWidth: 1440
 
   added:
-    recurring-section:
+    recurring-card:
       parent: left-column
       order: 1
-      type: section
-      label: Upcoming Recurring
-      layout: { dir: column, gap: 8 }
+      type: container
+      width: fill
       background: surface-primary
-      radius: 12
+      shadow: sm
+      radius: 16
+      layout: { dir: column, gap: 12, px: 24, py: 24 }
 
-    recurring-list:
-      parent: recurring-section
+    recurring-card-header:
+      parent: recurring-card
       order: 0
       type: container
-      layout: { dir: column, gap: 4 }
+      width: fill
+      layout: { dir: row, align: center, justify: space-between }
 
-    recurring-item-netflix:
-      parent: recurring-list
+    recurring-card-title:
+      parent: recurring-card-header
       order: 0
-      catalog: list-item
-      label: Netflix
-      overrides:
-        subtitle: "Monthly · $15.99 · Due in 3 days"
+      type: text
+      content: Upcoming Recurring
+      typography: label
+      weight: 600
+      color: text-primary
 
-    recurring-item-gym:
-      parent: recurring-list
+    recurring-card-view-all:
+      parent: recurring-card-header
       order: 1
-      catalog: list-item
-      label: Gym Membership
-      overrides:
-        subtitle: "Monthly · $45.00 · Due in 6 days"
+      catalog: link
+      label: View All
+      color: cta-primary
 
-    recurring-item-spotify:
-      parent: recurring-list
+    recurring-row-list:
+      parent: recurring-card
+      order: 1
+      type: container
+      width: fill
+      layout: { dir: column, gap: 0 }
+
+    recurring-row-1:
+      parent: recurring-row-list
+      order: 0
+      type: container
+      width: fill
+      layout: { dir: row, align: center, justify: space-between, py: 10, gap: 8 }
+      overrides: { borderBottom: "1px solid var(--border-default)" }
+
+    recurring-row-1-left:
+      parent: recurring-row-1
+      order: 0
+      type: container
+      layout: { dir: row, align: center, gap: 10 }
+
+    recurring-row-1-dot:
+      parent: recurring-row-1-left
+      order: 0
+      type: container
+      width: 10
+      height: 10
+      radius: 9999
+      background: cta-primary
+
+    recurring-row-1-info:
+      parent: recurring-row-1-left
+      order: 1
+      type: container
+      layout: { dir: column, gap: 2 }
+
+    recurring-row-1-merchant:
+      parent: recurring-row-1-info
+      order: 0
+      type: text
+      content: Rent Payment
+      typography: body
+      color: text-primary
+
+    recurring-row-1-meta:
+      parent: recurring-row-1-info
+      order: 1
+      type: container
+      layout: { dir: row, align: center, gap: 6 }
+
+    recurring-row-1-badge:
+      parent: recurring-row-1-meta
+      order: 0
+      catalog: badge-info
+      label: Monthly
+
+    recurring-row-1-date:
+      parent: recurring-row-1-meta
+      order: 1
+      type: text
+      content: Apr 1
+      typography: small
+      color: text-secondary
+
+    recurring-row-1-amount:
+      parent: recurring-row-1
+      order: 1
+      type: text
+      content: "$1,200.00"
+      typography: body
+      weight: 600
+      color: text-primary
+
+    recurring-row-2:
+      parent: recurring-row-list
+      order: 1
+      type: container
+      width: fill
+      layout: { dir: row, align: center, justify: space-between, py: 10, gap: 8 }
+      overrides: { borderBottom: "1px solid var(--border-default)" }
+
+    recurring-row-2-left:
+      parent: recurring-row-2
+      order: 0
+      type: container
+      layout: { dir: row, align: center, gap: 10 }
+
+    recurring-row-2-dot:
+      parent: recurring-row-2-left
+      order: 0
+      type: container
+      width: 10
+      height: 10
+      radius: 9999
+      background: info
+
+    recurring-row-2-info:
+      parent: recurring-row-2-left
+      order: 1
+      type: container
+      layout: { dir: column, gap: 2 }
+
+    recurring-row-2-merchant:
+      parent: recurring-row-2-info
+      order: 0
+      type: text
+      content: Netflix
+      typography: body
+      color: text-primary
+
+    recurring-row-2-meta:
+      parent: recurring-row-2-info
+      order: 1
+      type: container
+      layout: { dir: row, align: center, gap: 6 }
+
+    recurring-row-2-badge:
+      parent: recurring-row-2-meta
+      order: 0
+      catalog: badge-info
+      label: Monthly
+
+    recurring-row-2-date:
+      parent: recurring-row-2-meta
+      order: 1
+      type: text
+      content: Apr 8
+      typography: small
+      color: text-secondary
+
+    recurring-row-2-amount:
+      parent: recurring-row-2
+      order: 1
+      type: text
+      content: "$15.99"
+      typography: body
+      weight: 600
+      color: text-primary
+
+    recurring-row-3:
+      parent: recurring-row-list
       order: 2
-      catalog: list-item
-      label: Spotify
-      overrides:
-        subtitle: "Monthly · $9.99 · Due in 10 days"
+      type: container
+      width: fill
+      layout: { dir: row, align: center, justify: space-between, py: 10, gap: 8 }
+
+    recurring-row-3-left:
+      parent: recurring-row-3
+      order: 0
+      type: container
+      layout: { dir: row, align: center, gap: 10 }
+
+    recurring-row-3-dot:
+      parent: recurring-row-3-left
+      order: 0
+      type: container
+      width: 10
+      height: 10
+      radius: 9999
+      background: error
+
+    recurring-row-3-info:
+      parent: recurring-row-3-left
+      order: 1
+      type: container
+      layout: { dir: column, gap: 2 }
+
+    recurring-row-3-merchant:
+      parent: recurring-row-3-info
+      order: 0
+      type: text
+      content: Gym Membership
+      typography: body
+      color: text-primary
+
+    recurring-row-3-meta:
+      parent: recurring-row-3-info
+      order: 1
+      type: container
+      layout: { dir: row, align: center, gap: 6 }
+
+    recurring-row-3-badge:
+      parent: recurring-row-3-meta
+      order: 0
+      catalog: badge-warning
+      label: Monthly
+
+    recurring-row-3-date:
+      parent: recurring-row-3-meta
+      order: 1
+      type: text
+      content: Apr 15
+      typography: small
+      color: text-secondary
+
+    recurring-row-3-amount:
+      parent: recurring-row-3
+      order: 1
+      type: text
+      content: "$30.00"
+      typography: body
+      weight: 600
+      color: text-primary
 
   modified: {}
-
   removed: []
 
   reordered:
     - nodeId: category-donut-card
       newOrder: 2
 
-# Highlight classifications for Design Studio preview
 highlightNodes:
-  - nodeId: recurring-section
+  - nodeId: recurring-card
     op: added
-    description: "Added section: Upcoming Recurring"
-  - nodeId: recurring-list
+    description: "Upcoming Recurring card container"
+  - nodeId: recurring-card-header
     op: added
-    description: "Added container: Recurring list"
-  - nodeId: recurring-item-netflix
+    description: "Card header with title and View All link"
+  - nodeId: recurring-row-1
     op: added
-    description: "Added list-item: Netflix"
-  - nodeId: recurring-item-gym
+    description: "Recurring row: Rent Payment ($1,200 Monthly, Apr 1)"
+  - nodeId: recurring-row-2
     op: added
-    description: "Added list-item: Gym"
-  - nodeId: recurring-item-spotify
+    description: "Recurring row: Netflix ($15.99 Monthly, Apr 8)"
+  - nodeId: recurring-row-3
     op: added
-    description: "Added list-item: Spotify"
+    description: "Recurring row: Gym Membership ($30 Monthly, Apr 15)"
   - nodeId: category-donut-card
     op: reordered
-    description: "Reordered: shifted down for recurring section"
+    description: "Shifted down to make room for recurring card"

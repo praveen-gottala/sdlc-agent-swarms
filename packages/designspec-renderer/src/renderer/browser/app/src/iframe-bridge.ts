@@ -148,51 +148,68 @@ export function initIframeBridge(options?: {
         }
         deltaStyleEl.textContent = data.css;
 
-        // Apply classes and badges to each classified node
+        // Pass 1: tag all nodes with data-delta-op (for ancestor lookup)
+        for (const { nodeId, op } of data.nodes) {
+          const el = document.querySelector(`[data-node="${nodeId}"]`) as HTMLElement | null;
+          if (!el) continue;
+          el.dataset.deltaOp = op;
+        }
+
+        // Pass 2: apply visual highlights only to nodes without a same-op ancestor
         for (const { nodeId, op, description } of data.nodes) {
           const el = document.querySelector(`[data-node="${nodeId}"]`) as HTMLElement | null;
           if (!el) continue;
 
-          el.style.position = 'relative';
-          el.classList.add('r10-highlight', `r10-${op}`);
-          el.dataset.deltaOp = op;
+          // Nested-highlight collapse: walk up DOM, skip if ancestor has same op
+          let ancestor = el.parentElement;
+          let nested = false;
+          while (ancestor) {
+            if (ancestor.dataset?.deltaOp === op) { nested = true; break; }
+            ancestor = ancestor.parentElement;
+          }
+          if (nested) continue;
 
-          // Create badge
+          el.style.position = 'relative';
+          el.classList.add('delta-highlight', `delta-${op}`);
+
+          // Create badge (always visible, small)
           const badge = document.createElement('span');
-          badge.className = `r10-badge r10-badge-${op}`;
+          badge.className = `delta-badge delta-badge-${op}`;
           const prefix = op === 'added' ? '+' : op === 'modified' ? '~' : op === 'removed' ? '−' : '↕';
           badge.textContent = `${prefix} ${op.charAt(0).toUpperCase() + op.slice(1)}`;
 
-          // Create approve/reject controls
-          const controls = document.createElement('span');
-          controls.className = 'r10-region-controls';
-          controls.style.cssText = 'position:absolute;top:-10px;right:100px;display:flex;gap:2px;z-index:2;';
+          // Create hover toolbar (hidden until hover)
+          const toolbar = document.createElement('div');
+          toolbar.className = 'delta-hover-toolbar';
+
+          const toolbarLabel = document.createElement('span');
+          toolbarLabel.className = 'delta-toolbar-label';
+          toolbarLabel.textContent = description;
 
           const approveBtn = document.createElement('button');
-          approveBtn.className = 'r10-approve-btn';
+          approveBtn.className = 'delta-approve-btn';
           approveBtn.textContent = '✓';
           approveBtn.title = `Approve: ${description}`;
-          approveBtn.style.cssText = 'width:20px;height:20px;border-radius:10px;border:1px solid #639922;background:#C0DD97;color:#173404;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;';
           approveBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             window.parent.postMessage({ type: 'delta-region-action', nodeId, action: 'approve', source: 'agentforge' }, '*');
           });
 
           const rejectBtn = document.createElement('button');
-          rejectBtn.className = 'r10-reject-btn';
+          rejectBtn.className = 'delta-reject-btn';
           rejectBtn.textContent = '✕';
           rejectBtn.title = `Reject: ${description}`;
-          rejectBtn.style.cssText = 'width:20px;height:20px;border-radius:10px;border:1px solid #E24B4A;background:#F7C1C1;color:#501313;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;';
           rejectBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             window.parent.postMessage({ type: 'delta-region-action', nodeId, action: 'reject', source: 'agentforge' }, '*');
           });
 
-          controls.appendChild(approveBtn);
-          controls.appendChild(rejectBtn);
+          toolbar.appendChild(toolbarLabel);
+          toolbar.appendChild(approveBtn);
+          toolbar.appendChild(rejectBtn);
 
           el.insertBefore(badge, el.firstChild);
-          el.insertBefore(controls, el.firstChild);
+          el.appendChild(toolbar);
         }
         break;
       }
@@ -202,11 +219,11 @@ export function initIframeBridge(options?: {
           deltaStyleEl.remove();
           deltaStyleEl = null;
         }
-        document.querySelectorAll('.r10-highlight').forEach((el) => {
-          el.classList.remove('r10-highlight', 'r10-added', 'r10-modified', 'r10-removed', 'r10-reordered');
+        document.querySelectorAll('.delta-highlight').forEach((el) => {
+          el.classList.remove('delta-highlight', 'delta-added', 'delta-modified', 'delta-removed', 'delta-reordered');
           delete (el as HTMLElement).dataset.deltaOp;
         });
-        document.querySelectorAll('.r10-badge, .r10-region-controls').forEach((el) => el.remove());
+        document.querySelectorAll('.delta-badge, .delta-region-controls, .delta-hover-toolbar').forEach((el) => el.remove());
         break;
       }
     }

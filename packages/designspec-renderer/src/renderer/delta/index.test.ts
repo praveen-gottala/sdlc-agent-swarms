@@ -72,12 +72,12 @@ describe('renderDelta — added-only', () => {
     },
   };
 
-  it('renders added nodes with r10-added class', () => {
+  it('renders added nodes with delta-added class', () => {
     const result = renderDelta(BASE_SPEC, addedDelta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.jsx).toContain('r10-highlight r10-added');
+    expect(result.value.jsx).toContain('delta-highlight delta-added');
     expect(result.value.jsx).toContain('data-delta-op="added"');
     expect(result.value.jsx).toContain('data-node-id="newCard"');
   });
@@ -87,7 +87,7 @@ describe('renderDelta — added-only', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.jsx).toContain('r10-badge-added');
+    expect(result.value.jsx).toContain('delta-badge-added');
     expect(result.value.jsx).toContain('+ Added');
   });
 
@@ -123,12 +123,12 @@ describe('renderDelta — modified-only', () => {
     },
   };
 
-  it('renders modified nodes with r10-modified class', () => {
+  it('renders modified nodes with delta-modified class', () => {
     const result = renderDelta(BASE_SPEC, modifiedDelta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.jsx).toContain('r10-highlight r10-modified');
+    expect(result.value.jsx).toContain('delta-highlight delta-modified');
     expect(result.value.jsx).toContain('data-delta-op="modified"');
     expect(result.value.jsx).toContain('data-node-id="title"');
   });
@@ -138,7 +138,7 @@ describe('renderDelta — modified-only', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.jsx).toContain('r10-badge-modified');
+    expect(result.value.jsx).toContain('delta-badge-modified');
     expect(result.value.jsx).toContain('~ Modified');
   });
 
@@ -228,8 +228,8 @@ describe('renderDelta — mixed delta', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.value.jsx).toContain('r10-added');
-    expect(result.value.jsx).toContain('r10-modified');
+    expect(result.value.jsx).toContain('delta-added');
+    expect(result.value.jsx).toContain('delta-modified');
   });
 
   it('has correct total changeRegions', () => {
@@ -291,7 +291,7 @@ describe('renderDelta — annotations option', () => {
     const result = renderDelta(BASE_SPEC, delta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.jsx).toContain('r10-badge');
+    expect(result.value.jsx).toContain('delta-badge');
   });
 
   it('excludes badges when annotations=false', () => {
@@ -300,7 +300,7 @@ describe('renderDelta — annotations option', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.jsx).not.toContain('r10-badge');
+    expect(result.value.jsx).not.toContain('delta-badge');
   });
 });
 
@@ -365,6 +365,63 @@ describe('computeFieldDiff', () => {
       before: undefined,
       after: 'surface',
     });
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Nested-highlight collapse                                          */
+/* ------------------------------------------------------------------ */
+describe('renderDelta — nested-highlight collapse', () => {
+  const nestedDelta: DesignSpecDelta = {
+    ...EMPTY_DELTA,
+    added: {
+      parentCard: { parent: 'root', order: 3, type: 'container', label: 'Parent' },
+      child1: { parent: 'parentCard', order: 0, type: 'text', content: 'A', typography: 'body', color: 'text-primary' },
+      child2: { parent: 'parentCard', order: 1, type: 'text', content: 'B', typography: 'body', color: 'text-primary' },
+      child3: { parent: 'parentCard', order: 2, type: 'text', content: 'C', typography: 'body', color: 'text-primary' },
+      child4: { parent: 'parentCard', order: 3, type: 'text', content: 'D', typography: 'body', color: 'text-primary' },
+    },
+  };
+
+  it('produces exactly 1 highlight on parent, 0 on children (same-op nesting)', () => {
+    const result = renderDelta(BASE_SPEC, nestedDelta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const highlightMatches = result.value.jsx.match(/delta-highlight delta-added/g) ?? [];
+    expect(highlightMatches).toHaveLength(1);
+
+    const badgeMatches = result.value.jsx.match(/delta-badge-added/g) ?? [];
+    expect(badgeMatches).toHaveLength(1);
+  });
+
+  it('still tags nested children with data-delta-op for targeting', () => {
+    const result = renderDelta(BASE_SPEC, nestedDelta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    for (const childId of ['child1', 'child2', 'child3', 'child4']) {
+      expect(result.value.jsx).toContain(`data-delta-op="added" data-node-id="${childId}"`);
+    }
+  });
+
+  it('preserves cross-op nesting visibility (modified parent + added child)', () => {
+    const crossOpDelta: DesignSpecDelta = {
+      ...EMPTY_DELTA,
+      added: {
+        innerNew: { parent: 'card1', order: 2, type: 'text', content: 'New', typography: 'body', color: 'text-primary' },
+      },
+      modified: {
+        card1: { background: 'accent' },
+      },
+    };
+
+    const result = renderDelta(BASE_SPEC, crossOpDelta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.jsx).toContain('delta-highlight delta-added');
+    expect(result.value.jsx).toContain('delta-highlight delta-modified');
   });
 });
 

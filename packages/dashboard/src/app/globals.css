@@ -164,6 +164,13 @@ html[data-mantine-color-scheme="light"] {
   ::-webkit-scrollbar-thumb:hover { @apply bg-text-muted/50; }
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Component utilities ───────────────────────────────────── */
 
 @layer components {

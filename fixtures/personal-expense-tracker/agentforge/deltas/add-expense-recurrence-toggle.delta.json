@@ -1,0 +1,209 @@
+{
+  "screenId": "add-expense",
+  "baseWidth": 1440,
+  "added": {
+    "recurrence-section": {
+      "parent": "expense-form-card",
+      "order": 8,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "py": 16
+      }
+    },
+    "recurrence-toggle-row": {
+      "parent": "recurrence-section",
+      "order": 0,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "justify": "space-between"
+      }
+    },
+    "recurrence-toggle-label": {
+      "parent": "recurrence-toggle-row",
+      "order": 0,
+      "type": "text",
+      "content": "Recurring",
+      "typography": "label",
+      "color": "text-primary",
+      "weight": 600
+    },
+    "recurrence-toggle": {
+      "parent": "recurrence-toggle-row",
+      "order": 1,
+      "catalog": "toggle",
+      "value": "on",
+      "overrides": {
+        "aria-label": "Make this expense recurring"
+      }
+    },
+    "recurrence-config-panel": {
+      "parent": "recurrence-section",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "background": "surface-secondary",
+      "radius": 10,
+      "layout": {
+        "dir": "column",
+        "gap": 16,
+        "px": 16,
+        "py": 16
+      },
+      "overrides": {
+        "border": "1px solid var(--border-default)"
+      }
+    },
+    "frequency-label": {
+      "parent": "recurrence-config-panel",
+      "order": 0,
+      "type": "text",
+      "content": "Frequency",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "frequency-chip-row": {
+      "parent": "recurrence-config-panel",
+      "order": 1,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "row",
+        "gap": 8,
+        "align": "center"
+      }
+    },
+    "freq-chip-weekly": {
+      "parent": "frequency-chip-row",
+      "order": 0,
+      "catalog": "chip",
+      "label": "Weekly",
+      "overrides": {
+        "borderRadius": "9999px"
+      }
+    },
+    "freq-chip-monthly": {
+      "parent": "frequency-chip-row",
+      "order": 1,
+      "catalog": "chip",
+      "label": "Monthly",
+      "overrides": {
+        "borderRadius": "9999px",
+        "selected": true
+      }
+    },
+    "freq-chip-yearly": {
+      "parent": "frequency-chip-row",
+      "order": 2,
+      "catalog": "chip",
+      "label": "Yearly",
+      "overrides": {
+        "borderRadius": "9999px"
+      }
+    },
+    "end-date-label": {
+      "parent": "recurrence-config-panel",
+      "order": 2,
+      "type": "text",
+      "content": "Ends",
+      "typography": "label",
+      "color": "text-secondary",
+      "weight": 500
+    },
+    "end-date-options": {
+      "parent": "recurrence-config-panel",
+      "order": 3,
+      "type": "container",
+      "width": "fill",
+      "layout": {
+        "dir": "column",
+        "gap": 10
+      }
+    },
+    "end-date-never-row": {
+      "parent": "end-date-options",
+      "order": 0,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "end-date-never-radio": {
+      "parent": "end-date-never-row",
+      "order": 0,
+      "type": "container",
+      "width": 18,
+      "height": 18,
+      "radius": 9999,
+      "background": "cta-primary",
+      "overrides": {
+        "border": "2px solid var(--cta-primary)"
+      }
+    },
+    "end-date-never-label": {
+      "parent": "end-date-never-row",
+      "order": 1,
+      "type": "text",
+      "content": "Never",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "end-date-on-row": {
+      "parent": "end-date-options",
+      "order": 1,
+      "type": "container",
+      "layout": {
+        "dir": "row",
+        "align": "center",
+        "gap": 8
+      }
+    },
+    "end-date-on-radio": {
+      "parent": "end-date-on-row",
+      "order": 0,
+      "type": "container",
+      "width": 18,
+      "height": 18,
+      "radius": 9999,
+      "overrides": {
+        "border": "2px solid var(--border-default)"
+      }
+    },
+    "end-date-on-label": {
+      "parent": "end-date-on-row",
+      "order": 1,
+      "type": "text",
+      "content": "On date",
+      "typography": "body",
+      "color": "text-primary"
+    },
+    "end-date-picker": {
+      "parent": "end-date-on-row",
+      "order": 2,
+      "catalog": "date-picker",
+      "label": "",
+      "placeholder": "Select end date",
+      "width": 200,
+      "overrides": {
+        "disabled": true,
+        "aria-label": "Recurrence end date"
+      }
+    }
+  },
+  "modified": {},
+  "removed": [],
+  "reordered": [
+    {
+      "nodeId": "save-expense-btn",
+      "newOrder": 9
+    }
+  ]
+}
