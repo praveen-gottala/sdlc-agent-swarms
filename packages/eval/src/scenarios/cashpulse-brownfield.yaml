@@ -1,0 +1,212 @@
+# M3.5 Brownfield Fixture: CashPulse + Recurring Transactions
+#
+# Generated: 2026-05-15 via scripts/run-clarifier-cashpulse-brownfield.ts
+# Clarifier mode: evolution | Duration: 258.4s | All 4 schemas validated
+#
+# This fixture captures the pre-change baseline and post-change Clarifier output
+# for the brownfield change request "Add recurring transactions." Used as the
+# grounded example throughout the R9 research brief.
+
+id: cashpulse-brownfield
+name: CashPulse — Add Recurring Transactions (Brownfield)
+description: >
+  Brownfield enhancement to the existing CashPulse personal expense tracker.
+  Adds recurring transaction support: mark expenses as recurring (weekly/monthly/yearly),
+  view upcoming recurrences on the dashboard, manage recurring templates, and handle
+  deletion of single vs entire series.
+
+changeRequest: >
+  Add recurring transactions — let users mark a transaction as recurring
+  (weekly/monthly/yearly) and see upcoming recurrence on the dashboard.
+
+mode: evolution
+maxRounds: 1
+
+# ---------------------------------------------------------------------------
+# Pre-change baseline (M0 outputs)
+# ---------------------------------------------------------------------------
+
+preChangePRD:
+  path: fixtures/personal-expense-tracker/docs/prd.md
+  chars: 27243
+
+preChangeDesignSpecs:
+  dashboard:
+    path: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    nodeCount: 159
+  add-expense:
+    path: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    nodeCount: 157
+  confirm-delete:
+    path: fixtures/personal-expense-tracker/agentforge/designs/confirm-delete.json
+    nodeCount: 22
+  settings:
+    path: fixtures/personal-expense-tracker/agentforge/designs/settings.json
+  spending-insights:
+    path: fixtures/personal-expense-tracker/agentforge/designs/spending-insights.json
+  shared-chrome:
+    path: fixtures/personal-expense-tracker/agentforge/designs/shared-chrome.json
+
+# ---------------------------------------------------------------------------
+# Post-change Clarifier output
+# ---------------------------------------------------------------------------
+
+postChangeEnrichedRequirement:
+  path: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/enriched-requirement.json
+  bytes: 53343
+  validation: PASS (EnrichedRequirementSchema)
+  summary:
+    screens: 6
+    entities: 3
+    features: 8
+    confidence: from run-summary.json
+
+postChangePRD:
+  path: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/prd-draft.json
+
+postChangeScreens:
+  - id: screen-001
+    name: "Dashboard — Upcoming Recurring Card"
+    screenType: page
+  - id: screen-002
+    name: "Add Expense — Recurrence Configuration"
+    screenType: page
+  - id: screen-003
+    name: "Expense Detail Popover — Recurring Info"
+    screenType: modal
+  - id: screen-004
+    name: "Manage Recurring Transactions Drawer"
+    screenType: drawer
+  - id: screen-005
+    name: "Delete Recurring Expense Confirmation"
+    screenType: modal
+  - id: screen-006
+    name: "Dashboard — Recurring Badge on Expense Rows"
+    screenType: page
+
+postChangeEntities:
+  - name: Expense
+    change: modified
+    addedFields: [recurringTemplateId]
+  - name: Category
+    change: unchanged
+  - name: RecurringTemplate
+    change: new
+    fields: [id, amount, categoryId, merchantName, frequency, startDate, endDate, nextOccurrence, paymentMethod, note, status, createdAt]
+
+postChangeFeatures:
+  - name: "Mark Expense as Recurring"
+    priority: must-have
+  - name: "Upcoming Recurring Expenses on Dashboard"
+    priority: must-have
+  - name: "Recurring Transaction Badge on Expense Rows"
+    priority: must-have
+  - name: "Edit Recurrence from Expense Detail Popover"
+    priority: must-have
+  - name: "Delete Recurring Expense — Single vs Series"
+    priority: must-have
+  - name: "Manage Recurring Transactions List"
+    priority: should-have
+  - name: "Pause and Resume Recurring Transactions"
+    priority: should-have
+  - name: "Recurring Expense Totals in Spending Insights"
+    priority: could-have
+
+# ---------------------------------------------------------------------------
+# Hand-derived expected affected screens
+#
+# This is what a correct per-screen impact analysis algorithm should produce
+# when comparing postChangeEnrichedRequirement.prd.screens against
+# preChangeDesignSpecs. Written by inspecting the Clarifier output and the
+# existing DesignSpec node trees.
+# ---------------------------------------------------------------------------
+
+expectedAffectedScreens:
+  - screenId: dashboard
+    impact: modified
+    reason: >
+      Screens 001 and 006 both target the existing dashboard. Screen-001 adds an
+      "Upcoming Recurring" card section. Screen-006 adds recurring badges to
+      existing expense list rows. Both require inserting new nodes into the
+      existing 159-node dashboard DesignSpec.
+    affectedRegions:
+      - region: left-column (child of dashboard-body)
+        changeKind: insert
+        description: "Add Upcoming Recurring card section as new child"
+      - region: expense list rows
+        changeKind: modify
+        description: "Add recurring badge/icon to each expense row node"
+    confidence: 0.95
+
+  - screenId: add-expense
+    impact: modified
+    reason: >
+      Screen-002 adds recurrence configuration (frequency picker, start/end date)
+      to the existing 157-node add-expense form. New form fields inserted into the
+      existing form body container.
+    affectedRegions:
+      - region: form body container
+        changeKind: insert
+        description: "Add recurrence section with frequency radio, date pickers"
+    confidence: 0.90
+
+  - screenId: confirm-delete
+    impact: modified
+    reason: >
+      Screen-005 modifies the existing 22-node delete confirmation modal to include
+      "delete single occurrence vs entire series" choice when deleting a recurring expense.
+    affectedRegions:
+      - region: modal-panel
+        changeKind: insert
+        description: "Add radio/toggle for single vs series deletion"
+    confidence: 0.85
+
+  - screenId: settings
+    impact: unchanged
+    reason: "No screens in the change request reference settings."
+    confidence: 0.99
+
+  - screenId: spending-insights
+    impact: unchanged
+    reason: >
+      The "Recurring Expense Totals in Spending Insights" feature is could-have
+      priority. A strict impact analysis should flag this as potentially affected,
+      but with low confidence since could-have features may be deferred.
+    confidence: 0.70
+
+  - screenId: shared-chrome
+    impact: unchanged
+    reason: "Navigation structure unchanged — no new top-level nav items needed."
+    confidence: 0.95
+
+  - screenId: expense-detail-popover
+    impact: new
+    reason: >
+      Screen-003 (Expense Detail Popover) is a new modal that doesn't exist in the
+      baseline. Full DesignSpec generation needed (not a delta).
+    screenType: modal
+    confidence: 0.95
+
+  - screenId: manage-recurring
+    impact: new
+    reason: >
+      Screen-004 (Manage Recurring Transactions Drawer) is a new drawer screen.
+      Full DesignSpec generation at drawer viewport width (320px).
+    screenType: drawer
+    confidence: 0.95
+
+# ---------------------------------------------------------------------------
+# Run metadata
+# ---------------------------------------------------------------------------
+
+runMetadata:
+  scriptPath: scripts/run-clarifier-cashpulse-brownfield.ts
+  artifactDir: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/
+  threadId: m3.5-brownfield-1778891741472
+  durationMs: 258400
+  resumeCycles: 2
+  questionsAsked: 1
+  answersSimulated: 2
+  criticPassed: true
+  allSchemasValid: true
+  timestamp: "2026-05-15"

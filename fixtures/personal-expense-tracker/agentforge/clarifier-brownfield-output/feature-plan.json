@@ -1,0 +1,290 @@
+{
+  "id": "plan-1778891999821",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Mark Expense as Recurring",
+      "description": "On the Add Expense form (Screen 2), add a toggle or checkbox allowing users to mark an expense as recurring. When enabled, a recurrence frequency selector appears with options: Weekly, Monthly, and Yearly. An optional end date can be set. The recurrence configuration is saved alongside the expense and used to auto-generate future occurrences.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-0",
+          "condition": "WHEN the user opens the Add Expense form (Screen 2)",
+          "behavior": "THE SYSTEM SHALL display a 'Recurring' toggle row positioned below the Payment Method selector and above the Note input, defaulting to the off state.",
+          "formatted": "WHEN WHEN the user opens the Add Expense form (Screen 2) THE SYSTEM SHALL THE SYSTEM SHALL display a 'Recurring' toggle row positioned below the Payment Method selector and above the Note input, defaulting to the off state."
+        },
+        {
+          "id": "ears-1",
+          "condition": "WHEN the user toggles the 'Recurring' switch to the on position",
+          "behavior": "THE SYSTEM SHALL animate a configuration panel into view within 200ms (ease-in-out) containing a frequency chip selector (Weekly / Monthly / Yearly, defaulting to Monthly) and an end-date row with 'Never' pre-selected.",
+          "formatted": "WHEN WHEN the user toggles the 'Recurring' switch to the on position THE SYSTEM SHALL THE SYSTEM SHALL animate a configuration panel into view within 200ms (ease-in-out) containing a frequency chip selector (Weekly / Monthly / Yearly, defaulting to Monthly) and an end-date row with 'Never' pre-selected."
+        },
+        {
+          "id": "ears-2",
+          "condition": "WHEN the user selects 'On date' in the end-date row",
+          "behavior": "THE SYSTEM SHALL reveal a date picker input that restricts selection to future dates only.",
+          "formatted": "WHEN WHEN the user selects 'On date' in the end-date row THE SYSTEM SHALL THE SYSTEM SHALL reveal a date picker input that restricts selection to future dates only."
+        },
+        {
+          "id": "ears-3",
+          "condition": "WHEN the user submits the Add Expense form with the Recurring toggle on and a frequency selected",
+          "behavior": "THE SYSTEM SHALL create a RecurringTemplate record (with the expense's id, amount, frequency, startDate, optional endDate, and status 'active') and link the expense to it via recurringTemplateId, then auto-generate the next scheduled occurrence and set nextOccurrence accordingly.",
+          "formatted": "WHEN WHEN the user submits the Add Expense form with the Recurring toggle on and a frequency selected THE SYSTEM SHALL THE SYSTEM SHALL create a RecurringTemplate record (with the expense's id, amount, frequency, startDate, optional endDate, and status 'active') and link the expense to it via recurringTemplateId, then auto-generate the next scheduled occurrence and set nextOccurrence accordingly."
+        },
+        {
+          "id": "ears-4",
+          "condition": "WHEN the user toggles the 'Recurring' switch back to the off position",
+          "behavior": "THE SYSTEM SHALL collapse the configuration panel within 200ms and clear all previously entered recurrence data (frequency, end date) from the form state.",
+          "formatted": "WHEN WHEN the user toggles the 'Recurring' switch back to the off position THE SYSTEM SHALL THE SYSTEM SHALL collapse the configuration panel within 200ms and clear all previously entered recurrence data (frequency, end date) from the form state."
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [],
+      "status": "planned"
+    },
+    {
+      "id": "feat-002",
+      "name": "Upcoming Recurring Expenses on Dashboard",
+      "description": "Add a new card to the Dashboard (Screen 1) left column, below the Category Breakdown Mini-Chart, showing upcoming recurring expenses for the current month. Each row displays the merchant/description, amount, next occurrence date, and recurrence frequency badge. The card shows the next 5 upcoming recurrences sorted by date.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-5",
+          "condition": "WHEN the user navigates to the Dashboard (Screen 1)",
+          "behavior": "THE SYSTEM SHALL display an 'Upcoming Recurring' card in the left column, positioned below the Category Breakdown Mini-Chart, styled with white background, 16px border radius, card shadow, and 24px padding.",
+          "formatted": "WHEN WHEN the user navigates to the Dashboard (Screen 1) THE SYSTEM SHALL THE SYSTEM SHALL display an 'Upcoming Recurring' card in the left column, positioned below the Category Breakdown Mini-Chart, styled with white background, 16px border radius, card shadow, and 24px padding."
+        },
+        {
+          "id": "ears-6",
+          "condition": "WHEN at least one active RecurringTemplate has a nextOccurrence within the current calendar month",
+          "behavior": "THE SYSTEM SHALL populate the Upcoming Recurring card with up to 5 rows sorted ascending by nextOccurrence date, each row showing a 10px category-colored circle, merchant name, frequency badge pill, next occurrence date, and right-aligned amount.",
+          "formatted": "WHEN WHEN at least one active RecurringTemplate has a nextOccurrence within the current calendar month THE SYSTEM SHALL THE SYSTEM SHALL populate the Upcoming Recurring card with up to 5 rows sorted ascending by nextOccurrence date, each row showing a 10px category-colored circle, merchant name, frequency badge pill, next occurrence date, and right-aligned amount."
+        },
+        {
+          "id": "ears-7",
+          "condition": "WHEN no active RecurringTemplate records exist",
+          "behavior": "THE SYSTEM SHALL display an empty state inside the Upcoming Recurring card consisting of a 32px gray-300 circular-arrow icon and the text 'No recurring expenses' in body style, gray-400.",
+          "formatted": "WHEN WHEN no active RecurringTemplate records exist THE SYSTEM SHALL THE SYSTEM SHALL display an empty state inside the Upcoming Recurring card consisting of a 32px gray-300 circular-arrow icon and the text 'No recurring expenses' in body style, gray-400."
+        },
+        {
+          "id": "ears-8",
+          "condition": "WHEN the user clicks the 'View All' text link at the bottom of the Upcoming Recurring card",
+          "behavior": "THE SYSTEM SHALL open the Manage Recurring Transactions drawer (feat-006).",
+          "formatted": "WHEN WHEN the user clicks the 'View All' text link at the bottom of the Upcoming Recurring card THE SYSTEM SHALL THE SYSTEM SHALL open the Manage Recurring Transactions drawer (feat-006)."
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001",
+        "feat-006"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-003",
+      "name": "Recurring Transaction Badge on Expense Rows",
+      "description": "On the Dashboard recent expenses list and the Expense Detail Popover, display a small recurring icon/badge (e.g., a circular arrow icon) next to expenses that are part of a recurring series. The badge indicates the frequency (e.g., 'Monthly'). This helps users visually distinguish one-time from recurring expenses.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-9",
+          "condition": "WHEN an expense row in the Dashboard Recent Expenses list is linked to a RecurringTemplate (recurringTemplateId is not null)",
+          "behavior": "THE SYSTEM SHALL display a 14px gray-400 circular-arrow icon inline after the category label in the caption line, followed by the frequency text and date (e.g., 'Bills & Utilities · Monthly · Mar 1').",
+          "formatted": "WHEN WHEN an expense row in the Dashboard Recent Expenses list is linked to a RecurringTemplate (recurringTemplateId is not null) THE SYSTEM SHALL THE SYSTEM SHALL display a 14px gray-400 circular-arrow icon inline after the category label in the caption line, followed by the frequency text and date (e.g., 'Bills & Utilities · Monthly · Mar 1')."
+        },
+        {
+          "id": "ears-10",
+          "condition": "WHEN an expense displayed in the Expense Detail Popover is linked to a RecurringTemplate",
+          "behavior": "THE SYSTEM SHALL render a frequency badge pill (12px circular-arrow icon + frequency text, blue-100 background, blue-600 text, caption style) adjacent to the merchant name in the popover header.",
+          "formatted": "WHEN WHEN an expense displayed in the Expense Detail Popover is linked to a RecurringTemplate THE SYSTEM SHALL THE SYSTEM SHALL render a frequency badge pill (12px circular-arrow icon + frequency text, blue-100 background, blue-600 text, caption style) adjacent to the merchant name in the popover header."
+        },
+        {
+          "id": "ears-11",
+          "condition": "WHEN an expense in the Recent Expenses list is NOT linked to a RecurringTemplate",
+          "behavior": "THE SYSTEM SHALL display the expense row without any recurring icon or badge, preserving the existing row layout.",
+          "formatted": "WHEN WHEN an expense in the Recent Expenses list is NOT linked to a RecurringTemplate THE SYSTEM SHALL THE SYSTEM SHALL display the expense row without any recurring icon or badge, preserving the existing row layout."
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-004",
+      "name": "Edit Recurrence from Expense Detail Popover",
+      "description": "When viewing a recurring expense in the detail popover (Screen 1, section 4.5), show the recurrence details (frequency, next occurrence, end date) and provide an 'Edit Series' action alongside the existing 'Edit' button. 'Edit' modifies only the single occurrence; 'Edit Series' navigates to Screen 2 pre-filled with the recurring template for modifying the entire series.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-12",
+          "condition": "WHEN the user opens the Expense Detail Popover for an expense linked to a RecurringTemplate",
+          "behavior": "THE SYSTEM SHALL display an additional 'Recurrence' detail row below the existing four rows, showing the frequency and next occurrence date (e.g., 'Every month · Next: Apr 29') in body style, gray-900.",
+          "formatted": "WHEN WHEN the user opens the Expense Detail Popover for an expense linked to a RecurringTemplate THE SYSTEM SHALL THE SYSTEM SHALL display an additional 'Recurrence' detail row below the existing four rows, showing the frequency and next occurrence date (e.g., 'Every month · Next: Apr 29') in body style, gray-900."
+        },
+        {
+          "id": "ears-13",
+          "condition": "WHEN the user clicks 'Edit This' in the Expense Detail Popover for a recurring expense",
+          "behavior": "THE SYSTEM SHALL navigate to the Add Expense form pre-filled with only that single occurrence's data, and saving changes SHALL update only that expense record without modifying the RecurringTemplate.",
+          "formatted": "WHEN WHEN the user clicks 'Edit This' in the Expense Detail Popover for a recurring expense THE SYSTEM SHALL THE SYSTEM SHALL navigate to the Add Expense form pre-filled with only that single occurrence's data, and saving changes SHALL update only that expense record without modifying the RecurringTemplate."
+        },
+        {
+          "id": "ears-14",
+          "condition": "WHEN the user clicks 'Edit Series' in the Expense Detail Popover for a recurring expense",
+          "behavior": "THE SYSTEM SHALL navigate to the Add Expense form (Screen 2) pre-filled with the linked RecurringTemplate's data (amount, frequency, end date, merchant, category, payment method, note) with the Recurring toggle in the on state.",
+          "formatted": "WHEN WHEN the user clicks 'Edit Series' in the Expense Detail Popover for a recurring expense THE SYSTEM SHALL THE SYSTEM SHALL navigate to the Add Expense form (Screen 2) pre-filled with the linked RecurringTemplate's data (amount, frequency, end date, merchant, category, payment method, note) with the Recurring toggle in the on state."
+        },
+        {
+          "id": "ears-15",
+          "condition": "WHEN the user saves changes via 'Edit Series'",
+          "behavior": "THE SYSTEM SHALL update the RecurringTemplate record and recalculate nextOccurrence, applying the changes to all future auto-generated occurrences while leaving already-generated past occurrences unchanged.",
+          "formatted": "WHEN WHEN the user saves changes via 'Edit Series' THE SYSTEM SHALL THE SYSTEM SHALL update the RecurringTemplate record and recalculate nextOccurrence, applying the changes to all future auto-generated occurrences while leaving already-generated past occurrences unchanged."
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001",
+        "feat-003"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-005",
+      "name": "Delete Recurring Expense — Single vs Series",
+      "description": "When deleting a recurring expense from the detail popover, prompt the user to choose between deleting only the single occurrence or the entire recurring series. The confirmation text updates accordingly: 'Delete this expense?' vs 'Delete all future recurrences?'.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-16",
+          "condition": "WHEN the user initiates a delete action on a recurring expense in the Expense Detail Popover",
+          "behavior": "THE SYSTEM SHALL replace the action buttons area with an inline choice showing two stacked options: 'Delete this expense only' (red-500) and 'Delete entire series' (red-500, 600 weight), plus a 'Cancel' text link (gray-500) below them.",
+          "formatted": "WHEN WHEN the user initiates a delete action on a recurring expense in the Expense Detail Popover THE SYSTEM SHALL THE SYSTEM SHALL replace the action buttons area with an inline choice showing two stacked options: 'Delete this expense only' (red-500) and 'Delete entire series' (red-500, 600 weight), plus a 'Cancel' text link (gray-500) below them."
+        },
+        {
+          "id": "ears-17",
+          "condition": "WHEN the user selects 'Delete this expense only'",
+          "behavior": "THE SYSTEM SHALL display the confirmation text 'Confirm?' with a 3-second auto-revert timer, and upon confirmation SHALL delete only the selected expense record while leaving the RecurringTemplate and all other occurrences intact.",
+          "formatted": "WHEN WHEN the user selects 'Delete this expense only' THE SYSTEM SHALL THE SYSTEM SHALL display the confirmation text 'Confirm?' with a 3-second auto-revert timer, and upon confirmation SHALL delete only the selected expense record while leaving the RecurringTemplate and all other occurrences intact."
+        },
+        {
+          "id": "ears-18",
+          "condition": "WHEN the user selects 'Delete entire series'",
+          "behavior": "THE SYSTEM SHALL display the confirmation text 'Confirm?' with a 3-second auto-revert timer, and upon confirmation SHALL delete the linked RecurringTemplate and all future auto-generated expense occurrences associated with it.",
+          "formatted": "WHEN WHEN the user selects 'Delete entire series' THE SYSTEM SHALL THE SYSTEM SHALL display the confirmation text 'Confirm?' with a 3-second auto-revert timer, and upon confirmation SHALL delete the linked RecurringTemplate and all future auto-generated expense occurrences associated with it."
+        },
+        {
+          "id": "ears-19",
+          "condition": "WHEN the 3-second auto-revert timer expires without user confirmation",
+          "behavior": "THE SYSTEM SHALL revert the Expense Detail Popover to its normal action button state without performing any deletion.",
+          "formatted": "WHEN WHEN the 3-second auto-revert timer expires without user confirmation THE SYSTEM SHALL THE SYSTEM SHALL revert the Expense Detail Popover to its normal action button state without performing any deletion."
+        }
+      ],
+      "priority": "must-have",
+      "dependencies": [
+        "feat-001",
+        "feat-003",
+        "feat-004"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-006",
+      "name": "Manage Recurring Transactions List",
+      "description": "Add a dedicated screen/drawer accessible from the Dashboard's upcoming recurring card (via a 'View All' link) or from the Settings dialog. This view lists all active recurring transaction templates with their frequency, amount, category, next occurrence, and status (active/paused). Users can pause, resume, edit, or delete recurring templates from this list.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-20",
+          "condition": "WHEN the user clicks 'View All' on the Upcoming Recurring card or accesses the Recurring Transactions option from the Settings dialog",
+          "behavior": "THE SYSTEM SHALL slide in a 400px-wide right-side drawer panel from the right edge of the viewport within 350ms (ease-in-out), overlaid with a scrim behind it.",
+          "formatted": "WHEN WHEN the user clicks 'View All' on the Upcoming Recurring card or accesses the Recurring Transactions option from the Settings dialog THE SYSTEM SHALL THE SYSTEM SHALL slide in a 400px-wide right-side drawer panel from the right edge of the viewport within 350ms (ease-in-out), overlaid with a scrim behind it."
+        },
+        {
+          "id": "ears-21",
+          "condition": "WHEN the Manage Recurring Transactions drawer is open and RecurringTemplate records exist",
+          "behavior": "THE SYSTEM SHALL display a scrollable list of all RecurringTemplate entries, each as a card-like row (12px radius, 16px padding, 3px category-colored left border) showing merchant name, amount, frequency badge, next occurrence date, status, a pause/resume toggle, and a kebab menu.",
+          "formatted": "WHEN WHEN the Manage Recurring Transactions drawer is open and RecurringTemplate records exist THE SYSTEM SHALL THE SYSTEM SHALL display a scrollable list of all RecurringTemplate entries, each as a card-like row (12px radius, 16px padding, 3px category-colored left border) showing merchant name, amount, frequency badge, next occurrence date, status, a pause/resume toggle, and a kebab menu."
+        },
+        {
+          "id": "ears-22",
+          "condition": "WHEN the drawer is open and no RecurringTemplate records exist",
+          "behavior": "THE SYSTEM SHALL display a centered empty state with a 48px gray-300 circular-arrow icon, 'No recurring expenses yet' in section label style (gray-400), and 'Mark an expense as recurring to see it here' in body style (gray-400).",
+          "formatted": "WHEN WHEN the drawer is open and no RecurringTemplate records exist THE SYSTEM SHALL THE SYSTEM SHALL display a centered empty state with a 48px gray-300 circular-arrow icon, 'No recurring expenses yet' in section label style (gray-400), and 'Mark an expense as recurring to see it here' in body style (gray-400)."
+        },
+        {
+          "id": "ears-23",
+          "condition": "WHEN the user clicks the close (×) button or the scrim overlay, or presses the Escape key",
+          "behavior": "THE SYSTEM SHALL close the drawer and remove the scrim overlay.",
+          "formatted": "WHEN WHEN the user clicks the close (×) button or the scrim overlay, or presses the Escape key THE SYSTEM SHALL THE SYSTEM SHALL close the drawer and remove the scrim overlay."
+        },
+        {
+          "id": "ears-24",
+          "condition": "WHEN the user selects 'Edit' from a row's kebab menu in the drawer",
+          "behavior": "THE SYSTEM SHALL navigate to the Add Expense form (Screen 2) pre-filled with that RecurringTemplate's data with the Recurring toggle on.",
+          "formatted": "WHEN WHEN the user selects 'Edit' from a row's kebab menu in the drawer THE SYSTEM SHALL THE SYSTEM SHALL navigate to the Add Expense form (Screen 2) pre-filled with that RecurringTemplate's data with the Recurring toggle on."
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-001",
+        "feat-002"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-007",
+      "name": "Pause and Resume Recurring Transactions",
+      "description": "Allow users to temporarily pause a recurring transaction from the Manage Recurring Transactions drawer. Paused recurrences stop generating new expenses until resumed. A paused badge is shown on the recurring template row.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-25",
+          "condition": "WHEN the user toggles the pause switch on an active RecurringTemplate row in the Manage Recurring Transactions drawer",
+          "behavior": "THE SYSTEM SHALL update the RecurringTemplate's status to 'paused', display a 'Paused' badge (amber-50 background, amber-500 text) on the row, and render the row content at 50% opacity.",
+          "formatted": "WHEN WHEN the user toggles the pause switch on an active RecurringTemplate row in the Manage Recurring Transactions drawer THE SYSTEM SHALL THE SYSTEM SHALL update the RecurringTemplate's status to 'paused', display a 'Paused' badge (amber-50 background, amber-500 text) on the row, and render the row content at 50% opacity."
+        },
+        {
+          "id": "ears-26",
+          "condition": "WHEN a RecurringTemplate has status 'paused'",
+          "behavior": "THE SYSTEM SHALL NOT auto-generate new expense occurrences for that template until it is resumed.",
+          "formatted": "WHEN WHEN a RecurringTemplate has status 'paused' THE SYSTEM SHALL THE SYSTEM SHALL NOT auto-generate new expense occurrences for that template until it is resumed."
+        },
+        {
+          "id": "ears-27",
+          "condition": "WHEN the user toggles the pause switch on a paused RecurringTemplate row",
+          "behavior": "THE SYSTEM SHALL update the RecurringTemplate's status to 'active', remove the 'Paused' badge, restore full opacity on the row, and resume auto-generating future occurrences from the next scheduled date.",
+          "formatted": "WHEN WHEN the user toggles the pause switch on a paused RecurringTemplate row THE SYSTEM SHALL THE SYSTEM SHALL update the RecurringTemplate's status to 'active', remove the 'Paused' badge, restore full opacity on the row, and resume auto-generating future occurrences from the next scheduled date."
+        }
+      ],
+      "priority": "should-have",
+      "dependencies": [
+        "feat-006"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "feat-008",
+      "name": "Recurring Expense Totals in Spending Insights",
+      "description": "On the Spending Insights screen (Screen 3), add a summary stat or annotation showing how much of the total monthly spend comes from recurring vs one-time expenses. This could appear as an additional row in the Period Summary Header or as a small breakdown badge.",
+      "acceptanceCriteria": [
+        {
+          "id": "ears-28",
+          "condition": "WHEN the user views the Spending Insights screen (Screen 3) for any period",
+          "behavior": "THE SYSTEM SHALL display a recurring vs one-time breakdown showing the total amount and percentage of spend attributed to recurring expenses versus one-time expenses for the selected period.",
+          "formatted": "WHEN WHEN the user views the Spending Insights screen (Screen 3) for any period THE SYSTEM SHALL THE SYSTEM SHALL display a recurring vs one-time breakdown showing the total amount and percentage of spend attributed to recurring expenses versus one-time expenses for the selected period."
+        },
+        {
+          "id": "ears-29",
+          "condition": "WHEN the selected period contains no recurring expenses",
+          "behavior": "THE SYSTEM SHALL display the breakdown with recurring amount as $0.00 and 0%, and one-time amount reflecting the full period total.",
+          "formatted": "WHEN WHEN the selected period contains no recurring expenses THE SYSTEM SHALL THE SYSTEM SHALL display the breakdown with recurring amount as $0.00 and 0%, and one-time amount reflecting the full period total."
+        },
+        {
+          "id": "ears-30",
+          "condition": "WHEN the recurring vs one-time breakdown is rendered",
+          "behavior": "THE SYSTEM SHALL position it as an additional row in the Period Summary Header or as a small breakdown badge, consistent with the existing Spending Insights visual style.",
+          "formatted": "WHEN WHEN the recurring vs one-time breakdown is rendered THE SYSTEM SHALL THE SYSTEM SHALL position it as an additional row in the Period Summary Header or as a small breakdown badge, consistent with the existing Spending Insights visual style."
+        }
+      ],
+      "priority": "could-have",
+      "dependencies": [
+        "feat-001"
+      ],
+      "status": "planned"
+    }
+  ]
+}

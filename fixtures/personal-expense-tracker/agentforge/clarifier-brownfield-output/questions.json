@@ -1,0 +1,49 @@
+[
+  {
+    "id": "q-1-0",
+    "gapId": "det-dataentry-0",
+    "topic": "Adding expenses",
+    "text": "How do you want to add expenses — quick entry with just the basics, or detailed with all the info?",
+    "type": "multiple-choice",
+    "options": [
+      {
+        "label": "Quick entry",
+        "description": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+        "rationale": "Best when speed matters more than detail.",
+        "tradeoffs": [
+          "+ Fast to enter",
+          "+ Low friction",
+          "- Less detail per expense"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Detailed entry",
+        "description": "Full details — id, amount, categoryId, merchantName, date, paymentMethod, note, recurringTemplateId. More info captured per expense.",
+        "rationale": "Best when you want comprehensive records.",
+        "tradeoffs": [
+          "+ Rich expense data",
+          "+ Better for reports",
+          "- More effort per entry"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Flexible",
+        "description": "Start with the basics, optionally add more details like note, recurringTemplateId.",
+        "rationale": "Best of both — quick when you want, detailed when you need.",
+        "tradeoffs": [
+          "+ Adapts to the moment",
+          "+ No forced fields",
+          "- Slightly more complex form"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "priority": 1,
+    "evpiScore": 0.378
+  }
+]

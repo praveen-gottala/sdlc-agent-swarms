@@ -1,0 +1,365 @@
+{
+  "id": "cashpulse-recurring-transactions",
+  "title": "CashPulse — Recurring Transactions Enhancement",
+  "description": "Enhance CashPulse with recurring transaction support, allowing users to mark expenses as recurring (weekly, monthly, or yearly), manage recurrence schedules, and view upcoming recurring expenses on the dashboard. This change impacts the Add Expense form (Screen 2), the Dashboard (Screen 1), and the Settings dialog, and introduces new data entities for recurrence tracking.",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Mark Expense as Recurring",
+      "description": "On the Add Expense form (Screen 2), add a toggle or checkbox allowing users to mark an expense as recurring. When enabled, a recurrence frequency selector appears with options: Weekly, Monthly, and Yearly. An optional end date can be set. The recurrence configuration is saved alongside the expense and used to auto-generate future occurrences.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-002",
+      "name": "Upcoming Recurring Expenses on Dashboard",
+      "description": "Add a new card to the Dashboard (Screen 1) left column, below the Category Breakdown Mini-Chart, showing upcoming recurring expenses for the current month. Each row displays the merchant/description, amount, next occurrence date, and recurrence frequency badge. The card shows the next 5 upcoming recurrences sorted by date.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-003",
+      "name": "Recurring Transaction Badge on Expense Rows",
+      "description": "On the Dashboard recent expenses list and the Expense Detail Popover, display a small recurring icon/badge (e.g., a circular arrow icon) next to expenses that are part of a recurring series. The badge indicates the frequency (e.g., 'Monthly'). This helps users visually distinguish one-time from recurring expenses.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-004",
+      "name": "Edit Recurrence from Expense Detail Popover",
+      "description": "When viewing a recurring expense in the detail popover (Screen 1, section 4.5), show the recurrence details (frequency, next occurrence, end date) and provide an 'Edit Series' action alongside the existing 'Edit' button. 'Edit' modifies only the single occurrence; 'Edit Series' navigates to Screen 2 pre-filled with the recurring template for modifying the entire series.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-005",
+      "name": "Delete Recurring Expense — Single vs Series",
+      "description": "When deleting a recurring expense from the detail popover, prompt the user to choose between deleting only the single occurrence or the entire recurring series. The confirmation text updates accordingly: 'Delete this expense?' vs 'Delete all future recurrences?'.",
+      "priority": "must-have"
+    },
+    {
+      "id": "feat-006",
+      "name": "Manage Recurring Transactions List",
+      "description": "Add a dedicated screen/drawer accessible from the Dashboard's upcoming recurring card (via a 'View All' link) or from the Settings dialog. This view lists all active recurring transaction templates with their frequency, amount, category, next occurrence, and status (active/paused). Users can pause, resume, edit, or delete recurring templates from this list.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-007",
+      "name": "Pause and Resume Recurring Transactions",
+      "description": "Allow users to temporarily pause a recurring transaction from the Manage Recurring Transactions drawer. Paused recurrences stop generating new expenses until resumed. A paused badge is shown on the recurring template row.",
+      "priority": "should-have"
+    },
+    {
+      "id": "feat-008",
+      "name": "Recurring Expense Totals in Spending Insights",
+      "description": "On the Spending Insights screen (Screen 3), add a summary stat or annotation showing how much of the total monthly spend comes from recurring vs one-time expenses. This could appear as an additional row in the Period Summary Header or as a small breakdown badge.",
+      "priority": "could-have"
+    }
+  ],
+  "personas": [
+    {
+      "id": "persona-001",
+      "name": "Alex",
+      "role": "Daily Expense Tracker",
+      "goals": [
+        "Quickly log daily expenses with minimal friction",
+        "Mark regular bills and subscriptions as recurring so they don't need to be re-entered each period",
+        "See upcoming recurring expenses on the dashboard to anticipate future spending"
+      ]
+    },
+    {
+      "id": "persona-002",
+      "name": "Jordan",
+      "role": "Budget-Conscious Planner",
+      "goals": [
+        "Understand how much of the monthly budget is committed to recurring expenses vs discretionary spending",
+        "Manage and adjust recurring transactions when subscriptions or bills change",
+        "Pause recurring expenses temporarily (e.g., pausing a gym membership)"
+      ]
+    }
+  ],
+  "dataEntities": [
+    {
+      "id": "entity-001",
+      "name": "Expense",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the expense"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "description": "Expense amount in the user's currency"
+        },
+        {
+          "name": "categoryId",
+          "type": "reference",
+          "required": true,
+          "description": "Reference to the Category entity"
+        },
+        {
+          "name": "merchantName",
+          "type": "string",
+          "required": true,
+          "description": "Merchant or description of the expense"
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "description": "Date the expense occurred"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "enum",
+          "required": true,
+          "description": "Payment method: Cash, Debit Card, Credit Card, UPI/Other"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "required": false,
+          "description": "Optional note about the expense, max 100 characters"
+        },
+        {
+          "name": "recurringTemplateId",
+          "type": "reference",
+          "required": false,
+          "description": "Reference to the RecurringTemplate if this expense was generated from a recurring series. Null for one-time expenses."
+        }
+      ],
+      "relationships": [
+        "entity-002",
+        "entity-003"
+      ]
+    },
+    {
+      "id": "entity-002",
+      "name": "Category",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the category"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Category display name"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "required": true,
+          "description": "Hex color code for the category"
+        },
+        {
+          "name": "isDefault",
+          "type": "boolean",
+          "required": true,
+          "description": "Whether this is a system-default category"
+        }
+      ]
+    },
+    {
+      "id": "entity-003",
+      "name": "RecurringTemplate",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the recurring template"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "description": "Recurring expense amount"
+        },
+        {
+          "name": "categoryId",
+          "type": "reference",
+          "required": true,
+          "description": "Reference to the Category entity"
+        },
+        {
+          "name": "merchantName",
+          "type": "string",
+          "required": true,
+          "description": "Merchant or description for the recurring expense"
+        },
+        {
+          "name": "frequency",
+          "type": "enum",
+          "required": true,
+          "description": "Recurrence frequency: weekly, monthly, yearly"
+        },
+        {
+          "name": "startDate",
+          "type": "date",
+          "required": true,
+          "description": "Date the recurrence begins (date of the first expense)"
+        },
+        {
+          "name": "endDate",
+          "type": "date",
+          "required": false,
+          "description": "Optional end date for the recurrence. Null means indefinite."
+        },
+        {
+          "name": "nextOccurrence",
+          "type": "date",
+          "required": true,
+          "description": "Computed next occurrence date based on frequency and start date"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "enum",
+          "required": true,
+          "description": "Payment method: Cash, Debit Card, Credit Card, UPI/Other"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "required": false,
+          "description": "Optional note carried to each generated expense"
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "required": true,
+          "description": "Template status: active, paused"
+        },
+        {
+          "name": "createdAt",
+          "type": "date",
+          "required": true,
+          "description": "Timestamp when the recurring template was created"
+        }
+      ],
+      "relationships": [
+        "entity-002",
+        "entity-001"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "id": "screen-001",
+      "name": "Dashboard — Upcoming Recurring Card",
+      "description": "A new card added to the Dashboard (Screen 1) left column, positioned below the existing Category Breakdown Mini-Chart. The card is titled 'Upcoming Recurring' (section label style) and lists the next 5 upcoming recurring expenses for the current month, sorted by next occurrence date. Each row shows: a 10px category-colored circle, merchant name (body, gray-900), frequency badge (caption in a small pill — e.g., 'Monthly' in blue-100 background, blue-600 text, 20px radius), next date (caption, gray-500), and amount (small amount, gray-900, right-aligned). Rows are separated by 8px spacing. At the bottom, a 'View All' text link (caption, blue-600) opens the Manage Recurring Transactions drawer. If no recurring transactions exist, the card shows a subtle empty state: circular-arrow icon (32px, gray-300) + 'No recurring expenses' (body, gray-400). The card follows the existing card styling: white background, 16px radius, card shadow, 24px padding.",
+      "screenType": "page"
+    },
+    {
+      "id": "screen-002",
+      "name": "Add Expense — Recurrence Configuration",
+      "description": "Enhancement to the existing Add Expense form (Screen 2). Below the Payment Method selector and above the Note input, a new section is added. A toggle row: 'Recurring' label (section label, gray-900) on the left, a toggle switch on the right (44×24px, gray-200 track when off, blue-600 track when on, white 20px circle thumb, 150ms transition). When toggled on, a configuration panel slides down (200ms ease-in-out) containing: (1) Frequency selector — three horizontal chips: 'Weekly', 'Monthly', 'Yearly' with the same chip styling as Payment Method (unselected: white/gray-200 border/gray-700 text; selected: blue-100/blue-600 border/blue-600 text). Default: 'Monthly'. (2) End date row — 'Ends' label (body, gray-500) + two radio-style options: 'Never' (default, selected) and 'On date' which reveals a date picker input (same style as the main Date picker, but allowing future dates). When toggled off, the panel collapses and recurrence data is cleared. When editing an existing recurring expense series, the toggle is on and fields are pre-filled.",
+      "screenType": "page"
+    },
+    {
+      "id": "screen-003",
+      "name": "Expense Detail Popover — Recurring Info",
+      "description": "Enhancement to the existing Expense Detail Popover (Screen 1, section 4.5). When the viewed expense is part of a recurring series, additional information is displayed: (1) A recurring badge appears next to the merchant name in the popover header — a small pill with a circular-arrow icon (12px) + frequency text (e.g., 'Monthly') in blue-100 background, blue-600 text, caption style. (2) An additional detail row is added below the existing four rows: 'Recurrence' label (caption, gray-500) with value showing 'Every month · Next: Apr 29' (body, gray-900). (3) The action buttons area is updated: 'Edit' becomes 'Edit This' (edits only this occurrence), a new 'Edit Series' text button (blue-600) is added to edit the recurring template, and 'Delete' prompts a choice between 'Delete This' and 'Delete Series' via an inline toggle before confirmation.",
+      "screenType": "modal"
+    },
+    {
+      "id": "screen-004",
+      "name": "Manage Recurring Transactions Drawer",
+      "description": "A right-side drawer panel (400px wide, full viewport height, white background, elevated shadow) that slides in from the right (350ms ease-in-out). Header: 'Recurring Expenses' (page title, gray-900) + close (×) button (24px, gray-500). Below the header, a summary row: 'X active · $Y.YY/month' (body, gray-500) showing total count and estimated monthly commitment. The main content is a scrollable list of all RecurringTemplate entries. Each row is a card-like item (12px radius, 16px padding, 8px gap between rows) showing: category-colored left border (3px), merchant name (card title, gray-900), amount (small amount, gray-900, right-aligned), frequency pill badge (caption, blue-100/blue-600), next occurrence date (caption, gray-500), and status. A toggle switch on each row allows pausing/resuming (paused rows show 'Paused' badge in amber-50/amber-500 and the row content is at 50% opacity). Each row has a kebab menu (three dots, gray-400) that opens a small dropdown with 'Edit', 'Pause'/'Resume', and 'Delete' options. Empty state: centered circular-arrow icon (48px, gray-300) + 'No recurring expenses yet' (section label, gray-400) + 'Mark an expense as recurring to see it here' (body, gray-400). Scrim overlay behind the drawer (click to dismiss). Escape key closes.",
+      "screenType": "drawer"
+    },
+    {
+      "id": "screen-005",
+      "name": "Delete Recurring Expense Confirmation",
+      "description": "An inline confirmation flow within the Expense Detail Popover when deleting a recurring expense. Instead of the simple 'Confirm delete?' text change used for one-time expenses, a small inline choice appears in place of the action buttons: two stacked text buttons — 'Delete this expense only' (red-500) and 'Delete entire series' (red-500, 600 weight). Below them, a 'Cancel' text link (gray-500). Selecting either option triggers the standard confirmation text ('Confirm?' with 3-second auto-revert). This keeps the interaction within the existing popover without opening a separate modal.",
+      "screenType": "modal"
+    },
+    {
+      "id": "screen-006",
+      "name": "Dashboard — Recurring Badge on Expense Rows",
+      "description": "Enhancement to existing expense rows in the Dashboard Recent Expenses list (Screen 1, section 4.4). For expenses linked to a RecurringTemplate, a small recurring icon (circular arrow, 14px, gray-400) is displayed inline after the category label in the caption line. Example: 'Bills & Utilities · Monthly · Mar 1'. This is a visual-only enhancement to the existing expense row component, not a new screen, but it modifies the existing row structure.",
+      "screenType": "page"
+    }
+  ],
+  "nfrs": [
+    {
+      "id": "nfr-001",
+      "category": "Performance",
+      "description": "Recurring expense generation (computing upcoming occurrences for the dashboard card) must not introduce perceptible delay when loading the Dashboard.",
+      "target": "Dashboard load time remains under 500ms including recurring expense computation",
+      "measurement": "Time from navigation action to full dashboard render with recurring card populated"
+    },
+    {
+      "id": "nfr-002",
+      "category": "Usability",
+      "description": "The recurrence toggle and configuration on the Add Expense form must not disrupt the existing quick-entry flow. The form should remain fast for one-time expenses (the common case) with recurrence as an opt-in enhancement.",
+      "target": "Adding a one-time expense requires zero additional interactions compared to current flow",
+      "measurement": "Click/tap count comparison for one-time expense entry before and after the change"
+    },
+    {
+      "id": "nfr-003",
+      "category": "Accessibility",
+      "description": "The recurrence toggle switch must be keyboard accessible (Space/Enter to toggle) and announce state changes to screen readers. The Manage Recurring drawer must trap focus while open and return focus to the trigger element on close.",
+      "target": "Full WCAG 2.1 AA compliance for all new interactive elements",
+      "measurement": "Automated accessibility audit (axe-core) reports zero violations on new components"
+    },
+    {
+      "id": "nfr-004",
+      "category": "Data Integrity",
+      "description": "Deleting a recurring template must not delete previously generated expense records. Only future occurrences should be affected. Past expenses remain in history.",
+      "target": "100% preservation of historical expense records when a recurring series is deleted",
+      "measurement": "Verify via test cases that past expenses persist after series deletion"
+    },
+    {
+      "id": "nfr-005",
+      "category": "Animation & Motion",
+      "description": "New UI elements (recurrence config slide-down, drawer slide-in, recurring card) must respect the existing animation system and the prefers-reduced-motion media query. All new animations should use the established timing tokens.",
+      "target": "All new animations use existing timing tokens (150ms, 250ms, 350ms, 600ms) and are disabled under prefers-reduced-motion",
+      "measurement": "Visual QA review with reduced-motion enabled confirms instant rendering"
+    }
+  ],
+  "successMetrics": [
+    {
+      "id": "metric-001",
+      "name": "Recurring Transaction Adoption Rate",
+      "description": "Percentage of active users who create at least one recurring transaction within the first 30 days of the feature launch.",
+      "target": "25% of active users create at least one recurring template",
+      "measurement": "Count of users with ≥1 active RecurringTemplate / total active users, measured 30 days post-launch"
+    },
+    {
+      "id": "metric-002",
+      "name": "Reduction in Duplicate Manual Entries",
+      "description": "Decrease in manually entered expenses that match recurring patterns (same merchant, similar amount, regular intervals), indicating users are leveraging recurrence instead of re-entering.",
+      "target": "30% reduction in duplicate-pattern manual entries for users with active recurring templates",
+      "measurement": "Compare duplicate-pattern expense entries per user before and after recurring template creation"
+    },
+    {
+      "id": "metric-003",
+      "name": "Expense Logging Frequency Retention",
+      "description": "Ensure the addition of recurring transaction features does not reduce the frequency of manual expense logging (i.e., users don't stop tracking one-time expenses).",
+      "target": "No more than 5% decrease in average one-time expenses logged per user per month",
+      "measurement": "Compare average one-time expense count per user per month, pre- and post-launch"
+    },
+    {
+      "id": "metric-004",
+      "name": "Recurring Feature Engagement",
+      "description": "Frequency of interaction with the Upcoming Recurring dashboard card and the Manage Recurring drawer.",
+      "target": "Users with recurring templates view the Upcoming Recurring card at least 3x per week on average",
+      "measurement": "Track card visibility and 'View All' click-through rate per user per week"
+    }
+  ],
+  "outOfScope": [
+    "Automatic expense creation from recurring templates — this version shows upcoming recurrences on the dashboard but does not auto-generate expense records. Users still confirm or manually trigger each occurrence. Auto-generation may be added in a future version.",
+    "Recurring income tracking — this enhancement is scoped to recurring expenses only. Income or revenue recurrence is not included.",
+    "Push notifications or reminders for upcoming recurring expenses — the dashboard card provides visibility, but no notification system (email, push, or in-app alerts) is included in this version.",
+    "Custom recurrence intervals (e.g., every 2 weeks, every 3 months, specific days of the week) — only standard weekly, monthly, and yearly frequencies are supported.",
+    "Recurring expense forecasting or projection charts on the Insights screen — while a could-have feature adds a recurring vs one-time breakdown, full future spend projection or forecasting is deferred.",
+    "Bulk operations on recurring templates (e.g., pause all, delete multiple) — management is per-template only in this version.",
+    "Mobile-specific adaptations for the recurring transaction UI — the existing app is desktop-scoped and this enhancement follows the same constraint."
+  ],
+  "version": "1.1.0",
+  "status": "draft"
+}

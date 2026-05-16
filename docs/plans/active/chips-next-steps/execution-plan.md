@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 next (Brownfield Design Delta Research) — M4 after
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 next (Design Info Value Eval) — M4 after
 
 ## Plan Structure
 
@@ -799,7 +799,7 @@ Gate that defines "Architect done." Tested with hand-crafted bundles. **Blocked 
 
 ### M3 Phase 6: Architect nodes 1-5
 Contract Designer (Node 4, highest risk) → then Nodes 1, 2, 3, 5. Planning prompt's 214 lines of rules inform the specialist prompt — adapt, don't rewrite. **Blocked by R2, R3.**
-
+<!-- 
 ### M3.5: Brownfield Design Delta Research
 
 Research milestone (no code). Produces `docs/research/briefs/R9-brownfield-design-delta.md` — a self-contained LLM brief answering 4 questions that block M4's brownfield frontend task handling.
@@ -813,7 +813,63 @@ Research milestone (no code). Produces `docs/research/briefs/R9-brownfield-desig
 **R9.4 — Design info in code generation tasks:** Does passing ScreenPlan + ComponentComposition + DesignSpec context into code-generation prompts improve implementation quality, or does it bloat the context window with information the LLM already infers from the component composition? What's the right token budget allocation? (R3 §5 hard cap: 76K input ceiling)
 
 **Output:** `docs/research/briefs/R9-brownfield-design-delta.md`
-**Blocks:** M4 brownfield frontend tasks
+**Blocks:** M4 brownfield frontend tasks -->
+
+### M3.5: Brownfield Design Delta Research — COMPLETE (2026-05-15)
+
+Research milestone (no production code; one throwaway fixture script). Produces `docs/research/briefs/R9-brownfield-design-delta.md` — a research brief in the R7 mold, grounded in a real brownfield fixture, answering three analysis questions that block M4's brownfield frontend task handling. The fourth original question (design-info value in code generation) is split out as M3.6 because it requires measurement, not analysis.
+
+**M3.5 deliverables (2026-05-15):** Clarifier evolution mode run on CashPulse with "Add recurring transactions" change request (258s, 6 screens, 3 entities, 8 features, 4/4 schemas validated). Brownfield fixture at `packages/eval/src/scenarios/cashpulse-brownfield.yaml`. R9 brief (664 lines) with 8 recommendations, hybrid delta schema (`DesignSpecDelta`), `AffectedScreen` impact classification, slice-aware `ContextRefKind` extension, measured token budget (~25-35K of 76K ceiling). Verification review confirmed 13/15 citations accurate, 2 drift issues corrected in-place. Script: `scripts/run-clarifier-cashpulse-brownfield.ts`.
+
+**Step 1: Generate a brownfield fixture.** Run Clarifier evolution mode on CashPulse with a single change request (recommended: "add recurring transactions"). Capture (a) the existing `agentforge/designs/*.json` set from the M0 baseline, (b) the resulting modified `EnrichedRequirement` output, (c) a hand-derived expected `AffectedScreen[]` list with node-level annotations. Fixture lives at `packages/eval/src/scenarios/cashpulse-brownfield.yaml` and becomes M4's brownfield eval seed.
+
+**Step 2: Write the R9 brief.** Following the R7 pattern — current-state code excerpts with verbatim citations, candidate options with trade-offs, concrete recommendation. Sections labeled `Current state (M3)` vs `Proposed wiring (M4)` to keep the reader honest about what exists.
+
+**Step 3: Verification review.** A separate `R9-brownfield-design-delta-review.md` pass that checks the brief's code citations against the live repo at the moment of milestone closure (R7-review pattern).
+
+The three questions the brief answers:
+
+**R9.1 — Per-screen impact analysis.** `ChangeClassificationSchema` today carries `scopeAxes` (module-level enum) and `affectedModules: string[]` — neither expresses screen-node identity. The brief specifies (a) a comparison algorithm that reads existing DesignSpec JSON via `readDesignSpec()` from `packages/core/src/design-spec-store.ts` and diffs against `EnrichedRequirement.prd.screens`, producing a typed `AffectedScreen[]` with node IDs and change kinds; (b) a `ChangeClassificationSchema` extension carrying that list. The algorithm is traced manually against the Step 1 fixture and the result compared against the hand-derived expected output. If the algorithm doesn't reproduce the expected output, that's a finding — not a failure of the milestone.
+
+**R9.2 — DesignSpec delta format.** `DesignSpecV2` in `packages/designspec-renderer/src/types/design-spec-v2.ts` is a flat adjacency list (`Readonly<Record<string, NodeSpec>>`) with a hard constraint: `NodeSpec` uses 19 of 24 available optional-field slots under the Anthropic tool-schema budget. The brief sketches 2–3 candidate Zod delta schemas (e.g. `{unchanged: nodeId[], added: NodeSpec map, modified: partial NodeSpec map, removed: nodeId[]}` vs. an operation-list format vs. a hybrid), evaluates each against (a) the field-budget constraint, (b) round-trip apply semantics (deltaApply(existing, delta) → new spec must equal what designNode would have produced from scratch), and (c) renderability by the existing `designspec-renderer`. Picks one with justification. Specifies the change to `designNode` in `packages/agents-ux/src/design-pipeline/nodes.ts` that emits a delta when an existing spec is present, full spec otherwise.
+
+**R9.3 — MODIFY task context wiring (slice-aware).** `ContextRefKindSchema` in `packages/core/src/types/architect.schemas.ts` currently has five kinds: `dataModel.entity | apiChangeSet | componentComposition | screenPlan | pattern`. None covers existing-design state. The brief proposes wiring that treats the existing-design context as a **configurable slice strategy**, not a fixed blob — so M3.6's findings can refine the slice without refactoring the wiring. Two candidate approaches with trade-offs: extending `ContextRefKindSchema` with `existingDesign` and `delta` kinds and routing them through `sliceContractBundle()` in `packages/agents-architect/src/context-slicer.ts`, vs. a parallel `DesignContextSliceStrategy` channel orthogonal to ContractBundle. Picks one. Includes **token budget math** measured against the Step 1 fixture: typical DesignSpec JSON size in tokens, typical delta size, typical sliced ContractBundle size, total against R3's 76K input ceiling. If the unsliced approach already breaches 76K on a representative MODIFY task, that's a hard constraint M3.6 inherits.
+
+**Output:** `docs/research/briefs/R9-brownfield-design-delta.md` + `R9-brownfield-design-delta-review.md` + `packages/eval/src/scenarios/cashpulse-brownfield.yaml`.
+**Blocks:** M4 brownfield frontend task wiring (R9.1, R9.2, R9.3 outputs).
+**Does not block:** M3.6 (runs in parallel).
+
+---
+
+### M3.6: Design Info Value Eval
+
+Empirical milestone (eval harness + measurement, no production wiring changes). Answers what M3.5's analysis cannot: which slice of design-stage context (ScreenPlan / ComponentComposition / DesignSpec) materially improves code-generation quality, and whether the answer differs between NEW and MODIFY frontend tasks. Runs in parallel with M4 — informs M4's prompt-design choices but does not gate M4's integration work, because M3.5's R9.3 wiring is slice-aware by design.
+
+**Methodology.** Four context configurations crossed with two task types crossed with three representative tasks each. Same model, same temperature, same task description across runs.
+
+| Configuration | What enters the prompt beyond ContractBundle slice |
+|---------------|---------------------------------------------------|
+| **A — Baseline** | Nothing from design-stage outputs |
+| **B — Planning only** | + ScreenPlan + ComponentComposition |
+| **C — Full DesignSpec** | + everything in B + complete DesignSpec JSON |
+| **D — Narrowed DesignSpec** | + everything in B + DesignSpec restricted to labels, data bindings, region assignments — dropping spacing, typography, shadows that ComponentComposition implies |
+
+D is the interesting cell. If D ≈ C in quality at substantially lower token cost, the wiring defaults to D. If C > D, the wiring defaults to C. If B ≈ C, design-stage context past ComponentComposition is bloat and the wiring defaults to B. The hypothesis from CHIP's design-studio audit history (flat catalog keys hurt, full anatomy helped — but the shape of the context mattered more than the volume) predicts D wins, but the experiment is what settles it.
+
+**Task fixtures.** Three NEW tasks and three MODIFY tasks drawn from CashPulse:
+- NEW: dashboard summary card, transaction list page, settings form
+- MODIFY: the three screens most affected by the M3.5 fixture's "add recurring transactions" change
+
+**Scoring rubric.** Three axes, scored by a fresh-context reviewer (Cognition Devin Review pattern from R3 — no inheritance from the generation conversation):
+- **Visual fidelity** — does the generated code render output matching the DesignSpec? Measured against a rendered screenshot diff where available; falls back to manual inspection.
+- **Prop & binding correctness** — do component props match ComponentComposition, do data bindings hit the right entity fields?
+- **Token cost** — total input tokens consumed by the configuration.
+
+**Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` containing methodology, raw scores, configuration recommendation with token-cost tradeoff, and a follow-up flag if results suggest the slice should differ between NEW and MODIFY.
+
+**Output also:** `packages/eval/src/scenarios/design-info-value.yaml` — the eval scenario reused for regression testing as the implementer evolves.
+
+**Blocks:** Nothing. M4 ships with M3.5's slice-aware wiring defaulting to configuration C; M3.6's findings inform a follow-up commit narrowing the default if D wins.
 
 ### M4 Phase 7: Implementer + Reviewer
 Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1, M3.5 (for brownfield frontend).**

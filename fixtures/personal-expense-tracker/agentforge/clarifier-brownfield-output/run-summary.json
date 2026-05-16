@@ -1,0 +1,23 @@
+{
+  "threadId": "m3.5-brownfield-1778891741472",
+  "mode": "evolution",
+  "changeRequest": "Add recurring transactions — let users mark a transaction as recurring (weekly/monthly/yearly) and see upcoming recurrence on the dashboard.",
+  "maxRounds": 1,
+  "actualRounds": 1,
+  "totalQuestions": 1,
+  "totalAnswers": 2,
+  "criticPassed": true,
+  "criticRetries": 1,
+  "error": "Evolution mode requires retrieval tools but none were provided",
+  "durationMs": 258354,
+  "timestamp": "2026-05-16T00:39:59.863Z",
+  "baselineScreens": [
+    "add-expense",
+    "confirm-delete",
+    "dashboard",
+    "page-e2e-test-page-for-design-generation-flow-mo9kfqco",
+    "settings",
+    "shared-chrome",
+    "spending-insights"
+  ]
+}

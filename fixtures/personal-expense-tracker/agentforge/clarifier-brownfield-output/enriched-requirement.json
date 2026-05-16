@@ -1,0 +1,435 @@
+{
+  "id": "req-1778891999821",
+  "rawInput": "I have an existing personal expense tracking app (CashPulse). Here is the current PRD:\n\n# CASHPULSE\n## Personal Expense Tracker — UX Screen Specification PRD\n\n| Field | Value |\n|-------|-------|\n| Version | 1.0 |\n| Date | March 29, 2026 |\n| Author | Product Team |\n| Status | Ready for UX Agent Build |\n| Screens | 3 (Dashboard → Add Expense → Spending Insights) |\n| Platform | Desktop |\n| Complexity | Medium (~40–60 shapes per screen) |\n\n---\n\n## 1. Purpose & Scope\n\nThis PRD defines the UX specification for CashPulse, a clean personal expense tracking app. It is scoped exclusively to visual and interaction design — no backend functionality is required.\n\nThe document covers three screens: a daily dashboard showing recent expenses and budget status, an add/edit expense flow with category selection, and a spending insights view with charts and breakdowns. The design language is sharp, structured, and confident — financial data presented with clarity and zero clutter.\n\n---\n\n## 2. Design System Tokens\n\n### 2.1 Color Palette\n\n| Token | Hex | Usage |\n|-------|-----|-------|\n| blue-600 | #2563EB | Primary CTA, active states, chart fills |\n| blue-100 | #DBEAFE | Selected states, light accents |\n| gray-900 | #111827 | Headings, primary text, monetary values |\n| gray-500 | #6B7280 | Secondary text, labels, captions |\n| gray-100 | #F3F4F6 | Page background, dividers |\n| gray-50 | #F9FAFB | Card hover states, alternating rows |\n| emerald-500 | #10B981 | Income, under-budget indicators, positive trends |\n| emerald-50 | #ECFDF5 | Income badge background |\n| red-500 | #EF4444 | Over-budget warnings, expense highlights, delete actions |\n| red-50 | #FEF2F2 | Over-budget badge background |\n| amber-500 | #F59E0B | Near-budget warnings (80%+ spent) |\n| amber-50 | #FFFBEB | Warning badge background |\n| violet-500 | #8B5CF6 | Entertainment category accent |\n| orange-500 | #F97316 | Food & Dining category accent |\n| white | #FFFFFF | Card surfaces, button text on dark fills |\n\n### 2.2 Typography\n\n| Role | Size | Weight | Font |\n|------|------|--------|------|\n| Page Title | 24px | 700 | Inter |\n| Section Label | 16px | 600 | Inter |\n| Card Title | 15px | 600 | Inter |\n| Body | 14px | 400 | Inter |\n| Caption | 12px | 500 | Inter |\n| Amount Display | 32px | 700 | Inter (tabular-nums) |\n| Amount Secondary | 20px | 600 | Inter (tabular-nums) |\n| Small Amount | 14px | 600 | Inter (tabular-nums) |\n\n### 2.3 Spacing, Radius & Shadows\n\n- **Base unit:** 4px. Spacing multiples: 4, 8, 12, 16, 24, 32, 48.\n- **Card radius:** 16px. **Button radius:** 10px. **Badge radius:** 20px (fully rounded). **Input radius:** 8px.\n- **Card shadow:** `0 1px 3px rgba(0,0,0,0.06)`. **Elevated:** `0 8px 24px rgba(0,0,0,0.10)`.\n- **Input border:** 1px solid gray-200 (#E5E7EB). **Input focus border:** blue-600.\n\n### 2.4 Animations\n\n- Micro-interactions: 150ms ease-out.\n- Layout transitions: 250ms ease-in-out.\n- Chart renders: 600ms ease-out with staggered entry (50ms per bar/segment).\n- Screen transitions: 350ms ease-in-out, vertical slide (20px).\n- Number counter: 400ms ease-out for amount value animations.\n\n---\n\n## 3. Global Components\n\n### 3.1 Top Bar\n\nHeight: 64px. Background: white. Bottom border: 1px solid gray-100.\n\n- **Left:** App logo — a small pulse/wave icon (20px, blue-600) followed by \"CashPulse\" in section label style, gray-900. Clickable; navigates to Screen 1 (Dashboard).\n- **Center:** Navigation tabs — three text tabs: \"Dashboard\", \"Add Expense\", \"Insights\". Active tab: blue-600 text with a 2px bottom underline (blue-600). Inactive tabs: gray-500 text. Hover: gray-900. Underline slides to active tab (250ms ease-in-out).\n- **Right:** A month/year selector pill showing the current month (e.g., \"Mar 2026\") in caption style inside a rounded chip (gray-100 background, gray-900 text). Left/right chevron icons (16px, gray-500) on either side to navigate months. Click chevrons to change month (number counter animation on displayed amounts). Also a settings gear icon (20px, gray-500) with 16px left margin.\n\n### 3.2 Settings Dialog\n\nA centered modal dialog (max-width: 420px) with dark scrim overlay (fade-in 250ms). Contains:\n\n- **Currency selector:** \"Currency\" label + a dropdown showing current currency (e.g., \"$ USD\"). Options: USD, EUR, GBP, INR, JPY. Selecting a currency updates all displayed amounts.\n- **Monthly budget input:** \"Monthly Budget\" label + a numeric input field (120px wide) with currency symbol prefix. Default: $2,000.\n- **Category manager:** \"Categories\" label + a vertical list of 6 default categories with colored dot + name + a trash icon (gray-400, hover: red-500). Below the list, a text link: \"+ Add category\" in blue-600.\n- **Close:** close (×) button at top-right (24px, gray-500). Click scrim or press Escape to dismiss.\n\n---\n\n## 4. Screen 1: Dashboard\n\nThe home screen. Users see their spending status, recent expenses, and budget health at a glance. The design should feel organized and informative without being dense.\n\n### 4.1 Layout\n\nTwo-column layout below the top bar. Left column: 360px (summary cards). Right column: flexible remaining width (expense list). Gap: 24px. Outer padding: 32px. Background: gray-100.\n\n### 4.2 Budget Summary Card\n\nTop of the left column. A white card with 16px radius and card shadow. Padding: 24px.\n\n- **Header row:** \"This Month\" label (section label style, gray-900) on the left. On the right, a status badge — a small rounded pill showing budget status:\n  - Under 80% spent: emerald-50 background, emerald-500 text, \"On Track\".\n  - 80–100% spent: amber-50 background, amber-500 text, \"Heads Up\".\n  - Over 100%: red-50 background, red-500 text, \"Over Budget\".\n- **Amount display:** Below the header, the total spent amount in amount display style (32px, 700 weight, gray-900). Format: \"$1,247.50\". Below it, \"of $2,000.00 budget\" in body text, gray-500.\n- **Progress bar:** A horizontal bar, full card width, 8px tall, 4px radius. Track: gray-100. Fill: blue-600 (proportional to spend/budget). If over budget, fill becomes red-500. If 80–100%, fill becomes amber-500. Fill width animates on load (600ms ease-out).\n- **Remaining indicator:** Below the progress bar, right-aligned: \"Remaining: $752.50\" in caption, gray-500. If over budget, this reads \"Over by: $47.50\" in caption, red-500.\n\n### 4.3 Category Breakdown Mini-Chart\n\nBelow the budget summary card in the left column. White card, 16px radius, card shadow. Padding: 24px.\n\n- **Header:** \"By Category\" (section label, gray-900).\n- **Donut chart:** A 160px diameter donut ring (stroke: 24px) centered in the card. Segments colored by category (see 4.3.1). Center of the donut shows the total number of transactions: value in amount secondary style (20px, 600, gray-900), label \"transactions\" in caption below.\n- **Legend:** Below the donut, a vertical list of categories (max 6). Each row: a 10px colored circle + category name (body, gray-900) + amount (small amount, gray-900, right-aligned). Rows separated by 8px vertical spacing.\n\n#### 4.3.1 Default Category Colors\n\n| Category | Color Token | Hex |\n|----------|-------------|-----|\n| Food & Dining | orange-500 | #F97316 |\n| Transport | blue-600 | #2563EB |\n| Shopping | violet-500 | #8B5CF6 |\n| Bills & Utilities | gray-500 | #6B7280 |\n| Entertainment | amber-500 | #F59E0B |\n| Health | emerald-500 | #10B981 |\n\n### 4.4 Recent Expenses List\n\nRight column. Full height of the content area, scrollable.\n\n- **Header row:** \"Recent Expenses\" (section label, gray-900) on the left. On the right, a small filter dropdown chip: \"All Categories\" with a down chevron (caption, gray-500, gray-100 background, 20px radius). Clicking opens a dropdown with all categories + \"All Categories\" option. Single select. Selecting filters the list instantly (fade transition, 200ms).\n- **Expense rows:** A vertical list of expense items. Each row is a white card (12px radius, card shadow) with 16px padding and 8px gap between rows.\n\n**Expense row structure:**\n\n- **Left zone:** A 40px circle with the category icon inside (outlined style, white icon on category-colored background).\n- **Center zone:** Two lines — merchant/description name (card title, gray-900) + category label and date (caption, gray-500). Example: \"Starbucks Coffee\" / \"Food & Dining · Mar 28\".\n- **Right zone:** Expense amount in small amount style (14px, 600, gray-900), prefixed with \"–\" and currency symbol (e.g., \"–$4.50\"). Below the amount, payment method in caption, gray-400 (e.g., \"Visa •••4821\").\n- **Hover state:** gray-50 background (150ms). Cursor: pointer.\n- **Click:** Opens a detail/edit popover (see 4.5).\n- Each row has a subtle left border (3px) in the category color.\n\n### 4.5 Expense Detail Popover\n\nWhen an expense row is clicked, a popover card (320px wide) appears anchored to the right of the clicked row. White background, 12px radius, elevated shadow. Contains:\n\n- **Header:** Merchant name (card title, gray-900). Close (×) button top-right (20px, gray-500).\n- **Detail rows:** Four rows of label-value pairs, left-aligned labels (caption, gray-500), right-aligned values (body, gray-900):\n  - Amount: \"$4.50\"\n  - Category: \"Food & Dining\" with colored dot\n  - Date: \"Mar 28, 2026\"\n  - Payment: \"Visa •••4821\"\n- **Note:** If a note exists, shown below the detail rows in body text, gray-500, italic, with a small quote icon (12px, gray-300) prefix.\n- **Action buttons:** Two buttons at the bottom, side by side:\n  - \"Edit\" — text button, blue-600. Navigates to Screen 2 pre-filled with this expense's data.\n  - \"Delete\" — text button, red-500. Shows inline confirmation: text changes to \"Confirm delete?\" with a 3-second auto-revert. Clicking again during confirmation deletes the row (fade-out, 200ms).\n- Click outside or press Escape to dismiss (fade-out, 150ms).\n\n### 4.6 Empty State\n\nWhen no expenses exist for the selected month:\n\n- The right column shows a centered illustration placeholder: a simple outlined receipt icon (64px, gray-300) + \"No expenses yet\" in section label, gray-400 + \"Add your first expense to get started\" in body, gray-400 + a \"Add Expense\" button (blue-600 background, white text, 10px radius, 40px height). Clicking navigates to Screen 2.\n\n### 4.7 Screen 1 Interaction Matrix\n\n| Element | Interaction | Behavior |\n|---------|-------------|----------|\n| Month Selector Chevrons | Click | Navigate to previous/next month. All amounts animate (counter, 400ms). Category chart re-renders (600ms staggered). |\n| Budget Status Badge | — | Auto-calculated. No interaction. Updates reactively based on total spend vs budget. |\n| Category Filter Dropdown | Click | Opens dropdown with category list. Selecting filters expense list (200ms fade). \"All Categories\" resets filter. |\n| Expense Row | Click | Opens detail popover (150ms fade-in) anchored to the right. |\n| Expense Row | Hover | gray-50 background highlight (150ms). |\n| Detail Popover — \"Edit\" | Click | Navigate to Screen 2 with expense data pre-filled. Popover dismisses. |\n| Detail Popover — \"Delete\" | Click | Text changes to \"Confirm delete?\" (150ms). Second click deletes row (fade-out). Auto-reverts after 3 seconds. |\n| Donut Chart Segment | Hover | Segment slightly expands outward (4px, 150ms). Tooltip shows category name + amount + percentage. |\n| Navigation Tab — \"Add Expense\" | Click | Navigate to Screen 2. Tab underline slides (250ms). |\n| Settings Gear | Click | Settings dialog opens (250ms fade-in). Scrim overlay appears. |\n\n---\n\n## 5. Screen 2: Add Expense\n\nA focused form for logging a new expense. Clean layout with clear groupings. Should feel quick — designed for frequent, daily use.\n\n### 5.1 Layout\n\nSingle centered column, max-width: 520px. Background: gray-100. Padding: 32px top. Sections stacked vertically with 24px gaps.\n\n### 5.2 Amount Input (Hero)\n\nThe dominant element at the top.\n\n- A large, centered amount input field. The currency symbol (\"$\") displayed as a static prefix in amount display style (32px, 700, gray-300). The input value in amount display style (32px, 700, gray-900). Placeholder: \"0.00\" in gray-300.\n- No visible input border — just the number displayed large and centered. Below the input, a thin underline (2px): gray-200 default, blue-600 on focus (250ms transition).\n- Auto-focuses on screen load. Numeric keyboard entry. Decimal auto-formatting (max 2 decimal places).\n\n### 5.3 Category Selector\n\nBelow the amount input. A label: \"Category\" (section label, gray-900).\n\nBelow the label, a grid of category chips: 3 columns, 2 rows (6 categories). Each chip:\n\n- Size: flexible width (fills column), 44px height. 8px radius. 8px gap between chips.\n- **Unselected:** white background, 1px gray-200 border. Left-aligned 10px colored circle + category name (body, gray-700).\n- **Selected:** category-color background at 10% opacity (e.g., orange-50 for Food), category-color border (1.5px), category name in category-color text. Scale-bounce (1.05x → 1.0, 150ms).\n- Single select. Required field.\n\nBelow the grid, a text link: \"+ New Category\" (caption, blue-600). Clicking opens an inline row (slide-down, 200ms) with a text input (placeholder: \"Category name\") + a color picker showing 6 small color circles (the 6 palette colors) + a \"Save\" mini-button (blue-600, white text, caption size). Saving adds the chip to the grid and auto-selects it.\n\n### 5.4 Date Picker\n\nBelow the category selector. A label: \"Date\" (section label, gray-900).\n\n- A single input field styled as a clickable row: calendar icon (16px, gray-400) + date text (body, gray-900), e.g., \"Mar 29, 2026\". gray-100 background, 8px radius, 44px height, 1px gray-200 border.\n- **Default:** today's date, pre-filled.\n- **Click:** Opens a mini calendar dropdown (280px wide, elevated shadow, 12px radius). Calendar shows a month grid with:\n  - Header: left/right chevrons for month navigation + \"March 2026\" centered (card title style).\n  - Day grid: 7 columns (S M T W T F S headers in caption, gray-400). Day cells are 36px squares. Today: blue-600 text, blue-100 circle background. Selected day: blue-600 filled circle, white text. Hover: gray-50 background.\n  - Clicking a day selects it, closes the calendar (150ms fade-out), and updates the display text.\n- Cannot select future dates. Future days are gray-300 text, cursor: not-allowed.\n\n### 5.5 Payment Method Selector\n\nBelow the date picker. A label: \"Payment Method\" (section label, gray-900).\n\nA horizontal row of 4 rounded chips: \"Cash\", \"Debit Card\", \"Credit Card\", \"UPI/Other\". Single select.\n\n- **Unselected:** white background, 1px gray-200 border, gray-700 text. Each chip has a small icon (16px) to the left: banknote, card, credit-card, smartphone.\n- **Selected:** blue-100 background, blue-600 border (1.5px), blue-600 text and icon.\n- Default: \"Debit Card\" pre-selected.\n- Chips are horizontally scrollable if they overflow (rare at 520px).\n\n### 5.6 Note Input\n\nBelow payment method. A label: \"Note (optional)\" (section label, gray-900).\n\n- A single-line text input. Placeholder: \"What was this for?\" in gray-400. gray-100 background, 8px radius, 44px height, 1px gray-200 border. Focus: blue-600 border.\n- Max length: 100 characters. No character counter shown until 80+ characters, then a caption counter appears (gray-400, right-aligned), turning red-500 at 95+.\n\n### 5.7 Save Button\n\nA large, full-width CTA button at the bottom. Height: 52px. Background: blue-600. Text: \"Save Expense\" in white, 16px, 600 weight. Border-radius: 10px.\n\n- **Hover:** darken to blue-700, cursor: pointer. **Active/press:** scale-down (0.98).\n- **Disabled state:** if amount is $0.00 or no category selected, button is gray-200 background, gray-400 text, cursor: not-allowed.\n- **On save:** Button text briefly changes to \"✓ Saved!\" with emerald-500 background (400ms), then navigates to Screen 1 (slide transition, 350ms). The new expense appears at the top of the recent list with a brief highlight animation (blue-50 background flash, 1s).\n\n### 5.8 Quick Entry Suggestions\n\nBelow the save button. A label: \"Quick Add\" (caption, gray-400). A horizontal scrollable row of 3–4 suggestion chips based on frequent past expenses (e.g., \"☕ Starbucks $4.50\", \"🚌 Metro Pass $2.75\", \"🥗 Lunch $12.00\").\n\n- Chip style: white background, 1px gray-200 border, 20px radius, 36px height. Body text, gray-700.\n- **Click:** auto-fills the entire form with the suggestion's data (amount, category, description, payment method). All fields populate with a brief cascade animation (each field fills 50ms apart, top-to-bottom). The user can modify any field before saving.\n- **Hover:** gray-50 background (150ms).\n\n### 5.9 Screen 2 Interaction Matrix\n\n| Element | Interaction | Behavior |\n|---------|-------------|----------|\n| Amount Input | Focus | Auto-focused on load. Underline transitions to blue-600 (250ms). |\n| Amount Input | Typing | Numeric only, auto-formats with 2 decimal places. Leading zeros stripped. |\n| Category Chip | Click | Select chip, deselect others. Bounce animation (150ms). Border and background change to category color. |\n| \"+ New Category\" link | Click | Inline row slides down (200ms). Text input + color picker + save button. |\n| Date Row | Click | Mini calendar opens below (150ms fade-in). |\n| Calendar Day Cell | Click | Select date. Calendar closes (150ms). Date text updates. |\n| Payment Method Chip | Click | Select chip, deselect others (150ms). |\n| Note Input | Focus | Border transitions to blue-600 (150ms). |\n| Save Button | Click | If valid: button shows \"✓ Saved!\" (emerald-500, 400ms) → navigate to Screen 1 (350ms slide). If invalid: button disabled, no action. |\n| Quick Add Chip | Click | Auto-fills entire form with cascade animation (50ms per field). |\n| Quick Add Chip | Hover | gray-50 background (150ms). |\n\n---\n\n## 6. Screen 3: Spending Insights\n\nAn analytical view showing spending patterns, trends, and top categories. Should feel insightful — the reward for tracking consistently.\n\n### 6.1 Layout\n\nSingle column, max-width: 720px, centered. Background: gray-100. Padding: 32px top. Vertical stacking with 24px between sections.\n\n### 6.2 Period Summary Header\n\nA full-width white card (16px radius, card shadow, 24px padding) containing a row of three stat cells separated by 1px vertical dividers (40px tall, gray-200).\n\nEach stat cell:\n- **Value** (amount secondary style, 20px, 600, gray-900) centered.\n- **Label** (caption, gray-500) centered below.\n- **Trend indicator** (caption, 12px) below the label: a small up or down arrow + percentage. Green arrow + emerald-500 text for decrease (good). Red arrow + red-500 text for increase (bad).\n\nThe three stats:\n\n| Cell | Value Example | Label | Trend Example |\n|------|---------------|-------|---------------|\n| Left | $1,247.50 | Total Spent | ↓ 12% vs last month |\n| Center | $41.58 | Daily Average | ↑ 5% vs last month |\n| Right | 30 | Transactions | ↓ 3 vs last month |\n\n### 6.3 Spending Over Time Chart\n\nA white card (16px radius, card shadow, 24px padding).\n\n- **Header row:** \"Daily Spending\" (section label, gray-900) on the left. On the right, a toggle group of two small chips: \"Bar\" and \"Line\". Selected: blue-600 background, white text. Unselected: gray-100 background, gray-500 text. Toggles chart type (250ms transition — bars shrink/grow into line points and vice versa).\n- **Chart area:** 100% card width, 200px height.\n  - **Bar chart (default):** Vertical bars for each day of the month (1–31). Bar width: flexible to fill. Bar color: blue-600. Bars with spending over the daily average (budget ÷ days-in-month) have blue-600 fill; bars significantly over (2x+ average) have red-500 fill. X-axis: day numbers (caption, gray-400), showing every 5th day label (1, 5, 10, 15, 20, 25, 30). Y-axis: 4 horizontal gridlines with amount labels (caption, gray-400).\n  - **Line chart:** Same axes. A smooth curved line (blue-600, 2px stroke) connecting daily totals. Filled area below the line with blue-600 at 8% opacity. Data points as 6px circles (blue-600 fill, white 2px stroke) at each day.\n  - **Hover (both types):** Tooltip near the hovered bar/point: a small card (elevated shadow, 8px radius) showing \"Mar 15\" (caption, gray-500) + \"$67.30\" (card title, gray-900) + \"3 transactions\" (caption, gray-400).\n- **Average line:** A dashed horizontal line (1px, amber-500, dash pattern: 4px on, 4px off) at the daily budget average. Right-end label: \"avg $66.67\" (caption, amber-500).\n- **Chart entrance:** bars grow from bottom (600ms staggered, 30ms per bar) on first render.\n\n### 6.4 Top Categories Breakdown\n\nA white card (16px radius, card shadow, 24px padding).\n\n- **Header:** \"Top Categories\" (section label, gray-900).\n- **Horizontal stacked bar:** A single full-width bar (12px tall, 6px radius) showing proportional segments for each category, colored by category color (see 4.3.1). The bar animates from left to right on load (600ms).\n- **Category detail rows:** Below the bar, a vertical list of categories sorted by spend (highest first). Each row:\n  - **Left:** 10px colored circle + category name (body, gray-900).\n  - **Center:** A horizontal progress bar (120px wide, 6px tall, 4px radius). Track: gray-100. Fill: category color. Width proportional to that category's share of total.\n  - **Right:** Amount (small amount, gray-900) + percentage (caption, gray-500). Example: \"$380.00 · 30%\".\n  - Row height: 44px. Separated by 4px vertical spacing.\n- **Hover:** Row background becomes gray-50 (150ms). Progress bar fill darkens slightly.\n\n### 6.5 Biggest Expenses\n\nA white card (16px radius, card shadow, 24px padding).\n\n- **Header:** \"Biggest Expenses\" (section label, gray-900).\n- **List:** Top 5 individual expenses, sorted by amount (highest first). Each row:\n  - **Left:** Rank number in a 28px circle (gray-100 background, gray-500 text, caption weight). #1 uses blue-600 background, white text.\n  - **Center:** Merchant name (body, gray-900) + category and date (caption, gray-500). Two lines.\n  - **Right:** Amount in small amount style (gray-900). Example: \"$185.00\".\n  - Row height: 52px. Separated by 1px gray-100 dividers.\n\n### 6.6 Comparison Card\n\nA white card (16px radius, card shadow, 24px padding).\n\n- **Header:** \"vs Last Month\" (section label, gray-900).\n- **Two-column comparison:** Side-by-side vertical bars representing this month and last month.\n  - Left bar label: \"Last Month\" (caption, gray-400). Bar: gray-300 fill. Height proportional.\n  - Right bar label: \"This Month\" (caption, gray-900). Bar: blue-600 fill. Height proportional.\n  - Bar width: 60px each. Max height: 120px. Gap: 24px between bars. Bars grow from bottom on load (600ms).\n  - Below the bars, centered: the difference as a large badge — \"You spent $142 less\" (emerald-500 text on emerald-50 background, 20px radius pill) or \"You spent $142 more\" (red-500 text on red-50 background).\n\n### 6.7 Export Button\n\nBelow all cards, right-aligned. A secondary button: \"Export CSV\" with a download icon (16px). White background, 1px gray-200 border, gray-700 text, 10px radius, 40px height.\n\n- **Hover:** gray-50 background. **Click:** button text changes to \"✓ Exported\" with emerald-500 text (1.5s), then reverts.\n\n### 6.8 Screen 3 Interaction Matrix\n\n| Element | Interaction | Behavior |\n|---------|-------------|----------|\n| Period Summary Trends | — | Auto-calculated. No interaction. Compares current vs previous month. |\n| Bar/Line Toggle | Click | Switch chart type (250ms morph transition). Selected chip highlights. |\n| Chart Bar/Point | Hover | Tooltip appears near cursor (150ms fade-in). Shows date, amount, transaction count. |\n| Category Row | Hover | gray-50 background (150ms). |\n| Stacked Bar Segment | Hover | Segment lifts slightly (2px up, 150ms). Tooltip: category name + amount + percentage. |\n| Export CSV Button | Click | Button text → \"✓ Exported\" (emerald-500, 1.5s auto-revert). |\n| Month Selector (top bar) | Click chevrons | All data and charts re-render. Bars/line animate fresh (600ms). Stats counter-animate (400ms). |\n\n---\n\n## 7. Screen Flow & Navigation\n\n| From | Action | To | Transition |\n|------|--------|----|------------|\n| Screen 1 | Click \"Add Expense\" tab or empty state button | Screen 2 | Slide up (350ms) |\n| Screen 2 | Save expense successfully | Screen 1 | Slide down (350ms). New expense highlighted. |\n| Screen 1 | Click \"Insights\" tab | Screen 3 | Slide left (350ms) |\n| Screen 3 | Click \"Dashboard\" tab | Screen 1 | Slide right (350ms) |\n| Any | Click \"CashPulse\" logo | Screen 1 | Slide right (300ms) |\n| Any | Click navigation tab | Target screen | Tab underline slides (250ms). Content transitions (350ms). |\n\n---\n\n## 8. Responsive Behavior\n\nThis app is a desktop application with a centered content area. Dashboard uses a two-column layout; other screens use a single centered column.\n\n| Breakpoint | Behavior |\n|------------|----------|\n| 768–1024px | Dashboard: stacks to single column (summary cards above expense list). Max content width: 560px. Chart heights reduce to 160px. |\n| 1024–1440px | Dashboard: two-column layout (360px + flex). Insights: 680px max-width. Standard spacing. |\n| > 1440px | Dashboard: two-column layout (400px + flex). Insights: 720px max-width. Maximum whitespace. Expense list shows 10+ items without scroll. |\n\n---\n\n## 9. Accessibility\n\n- All buttons and interactive elements have minimum 36×36px click targets.\n- Amount inputs use `inputmode=\"decimal\"` for appropriate mobile keyboards.\n- Charts include `role=\"img\"` with `aria-label` describing the data summary (e.g., \"Bar chart showing daily spending for March 2026, averaging $41.58 per day\").\n- Chart tooltips are accessible via keyboard focus (Tab moves through bars/points, tooltip appears on focus).\n- Color is never the sole indicator — budget status uses both color and text labels. Category breakdowns include percentage text alongside colored bars.\n- Focus rings: 2px blue-600 outline, 2px offset on all interactive elements. Full keyboard navigation (Tab, Enter, Space, Escape).\n- Reduced motion: respect `prefers-reduced-motion`. Replace chart animations with instant renders. Disable bounce and cascade effects. Replace slide transitions with instant cuts.\n- Delete confirmation uses text change (not color alone) and auto-reverts to prevent accidental deletion.\n\n---\n\n## 10. Empty & Error States\n\n- **No expenses for selected month (Screen 1):** Right column shows empty state (see 4.6). Left column budget card shows \"$0.00 of $2,000.00 budget\" with empty progress bar. Donut chart shows a single gray-200 ring with \"0 transactions\" in center.\n- **No spending data (Screen 3):** All chart areas show a centered message: \"Not enough data yet\" (body, gray-400) with a small bar-chart outline icon (48px, gray-300). Stats show \"$0.00\" with no trend indicators.\n- **No recent frequent expenses (Screen 2):** The \"Quick Add\" section is hidden entirely — no empty state shown for it. The save button area takes its space.\n- **Invalid amount input:** If user types non-numeric characters, they are silently rejected (no error message, input simply doesn't accept them). If amount exceeds $99,999.99, input stops accepting digits and a caption appears below: \"Maximum amount: $99,999.99\" in amber-500.\n- **Currency change (Settings):** On currency change, a small toast appears at bottom-center: \"Currency updated to EUR\" (body, gray-900 on white background, card shadow, 12px radius). Auto-dismisses after 2 seconds.\n\n\n---\n\nPlease enhance it with the following change:\n\nAdd recurring transactions — let users mark a transaction as recurring (weekly/monthly/yearly) and see upcoming recurrence on the dashboard.",
+  "mode": "evolution",
+  "prd": {
+    "id": "cashpulse-recurring-transactions",
+    "title": "CashPulse — Recurring Transactions Enhancement",
+    "description": "Enhance CashPulse with recurring transaction support, allowing users to mark expenses as recurring (weekly, monthly, or yearly), manage recurrence schedules, and view upcoming recurring expenses on the dashboard. This change impacts the Add Expense form (Screen 2), the Dashboard (Screen 1), and the Settings dialog, and introduces new data entities for recurrence tracking.",
+    "features": [
+      {
+        "id": "feat-001",
+        "name": "Mark Expense as Recurring",
+        "description": "On the Add Expense form (Screen 2), add a toggle or checkbox allowing users to mark an expense as recurring. When enabled, a recurrence frequency selector appears with options: Weekly, Monthly, and Yearly. An optional end date can be set. The recurrence configuration is saved alongside the expense and used to auto-generate future occurrences.",
+        "priority": "must-have"
+      },
+      {
+        "id": "feat-002",
+        "name": "Upcoming Recurring Expenses on Dashboard",
+        "description": "Add a new card to the Dashboard (Screen 1) left column, below the Category Breakdown Mini-Chart, showing upcoming recurring expenses for the current month. Each row displays the merchant/description, amount, next occurrence date, and recurrence frequency badge. The card shows the next 5 upcoming recurrences sorted by date.",
+        "priority": "must-have"
+      },
+      {
+        "id": "feat-003",
+        "name": "Recurring Transaction Badge on Expense Rows",
+        "description": "On the Dashboard recent expenses list and the Expense Detail Popover, display a small recurring icon/badge (e.g., a circular arrow icon) next to expenses that are part of a recurring series. The badge indicates the frequency (e.g., 'Monthly'). This helps users visually distinguish one-time from recurring expenses.",
+        "priority": "must-have"
+      },
+      {
+        "id": "feat-004",
+        "name": "Edit Recurrence from Expense Detail Popover",
+        "description": "When viewing a recurring expense in the detail popover (Screen 1, section 4.5), show the recurrence details (frequency, next occurrence, end date) and provide an 'Edit Series' action alongside the existing 'Edit' button. 'Edit' modifies only the single occurrence; 'Edit Series' navigates to Screen 2 pre-filled with the recurring template for modifying the entire series.",
+        "priority": "must-have"
+      },
+      {
+        "id": "feat-005",
+        "name": "Delete Recurring Expense — Single vs Series",
+        "description": "When deleting a recurring expense from the detail popover, prompt the user to choose between deleting only the single occurrence or the entire recurring series. The confirmation text updates accordingly: 'Delete this expense?' vs 'Delete all future recurrences?'.",
+        "priority": "must-have"
+      },
+      {
+        "id": "feat-006",
+        "name": "Manage Recurring Transactions List",
+        "description": "Add a dedicated screen/drawer accessible from the Dashboard's upcoming recurring card (via a 'View All' link) or from the Settings dialog. This view lists all active recurring transaction templates with their frequency, amount, category, next occurrence, and status (active/paused). Users can pause, resume, edit, or delete recurring templates from this list.",
+        "priority": "should-have"
+      },
+      {
+        "id": "feat-007",
+        "name": "Pause and Resume Recurring Transactions",
+        "description": "Allow users to temporarily pause a recurring transaction from the Manage Recurring Transactions drawer. Paused recurrences stop generating new expenses until resumed. A paused badge is shown on the recurring template row.",
+        "priority": "should-have"
+      },
+      {
+        "id": "feat-008",
+        "name": "Recurring Expense Totals in Spending Insights",
+        "description": "On the Spending Insights screen (Screen 3), add a summary stat or annotation showing how much of the total monthly spend comes from recurring vs one-time expenses. This could appear as an additional row in the Period Summary Header or as a small breakdown badge.",
+        "priority": "could-have"
+      }
+    ],
+    "personas": [
+      {
+        "id": "persona-001",
+        "name": "Alex",
+        "role": "Daily Expense Tracker",
+        "goals": [
+          "Quickly log daily expenses with minimal friction",
+          "Mark regular bills and subscriptions as recurring so they don't need to be re-entered each period",
+          "See upcoming recurring expenses on the dashboard to anticipate future spending"
+        ]
+      },
+      {
+        "id": "persona-002",
+        "name": "Jordan",
+        "role": "Budget-Conscious Planner",
+        "goals": [
+          "Understand how much of the monthly budget is committed to recurring expenses vs discretionary spending",
+          "Manage and adjust recurring transactions when subscriptions or bills change",
+          "Pause recurring expenses temporarily (e.g., pausing a gym membership)"
+        ]
+      }
+    ],
+    "dataEntities": [
+      {
+        "id": "entity-001",
+        "name": "Expense",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "description": "Unique identifier for the expense"
+          },
+          {
+            "name": "amount",
+            "type": "number",
+            "required": true,
+            "description": "Expense amount in the user's currency"
+          },
+          {
+            "name": "categoryId",
+            "type": "reference",
+            "required": true,
+            "description": "Reference to the Category entity"
+          },
+          {
+            "name": "merchantName",
+            "type": "string",
+            "required": true,
+            "description": "Merchant or description of the expense"
+          },
+          {
+            "name": "date",
+            "type": "date",
+            "required": true,
+            "description": "Date the expense occurred"
+          },
+          {
+            "name": "paymentMethod",
+            "type": "enum",
+            "required": true,
+            "description": "Payment method: Cash, Debit Card, Credit Card, UPI/Other"
+          },
+          {
+            "name": "note",
+            "type": "string",
+            "required": false,
+            "description": "Optional note about the expense, max 100 characters"
+          },
+          {
+            "name": "recurringTemplateId",
+            "type": "reference",
+            "required": false,
+            "description": "Reference to the RecurringTemplate if this expense was generated from a recurring series. Null for one-time expenses."
+          }
+        ],
+        "relationships": [
+          "entity-002",
+          "entity-003"
+        ]
+      },
+      {
+        "id": "entity-002",
+        "name": "Category",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "description": "Unique identifier for the category"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "description": "Category display name"
+          },
+          {
+            "name": "color",
+            "type": "string",
+            "required": true,
+            "description": "Hex color code for the category"
+          },
+          {
+            "name": "isDefault",
+            "type": "boolean",
+            "required": true,
+            "description": "Whether this is a system-default category"
+          }
+        ]
+      },
+      {
+        "id": "entity-003",
+        "name": "RecurringTemplate",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "description": "Unique identifier for the recurring template"
+          },
+          {
+            "name": "amount",
+            "type": "number",
+            "required": true,
+            "description": "Recurring expense amount"
+          },
+          {
+            "name": "categoryId",
+            "type": "reference",
+            "required": true,
+            "description": "Reference to the Category entity"
+          },
+          {
+            "name": "merchantName",
+            "type": "string",
+            "required": true,
+            "description": "Merchant or description for the recurring expense"
+          },
+          {
+            "name": "frequency",
+            "type": "enum",
+            "required": true,
+            "description": "Recurrence frequency: weekly, monthly, yearly"
+          },
+          {
+            "name": "startDate",
+            "type": "date",
+            "required": true,
+            "description": "Date the recurrence begins (date of the first expense)"
+          },
+          {
+            "name": "endDate",
+            "type": "date",
+            "required": false,
+            "description": "Optional end date for the recurrence. Null means indefinite."
+          },
+          {
+            "name": "nextOccurrence",
+            "type": "date",
+            "required": true,
+            "description": "Computed next occurrence date based on frequency and start date"
+          },
+          {
+            "name": "paymentMethod",
+            "type": "enum",
+            "required": true,
+            "description": "Payment method: Cash, Debit Card, Credit Card, UPI/Other"
+          },
+          {
+            "name": "note",
+            "type": "string",
+            "required": false,
+            "description": "Optional note carried to each generated expense"
+          },
+          {
+            "name": "status",
+            "type": "enum",
+            "required": true,
+            "description": "Template status: active, paused"
+          },
+          {
+            "name": "createdAt",
+            "type": "date",
+            "required": true,
+            "description": "Timestamp when the recurring template was created"
+          }
+        ],
+        "relationships": [
+          "entity-002",
+          "entity-001"
+        ]
+      }
+    ],
+    "screens": [
+      {
+        "id": "screen-001",
+        "name": "Dashboard — Upcoming Recurring Card",
+        "description": "A new card added to the Dashboard (Screen 1) left column, positioned below the existing Category Breakdown Mini-Chart. The card is titled 'Upcoming Recurring' (section label style) and lists the next 5 upcoming recurring expenses for the current month, sorted by next occurrence date. Each row shows: a 10px category-colored circle, merchant name (body, gray-900), frequency badge (caption in a small pill — e.g., 'Monthly' in blue-100 background, blue-600 text, 20px radius), next date (caption, gray-500), and amount (small amount, gray-900, right-aligned). Rows are separated by 8px spacing. At the bottom, a 'View All' text link (caption, blue-600) opens the Manage Recurring Transactions drawer. If no recurring transactions exist, the card shows a subtle empty state: circular-arrow icon (32px, gray-300) + 'No recurring expenses' (body, gray-400). The card follows the existing card styling: white background, 16px radius, card shadow, 24px padding.",
+        "screenType": "page"
+      },
+      {
+        "id": "screen-002",
+        "name": "Add Expense — Recurrence Configuration",
+        "description": "Enhancement to the existing Add Expense form (Screen 2). Below the Payment Method selector and above the Note input, a new section is added. A toggle row: 'Recurring' label (section label, gray-900) on the left, a toggle switch on the right (44×24px, gray-200 track when off, blue-600 track when on, white 20px circle thumb, 150ms transition). When toggled on, a configuration panel slides down (200ms ease-in-out) containing: (1) Frequency selector — three horizontal chips: 'Weekly', 'Monthly', 'Yearly' with the same chip styling as Payment Method (unselected: white/gray-200 border/gray-700 text; selected: blue-100/blue-600 border/blue-600 text). Default: 'Monthly'. (2) End date row — 'Ends' label (body, gray-500) + two radio-style options: 'Never' (default, selected) and 'On date' which reveals a date picker input (same style as the main Date picker, but allowing future dates). When toggled off, the panel collapses and recurrence data is cleared. When editing an existing recurring expense series, the toggle is on and fields are pre-filled.",
+        "screenType": "page"
+      },
+      {
+        "id": "screen-003",
+        "name": "Expense Detail Popover — Recurring Info",
+        "description": "Enhancement to the existing Expense Detail Popover (Screen 1, section 4.5). When the viewed expense is part of a recurring series, additional information is displayed: (1) A recurring badge appears next to the merchant name in the popover header — a small pill with a circular-arrow icon (12px) + frequency text (e.g., 'Monthly') in blue-100 background, blue-600 text, caption style. (2) An additional detail row is added below the existing four rows: 'Recurrence' label (caption, gray-500) with value showing 'Every month · Next: Apr 29' (body, gray-900). (3) The action buttons area is updated: 'Edit' becomes 'Edit This' (edits only this occurrence), a new 'Edit Series' text button (blue-600) is added to edit the recurring template, and 'Delete' prompts a choice between 'Delete This' and 'Delete Series' via an inline toggle before confirmation.",
+        "screenType": "modal"
+      },
+      {
+        "id": "screen-004",
+        "name": "Manage Recurring Transactions Drawer",
+        "description": "A right-side drawer panel (400px wide, full viewport height, white background, elevated shadow) that slides in from the right (350ms ease-in-out). Header: 'Recurring Expenses' (page title, gray-900) + close (×) button (24px, gray-500). Below the header, a summary row: 'X active · $Y.YY/month' (body, gray-500) showing total count and estimated monthly commitment. The main content is a scrollable list of all RecurringTemplate entries. Each row is a card-like item (12px radius, 16px padding, 8px gap between rows) showing: category-colored left border (3px), merchant name (card title, gray-900), amount (small amount, gray-900, right-aligned), frequency pill badge (caption, blue-100/blue-600), next occurrence date (caption, gray-500), and status. A toggle switch on each row allows pausing/resuming (paused rows show 'Paused' badge in amber-50/amber-500 and the row content is at 50% opacity). Each row has a kebab menu (three dots, gray-400) that opens a small dropdown with 'Edit', 'Pause'/'Resume', and 'Delete' options. Empty state: centered circular-arrow icon (48px, gray-300) + 'No recurring expenses yet' (section label, gray-400) + 'Mark an expense as recurring to see it here' (body, gray-400). Scrim overlay behind the drawer (click to dismiss). Escape key closes.",
+        "screenType": "drawer"
+      },
+      {
+        "id": "screen-005",
+        "name": "Delete Recurring Expense Confirmation",
+        "description": "An inline confirmation flow within the Expense Detail Popover when deleting a recurring expense. Instead of the simple 'Confirm delete?' text change used for one-time expenses, a small inline choice appears in place of the action buttons: two stacked text buttons — 'Delete this expense only' (red-500) and 'Delete entire series' (red-500, 600 weight). Below them, a 'Cancel' text link (gray-500). Selecting either option triggers the standard confirmation text ('Confirm?' with 3-second auto-revert). This keeps the interaction within the existing popover without opening a separate modal.",
+        "screenType": "modal"
+      },
+      {
+        "id": "screen-006",
+        "name": "Dashboard — Recurring Badge on Expense Rows",
+        "description": "Enhancement to existing expense rows in the Dashboard Recent Expenses list (Screen 1, section 4.4). For expenses linked to a RecurringTemplate, a small recurring icon (circular arrow, 14px, gray-400) is displayed inline after the category label in the caption line. Example: 'Bills & Utilities · Monthly · Mar 1'. This is a visual-only enhancement to the existing expense row component, not a new screen, but it modifies the existing row structure.",
+        "screenType": "page"
+      }
+    ],
+    "nfrs": [
+      {
+        "id": "nfr-001",
+        "category": "Performance",
+        "description": "Recurring expense generation (computing upcoming occurrences for the dashboard card) must not introduce perceptible delay when loading the Dashboard.",
+        "target": "Dashboard load time remains under 500ms including recurring expense computation",
+        "measurement": "Time from navigation action to full dashboard render with recurring card populated"
+      },
+      {
+        "id": "nfr-002",
+        "category": "Usability",
+        "description": "The recurrence toggle and configuration on the Add Expense form must not disrupt the existing quick-entry flow. The form should remain fast for one-time expenses (the common case) with recurrence as an opt-in enhancement.",
+        "target": "Adding a one-time expense requires zero additional interactions compared to current flow",
+        "measurement": "Click/tap count comparison for one-time expense entry before and after the change"
+      },
+      {
+        "id": "nfr-003",
+        "category": "Accessibility",
+        "description": "The recurrence toggle switch must be keyboard accessible (Space/Enter to toggle) and announce state changes to screen readers. The Manage Recurring drawer must trap focus while open and return focus to the trigger element on close.",
+        "target": "Full WCAG 2.1 AA compliance for all new interactive elements",
+        "measurement": "Automated accessibility audit (axe-core) reports zero violations on new components"
+      },
+      {
+        "id": "nfr-004",
+        "category": "Data Integrity",
+        "description": "Deleting a recurring template must not delete previously generated expense records. Only future occurrences should be affected. Past expenses remain in history.",
+        "target": "100% preservation of historical expense records when a recurring series is deleted",
+        "measurement": "Verify via test cases that past expenses persist after series deletion"
+      },
+      {
+        "id": "nfr-005",
+        "category": "Animation & Motion",
+        "description": "New UI elements (recurrence config slide-down, drawer slide-in, recurring card) must respect the existing animation system and the prefers-reduced-motion media query. All new animations should use the established timing tokens.",
+        "target": "All new animations use existing timing tokens (150ms, 250ms, 350ms, 600ms) and are disabled under prefers-reduced-motion",
+        "measurement": "Visual QA review with reduced-motion enabled confirms instant rendering"
+      }
+    ],
+    "successMetrics": [
+      {
+        "id": "metric-001",
+        "name": "Recurring Transaction Adoption Rate",
+        "description": "Percentage of active users who create at least one recurring transaction within the first 30 days of the feature launch.",
+        "target": "25% of active users create at least one recurring template",
+        "measurement": "Count of users with ≥1 active RecurringTemplate / total active users, measured 30 days post-launch"
+      },
+      {
+        "id": "metric-002",
+        "name": "Reduction in Duplicate Manual Entries",
+        "description": "Decrease in manually entered expenses that match recurring patterns (same merchant, similar amount, regular intervals), indicating users are leveraging recurrence instead of re-entering.",
+        "target": "30% reduction in duplicate-pattern manual entries for users with active recurring templates",
+        "measurement": "Compare duplicate-pattern expense entries per user before and after recurring template creation"
+      },
+      {
+        "id": "metric-003",
+        "name": "Expense Logging Frequency Retention",
+        "description": "Ensure the addition of recurring transaction features does not reduce the frequency of manual expense logging (i.e., users don't stop tracking one-time expenses).",
+        "target": "No more than 5% decrease in average one-time expenses logged per user per month",
+        "measurement": "Compare average one-time expense count per user per month, pre- and post-launch"
+      },
+      {
+        "id": "metric-004",
+        "name": "Recurring Feature Engagement",
+        "description": "Frequency of interaction with the Upcoming Recurring dashboard card and the Manage Recurring drawer.",
+        "target": "Users with recurring templates view the Upcoming Recurring card at least 3x per week on average",
+        "measurement": "Track card visibility and 'View All' click-through rate per user per week"
+      }
+    ],
+    "outOfScope": [
+      "Automatic expense creation from recurring templates — this version shows upcoming recurrences on the dashboard but does not auto-generate expense records. Users still confirm or manually trigger each occurrence. Auto-generation may be added in a future version.",
+      "Recurring income tracking — this enhancement is scoped to recurring expenses only. Income or revenue recurrence is not included.",
+      "Push notifications or reminders for upcoming recurring expenses — the dashboard card provides visibility, but no notification system (email, push, or in-app alerts) is included in this version.",
+      "Custom recurrence intervals (e.g., every 2 weeks, every 3 months, specific days of the week) — only standard weekly, monthly, and yearly frequencies are supported.",
+      "Recurring expense forecasting or projection charts on the Insights screen — while a could-have feature adds a recurring vs one-time breakdown, full future spend projection or forecasting is deferred.",
+      "Bulk operations on recurring templates (e.g., pause all, delete multiple) — management is per-template only in this version.",
+      "Mobile-specific adaptations for the recurring transaction UI — the existing app is desktop-scoped and this enhancement follows the same constraint."
+    ],
+    "version": "1.1.0",
+    "status": "draft"
+  },
+  "assumptionLedger": {
+    "id": "ledger-1778891956986",
+    "entries": [
+      {
+        "id": "assumption-det-phantom-a11y-3",
+        "statement": "Assumed reasonable default for: WCAG 2.1 AA compliance with keyboard navigation and screen reader support.",
+        "evidence": "Low divergence (score: 0) — implementations converged.",
+        "confidence": 1,
+        "blastRadius": "high",
+        "requiresConfirmation": false
+      },
+      {
+        "id": "assumption-det-phantom-validation-1",
+        "statement": "Assumed reasonable default for: Instant validation with clear error messages for all form inputs.",
+        "evidence": "Low divergence (score: 0) — implementations converged.",
+        "confidence": 1,
+        "blastRadius": "high",
+        "requiresConfirmation": false
+      },
+      {
+        "id": "assumption-det-phantom-errors-2",
+        "statement": "Assumed reasonable default for: Toast messages for minor errors, inline messages for form errors.",
+        "evidence": "Low divergence (score: 0) — implementations converged.",
+        "confidence": 1,
+        "blastRadius": "high",
+        "requiresConfirmation": false
+      },
+      {
+        "id": "assumption-unresolved-det-phantom-validation-1",
+        "statement": "Unresolved after max rounds: Instant validation with clear error messages for all form inputs.",
+        "evidence": "Max clarification rounds exhausted without human answer.",
+        "confidence": 0.3,
+        "blastRadius": "high",
+        "requiresConfirmation": true
+      },
+      {
+        "id": "assumption-unresolved-det-phantom-errors-2",
+        "statement": "Unresolved after max rounds: Toast messages for minor errors, inline messages for form errors.",
+        "evidence": "Max clarification rounds exhausted without human answer.",
+        "confidence": 0.3,
+        "blastRadius": "high",
+        "requiresConfirmation": true
+      },
+      {
+        "id": "assumption-unresolved-det-phantom-a11y-3",
+        "statement": "Unresolved after max rounds: WCAG 2.1 AA compliance with keyboard navigation and screen reader support.",
+        "evidence": "Max clarification rounds exhausted without human answer.",
+        "confidence": 0.3,
+        "blastRadius": "high",
+        "requiresConfirmation": true
+      }
+    ],
+    "createdAt": "2026-05-16T00:39:16.986Z",
+    "lastUpdatedAt": "2026-05-16T00:39:59.821Z"
+  },
+  "clarificationRounds": [
+    {
+      "round": 1,
+      "questionsAsked": 1,
+      "questionsAnswered": 1,
+      "timestamp": "2026-05-16T00:39:59.821Z"
+    }
+  ],
+  "confidence": 0.5,
+  "createdAt": "2026-05-16T00:39:59.821Z"
+}

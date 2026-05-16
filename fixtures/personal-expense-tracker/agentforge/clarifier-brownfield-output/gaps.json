@@ -1,0 +1,76 @@
+[
+  {
+    "id": "det-dataentry-0",
+    "topic": "Adding expenses",
+    "description": "How do you want to add expenses — quick entry with just the basics, or detailed with all the info?",
+    "category": "ambiguous",
+    "confidence": 0.4,
+    "deterministic": true,
+    "divergentInterpretations": [
+      {
+        "label": "Quick entry",
+        "description": "Just the essentials — id and amount. Fast to enter, minimal effort.",
+        "rationale": "Best when speed matters more than detail.",
+        "tradeoffs": [
+          "+ Fast to enter",
+          "+ Low friction",
+          "- Less detail per expense"
+        ],
+        "recommended": true,
+        "source": "template"
+      },
+      {
+        "label": "Detailed entry",
+        "description": "Full details — id, amount, categoryId, merchantName, date, paymentMethod, note, recurringTemplateId. More info captured per expense.",
+        "rationale": "Best when you want comprehensive records.",
+        "tradeoffs": [
+          "+ Rich expense data",
+          "+ Better for reports",
+          "- More effort per entry"
+        ],
+        "recommended": false,
+        "source": "template"
+      },
+      {
+        "label": "Flexible",
+        "description": "Start with the basics, optionally add more details like note, recurringTemplateId.",
+        "rationale": "Best of both — quick when you want, detailed when you need.",
+        "tradeoffs": [
+          "+ Adapts to the moment",
+          "+ No forced fields",
+          "- Slightly more complex form"
+        ],
+        "recommended": false,
+        "source": "template"
+      }
+    ],
+    "divergenceScore": 0.67
+  },
+  {
+    "id": "det-phantom-validation-1",
+    "topic": "Validation",
+    "description": "Instant validation with clear error messages for all form inputs.",
+    "category": "missing",
+    "confidence": 0.95,
+    "deterministic": true,
+    "divergenceScore": 0
+  },
+  {
+    "id": "det-phantom-errors-2",
+    "topic": "Error handling",
+    "description": "Toast messages for minor errors, inline messages for form errors.",
+    "category": "missing",
+    "confidence": 0.95,
+    "deterministic": true,
+    "divergenceScore": 0
+  },
+  {
+    "id": "det-phantom-a11y-3",
+    "topic": "Accessibility",
+    "description": "WCAG 2.1 AA compliance with keyboard navigation and screen reader support.",
+    "category": "missing",
+    "confidence": 0.9,
+    "deterministic": true,
+    "divergenceScore": 0
+  }
+]
