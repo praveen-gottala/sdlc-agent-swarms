@@ -5,6 +5,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // ─── Inline protocol types (no cross-package runtime dep) ───────────────────
 // These mirror @agentforge/designspec-renderer iframe-protocol.ts exactly.
 
+interface DeltaNodeClassification {
+  readonly nodeId: string;
+  readonly op: 'added' | 'modified' | 'removed' | 'reordered';
+  readonly description: string;
+}
+
 type ParentMessage =
   | { type: 'load-spec'; specJson: string; source: 'agentforge' }
   | { type: 'load-prototype'; payload: string; source: 'agentforge' }
@@ -13,7 +19,9 @@ type ParentMessage =
   | { type: 'disable-tagging'; source: 'agentforge' }
   | { type: 'highlight-node'; nodeId: string; source: 'agentforge' }
   | { type: 'clear-highlights'; source: 'agentforge' }
-  | { type: 'extract-dom'; source: 'agentforge' };
+  | { type: 'extract-dom'; source: 'agentforge' }
+  | { type: 'apply-delta-highlights'; nodes: DeltaNodeClassification[]; css: string; source: 'agentforge' }
+  | { type: 'clear-delta-highlights'; source: 'agentforge' };
 
 type ChildMessage =
   | {
@@ -48,6 +56,12 @@ type ChildMessage =
       message: string;
       source: 'agentforge';
       logSource?: 'bridge' | 'renderer';
+    }
+  | {
+      type: 'delta-region-action';
+      nodeId: string;
+      action: 'approve' | 'reject';
+      source: 'agentforge';
     };
 
 // ─── Callback types for child-to-parent events ─────────────────────────────
@@ -90,6 +104,10 @@ export interface UseRendererBridgeResult {
   updateNodeStyle: (nodeId: string, styles: Record<string, string>) => void;
   /** Extract DOM layout data from all rendered [data-node] elements */
   extractDOM: () => Promise<Record<string, unknown>>;
+  /** Apply delta highlight CSS and classifications to rendered nodes */
+  applyDeltaHighlights: (nodes: DeltaNodeClassification[], css: string) => void;
+  /** Clear all delta highlights from the renderer */
+  clearDeltaHighlights: () => void;
   /** Register a callback for node hover events */
   onNodeHovered: (callback: NodeHoveredCallback | null) => void;
   /** Register a callback for node click events */
@@ -179,6 +197,17 @@ export function useRendererBridge(
     },
     [postToIframe],
   );
+
+  const applyDeltaHighlights = useCallback(
+    (nodes: DeltaNodeClassification[], css: string) => {
+      postToIframe({ type: 'apply-delta-highlights', nodes, css, source: 'agentforge' });
+    },
+    [postToIframe],
+  );
+
+  const clearDeltaHighlights = useCallback(() => {
+    postToIframe({ type: 'clear-delta-highlights', source: 'agentforge' });
+  }, [postToIframe]);
 
   const extractDOM = useCallback((): Promise<Record<string, unknown>> => {
     return new Promise((resolve, reject) => {
@@ -272,6 +301,8 @@ export function useRendererBridge(
     highlightNode,
     clearHighlights,
     updateNodeStyle,
+    applyDeltaHighlights,
+    clearDeltaHighlights,
     onNodeHovered,
     onNodeClicked,
     onRenderComplete,

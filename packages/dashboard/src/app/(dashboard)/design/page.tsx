@@ -161,6 +161,10 @@ function DesignStudioContent() {
   ] as const;
   const [selectedModel, setSelectedModel] = useState<string>('claude-sonnet-4-6');
 
+  // Delta preview state — activated via ?delta=fixture:cashpulse-add-recurring
+  const [deltaPreviewActive, setDeltaPreviewActive] = useState(false);
+  const [deltaRegionActions, setDeltaRegionActions] = useState<Record<string, 'approve' | 'reject'>>({});
+
   // Coherence check state
   const [coherenceResults, setCoherenceResults] = useState<CoherenceResult[]>([]);
   const [coherenceWarnings, setCoherenceWarnings] = useState<string[]>([]);
@@ -819,6 +823,94 @@ function DesignStudioContent() {
     // Only re-fetch when page selection or its design status changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, selectedDesignStatus]);
+
+  // Delta preview: apply highlights after spec renders in iframe
+  const deltaFixtureParam = searchParams.get('delta');
+  useEffect(() => {
+    if (!deltaFixtureParam?.startsWith('fixture:') || !designSpec || !bridgeRef.current?.isReady) return;
+
+    const CASHPULSE_DELTA_NODES = [
+      { nodeId: 'recurring-section', op: 'added' as const, description: 'Added section: Upcoming Recurring' },
+      { nodeId: 'recurring-list', op: 'added' as const, description: 'Added container: Recurring list' },
+      { nodeId: 'recurring-item-netflix', op: 'added' as const, description: 'Added list-item: Netflix' },
+      { nodeId: 'recurring-item-gym', op: 'added' as const, description: 'Added list-item: Gym' },
+      { nodeId: 'recurring-item-spotify', op: 'added' as const, description: 'Added list-item: Spotify' },
+      { nodeId: 'category-donut-card', op: 'reordered' as const, description: 'Reordered: shifted down for recurring section' },
+    ];
+
+    const DELTA_CSS = `
+.r10-highlight { position: relative; border-radius: var(--border-radius-md, 8px); }
+.r10-added { border: 2px solid #639922; background: rgba(99, 153, 34, 0.06); }
+.r10-modified { border: 2px solid #BA7517; background: rgba(186, 117, 23, 0.06); }
+.r10-removed { border: 2px dashed #E24B4A; background: rgba(226, 75, 74, 0.04); opacity: 0.55; }
+.r10-removed * { text-decoration: line-through; }
+.r10-reordered { border: 2px solid #BA7517; background: rgba(186, 117, 23, 0.06); }
+.r10-badge { position: absolute; top: -10px; right: 10px; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; line-height: 1.4; white-space: nowrap; z-index: 1; }
+.r10-badge-added { background: #C0DD97; color: #173404; border: 0.5px solid #639922; }
+.r10-badge-modified { background: #FAC775; color: #412402; border: 0.5px solid #BA7517; }
+.r10-badge-removed { background: #F7C1C1; color: #501313; border: 0.5px solid #E24B4A; opacity: 1; }
+.r10-badge-reordered { background: #FAC775; color: #412402; border: 0.5px solid #BA7517; }
+`;
+
+    // Apply delta highlights after a delay to ensure iframe has rendered the spec
+    const timer = setTimeout(() => {
+      const existingIds = new Set(Object.keys(designSpec.nodes ?? {}));
+
+      // Place recurring section inside left-column (between budget-summary and category-donut)
+      const parentId = existingIds.has('left-column') ? 'left-column' : 'root';
+      const addedNodes: Record<string, Record<string, unknown>> = {
+        'recurring-section': { parent: parentId, order: 1, type: 'section', label: 'Upcoming Recurring', layout: { dir: 'column', gap: 8 }, background: 'surface-primary', radius: 12 },
+        'recurring-list': { parent: 'recurring-section', order: 0, type: 'container', layout: { dir: 'column', gap: 4 } },
+        'recurring-item-netflix': { parent: 'recurring-list', order: 0, catalog: 'list-item', label: 'Netflix', overrides: { subtitle: 'Monthly · $15.99 · Due in 3 days' } },
+        'recurring-item-gym': { parent: 'recurring-list', order: 1, catalog: 'list-item', label: 'Gym Membership', overrides: { subtitle: 'Monthly · $45.00 · Due in 6 days' } },
+        'recurring-item-spotify': { parent: 'recurring-list', order: 2, catalog: 'list-item', label: 'Spotify', overrides: { subtitle: 'Monthly · $9.99 · Due in 10 days' } },
+      };
+
+      // Shift category-donut-card down to make room for the recurring section
+      const mergedNodes = { ...designSpec.nodes, ...addedNodes };
+      if (mergedNodes['category-donut-card']) {
+        mergedNodes['category-donut-card'] = { ...mergedNodes['category-donut-card'], order: 2 };
+      }
+
+      const mergedSpec = {
+        ...designSpec,
+        nodes: mergedNodes,
+      };
+
+      // Re-send the merged spec
+      const rd = rendererData;
+      const payload = rd
+        ? { spec: mergedSpec, tokens: rd.tokens, catalog: rd.catalog }
+        : mergedSpec;
+      bridgeRef.current?.loadSpec(JSON.stringify(payload));
+
+      // Apply highlights after re-render
+      setTimeout(() => {
+        bridgeRef.current?.applyDeltaHighlights(
+          CASHPULSE_DELTA_NODES.filter(n => existingIds.has(n.nodeId) || addedNodes[n.nodeId]),
+          DELTA_CSS,
+        );
+        setDeltaPreviewActive(true);
+        log('INFO', 'studio', `Delta preview applied: ${CASHPULSE_DELTA_NODES.length} regions`);
+      }, 1500);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deltaFixtureParam, designSpec, bridgeRef.current?.isReady]);
+
+  // Listen for approve/reject actions from iframe
+  useEffect(() => {
+    if (!deltaPreviewActive) return;
+    function handleDeltaAction(event: MessageEvent) {
+      const data = event.data;
+      if (!data || data.source !== 'agentforge' || data.type !== 'delta-region-action') return;
+      setDeltaRegionActions(prev => ({ ...prev, [data.nodeId]: data.action }));
+      log('INFO', 'studio', `Region ${data.nodeId}: ${data.action}`);
+    }
+    window.addEventListener('message', handleDeltaAction);
+    return () => window.removeEventListener('message', handleDeltaAction);
+  }, [deltaPreviewActive, log]);
 
   // Handle property changes from inspector — patch spec in memory + live preview
   const handlePropertyChange = useCallback(

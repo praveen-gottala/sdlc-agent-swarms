@@ -11,11 +11,7 @@ const nextConfig = {
     '@agentforge/designspec-renderer',
     '@agentforge/providers',
     '@agentforge/cli',
+    '@agentforge/core',
   ],
-  experimental: {
-    optimizePackageImports: [
-      '@agentforge/core',
-    ],
-  },
 };
 module.exports = nextConfig;

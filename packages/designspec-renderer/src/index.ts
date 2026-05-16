@@ -99,6 +99,22 @@ export type { RenderResult, ChunkedRenderResult } from './renderer/penpot/index.
 export { renderToJSX } from './renderer/react/index.js';
 export type { JsxRenderResult } from './renderer/react/index.js';
 
+// ─── Delta Renderer ─────────────────────────────────
+export { renderDelta, deltaApply, deltaCompute, computeFieldDiff, DELTA_HIGHLIGHT_CSS } from './renderer/delta/index.js';
+export type {
+  DesignSpecDelta,
+  ReorderEntry,
+  DeltaApplyResult,
+} from './renderer/delta/delta-types.js';
+export type {
+  DeltaRenderOutput,
+  DeltaRenderOptions,
+  DeltaRenderMetadata,
+  ChangeRegion,
+  FieldDiff,
+  HighlightStyle,
+} from './renderer/delta/index.js';
+
 // ─── SDK Tools ───────────────────────────────────────────
 export { SUBMIT_DESIGN_TOOL } from './sdk/submit-design-tool.js';
 

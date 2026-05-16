@@ -89,6 +89,9 @@ export function renderToJSX(
 
     renderedNodeIds.push(treeNode.id);
 
+    // Inject data-node-id on the next emitted tag for this node
+    builder.setNodeId(treeNode.id);
+
     // Render the node — pass a renderChildren callback for JSX nesting
     renderer(resolved, ctx, () => {
       for (const child of treeNode.children) {

@@ -19,18 +19,36 @@ export class JsxBuilder {
   private readonly indentStr = '  ';
   /** path → Set<component> for deduplication. */
   private readonly importMap = new Map<string, Set<string>>();
+  /** Node ID to inject as data-node-id on the next open/selfClosing call. */
+  private pendingNodeId: string | undefined;
+
+  /** Set a node ID to be emitted as data-node-id on the next open/selfClosing call. */
+  setNodeId(id: string): this {
+    this.pendingNodeId = id;
+    return this;
+  }
+
+  /** Consume the pending node ID attribute string, if any. */
+  private consumeNodeIdAttr(): string {
+    if (!this.pendingNodeId) return '';
+    const attr = ` data-node-id="${this.pendingNodeId}"`;
+    this.pendingNodeId = undefined;
+    return attr;
+  }
 
   /** Emit a self-closing tag: `<hr className="..." />` */
   selfClosing(tag: string, attrs?: string): this {
+    const nodeIdAttr = this.consumeNodeIdAttr();
     const attrStr = attrs ? ` ${attrs}` : '';
-    this.lines.push(`${this.pad()}<${tag}${attrStr} />`);
+    this.lines.push(`${this.pad()}<${tag}${attrStr}${nodeIdAttr} />`);
     return this;
   }
 
   /** Open a tag and increase indentation. */
   open(tag: string, attrs?: string): this {
+    const nodeIdAttr = this.consumeNodeIdAttr();
     const attrStr = attrs ? ` ${attrs}` : '';
-    this.lines.push(`${this.pad()}<${tag}${attrStr}>`);
+    this.lines.push(`${this.pad()}<${tag}${attrStr}${nodeIdAttr}>`);
     this.indentLevel++;
     return this;
   }

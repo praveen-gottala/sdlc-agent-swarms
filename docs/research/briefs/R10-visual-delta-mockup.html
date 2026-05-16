@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>R10 Visual Delta Mockup — Reference</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f4ef;
+    --color-background-tertiary: #faf9f5;
+    --color-text-primary: #1a1a19;
+    --color-text-secondary: #5f5e5a;
+    --color-text-tertiary: #888780;
+    --color-border-tertiary: rgba(0, 0, 0, 0.15);
+    --color-border-secondary: rgba(0, 0, 0, 0.3);
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1f1f1e;
+      --color-background-secondary: #2c2c2a;
+      --color-background-tertiary: #181817;
+      --color-text-primary: #f5f4ef;
+      --color-text-secondary: #b4b2a9;
+      --color-text-tertiary: #888780;
+      --color-border-tertiary: rgba(255, 255, 255, 0.15);
+      --color-border-secondary: rgba(255, 255, 255, 0.3);
+    }
+  }
+  body {
+    margin: 0;
+    padding: 32px;
+    font-family: var(--font-sans);
+    background: var(--color-background-tertiary);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  h1 { font-size: 18px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Visual delta — overlay mode reference</h1>
+<p class="subtitle">CashPulse dashboard with "Add recurring transactions" delta applied. Used as the visual target for R10 Phase A implementation.</p>
+
+<h2 class="sr-only">Mockup of visual delta overlay rendering, showing added, modified, and removed regions on a personal expense tracker dashboard, with a legend of the three highlight types.</h2>
+
+<div style="display: flex; justify-content: center; align-items: center; gap: 12px; padding: 10px 0 14px;">
+  <span style="color: var(--color-text-secondary); font-size: 14px;">‹</span>
+  <span style="font-size: 13px; color: var(--color-text-secondary);">March 2026</span>
+  <span style="color: var(--color-text-secondary); font-size: 14px;">›</span>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px 14px;">
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 6px;">Monthly Budget</p>
+      <p style="font-size: 18px; font-weight: 500; margin: 0 0 2px;">$1,847.50</p>
+      <p style="font-size: 11px; color: var(--color-text-tertiary); margin: 0;">of $3,000 · $1,152.50 left</p>
+      <div style="height: 4px; background: var(--color-background-secondary); border-radius: 4px; margin-top: 8px; overflow: hidden;">
+        <div style="width: 62%; height: 100%; background: #1D9E75;"></div>
+      </div>
+    </div>
+
+    <div style="position: relative; background: rgba(99, 153, 34, 0.06); border: 2px solid #639922; border-radius: var(--border-radius-lg); padding: 14px 14px 12px; margin-top: 6px;">
+      <div style="position: absolute; top: -10px; right: 10px; background: #C0DD97; color: #173404; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; border: 0.5px solid #639922;">+ Added</div>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 10px;">↻ Upcoming Recurring</p>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Netflix · Monthly</span><span style="color: var(--color-text-secondary);">Mar 15</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Gym · Monthly</span><span style="color: var(--color-text-secondary);">Mar 18</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>Spotify · Monthly</span><span style="color: var(--color-text-secondary);">Mar 22</span></div>
+      </div>
+    </div>
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px 14px;">
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 8px;">Spending by Category</p>
+      <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between;"><span><span style="color: #BA7517;">●</span> Housing</span><span>$702.00</span></div>
+        <div style="display: flex; justify-content: space-between;"><span><span style="color: #1D9E75;">●</span> Food &amp; Dining</span><span>$406.30</span></div>
+        <div style="display: flex; justify-content: space-between;"><span><span style="color: #378ADD;">●</span> Transport</span><span>$277.10</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px 14px;">
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 8px;">Recent Expenses</p>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 5px 0; border-bottom: 0.5px solid var(--color-border-tertiary);">
+          <div>🏠 Rent Payment</div>
+          <div>-$1,200.00</div>
+        </div>
+
+        <div style="position: relative; display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 8px; margin: 6px -6px 4px; background: rgba(186, 117, 23, 0.06); border: 2px solid #BA7517; border-radius: var(--border-radius-md);">
+          <div style="position: absolute; top: -10px; right: 8px; background: #FAC775; color: #412402; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; border: 0.5px solid #BA7517;">~ Modified</div>
+          <div>📺 Netflix <span style="background: #FAC775; color: #412402; font-size: 9px; padding: 1px 6px; border-radius: 8px; margin-left: 4px; font-weight: 500;">Monthly</span></div>
+          <div>-$15.99</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 5px 0; border-bottom: 0.5px solid var(--color-border-tertiary);">
+          <div>🛒 Whole Foods</div>
+          <div>-$87.40</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 5px 0;">
+          <div>🚗 Uber</div>
+          <div>-$24.80</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="position: relative; background: var(--color-background-primary); border: 2px dashed #E24B4A; border-radius: var(--border-radius-lg); padding: 12px 14px; opacity: 0.55;">
+      <div style="position: absolute; top: -10px; right: 10px; background: #F7C1C1; color: #501313; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; border: 0.5px solid #E24B4A; opacity: 1;">− Removed</div>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 4px; text-decoration: line-through;">Set Budget Goal banner</p>
+      <p style="font-size: 11px; color: var(--color-text-tertiary); margin: 0; text-decoration: line-through;">Retired promotional component</p>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 20px; padding: 12px 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-lg);">
+  <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Highlight types</p>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 22px; height: 22px; border: 2px solid #639922; background: rgba(99, 153, 34, 0.1); border-radius: 4px; flex-shrink: 0;"></div>
+      <div>
+        <div style="font-size: 12px; font-weight: 500; color: #3B6D11;">Added</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary);">new node in delta</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 22px; height: 22px; border: 2px solid #BA7517; background: rgba(186, 117, 23, 0.08); border-radius: 4px; flex-shrink: 0;"></div>
+      <div>
+        <div style="font-size: 12px; font-weight: 500; color: #854F0B;">Modified</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary);">fields changed; hover for diff</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 22px; height: 22px; border: 2px dashed #E24B4A; background: rgba(226, 75, 74, 0.04); border-radius: 4px; flex-shrink: 0; opacity: 0.7;"></div>
+      <div>
+        <div style="font-size: 12px; font-weight: 500; color: #A32D2D;">Removed</div>
+        <div style="font-size: 11px; color: var(--color-text-secondary);">node deleted; strikethrough</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
