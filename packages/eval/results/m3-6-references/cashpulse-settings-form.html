@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>M3.6 Reference — cashpulse-settings-form</title>
+<style>
+  :root {
+    --background-primary: #ffffff;
+    --background-secondary: #f5f4ef;
+    --background-tertiary: #faf9f5;
+    --surface-primary: #ffffff;
+    --surface-secondary: #f5f4ef;
+    --accent-primary: #0F6E56;
+    --cta-primary: #0F6E56;
+    --text-primary: #1a1a19;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --text-on-cta: #ffffff;
+    --border-primary: rgba(0, 0, 0, 0.15);
+    --border-secondary: rgba(0, 0, 0, 0.3);
+    --success: #1D9E75;
+    --warning: #BA7517;
+    --error: #E24B4A;
+    --info: #378ADD;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  body {
+    margin: 0; padding: 24px;
+    font-family: var(--font-sans);
+    background: var(--background-tertiary);
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+  .header { max-width: 900px; margin: 0 auto 16px; }
+  .header h1 { font-size: 16px; font-weight: 500; margin: 0 0 4px; }
+  .header p { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 500; }
+  .badge-new { background: #dbeafe; color: #1e40af; }
+  .badge-modify { background: #FAC775; color: #412402; }
+  .content {
+    max-width: 900px; margin: 0 auto;
+    background: var(--background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--border-primary);
+    padding: 16px; overflow: auto;
+  }
+  pre {
+    font-size: 11px; line-height: 1.5;
+    white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    margin: 0;
+  }
+  
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>M3.6 Reference — cashpulse-settings-form</h1>
+  <p><span class="badge badge-new">NEW</span></p>
+</div>
+
+<div class="content">
+<pre>import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+export function SettingsScreen() {
+  return (
+    &lt;div className=&quot;min-h-screen flex flex-col items-center bg-[var(--surface-primary)]&quot; data-node-id=&quot;root&quot;&gt;
+      &lt;header className=&quot;flex items-center justify-between px-[16px] py-[12px] w-full h-[56px] bg-[var(--surface-secondary)]&quot; data-node-id=&quot;top-bar&quot;&gt;
+        &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;top-bar-left&quot;&gt;
+          &lt;div className=&quot;flex items-center gap-[6px]&quot; data-node-id=&quot;logo-button&quot;&gt;
+            &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;logo-icon&quot;&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div className=&quot;flex items-center gap-[4px]&quot; data-node-id=&quot;month-selector&quot;&gt;
+            &lt;div className=&quot;flex items-center justify-center w-[32px] h-[32px] mx-auto&quot; data-node-id=&quot;month-prev-btn&quot;&gt;
+              &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;month-prev-icon&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-primary)]&quot; data-node-id=&quot;month-label&quot;&gt;
+              June 2025
+            &lt;/p&gt;
+            &lt;div className=&quot;flex items-center justify-center w-[32px] h-[32px] mx-auto&quot; data-node-id=&quot;month-next-btn&quot;&gt;
+              &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;month-next-icon&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;Button variant=&quot;default&quot; className=&quot;w-full h-[48px] rounded-[12px]&quot; data-node-id=&quot;top-bar-add-btn&quot;&gt;
+          + Add
+        &lt;/Button&gt;
+      &lt;/header&gt;
+      &lt;div className=&quot;flex flex-col w-full bg-[var(--surface-primary)] shadow-[0_8px_32px_rgba(15,110,86,0.14)]&quot; data-node-id=&quot;drawer-panel&quot;&gt;
+        &lt;header className=&quot;flex items-center justify-between px-[20px] py-[16px] w-full h-[64px] bg-[var(--surface-secondary)]&quot; data-node-id=&quot;drawer-header&quot;&gt;
+          &lt;h1 className=&quot;text-[32px] font-bold leading-[1.2] text-[var(--text-primary)]&quot; data-node-id=&quot;drawer-title&quot;&gt;
+            Settings
+          &lt;/h1&gt;
+          &lt;div className=&quot;flex items-center justify-center w-[44px] h-[44px] mx-auto bg-[var(--surface-secondary)] rounded-full&quot; data-node-id=&quot;close-button&quot;&gt;
+            &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;close-icon&quot;&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/header&gt;
+        &lt;div className=&quot;flex flex-col px-[20px] py-[20px] w-full bg-[var(--surface-primary)]&quot; data-node-id=&quot;drawer-content&quot;&gt;
+          &lt;div className=&quot;flex flex-col gap-[12px] py-[16px] w-full&quot; data-node-id=&quot;currency-section&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px] w-full&quot; data-node-id=&quot;currency-section-header&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;currency-section-title&quot;&gt;
+                Currency
+              &lt;/h3&gt;
+              &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;currency-section-desc&quot;&gt;
+                Select your preferred display currency
+              &lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px]&quot; data-node-id=&quot;currency-selector&quot;&gt;
+              &lt;label className=&quot;text-[12px] font-medium text-[var(--text-secondary)]&quot;&gt;
+                Currency
+              &lt;/label&gt;
+              &lt;Select&gt;
+                &lt;SelectTrigger className=&quot;h-[48px] rounded-[12px]&quot;&gt;
+                  &lt;SelectValue placeholder=&quot;Select...&quot; /&gt;
+                &lt;/SelectTrigger&gt;
+              &lt;/Select&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;divider-1&quot; /&gt;
+          &lt;div className=&quot;flex flex-col gap-[12px] py-[16px] w-full&quot; data-node-id=&quot;budget-section&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px] w-full&quot; data-node-id=&quot;budget-section-header&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;budget-section-title&quot;&gt;
+                Monthly Budget
+              &lt;/h3&gt;
+              &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;budget-section-desc&quot;&gt;
+                Set your default monthly spending limit
+              &lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex items-center w-full rounded-[10px]&quot; data-node-id=&quot;budget-input-row&quot;&gt;
+              &lt;div className=&quot;flex items-center justify-center px-[14px] py-[12px] bg-[var(--surface-secondary)]&quot; data-node-id=&quot;budget-currency-prefix&quot;&gt;
+                &lt;p className=&quot;text-[14px] font-medium text-[var(--text-secondary)]&quot; data-node-id=&quot;budget-currency-symbol&quot;&gt;
+                  $
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-full&quot; data-node-id=&quot;budget-amount-input&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;divider-2&quot; /&gt;
+          &lt;div className=&quot;flex flex-col gap-[12px] py-[16px] w-full&quot; data-node-id=&quot;preferences-section&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px] w-full&quot; data-node-id=&quot;preferences-section-header&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;preferences-section-title&quot;&gt;
+                Preferences
+              &lt;/h3&gt;
+              &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;preferences-section-desc&quot;&gt;
+                Customize your app experience
+              &lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] py-[14px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;locale-toggle-row&quot;&gt;
+              &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;locale-toggle-label-group&quot;&gt;
+                &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;locale-toggle-label&quot;&gt;
+                  Use system locale
+                &lt;/p&gt;
+                &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;locale-toggle-desc&quot;&gt;
+                  Format numbers and dates using device locale
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col bg-[var(--surface-secondary)]&quot; data-node-id=&quot;locale-toggle&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;divider-3&quot; /&gt;
+          &lt;div className=&quot;flex flex-col gap-[12px] py-[16px] w-full&quot; data-node-id=&quot;danger-zone-section&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px] w-full&quot; data-node-id=&quot;danger-zone-header&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--error)]&quot; data-node-id=&quot;danger-zone-title&quot;&gt;
+                Danger Zone
+              &lt;/h3&gt;
+              &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;danger-zone-desc&quot;&gt;
+                Irreversible actions — proceed with caution
+              &lt;/p&gt;
+            &lt;/div&gt;
+            &lt;Button variant=&quot;outline&quot; className=&quot;w-full h-[44px] rounded-[12px]&quot; data-node-id=&quot;reset-budget-btn&quot;&gt;
+              Reset All Budgets
+            &lt;/Button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col gap-[12px] px-[20px] py-[20px] w-full bg-[var(--surface-secondary)]&quot; data-node-id=&quot;drawer-footer&quot;&gt;
+          &lt;Button variant=&quot;default&quot; className=&quot;w-full h-[48px] rounded-[12px]&quot; data-node-id=&quot;save-settings-btn&quot;&gt;
+            Save Settings
+          &lt;/Button&gt;
+          &lt;div className=&quot;flex items-center justify-center w-full h-[20px]&quot; data-node-id=&quot;settings-status-region&quot;&gt;
+            &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;settings-status-text&quot;&gt;
+              
+            &lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex items-center justify-between px-[8px] py-[8px] w-full h-[64px] bg-[var(--surface-secondary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)]&quot; data-node-id=&quot;nav-tabs&quot;&gt;
+        &lt;div className=&quot;flex flex-col items-center gap-[4px] px-[16px] py-[6px]&quot; data-node-id=&quot;nav-tab-home&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-home-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-home-label&quot;&gt;
+            Home
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center gap-[4px] px-[16px] py-[6px]&quot; data-node-id=&quot;nav-tab-add&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-add-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-add-label&quot;&gt;
+            Add
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center gap-[4px] px-[16px] py-[6px]&quot; data-node-id=&quot;nav-tab-insights&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-insights-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-insights-label&quot;&gt;
+            Insights
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+</div>
+</body>
+</html>

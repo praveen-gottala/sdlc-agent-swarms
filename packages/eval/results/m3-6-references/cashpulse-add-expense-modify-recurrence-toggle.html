@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>M3.6 Reference — cashpulse-add-expense-modify-recurrence-toggle</title>
+<style>
+  :root {
+    --background-primary: #ffffff;
+    --background-secondary: #f5f4ef;
+    --background-tertiary: #faf9f5;
+    --surface-primary: #ffffff;
+    --surface-secondary: #f5f4ef;
+    --accent-primary: #0F6E56;
+    --cta-primary: #0F6E56;
+    --text-primary: #1a1a19;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --text-on-cta: #ffffff;
+    --border-primary: rgba(0, 0, 0, 0.15);
+    --border-secondary: rgba(0, 0, 0, 0.3);
+    --success: #1D9E75;
+    --warning: #BA7517;
+    --error: #E24B4A;
+    --info: #378ADD;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  body {
+    margin: 0; padding: 24px;
+    font-family: var(--font-sans);
+    background: var(--background-tertiary);
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+  .header { max-width: 900px; margin: 0 auto 16px; }
+  .header h1 { font-size: 16px; font-weight: 500; margin: 0 0 4px; }
+  .header p { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 500; }
+  .badge-new { background: #dbeafe; color: #1e40af; }
+  .badge-modify { background: #FAC775; color: #412402; }
+  .content {
+    max-width: 900px; margin: 0 auto;
+    background: var(--background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--border-primary);
+    padding: 16px; overflow: auto;
+  }
+  pre {
+    font-size: 11px; line-height: 1.5;
+    white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    margin: 0;
+  }
+  
+/* ─── R10 Delta Highlight Styles ─────────────────────── */
+
+.r10-highlight {
+  position: relative;
+  border-radius: var(--border-radius-md, 8px);
+}
+
+/* Added: green solid outline + subtle green tint */
+.r10-added {
+  border: 2px solid #639922;
+  background: rgba(99, 153, 34, 0.06);
+}
+
+/* Modified: amber solid outline + subtle amber tint */
+.r10-modified {
+  border: 2px solid #BA7517;
+  background: rgba(186, 117, 23, 0.06);
+}
+
+/* Removed: red dashed outline + reduced opacity + strikethrough */
+.r10-removed {
+  border: 2px dashed #E24B4A;
+  background: rgba(226, 75, 74, 0.04);
+  opacity: 0.55;
+}
+.r10-removed * {
+  text-decoration: line-through;
+}
+
+/* Reordered: same as modified + arrow indicator */
+.r10-reordered {
+  border: 2px solid #BA7517;
+  background: rgba(186, 117, 23, 0.06);
+}
+
+/* ─── Badges ─────────────────────────────────────────── */
+
+.r10-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.r10-badge-added {
+  background: #C0DD97;
+  color: #173404;
+  border: 0.5px solid #639922;
+}
+
+.r10-badge-modified {
+  background: #FAC775;
+  color: #412402;
+  border: 0.5px solid #BA7517;
+}
+
+.r10-badge-removed {
+  background: #F7C1C1;
+  color: #501313;
+  border: 0.5px solid #E24B4A;
+  opacity: 1;
+}
+
+.r10-badge-reordered {
+  background: #FAC775;
+  color: #412402;
+  border: 0.5px solid #BA7517;
+}
+
+/* ─── Field diff badge (inline, for modified fields) ── */
+
+.r10-field-badge {
+  display: inline-block;
+  background: #FAC775;
+  color: #412402;
+  font-size: 9px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>M3.6 Reference — cashpulse-add-expense-modify-recurrence-toggle</h1>
+  <p><span class="badge badge-modify">MODIFY</span></p>
+</div>
+<div style="max-width:900px;margin:0 auto 16px;background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.15);padding:16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="font-size:14px;font-weight:600;margin:0;">Change Summary</h2>
+    <span style="font-size:12px;color:#5f5e5a;">6 added</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-section</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added section</div>
+        
+      </div>
+    </div>
+<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-toggle</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added toggle</div>
+        
+      </div>
+    </div>
+<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-frequency</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added segmented-control</div>
+        
+      </div>
+    </div>
+<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-start-date</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added date-picker</div>
+        
+      </div>
+    </div>
+<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-end-date</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added date-picker</div>
+        
+      </div>
+    </div>
+<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-left:3px solid #639922;background:rgba(99,153,34,0.08);border-radius:0 8px 8px 0;">
+      <span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:8px;background:#C0DD97;color:#173404;white-space:nowrap;flex-shrink:0;">+ Added</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">recurrence-summary</div>
+        <div style="font-size:11px;color:#5f5e5a;">Added text</div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+<div class="content">
+<pre>import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+export function AddExpenseScreen() {
+  return (
+    &lt;div className=&quot;min-h-screen flex flex-col items-stretch bg-[var(--background-primary)]&quot; data-node-id=&quot;root&quot;&gt;
+      &lt;div className=&quot;flex items-center justify-between px-[24px] w-full h-[64px] bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)]&quot; data-node-id=&quot;top-bar&quot;&gt;
+        &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;top-bar-back-btn&quot;&gt;
+          
+        &lt;/Button&gt;
+        &lt;h2 className=&quot;text-[24px] font-bold leading-[1.25] text-[var(--text-primary)]&quot; data-node-id=&quot;top-bar-title&quot;&gt;
+          Add Expense
+        &lt;/h2&gt;
+        &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;top-bar-actions&quot;&gt;
+          &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;top-bar-add-button&quot;&gt;
+            
+          &lt;/Button&gt;
+          &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;top-bar-settings-trigger&quot;&gt;
+            
+          &lt;/Button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex flex-col items-center w-full bg-[var(--background-primary)]&quot; data-node-id=&quot;page-body&quot;&gt;
+        &lt;div className=&quot;flex flex-col gap-[24px] py-[24px] w-[640px] mx-auto&quot; data-node-id=&quot;center-col&quot;&gt;
+          &lt;div className=&quot;flex flex-col gap-[8px] w-full&quot; data-node-id=&quot;quick-add-section&quot;&gt;
+            &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;quick-add-label&quot;&gt;
+              Quick Add
+            &lt;/p&gt;
+            &lt;div className=&quot;flex items-center gap-[8px] w-full&quot; data-node-id=&quot;quick-add-chips-row&quot;&gt;
+              &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;qac-coffee&quot;&gt;
+                ☕ Coffee $4.50
+              &lt;/Badge&gt;
+              &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;qac-lunch&quot;&gt;
+                🍜 Lunch $12.80
+              &lt;/Badge&gt;
+              &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;qac-transit&quot;&gt;
+                🚇 Transit $2.75
+              &lt;/Badge&gt;
+              &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;qac-groceries&quot;&gt;
+                🛒 Groceries $67.20
+              &lt;/Badge&gt;
+              &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;qac-gym&quot;&gt;
+                🏋️ Gym $30.00
+              &lt;/Badge&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div className=&quot;flex flex-col items-center gap-[8px] py-[32px] w-full bg-[var(--background-primary)]&quot; data-node-id=&quot;amount-hero-section&quot;&gt;
+            &lt;section className=&quot;flex items-center justify-center gap-[8px] bg-transparent&quot; data-node-id=&quot;amount-currency-row&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+                $
+              &lt;/h3&gt;
+              &lt;div className=&quot;flex flex-col gap-[4px]&quot; data-node-id=&quot;amount-hero-input&quot;&gt;
+                &lt;Input className=&quot;h-[48px] rounded-[12px] border-[var(--border-default)]&quot; placeholder=&quot;0.00&quot; /&gt;
+              &lt;/div&gt;
+            &lt;/section&gt;
+            &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;amount-hint&quot;&gt;
+              Enter the expense amount
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div className=&quot;flex flex-col px-[24px] py-[24px] w-full bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)] rounded-[16px]&quot; data-node-id=&quot;expense-form-card&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[12px] py-[16px] w-full&quot; data-node-id=&quot;category-section&quot;&gt;
+              &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;category-section-label&quot;&gt;
+                Category
+              &lt;/p&gt;
+              &lt;div className=&quot;flex items-center gap-[8px] w-full&quot; data-node-id=&quot;category-chip-grid&quot;&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-food&quot;&gt;
+                  🍔 Food
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-transport&quot;&gt;
+                  🚗 Transport
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-shopping&quot;&gt;
+                  🛍️ Shopping
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-health&quot;&gt;
+                  💊 Health
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-entertainment&quot;&gt;
+                  🎬 Entertainment
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-utilities&quot;&gt;
+                  💡 Utilities
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;cat-add-new&quot;&gt;
+                  + New
+                &lt;/Badge&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[12px] px-[16px] py-[16px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;new-category-inline-form&quot;&gt;
+                &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-primary)]&quot; data-node-id=&quot;new-cat-form-title&quot;&gt;
+                  New Category
+                &lt;/p&gt;
+                &lt;div className=&quot;flex flex-col gap-[4px]&quot; data-node-id=&quot;new-cat-name-input&quot;&gt;
+                  &lt;label className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot;&gt;
+                    Category Name
+                  &lt;/label&gt;
+                  &lt;Input className=&quot;h-[48px] rounded-[12px] border-[var(--border-default)]&quot; placeholder=&quot;e.g. Subscriptions&quot; /&gt;
+                &lt;/div&gt;
+                &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;color-picker-row-label&quot;&gt;
+                  Pick a color
+                &lt;/p&gt;
+                &lt;div className=&quot;flex items-center gap-[8px] w-full&quot; data-node-id=&quot;color-picker-row&quot;&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--cta-primary)] rounded-full&quot; data-node-id=&quot;color-swatch-1&quot;&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--success)] rounded-full&quot; data-node-id=&quot;color-swatch-2&quot;&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--error)] rounded-full&quot; data-node-id=&quot;color-swatch-3&quot;&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--warning)] rounded-full&quot; data-node-id=&quot;color-swatch-4&quot;&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--info)] rounded-full&quot; data-node-id=&quot;color-swatch-5&quot;&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex w-[32px] h-[32px] mx-auto bg-[var(--surface-secondary)] rounded-full&quot; data-node-id=&quot;color-swatch-6&quot;&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;flex justify-end gap-[8px] w-full&quot; data-node-id=&quot;new-cat-actions&quot;&gt;
+                  &lt;Button variant=&quot;outline&quot; className=&quot;h-[44px] rounded-[12px]&quot; data-node-id=&quot;new-cat-cancel-btn&quot;&gt;
+                    Cancel
+                  &lt;/Button&gt;
+                  &lt;Button variant=&quot;default&quot; className=&quot;w-full h-[48px] rounded-[12px]&quot; data-node-id=&quot;new-cat-save-btn&quot;&gt;
+                    Add Category
+                  &lt;/Button&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;form-divider-1&quot; /&gt;
+            &lt;div className=&quot;flex flex-col gap-[8px] py-[16px] w-full&quot; data-node-id=&quot;date-section&quot;&gt;
+              &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;date-section-label&quot;&gt;
+                Date
+              &lt;/p&gt;
+              &lt;div className=&quot;flex flex-col w-full&quot; data-node-id=&quot;date-picker-input&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[12px] px-[16px] py-[16px] w-full bg-[var(--surface-primary)] shadow-[0_4px_16px_rgba(15,110,86,0.10)] rounded-[10px]&quot; data-node-id=&quot;mini-calendar-dropdown&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between w-full&quot; data-node-id=&quot;month-selector&quot;&gt;
+                  &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;month-prev-btn&quot;&gt;
+                    
+                  &lt;/Button&gt;
+                  &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;month-label&quot;&gt;
+                    January 2025
+                  &lt;/h3&gt;
+                  &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;month-next-btn&quot;&gt;
+                    
+                  &lt;/Button&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;flex items-center justify-between w-full&quot; data-node-id=&quot;calendar-weekdays&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-su&quot;&gt;
+                    Su
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-mo&quot;&gt;
+                    Mo
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-tu&quot;&gt;
+                    Tu
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-we&quot;&gt;
+                    We
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-th&quot;&gt;
+                    Th
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-fr&quot;&gt;
+                    Fr
+                  &lt;/p&gt;
+                  &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;cal-day-sa&quot;&gt;
+                    Sa
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;flex gap-[4px] w-full&quot; data-node-id=&quot;calendar-grid&quot;&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d1&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-secondary)]&quot; data-node-id=&quot;cg-d1t&quot;&gt;
+                      
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d2&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-secondary)]&quot; data-node-id=&quot;cg-d2t&quot;&gt;
+                      
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d3&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d3t&quot;&gt;
+                      1
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d4&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d4t&quot;&gt;
+                      2
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d5&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d5t&quot;&gt;
+                      3
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d6&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d6t&quot;&gt;
+                      4
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d7&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d7t&quot;&gt;
+                      5
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d8&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d8t&quot;&gt;
+                      6
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d9&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d9t&quot;&gt;
+                      7
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d10&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d10t&quot;&gt;
+                      8
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d11&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d11t&quot;&gt;
+                      9
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d12&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d12t&quot;&gt;
+                      10
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d13&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d13t&quot;&gt;
+                      11
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d14&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d14t&quot;&gt;
+                      12
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto bg-[var(--cta-primary)] rounded-full&quot; data-node-id=&quot;cg-d15&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-bold text-[var(--text-on-cta)]&quot; data-node-id=&quot;cg-d15t&quot;&gt;
+                      13
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d16&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d16t&quot;&gt;
+                      14
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d17&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d17t&quot;&gt;
+                      15
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d18&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d18t&quot;&gt;
+                      16
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d19&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d19t&quot;&gt;
+                      17
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d20&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d20t&quot;&gt;
+                      18
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d21&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d21t&quot;&gt;
+                      19
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d22&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d22t&quot;&gt;
+                      20
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d23&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d23t&quot;&gt;
+                      21
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d24&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d24t&quot;&gt;
+                      22
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d25&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d25t&quot;&gt;
+                      23
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d26&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d26t&quot;&gt;
+                      24
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d27&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d27t&quot;&gt;
+                      25
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d28&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d28t&quot;&gt;
+                      26
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d29&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d29t&quot;&gt;
+                      27
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d30&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d30t&quot;&gt;
+                      28
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d31&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d31t&quot;&gt;
+                      29
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d32&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d32t&quot;&gt;
+                      30
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div className=&quot;flex items-center justify-center w-[36px] h-[36px] mx-auto rounded-full&quot; data-node-id=&quot;cg-d33&quot;&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cg-d33t&quot;&gt;
+                      31
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;form-divider-2&quot; /&gt;
+            &lt;div className=&quot;flex flex-col gap-[8px] py-[16px] w-full&quot; data-node-id=&quot;payment-method-section&quot;&gt;
+              &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;payment-section-label&quot;&gt;
+                Payment Method
+              &lt;/p&gt;
+              &lt;div className=&quot;flex items-center gap-[8px] w-full&quot; data-node-id=&quot;payment-chip-row&quot;&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;pm-cash&quot;&gt;
+                  💵 Cash
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;pm-credit&quot;&gt;
+                  💳 Credit Card
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;pm-debit&quot;&gt;
+                  🏦 Debit Card
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;pm-apple-pay&quot;&gt;
+                  📱 Apple Pay
+                &lt;/Badge&gt;
+                &lt;Badge variant=&quot;outline&quot; data-node-id=&quot;pm-bank&quot;&gt;
+                  🏛️ Bank Transfer
+                &lt;/Badge&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;form-divider-3&quot; /&gt;
+            &lt;div className=&quot;flex flex-col gap-[4px] py-[16px] w-full&quot; data-node-id=&quot;note-section&quot;&gt;
+              &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;note-section-label&quot;&gt;
+                Note
+              &lt;/p&gt;
+              &lt;div className=&quot;flex flex-col w-full&quot; data-node-id=&quot;note-input&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex justify-end w-full&quot; data-node-id=&quot;char-counter-row&quot;&gt;
+                &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;char-counter&quot;&gt;
+                  0 / 140
+                &lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;hr className=&quot;border-[var(--border-default)]/30 w-full&quot; data-node-id=&quot;form-divider-4&quot; /&gt;
+            &lt;Button variant=&quot;default&quot; className=&quot;w-full h-[48px] rounded-[12px]&quot; data-node-id=&quot;save-expense-btn&quot;&gt;
+              Save Expense
+            &lt;/Button&gt;
+            &lt;section className=&quot;flex flex-col gap-[12px] r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-section&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+                Recurrence
+              &lt;/h3&gt;
+              &lt;div className=&quot;flex flex-col r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-toggle&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;Tabs defaultValue=&quot;Monthly&quot; className=&quot;w-full r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-frequency&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+                &lt;TabsList className=&quot;w-full rounded-[24px]&quot;&gt;
+                  &lt;TabsTrigger value=&quot;Weekly&quot;&gt;
+                    Weekly
+                  &lt;/TabsTrigger&gt;
+                  &lt;TabsTrigger value=&quot;Monthly&quot;&gt;
+                    Monthly
+                  &lt;/TabsTrigger&gt;
+                  &lt;TabsTrigger value=&quot;Yearly&quot;&gt;
+                    Yearly
+                  &lt;/TabsTrigger&gt;
+                &lt;/TabsList&gt;
+              &lt;/Tabs&gt;
+              &lt;div className=&quot;flex flex-col r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-start-date&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-end-date&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;p className=&quot;text-[var(--text-secondary)] r10-highlight r10-added&quot; data-delta-op=&quot;added&quot; data-node-id=&quot;recurrence-summary&quot;&gt;
+&lt;span class=&quot;r10-badge r10-badge-added&quot;&gt;+ Added&lt;/span&gt;
+                Repeats monthly starting today
+              &lt;/p&gt;
+            &lt;/section&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex items-center justify-between w-full h-[64px] bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)]&quot; data-node-id=&quot;nav-tabs&quot;&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-home&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-home-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-home-label&quot;&gt;
+            Home
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-add-expense&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-add-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--cta-primary)]&quot; data-node-id=&quot;nav-tab-add-label&quot;&gt;
+            Add
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-insights&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-insights-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-insights-label&quot;&gt;
+            Insights
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+</div>
+</body>
+</html>

@@ -825,18 +825,81 @@ function DesignStudioContent() {
   }, [selectedId, selectedDesignStatus]);
 
   // Delta preview: apply highlights after spec renders in iframe
+  // Supported fixtures:
+  //   ?delta=fixture:cashpulse-add-recurring          (dashboard — 5 added, 1 reordered)
+  //   ?delta=fixture:cashpulse-recurring-badge         (dashboard — 4 modified expense rows)
+  //   ?delta=fixture:cashpulse-recurrence-toggle       (add-expense — 6 added form fields)
   const deltaFixtureParam = searchParams.get('delta');
   useEffect(() => {
     if (!deltaFixtureParam?.startsWith('fixture:') || !designSpec || !bridgeRef.current?.isReady) return;
 
-    const CASHPULSE_DELTA_NODES = [
-      { nodeId: 'recurring-section', op: 'added' as const, description: 'Added section: Upcoming Recurring' },
-      { nodeId: 'recurring-list', op: 'added' as const, description: 'Added container: Recurring list' },
-      { nodeId: 'recurring-item-netflix', op: 'added' as const, description: 'Added list-item: Netflix' },
-      { nodeId: 'recurring-item-gym', op: 'added' as const, description: 'Added list-item: Gym' },
-      { nodeId: 'recurring-item-spotify', op: 'added' as const, description: 'Added list-item: Spotify' },
-      { nodeId: 'category-donut-card', op: 'reordered' as const, description: 'Reordered: shifted down for recurring section' },
-    ];
+    const fixtureName = deltaFixtureParam.replace('fixture:', '');
+
+    type DeltaFixture = {
+      nodes: Array<{ nodeId: string; op: 'added' | 'modified' | 'removed' | 'reordered'; description: string }>;
+      addedNodes?: Record<string, Record<string, unknown>>;
+      modifiedNodes?: Record<string, Record<string, unknown>>;
+      reorderedNodes?: Record<string, number>;
+    };
+
+    const FIXTURES: Record<string, DeltaFixture> = {
+      'cashpulse-add-recurring': {
+        nodes: [
+          { nodeId: 'recurring-section', op: 'added', description: 'Added section: Upcoming Recurring' },
+          { nodeId: 'recurring-list', op: 'added', description: 'Added container: Recurring list' },
+          { nodeId: 'recurring-item-netflix', op: 'added', description: 'Added list-item: Netflix' },
+          { nodeId: 'recurring-item-gym', op: 'added', description: 'Added list-item: Gym' },
+          { nodeId: 'recurring-item-spotify', op: 'added', description: 'Added list-item: Spotify' },
+          { nodeId: 'category-donut-card', op: 'reordered', description: 'Reordered: shifted down for recurring section' },
+        ],
+        addedNodes: {
+          'recurring-section': { parent: 'left-column', order: 1, type: 'section', label: 'Upcoming Recurring', layout: { dir: 'column', gap: 8 }, background: 'surface-primary', radius: 12 },
+          'recurring-list': { parent: 'recurring-section', order: 0, type: 'container', layout: { dir: 'column', gap: 4 } },
+          'recurring-item-netflix': { parent: 'recurring-list', order: 0, catalog: 'list-item', label: 'Netflix', overrides: { subtitle: 'Monthly · $15.99 · Due in 3 days' } },
+          'recurring-item-gym': { parent: 'recurring-list', order: 1, catalog: 'list-item', label: 'Gym Membership', overrides: { subtitle: 'Monthly · $45.00 · Due in 6 days' } },
+          'recurring-item-spotify': { parent: 'recurring-list', order: 2, catalog: 'list-item', label: 'Spotify', overrides: { subtitle: 'Monthly · $9.99 · Due in 10 days' } },
+        },
+        reorderedNodes: { 'category-donut-card': 2 },
+      },
+      'cashpulse-recurring-badge': {
+        nodes: [
+          { nodeId: 'recurring-badge-1', op: 'added', description: 'Added badge: Monthly (Rent Payment row)' },
+          { nodeId: 'recurring-badge-3', op: 'added', description: 'Added badge: Weekly (Uber row)' },
+          { nodeId: 'recurring-badge-4', op: 'added', description: 'Added badge: Monthly (Netflix row)' },
+          { nodeId: 'recurring-badge-6', op: 'added', description: 'Added badge: Yearly (Starbucks row)' },
+        ],
+        addedNodes: {
+          'recurring-badge-1': { parent: 'expense-row-1-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
+          'recurring-badge-3': { parent: 'expense-row-3-right', order: 2, catalog: 'badge', label: 'Weekly', overrides: { variant: 'secondary' } },
+          'recurring-badge-4': { parent: 'expense-row-4-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
+          'recurring-badge-6': { parent: 'expense-row-6-right', order: 2, catalog: 'badge', label: 'Yearly', overrides: { variant: 'secondary' } },
+        },
+      },
+      'cashpulse-recurrence-toggle': {
+        nodes: [
+          { nodeId: 'recurrence-section', op: 'added', description: 'Added section: Recurrence' },
+          { nodeId: 'recurrence-toggle', op: 'added', description: 'Added toggle: Make this recurring' },
+          { nodeId: 'recurrence-frequency', op: 'added', description: 'Added segmented-control: Frequency' },
+          { nodeId: 'recurrence-start-date', op: 'added', description: 'Added date-picker: Start Date' },
+          { nodeId: 'recurrence-end-date', op: 'added', description: 'Added date-picker: End Date' },
+          { nodeId: 'recurrence-summary', op: 'added', description: 'Added text: Repeats monthly' },
+        ],
+        addedNodes: {
+          'recurrence-section': { parent: 'expense-form-card', order: 10, type: 'section', label: 'Recurrence', layout: { dir: 'column', gap: 12 } },
+          'recurrence-toggle': { parent: 'recurrence-section', order: 0, catalog: 'toggle', label: 'Make this recurring' },
+          'recurrence-frequency': { parent: 'recurrence-section', order: 1, catalog: 'segmented-control', label: 'Frequency', options: [{ label: 'Weekly', selected: false }, { label: 'Monthly', selected: true }, { label: 'Yearly', selected: false }] },
+          'recurrence-start-date': { parent: 'recurrence-section', order: 2, catalog: 'date-picker', label: 'Start Date', placeholder: 'Select start date' },
+          'recurrence-end-date': { parent: 'recurrence-section', order: 3, catalog: 'date-picker', label: 'End Date (optional)', placeholder: 'No end date' },
+          'recurrence-summary': { parent: 'recurrence-section', order: 4, type: 'text', content: 'Repeats monthly starting today', typography: 'caption', color: 'text-secondary' },
+        },
+      },
+    };
+
+    const fixture = FIXTURES[fixtureName];
+    if (!fixture) {
+      log('WARN', 'studio', `Unknown delta fixture: ${fixtureName}. Available: ${Object.keys(FIXTURES).join(', ')}`);
+      return;
+    }
 
     const DELTA_CSS = `
 .r10-highlight { position: relative; border-radius: var(--border-radius-md, 8px); }
@@ -852,46 +915,49 @@ function DesignStudioContent() {
 .r10-badge-reordered { background: #FAC775; color: #412402; border: 0.5px solid #BA7517; }
 `;
 
-    // Apply delta highlights after a delay to ensure iframe has rendered the spec
     const timer = setTimeout(() => {
       const existingIds = new Set(Object.keys(designSpec.nodes ?? {}));
+      const mergedNodes = { ...designSpec.nodes };
 
-      // Place recurring section inside left-column (between budget-summary and category-donut)
-      const parentId = existingIds.has('left-column') ? 'left-column' : 'root';
-      const addedNodes: Record<string, Record<string, unknown>> = {
-        'recurring-section': { parent: parentId, order: 1, type: 'section', label: 'Upcoming Recurring', layout: { dir: 'column', gap: 8 }, background: 'surface-primary', radius: 12 },
-        'recurring-list': { parent: 'recurring-section', order: 0, type: 'container', layout: { dir: 'column', gap: 4 } },
-        'recurring-item-netflix': { parent: 'recurring-list', order: 0, catalog: 'list-item', label: 'Netflix', overrides: { subtitle: 'Monthly · $15.99 · Due in 3 days' } },
-        'recurring-item-gym': { parent: 'recurring-list', order: 1, catalog: 'list-item', label: 'Gym Membership', overrides: { subtitle: 'Monthly · $45.00 · Due in 6 days' } },
-        'recurring-item-spotify': { parent: 'recurring-list', order: 2, catalog: 'list-item', label: 'Spotify', overrides: { subtitle: 'Monthly · $9.99 · Due in 10 days' } },
-      };
-
-      // Shift category-donut-card down to make room for the recurring section
-      const mergedNodes = { ...designSpec.nodes, ...addedNodes };
-      if (mergedNodes['category-donut-card']) {
-        mergedNodes['category-donut-card'] = { ...mergedNodes['category-donut-card'], order: 2 };
+      // Apply added nodes
+      if (fixture.addedNodes) {
+        for (const [id, node] of Object.entries(fixture.addedNodes)) {
+          mergedNodes[id] = node;
+        }
       }
 
-      const mergedSpec = {
-        ...designSpec,
-        nodes: mergedNodes,
-      };
+      // Apply modified nodes (shallow merge into existing)
+      if (fixture.modifiedNodes) {
+        for (const [id, changes] of Object.entries(fixture.modifiedNodes)) {
+          if (mergedNodes[id]) {
+            mergedNodes[id] = { ...mergedNodes[id], ...changes };
+          }
+        }
+      }
 
-      // Re-send the merged spec
+      // Apply reordered nodes
+      if (fixture.reorderedNodes) {
+        for (const [id, newOrder] of Object.entries(fixture.reorderedNodes)) {
+          if (mergedNodes[id]) {
+            mergedNodes[id] = { ...mergedNodes[id], order: newOrder };
+          }
+        }
+      }
+
+      const mergedSpec = { ...designSpec, nodes: mergedNodes };
       const rd = rendererData;
       const payload = rd
         ? { spec: mergedSpec, tokens: rd.tokens, catalog: rd.catalog }
         : mergedSpec;
       bridgeRef.current?.loadSpec(JSON.stringify(payload));
 
-      // Apply highlights after re-render
       setTimeout(() => {
-        bridgeRef.current?.applyDeltaHighlights(
-          CASHPULSE_DELTA_NODES.filter(n => existingIds.has(n.nodeId) || addedNodes[n.nodeId]),
-          DELTA_CSS,
+        const applicableNodes = fixture.nodes.filter(n =>
+          existingIds.has(n.nodeId) || fixture.addedNodes?.[n.nodeId],
         );
+        bridgeRef.current?.applyDeltaHighlights(applicableNodes, DELTA_CSS);
         setDeltaPreviewActive(true);
-        log('INFO', 'studio', `Delta preview applied: ${CASHPULSE_DELTA_NODES.length} regions`);
+        log('INFO', 'studio', `Delta preview "${fixtureName}" applied: ${applicableNodes.length} regions`);
       }, 1500);
     }, 1000);
 

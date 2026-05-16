@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>M3.6 Reference — cashpulse-transactions-list-page</title>
+<style>
+  :root {
+    --background-primary: #ffffff;
+    --background-secondary: #f5f4ef;
+    --background-tertiary: #faf9f5;
+    --surface-primary: #ffffff;
+    --surface-secondary: #f5f4ef;
+    --accent-primary: #0F6E56;
+    --cta-primary: #0F6E56;
+    --text-primary: #1a1a19;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --text-on-cta: #ffffff;
+    --border-primary: rgba(0, 0, 0, 0.15);
+    --border-secondary: rgba(0, 0, 0, 0.3);
+    --success: #1D9E75;
+    --warning: #BA7517;
+    --error: #E24B4A;
+    --info: #378ADD;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  body {
+    margin: 0; padding: 24px;
+    font-family: var(--font-sans);
+    background: var(--background-tertiary);
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+  .header { max-width: 900px; margin: 0 auto 16px; }
+  .header h1 { font-size: 16px; font-weight: 500; margin: 0 0 4px; }
+  .header p { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 500; }
+  .badge-new { background: #dbeafe; color: #1e40af; }
+  .badge-modify { background: #FAC775; color: #412402; }
+  .content {
+    max-width: 900px; margin: 0 auto;
+    background: var(--background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--border-primary);
+    padding: 16px; overflow: auto;
+  }
+  pre {
+    font-size: 11px; line-height: 1.5;
+    white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    margin: 0;
+  }
+  
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>M3.6 Reference — cashpulse-transactions-list-page</h1>
+  <p><span class="badge badge-new">NEW</span></p>
+</div>
+
+<div class="content">
+<pre>import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+export function SpendingInsightsScreen() {
+  return (
+    &lt;div className=&quot;min-h-screen flex flex-col items-stretch bg-[var(--background-primary)]&quot; data-node-id=&quot;root&quot;&gt;
+      &lt;div className=&quot;flex items-center justify-between gap-[16px] px-[24px] w-full h-[64px] bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)]&quot; data-node-id=&quot;top-bar&quot;&gt;
+        &lt;div className=&quot;flex items-center gap-[10px]&quot; data-node-id=&quot;top-bar-brand&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;top-bar-logo&quot;&gt;
+          &lt;/div&gt;
+          &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;top-bar-app-name&quot;&gt;
+            SpendWise
+          &lt;/h3&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;top-bar-actions&quot;&gt;
+          &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;top-bar-settings-trigger&quot;&gt;
+            Settings
+          &lt;/Button&gt;
+          &lt;Button variant=&quot;default&quot; className=&quot;w-full h-[48px] rounded-[12px]&quot; data-node-id=&quot;top-bar-add-button&quot;&gt;
+            Add Expense
+          &lt;/Button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex items-center justify-center gap-[16px] px-[24px] w-full h-[52px] bg-[var(--surface-primary)]&quot; data-node-id=&quot;month-selector&quot;&gt;
+        &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;month-prev-btn&quot;&gt;
+          
+        &lt;/Button&gt;
+        &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;month-label&quot;&gt;
+          May 2025
+        &lt;/h3&gt;
+        &lt;Button variant=&quot;ghost&quot; className=&quot;h-[44px]&quot; data-node-id=&quot;month-next-btn&quot;&gt;
+          
+        &lt;/Button&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex flex-col gap-[24px] px-[80px] py-[24px] w-full&quot; data-node-id=&quot;page-content&quot;&gt;
+        &lt;div className=&quot;flex items-stretch w-full bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)] rounded-[16px]&quot; data-node-id=&quot;period-summary-header&quot;&gt;
+          &lt;Card className=&quot;rounded-[20px] shadow-[0_2px_8px_rgba(15,110,86,0.06)] bg-[var(--surface-primary)] px-[24px] py-[20px]&quot; data-node-id=&quot;stat-cell-total-spent&quot;&gt;
+            &lt;div className=&quot;text-[14px] text-[var(--text-secondary)]&quot;&gt;
+              Total Spent
+            &lt;/div&gt;
+          &lt;/Card&gt;
+          &lt;Card className=&quot;rounded-[20px] shadow-[0_2px_8px_rgba(15,110,86,0.06)] bg-[var(--surface-primary)] px-[24px] py-[20px]&quot; data-node-id=&quot;stat-cell-daily-average&quot;&gt;
+            &lt;div className=&quot;text-[14px] text-[var(--text-secondary)]&quot;&gt;
+              Daily Average
+            &lt;/div&gt;
+          &lt;/Card&gt;
+          &lt;Card className=&quot;rounded-[20px] shadow-[0_2px_8px_rgba(15,110,86,0.06)] bg-[var(--surface-primary)] px-[24px] py-[20px]&quot; data-node-id=&quot;stat-cell-transaction-count&quot;&gt;
+            &lt;div className=&quot;text-[14px] text-[var(--text-secondary)]&quot;&gt;
+              Transactions
+            &lt;/div&gt;
+          &lt;/Card&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col gap-[24px] w-full&quot; data-node-id=&quot;mid-row&quot;&gt;
+          &lt;div className=&quot;flex flex-col gap-[16px] px-[24px] py-[24px] w-full bg-[var(--surface-primary)] shadow-[0_2px_8px_rgba(15,110,86,0.06)] rounded-[16px]&quot; data-node-id=&quot;daily-spending-chart-card&quot;&gt;
+            &lt;section className=&quot;flex items-center justify-between gap-[12px] bg-transparent&quot; data-node-id=&quot;chart-card-header&quot;&gt;
+              &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+                Daily Spending — May 2025
+              &lt;/h3&gt;
+              &lt;Tabs defaultValue=&quot;Bar&quot; className=&quot;w-full&quot; data-node-id=&quot;chart-type-toggle&quot;&gt;
+                &lt;TabsList className=&quot;w-full rounded-[6px]&quot;&gt;
+                  &lt;TabsTrigger value=&quot;Bar&quot;&gt;
+                    Bar
+                  &lt;/TabsTrigger&gt;
+                  &lt;TabsTrigger value=&quot;Line&quot;&gt;
+                    Line
+                  &lt;/TabsTrigger&gt;
+                &lt;/TabsList&gt;
+              &lt;/Tabs&gt;
+            &lt;/section&gt;
+            &lt;div className=&quot;flex items-end justify-between gap-[4px] px-[8px] py-[12px] w-full h-[220px] bg-[var(--surface-primary)] rounded-[10px]&quot; data-node-id=&quot;daily-spending-chart&quot;&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[80px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-1&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[120px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-2&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[60px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-3&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[150px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-4&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[90px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-5&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[110px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-6&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[45px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-7&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[175px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-8&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[95px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-9&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[130px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-10&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[70px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-11&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[100px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-12&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[55px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-13&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[140px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-14&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[85px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-15&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[160px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-16&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[75px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-17&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[105px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-18&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[50px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-19&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col w-[18px] h-[190px] mx-auto bg-[var(--cta-primary)] rounded-[4px]&quot; data-node-id=&quot;chart-bar-20&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex items-center gap-[8px] w-full h-[1px]&quot; data-node-id=&quot;average-dashed-line&quot;&gt;
+              &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;average-line-label&quot;&gt;
+                Avg $124.10 / day
+              &lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex gap-[24px] w-full&quot; data-node-id=&quot;two-col-row&quot;&gt;
+          &lt;section className=&quot;flex flex-col gap-[16px] px-[24px] py-[24px] bg-[var(--surface-primary)]&quot; data-node-id=&quot;top-categories-card&quot;&gt;
+            &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+              Top Categories
+            &lt;/h3&gt;
+            &lt;div className=&quot;flex items-stretch gap-[2px] w-full h-[12px] bg-[var(--surface-secondary)] rounded-[6px]&quot; data-node-id=&quot;stacked-category-bar&quot;&gt;
+              &lt;div className=&quot;flex w-full h-[12px] rounded-[6px]&quot; data-node-id=&quot;cat-bar-food&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex w-full h-[12px]&quot; data-node-id=&quot;cat-bar-transport&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex w-full h-[12px]&quot; data-node-id=&quot;cat-bar-housing&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex w-full h-[12px]&quot; data-node-id=&quot;cat-bar-health&quot;&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex w-full h-[12px] rounded-[6px]&quot; data-node-id=&quot;cat-bar-other&quot;&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex flex-col gap-[8px] w-full&quot; data-node-id=&quot;category-rows&quot;&gt;
+              &lt;div className=&quot;flex flex-col gap-[6px] px-[16px] py-[12px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;cat-row-food&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between gap-[8px] w-full&quot; data-node-id=&quot;cat-row-food-top&quot;&gt;
+                  &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;cat-row-food-left&quot;&gt;
+                    &lt;div className=&quot;flex w-[10px] h-[10px] mx-auto rounded-full&quot; data-node-id=&quot;cat-dot-food&quot;&gt;
+                    &lt;/div&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cat-name-food&quot;&gt;
+                      Food &amp; Dining
+                    &lt;/p&gt;
+                    &lt;Badge className=&quot;rounded-[8px]&quot; data-node-id=&quot;cat-count-food&quot;&gt;
+                      18 txns
+                    &lt;/Badge&gt;
+                  &lt;/div&gt;
+                  &lt;p className=&quot;text-[14px] font-semibold text-[var(--text-primary)]&quot; data-node-id=&quot;cat-amount-food&quot;&gt;
+                    $1,231.40
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;Progress value={0} className=&quot;w-full&quot; data-node-id=&quot;cat-progress-food&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[6px] px-[16px] py-[12px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;cat-row-transport&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between gap-[8px] w-full&quot; data-node-id=&quot;cat-row-transport-top&quot;&gt;
+                  &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;cat-row-transport-left&quot;&gt;
+                    &lt;div className=&quot;flex w-[10px] h-[10px] mx-auto rounded-full&quot; data-node-id=&quot;cat-dot-transport&quot;&gt;
+                    &lt;/div&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cat-name-transport&quot;&gt;
+                      Transport
+                    &lt;/p&gt;
+                    &lt;Badge className=&quot;rounded-[8px]&quot; data-node-id=&quot;cat-count-transport&quot;&gt;
+                      12 txns
+                    &lt;/Badge&gt;
+                  &lt;/div&gt;
+                  &lt;p className=&quot;text-[14px] font-semibold text-[var(--text-primary)]&quot; data-node-id=&quot;cat-amount-transport&quot;&gt;
+                    $846.60
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;Progress value={0} className=&quot;w-full&quot; data-node-id=&quot;cat-progress-transport&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[6px] px-[16px] py-[12px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;cat-row-housing&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between gap-[8px] w-full&quot; data-node-id=&quot;cat-row-housing-top&quot;&gt;
+                  &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;cat-row-housing-left&quot;&gt;
+                    &lt;div className=&quot;flex w-[10px] h-[10px] mx-auto rounded-full&quot; data-node-id=&quot;cat-dot-housing&quot;&gt;
+                    &lt;/div&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cat-name-housing&quot;&gt;
+                      Housing
+                    &lt;/p&gt;
+                    &lt;Badge className=&quot;rounded-[8px]&quot; data-node-id=&quot;cat-count-housing&quot;&gt;
+                      3 txns
+                    &lt;/Badge&gt;
+                  &lt;/div&gt;
+                  &lt;p className=&quot;text-[14px] font-semibold text-[var(--text-primary)]&quot; data-node-id=&quot;cat-amount-housing&quot;&gt;
+                    $692.50
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;Progress value={0} className=&quot;w-full&quot; data-node-id=&quot;cat-progress-housing&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[6px] px-[16px] py-[12px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;cat-row-health&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between gap-[8px] w-full&quot; data-node-id=&quot;cat-row-health-top&quot;&gt;
+                  &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;cat-row-health-left&quot;&gt;
+                    &lt;div className=&quot;flex w-[10px] h-[10px] mx-auto rounded-full&quot; data-node-id=&quot;cat-dot-health&quot;&gt;
+                    &lt;/div&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cat-name-health&quot;&gt;
+                      Health &amp; Fitness
+                    &lt;/p&gt;
+                    &lt;Badge className=&quot;rounded-[8px]&quot; data-node-id=&quot;cat-count-health&quot;&gt;
+                      7 txns
+                    &lt;/Badge&gt;
+                  &lt;/div&gt;
+                  &lt;p className=&quot;text-[14px] font-semibold text-[var(--text-primary)]&quot; data-node-id=&quot;cat-amount-health&quot;&gt;
+                    $538.70
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;Progress value={0} className=&quot;w-full&quot; data-node-id=&quot;cat-progress-health&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex flex-col gap-[6px] px-[16px] py-[12px] w-full bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;cat-row-other&quot;&gt;
+                &lt;div className=&quot;flex items-center justify-between gap-[8px] w-full&quot; data-node-id=&quot;cat-row-other-top&quot;&gt;
+                  &lt;div className=&quot;flex items-center gap-[8px]&quot; data-node-id=&quot;cat-row-other-left&quot;&gt;
+                    &lt;div className=&quot;flex w-[10px] h-[10px] mx-auto rounded-full&quot; data-node-id=&quot;cat-dot-other&quot;&gt;
+                    &lt;/div&gt;
+                    &lt;p className=&quot;text-[14px] text-[var(--text-primary)]&quot; data-node-id=&quot;cat-name-other&quot;&gt;
+                      Other
+                    &lt;/p&gt;
+                    &lt;Badge className=&quot;rounded-[8px]&quot; data-node-id=&quot;cat-count-other&quot;&gt;
+                      7 txns
+                    &lt;/Badge&gt;
+                  &lt;/div&gt;
+                  &lt;p className=&quot;text-[14px] font-semibold text-[var(--text-primary)]&quot; data-node-id=&quot;cat-amount-other&quot;&gt;
+                    $538.00
+                  &lt;/p&gt;
+                &lt;/div&gt;
+                &lt;Progress value={0} className=&quot;w-full&quot; data-node-id=&quot;cat-progress-other&quot; /&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/section&gt;
+          &lt;section className=&quot;flex flex-col gap-[12px] px-[24px] py-[24px] bg-[var(--surface-primary)]&quot; data-node-id=&quot;biggest-expenses-card&quot;&gt;
+            &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+              Biggest Expenses
+            &lt;/h3&gt;
+            &lt;div className=&quot;flex flex-col gap-[8px] w-full&quot; data-node-id=&quot;ranked-expense-rows&quot;&gt;
+              &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] w-full h-[56px] bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;ranked-row-1&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;ranked-row-1-left&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-bold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-rank-1&quot;&gt;
+                    #1
+                  &lt;/p&gt;
+                  &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;ranked-info-1&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-merchant-1&quot;&gt;
+                      Whole Foods Market
+                    &lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-meta-1&quot;&gt;
+                      Food &amp; Dining · May 3
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-amount-1&quot;&gt;
+                  $312.80
+                &lt;/h3&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] w-full h-[56px] bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;ranked-row-2&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;ranked-row-2-left&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-bold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-rank-2&quot;&gt;
+                    #2
+                  &lt;/p&gt;
+                  &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;ranked-info-2&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-merchant-2&quot;&gt;
+                      Monthly Rent
+                    &lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-meta-2&quot;&gt;
+                      Housing · May 1
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-amount-2&quot;&gt;
+                  $280.00
+                &lt;/h3&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] w-full h-[56px] bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;ranked-row-3&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;ranked-row-3-left&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-bold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-rank-3&quot;&gt;
+                    #3
+                  &lt;/p&gt;
+                  &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;ranked-info-3&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-merchant-3&quot;&gt;
+                      Delta Airlines
+                    &lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-meta-3&quot;&gt;
+                      Transport · May 14
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-amount-3&quot;&gt;
+                  $247.50
+                &lt;/h3&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] w-full h-[56px] bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;ranked-row-4&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;ranked-row-4-left&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-bold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-rank-4&quot;&gt;
+                    #4
+                  &lt;/p&gt;
+                  &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;ranked-info-4&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-merchant-4&quot;&gt;
+                      Apple Subscription
+                    &lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-meta-4&quot;&gt;
+                      Other · May 7
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-amount-4&quot;&gt;
+                  $199.00
+                &lt;/h3&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-center justify-between gap-[12px] px-[16px] w-full h-[56px] bg-[var(--surface-secondary)] rounded-[10px]&quot; data-node-id=&quot;ranked-row-5&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-[12px]&quot; data-node-id=&quot;ranked-row-5-left&quot;&gt;
+                  &lt;p className=&quot;text-[12px] font-bold leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-rank-5&quot;&gt;
+                    #5
+                  &lt;/p&gt;
+                  &lt;div className=&quot;flex flex-col gap-[2px]&quot; data-node-id=&quot;ranked-info-5&quot;&gt;
+                    &lt;p className=&quot;text-[14px] font-medium text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-merchant-5&quot;&gt;
+                      Equinox Gym
+                    &lt;/p&gt;
+                    &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;ranked-meta-5&quot;&gt;
+                      Health &amp; Fitness · May 2
+                    &lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;h3 className=&quot;text-[18px] font-bold leading-[1.3] text-[var(--text-primary)]&quot; data-node-id=&quot;ranked-amount-5&quot;&gt;
+                  $185.00
+                &lt;/h3&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/section&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col gap-[20px] px-[24px] py-[24px] w-full bg-[var(--surface-primary)] rounded-[16px]&quot; data-node-id=&quot;month-comparison-card&quot;&gt;
+          &lt;section className=&quot;flex items-center justify-between gap-[12px] bg-transparent&quot; data-node-id=&quot;month-comparison-header&quot;&gt;
+            &lt;h3 className=&quot;text-[18px] font-semibold leading-[1.3] text-[var(--text-primary)]&quot;&gt;
+              Month-over-Month Comparison
+            &lt;/h3&gt;
+            &lt;Badge className=&quot;rounded-full&quot; data-node-id=&quot;spending-diff-badge&quot;&gt;
+              ↑ $421.80 more than April
+            &lt;/Badge&gt;
+          &lt;/section&gt;
+          &lt;div className=&quot;flex flex-col gap-[12px] w-full&quot; data-node-id=&quot;comparison-bars&quot;&gt;
+            &lt;div className=&quot;flex flex-col gap-[6px] w-full&quot; data-node-id=&quot;comparison-bar-may-row&quot;&gt;
+              &lt;div className=&quot;flex items-center justify-between w-full&quot; data-node-id=&quot;comparison-bar-may-label-row&quot;&gt;
+                &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;comparison-bar-may-label&quot;&gt;
+                  May 2025
+                &lt;/p&gt;
+                &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-primary)]&quot; data-node-id=&quot;comparison-bar-may-amount&quot;&gt;
+                  $3,847.20
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-stretch w-full h-[32px] bg-[var(--surface-secondary)] rounded-[6px]&quot; data-node-id=&quot;comparison-bar-may-track&quot;&gt;
+                &lt;div className=&quot;flex h-[32px] bg-[var(--cta-primary)] rounded-[6px]&quot; data-node-id=&quot;comparison-bar-may-fill&quot;&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;flex flex-col gap-[6px] w-full&quot; data-node-id=&quot;comparison-bar-apr-row&quot;&gt;
+              &lt;div className=&quot;flex items-center justify-between w-full&quot; data-node-id=&quot;comparison-bar-apr-label-row&quot;&gt;
+                &lt;p className=&quot;text-[12px] font-medium leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;comparison-bar-apr-label&quot;&gt;
+                  April 2025
+                &lt;/p&gt;
+                &lt;p className=&quot;text-[12px] font-semibold leading-[1.4] text-[var(--text-primary)]&quot; data-node-id=&quot;comparison-bar-apr-amount&quot;&gt;
+                  $3,425.40
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;flex items-stretch w-full h-[32px] bg-[var(--surface-secondary)] rounded-[6px]&quot; data-node-id=&quot;comparison-bar-apr-track&quot;&gt;
+                &lt;div className=&quot;flex h-[32px] rounded-[6px]&quot; data-node-id=&quot;comparison-bar-apr-fill&quot;&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex items-center justify-end gap-[12px] w-full&quot; data-node-id=&quot;export-row&quot;&gt;
+          &lt;Button variant=&quot;outline&quot; className=&quot;h-[44px] rounded-[6px]&quot; data-node-id=&quot;export-csv-button&quot;&gt;
+            Export CSV
+          &lt;/Button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;flex items-center justify-center w-full h-[64px] bg-[var(--surface-primary)]&quot; data-node-id=&quot;nav-tabs&quot;&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-home&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-home-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-home-label&quot;&gt;
+            Home
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-add-expense&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-add-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[11px] leading-[1.4] text-[var(--text-secondary)]&quot; data-node-id=&quot;nav-tab-add-label&quot;&gt;
+            Add Expense
+          &lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className=&quot;flex flex-col items-center justify-center gap-[4px] w-full h-[64px]&quot; data-node-id=&quot;nav-tab-insights&quot;&gt;
+          &lt;div className=&quot;flex flex-col bg-transparent&quot; data-node-id=&quot;nav-tab-insights-icon&quot;&gt;
+          &lt;/div&gt;
+          &lt;p className=&quot;text-[11px] font-semibold leading-[1.4] text-[var(--cta-primary)]&quot; data-node-id=&quot;nav-tab-insights-label&quot;&gt;
+            Insights
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+</div>
+</body>
+</html>
