@@ -101,6 +101,24 @@ describe('createCritic (Node 6)', () => {
     }
   });
 
+  it('returns failed report when required state channels are missing', async () => {
+    const node = createCritic();
+    const state = makeState({
+      enrichedRequirement: mockRequirement,
+      constraintSet: mockConstraintSet,
+      // optionsBundle, architectureSpec, taskPlan, assumptionLedger all null
+    });
+
+    const result = await node(state);
+
+    expect(result.criticPassed).toBe(false);
+    expect(result.criticReport).toBeDefined();
+    expect(result.criticReport!.summary).toContain('Missing required state');
+    expect(result.criticReport!.summary).toContain('taskPlan');
+    expect(result.criticReport!.summary).toContain('architectureSpec');
+    expect(result.criticRetries).toBe(1);
+  });
+
   it('passes existingFiles to validateContractBundle in brownfield mode', async () => {
     const node = createCritic();
     const existingFiles = new Set(['src/index.ts', 'package.json']) as ReadonlySet<string>;

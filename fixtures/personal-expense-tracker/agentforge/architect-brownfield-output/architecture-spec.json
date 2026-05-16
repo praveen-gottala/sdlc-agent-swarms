@@ -1,0 +1,253 @@
+{
+  "projectId": "cashpulse-brownfield",
+  "decisions": [
+    {
+      "gapId": "gap-data-store",
+      "chosenAlternativeId": "alt-3",
+      "rationale": "IndexedDB with Dexie.js provides indexed relational lookups (O(log n) by recurringTemplateId), clean schema migrations via db.version(), and generous storage quota — all with a single ~22 KB dependency. It structurally supports the data-integrity constraint (past expenses survive template deletion) and keeps data device-local, consistent with the desktop-scoped, no-sync scope. localStorage lacks indexing and migration; WASM SQLite is disproportionate; Supabase introduces auth and network dependency out of scope.",
+      "adrId": "adr-001"
+    },
+    {
+      "gapId": "gap-styling-approach",
+      "chosenAlternativeId": "alt-css-modules-plus-headless",
+      "rationale": "CSS Modules + Radix UI Primitives is the only option that satisfies all three demanding soft constraints (Accessibility via Radix Switch/Dialog, Animation via data-state CSS targeting with prefers-reduced-motion, Performance via static CSS with no runtime injection). It maintains styling consistency with the brownfield baseline and adds only 3 small, tree-shakeable Radix packages. Pure CSS Modules alone doesn't solve accessibility; Tailwind creates a dual paradigm if not already present; styled-components adds runtime overhead.",
+      "adrId": "adr-002"
+    },
+    {
+      "gapId": "gap-component-library",
+      "chosenAlternativeId": "alt-shadcn-ui",
+      "rationale": "shadcn/ui's copy-into-repo model provides pre-styled, accessible components built on Radix primitives (aligning with the styling decision) with zero runtime library overhead. Only ~8 primitives are copied, keeping blast radius scoped. Unlike Mantine/MUI, it doesn't force visual redesign of existing screens. Unlike bare Headless UI, it reduces custom CSS authoring for drawer, toggle, and card components. The Tailwind dependency for copied components is acceptable as it's scoped to src/components/ui/.",
+      "adrId": "adr-003"
+    },
+    {
+      "gapId": "gap-data-access-pattern",
+      "chosenAlternativeId": "alt-001",
+      "rationale": "The Repository Pattern structurally enforces the data-integrity constraint via named methods like deleteTemplatePreservingHistory(). It provides a clean boundary between Dexie.js queries and UI components, makes occurrence computation cacheable at the service layer, and accommodates future scope expansions. The ~6 new files and ~6 updated call sites are proportionate to adding a new entity with non-trivial deletion semantics. Query Builder functions lack structural guardrails; Active Record couples persistence to domain; CQRS-lite is overkill.",
+      "adrId": "adr-004"
+    },
+    {
+      "gapId": "gap-caching-strategy",
+      "chosenAlternativeId": "alt-3",
+      "rationale": "TanStack Query scoped to recurring endpoints provides robust cache invalidation (mutations auto-trigger targeted refetches), background refetching, and retry logic — directly satisfying the dashboard performance constraint with no server infrastructure. The ~13 KB dependency is proportionate. Scoping to new recurring endpoints keeps blast radius low. In-memory memoization requires manual invalidation; HTTP caching has imprecise invalidation; Redis is infrastructure overkill for a client-side app.",
+      "adrId": "adr-005"
+    }
+  ],
+  "stackConfig": {
+    "frontend": "React with TypeScript, shadcn/ui (Radix UI primitives), TanStack Query",
+    "backend": "Client-side only (no server runtime) — all logic runs in the browser",
+    "database": "IndexedDB via Dexie.js (client-side, versioned schema)",
+    "styling": "CSS Modules for existing components + Tailwind CSS for shadcn/ui components, shared design tokens via CSS custom properties and tailwind.config.js",
+    "componentLibrary": "shadcn/ui (copy-into-repo model, built on Radix UI primitives)"
+  },
+  "assumptionLedgerUpdates": [],
+  "implementationPatterns": [
+    {
+      "id": "data-access-drizzle-only",
+      "category": "data-access",
+      "title": "Drizzle ORM for all persistence",
+      "rule": "Use Drizzle schemas and queries only; no raw SQL except inside reviewed migrations.",
+      "rationale": "Keeps schema drift and parallel-task DB access consistent.",
+      "appliesTo": [
+        "backend"
+      ]
+    },
+    {
+      "id": "api-error-rfc7807",
+      "category": "error-handling",
+      "title": "Problem+json error envelope",
+      "rule": "HTTP errors use application/problem+json with code, message, optional details; same shape on every route.",
+      "rationale": "Prevents T3/T4 mismatch on error handling (R6 Q2, Cognition Principle 2).",
+      "appliesTo": [
+        "backend",
+        "integration"
+      ]
+    },
+    {
+      "id": "component-tailwind-tokens-only",
+      "category": "styling",
+      "title": "Tailwind via Design Tokens Only (shadcn/ui Components)",
+      "rule": "All shadcn/ui components in src/components/ui/ MUST use Tailwind utility classes that reference design tokens defined in tailwind.config.js (colors, spacing, radii, shadows, font sizes, animation durations). Arbitrary values (e.g., bg-[#2563EB]) are FORBIDDEN — use the token name (e.g., bg-blue-600). New components outside src/components/ui/ that use CSS Modules MUST reference the same token values via CSS custom properties defined in tokens.css.",
+      "rationale": "Derived from baseline pattern component-tailwind-tokens-only, refined for the hybrid CSS Modules + shadcn/ui approach chosen in gap-styling-approach and gap-component-library. Token discipline prevents style divergence between shadcn components (Tailwind) and existing components (CSS Modules).",
+      "example": "// tailwind.config.js (extend)\ncolors: {\n  'blue-600': '#2563EB',\n  'blue-100': '#DBEAFE',\n  'gray-900': '#111827',\n  // ... all PRD tokens\n},\nborderRadius: {\n  card: '16px',\n  button: '10px',\n  badge: '20px',\n  input: '8px',\n},\ntransitionDuration: {\n  micro: '150ms',\n  layout: '250ms',\n  screen: '350ms',\n  chart: '600ms',\n}\n\n// tokens.css (for CSS Modules)\n:root {\n  --color-blue-600: #2563EB;\n  --radius-card: 16px;\n  --duration-micro: 150ms;\n}",
+      "forbids": [
+        "Arbitrary Tailwind values (square bracket notation)",
+        "Hardcoded hex/px values in component files"
+      ],
+      "appliesTo": [
+        "tailwind.config.js",
+        "tokens.css",
+        "src/components/ui/",
+        "all .module.css files"
+      ]
+    },
+    {
+      "id": "state-server-only",
+      "category": "other",
+      "title": "Authoritative state on the server",
+      "rule": "React state is ephemeral UI only; budgets, transactions, and sessions are loaded and mutated via API.",
+      "rationale": "Avoids split-brain between client guesses and server truth.",
+      "appliesTo": [
+        "frontend",
+        "backend"
+      ]
+    },
+    {
+      "id": "validation-zod-at-boundary",
+      "category": "validation",
+      "title": "Zod Schemas at Data Boundaries",
+      "rule": "All data entering or leaving the persistence layer MUST be validated against a Zod schema. Define schemas for Expense, Category, and RecurringTemplate in a shared src/schemas/ directory. Repository methods MUST parse inputs with schema.parse() before writing to Dexie. Data read from Dexie SHOULD be validated with schema.safeParse() to detect corruption. Form submission handlers MUST validate against the same schemas before calling repository methods.",
+      "rationale": "Derived from baseline pattern validation-zod-at-boundary, adapted for a client-side Dexie.js persistence layer instead of HTTP boundaries. Shared Zod schemas prevent schema drift between form validation and storage, and catch data corruption from localStorage migration or manual IndexedDB edits.",
+      "example": "// src/schemas/recurringTemplate.ts\nimport { z } from 'zod';\n\nexport const RecurringTemplateSchema = z.object({\n  id: z.string().uuid(),\n  amount: z.number().positive().max(99999.99),\n  categoryId: z.string(),\n  merchantName: z.string().min(1).max(100),\n  frequency: z.enum(['weekly', 'monthly', 'yearly']),\n  startDate: z.string().date(),\n  endDate: z.string().date().nullable(),\n  nextOccurrence: z.string().date(),\n  paymentMethod: z.enum(['cash', 'debit_card', 'credit_card', 'upi_other']),\n  note: z.string().max(100).optional(),\n  status: z.enum(['active', 'paused']),\n  createdAt: z.string().datetime(),\n});",
+      "appliesTo": [
+        "src/schemas/",
+        "RecurringTemplateRepository",
+        "ExpenseRepository",
+        "AddExpenseForm"
+      ]
+    },
+    {
+      "id": "auth-middleware-required",
+      "category": "auth",
+      "title": "Session auth via shared middleware",
+      "rule": "Protected routes and handlers run behind the same auth middleware stack; no ad-hoc cookie checks in handlers.",
+      "appliesTo": [
+        "backend"
+      ]
+    },
+    {
+      "id": "logging-structured-pino",
+      "category": "logging",
+      "title": "Structured JSON logging",
+      "rule": "Use structured logging (e.g. pino) with correlation ids; no console.log in production paths.",
+      "appliesTo": [
+        "backend",
+        "integration"
+      ]
+    },
+    {
+      "id": "data-access-dexie-repository",
+      "category": "data-access",
+      "title": "Dexie.js Repository Pattern for All Persistence",
+      "rule": "All data reads and writes MUST go through a repository class (ExpenseRepository, CategoryRepository, RecurringTemplateRepository). Repositories encapsulate Dexie.js table operations and return plain TypeScript objects. Components and hooks MUST NOT import Dexie tables directly.",
+      "rationale": "Derived from gap-data-store (Dexie.js) and gap-data-access-pattern (Repository Pattern). Encapsulating Dexie access in repositories enforces data-integrity constraints (e.g., deleteTemplatePreservingHistory) and keeps UI components decoupled from the storage engine.",
+      "example": "// src/repositories/RecurringTemplateRepository.ts\nimport { db } from '../db';\nimport type { RecurringTemplate } from '../types';\n\nexport class RecurringTemplateRepository {\n  async findActiveTemplates(): Promise<RecurringTemplate[]> {\n    return db.recurringTemplates.where('status').equals('active').toArray();\n  }\n\n  async deleteTemplatePreservingHistory(templateId: string): Promise<void> {\n    await db.transaction('rw', [db.recurringTemplates, db.expenses], async () => {\n      await db.expenses.where('recurringTemplateId').equals(templateId).modify({ recurringTemplateId: null });\n      await db.recurringTemplates.delete(templateId);\n    });\n  }\n}",
+      "forbids": [
+        "Direct Dexie table access from React components or hooks"
+      ],
+      "appliesTo": [
+        "RecurringTemplateRepository",
+        "ExpenseRepository",
+        "CategoryRepository",
+        "db.ts"
+      ]
+    },
+    {
+      "id": "api-error-toast-inline",
+      "category": "error-handling",
+      "title": "Toast for Transient Errors, Inline for Form Validation Errors",
+      "rule": "Transient errors (e.g., IndexedDB write failures, cache misses) MUST be displayed as auto-dismissing toast notifications (2-second duration, bottom-center, white card with card shadow). Form validation errors (e.g., missing category, zero amount) MUST be displayed inline adjacent to the invalid field using caption-style text in red-500. Error messages MUST be descriptive and actionable.",
+      "rationale": "Derived from assumption-det-phantom-errors-2 and the existing PRD pattern (currency change toast, inline amount validation). Separating transient vs. validation errors matches the established UX language and avoids modal interruptions in the quick-entry flow (NFR-002).",
+      "example": "// Toast: <Toast message=\"Failed to save — please try again\" variant=\"error\" />\n// Inline: <span className={styles.fieldError}>Please select a category</span>",
+      "appliesTo": [
+        "AddExpenseForm",
+        "RecurringDrawer",
+        "Dashboard",
+        "Toast component"
+      ]
+    },
+    {
+      "id": "state-client-tanstack-query",
+      "category": "state-management",
+      "title": "TanStack Query for Async Data State, Local State for UI",
+      "rule": "All asynchronous data fetching from Dexie.js repositories MUST use TanStack Query (useQuery / useMutation). Query keys MUST follow the pattern ['entity', ...params] (e.g., ['recurring-templates', 'active'], ['expenses', { month: '2026-03' }]). Mutations MUST invalidate affected query keys via queryClient.invalidateQueries() in onSuccess. Ephemeral UI state (form inputs, toggle states, popover visibility) MUST use React local state (useState) or component-scoped refs — NOT TanStack Query.",
+      "rationale": "Derived from gap-caching-strategy (TanStack Query). Clear separation between server-state (Dexie data via TanStack Query) and UI-state (React useState) prevents cache pollution and ensures dashboard data stays fresh after mutations. Consistent query key conventions prevent cache key collisions across features.",
+      "example": "// src/hooks/useUpcomingRecurring.ts\nimport { useQuery } from '@tanstack/react-query';\nimport { recurringTemplateRepo } from '../repositories';\n\nexport function useUpcomingRecurring(month: string) {\n  return useQuery({\n    queryKey: ['recurring-templates', 'upcoming', month],\n    queryFn: () => recurringTemplateRepo.findUpcomingOccurrences(month),\n    staleTime: 60_000,\n  });\n}\n\n// In mutation:\nuseMutation({\n  mutationFn: (data) => recurringTemplateRepo.create(data),\n  onSuccess: () => {\n    queryClient.invalidateQueries({ queryKey: ['recurring-templates'] });\n    queryClient.invalidateQueries({ queryKey: ['expenses'] });\n  },\n});",
+      "appliesTo": [
+        "src/hooks/",
+        "App.tsx (QueryClientProvider)",
+        "all data-fetching components"
+      ]
+    },
+    {
+      "id": "a11y-radix-primitives",
+      "category": "accessibility",
+      "title": "Radix UI Primitives for All Interactive Disclosure/Toggle/Overlay Components",
+      "rule": "All toggle switches MUST use Radix Switch (or shadcn Switch). All drawer/modal overlays MUST use Radix Dialog (or shadcn Sheet/Dialog) which provides focus trapping, Escape-to-close, and return-focus-to-trigger. All collapsible/disclosure panels MUST use Radix Collapsible (or shadcn Collapsible). Custom implementations of these interaction patterns are FORBIDDEN. All interactive elements MUST have visible focus rings (2px blue-600 outline, 2px offset) and minimum 36×36px click targets per the existing PRD accessibility spec.",
+      "rationale": "Derived from gap-styling-approach (Radix primitives) and gap-component-library (shadcn/ui built on Radix). NFR-003 explicitly requires keyboard-accessible toggle (Space/Enter), screen reader state announcements, focus trapping in the drawer, and focus restoration on close. Radix provides all of these out of the box, eliminating the risk of incomplete custom implementations.",
+      "example": "// RecurrenceToggle using shadcn Switch (Radix-based)\nimport { Switch } from '@/components/ui/switch';\nimport { Label } from '@/components/ui/label';\n\n<div className=\"flex items-center justify-between\">\n  <Label htmlFor=\"recurring-toggle\">Recurring</Label>\n  <Switch\n    id=\"recurring-toggle\"\n    checked={isRecurring}\n    onCheckedChange={setIsRecurring}\n  />\n</div>",
+      "forbids": [
+        "Custom toggle/switch implementations without Radix",
+        "Custom modal/drawer without focus trap"
+      ],
+      "appliesTo": [
+        "RecurrenceToggle",
+        "ManageRecurringDrawer",
+        "RecurrenceConfigPanel",
+        "ExpenseDetailPopover"
+      ]
+    },
+    {
+      "id": "animation-motion-tokens",
+      "category": "animation",
+      "title": "Animation Timing Tokens with prefers-reduced-motion Respect",
+      "rule": "All animations MUST use the established timing tokens: 150ms (micro-interactions), 250ms (layout transitions), 350ms (screen transitions), 600ms (chart renders). New animations for recurring UI (config slide-down: 200ms, drawer slide-in: 350ms) MUST use the nearest token value. All CSS animations MUST include a @media (prefers-reduced-motion: reduce) block that sets animation-duration to 0ms and transition-duration to 0ms. Tailwind-based animations MUST use the motion-reduce: variant. Radix data-state transitions MUST be CSS-driven, not JS-driven.",
+      "rationale": "Derived from NFR-005 (Animation & Motion constraint) and the PRD's existing animation system (Section 2.4). Consistent timing tokens prevent jarring UX from mismatched animation speeds. prefers-reduced-motion compliance is a WCAG 2.1 AA requirement (NFR-003).",
+      "example": "/* RecurrenceConfig.module.css */\n.configPanel[data-state='open'] {\n  animation: slideDown var(--duration-layout) ease-in-out;\n}\n.configPanel[data-state='closed'] {\n  animation: slideUp var(--duration-micro) ease-in-out;\n}\n@media (prefers-reduced-motion: reduce) {\n  .configPanel[data-state='open'],\n  .configPanel[data-state='closed'] {\n    animation-duration: 0ms;\n  }\n}",
+      "appliesTo": [
+        "all .module.css files",
+        "tailwind.config.js",
+        "src/components/ui/"
+      ]
+    },
+    {
+      "id": "logging-client-structured",
+      "category": "logging",
+      "title": "Structured Client-Side Logging for Data Operations",
+      "rule": "All repository write operations (create, update, delete) MUST log a structured JSON entry to the console in development mode. Log entries MUST include: timestamp, operation (create|update|delete), entity (expense|category|recurringTemplate), entityId, and a summary of changed fields. In production builds, logging MUST be suppressed or routed to a lightweight error-reporting service. Dexie transaction failures MUST be logged with the full error object and the operation context.",
+      "rationale": "Derived from baseline pattern logging-structured-pino, adapted for a client-side browser app without a Node.js server. Structured logging aids debugging of data-integrity issues (e.g., verifying that deleteTemplatePreservingHistory correctly nullifies FK references) during development.",
+      "example": "// src/utils/logger.ts\nexport function logDataOp(op: string, entity: string, id: string, details?: Record<string, unknown>) {\n  if (import.meta.env.DEV) {\n    console.log(JSON.stringify({\n      ts: new Date().toISOString(),\n      op,\n      entity,\n      id,\n      ...details,\n    }));\n  }\n}",
+      "appliesTo": [
+        "all Repository classes",
+        "src/utils/logger.ts"
+      ]
+    },
+    {
+      "id": "data-integrity-recurring-delete",
+      "category": "data-access",
+      "title": "Preserve Historical Expenses on Recurring Template Deletion",
+      "rule": "When deleting a RecurringTemplate, the repository MUST execute a Dexie transaction that first nullifies recurringTemplateId on all associated Expense records, then deletes the template. This MUST be an atomic transaction — if either operation fails, neither is committed. The repository method MUST be named deleteTemplatePreservingHistory to make the intent discoverable. Direct deletion of RecurringTemplate records without nullifying expense references is FORBIDDEN.",
+      "rationale": "Derived from NFR-004 (Data Integrity constraint) and gap-data-access-pattern (Repository Pattern). Past expense records must survive template deletion to maintain accurate historical spending data. The atomic transaction prevents orphaned FK references.",
+      "example": "// In RecurringTemplateRepository\nasync deleteTemplatePreservingHistory(templateId: string): Promise<void> {\n  await db.transaction('rw', [db.recurringTemplates, db.expenses], async () => {\n    await db.expenses\n      .where('recurringTemplateId')\n      .equals(templateId)\n      .modify({ recurringTemplateId: null });\n    await db.recurringTemplates.delete(templateId);\n  });\n}",
+      "forbids": [
+        "Direct db.recurringTemplates.delete() without nullifying expense FK references"
+      ],
+      "appliesTo": [
+        "RecurringTemplateRepository"
+      ]
+    },
+    {
+      "id": "schema-dexie-versioned",
+      "category": "data-access",
+      "title": "Versioned Dexie Schema for Entity Migrations",
+      "rule": "The Dexie database schema MUST be defined in a single src/db.ts file using Dexie's version().stores() API. Each schema change (adding RecurringTemplate, adding indexes, adding fields) MUST increment the version number. Migration logic for existing data MUST be defined in the version().upgrade() callback. The current schema version MUST be documented in a comment at the top of db.ts.",
+      "rationale": "Derived from gap-data-store (Dexie.js). CashPulse is a brownfield app that may already have data in a previous schema. Dexie's versioned migration system ensures existing Expense and Category data is preserved when the RecurringTemplate store is added.",
+      "example": "// src/db.ts — Schema version 2: adds RecurringTemplate\nimport Dexie, { type Table } from 'dexie';\n\nexport class CashPulseDB extends Dexie {\n  expenses!: Table<Expense>;\n  categories!: Table<Category>;\n  recurringTemplates!: Table<RecurringTemplate>;\n\n  constructor() {\n    super('cashpulse');\n    this.version(1).stores({\n      expenses: '++id, categoryId, date',\n      categories: '++id',\n    });\n    this.version(2).stores({\n      expenses: '++id, categoryId, date, recurringTemplateId',\n      categories: '++id',\n      recurringTemplates: '++id, categoryId, status, nextOccurrence',\n    });\n  }\n}\nexport const db = new CashPulseDB();",
+      "appliesTo": [
+        "src/db.ts"
+      ]
+    },
+    {
+      "id": "occurrence-pure-computation",
+      "category": "data-access",
+      "title": "Pure Function for Recurring Occurrence Generation",
+      "rule": "Upcoming occurrence dates MUST be computed by a pure function that takes a RecurringTemplate and a date range, and returns an array of projected occurrence dates. This function MUST NOT perform any I/O or side effects. It MUST handle all three frequencies (weekly, monthly, yearly) and respect the template's endDate if set. The function MUST be unit-tested with edge cases (month boundaries, leap years, end-date truncation). The function MUST be importable independently from the repository layer for use in both dashboard and insights views.",
+      "rationale": "Derived from gap-caching-strategy rationale and NFR-001 (dashboard load <500ms). Pure computation is trivially memoizable by TanStack Query and testable without Dexie. Keeping it separate from the repository allows reuse in the Spending Insights screen (feat-008).",
+      "example": "// src/utils/computeOccurrences.ts\nexport function computeUpcomingOccurrences(\n  template: RecurringTemplate,\n  rangeStart: Date,\n  rangeEnd: Date,\n): Date[] {\n  const occurrences: Date[] = [];\n  let current = new Date(template.startDate);\n  while (current <= rangeEnd) {\n    if (current >= rangeStart && (!template.endDate || current <= new Date(template.endDate))) {\n      occurrences.push(new Date(current));\n    }\n    switch (template.frequency) {\n      case 'weekly': current.setDate(current.getDate() + 7); break;\n      case 'monthly': current.setMonth(current.getMonth() + 1); break;\n      case 'yearly': current.setFullYear(current.getFullYear() + 1); break;\n    }\n  }\n  return occurrences;\n}",
+      "appliesTo": [
+        "src/utils/computeOccurrences.ts",
+        "RecurringTemplateRepository",
+        "useUpcomingRecurring hook"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,923 @@
+{
+  "projectId": "cashpulse",
+  "tasks": [
+    {
+      "id": "scaffold-project",
+      "title": "Scaffold Vite + React project with Tailwind, shadcn/ui, and core config",
+      "description": "Initialize the Vite React 18 TypeScript project. Configure Tailwind CSS v3 with CashPulse design tokens (colors, spacing, radius, shadows, fonts), PostCSS, CVA, tailwind-merge cn() utility. Set up shadcn/ui base config, install Recharts, Dexie.js, Zustand, and Zod dependencies. Create folder structure for components, hooks, lib, types, and stores.",
+      "filePaths": [
+        "package.json",
+        "vite.config.ts",
+        "tsconfig.json",
+        "tailwind.config.ts",
+        "postcss.config.js",
+        "src/index.css",
+        "src/main.tsx",
+        "src/App.tsx",
+        "src/lib/utils.ts",
+        "src/lib/logger.ts",
+        "components.json"
+      ],
+      "dependencies": [],
+      "writeOrder": 0,
+      "type": "scaffold",
+      "mode": "NEW",
+      "estimatedTokenBudget": 8700,
+      "contextRefs": [
+        {
+          "kind": "pattern",
+          "id": "component-tailwind-tokens-only"
+        },
+        {
+          "kind": "pattern",
+          "id": "logging-console-structured"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "logging-console-structured"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "entity-types-and-schemas",
+      "title": "Define TypeScript entity types and Zod validation schemas",
+      "description": "Create the canonical types/entities.ts file with all 9 entity interfaces (Expense, Category, Budget, UserSettings, CategoryBudget, QuickAddSuggestion, MonthSummary, CategorySpending, DailySpending) plus PaymentMethod and Currency union types. Create lib/schemas.ts with corresponding Zod schemas for boundary validation (amount max 99999.99, note max 100 chars, date not future, paymentMethod enum).",
+      "filePaths": [
+        "src/types/entities.ts",
+        "src/lib/schemas.ts"
+      ],
+      "dependencies": [
+        "scaffold-project"
+      ],
+      "writeOrder": 1,
+      "type": "backend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 18200,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-budget"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-user-settings"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-budget"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-quick-add-suggestion"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-month-summary"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-spending"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-daily-spending"
+        },
+        {
+          "kind": "pattern",
+          "id": "entity-type-definitions"
+        },
+        {
+          "kind": "pattern",
+          "id": "validation-zod-at-boundary"
+        }
+      ],
+      "patternRefs": [
+        "entity-type-definitions",
+        "validation-zod-at-boundary"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "dexie-database-and-seed",
+      "title": "Set up Dexie.js database, tables, and default seed data",
+      "description": "Create lib/db.ts with a Dexie subclass declaring tables for Expense, Category, Budget, UserSettings, CategoryBudget, and QuickAddSuggestion with proper indexes. Implement schema versioning. Create lib/seed.ts to seed 6 default categories (Food, Transport, Shopping, Entertainment, Health, Utilities) with design-token colors and icons, and a singleton UserSettings record (USD, $2000 default budget). Seed runs on first app load.",
+      "filePaths": [
+        "src/lib/db.ts",
+        "src/lib/seed.ts"
+      ],
+      "dependencies": [
+        "entity-types-and-schemas"
+      ],
+      "writeOrder": 2,
+      "type": "backend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 14600,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-budget"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-user-settings"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-budget"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-quick-add-suggestion"
+        },
+        {
+          "kind": "pattern",
+          "id": "data-access-dexie-only"
+        }
+      ],
+      "patternRefs": [
+        "data-access-dexie-only",
+        "validation-zod-at-boundary"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "zustand-store-and-hooks",
+      "title": "Create Zustand store slices and Dexie repository hooks",
+      "description": "Implement Zustand store with slices: expenseSlice, budgetSlice, settingsSlice, uiSlice (selectedMonth, activeTab). Create repository hooks (useExpenses, useCategories, useBudget, useSettings, useQuickAddSuggestions) that wrap Dexie operations with Zod validation on writes. Hydrate Zustand from Dexie liveQuery() subscriptions. Implement memoized selectors for derived entities (MonthSummary, CategorySpending, DailySpending).",
+      "filePaths": [
+        "src/stores/app-store.ts",
+        "src/hooks/use-expenses.ts",
+        "src/hooks/use-categories.ts",
+        "src/hooks/use-budget.ts",
+        "src/hooks/use-settings.ts",
+        "src/hooks/use-quick-suggestions.ts",
+        "src/hooks/use-derived-data.ts"
+      ],
+      "dependencies": [
+        "dexie-database-and-seed"
+      ],
+      "writeOrder": 3,
+      "type": "backend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 24700,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-budget"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-user-settings"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-month-summary"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-spending"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-daily-spending"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-quick-add-suggestion"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-001"
+        },
+        {
+          "kind": "pattern",
+          "id": "state-zustand-client"
+        },
+        {
+          "kind": "pattern",
+          "id": "data-access-dexie-only"
+        },
+        {
+          "kind": "pattern",
+          "id": "validation-zod-at-boundary"
+        }
+      ],
+      "patternRefs": [
+        "state-zustand-client",
+        "data-access-dexie-only",
+        "validation-zod-at-boundary",
+        "logging-console-structured",
+        "api-error-toast-envelope"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "shared-ui-components",
+      "title": "Build shared UI primitives: Button, Badge, EmptyState, Toast, AnimatedAmount",
+      "description": "Create CVA-managed shared components: Button (intent: primary/secondary/ghost/danger, size: sm/md/lg), StatusBadge (on-track/heads-up/over-budget), EmptyState (icon, message, CTA), AnimatedAmountDisplay (counter animation with reduced-motion support), Toast provider using Radix Toast. All components use focus-ring classes and design tokens.",
+      "filePaths": [
+        "src/components/ui/button.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/empty-state.tsx",
+        "src/components/ui/toast.tsx",
+        "src/components/ui/animated-amount.tsx",
+        "src/components/ui/category-icon-circle.tsx"
+      ],
+      "dependencies": [
+        "scaffold-project"
+      ],
+      "writeOrder": 1,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 10000,
+      "contextRefs": [
+        {
+          "kind": "pattern",
+          "id": "cva-variant-components"
+        },
+        {
+          "kind": "pattern",
+          "id": "a11y-focus-ring-global"
+        },
+        {
+          "kind": "pattern",
+          "id": "reduced-motion-respect"
+        },
+        {
+          "kind": "pattern",
+          "id": "component-tailwind-tokens-only"
+        }
+      ],
+      "patternRefs": [
+        "cva-variant-components",
+        "a11y-focus-ring-global",
+        "reduced-motion-respect",
+        "component-tailwind-tokens-only",
+        "api-error-toast-envelope"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "top-nav-and-routing",
+      "title": "Implement TopNavBar, NavTabs, MonthNavigator, and React Router setup",
+      "description": "Set up React Router with routes for / (Dashboard), /add-expense (Add/Edit Expense), and /insights (Insights). Build TopNavBar (64px) with CashPulseLogo, NavTabs with sliding underline indicator, MonthNavigator pill with chevron navigation, and SettingsTrigger gear icon. Month changes update Zustand selectedMonth and trigger re-renders.",
+      "filePaths": [
+        "src/components/layout/top-nav-bar.tsx",
+        "src/components/layout/nav-tabs.tsx",
+        "src/components/layout/month-navigator.tsx",
+        "src/components/layout/cashpulse-logo.tsx",
+        "src/components/layout/settings-trigger.tsx",
+        "src/router.tsx"
+      ],
+      "dependencies": [
+        "shared-ui-components",
+        "zustand-store-and-hooks"
+      ],
+      "writeOrder": 4,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 13550,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "pattern",
+          "id": "component-tailwind-tokens-only"
+        },
+        {
+          "kind": "pattern",
+          "id": "a11y-focus-ring-global"
+        },
+        {
+          "kind": "pattern",
+          "id": "cva-variant-components"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-focus-ring-global",
+        "cva-variant-components",
+        "reduced-motion-respect"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-012",
+        "feat-013"
+      ]
+    },
+    {
+      "id": "dashboard-budget-and-donut",
+      "title": "Build Dashboard left column: BudgetSummaryCard and CategoryDonutChart",
+      "description": "Implement the Dashboard left column with BudgetSummaryCard showing total spent vs budget with animated progress bar (blue <80%, amber 80-100%, red >100%), StatusBadge, remaining amount with AnimatedAmountDisplay. Build CategoryDonutChartCard with 160px Recharts PieChart, center transaction count, CategoryLegend with colored dots. Donut segments expand on hover with tooltip. Empty states for zero data (gray ring, $0.00).",
+      "filePaths": [
+        "src/components/dashboard/budget-summary-card.tsx",
+        "src/components/dashboard/budget-progress-bar.tsx",
+        "src/components/dashboard/category-donut-chart-card.tsx",
+        "src/components/dashboard/donut-chart.tsx",
+        "src/components/dashboard/category-legend.tsx"
+      ],
+      "dependencies": [
+        "top-nav-and-routing"
+      ],
+      "writeOrder": 5,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 12900,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-month-summary"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-spending"
+        },
+        {
+          "kind": "pattern",
+          "id": "chart-recharts-pattern"
+        },
+        {
+          "kind": "pattern",
+          "id": "reduced-motion-respect"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "chart-recharts-pattern",
+        "reduced-motion-respect",
+        "a11y-focus-ring-global",
+        "cva-variant-components",
+        "state-zustand-client"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-001",
+        "feat-002",
+        "feat-017"
+      ]
+    },
+    {
+      "id": "dashboard-expenses-and-popover",
+      "title": "Build Dashboard right column: RecentExpensesList, CategoryFilter, and ExpenseDetailPopover",
+      "description": "Implement the Dashboard right column with RecentExpensesList showing scrollable expense cards with category-colored left border, CategoryIconCircle, merchant name, category label, date, amount, payment method. Build CategoryFilterDropdown using Radix Select. Build ExpenseDetailPopover (320px) anchored to clicked row with amount, category, date, payment method, note, Edit button (navigates to /add-expense?id=X), and Delete button with inline 3-second confirmation. Empty state when no expenses.",
+      "filePaths": [
+        "src/components/dashboard/recent-expenses-list.tsx",
+        "src/components/dashboard/expense-row.tsx",
+        "src/components/dashboard/category-filter-dropdown.tsx",
+        "src/components/dashboard/expense-detail-popover.tsx",
+        "src/components/dashboard/dashboard-page.tsx"
+      ],
+      "dependencies": [
+        "dashboard-budget-and-donut"
+      ],
+      "writeOrder": 6,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 12750,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "pattern",
+          "id": "cva-variant-components"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "cva-variant-components",
+        "a11y-focus-ring-global",
+        "reduced-motion-respect",
+        "state-zustand-client"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-003",
+        "feat-004",
+        "feat-017",
+        "feat-019"
+      ]
+    },
+    {
+      "id": "add-expense-form",
+      "title": "Build Add/Edit Expense form with category selector, date picker, and payment chips",
+      "description": "Implement AddExpensePage with single-column form (max-width 520px): HeroAmountInput (32px, auto-focused, numeric-only with decimal formatting), CategorySelectorGrid (3x2 chips with CVA color states), DatePickerInput with mini calendar (no future dates), PaymentMethodSelector (Cash/Debit Card/Credit Card/UPI-Other chips), NoteInput (100 char max with counter at 80+), SaveButton (disabled when amount $0 or no category). On save: Zod validate, write to Dexie, show '✓ Saved!' emerald state, navigate to dashboard.",
+      "filePaths": [
+        "src/components/expense-form/add-expense-page.tsx",
+        "src/components/expense-form/hero-amount-input.tsx",
+        "src/components/expense-form/category-selector-grid.tsx",
+        "src/components/expense-form/category-chip.tsx",
+        "src/components/expense-form/date-picker-input.tsx",
+        "src/components/expense-form/payment-method-selector.tsx",
+        "src/components/expense-form/payment-chip.tsx",
+        "src/components/expense-form/note-input.tsx",
+        "src/components/expense-form/save-button.tsx"
+      ],
+      "dependencies": [
+        "top-nav-and-routing"
+      ],
+      "writeOrder": 5,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 14500,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-002"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-002"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "pattern",
+          "id": "cva-variant-components"
+        },
+        {
+          "kind": "pattern",
+          "id": "validation-zod-at-boundary"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "cva-variant-components",
+        "a11y-focus-ring-global",
+        "reduced-motion-respect",
+        "validation-zod-at-boundary",
+        "state-zustand-client",
+        "api-error-toast-envelope"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-005",
+        "feat-020",
+        "feat-021"
+      ]
+    },
+    {
+      "id": "quick-entry-and-inline-category",
+      "title": "Build Quick Entry Suggestions and Inline Category Creation",
+      "description": "Implement QuickEntrySuggestions horizontal scrollable row of 3-4 suggestion chips below save button, based on frequent past expenses. Clicking a chip auto-fills the form with cascade animation (50ms per field, respects reduced-motion). Hidden when no frequent expenses. Build InlineCategoryCreation: '+ New Category' link opens inline row with text input, 6-color picker circles, and Save mini-button. New category auto-selects in grid.",
+      "filePaths": [
+        "src/components/expense-form/quick-entry-suggestions.tsx",
+        "src/components/expense-form/suggestion-chip.tsx",
+        "src/components/expense-form/inline-category-creation.tsx",
+        "src/components/expense-form/color-picker-circles.tsx"
+      ],
+      "dependencies": [
+        "add-expense-form"
+      ],
+      "writeOrder": 6,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 12250,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-002"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-002"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-quick-add-suggestion"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "pattern",
+          "id": "reduced-motion-respect"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "cva-variant-components",
+        "a11y-focus-ring-global",
+        "reduced-motion-respect",
+        "state-zustand-client",
+        "validation-zod-at-boundary"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-006",
+        "feat-015",
+        "feat-017"
+      ]
+    },
+    {
+      "id": "insights-summary-and-daily-chart",
+      "title": "Build Insights page: PeriodSummaryCard and DailySpendingChart with bar/line toggle",
+      "description": "Implement InsightsPage layout. Build PeriodSummaryCard with three stat cells (Total Spent, Daily Average, Transactions) with trend indicators (green decrease, red increase vs last month). Build DailySpendingChartCard with Recharts BarChart/LineChart toggle, hover tooltips (date, amount, count), dashed amber average line, red bars for 2x+ average days. Charts animate on first render with staggered entry (respects reduced-motion). Empty state when no data.",
+      "filePaths": [
+        "src/components/insights/insights-page.tsx",
+        "src/components/insights/period-summary-card.tsx",
+        "src/components/insights/stat-cell.tsx",
+        "src/components/insights/daily-spending-chart-card.tsx",
+        "src/components/insights/daily-spending-chart.tsx",
+        "src/components/insights/chart-mode-toggle.tsx",
+        "src/components/ui/chart-tooltip.tsx"
+      ],
+      "dependencies": [
+        "top-nav-and-routing"
+      ],
+      "writeOrder": 5,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 13600,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-003"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-003"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-month-summary"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-daily-spending"
+        },
+        {
+          "kind": "pattern",
+          "id": "chart-recharts-pattern"
+        },
+        {
+          "kind": "pattern",
+          "id": "reduced-motion-respect"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "chart-recharts-pattern",
+        "reduced-motion-respect",
+        "a11y-focus-ring-global",
+        "state-zustand-client"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-007",
+        "feat-008",
+        "feat-017",
+        "feat-020"
+      ]
+    },
+    {
+      "id": "insights-categories-expenses-comparison",
+      "title": "Build Insights: TopCategories, BiggestExpenses, MonthComparison, and ExportCSV",
+      "description": "Build TopCategoriesCard with horizontal stacked bar (Recharts) and sorted category progress list with colored dots, amounts, percentages. Build BiggestExpensesCard listing top 5 expenses with rank circles (#1 blue-600). Build MonthComparisonCard with side-by-side vertical bars (grow from bottom) and delta badge. Build ExportCsvButton that generates CSV and shows '✓ Exported' emerald state for 1.5s.",
+      "filePaths": [
+        "src/components/insights/top-categories-card.tsx",
+        "src/components/insights/stacked-bar.tsx",
+        "src/components/insights/category-progress-list.tsx",
+        "src/components/insights/biggest-expenses-card.tsx",
+        "src/components/insights/biggest-expense-row.tsx",
+        "src/components/insights/month-comparison-card.tsx",
+        "src/components/insights/comparison-bars.tsx",
+        "src/components/insights/export-csv-button.tsx",
+        "src/lib/export-csv.ts"
+      ],
+      "dependencies": [
+        "insights-summary-and-daily-chart"
+      ],
+      "writeOrder": 6,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 15600,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-003"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-003"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category-spending"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-month-summary"
+        },
+        {
+          "kind": "pattern",
+          "id": "chart-recharts-pattern"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "chart-recharts-pattern",
+        "reduced-motion-respect",
+        "a11y-focus-ring-global",
+        "cva-variant-components",
+        "state-zustand-client"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-009",
+        "feat-010",
+        "feat-011",
+        "feat-016"
+      ]
+    },
+    {
+      "id": "settings-dialog",
+      "title": "Build Settings Dialog with currency selector, budget input, and category manager",
+      "description": "Implement SettingsDialog as a centered Radix Dialog modal (max-width 420px) with dark scrim. Build CurrencySelector dropdown (USD/EUR/GBP/INR/JPY), BudgetLimitInput with currency prefix (default $2,000), CategoryManager with colored dot list, trash icons (disabled for defaults), and '+ Add category' link with inline creation. Dismissible via close button, scrim click, or Escape. Currency change triggers toast notification ('Currency updated to EUR', 2s auto-dismiss).",
+      "filePaths": [
+        "src/components/settings/settings-dialog.tsx",
+        "src/components/settings/currency-selector.tsx",
+        "src/components/settings/budget-limit-input.tsx",
+        "src/components/settings/category-manager.tsx",
+        "src/components/settings/category-manager-row.tsx"
+      ],
+      "dependencies": [
+        "top-nav-and-routing"
+      ],
+      "writeOrder": 5,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 13550,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-004"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-004"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-user-settings"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-budget"
+        },
+        {
+          "kind": "pattern",
+          "id": "api-error-toast-envelope"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "cva-variant-components",
+        "a11y-focus-ring-global",
+        "validation-zod-at-boundary",
+        "state-zustand-client",
+        "api-error-toast-envelope"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-014",
+        "feat-018",
+        "feat-022"
+      ]
+    },
+    {
+      "id": "responsive-and-a11y",
+      "title": "Add responsive breakpoints, keyboard navigation, and ARIA attributes",
+      "description": "Apply responsive layout breakpoints across all screens: 768-1024px stacks dashboard to single column with reduced chart heights; 1024-1440px standard two-column; >1440px maximizes whitespace. Add comprehensive keyboard navigation (Tab, Enter, Space, Escape) to all interactive elements. Ensure 2px blue-600 focus rings with 2px offset. Add ARIA roles/labels to charts (role='img'), interactive elements, and popover. Verify 36x36px minimum click targets. Ensure color is never the sole indicator.",
+      "filePaths": [
+        "src/components/dashboard/dashboard-page.tsx",
+        "src/components/insights/insights-page.tsx",
+        "src/components/expense-form/add-expense-page.tsx",
+        "src/components/dashboard/donut-chart.tsx",
+        "src/components/insights/daily-spending-chart.tsx",
+        "src/components/insights/comparison-bars.tsx"
+      ],
+      "dependencies": [
+        "dashboard-expenses-and-popover",
+        "add-expense-form",
+        "insights-categories-expenses-comparison"
+      ],
+      "writeOrder": 7,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 15850,
+      "contextRefs": [
+        {
+          "kind": "pattern",
+          "id": "a11y-focus-ring-global"
+        },
+        {
+          "kind": "pattern",
+          "id": "reduced-motion-respect"
+        },
+        {
+          "kind": "pattern",
+          "id": "component-tailwind-tokens-only"
+        }
+      ],
+      "patternRefs": [
+        "a11y-focus-ring-global",
+        "reduced-motion-respect",
+        "component-tailwind-tokens-only"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-019",
+        "feat-020",
+        "feat-021"
+      ]
+    },
+    {
+      "id": "integration-app-wiring",
+      "title": "Wire all routes, App shell, seed initialization, and end-to-end flow",
+      "description": "Wire up App.tsx with React Router, Toast provider, Zustand store initialization, Dexie seed on first load, and Settings dialog trigger. Ensure month navigation propagates to all screens. Verify edit expense flow (popover Edit → pre-filled form → save → dashboard). Verify delete flow with confirmation. Ensure currency changes propagate to all amount displays. Final integration of all screens and data flows.",
+      "filePaths": [
+        "src/App.tsx",
+        "src/main.tsx",
+        "src/router.tsx"
+      ],
+      "dependencies": [
+        "dashboard-expenses-and-popover",
+        "quick-entry-and-inline-category",
+        "insights-categories-expenses-comparison",
+        "settings-dialog",
+        "responsive-and-a11y"
+      ],
+      "writeOrder": 8,
+      "type": "integration",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 22600,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "screenPlan",
+          "id": "screen-002"
+        },
+        {
+          "kind": "screenPlan",
+          "id": "screen-003"
+        },
+        {
+          "kind": "pattern",
+          "id": "state-zustand-client"
+        },
+        {
+          "kind": "pattern",
+          "id": "data-access-dexie-only"
+        }
+      ],
+      "patternRefs": [
+        "state-zustand-client",
+        "data-access-dexie-only",
+        "api-error-toast-envelope",
+        "auth-none-single-user"
+      ],
+      "acceptanceCriteriaIds": [
+        "feat-012",
+        "feat-013"
+      ]
+    }
+  ],
+  "featureCoverage": {
+    "feat-001": [
+      "dashboard-budget-and-donut"
+    ],
+    "feat-002": [
+      "dashboard-budget-and-donut"
+    ],
+    "feat-003": [
+      "dashboard-expenses-and-popover"
+    ],
+    "feat-004": [
+      "dashboard-expenses-and-popover"
+    ],
+    "feat-005": [
+      "add-expense-form"
+    ],
+    "feat-006": [
+      "quick-entry-and-inline-category"
+    ],
+    "feat-007": [
+      "insights-summary-and-daily-chart"
+    ],
+    "feat-008": [
+      "insights-summary-and-daily-chart"
+    ],
+    "feat-009": [
+      "insights-categories-expenses-comparison"
+    ],
+    "feat-010": [
+      "insights-categories-expenses-comparison"
+    ],
+    "feat-011": [
+      "insights-categories-expenses-comparison"
+    ],
+    "feat-012": [
+      "top-nav-and-routing",
+      "integration-app-wiring"
+    ],
+    "feat-013": [
+      "top-nav-and-routing",
+      "integration-app-wiring"
+    ],
+    "feat-014": [
+      "settings-dialog"
+    ],
+    "feat-015": [
+      "quick-entry-and-inline-category"
+    ],
+    "feat-016": [
+      "insights-categories-expenses-comparison"
+    ],
+    "feat-017": [
+      "dashboard-budget-and-donut",
+      "dashboard-expenses-and-popover",
+      "insights-summary-and-daily-chart",
+      "quick-entry-and-inline-category"
+    ],
+    "feat-018": [
+      "settings-dialog"
+    ],
+    "feat-019": [
+      "responsive-and-a11y",
+      "dashboard-expenses-and-popover"
+    ],
+    "feat-020": [
+      "responsive-and-a11y",
+      "insights-summary-and-daily-chart",
+      "add-expense-form"
+    ],
+    "feat-021": [
+      "responsive-and-a11y",
+      "add-expense-form"
+    ],
+    "feat-022": [
+      "settings-dialog"
+    ],
+    "feat-023": [],
+    "feat-024": [],
+    "feat-025": []
+  }
+}

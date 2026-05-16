@@ -1,0 +1,86 @@
+[
+  {
+    "id": "adr-001",
+    "title": "Client-Side Data Persistence via Dexie.js (IndexedDB)",
+    "status": "accepted",
+    "decision": "Use Dexie.js as the primary data persistence layer for all 8 data entities. Dexie tables map 1:1 to Expense, Category, Budget, UserSettings, and QuickAddSuggestion. Derived entities (MonthSummary, CategorySpending, DailySpending) are computed via Dexie Collection queries and cached with memoized selectors. No backend database is used.",
+    "rationale": "CashPulse is a fully client-side, single-user desktop app with explicit scope exclusions for backend API, auth, and cloud sync. Dexie.js provides indexed queries that keep Insights chart aggregations within the 600ms render budget, liveQuery() for reactive UI updates within 150ms, schema versioning for future entity evolution, and a generous IndexedDB storage quota (~60% of disk vs localStorage's 5MB). The 23KB gzipped bundle cost is negligible. Zustand+localStorage (alt-2) risks 5MB cap and full-store serialization jank; sql.js WASM (alt-3) adds 400KB+ bundle and 200-500ms cold start; the sessionStorage hybrid (alt-4) has stale-data risk from manual dirty-flag invalidation.",
+    "alternatives": [
+      "alt-1: localStorage + in-memory state (Zustand/Context) — zero deps but 5MB cap and no query language",
+      "alt-3: SQLite via sql.js (WASM) — full SQL but 400KB+ bundle and WASM cold-start latency",
+      "alt-4: localStorage + sessionStorage hybrid — zero deps but manual dirty-flag invalidation risk"
+    ]
+  },
+  {
+    "id": "adr-002",
+    "title": "Styling via Tailwind CSS + CVA (Class Variance Authority)",
+    "status": "accepted",
+    "decision": "Use Tailwind CSS v3 with Class Variance Authority (CVA) and tailwind-merge as the styling system. All design tokens (Inter font, 4px spacing grid, 16px/10px/20px/8px radii, card/elevated shadows, color palette) are codified in tailwind.config.ts. CVA defines typed variant maps for polymorphic components (Button, Badge, CategoryChip, PaymentChip). No runtime CSS-in-JS is used.",
+    "rationale": "CashPulse has a strict design token system (7 radius values, 2 shadow levels, 15 color tokens, 8 typography roles) and data-driven visual states (Category colors from entity-002, Budget status from entity-003). CVA's typed variant maps enforce these states at compile time, preventing style drift across 7 screens. Zero-runtime extraction guarantees sub-150ms micro-interactions and sub-350ms transitions. Tailwind's motion-reduce: variant natively handles prefers-reduced-motion. styled-components (alt-styled-components) adds 15-20KB runtime overhead and has RSC incompatibility risk. CSS Modules (alt-css-modules) lack type-safe token enforcement and require duplicated media queries.",
+    "alternatives": [
+      "alt-tailwind: Plain Tailwind CSS — viable but lacks typed variant management for CashPulse's many visual states",
+      "alt-css-modules: CSS Modules — zero deps but no type-safe tokens, duplicated media queries",
+      "alt-styled-components: styled-components v6 — runtime CSS-in-JS overhead risks 150ms budget, RSC incompatibility"
+    ]
+  },
+  {
+    "id": "adr-003",
+    "title": "Component Library: shadcn/ui (Radix UI + Tailwind)",
+    "status": "accepted",
+    "decision": "Adopt shadcn/ui as the component library. Components are copy-owned (source in /components/ui), built on Radix UI accessibility primitives, and styled with Tailwind utility classes. Radix primitives are used for Dialog (Settings, delete confirmation), Popover (expense detail), Select (category filter, currency), and Toast (notifications). A separate charting library (Recharts) is added for Insights screen charts.",
+    "rationale": "shadcn/ui's copy-owned model means CashPulse's design tokens (Inter, blue-600, custom radii/shadows) are applied directly in component source with zero override friction. Radix primitives provide WCAG 2.1 AA keyboard navigation, focus management, and ARIA roles out of the box for the most complex interactive elements (category Select, date picker Popover, delete Dialog, Settings Dialog). No runtime CSS-in-JS overhead. Mantine (alt-mantine) adds 4-6 deps and requires extensive theme overrides to match CashPulse's sharp design language. MUI (alt-mui) has the highest customization burden (20-30 theme override keys) and Emotion runtime cost. Custom Radix-only (alt-custom-headless) requires 40-80 hours of component building.",
+    "alternatives": [
+      "alt-mantine: Mantine v7 — built-in charts but 120KB+ core, extensive theme overrides needed",
+      "alt-mui: MUI v6 — largest ecosystem but Material Design defaults require heavy customization",
+      "alt-custom-headless: Custom + Radix only — full control but 40-80 hours build time"
+    ]
+  },
+  {
+    "id": "adr-004",
+    "title": "Caching Strategy: Zustand In-Memory Store + Memoized Selectors",
+    "status": "accepted",
+    "decision": "Use Zustand as the in-memory application state store layered on top of Dexie.js persistence. Derived entities (MonthSummary, CategorySpending, DailySpending, QuickAddSuggestion) are computed via memoized selectors (useMemo + Zustand useShallow). Dexie liveQuery() hydrates the Zustand store reactively. No external cache infrastructure (Redis, Service Worker) is used.",
+    "rationale": "Combining Zustand (synchronous reads, ~3KB) with memoized selectors gives sub-150ms reads for all micro-interactions while Dexie handles durable persistence. Derived chart data recomputes only when source slices change, keeping Insights renders within 600ms. This two-layer approach (Dexie for persistence, Zustand for hot-path reads) avoids the full-store-serialization risk of Zustand+localStorage alone and the conceptual overhead of Service Workers. No backend exists to cache against, making HTTP caching and Service Worker strategies premature.",
+    "alternatives": [
+      "alt-2: IndexedDB via idb-keyval — adds async read complexity without Dexie's query power",
+      "alt-3: Service Worker + Workbox — overkill for client-only app with no backend",
+      "alt-4 alone: Pure memoization — no cross-session persistence without separate localStorage layer"
+    ]
+  },
+  {
+    "id": "adr-005",
+    "title": "No Payment Provider — Client-Side Data Persistence Only",
+    "status": "accepted",
+    "decision": "CashPulse does not integrate any payment processing provider. All expense data is user-entered and persisted client-side via Dexie.js (IndexedDB). The 'payment method' field on Expense (entity-001) is a user-selected enum label (Cash, Debit Card, Credit Card, UPI/Other) with no connection to real payment infrastructure.",
+    "rationale": "The PRD explicitly scopes CashPulse as a tracker, not a payment initiator. Backend API development, bank/card integration, and authentication are all out of scope. The payment method field is purely a categorization label for the user's own records. Introducing any payment provider (Stripe, Plaid) would violate multiple hard scope exclusions and add unnecessary complexity, auth requirements, and backend dependencies.",
+    "alternatives": [
+      "alt-indexeddb: Dexie.js for structured persistence — chosen as the persistence layer in ADR-001",
+      "alt-mock-rest-api: MSW mock API — adds REST semantics where none are required",
+      "alt-json-file-import-export: JSON file import/export — suitable as supplementary export only, not primary persistence"
+    ]
+  },
+  {
+    "id": "adr-006",
+    "title": "Notification Channel: Radix UI Toast Primitive",
+    "status": "accepted",
+    "decision": "Use @radix-ui/react-toast as the in-app notification system. A custom useToast() hook wraps the Radix imperative API. Toasts are used for: expense save confirmation ('✓ Saved!'), currency change notification, CSV export confirmation, and error feedback. The delete confirmation uses inline text change (not a toast) per PRD spec. No browser Notification API or push notifications are used.",
+    "rationale": "Radix Toast provides production-grade ARIA live regions (role='status', role='alert'), Escape dismiss, and focus management out of the box — eliminating bespoke WCAG implementation risk. The ~8KB cost is zero marginal since Radix primitives are already in the stack via shadcn/ui (ADR-003). Browser Notification API (alt-04) requires permission prompts and is borderline out-of-scope. Hand-rolled toasts (alt-01) duplicate accessibility logic that Radix already provides. Inline-only feedback (alt-03) cannot surface cross-screen notifications like currency change confirmation.",
+    "alternatives": [
+      "alt-01: Hand-rolled toast system — zero deps but must implement ARIA live regions manually",
+      "alt-03: Inline contextual feedback only — no overlay complexity but cannot surface cross-screen notifications",
+      "alt-04: Browser Notification API — requires permission prompts, borderline out-of-scope"
+    ]
+  },
+  {
+    "id": "adr-007",
+    "title": "Search and Filtering: Client-Side In-Memory Filtering",
+    "status": "accepted",
+    "decision": "Implement search and filtering as client-side in-memory array operations. The Dashboard category filter dropdown applies Array.filter predicates against the expense list. Filter state is managed in component-local state (not URL params) since the current scope has only one filter control per screen. A 150ms debounce is applied to any future keyword search input. Fuse.js may be added later if free-text search (feat-024, could-have) is prioritized.",
+    "rationale": "CashPulse's current must-have scope has exactly one filter: the category dropdown on the Dashboard expense list. This is a simple single-select filter over an in-memory dataset that will realistically contain <2,000 records for a personal tracker. Array.filter executes in <10ms for this volume, well within the 150ms budget. URL query params (alt-2) add router complexity for a single dropdown filter. Fuse.js (alt-3) adds 24KB for fuzzy matching that isn't needed until the could-have search feature is built. The predicate DSL (alt-4) is over-engineered for one filter control.",
+    "alternatives": [
+      "alt-2: URL query parameter filtering — adds router complexity for a single filter control",
+      "alt-3: Fuse.js fuzzy search — 24KB dep for a feature not yet in must-have scope",
+      "alt-4: Structured filter DSL — over-engineered for current single-filter scope"
+    ]
+  }
+]

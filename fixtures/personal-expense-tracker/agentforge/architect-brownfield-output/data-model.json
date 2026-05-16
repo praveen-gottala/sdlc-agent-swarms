@@ -1,0 +1,203 @@
+{
+  "projectId": "chip-brownfield-recurring",
+  "entities": [
+    {
+      "id": "entity-expense",
+      "name": "Expense",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key, generated client-side (crypto.randomUUID)"
+        },
+        {
+          "name": "amount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Expense amount in user's local currency"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Foreign key to Category entity"
+        },
+        {
+          "name": "merchantName",
+          "type": "varchar(255)",
+          "required": true,
+          "description": "Merchant or description label for the expense"
+        },
+        {
+          "name": "date",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Date the expense occurred or is scheduled"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "varchar(50)",
+          "required": true,
+          "description": "Enum-like: e.g. CASH, CREDIT_CARD, DEBIT_CARD, etc."
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false,
+          "description": "Optional free-text note"
+        },
+        {
+          "name": "recurringTemplateId",
+          "type": "uuid fk->RecurringTemplate",
+          "required": false,
+          "description": "Nullable FK linking this occurrence to its parent RecurringTemplate. NULL for one-time expenses. Preserved even if the template is deleted (data-integrity constraint). Supports feat-003, feat-004, feat-005."
+        },
+        {
+          "name": "isRecurringInstance",
+          "type": "boolean",
+          "required": true,
+          "description": "Derived flag (true when recurringTemplateId is non-null at write time) stored for fast filtering in dashboard queries and Spending Insights (feat-002, feat-008). Default false."
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Record creation timestamp, set client-side"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Last modification timestamp, updated on every write"
+        }
+      ],
+      "tableName": "expenses",
+      "relationships": [
+        "categoryId: uuid fk->Category",
+        "recurringTemplateId: uuid fk->RecurringTemplate (nullable, preserved on template deletion)"
+      ]
+    },
+    {
+      "id": "entity-category",
+      "name": "Category",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key"
+        },
+        {
+          "name": "name",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "Display name of the category; unique(name)"
+        },
+        {
+          "name": "color",
+          "type": "varchar(7)",
+          "required": true,
+          "description": "Hex color string e.g. #FF5733"
+        },
+        {
+          "name": "isDefault",
+          "type": "boolean",
+          "required": true,
+          "description": "Whether this is a system-provided default category. Default false."
+        }
+      ],
+      "tableName": "categories",
+      "relationships": []
+    },
+    {
+      "id": "entity-recurring-template",
+      "name": "RecurringTemplate",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key, generated client-side (crypto.randomUUID)"
+        },
+        {
+          "name": "amount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Canonical amount for each generated occurrence"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Foreign key to Category entity"
+        },
+        {
+          "name": "merchantName",
+          "type": "varchar(255)",
+          "required": true,
+          "description": "Merchant or description label used when generating occurrences"
+        },
+        {
+          "name": "frequency",
+          "type": "varchar(20)",
+          "required": true,
+          "description": "Enum: WEEKLY | MONTHLY | YEARLY. Drives occurrence generation (feat-001, feat-002)."
+        },
+        {
+          "name": "startDate",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Date from which recurrence begins; first occurrence anchor"
+        },
+        {
+          "name": "endDate",
+          "type": "timestamptz",
+          "required": false,
+          "description": "Optional date after which no new occurrences are generated (feat-001)"
+        },
+        {
+          "name": "nextOccurrenceDate",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Computed and persisted date of the next occurrence to be generated. Used for dashboard upcoming card sort (feat-002) and Manage Recurring list (feat-006). Updated after each occurrence is written."
+        },
+        {
+          "name": "paymentMethod",
+          "type": "varchar(50)",
+          "required": true,
+          "description": "Enum-like: propagated to generated Expense occurrences"
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false,
+          "description": "Optional note propagated to generated occurrences"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)",
+          "required": true,
+          "description": "Enum: ACTIVE | PAUSED | CANCELLED. PAUSED stops occurrence generation (feat-007); CANCELLED is soft-delete for series deletion (feat-005). Default ACTIVE."
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Record creation timestamp"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Last modification timestamp; updated on edit-series, pause, resume, cancel"
+        }
+      ],
+      "tableName": "recurring_templates",
+      "relationships": [
+        "categoryId: uuid fk->Category",
+        "unique(merchantName, frequency, startDate, categoryId) — prevents accidental duplicate template creation"
+      ]
+    }
+  ]
+}

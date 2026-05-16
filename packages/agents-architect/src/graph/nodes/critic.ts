@@ -32,6 +32,27 @@ export function createCritic(): ArchitectNodeFn {
       };
     }
 
+    if (!state.constraintSet || !state.optionsBundle || !state.architectureSpec || !state.taskPlan || !state.assumptionLedger) {
+      const missing = [
+        !state.constraintSet && 'constraintSet',
+        !state.optionsBundle && 'optionsBundle',
+        !state.architectureSpec && 'architectureSpec',
+        !state.taskPlan && 'taskPlan',
+        !state.assumptionLedger && 'assumptionLedger',
+      ].filter(Boolean).join(', ');
+      debugLog(`critic: EXIT (missing required state: ${missing})`);
+      const failReport: CriticReport = {
+        gates: [],
+        passed: false,
+        summary: `Missing required state channels: ${missing} — upstream node(s) failed.`,
+      };
+      return {
+        criticReport: failReport,
+        criticPassed: false,
+        criticRetries: state.criticRetries + 1,
+      };
+    }
+
     // Assemble the ContractBundle from state channels
     const bundle: ContractBundle = {
       projectId: state.constraintSet?.projectId ?? '',

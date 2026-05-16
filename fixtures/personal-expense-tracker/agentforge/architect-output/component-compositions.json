@@ -1,0 +1,1447 @@
+[
+  {
+    "screenId": "screen-001",
+    "componentTree": [
+      {
+        "id": "dashboard-page",
+        "type": "DashboardPage",
+        "children": [
+          "top-nav-bar",
+          "dashboard-layout"
+        ],
+        "props": {
+          "selectedMonth": "string",
+          "onMonthChange": "(month: string) => void",
+          "backgroundColor": "color.gray.100",
+          "padding": "space.8"
+        }
+      },
+      {
+        "id": "top-nav-bar",
+        "type": "TopNavBar",
+        "catalogId": "feat-013",
+        "children": [
+          "cashpulse-logo",
+          "nav-tabs",
+          "month-navigator",
+          "settings-trigger"
+        ],
+        "props": {
+          "activeTab": "'dashboard' | 'add-expense' | 'insights'",
+          "selectedMonth": "string",
+          "onTabChange": "(tab: 'dashboard' | 'add-expense' | 'insights') => void",
+          "onMonthChange": "(month: string) => void",
+          "onSettingsClick": "() => void",
+          "height": "space.16",
+          "backgroundColor": "color.white",
+          "shadow": "shadow.card"
+        }
+      },
+      {
+        "id": "cashpulse-logo",
+        "type": "CashPulseLogo",
+        "catalogId": "feat-013",
+        "props": {
+          "onClick": "() => void",
+          "iconColor": "color.blue.600",
+          "textColor": "color.gray.900",
+          "fontFamily": "font.inter"
+        }
+      },
+      {
+        "id": "nav-tabs",
+        "type": "NavTabs",
+        "catalogId": "feat-013",
+        "props": {
+          "tabs": "Array<{ id: 'dashboard' | 'add-expense' | 'insights', label: string }>",
+          "activeTab": "'dashboard' | 'add-expense' | 'insights'",
+          "onTabChange": "(tab: 'dashboard' | 'add-expense' | 'insights') => void",
+          "indicatorColor": "color.blue.600",
+          "activeTextColor": "color.blue.600",
+          "inactiveTextColor": "color.gray.500",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "month-navigator",
+        "type": "MonthNavigator",
+        "catalogId": "feat-012",
+        "props": {
+          "selectedMonth": "string",
+          "onPrevMonth": "() => void",
+          "onNextMonth": "() => void",
+          "displayLabel": "string",
+          "pillBackgroundColor": "color.gray.100",
+          "textColor": "color.gray.900",
+          "chevronColor": "color.gray.500",
+          "borderRadius": "radius.badge",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "settings-trigger",
+        "type": "SettingsTrigger",
+        "catalogId": "feat-014",
+        "props": {
+          "onClick": "() => void",
+          "iconColor": "color.gray.500",
+          "focusRingColor": "color.blue.600",
+          "minSize": "space.9"
+        }
+      },
+      {
+        "id": "dashboard-layout",
+        "type": "DashboardLayout",
+        "children": [
+          "dashboard-left-column",
+          "dashboard-right-column"
+        ],
+        "props": {
+          "leftColumnWidth": "360px",
+          "gap": "space.6"
+        }
+      },
+      {
+        "id": "dashboard-left-column",
+        "type": "DashboardLeftColumn",
+        "children": [
+          "budget-summary-card",
+          "category-donut-chart-card"
+        ],
+        "props": {
+          "width": "360px",
+          "gap": "space.6"
+        }
+      },
+      {
+        "id": "budget-summary-card",
+        "type": "BudgetSummaryCard",
+        "catalogId": "feat-001",
+        "children": [
+          "budget-status-badge",
+          "budget-amount-display",
+          "budget-progress-bar",
+          "budget-remaining-display"
+        ],
+        "props": {
+          "monthSummary": "{ id: string, month: string, totalSpent: number, transactionCount: number, dailyAverage: number, budgetLimit: number, budgetStatus: 'On Track' | 'Heads Up' | 'Over Budget', remainingAmount: number, updatedAt: string }",
+          "currency": "string",
+          "animateOnMount": "boolean",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6"
+        }
+      },
+      {
+        "id": "budget-status-badge",
+        "type": "StatusBadge",
+        "catalogId": "feat-001",
+        "props": {
+          "status": "'On Track' | 'Heads Up' | 'Over Budget'",
+          "variants": {
+            "on-track": {
+              "backgroundColor": "color.blue.100",
+              "textColor": "color.blue.700"
+            },
+            "heads-up": {
+              "backgroundColor": "color.amber.100",
+              "textColor": "color.amber.700"
+            },
+            "over-budget": {
+              "backgroundColor": "color.red.100",
+              "textColor": "color.red.700"
+            }
+          },
+          "borderRadius": "radius.badge",
+          "fontSize": "typography.label"
+        }
+      },
+      {
+        "id": "budget-amount-display",
+        "type": "AnimatedAmountDisplay",
+        "catalogId": "feat-001",
+        "props": {
+          "amount": "number",
+          "currency": "string",
+          "label": "string",
+          "animateCounter": "boolean",
+          "fontSize": "typography.hero",
+          "fontFamily": "font.inter",
+          "fontVariant": "tabular-nums",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "budget-progress-bar",
+        "type": "BudgetProgressBar",
+        "catalogId": "feat-001",
+        "props": {
+          "spentAmount": "number",
+          "budgetLimit": "number",
+          "spendPercentage": "number",
+          "trackColor": "color.gray.200",
+          "fillColorUnder80": "color.blue.600",
+          "fillColorHeadsUp": "color.amber.500",
+          "fillColorOverBudget": "color.red.500",
+          "borderRadius": "radius.badge",
+          "height": "space.2"
+        }
+      },
+      {
+        "id": "budget-remaining-display",
+        "type": "BudgetRemainingDisplay",
+        "catalogId": "feat-001",
+        "props": {
+          "remainingAmount": "number",
+          "currency": "string",
+          "isOverBudget": "boolean",
+          "positiveTextColor": "color.gray.600",
+          "negativeTextColor": "color.red.500",
+          "fontFamily": "font.inter",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "category-donut-chart-card",
+        "type": "CategoryDonutChartCard",
+        "catalogId": "feat-002",
+        "children": [
+          "donut-chart",
+          "donut-legend"
+        ],
+        "props": {
+          "categorySpending": "Array<{ id: string, categoryId: string, category: { id: string, name: string, color: string, icon: string }, month: string, totalAmount: number, percentage: number, transactionCount: number, updatedAt: string }>",
+          "totalTransactionCount": "number",
+          "isEmpty": "boolean",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6"
+        }
+      },
+      {
+        "id": "donut-chart",
+        "type": "DonutChart",
+        "catalogId": "feat-002",
+        "children": [
+          "donut-tooltip"
+        ],
+        "props": {
+          "segments": "Array<{ categoryId: string, color: string, percentage: number, totalAmount: number, name: string }>",
+          "diameter": "160px",
+          "centerLabel": "number",
+          "centerSubLabel": "string",
+          "emptySegmentColor": "color.gray.200",
+          "onSegmentHover": "(segment: { name: string, amount: number, percentage: number } | null) => void",
+          "ariaLabel": "string",
+          "role": "img"
+        }
+      },
+      {
+        "id": "donut-tooltip",
+        "type": "ChartTooltip",
+        "catalogId": "feat-002",
+        "props": {
+          "categoryName": "string",
+          "amount": "number",
+          "percentage": "number",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "shadow": "shadow.elevated",
+          "borderRadius": "radius.card",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "donut-legend",
+        "type": "CategoryLegend",
+        "catalogId": "feat-002",
+        "props": {
+          "items": "Array<{ categoryId: string, name: string, color: string, totalAmount: number, percentage: number }>",
+          "currency": "string",
+          "dotSize": "space.3",
+          "textColor": "color.gray.700",
+          "amountColor": "color.gray.900",
+          "fontFamily": "font.inter",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "dashboard-right-column",
+        "type": "DashboardRightColumn",
+        "children": [
+          "recent-expenses-header",
+          "recent-expenses-list",
+          "dashboard-empty-state"
+        ],
+        "props": {
+          "flex": "1",
+          "gap": "space.4"
+        }
+      },
+      {
+        "id": "recent-expenses-header",
+        "type": "RecentExpensesHeader",
+        "catalogId": "feat-003",
+        "children": [
+          "category-filter-dropdown"
+        ],
+        "props": {
+          "title": "string",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "category-filter-dropdown",
+        "type": "CategoryFilterDropdown",
+        "catalogId": "feat-007",
+        "props": {
+          "categories": "Array<{ id: string, name: string, color: string, icon: string }>",
+          "selectedCategoryId": "string | null",
+          "onSelect": "(categoryId: string | null) => void",
+          "allLabel": "string",
+          "triggerBorderRadius": "radius.badge",
+          "triggerBackgroundColor": "color.white",
+          "triggerBorderColor": "color.gray.200",
+          "chevronColor": "color.gray.500",
+          "listBackgroundColor": "color.white",
+          "listShadow": "shadow.elevated",
+          "listBorderRadius": "radius.card",
+          "transitionDuration": "200ms",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "recent-expenses-list",
+        "type": "RecentExpensesList",
+        "catalogId": "feat-003",
+        "children": [
+          "expense-row"
+        ],
+        "props": {
+          "expenses": "Array<{ id: string, amount: number, description: string, categoryId: string, category: { id: string, name: string, color: string, icon: string }, date: string, paymentMethod: string, note?: string, createdAt: string, updatedAt: string }>",
+          "selectedExpenseId": "string | null",
+          "onExpenseClick": "(expenseId: string) => void",
+          "currency": "string",
+          "scrollable": "boolean",
+          "gap": "space.3"
+        }
+      },
+      {
+        "id": "expense-row",
+        "type": "ExpenseRow",
+        "catalogId": "feat-003",
+        "children": [
+          "category-icon-circle",
+          "expense-row-meta",
+          "expense-row-amount"
+        ],
+        "props": {
+          "expense": "{ id: string, amount: number, description: string, category: { id: string, name: string, color: string, icon: string }, date: string, paymentMethod: string, note?: string }",
+          "currency": "string",
+          "isSelected": "boolean",
+          "onClick": "(expenseId: string) => void",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "categoryBorderColor": "category.color",
+          "categoryBorderWidth": "4px",
+          "hoverBackgroundColor": "color.gray.50",
+          "amountColor": "color.gray.900",
+          "amountPrefix": "string",
+          "dateColor": "color.gray.500",
+          "paymentMethodColor": "color.gray.400",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "category-icon-circle",
+        "type": "CategoryIconCircle",
+        "catalogId": "feat-003",
+        "props": {
+          "icon": "string",
+          "color": "string",
+          "size": "space.10",
+          "borderRadius": "radius.badge"
+        }
+      },
+      {
+        "id": "expense-row-meta",
+        "type": "ExpenseRowMeta",
+        "props": {
+          "description": "string",
+          "categoryName": "string",
+          "date": "string",
+          "descriptionColor": "color.gray.900",
+          "categoryColor": "color.gray.500",
+          "dateColor": "color.gray.500",
+          "fontFamily": "font.inter"
+        }
+      },
+      {
+        "id": "expense-row-amount",
+        "type": "ExpenseRowAmount",
+        "props": {
+          "amount": "number",
+          "currency": "string",
+          "paymentMethod": "string",
+          "amountColor": "color.gray.900",
+          "paymentMethodColor": "color.gray.400",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "dashboard-empty-state",
+        "type": "EmptyState",
+        "catalogId": "feat-017",
+        "children": [
+          "button"
+        ],
+        "props": {
+          "icon": "string",
+          "title": "string",
+          "description": "string",
+          "ctaLabel": "string",
+          "onCtaClick": "() => void",
+          "iconColor": "color.gray.300",
+          "titleColor": "color.gray.700",
+          "descriptionColor": "color.gray.500",
+          "ctaVariant": "primary"
+        }
+      },
+      {
+        "id": "button",
+        "type": "Button",
+        "catalogId": "feat-005",
+        "props": {
+          "intent": "'primary' | 'secondary' | 'ghost' | 'danger'",
+          "size": "'sm' | 'md' | 'lg'",
+          "label": "string",
+          "disabled": "boolean",
+          "onClick": "() => void",
+          "fullWidth": "boolean",
+          "borderRadius": "radius.button",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "expense-detail-popover",
+        "type": "ExpenseDetailPopover",
+        "catalogId": "feat-004",
+        "children": [
+          "popover-header",
+          "popover-detail-rows",
+          "popover-note",
+          "popover-actions"
+        ],
+        "props": {
+          "expense": "{ id: string, amount: number, description: string, category: { id: string, name: string, color: string, icon: string }, date: string, paymentMethod: string, note?: string }",
+          "currency": "string",
+          "isOpen": "boolean",
+          "anchorExpenseId": "string | null",
+          "onClose": "() => void",
+          "onEdit": "(expenseId: string) => void",
+          "onDelete": "(expenseId: string) => void",
+          "width": "320px",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.elevated",
+          "deleteConfirmTimeout": "3000"
+        }
+      },
+      {
+        "id": "popover-header",
+        "type": "PopoverHeader",
+        "catalogId": "feat-004",
+        "props": {
+          "title": "string",
+          "onClose": "() => void",
+          "titleColor": "color.gray.900",
+          "closeIconColor": "color.gray.500",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "popover-detail-rows",
+        "type": "PopoverDetailRows",
+        "catalogId": "feat-004",
+        "props": {
+          "amount": "number",
+          "currency": "string",
+          "category": "{ name: string, color: string }",
+          "date": "string",
+          "paymentMethod": "string",
+          "labelColor": "color.gray.500",
+          "valueColor": "color.gray.900",
+          "categoryDotSize": "space.3",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "popover-note",
+        "type": "PopoverNote",
+        "catalogId": "feat-004",
+        "props": {
+          "note": "string | undefined",
+          "textColor": "color.gray.500",
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "id": "popover-actions",
+        "type": "PopoverActions",
+        "catalogId": "feat-004",
+        "props": {
+          "onEdit": "() => void",
+          "onDelete": "() => void",
+          "deleteConfirmLabel": "string",
+          "deleteConfirmTimeout": "number",
+          "editTextColor": "color.blue.600",
+          "deleteTextColor": "color.red.500",
+          "focusRingColor": "color.blue.600"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-002",
+    "componentTree": [
+      {
+        "id": "add-expense-page",
+        "type": "AddExpensePage",
+        "children": [
+          "top-nav-bar",
+          "add-expense-form"
+        ],
+        "props": {
+          "mode": "'add' | 'edit'",
+          "prefillExpense": "{ id: string, amount: number, description: string, categoryId: string, date: string, paymentMethod: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other', note?: string } | null",
+          "backgroundColor": "color.gray.100",
+          "maxWidth": "520px"
+        }
+      },
+      {
+        "id": "add-expense-form",
+        "type": "AddExpenseForm",
+        "catalogId": "feat-005",
+        "children": [
+          "hero-amount-input",
+          "category-selector-grid",
+          "inline-category-creation",
+          "date-picker-input",
+          "payment-method-selector",
+          "note-input",
+          "save-button",
+          "quick-entry-suggestions"
+        ],
+        "props": {
+          "initialValues": "{ amount: number, description: string, categoryId: string | null, date: string, paymentMethod: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other' | null, note: string }",
+          "categories": "Array<{ id: string, name: string, color: string, icon: string, sortOrder: number }>",
+          "onSave": "(expense: { amount: number, description: string, categoryId: string, date: string, paymentMethod: string, note?: string }) => void",
+          "onSaveSuccess": "() => void",
+          "isSubmitting": "boolean",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.8",
+          "gap": "space.6"
+        }
+      },
+      {
+        "id": "hero-amount-input",
+        "type": "HeroAmountInput",
+        "catalogId": "feat-005",
+        "props": {
+          "value": "number",
+          "onChange": "(value: number) => void",
+          "currency": "string",
+          "autoFocus": "boolean",
+          "fontSize": "typography.hero",
+          "fontFamily": "font.inter",
+          "fontVariant": "tabular-nums",
+          "textColor": "color.gray.900",
+          "placeholderColor": "color.gray.300",
+          "borderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600",
+          "borderRadius": "radius.input",
+          "inputMode": "decimal"
+        }
+      },
+      {
+        "id": "category-selector-grid",
+        "type": "CategorySelectorGrid",
+        "catalogId": "feat-005",
+        "children": [
+          "category-chip"
+        ],
+        "props": {
+          "categories": "Array<{ id: string, name: string, color: string, icon: string }>",
+          "selectedCategoryId": "string | null",
+          "onSelect": "(categoryId: string) => void",
+          "columns": "3",
+          "gap": "space.3"
+        }
+      },
+      {
+        "id": "category-chip",
+        "type": "CategoryChip",
+        "catalogId": "feat-005",
+        "props": {
+          "category": "{ id: string, name: string, color: string, icon: string }",
+          "isSelected": "boolean",
+          "onSelect": "(categoryId: string) => void",
+          "selectedBackgroundColor": "category.color",
+          "selectedTextColor": "color.white",
+          "unselectedBackgroundColor": "color.gray.100",
+          "unselectedTextColor": "color.gray.700",
+          "borderRadius": "radius.button",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "inline-category-creation",
+        "type": "InlineCategoryCreation",
+        "catalogId": "feat-015",
+        "children": [
+          "color-picker-circles",
+          "button"
+        ],
+        "props": {
+          "isOpen": "boolean",
+          "onToggle": "() => void",
+          "onSave": "(category: { name: string, color: string, icon: string }) => void",
+          "colorOptions": "Array<string>",
+          "triggerLabel": "string",
+          "triggerTextColor": "color.blue.600",
+          "inputBorderRadius": "radius.input",
+          "inputBorderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "color-picker-circles",
+        "type": "ColorPickerCircles",
+        "catalogId": "feat-015",
+        "props": {
+          "colors": "Array<string>",
+          "selectedColor": "string | null",
+          "onSelect": "(color: string) => void",
+          "circleSize": "space.6",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "date-picker-input",
+        "type": "DatePickerInput",
+        "catalogId": "feat-005",
+        "children": [
+          "date-picker-calendar"
+        ],
+        "props": {
+          "value": "string",
+          "onChange": "(date: string) => void",
+          "maxDate": "string",
+          "isOpen": "boolean",
+          "onToggle": "() => void",
+          "borderRadius": "radius.input",
+          "borderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "date-picker-calendar",
+        "type": "DatePickerCalendar",
+        "catalogId": "screen-006",
+        "props": {
+          "selectedDate": "string",
+          "onDateSelect": "(date: string) => void",
+          "maxDate": "string",
+          "width": "280px",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.elevated",
+          "todayHighlightColor": "color.blue.100",
+          "selectedDayColor": "color.blue.600",
+          "selectedDayTextColor": "color.white",
+          "disabledDayColor": "color.gray.300",
+          "chevronColor": "color.gray.500",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "payment-method-selector",
+        "type": "PaymentMethodSelector",
+        "catalogId": "feat-005",
+        "children": [
+          "payment-chip"
+        ],
+        "props": {
+          "options": "Array<'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other'>",
+          "selectedMethod": "'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other' | null",
+          "onSelect": "(method: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other') => void",
+          "gap": "space.3"
+        }
+      },
+      {
+        "id": "payment-chip",
+        "type": "PaymentChip",
+        "catalogId": "feat-005",
+        "props": {
+          "method": "'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other'",
+          "isSelected": "boolean",
+          "onSelect": "(method: string) => void",
+          "selectedBackgroundColor": "color.blue.600",
+          "selectedTextColor": "color.white",
+          "unselectedBackgroundColor": "color.gray.100",
+          "unselectedTextColor": "color.gray.700",
+          "borderRadius": "radius.button",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "note-input",
+        "type": "NoteInput",
+        "catalogId": "feat-005",
+        "props": {
+          "value": "string",
+          "onChange": "(value: string) => void",
+          "maxLength": "100",
+          "showCounterThreshold": "80",
+          "placeholder": "string",
+          "borderRadius": "radius.input",
+          "borderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600",
+          "textColor": "color.gray.900",
+          "counterColor": "color.gray.400",
+          "counterWarningColor": "color.amber.500"
+        }
+      },
+      {
+        "id": "save-button",
+        "type": "SaveButton",
+        "catalogId": "feat-005",
+        "props": {
+          "isDisabled": "boolean",
+          "isSubmitting": "boolean",
+          "isSaved": "boolean",
+          "savedLabel": "string",
+          "defaultLabel": "string",
+          "savedBackgroundColor": "color.emerald.500",
+          "defaultBackgroundColor": "color.blue.600",
+          "disabledBackgroundColor": "color.gray.200",
+          "textColor": "color.white",
+          "borderRadius": "radius.button",
+          "fullWidth": "boolean",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "quick-entry-suggestions",
+        "type": "QuickEntrySuggestions",
+        "catalogId": "feat-006",
+        "children": [
+          "suggestion-chip"
+        ],
+        "props": {
+          "suggestions": "Array<{ id: string, description: string, amount: number, categoryId: string, category: { id: string, name: string, color: string, icon: string }, paymentMethod: string, frequency: number, lastUsedAt: string }>",
+          "onSuggestionSelect": "(suggestion: { description: string, amount: number, categoryId: string, paymentMethod: string }) => void",
+          "isHidden": "boolean",
+          "cascadeAnimationDelay": "50",
+          "scrollable": "boolean",
+          "gap": "space.3"
+        }
+      },
+      {
+        "id": "suggestion-chip",
+        "type": "SuggestionChip",
+        "catalogId": "feat-006",
+        "props": {
+          "suggestion": "{ id: string, description: string, amount: number, category: { icon: string }, paymentMethod: string }",
+          "currency": "string",
+          "onClick": "() => void",
+          "backgroundColor": "color.white",
+          "borderColor": "color.gray.200",
+          "textColor": "color.gray.700",
+          "borderRadius": "radius.badge",
+          "shadow": "shadow.card",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-003",
+    "componentTree": [
+      {
+        "id": "insights-page",
+        "type": "InsightsPage",
+        "children": [
+          "top-nav-bar",
+          "period-summary-card",
+          "daily-spending-chart-card",
+          "top-categories-card",
+          "biggest-expenses-card",
+          "month-comparison-card",
+          "export-csv-button",
+          "insights-empty-state"
+        ],
+        "props": {
+          "selectedMonth": "string",
+          "onMonthChange": "(month: string) => void",
+          "backgroundColor": "color.gray.100",
+          "maxWidth": "720px"
+        }
+      },
+      {
+        "id": "period-summary-card",
+        "type": "PeriodSummaryCard",
+        "catalogId": "feat-007",
+        "children": [
+          "stat-cell"
+        ],
+        "props": {
+          "monthSummary": "{ totalSpent: number, dailyAverage: number, transactionCount: number }",
+          "comparison": "{ delta: number, deltaDirection: 'less' | 'more' | 'same', previous: { totalSpent: number, dailyAverage: number, transactionCount: number } | null }",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6",
+          "dividerColor": "color.gray.200"
+        }
+      },
+      {
+        "id": "stat-cell",
+        "type": "StatCell",
+        "catalogId": "feat-007",
+        "props": {
+          "label": "string",
+          "value": "string",
+          "trendDirection": "'up' | 'down' | 'same'",
+          "trendPercentage": "number",
+          "trendGoodDirection": "'down'",
+          "upTrendColor": "color.red.500",
+          "downTrendColor": "color.emerald.500",
+          "valueColor": "color.gray.900",
+          "labelColor": "color.gray.500",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "daily-spending-chart-card",
+        "type": "DailySpendingChartCard",
+        "catalogId": "feat-008",
+        "children": [
+          "chart-mode-toggle",
+          "daily-spending-chart",
+          "chart-tooltip"
+        ],
+        "props": {
+          "dailySpending": "Array<{ id: string, date: string, totalAmount: number, transactionCount: number, updatedAt: string }>",
+          "averageDaily": "number",
+          "currency": "string",
+          "chartMode": "'bar' | 'line'",
+          "onChartModeChange": "(mode: 'bar' | 'line') => void",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6",
+          "barColorDefault": "color.blue.600",
+          "barColorHighAboveAverage": "color.red.500",
+          "averageLineColor": "color.amber.500",
+          "lineChartFillColor": "color.blue.100",
+          "animateOnMount": "boolean",
+          "ariaLabel": "string",
+          "role": "img"
+        }
+      },
+      {
+        "id": "chart-mode-toggle",
+        "type": "ChartModeToggle",
+        "catalogId": "feat-008",
+        "props": {
+          "activeMode": "'bar' | 'line'",
+          "onModeChange": "(mode: 'bar' | 'line') => void",
+          "activeBackgroundColor": "color.blue.600",
+          "activeTextColor": "color.white",
+          "inactiveBackgroundColor": "color.gray.100",
+          "inactiveTextColor": "color.gray.700",
+          "borderRadius": "radius.button",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "daily-spending-chart",
+        "type": "DailySpendingChart",
+        "catalogId": "feat-008",
+        "props": {
+          "data": "Array<{ date: string, totalAmount: number, transactionCount: number }>",
+          "mode": "'bar' | 'line'",
+          "averageDaily": "number",
+          "currency": "string",
+          "barColorDefault": "color.blue.600",
+          "barColorHighAboveAverage": "color.red.500",
+          "averageLineColor": "color.amber.500",
+          "averageLineDash": "string",
+          "lineChartFillColor": "color.blue.100",
+          "animateOnMount": "boolean",
+          "onDataPointFocus": "(point: { date: string, totalAmount: number, transactionCount: number } | null) => void",
+          "ariaLabel": "string"
+        }
+      },
+      {
+        "id": "chart-tooltip",
+        "type": "ChartTooltip",
+        "catalogId": "feat-008",
+        "props": {
+          "date": "string",
+          "amount": "number",
+          "transactionCount": "number",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "shadow": "shadow.elevated",
+          "borderRadius": "radius.card",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "top-categories-card",
+        "type": "TopCategoriesCard",
+        "catalogId": "feat-009",
+        "children": [
+          "stacked-bar",
+          "category-progress-list"
+        ],
+        "props": {
+          "categorySpending": "Array<{ categoryId: string, category: { id: string, name: string, color: string, icon: string }, totalAmount: number, percentage: number, transactionCount: number }>",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6"
+        }
+      },
+      {
+        "id": "stacked-bar",
+        "type": "StackedBar",
+        "catalogId": "feat-009",
+        "children": [
+          "stacked-bar-tooltip"
+        ],
+        "props": {
+          "segments": "Array<{ categoryId: string, color: string, percentage: number, name: string, totalAmount: number }>",
+          "height": "space.4",
+          "borderRadius": "radius.badge",
+          "onSegmentHover": "(segment: { name: string, amount: number, percentage: number } | null) => void",
+          "ariaLabel": "string",
+          "role": "img"
+        }
+      },
+      {
+        "id": "stacked-bar-tooltip",
+        "type": "ChartTooltip",
+        "catalogId": "feat-009",
+        "props": {
+          "categoryName": "string",
+          "amount": "number",
+          "percentage": "number",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "shadow": "shadow.elevated",
+          "borderRadius": "radius.card",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "category-progress-list",
+        "type": "CategoryProgressList",
+        "catalogId": "feat-009",
+        "props": {
+          "items": "Array<{ categoryId: string, category: { name: string, color: string }, totalAmount: number, percentage: number }>",
+          "currency": "string",
+          "progressTrackColor": "color.gray.200",
+          "labelColor": "color.gray.700",
+          "amountColor": "color.gray.900",
+          "percentageColor": "color.gray.500",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "biggest-expenses-card",
+        "type": "BiggestExpensesCard",
+        "catalogId": "feat-010",
+        "children": [
+          "biggest-expense-row"
+        ],
+        "props": {
+          "expenses": "Array<{ rank: number, id: string, amount: number, description: string, category: { id: string, name: string, color: string, icon: string }, date: string, paymentMethod: string, note?: string }>",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6"
+        }
+      },
+      {
+        "id": "biggest-expense-row",
+        "type": "BiggestExpenseRow",
+        "catalogId": "feat-010",
+        "props": {
+          "rank": "number",
+          "expense": "{ id: string, amount: number, description: string, category: { name: string, color: string, icon: string }, date: string, paymentMethod: string }",
+          "currency": "string",
+          "rankCircleSize": "space.8",
+          "rankHighlightColor": "color.blue.600",
+          "rankDefaultColor": "color.gray.200",
+          "rankHighlightTextColor": "color.white",
+          "rankDefaultTextColor": "color.gray.700",
+          "descriptionColor": "color.gray.900",
+          "categoryColor": "color.gray.500",
+          "dateColor": "color.gray.500",
+          "amountColor": "color.gray.900",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "month-comparison-card",
+        "type": "MonthComparisonCard",
+        "catalogId": "feat-011",
+        "children": [
+          "comparison-bars",
+          "comparison-badge"
+        ],
+        "props": {
+          "current": "{ month: string, totalSpent: number, budgetLimit: number }",
+          "previous": "{ month: string, totalSpent: number, budgetLimit: number } | null",
+          "delta": "number",
+          "deltaDirection": "'less' | 'more' | 'same'",
+          "currency": "string",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.card",
+          "padding": "space.6",
+          "currentBarColor": "color.blue.600",
+          "previousBarColor": "color.gray.300",
+          "animateOnMount": "boolean"
+        }
+      },
+      {
+        "id": "comparison-bars",
+        "type": "ComparisonBars",
+        "catalogId": "feat-011",
+        "props": {
+          "currentAmount": "number",
+          "previousAmount": "number",
+          "currentLabel": "string",
+          "previousLabel": "string",
+          "currentBarColor": "color.blue.600",
+          "previousBarColor": "color.gray.300",
+          "maxBarHeight": "space.32",
+          "animateOnMount": "boolean",
+          "currency": "string",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "comparison-badge",
+        "type": "ComparisonBadge",
+        "catalogId": "feat-011",
+        "props": {
+          "delta": "number",
+          "deltaDirection": "'less' | 'more' | 'same'",
+          "currency": "string",
+          "lessBackgroundColor": "color.emerald.100",
+          "lessTextColor": "color.emerald.700",
+          "moreBackgroundColor": "color.red.100",
+          "moreTextColor": "color.red.700",
+          "sameBackgroundColor": "color.gray.100",
+          "sameTextColor": "color.gray.700",
+          "borderRadius": "radius.badge",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "export-csv-button",
+        "type": "ExportCsvButton",
+        "catalogId": "feat-016",
+        "props": {
+          "selectedMonth": "string | null",
+          "onExport": "() => void",
+          "isExported": "boolean",
+          "defaultLabel": "string",
+          "exportedLabel": "string",
+          "exportedTextColor": "color.emerald.500",
+          "defaultTextColor": "color.gray.700",
+          "borderColor": "color.gray.200",
+          "borderRadius": "radius.button",
+          "revertDuration": "1500",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "insights-empty-state",
+        "type": "EmptyState",
+        "catalogId": "feat-017",
+        "props": {
+          "icon": "string",
+          "title": "string",
+          "description": "string",
+          "iconColor": "color.gray.300",
+          "titleColor": "color.gray.700",
+          "descriptionColor": "color.gray.500"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-004",
+    "componentTree": [
+      {
+        "id": "settings-dialog",
+        "type": "SettingsDialog",
+        "catalogId": "feat-014",
+        "children": [
+          "dialog-header",
+          "currency-selector",
+          "budget-limit-input",
+          "category-manager"
+        ],
+        "props": {
+          "isOpen": "boolean",
+          "onClose": "() => void",
+          "settings": "{ id: string, currency: 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY', defaultMonthlyBudget: number, updatedAt: string }",
+          "categories": "Array<{ id: string, name: string, color: string, icon: string, isDefault: boolean, sortOrder: number }>",
+          "onSettingsChange": "(settings: { currency?: string, defaultMonthlyBudget?: number }) => void",
+          "onCategoryDelete": "(categoryId: string) => void",
+          "onCategoryAdd": "() => void",
+          "maxWidth": "420px",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.elevated",
+          "scrimColor": "rgba(0,0,0,0.5)",
+          "padding": "space.6"
+        }
+      },
+      {
+        "id": "dialog-header",
+        "type": "DialogHeader",
+        "catalogId": "feat-014",
+        "props": {
+          "title": "string",
+          "onClose": "() => void",
+          "titleColor": "color.gray.900",
+          "closeIconColor": "color.gray.500",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "currency-selector",
+        "type": "CurrencySelector",
+        "catalogId": "feat-014",
+        "props": {
+          "options": "Array<'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY'>",
+          "selectedCurrency": "'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY'",
+          "onSelect": "(currency: 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY') => void",
+          "label": "string",
+          "borderRadius": "radius.input",
+          "borderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600",
+          "textColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "budget-limit-input",
+        "type": "BudgetLimitInput",
+        "catalogId": "feat-014",
+        "props": {
+          "value": "number",
+          "onChange": "(value: number) => void",
+          "currency": "string",
+          "label": "string",
+          "currencyPrefix": "string",
+          "borderRadius": "radius.input",
+          "borderColor": "color.gray.200",
+          "focusRingColor": "color.blue.600",
+          "textColor": "color.gray.900",
+          "fontVariant": "tabular-nums",
+          "inputMode": "decimal"
+        }
+      },
+      {
+        "id": "category-manager",
+        "type": "CategoryManager",
+        "catalogId": "feat-014",
+        "children": [
+          "category-manager-row"
+        ],
+        "props": {
+          "categories": "Array<{ id: string, name: string, color: string, icon: string, isDefault: boolean }>",
+          "onDelete": "(categoryId: string) => void",
+          "onAdd": "() => void",
+          "addLabel": "string",
+          "addLinkColor": "color.blue.600",
+          "dotSize": "space.3",
+          "trashIconColor": "color.red.500",
+          "defaultCategoryTrashDisabled": "boolean",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "category-manager-row",
+        "type": "CategoryManagerRow",
+        "catalogId": "feat-014",
+        "props": {
+          "category": "{ id: string, name: string, color: string, isDefault: boolean }",
+          "onDelete": "(categoryId: string) => void",
+          "dotSize": "space.3",
+          "nameColor": "color.gray.900",
+          "trashIconColor": "color.red.500",
+          "isDeleteDisabled": "boolean",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-005",
+    "componentTree": [
+      {
+        "id": "expense-detail-popover-screen",
+        "type": "ExpenseDetailPopover",
+        "catalogId": "feat-004",
+        "children": [
+          "popover-header",
+          "popover-amount-row",
+          "popover-category-row",
+          "popover-date-row",
+          "popover-payment-row",
+          "popover-note-section",
+          "popover-action-buttons"
+        ],
+        "props": {
+          "expense": "{ id: string, amount: number, description: string, category: { id: string, name: string, color: string, icon: string }, date: string, paymentMethod: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other', note?: string }",
+          "currency": "string",
+          "isOpen": "boolean",
+          "onClose": "() => void",
+          "onEdit": "(expenseId: string) => void",
+          "onDelete": "(expenseId: string) => void",
+          "width": "320px",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.elevated",
+          "deleteConfirmTimeout": "3000"
+        }
+      },
+      {
+        "id": "popover-amount-row",
+        "type": "PopoverDetailRow",
+        "catalogId": "feat-004",
+        "props": {
+          "label": "string",
+          "value": "string",
+          "labelColor": "color.gray.500",
+          "valueColor": "color.gray.900",
+          "fontVariant": "tabular-nums"
+        }
+      },
+      {
+        "id": "popover-category-row",
+        "type": "PopoverCategoryRow",
+        "catalogId": "feat-004",
+        "props": {
+          "label": "string",
+          "categoryName": "string",
+          "categoryColor": "string",
+          "dotSize": "space.3",
+          "labelColor": "color.gray.500",
+          "valueColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "popover-date-row",
+        "type": "PopoverDetailRow",
+        "catalogId": "feat-004",
+        "props": {
+          "label": "string",
+          "value": "string",
+          "labelColor": "color.gray.500",
+          "valueColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "popover-payment-row",
+        "type": "PopoverDetailRow",
+        "catalogId": "feat-004",
+        "props": {
+          "label": "string",
+          "value": "string",
+          "labelColor": "color.gray.500",
+          "valueColor": "color.gray.900"
+        }
+      },
+      {
+        "id": "popover-note-section",
+        "type": "PopoverNote",
+        "catalogId": "feat-004",
+        "props": {
+          "note": "string | undefined",
+          "textColor": "color.gray.500",
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "id": "popover-action-buttons",
+        "type": "PopoverActions",
+        "catalogId": "feat-004",
+        "props": {
+          "onEdit": "() => void",
+          "onDelete": "() => void",
+          "isConfirmingDelete": "boolean",
+          "onConfirmDelete": "() => void",
+          "deleteConfirmLabel": "string",
+          "deleteConfirmTimeout": "number",
+          "editTextColor": "color.blue.600",
+          "deleteTextColor": "color.red.500",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-006",
+    "componentTree": [
+      {
+        "id": "date-picker-calendar-dropdown",
+        "type": "DatePickerCalendar",
+        "catalogId": "feat-005",
+        "children": [
+          "calendar-header",
+          "calendar-day-grid"
+        ],
+        "props": {
+          "selectedDate": "string",
+          "onDateSelect": "(date: string) => void",
+          "onClose": "() => void",
+          "maxDate": "string",
+          "width": "280px",
+          "backgroundColor": "color.white",
+          "borderRadius": "radius.card",
+          "shadow": "shadow.elevated",
+          "padding": "space.4"
+        }
+      },
+      {
+        "id": "calendar-header",
+        "type": "CalendarHeader",
+        "catalogId": "screen-006",
+        "props": {
+          "displayMonthYear": "string",
+          "onPrevMonth": "() => void",
+          "onNextMonth": "() => void",
+          "textColor": "color.gray.900",
+          "chevronColor": "color.gray.500",
+          "focusRingColor": "color.blue.600"
+        }
+      },
+      {
+        "id": "calendar-day-grid",
+        "type": "CalendarDayGrid",
+        "catalogId": "screen-006",
+        "props": {
+          "days": "Array<{ date: string, dayNumber: number, isToday: boolean, isSelected: boolean, isDisabled: boolean, isCurrentMonth: boolean }>",
+          "onDaySelect": "(date: string) => void",
+          "columns": "7",
+          "weekdayLabels": "Array<string>",
+          "todayHighlightColor": "color.blue.100",
+          "todayTextColor": "color.blue.600",
+          "selectedDayColor": "color.blue.600",
+          "selectedDayTextColor": "color.white",
+          "disabledDayColor": "color.gray.300",
+          "defaultDayTextColor": "color.gray.700",
+          "focusRingColor": "color.blue.600",
+          "minDaySize": "space.9"
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-007",
+    "componentTree": [
+      {
+        "id": "category-filter-dropdown-screen",
+        "type": "CategoryFilterDropdown",
+        "catalogId": "feat-003",
+        "children": [
+          "filter-dropdown-trigger",
+          "filter-dropdown-list"
+        ],
+        "props": {
+          "categories": "Array<{ id: string, name: string, color: string, icon: string }>",
+          "selectedCategoryId": "string | null",
+          "onSelect": "(categoryId: string | null) => void",
+          "allLabel": "string",
+          "triggerBorderRadius": "radius.badge",
+          "triggerBackgroundColor": "color.white",
+          "triggerBorderColor": "color.gray.200",
+          "triggerTextColor": "color.gray.700",
+          "chevronColor": "color.gray.500",
+          "listBackgroundColor": "color.white",
+          "listShadow": "shadow.elevated",
+          "listBorderRadius": "radius.card",
+          "listItemHoverColor": "color.gray.50",
+          "selectedItemColor": "color.blue.600",
+          "transitionDuration": "200ms",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "filter-dropdown-trigger",
+        "type": "FilterDropdownTrigger",
+        "catalogId": "feat-007",
+        "props": {
+          "label": "string",
+          "isOpen": "boolean",
+          "onClick": "() => void",
+          "borderRadius": "radius.badge",
+          "backgroundColor": "color.white",
+          "borderColor": "color.gray.200",
+          "textColor": "color.gray.700",
+          "chevronColor": "color.gray.500",
+          "focusRingColor": "color.blue.600",
+          "minHeight": "space.9"
+        }
+      },
+      {
+        "id": "filter-dropdown-list",
+        "type": "FilterDropdownList",
+        "catalogId": "feat-007",
+        "props": {
+          "items": "Array<{ id: string | null, label: string, color?: string }>",
+          "selectedId": "string | null",
+          "onSelect": "(id: string | null) => void",
+          "backgroundColor": "color.white",
+          "shadow": "shadow.elevated",
+          "borderRadius": "radius.card",
+          "itemHoverColor": "color.gray.50",
+          "selectedItemTextColor": "color.blue.600",
+          "defaultItemTextColor": "color.gray.700",
+          "transitionDuration": "200ms",
+          "focusRingColor": "color.blue.600"
+        }
+      }
+    ]
+  }
+]

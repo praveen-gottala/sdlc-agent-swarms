@@ -1,0 +1,62 @@
+[
+  {
+    "name": "ScreenPlanSchema[0]",
+    "ok": true
+  },
+  {
+    "name": "ScreenPlanSchema[1]",
+    "ok": true
+  },
+  {
+    "name": "ScreenPlanSchema[2]",
+    "ok": true
+  },
+  {
+    "name": "ScreenPlanSchema[3]",
+    "ok": true
+  },
+  {
+    "name": "ScreenPlanSchema[4]",
+    "ok": true
+  },
+  {
+    "name": "ScreenPlanSchema[5]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[0]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[1]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[2]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[3]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[4]",
+    "ok": true
+  },
+  {
+    "name": "ComponentCompositionSchema[5]",
+    "ok": true
+  },
+  {
+    "name": "DataModelSpecSchema",
+    "ok": true
+  },
+  {
+    "name": "TaskPlanSchema",
+    "ok": true
+  },
+  {
+    "name": "ArchitectureSpecSchema",
+    "ok": true
+  }
+]

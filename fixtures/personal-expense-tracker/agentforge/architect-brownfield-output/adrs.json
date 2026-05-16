@@ -1,0 +1,62 @@
+[
+  {
+    "id": "adr-001",
+    "title": "Use IndexedDB with Dexie.js for Client-Side Persistence",
+    "status": "accepted",
+    "decision": "Adopt Dexie.js as the persistence layer for all CashPulse entities (Expense, Category, RecurringTemplate). Define three object stores with compound indexes (e.g., [recurringTemplateId+date] on expenses). Recurring occurrence generation remains a pure in-memory computation on top of fetched templates.",
+    "rationale": "CashPulse is a desktop-scoped, single-user browser app with no server runtime or sync requirement. Dexie.js (~22 KB gzipped) provides indexed relational lookups that structurally enforce the data-integrity constraint (past expenses survive template deletion via indexed recurringTemplateId queries), handles schema migrations cleanly via db.version(n).stores(...), and keeps all data local. localStorage (alt-1) lacks indexing and migration support. WASM SQLite (alt-2) adds disproportionate bundle size and Web Worker wiring. Supabase (alt-4) introduces auth, network dependency, and high blast radius — all out of scope. If the existing codebase uses localStorage, a phased migration is straightforward: seed Dexie from localStorage on first launch.",
+    "alternatives": [
+      "alt-1: In-Memory Store with localStorage Persistence — lowest blast radius but no indexing, no migration support, 5 MB cap",
+      "alt-2: SQLite via OPFS with sql.js/wa-sqlite — true relational integrity but 400–1500 KB WASM bundle and Web Worker complexity",
+      "alt-4: Supabase PostgreSQL — cloud-native but requires auth, network resilience, and environment config, all out of scope"
+    ]
+  },
+  {
+    "id": "adr-002",
+    "title": "Use CSS Modules + Radix UI Primitives for Styling and Accessible Interactions",
+    "status": "accepted",
+    "decision": "Extend the existing CSS Modules approach for all visual styling of new recurring-transaction components. Pair with Radix UI Primitives (@radix-ui/react-switch, @radix-ui/react-dialog, @radix-ui/react-collapsible) for accessibility-critical interactive elements: the recurrence toggle, the Manage Recurring drawer, and the recurrence config disclosure panel. Animation tokens are defined as CSS custom properties in a shared tokens.css file. Radix data-state attributes are targeted in CSS for enter/exit animations, with @media (prefers-reduced-motion: reduce) override blocks.",
+    "rationale": "This is the only alternative that directly satisfies all three demanding soft constraints (Accessibility, Animation & Motion, Dashboard Performance) without introducing a dual-styling paradigm or runtime CSS overhead. Radix Switch provides keyboard accessibility (Space/Enter, role=switch, aria-checked); Radix Dialog provides focus trap and return-focus. All visual design is owned by CSS Modules, maintaining consistency with the assumed brownfield baseline. Tailwind (alt-tailwind) would create a dual-styling paradigm if the codebase doesn't already use it. styled-components (alt-styled-components) adds runtime CSS injection overhead. Pure CSS Modules (alt-css-modules) alone doesn't solve accessibility for toggle, drawer, and collapsible.",
+    "alternatives": [
+      "alt-css-modules: CSS Modules only — no accessibility primitives for toggle/drawer/collapsible",
+      "alt-tailwind: Tailwind CSS — viable only if already in use; still needs headless UI for accessibility",
+      "alt-styled-components: styled-components — runtime CSS injection overhead, potential FOUC"
+    ]
+  },
+  {
+    "id": "adr-003",
+    "title": "Use shadcn/ui as the Component Library (Copy-Into-Repo Model)",
+    "status": "accepted",
+    "decision": "Adopt shadcn/ui for the new recurring-transaction UI components. Copy only the needed primitives (Switch, Sheet, Collapsible, Card, Badge, Separator, Label, Button variants) into src/components/ui/. shadcn/ui is built on Radix UI primitives (aligning with ADR-002's accessibility decision) and uses Tailwind CSS for styling.",
+    "rationale": "shadcn/ui provides pre-styled, accessible components built on Radix primitives with zero runtime bundle overhead from a library namespace. The copy-into-repo model gives full ownership of markup and styles, allowing alignment with CashPulse's existing design tokens. Unlike Mantine or MUI, it does not force a visual redesign of existing screens. Unlike bare Headless UI, it ships pre-styled components that reduce custom CSS authoring for the drawer, toggle, and dashboard card. The blast radius is medium and scoped to ~8-12 new files in src/components/ui/. Note: adopting shadcn/ui implies Tailwind CSS is used for the copied components; this refines ADR-002 to use Tailwind for new shadcn-based components while existing components may retain CSS Modules.",
+    "alternatives": [
+      "alt-mantine: Mantine v7 — high blast radius, ~120 KB bundle, encourages full migration",
+      "alt-headlessui-tailwind: Headless UI + Tailwind — minimal but requires building Card/Badge/form components from scratch",
+      "alt-mui: MUI v5 — ~300 KB bundle, Emotion conflicts, Material Design aesthetic clash"
+    ]
+  },
+  {
+    "id": "adr-004",
+    "title": "Use Repository Pattern for Data Access",
+    "status": "accepted",
+    "decision": "Introduce a repository class per entity (ExpenseRepository, CategoryRepository, RecurringTemplateRepository). Each repository encapsulates all Dexie.js query logic and returns plain domain objects. RecurringTemplateRepository exposes methods like findActiveTemplates(), findUpcomingOccurrences(dateRange), and deleteTemplatePreservingHistory(templateId). Repositories are imported by React hooks/services, keeping data access decoupled from UI components.",
+    "rationale": "The repository pattern provides the right balance for this brownfield enhancement. It structurally enforces the data-integrity constraint (deleteTemplatePreservingHistory is a named, discoverable method that nullifies the FK on past Expense records without deleting them). Occurrence computation logic is cacheable at the service layer. The clean boundary accommodates future scope expansions (forecasting, bulk ops) without restructuring. Blast radius is medium but bounded: ~6 new files and ~6 updated call sites. Query Builder functions (alt-002) have lower blast radius but no structural guardrails for data integrity. Active Record (alt-003) couples persistence to domain objects. CQRS-lite (alt-004) is overkill for 3 entities.",
+    "alternatives": [
+      "alt-002: Query Builder / Inline Functions — lowest blast radius but no structural data-integrity enforcement",
+      "alt-003: Active Record — couples persistence to domain objects, harder to test",
+      "alt-004: CQRS-Lite — overkill for current scope, higher onboarding cost"
+    ]
+  },
+  {
+    "id": "adr-005",
+    "title": "Use TanStack Query for Client-Side Data Caching",
+    "status": "accepted",
+    "decision": "Introduce TanStack Query (React Query) scoped to the new recurring-transaction data flows. The dashboard's upcoming recurring occurrences are fetched via a useQuery hook with staleTime of 60 seconds. Mutations (create/update/delete RecurringTemplate) use useMutation with onSuccess callbacks that call queryClient.invalidateQueries(['recurring-upcoming']), ensuring the dashboard card refetches fresh data immediately after any change. Scope adoption to new recurring endpoints initially; existing data fetching patterns are not migrated in this iteration.",
+    "rationale": "TanStack Query delivers the best balance of developer experience, cache invalidation correctness, and blast radius for a brownfield frontend app. The staleTime/invalidateQueries pattern directly satisfies the dashboard performance soft constraint (NFR-001: <500ms load) with no new server infrastructure. The single dependency (~13 KB gzipped) is well-maintained and pays dividends beyond this feature. Scoping to new recurring endpoints keeps blast radius low (~3-5 new hooks). In-memory memoization (alt-1) requires manual invalidation. HTTP Cache-Control (alt-2) has imprecise invalidation. Redis (alt-4) is overkill for a client-side app with no server.",
+    "alternatives": [
+      "alt-1: In-Memory Memoization — zero dependencies but manual invalidation, per-process only",
+      "alt-2: HTTP Cache-Control — no new packages but imprecise invalidation across tabs",
+      "alt-4: Redis — overkill, requires new infrastructure for a client-side app"
+    ]
+  }
+]

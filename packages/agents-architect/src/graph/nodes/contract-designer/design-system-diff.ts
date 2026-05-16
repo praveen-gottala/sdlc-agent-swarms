@@ -126,7 +126,7 @@ export function createDesignSystemDiffSpecialist(deps: ArchitectDeps): Architect
       { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
       {
         model: 'claude-sonnet-4-6',
-        maxTokens: 2048,
+        maxTokens: 65536,
         temperature: 0,
         responseSchema: DESIGN_SYSTEM_DIFF_RESPONSE_SCHEMA,
         promptVersion,

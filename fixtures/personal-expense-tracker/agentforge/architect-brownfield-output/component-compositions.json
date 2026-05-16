@@ -1,0 +1,1200 @@
+[
+  {
+    "screenId": "screen-001",
+    "componentTree": [
+      {
+        "id": "upcoming-recurring-card",
+        "type": "UpcomingRecurringCard",
+        "children": [
+          "upcoming-recurring-card-header",
+          "upcoming-recurring-row-list",
+          "upcoming-recurring-empty-state",
+          "upcoming-recurring-view-all-link"
+        ],
+        "props": {
+          "items": {
+            "type": "Array<{ templateId: string; merchantName: string; amount: number; nextOccurrenceDate: string; frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY'; categoryId: string; status: 'ACTIVE' | 'PAUSED' | 'CANCELLED'; categoryColor: string; }>",
+            "description": "Up to 5 upcoming recurring occurrences from GET /api/recurring-templates/upcoming, sorted by nextOccurrenceDate ascending"
+          },
+          "isLoading": "boolean",
+          "onViewAllClick": "() => void",
+          "tokens": {
+            "background": "color.neutral.white",
+            "borderRadius": "space.4",
+            "padding": "space.6",
+            "shadow": "shadow.card",
+            "rowGap": "space.2"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-card-header",
+        "type": "SectionLabel",
+        "props": {
+          "text": "Upcoming Recurring",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.section-label",
+            "fontWeight": "font.weight.semibold"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-row-list",
+        "type": "UpcomingRecurringRowList",
+        "children": [
+          "upcoming-recurring-row"
+        ],
+        "props": {
+          "items": {
+            "type": "Array<{ templateId: string; merchantName: string; amount: number; nextOccurrenceDate: string; frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY'; categoryColor: string; }>",
+            "description": "Rendered when items.length > 0"
+          },
+          "tokens": {
+            "rowGap": "space.2"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-row",
+        "type": "UpcomingRecurringRow",
+        "children": [
+          "category-color-dot",
+          "recurring-frequency-badge",
+          "upcoming-recurring-row-date",
+          "upcoming-recurring-row-amount"
+        ],
+        "props": {
+          "templateId": "string",
+          "merchantName": "string",
+          "amount": "number",
+          "nextOccurrenceDate": "string",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "categoryColor": "string",
+          "tokens": {
+            "dotSize": "space.2-5",
+            "merchantColor": "color.neutral.gray-900",
+            "merchantFontSize": "font.size.body",
+            "dateColor": "color.neutral.gray-500",
+            "dateFontSize": "font.size.caption",
+            "amountColor": "color.neutral.gray-900",
+            "amountFontSize": "font.size.small-amount"
+          }
+        }
+      },
+      {
+        "id": "category-color-dot",
+        "type": "CategoryColorDot",
+        "props": {
+          "color": "string",
+          "tokens": {
+            "size": "space.2-5",
+            "borderRadius": "border.radius.full"
+          }
+        }
+      },
+      {
+        "id": "recurring-frequency-badge",
+        "type": "RecurringFrequencyBadge",
+        "props": {
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "tokens": {
+            "background": "color.blue.100",
+            "textColor": "color.blue.600",
+            "fontSize": "font.size.caption",
+            "borderRadius": "border.radius.pill",
+            "paddingX": "space.2",
+            "paddingY": "space.0-5"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-row-date",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-row-amount",
+        "type": "AmountText",
+        "props": {
+          "value": "number",
+          "align": "'right'",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.small-amount"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-empty-state",
+        "type": "UpcomingRecurringEmptyState",
+        "children": [
+          "circular-arrow-icon",
+          "empty-state-label"
+        ],
+        "props": {
+          "tokens": {
+            "iconSize": "space.8",
+            "iconColor": "color.neutral.gray-300",
+            "textColor": "color.neutral.gray-400",
+            "fontSize": "font.size.body"
+          }
+        }
+      },
+      {
+        "id": "circular-arrow-icon",
+        "type": "Icon",
+        "props": {
+          "name": "circular-arrow",
+          "tokens": {
+            "size": "space.8",
+            "color": "color.neutral.gray-300"
+          }
+        }
+      },
+      {
+        "id": "empty-state-label",
+        "type": "Text",
+        "props": {
+          "content": "No recurring expenses",
+          "tokens": {
+            "color": "color.neutral.gray-400",
+            "fontSize": "font.size.body"
+          }
+        }
+      },
+      {
+        "id": "upcoming-recurring-view-all-link",
+        "type": "TextLink",
+        "props": {
+          "label": "View All",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.blue.600",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "expense-row-recurring-badge",
+        "type": "ExpenseRowRecurringBadge",
+        "catalogId": "screen-006",
+        "children": [
+          "recurring-inline-icon"
+        ],
+        "props": {
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "tokens": {
+            "iconSize": "14px",
+            "iconColor": "color.neutral.gray-400",
+            "fontSize": "font.size.caption",
+            "color": "color.neutral.gray-500"
+          }
+        }
+      },
+      {
+        "id": "recurring-inline-icon",
+        "type": "Icon",
+        "props": {
+          "name": "circular-arrow",
+          "tokens": {
+            "size": "14px",
+            "color": "color.neutral.gray-400"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-002",
+    "componentTree": [
+      {
+        "id": "recurrence-config-section",
+        "type": "RecurrenceConfigSection",
+        "children": [
+          "recurrence-toggle-row",
+          "recurrence-config-panel"
+        ],
+        "props": {
+          "isRecurring": "boolean",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "endDateMode": "'NEVER' | 'ON_DATE'",
+          "endDate": "string | undefined",
+          "onIsRecurringChange": "(value: boolean) => void",
+          "onFrequencyChange": "(value: 'WEEKLY' | 'MONTHLY' | 'YEARLY') => void",
+          "onEndDateModeChange": "(value: 'NEVER' | 'ON_DATE') => void",
+          "onEndDateChange": "(value: string | undefined) => void",
+          "isEditingSeries": "boolean",
+          "tokens": {
+            "sectionGap": "space.4",
+            "panelTransitionDuration": "animation.duration.150ms",
+            "panelEasing": "animation.easing.ease-in-out"
+          }
+        }
+      },
+      {
+        "id": "recurrence-toggle-row",
+        "type": "RecurrenceToggleRow",
+        "catalogId": "radix-switch",
+        "props": {
+          "label": "Recurring",
+          "checked": "boolean",
+          "onCheckedChange": "(value: boolean) => void",
+          "tokens": {
+            "labelColor": "color.neutral.gray-900",
+            "labelFontSize": "font.size.section-label",
+            "toggleTrackColorOff": "color.neutral.gray-200",
+            "toggleTrackColorOn": "color.blue.600",
+            "toggleThumbColor": "color.neutral.white",
+            "toggleWidth": "44px",
+            "toggleHeight": "24px",
+            "toggleThumbSize": "20px",
+            "toggleTransitionDuration": "animation.duration.150ms"
+          }
+        }
+      },
+      {
+        "id": "recurrence-config-panel",
+        "type": "RecurrenceConfigPanel",
+        "catalogId": "radix-collapsible",
+        "children": [
+          "frequency-chip-selector",
+          "end-date-row"
+        ],
+        "props": {
+          "isVisible": "boolean",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "endDateMode": "'NEVER' | 'ON_DATE'",
+          "endDate": "string | undefined",
+          "onFrequencyChange": "(value: 'WEEKLY' | 'MONTHLY' | 'YEARLY') => void",
+          "onEndDateModeChange": "(value: 'NEVER' | 'ON_DATE') => void",
+          "onEndDateChange": "(value: string | undefined) => void",
+          "tokens": {
+            "panelGap": "space.4",
+            "slideDownDuration": "animation.duration.150ms",
+            "slideDownEasing": "animation.easing.ease-in-out"
+          }
+        }
+      },
+      {
+        "id": "frequency-chip-selector",
+        "type": "FrequencyChipSelector",
+        "children": [
+          "frequency-chip"
+        ],
+        "props": {
+          "value": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "options": [
+            {
+              "value": "WEEKLY",
+              "label": "Weekly"
+            },
+            {
+              "value": "MONTHLY",
+              "label": "Monthly"
+            },
+            {
+              "value": "YEARLY",
+              "label": "Yearly"
+            }
+          ],
+          "onChange": "(value: 'WEEKLY' | 'MONTHLY' | 'YEARLY') => void",
+          "tokens": {
+            "chipUnselectedBackground": "color.neutral.white",
+            "chipUnselectedBorder": "color.neutral.gray-200",
+            "chipUnselectedText": "color.neutral.gray-700",
+            "chipSelectedBackground": "color.blue.100",
+            "chipSelectedBorder": "color.blue.600",
+            "chipSelectedText": "color.blue.600",
+            "chipGap": "space.2",
+            "chipBorderRadius": "border.radius.chip"
+          }
+        }
+      },
+      {
+        "id": "frequency-chip",
+        "type": "FrequencyChip",
+        "props": {
+          "label": "string",
+          "value": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "isSelected": "boolean",
+          "onClick": "(value: 'WEEKLY' | 'MONTHLY' | 'YEARLY') => void",
+          "tokens": {
+            "unselectedBackground": "color.neutral.white",
+            "unselectedBorder": "color.neutral.gray-200",
+            "unselectedText": "color.neutral.gray-700",
+            "selectedBackground": "color.blue.100",
+            "selectedBorder": "color.blue.600",
+            "selectedText": "color.blue.600",
+            "borderRadius": "border.radius.chip",
+            "paddingX": "space.3",
+            "paddingY": "space.1-5",
+            "focusRing": "2px solid color.blue.600",
+            "focusRingOffset": "2px",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "end-date-row",
+        "type": "EndDateRow",
+        "children": [
+          "end-date-never-radio",
+          "end-date-on-date-radio",
+          "end-date-picker-input"
+        ],
+        "props": {
+          "endDateMode": "'NEVER' | 'ON_DATE'",
+          "endDate": "string | undefined",
+          "onEndDateModeChange": "(value: 'NEVER' | 'ON_DATE') => void",
+          "onEndDateChange": "(value: string | undefined) => void",
+          "tokens": {
+            "labelColor": "color.neutral.gray-500",
+            "labelFontSize": "font.size.body",
+            "rowGap": "space.3"
+          }
+        }
+      },
+      {
+        "id": "end-date-never-radio",
+        "type": "RadioOption",
+        "props": {
+          "label": "Never",
+          "value": "NEVER",
+          "isSelected": "boolean",
+          "onSelect": "() => void",
+          "tokens": {
+            "labelColor": "color.neutral.gray-700",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "end-date-on-date-radio",
+        "type": "RadioOption",
+        "props": {
+          "label": "On date",
+          "value": "ON_DATE",
+          "isSelected": "boolean",
+          "onSelect": "() => void",
+          "tokens": {
+            "labelColor": "color.neutral.gray-700",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "end-date-picker-input",
+        "type": "DatePickerInput",
+        "props": {
+          "value": "string | undefined",
+          "onChange": "(value: string) => void",
+          "isVisible": "boolean",
+          "minDate": "string",
+          "placeholder": "Select end date",
+          "tokens": {
+            "borderColor": "color.neutral.gray-200",
+            "borderRadius": "border.radius.input",
+            "focusBorderColor": "color.blue.600",
+            "fontSize": "font.size.body",
+            "padding": "space.3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-003",
+    "componentTree": [
+      {
+        "id": "expense-detail-popover-recurring",
+        "type": "ExpenseDetailPopoverRecurring",
+        "catalogId": "radix-dialog",
+        "children": [
+          "popover-header-recurring",
+          "popover-detail-rows",
+          "recurrence-detail-row",
+          "popover-action-buttons-recurring",
+          "delete-choice-inline"
+        ],
+        "props": {
+          "expense": {
+            "type": "{ id: string; amount: number; categoryId: string; merchantName: string; date: string; paymentMethod: string; note?: string; recurringTemplateId?: string; isRecurringInstance: boolean; createdAt: string; updatedAt: string; }",
+            "description": "Full Expense object from GET /api/expenses/{id}"
+          },
+          "recurringTemplate": {
+            "type": "{ id: string; frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY'; nextOccurrenceDate: string; endDate?: string; status: 'ACTIVE' | 'PAUSED' | 'CANCELLED'; } | undefined",
+            "description": "Loaded from GET /api/recurring-templates/{id} when expense.recurringTemplateId is non-null"
+          },
+          "deleteMode": "'IDLE' | 'CHOOSING' | 'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES'",
+          "onEditThis": "(expenseId: string) => void",
+          "onEditSeries": "(templateId: string) => void",
+          "onDeleteThis": "(expenseId: string) => void",
+          "onDeleteSeries": "(templateId: string) => void",
+          "onDeleteModeChange": "(mode: 'IDLE' | 'CHOOSING' | 'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES') => void",
+          "onClose": "() => void"
+        }
+      },
+      {
+        "id": "popover-header-recurring",
+        "type": "PopoverHeaderRecurring",
+        "children": [
+          "popover-merchant-name",
+          "popover-recurring-header-badge"
+        ],
+        "props": {
+          "merchantName": "string",
+          "isRecurring": "boolean",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY' | undefined",
+          "tokens": {
+            "merchantFontSize": "font.size.card-title",
+            "merchantColor": "color.neutral.gray-900"
+          }
+        }
+      },
+      {
+        "id": "popover-merchant-name",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "fontSize": "font.size.card-title",
+            "color": "color.neutral.gray-900",
+            "fontWeight": "font.weight.semibold"
+          }
+        }
+      },
+      {
+        "id": "popover-recurring-header-badge",
+        "type": "RecurringHeaderBadge",
+        "children": [
+          "popover-badge-icon",
+          "popover-badge-label"
+        ],
+        "props": {
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "isVisible": "boolean",
+          "tokens": {
+            "background": "color.blue.100",
+            "textColor": "color.blue.600",
+            "fontSize": "font.size.caption",
+            "iconSize": "12px",
+            "borderRadius": "border.radius.pill",
+            "paddingX": "space.2",
+            "paddingY": "space.0-5"
+          }
+        }
+      },
+      {
+        "id": "popover-badge-icon",
+        "type": "Icon",
+        "props": {
+          "name": "circular-arrow",
+          "tokens": {
+            "size": "12px",
+            "color": "color.blue.600"
+          }
+        }
+      },
+      {
+        "id": "popover-badge-label",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "fontSize": "font.size.caption",
+            "color": "color.blue.600"
+          }
+        }
+      },
+      {
+        "id": "popover-detail-rows",
+        "type": "PopoverDetailRows",
+        "props": {
+          "rows": {
+            "type": "Array<{ label: string; value: string; }>",
+            "description": "Existing four detail rows: date, category, payment method, note"
+          },
+          "tokens": {
+            "labelColor": "color.neutral.gray-500",
+            "labelFontSize": "font.size.caption",
+            "valueColor": "color.neutral.gray-900",
+            "valueFontSize": "font.size.body",
+            "rowGap": "space.3"
+          }
+        }
+      },
+      {
+        "id": "recurrence-detail-row",
+        "type": "RecurrenceDetailRow",
+        "props": {
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "nextOccurrenceDate": "string",
+          "isVisible": "boolean",
+          "tokens": {
+            "labelColor": "color.neutral.gray-500",
+            "labelFontSize": "font.size.caption",
+            "valueColor": "color.neutral.gray-900",
+            "valueFontSize": "font.size.body"
+          }
+        }
+      },
+      {
+        "id": "popover-action-buttons-recurring",
+        "type": "PopoverActionButtonsRecurring",
+        "children": [
+          "edit-this-button",
+          "edit-series-button",
+          "delete-trigger-button"
+        ],
+        "props": {
+          "isRecurring": "boolean",
+          "isDeleteChoosing": "boolean",
+          "onEditThis": "() => void",
+          "onEditSeries": "() => void",
+          "onDeleteClick": "() => void",
+          "tokens": {
+            "editThisColor": "color.neutral.gray-700",
+            "editSeriesColor": "color.blue.600",
+            "deleteColor": "color.red.500",
+            "fontSize": "font.size.body",
+            "buttonGap": "space.3",
+            "minClickTarget": "36px",
+            "focusRing": "2px solid color.blue.600",
+            "focusRingOffset": "2px"
+          }
+        }
+      },
+      {
+        "id": "edit-this-button",
+        "type": "Button",
+        "props": {
+          "label": "Edit This",
+          "variant": "secondary",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.neutral.gray-700",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "edit-series-button",
+        "type": "TextButton",
+        "props": {
+          "label": "Edit Series",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.blue.600",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-trigger-button",
+        "type": "Button",
+        "props": {
+          "label": "Delete",
+          "variant": "destructive",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.red.500",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-choice-inline",
+        "type": "DeleteChoiceInline",
+        "children": [
+          "delete-this-only-button",
+          "delete-entire-series-button",
+          "delete-cancel-link"
+        ],
+        "props": {
+          "isVisible": "boolean",
+          "confirmMode": "'IDLE' | 'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES'",
+          "onDeleteThis": "() => void",
+          "onDeleteSeries": "() => void",
+          "onCancel": "() => void",
+          "tokens": {
+            "deleteColor": "color.red.500",
+            "deleteSeriesWeight": "font.weight.semibold",
+            "cancelColor": "color.neutral.gray-500",
+            "fontSize": "font.size.body",
+            "stackGap": "space.2",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-this-only-button",
+        "type": "TextButton",
+        "props": {
+          "label": "Delete this expense only",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.red.500",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-entire-series-button",
+        "type": "TextButton",
+        "props": {
+          "label": "Delete entire series",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.red.500",
+            "fontWeight": "font.weight.semibold",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-cancel-link",
+        "type": "TextLink",
+        "props": {
+          "label": "Cancel",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.body"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-004",
+    "componentTree": [
+      {
+        "id": "manage-recurring-drawer",
+        "type": "ManageRecurringDrawer",
+        "catalogId": "radix-dialog",
+        "children": [
+          "drawer-header",
+          "drawer-summary-row",
+          "recurring-template-list",
+          "manage-recurring-empty-state"
+        ],
+        "props": {
+          "isOpen": "boolean",
+          "onClose": "() => void",
+          "templates": {
+            "type": "Array<{ id: string; amount: number; categoryId: string; merchantName: string; frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY'; startDate: string; endDate?: string; nextOccurrenceDate: string; paymentMethod: string; note?: string; status: 'ACTIVE' | 'PAUSED' | 'CANCELLED'; createdAt: string; updatedAt: string; categoryColor: string; }>",
+            "description": "Full list from GET /api/recurring-templates"
+          },
+          "isLoading": "boolean",
+          "activeCount": "number",
+          "estimatedMonthlyTotal": "number",
+          "tokens": {
+            "drawerWidth": "400px",
+            "background": "color.neutral.white",
+            "shadow": "shadow.elevated",
+            "slideInDuration": "animation.duration.350ms",
+            "slideInEasing": "animation.easing.ease-in-out",
+            "scrimBackground": "color.overlay.scrim",
+            "headerPaddingX": "space.6",
+            "headerPaddingY": "space.4"
+          }
+        }
+      },
+      {
+        "id": "drawer-header",
+        "type": "DrawerHeader",
+        "props": {
+          "title": "Recurring Expenses",
+          "onClose": "() => void",
+          "tokens": {
+            "titleColor": "color.neutral.gray-900",
+            "titleFontSize": "font.size.page-title",
+            "closeIconSize": "24px",
+            "closeIconColor": "color.neutral.gray-500",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "drawer-summary-row",
+        "type": "DrawerSummaryRow",
+        "props": {
+          "activeCount": "number",
+          "estimatedMonthlyTotal": "number",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.body"
+          }
+        }
+      },
+      {
+        "id": "recurring-template-list",
+        "type": "RecurringTemplateList",
+        "children": [
+          "recurring-template-row"
+        ],
+        "props": {
+          "items": {
+            "type": "Array<{ id: string; amount: number; categoryId: string; merchantName: string; frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY'; nextOccurrenceDate: string; status: 'ACTIVE' | 'PAUSED' | 'CANCELLED'; categoryColor: string; }>",
+            "description": "Rendered when templates.length > 0"
+          },
+          "tokens": {
+            "listGap": "space.2",
+            "overflowY": "scroll"
+          }
+        }
+      },
+      {
+        "id": "recurring-template-row",
+        "type": "RecurringTemplateRow",
+        "children": [
+          "template-row-merchant-name",
+          "template-row-amount",
+          "recurring-frequency-badge",
+          "template-row-next-date",
+          "template-row-status-toggle",
+          "template-row-paused-badge",
+          "template-row-kebab-menu"
+        ],
+        "props": {
+          "id": "string",
+          "merchantName": "string",
+          "amount": "number",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY'",
+          "nextOccurrenceDate": "string",
+          "status": "'ACTIVE' | 'PAUSED' | 'CANCELLED'",
+          "categoryColor": "string",
+          "onPause": "(id: string) => void",
+          "onResume": "(id: string) => void",
+          "onEdit": "(id: string) => void",
+          "onDelete": "(id: string) => void",
+          "tokens": {
+            "borderRadius": "border.radius.card",
+            "padding": "space.4",
+            "leftBorderWidth": "3px",
+            "leftBorderColor": "categoryColor",
+            "pausedOpacity": "0.5",
+            "pausedBadgeBackground": "color.amber.50",
+            "pausedBadgeColor": "color.amber.500",
+            "merchantColor": "color.neutral.gray-900",
+            "merchantFontSize": "font.size.card-title",
+            "amountColor": "color.neutral.gray-900",
+            "amountFontSize": "font.size.small-amount",
+            "dateColor": "color.neutral.gray-500",
+            "dateFontSize": "font.size.caption",
+            "kebabIconColor": "color.neutral.gray-400",
+            "focusRing": "2px solid color.blue.600",
+            "focusRingOffset": "2px",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "template-row-merchant-name",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.card-title",
+            "fontWeight": "font.weight.semibold"
+          }
+        }
+      },
+      {
+        "id": "template-row-amount",
+        "type": "AmountText",
+        "props": {
+          "value": "number",
+          "align": "'right'",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.small-amount"
+          }
+        }
+      },
+      {
+        "id": "template-row-next-date",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "template-row-status-toggle",
+        "type": "StatusToggle",
+        "catalogId": "radix-switch",
+        "props": {
+          "templateId": "string",
+          "status": "'ACTIVE' | 'PAUSED'",
+          "onPause": "(id: string) => void",
+          "onResume": "(id: string) => void",
+          "tokens": {
+            "trackColorActive": "color.blue.600",
+            "trackColorPaused": "color.neutral.gray-200",
+            "thumbColor": "color.neutral.white",
+            "toggleWidth": "44px",
+            "toggleHeight": "24px",
+            "thumbSize": "20px",
+            "transitionDuration": "animation.duration.150ms",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "template-row-paused-badge",
+        "type": "StatusBadge",
+        "props": {
+          "label": "Paused",
+          "isVisible": "boolean",
+          "tokens": {
+            "background": "color.amber.50",
+            "textColor": "color.amber.500",
+            "fontSize": "font.size.caption",
+            "borderRadius": "border.radius.pill",
+            "paddingX": "space.2",
+            "paddingY": "space.0-5"
+          }
+        }
+      },
+      {
+        "id": "template-row-kebab-menu",
+        "type": "KebabMenu",
+        "props": {
+          "templateId": "string",
+          "status": "'ACTIVE' | 'PAUSED'",
+          "onEdit": "(id: string) => void",
+          "onPauseResume": "(id: string, action: 'pause' | 'resume') => void",
+          "onDelete": "(id: string) => void",
+          "tokens": {
+            "iconColor": "color.neutral.gray-400",
+            "iconSize": "20px",
+            "dropdownBackground": "color.neutral.white",
+            "dropdownShadow": "shadow.card",
+            "dropdownBorderRadius": "border.radius.card",
+            "itemFontSize": "font.size.body",
+            "itemColor": "color.neutral.gray-700",
+            "deleteItemColor": "color.red.500",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "manage-recurring-empty-state",
+        "type": "ManageRecurringEmptyState",
+        "children": [
+          "manage-empty-icon",
+          "manage-empty-title",
+          "manage-empty-body"
+        ],
+        "props": {
+          "tokens": {
+            "iconSize": "space.12",
+            "iconColor": "color.neutral.gray-300",
+            "titleColor": "color.neutral.gray-400",
+            "titleFontSize": "font.size.section-label",
+            "bodyColor": "color.neutral.gray-400",
+            "bodyFontSize": "font.size.body",
+            "gap": "space.3",
+            "textAlign": "center"
+          }
+        }
+      },
+      {
+        "id": "manage-empty-icon",
+        "type": "Icon",
+        "props": {
+          "name": "circular-arrow",
+          "tokens": {
+            "size": "space.12",
+            "color": "color.neutral.gray-300"
+          }
+        }
+      },
+      {
+        "id": "manage-empty-title",
+        "type": "Text",
+        "props": {
+          "content": "No recurring expenses yet",
+          "tokens": {
+            "color": "color.neutral.gray-400",
+            "fontSize": "font.size.section-label",
+            "fontWeight": "font.weight.semibold"
+          }
+        }
+      },
+      {
+        "id": "manage-empty-body",
+        "type": "Text",
+        "props": {
+          "content": "Mark an expense as recurring to see it here",
+          "tokens": {
+            "color": "color.neutral.gray-400",
+            "fontSize": "font.size.body"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-005",
+    "componentTree": [
+      {
+        "id": "delete-recurring-confirmation",
+        "type": "DeleteRecurringConfirmation",
+        "children": [
+          "delete-choice-group",
+          "delete-confirm-text",
+          "delete-cancel-action"
+        ],
+        "props": {
+          "expenseId": "string",
+          "templateId": "string",
+          "confirmMode": "'CHOOSING' | 'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES'",
+          "autoRevertMs": "number",
+          "onDeleteThis": "(expenseId: string) => void",
+          "onDeleteSeries": "(templateId: string) => void",
+          "onCancel": "() => void",
+          "onConfirmModeChange": "(mode: 'CHOOSING' | 'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES') => void",
+          "tokens": {
+            "stackGap": "space.2",
+            "deleteColor": "color.red.500",
+            "deleteSeriesWeight": "font.weight.semibold",
+            "cancelColor": "color.neutral.gray-500",
+            "fontSize": "font.size.body",
+            "confirmTextColor": "color.neutral.gray-900",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "delete-choice-group",
+        "type": "DeleteChoiceGroup",
+        "children": [
+          "delete-this-expense-only-btn",
+          "delete-all-future-recurrences-btn"
+        ],
+        "props": {
+          "isVisible": "boolean",
+          "tokens": {
+            "stackGap": "space.2"
+          }
+        }
+      },
+      {
+        "id": "delete-this-expense-only-btn",
+        "type": "TextButton",
+        "props": {
+          "label": "Delete this expense only",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.red.500",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px",
+            "focusRing": "2px solid color.blue.600",
+            "focusRingOffset": "2px"
+          }
+        }
+      },
+      {
+        "id": "delete-all-future-recurrences-btn",
+        "type": "TextButton",
+        "props": {
+          "label": "Delete entire series",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.red.500",
+            "fontWeight": "font.weight.semibold",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px",
+            "focusRing": "2px solid color.blue.600",
+            "focusRingOffset": "2px"
+          }
+        }
+      },
+      {
+        "id": "delete-confirm-text",
+        "type": "ConfirmText",
+        "props": {
+          "mode": "'CONFIRMING_SINGLE' | 'CONFIRMING_SERIES'",
+          "singleLabel": "Delete this expense?",
+          "seriesLabel": "Delete all future recurrences?",
+          "isVisible": "boolean",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.body",
+            "fontWeight": "font.weight.semibold"
+          }
+        }
+      },
+      {
+        "id": "delete-cancel-action",
+        "type": "TextLink",
+        "props": {
+          "label": "Cancel",
+          "onClick": "() => void",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.body",
+            "minClickTarget": "36px"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "screenId": "screen-006",
+    "componentTree": [
+      {
+        "id": "expense-row-enhanced",
+        "type": "ExpenseRowEnhanced",
+        "children": [
+          "expense-row-category-dot",
+          "expense-row-merchant-name",
+          "expense-row-caption-line",
+          "expense-row-amount"
+        ],
+        "props": {
+          "expense": {
+            "type": "{ id: string; amount: number; categoryId: string; merchantName: string; date: string; paymentMethod: string; note?: string; recurringTemplateId?: string; isRecurringInstance: boolean; createdAt: string; updatedAt: string; }",
+            "description": "Full Expense object from GET /api/expenses response items"
+          },
+          "categoryName": "string",
+          "categoryColor": "string",
+          "onClick": "(expenseId: string) => void",
+          "tokens": {
+            "merchantColor": "color.neutral.gray-900",
+            "merchantFontSize": "font.size.body",
+            "captionColor": "color.neutral.gray-500",
+            "captionFontSize": "font.size.caption",
+            "amountColor": "color.neutral.gray-900",
+            "amountFontSize": "font.size.body",
+            "rowPaddingY": "space.3",
+            "minClickTarget": "36px"
+          }
+        }
+      },
+      {
+        "id": "expense-row-category-dot",
+        "type": "CategoryColorDot",
+        "props": {
+          "color": "string",
+          "tokens": {
+            "size": "space.2-5",
+            "borderRadius": "border.radius.full"
+          }
+        }
+      },
+      {
+        "id": "expense-row-merchant-name",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.body"
+          }
+        }
+      },
+      {
+        "id": "expense-row-caption-line",
+        "type": "ExpenseRowCaptionLine",
+        "children": [
+          "caption-category-label",
+          "caption-recurring-icon",
+          "caption-frequency-label",
+          "caption-date-label"
+        ],
+        "props": {
+          "categoryName": "string",
+          "date": "string",
+          "isRecurringInstance": "boolean",
+          "frequency": "'WEEKLY' | 'MONTHLY' | 'YEARLY' | undefined",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption",
+            "iconColor": "color.neutral.gray-400",
+            "iconSize": "14px",
+            "gap": "space.1"
+          }
+        }
+      },
+      {
+        "id": "caption-category-label",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "caption-recurring-icon",
+        "type": "Icon",
+        "props": {
+          "name": "circular-arrow",
+          "isVisible": "boolean",
+          "tokens": {
+            "size": "14px",
+            "color": "color.neutral.gray-400"
+          }
+        }
+      },
+      {
+        "id": "caption-frequency-label",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "isVisible": "boolean",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "caption-date-label",
+        "type": "Text",
+        "props": {
+          "content": "string",
+          "tokens": {
+            "color": "color.neutral.gray-500",
+            "fontSize": "font.size.caption"
+          }
+        }
+      },
+      {
+        "id": "expense-row-amount",
+        "type": "AmountText",
+        "props": {
+          "value": "number",
+          "align": "'right'",
+          "tokens": {
+            "color": "color.neutral.gray-900",
+            "fontSize": "font.size.body"
+          }
+        }
+      }
+    ]
+  }
+]

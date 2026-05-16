@@ -161,7 +161,7 @@ export function createComponentsSpecialist(deps: ArchitectDeps): ArchitectNodeFn
       { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
       {
         model: 'claude-sonnet-4-6',
-        maxTokens: 4096,
+        maxTokens: 65536,
         temperature: 0,
         responseSchema: COMPONENTS_RESPONSE_SCHEMA,
         promptVersion,

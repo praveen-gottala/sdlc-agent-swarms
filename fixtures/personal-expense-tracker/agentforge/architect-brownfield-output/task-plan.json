@@ -1,0 +1,765 @@
+{
+  "projectId": "recurring-expenses",
+  "tasks": [
+    {
+      "id": "scaffold-dexie-schema-tokens",
+      "title": "Extend Dexie schema, Zod schemas, and design tokens for recurring features",
+      "description": "Add RecurringTemplate table to Dexie db.ts with versioned migration, add recurringTemplateId and isRecurringInstance fields to the Expense store indexes. Define Zod schemas for Expense (updated), RecurringTemplate, and ErrorEnvelope in src/schemas/. Update tailwind.config.js and tokens.css with new design tokens (colors, spacing, animation durations, sizes).",
+      "filePaths": [
+        "src/db.ts",
+        "src/schemas/recurring-template.schema.ts",
+        "src/schemas/expense.schema.ts",
+        "src/schemas/error-envelope.schema.ts",
+        "src/styles/tokens.css",
+        "tailwind.config.js"
+      ],
+      "dependencies": [],
+      "writeOrder": 0,
+      "type": "scaffold",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 10200,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-category"
+        }
+      ],
+      "patternRefs": [
+        "schema-dexie-versioned",
+        "validation-zod-at-boundary",
+        "component-tailwind-tokens-only"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "backend-recurring-template-repository",
+      "title": "Implement RecurringTemplateRepository with CRUD, pause/resume, and safe delete",
+      "description": "Create RecurringTemplateRepository class with methods: create, getById, getAll (with status filter), update, deleteTemplatePreservingHistory (atomic Dexie transaction that nullifies recurringTemplateId on expenses then deletes template), pause, and resume. All methods validate via Zod schemas and log structured entries in dev mode. Implement the pure occurrence computation function in a separate utility file.",
+      "filePaths": [
+        "src/repositories/recurring-template.repository.ts",
+        "src/utils/occurrence-calculator.ts",
+        "src/repositories/index.ts"
+      ],
+      "dependencies": [
+        "scaffold-dexie-schema-tokens"
+      ],
+      "writeOrder": 1,
+      "type": "backend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 14000,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-001"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-005"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-007"
+        }
+      ],
+      "patternRefs": [
+        "data-access-dexie-repository",
+        "validation-zod-at-boundary",
+        "data-integrity-recurring-delete",
+        "occurrence-pure-computation",
+        "logging-client-structured"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "backend-expense-repository-update",
+      "title": "Update ExpenseRepository with recurring fields and summary aggregation",
+      "description": "Modify the existing ExpenseRepository to handle recurringTemplateId and isRecurringInstance fields on create/update. Add getById, list with filtering (isRecurringInstance, date range, categoryId), and getSummary method that computes recurring vs one-time spend totals for a given period. All inputs/outputs validated with Zod schemas.",
+      "filePaths": [
+        "src/repositories/expense.repository.ts"
+      ],
+      "dependencies": [
+        "scaffold-dexie-schema-tokens"
+      ],
+      "writeOrder": 1,
+      "type": "backend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 11550,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-001"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-003"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-008"
+        }
+      ],
+      "patternRefs": [
+        "data-access-dexie-repository",
+        "validation-zod-at-boundary",
+        "logging-client-structured"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "backend-tanstack-query-hooks",
+      "title": "Create TanStack Query hooks for recurring templates and expenses",
+      "description": "Implement custom hooks: useRecurringTemplates, useRecurringTemplate, useUpcomingRecurrences, useCreateRecurringTemplate, useUpdateRecurringTemplate, useDeleteRecurringTemplate, usePauseTemplate, useResumeTemplate, useExpenseSummary, useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense. Each hook wraps repository calls with proper query keys and mutation invalidation.",
+      "filePaths": [
+        "src/hooks/use-recurring-templates.ts",
+        "src/hooks/use-expenses.ts"
+      ],
+      "dependencies": [
+        "backend-recurring-template-repository",
+        "backend-expense-repository-update"
+      ],
+      "writeOrder": 2,
+      "type": "backend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 21200,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-001"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-002"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-003"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-004"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-005"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-006"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-007"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-008"
+        }
+      ],
+      "patternRefs": [
+        "state-client-tanstack-query",
+        "api-error-toast-inline"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-shared-ui-components",
+      "title": "Build shared UI primitives: RecurringFrequencyBadge, StatusBadge, shadcn Switch/Sheet",
+      "description": "Create reusable UI components used across multiple screens: RecurringFrequencyBadge (displays Weekly/Monthly/Yearly with color coding), StatusBadge (Active/Paused), CategoryColorDot, and copy in shadcn/ui Switch and Sheet (drawer) primitives. All components use Tailwind tokens and Radix primitives for accessibility.",
+      "filePaths": [
+        "src/components/ui/switch.tsx",
+        "src/components/ui/sheet.tsx",
+        "src/components/recurring/RecurringFrequencyBadge.tsx",
+        "src/components/recurring/StatusBadge.tsx",
+        "src/components/recurring/RecurringFrequencyBadge.module.css"
+      ],
+      "dependencies": [
+        "scaffold-dexie-schema-tokens"
+      ],
+      "writeOrder": 2,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 9300,
+      "contextRefs": [
+        {
+          "kind": "pattern",
+          "id": "component-tailwind-tokens-only"
+        },
+        {
+          "kind": "pattern",
+          "id": "a11y-radix-primitives"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-radix-primitives",
+        "animation-motion-tokens"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-recurrence-config",
+      "title": "Build RecurrenceConfigSection for Add Expense form (Screen 2)",
+      "description": "Implement the recurrence configuration UI on the Add Expense form: a Radix Switch toggle to mark as recurring, an animated slide-down panel with FrequencyChipSelector (Weekly/Monthly/Yearly chips), and EndDateRow with radio options (Never / On Date) plus DatePickerInput. The section integrates with the parent form state and validates via Zod schema before submission. Uses 200ms slide-down animation with reduced-motion support.",
+      "filePaths": [
+        "src/components/recurring/RecurrenceConfigSection.tsx",
+        "src/components/recurring/FrequencyChipSelector.tsx",
+        "src/components/recurring/EndDateRow.tsx",
+        "src/components/recurring/RecurrenceConfigSection.module.css"
+      ],
+      "dependencies": [
+        "frontend-shared-ui-components",
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 14250,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-002"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-002"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-radix-primitives",
+        "animation-motion-tokens",
+        "validation-zod-at-boundary"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-add-expense-integration",
+      "title": "Integrate RecurrenceConfigSection into Add Expense page and handle submission",
+      "description": "Modify the existing Add Expense page to embed RecurrenceConfigSection. On form submit, if recurring is enabled, create a RecurringTemplate first, then create the initial Expense with recurringTemplateId and isRecurringInstance=true. If not recurring, create a standard Expense with isRecurringInstance=false. Handle edit-series mode by pre-filling form from a RecurringTemplate when navigated with templateId query param. Show toast on success/error.",
+      "filePaths": [
+        "src/pages/AddExpense.tsx",
+        "src/pages/AddExpense.module.css"
+      ],
+      "dependencies": [
+        "frontend-recurrence-config"
+      ],
+      "writeOrder": 4,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 12650,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-002"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-002"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-001"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-004"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        }
+      ],
+      "patternRefs": [
+        "state-client-tanstack-query",
+        "validation-zod-at-boundary",
+        "api-error-toast-inline"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-expense-row-badge",
+      "title": "Add recurring badge to expense rows on Dashboard (Screen 1/6)",
+      "description": "Modify the existing expense row component to show a recurring icon/badge (circular arrow + frequency label) when isRecurringInstance is true. Implement ExpenseRowRecurringBadge as an inline icon with caption text. Update the expense row caption line to include the recurring indicator between category and date. Badge uses the RecurringFrequencyBadge shared component.",
+      "filePaths": [
+        "src/components/recurring/ExpenseRowRecurringBadge.tsx",
+        "src/components/expenses/ExpenseRow.tsx",
+        "src/components/expenses/ExpenseRow.module.css"
+      ],
+      "dependencies": [
+        "frontend-shared-ui-components",
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 14950,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-006"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-006"
+        },
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-upcoming-recurring-card",
+      "title": "Build UpcomingRecurringCard for Dashboard (Screen 1)",
+      "description": "Create the UpcomingRecurringCard component showing the next 5 upcoming recurring expenses for the current month. Includes SectionLabel header, UpcomingRecurringRowList with rows displaying merchant name, amount, next occurrence date, category color dot, and frequency badge. Includes empty state with circular arrow icon and 'View All' link that opens the Manage Recurring drawer. Uses useUpcomingRecurrences hook.",
+      "filePaths": [
+        "src/components/recurring/UpcomingRecurringCard.tsx",
+        "src/components/recurring/UpcomingRecurringRow.tsx",
+        "src/components/recurring/UpcomingRecurringEmptyState.tsx",
+        "src/components/recurring/UpcomingRecurringCard.module.css"
+      ],
+      "dependencies": [
+        "frontend-shared-ui-components",
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 15050,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-002"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "state-client-tanstack-query",
+        "animation-motion-tokens"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-dashboard-integration",
+      "title": "Integrate UpcomingRecurringCard into Dashboard page",
+      "description": "Modify the existing Dashboard page to add the UpcomingRecurringCard below the Category Breakdown Mini-Chart in the left column. Wire up the 'View All' link to open the ManageRecurringDrawer. Ensure the dashboard layout accommodates the new card without breaking existing components.",
+      "filePaths": [
+        "src/pages/Dashboard.tsx",
+        "src/pages/Dashboard.module.css"
+      ],
+      "dependencies": [
+        "frontend-upcoming-recurring-card",
+        "frontend-expense-row-badge"
+      ],
+      "writeOrder": 4,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 12000,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-expense-detail-popover",
+      "title": "Enhance Expense Detail Popover with recurring info and Edit Series action (Screen 3)",
+      "description": "Modify the existing Expense Detail Popover to show recurring details when the expense has a recurringTemplateId: display RecurringHeaderBadge in the header, add RecurrenceDetailRow showing frequency/next occurrence/end date, and add 'Edit Series' button alongside 'Edit'. 'Edit' modifies single occurrence; 'Edit Series' navigates to /expenses/add?templateId={id}. Uses useRecurringTemplate hook to fetch template details.",
+      "filePaths": [
+        "src/components/expenses/ExpenseDetailPopover.tsx",
+        "src/components/recurring/RecurrenceDetailRow.tsx",
+        "src/components/recurring/RecurringHeaderBadge.tsx",
+        "src/components/expenses/ExpenseDetailPopover.module.css"
+      ],
+      "dependencies": [
+        "frontend-shared-ui-components",
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 17800,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-003"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-003"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-003"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-004"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-radix-primitives",
+        "state-client-tanstack-query"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-delete-confirmation",
+      "title": "Build Delete Recurring Confirmation with single vs series choice (Screen 5)",
+      "description": "Create the DeleteRecurringConfirmation component that prompts users to choose between deleting a single occurrence or the entire series. Shows DeleteChoiceGroup with two text buttons and dynamically updating confirmation text. For non-recurring expenses, shows standard delete confirmation. Integrates useDeleteExpense and useDeleteRecurringTemplate mutations. Includes cancel action.",
+      "filePaths": [
+        "src/components/recurring/DeleteRecurringConfirmation.tsx",
+        "src/components/recurring/DeleteRecurringConfirmation.module.css"
+      ],
+      "dependencies": [
+        "frontend-expense-detail-popover"
+      ],
+      "writeOrder": 4,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 11350,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-005"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-005"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-005"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-radix-primitives",
+        "state-client-tanstack-query",
+        "api-error-toast-inline",
+        "data-integrity-recurring-delete"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-manage-recurring-drawer",
+      "title": "Build Manage Recurring Transactions drawer (Screen 4)",
+      "description": "Implement the ManageRecurringDrawer using shadcn Sheet (Radix Dialog) with 350ms slide-in animation. Contains DrawerHeader, DrawerSummaryRow, and RecurringTemplateList. Each RecurringTemplateRow shows merchant name, amount, frequency badge, next date, status toggle (pause/resume), paused badge, and kebab menu (edit/delete). Includes empty state. Uses useRecurringTemplates, usePauseTemplate, useResumeTemplate hooks. Drawer is accessible with focus trapping and Escape-to-close.",
+      "filePaths": [
+        "src/components/recurring/ManageRecurringDrawer.tsx",
+        "src/components/recurring/RecurringTemplateRow.tsx",
+        "src/components/recurring/ManageRecurringEmptyState.tsx",
+        "src/components/recurring/ManageRecurringDrawer.module.css"
+      ],
+      "dependencies": [
+        "frontend-shared-ui-components",
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "NEW",
+      "estimatedTokenBudget": 16050,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-004"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-004"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-006"
+        },
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-007"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "a11y-radix-primitives",
+        "animation-motion-tokens",
+        "state-client-tanstack-query",
+        "api-error-toast-inline"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "frontend-spending-insights-recurring",
+      "title": "Add recurring vs one-time breakdown to Spending Insights (Screen 3)",
+      "description": "Modify the Spending Insights page to display a recurring vs one-time expense breakdown. Add a summary stat row or badge in the Period Summary Header showing recurringSpend, oneTimeSpend, and their counts. Uses useExpenseSummary hook with the current period's date range. Renders as a small breakdown annotation with amounts and percentages.",
+      "filePaths": [
+        "src/pages/SpendingInsights.tsx",
+        "src/components/recurring/RecurringSpendBreakdown.tsx",
+        "src/components/recurring/RecurringSpendBreakdown.module.css"
+      ],
+      "dependencies": [
+        "backend-tanstack-query-hooks"
+      ],
+      "writeOrder": 3,
+      "type": "frontend",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 10350,
+      "contextRefs": [
+        {
+          "kind": "apiChangeSet",
+          "id": "acs-008"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        }
+      ],
+      "patternRefs": [
+        "component-tailwind-tokens-only",
+        "state-client-tanstack-query"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "test-occurrence-calculator",
+      "title": "Unit tests for occurrence calculator pure function",
+      "description": "Write comprehensive unit tests for the occurrence-calculator utility covering all three frequencies (weekly, monthly, yearly), edge cases (month boundaries, leap years, end-date truncation, start date in the past), and empty result scenarios. Validates the pure function contract independently from the repository layer.",
+      "filePaths": [
+        "src/utils/__tests__/occurrence-calculator.test.ts"
+      ],
+      "dependencies": [
+        "backend-recurring-template-repository"
+      ],
+      "writeOrder": 3,
+      "type": "test",
+      "mode": "NEW",
+      "estimatedTokenBudget": 9000,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        },
+        {
+          "kind": "pattern",
+          "id": "occurrence-pure-computation"
+        }
+      ],
+      "patternRefs": [
+        "occurrence-pure-computation"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "test-repository-integration",
+      "title": "Integration tests for RecurringTemplate and Expense repositories",
+      "description": "Write integration tests for RecurringTemplateRepository and ExpenseRepository covering CRUD operations, deleteTemplatePreservingHistory atomicity (verifying expenses retain data after template deletion), pause/resume state transitions, and expense summary aggregation. Uses fake-indexeddb for Dexie testing.",
+      "filePaths": [
+        "src/repositories/__tests__/recurring-template.repository.test.ts",
+        "src/repositories/__tests__/expense.repository.test.ts"
+      ],
+      "dependencies": [
+        "backend-recurring-template-repository",
+        "backend-expense-repository-update"
+      ],
+      "writeOrder": 3,
+      "type": "test",
+      "mode": "NEW",
+      "estimatedTokenBudget": 13750,
+      "contextRefs": [
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-recurring-template"
+        },
+        {
+          "kind": "dataModel.entity",
+          "id": "entity-expense"
+        },
+        {
+          "kind": "pattern",
+          "id": "data-integrity-recurring-delete"
+        }
+      ],
+      "patternRefs": [
+        "data-access-dexie-repository",
+        "data-integrity-recurring-delete",
+        "validation-zod-at-boundary"
+      ],
+      "acceptanceCriteriaIds": []
+    },
+    {
+      "id": "integration-popover-delete-flow",
+      "title": "Wire delete confirmation into Expense Detail Popover and verify end-to-end flow",
+      "description": "Integrate DeleteRecurringConfirmation into the ExpenseDetailPopover's delete trigger. Wire the 'View All' link from UpcomingRecurringCard to open ManageRecurringDrawer. Ensure the full flow works: popover shows recurring details → delete trigger opens confirmation → single/series choice executes correct mutation → cache invalidation refreshes dashboard. Verify Edit Series navigation passes templateId to Add Expense form.",
+      "filePaths": [
+        "src/components/expenses/ExpenseDetailPopover.tsx",
+        "src/pages/Dashboard.tsx"
+      ],
+      "dependencies": [
+        "frontend-delete-confirmation",
+        "frontend-dashboard-integration",
+        "frontend-manage-recurring-drawer",
+        "frontend-add-expense-integration"
+      ],
+      "writeOrder": 5,
+      "type": "integration",
+      "mode": "MODIFY",
+      "estimatedTokenBudget": 20400,
+      "contextRefs": [
+        {
+          "kind": "screenPlan",
+          "id": "screen-003"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-003"
+        },
+        {
+          "kind": "screenPlan",
+          "id": "screen-005"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-005"
+        },
+        {
+          "kind": "screenPlan",
+          "id": "screen-001"
+        },
+        {
+          "kind": "componentComposition",
+          "id": "screen-001"
+        }
+      ],
+      "patternRefs": [
+        "state-client-tanstack-query",
+        "data-integrity-recurring-delete",
+        "a11y-radix-primitives"
+      ],
+      "acceptanceCriteriaIds": []
+    }
+  ],
+  "featureCoverage": {
+    "feat-001": [
+      "scaffold-dexie-schema-tokens",
+      "backend-recurring-template-repository",
+      "backend-tanstack-query-hooks",
+      "frontend-recurrence-config",
+      "frontend-add-expense-integration"
+    ],
+    "feat-002": [
+      "frontend-upcoming-recurring-card",
+      "frontend-dashboard-integration",
+      "backend-tanstack-query-hooks"
+    ],
+    "feat-003": [
+      "frontend-expense-row-badge",
+      "frontend-expense-detail-popover",
+      "frontend-dashboard-integration"
+    ],
+    "feat-004": [
+      "frontend-expense-detail-popover",
+      "frontend-add-expense-integration",
+      "integration-popover-delete-flow"
+    ],
+    "feat-005": [
+      "frontend-delete-confirmation",
+      "integration-popover-delete-flow",
+      "backend-recurring-template-repository"
+    ],
+    "feat-006": [
+      "frontend-manage-recurring-drawer",
+      "frontend-dashboard-integration",
+      "backend-tanstack-query-hooks"
+    ],
+    "feat-007": [
+      "frontend-manage-recurring-drawer",
+      "backend-recurring-template-repository",
+      "backend-tanstack-query-hooks"
+    ],
+    "feat-008": [
+      "frontend-spending-insights-recurring",
+      "backend-expense-repository-update",
+      "backend-tanstack-query-hooks"
+    ]
+  }
+}

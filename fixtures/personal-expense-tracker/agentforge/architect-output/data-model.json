@@ -1,0 +1,433 @@
+{
+  "projectId": "cashpulse",
+  "entities": [
+    {
+      "id": "entity-expense",
+      "name": "Expense",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key, generated client-side (crypto.randomUUID)"
+        },
+        {
+          "name": "amount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Expense amount; must be > 0"
+        },
+        {
+          "name": "description",
+          "type": "varchar(255)",
+          "required": true,
+          "description": "Merchant name or short description shown in expense rows"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Reference to the Category entity; drives color, icon, and grouping"
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "description": "Expense date; no future dates allowed (enforced in form)"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "varchar(32)",
+          "required": true,
+          "description": "Enum-like label: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other'"
+        },
+        {
+          "name": "note",
+          "type": "varchar(100)",
+          "required": false,
+          "description": "Optional user note; max 100 characters"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of record creation"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of last modification"
+        }
+      ],
+      "tableName": "expenses",
+      "relationships": [
+        "categoryId: uuid fk->Category"
+      ]
+    },
+    {
+      "id": "entity-category",
+      "name": "Category",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key, generated client-side"
+        },
+        {
+          "name": "name",
+          "type": "varchar(64)",
+          "required": true,
+          "description": "Display name of the category; unique(name)"
+        },
+        {
+          "name": "color",
+          "type": "varchar(32)",
+          "required": true,
+          "description": "Tailwind color token or hex string (e.g., 'blue-500', '#3B82F6') used for dots, borders, chart segments"
+        },
+        {
+          "name": "icon",
+          "type": "varchar(64)",
+          "required": true,
+          "description": "Icon identifier (emoji or icon name) shown in category chip and expense row circle"
+        },
+        {
+          "name": "isDefault",
+          "type": "boolean",
+          "required": true,
+          "description": "True for seed/system categories; false for user-created categories. Default categories cannot be deleted."
+        },
+        {
+          "name": "sortOrder",
+          "type": "integer",
+          "required": true,
+          "description": "Display order in category selector grid and legend lists"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of record creation"
+        }
+      ],
+      "tableName": "categories",
+      "relationships": []
+    },
+    {
+      "id": "entity-budget",
+      "name": "Budget",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key"
+        },
+        {
+          "name": "month",
+          "type": "varchar(7)",
+          "required": true,
+          "description": "ISO month string 'YYYY-MM'; unique(month) — one budget record per calendar month"
+        },
+        {
+          "name": "monthlyLimit",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Total spending cap for the month; defaults to UserSettings.defaultMonthlyBudget at creation time"
+        },
+        {
+          "name": "currency",
+          "type": "varchar(3)",
+          "required": true,
+          "description": "ISO 4217 currency code: 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY'"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of record creation"
+        }
+      ],
+      "tableName": "budgets",
+      "relationships": []
+    },
+    {
+      "id": "entity-user-settings",
+      "name": "UserSettings",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Singleton record; always a fixed well-known UUID ('settings-singleton')"
+        },
+        {
+          "name": "currency",
+          "type": "varchar(3)",
+          "required": true,
+          "description": "Active display currency: 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY'. Default 'USD'."
+        },
+        {
+          "name": "defaultMonthlyBudget",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Default monthly budget applied when creating a new Budget record. Default 2000.00."
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of last settings change; triggers currency-change toast"
+        }
+      ],
+      "tableName": "user_settings",
+      "relationships": []
+    },
+    {
+      "id": "entity-category-budget",
+      "name": "CategoryBudget",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Reference to Category; unique(categoryId, month)"
+        },
+        {
+          "name": "month",
+          "type": "varchar(7)",
+          "required": true,
+          "description": "ISO month string 'YYYY-MM'; unique(categoryId, month)"
+        },
+        {
+          "name": "limitAmount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Per-category spending cap for the given month (feat-025)"
+        },
+        {
+          "name": "createdAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Client-side UTC timestamp of record creation"
+        }
+      ],
+      "tableName": "category_budgets",
+      "relationships": [
+        "categoryId: uuid fk->Category"
+      ]
+    },
+    {
+      "id": "entity-quick-add-suggestion",
+      "name": "QuickAddSuggestion",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key"
+        },
+        {
+          "name": "description",
+          "type": "varchar(255)",
+          "required": true,
+          "description": "Merchant/description text shown in suggestion chip (e.g., 'Starbucks')"
+        },
+        {
+          "name": "amount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Pre-fill amount for the suggestion chip"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Category to auto-select when chip is tapped"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "varchar(32)",
+          "required": true,
+          "description": "Payment method to auto-select: 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other'"
+        },
+        {
+          "name": "frequency",
+          "type": "integer",
+          "required": true,
+          "description": "Count of how many times this description+category+amount combo has been logged; used to rank top 3-4 chips"
+        },
+        {
+          "name": "lastUsedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Timestamp of most recent use; used as tiebreaker when frequency is equal"
+        }
+      ],
+      "tableName": "quick_add_suggestions",
+      "relationships": [
+        "categoryId: uuid fk->Category"
+      ]
+    },
+    {
+      "id": "entity-month-summary",
+      "name": "MonthSummary",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key; unique(month)"
+        },
+        {
+          "name": "month",
+          "type": "varchar(7)",
+          "required": true,
+          "description": "ISO month string 'YYYY-MM'; unique(month). Derived/cached aggregate — recomputed via Dexie liveQuery on expense mutations."
+        },
+        {
+          "name": "totalSpent",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Sum of all expense amounts for the month"
+        },
+        {
+          "name": "transactionCount",
+          "type": "integer",
+          "required": true,
+          "description": "Count of expense records for the month"
+        },
+        {
+          "name": "dailyAverage",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "totalSpent / number of days elapsed in month (or total days if month is past)"
+        },
+        {
+          "name": "budgetLimit",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Snapshot of Budget.monthlyLimit for this month at time of last recompute"
+        },
+        {
+          "name": "budgetStatus",
+          "type": "varchar(16)",
+          "required": true,
+          "description": "'On Track' (< 80% spent) | 'Heads Up' (80–100%) | 'Over Budget' (> 100%)"
+        },
+        {
+          "name": "remainingAmount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "budgetLimit − totalSpent; can be negative when over budget"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Timestamp of last recomputation"
+        }
+      ],
+      "tableName": "month_summaries",
+      "relationships": []
+    },
+    {
+      "id": "entity-category-spending",
+      "name": "CategorySpending",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key; unique(categoryId, month)"
+        },
+        {
+          "name": "categoryId",
+          "type": "uuid fk->Category",
+          "required": true,
+          "description": "Reference to Category; unique(categoryId, month)"
+        },
+        {
+          "name": "month",
+          "type": "varchar(7)",
+          "required": true,
+          "description": "ISO month string 'YYYY-MM'"
+        },
+        {
+          "name": "totalAmount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Sum of expense amounts for this category in this month"
+        },
+        {
+          "name": "percentage",
+          "type": "decimal(5,2)",
+          "required": true,
+          "description": "totalAmount / MonthSummary.totalSpent * 100; used for donut chart segments and stacked bar"
+        },
+        {
+          "name": "transactionCount",
+          "type": "integer",
+          "required": true,
+          "description": "Count of expense records for this category in this month"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Timestamp of last recomputation"
+        }
+      ],
+      "tableName": "category_spending",
+      "relationships": [
+        "categoryId: uuid fk->Category"
+      ]
+    },
+    {
+      "id": "entity-daily-spending",
+      "name": "DailySpending",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid pk",
+          "required": true,
+          "description": "Primary key; unique(date)"
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "description": "Calendar date 'YYYY-MM-DD'; unique(date)"
+        },
+        {
+          "name": "totalAmount",
+          "type": "decimal(10,2)",
+          "required": true,
+          "description": "Sum of expense amounts for this date; used for bar/line chart data points"
+        },
+        {
+          "name": "transactionCount",
+          "type": "integer",
+          "required": true,
+          "description": "Count of expense records for this date; shown in chart hover tooltip"
+        },
+        {
+          "name": "updatedAt",
+          "type": "timestamptz",
+          "required": true,
+          "description": "Timestamp of last recomputation"
+        }
+      ],
+      "tableName": "daily_spending",
+      "relationships": []
+    }
+  ]
+}

@@ -1,0 +1,494 @@
+[
+  {
+    "id": "screen-001",
+    "featureId": "feat-002",
+    "screenType": "page",
+    "route": "/dashboard",
+    "components": [
+      "upcoming-recurring-card",
+      "upcoming-recurring-card-header",
+      "upcoming-recurring-row-list",
+      "upcoming-recurring-row",
+      "category-color-dot",
+      "recurring-frequency-badge",
+      "upcoming-recurring-row-date",
+      "upcoming-recurring-row-amount",
+      "upcoming-recurring-empty-state",
+      "circular-arrow-icon",
+      "empty-state-label",
+      "upcoming-recurring-view-all-link",
+      "expense-row-recurring-badge",
+      "recurring-inline-icon"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-recurring-template",
+        "field": "merchantName",
+        "source": "/api/recurring-templates/upcoming",
+        "transform": "items[].merchantName"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "amount",
+        "source": "/api/recurring-templates/upcoming",
+        "transform": "items[].amount"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "nextOccurrenceDate",
+        "source": "/api/recurring-templates/upcoming",
+        "transform": "items[].nextOccurrenceDate | formatDate"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "frequency",
+        "source": "/api/recurring-templates/upcoming",
+        "transform": "items[].frequency | toTitleCase"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/recurring-templates/upcoming",
+        "transform": "items[].categoryId | lookupCategoryColor"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "isRecurringInstance",
+        "source": "/api/expenses",
+        "transform": "items[].isRecurringInstance"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "recurringTemplateId",
+        "source": "/api/expenses",
+        "transform": "items[].recurringTemplateId"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "merchantName",
+        "source": "/api/expenses",
+        "transform": "items[].merchantName"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses",
+        "transform": "items[].amount"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses",
+        "transform": "items[].date | formatDate"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/expenses",
+        "transform": "items[].categoryId"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-004",
+        "trigger": "upcoming-recurring-view-all-link onClick"
+      },
+      {
+        "target": "screen-003",
+        "trigger": "expense-row-enhanced onClick"
+      }
+    ]
+  },
+  {
+    "id": "screen-002",
+    "featureId": "feat-001",
+    "screenType": "page",
+    "route": "/expenses/add",
+    "components": [
+      "recurrence-config-section",
+      "recurrence-toggle-row",
+      "recurrence-config-panel",
+      "frequency-chip-selector",
+      "frequency-chip",
+      "end-date-row",
+      "end-date-never-radio",
+      "end-date-on-date-radio",
+      "end-date-picker-input"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-recurring-template",
+        "field": "frequency",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "frequency | default:MONTHLY — pre-fills FrequencyChipSelector when isEditingSeries=true"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "endDate",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "endDate | toEndDateMode — maps presence to ON_DATE or NEVER"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "startDate",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "startDate — used as minDate anchor for end-date-picker-input"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "merchantName",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "merchantName — pre-fills form merchant field when editing series"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "amount",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "amount — pre-fills form amount field when editing series"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "categoryId",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "categoryId — pre-selects category when editing series"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "paymentMethod",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "paymentMethod — pre-selects payment method chip when editing series"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "note",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "note — pre-fills note input when editing series"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "form submit success (POST /api/recurring-templates + POST /api/expenses)"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "form submit success (PUT /api/recurring-templates/{id} — edit series save)"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "cancel / back action"
+      }
+    ]
+  },
+  {
+    "id": "screen-003",
+    "featureId": "feat-004",
+    "screenType": "modal",
+    "route": "/expenses/:id/detail",
+    "components": [
+      "expense-detail-popover-recurring",
+      "popover-header-recurring",
+      "popover-merchant-name",
+      "popover-recurring-header-badge",
+      "popover-badge-icon",
+      "popover-badge-label",
+      "popover-detail-rows",
+      "recurrence-detail-row",
+      "popover-action-buttons-recurring",
+      "edit-this-button",
+      "edit-series-button",
+      "delete-trigger-button",
+      "delete-choice-inline",
+      "delete-this-only-button",
+      "delete-entire-series-button",
+      "delete-cancel-link"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-expense",
+        "field": "merchantName",
+        "source": "/api/expenses/{id}",
+        "transform": "merchantName"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses/{id}",
+        "transform": "amount"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses/{id}",
+        "transform": "date | formatDate"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/expenses/{id}",
+        "transform": "categoryId | lookupCategoryName"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "paymentMethod",
+        "source": "/api/expenses/{id}",
+        "transform": "paymentMethod | toDisplayLabel"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "note",
+        "source": "/api/expenses/{id}",
+        "transform": "note"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "isRecurringInstance",
+        "source": "/api/expenses/{id}",
+        "transform": "isRecurringInstance — drives popover-recurring-header-badge isVisible and recurrence-detail-row isVisible"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "recurringTemplateId",
+        "source": "/api/expenses/{id}",
+        "transform": "recurringTemplateId — triggers secondary fetch of /api/recurring-templates/{id}"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "frequency",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "frequency | toTitleCase — populates popover-badge-label and recurrence-detail-row"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "nextOccurrenceDate",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "nextOccurrenceDate | formatDate — populates recurrence-detail-row value"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "endDate",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "endDate | formatDate — appended to recurrence-detail-row value when present"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-002",
+        "trigger": "edit-series-button onClick — navigates to /expenses/add?templateId={templateId}&mode=edit-series"
+      },
+      {
+        "target": "screen-005",
+        "trigger": "delete-trigger-button onClick — transitions deleteMode to CHOOSING, renders delete-choice-inline inline"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "onClose — modal dismissed via close button or scrim click"
+      }
+    ]
+  },
+  {
+    "id": "screen-004",
+    "featureId": "feat-006",
+    "screenType": "drawer",
+    "route": "/recurring-templates",
+    "components": [
+      "manage-recurring-drawer",
+      "drawer-header",
+      "drawer-summary-row",
+      "recurring-template-list",
+      "recurring-template-row",
+      "template-row-merchant-name",
+      "template-row-amount",
+      "recurring-frequency-badge",
+      "template-row-next-date",
+      "template-row-status-toggle",
+      "template-row-paused-badge",
+      "template-row-kebab-menu",
+      "manage-recurring-empty-state",
+      "manage-empty-icon",
+      "manage-empty-title",
+      "manage-empty-body"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-recurring-template",
+        "field": "merchantName",
+        "source": "/api/recurring-templates",
+        "transform": "items[].merchantName"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "amount",
+        "source": "/api/recurring-templates",
+        "transform": "items[].amount"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "frequency",
+        "source": "/api/recurring-templates",
+        "transform": "items[].frequency | toTitleCase"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "nextOccurrenceDate",
+        "source": "/api/recurring-templates",
+        "transform": "items[].nextOccurrenceDate | formatDate"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "status",
+        "source": "/api/recurring-templates",
+        "transform": "items[].status — drives template-row-status-toggle checked state and template-row-paused-badge isVisible"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/recurring-templates",
+        "transform": "items[].categoryId | lookupCategoryColor — drives template-row left border color and category-color-dot"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "status",
+        "source": "/api/recurring-templates",
+        "transform": "items.filter(status=ACTIVE).length — populates drawer-summary-row activeCount"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "amount",
+        "source": "/api/recurring-templates",
+        "transform": "items.filter(status=ACTIVE).reduce(sum by frequency normalized to monthly) — populates drawer-summary-row estimatedMonthlyTotal"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-002",
+        "trigger": "template-row-kebab-menu onEdit — navigates to /expenses/add?templateId={id}&mode=edit-series"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "drawer-header onClose or scrim click — closes drawer, returns to dashboard"
+      }
+    ]
+  },
+  {
+    "id": "screen-005",
+    "featureId": "feat-005",
+    "screenType": "modal",
+    "route": "/expenses/:id/delete-confirm",
+    "components": [
+      "delete-recurring-confirmation",
+      "delete-choice-group",
+      "delete-this-expense-only-btn",
+      "delete-all-future-recurrences-btn",
+      "delete-confirm-text",
+      "delete-cancel-action"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-expense",
+        "field": "id",
+        "source": "/api/expenses/{id}",
+        "transform": "id — passed as expenseId prop to delete-recurring-confirmation"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "recurringTemplateId",
+        "source": "/api/expenses/{id}",
+        "transform": "recurringTemplateId — passed as templateId prop to delete-recurring-confirmation"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "isRecurringInstance",
+        "source": "/api/expenses/{id}",
+        "transform": "isRecurringInstance — determines whether delete-choice-group or simple confirm is shown"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "delete-this-expense-only-btn onClick confirmed — DELETE /api/expenses/{id} success, close modal"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "delete-all-future-recurrences-btn onClick confirmed — DELETE /api/recurring-templates/{id}?mode=series success, close modal"
+      },
+      {
+        "target": "screen-003",
+        "trigger": "delete-cancel-action onClick — returns to expense detail popover"
+      }
+    ]
+  },
+  {
+    "id": "screen-006",
+    "featureId": "feat-003",
+    "screenType": "page",
+    "route": "/dashboard",
+    "components": [
+      "expense-row-enhanced",
+      "expense-row-category-dot",
+      "expense-row-merchant-name",
+      "expense-row-caption-line",
+      "caption-category-label",
+      "caption-recurring-icon",
+      "caption-frequency-label",
+      "caption-date-label",
+      "expense-row-amount"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-expense",
+        "field": "merchantName",
+        "source": "/api/expenses",
+        "transform": "items[].merchantName"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses",
+        "transform": "items[].amount"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses",
+        "transform": "items[].date | formatDate"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "isRecurringInstance",
+        "source": "/api/expenses",
+        "transform": "items[].isRecurringInstance — drives caption-recurring-icon isVisible and caption-frequency-label isVisible"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "recurringTemplateId",
+        "source": "/api/expenses",
+        "transform": "items[].recurringTemplateId — used to resolve frequency label via cached template store"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "name",
+        "source": "/api/expenses",
+        "transform": "items[].categoryId | lookupCategoryName — populates caption-category-label"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/expenses",
+        "transform": "items[].categoryId | lookupCategoryColor — populates expense-row-category-dot color"
+      },
+      {
+        "entityId": "entity-recurring-template",
+        "field": "frequency",
+        "source": "/api/recurring-templates/{id}",
+        "transform": "frequency | toTitleCase — populates caption-frequency-label for recurring rows"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-003",
+        "trigger": "expense-row-enhanced onClick — opens expense detail modal for selected expense"
+      }
+    ]
+  }
+]

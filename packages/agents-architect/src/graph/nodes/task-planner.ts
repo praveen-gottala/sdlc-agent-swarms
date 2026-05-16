@@ -410,7 +410,7 @@ async function callLlm(
     { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
     {
       model: 'claude-opus-4-6',
-      maxTokens: 8192,
+      maxTokens: 65536,
       temperature: 0,
       responseSchema: TASK_PLANNER_RESPONSE_SCHEMA,
       promptVersion,

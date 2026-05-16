@@ -41,6 +41,7 @@
 - [LangGraph Resume: updateState + stream(null)](#langgraph-resume-updatestate--streamnull) — RULE
 - [Verification Gate = Full Gate, Not Just the Triad](#verification-gate--full-gate-not-just-the-triad) — RULE
 - [Validate Deferral Reasoning with Fresh-Context Subagent](#validate-deferral-reasoning-with-fresh-context-subagent) — RULE
+- [Multiple Solutions — Pick the Quality-Preserving Fix](#multiple-solutions--pick-the-quality-preserving-fix) — RULE
 
 ---
 
@@ -608,3 +609,14 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When closing or re-deferring a plan item with reasoning that it "doesn't apply," spawn a fresh-context `researcher` subagent to independently validate the reasoning before accepting it. The subagent should receive the claim, relevant file paths, and be asked for a verdict with file+line evidence.
 **Why:** Reasoning that leads to NOT doing something the plan asked for is higher-risk than doing what was asked — it's easy to rationalize a skip. In M3 Phase 6, the deferral reasoning turned out to be correct (subagent verdict: CLAIM CORRECT), but the fresh-context reviewer also discovered a related token-efficiency improvement that had been missed entirely: specialists were dumping full `enrichedRequirement` JSON (~2-4K wasted tokens per specialist, ~10-16K total across the Node 4 dispatch). That improvement was implemented as a direct result of the validation step.
 **How to apply:** When your reasoning concludes "this plan item doesn't apply as written," spawn `Agent({ subagent_type: 'researcher', prompt: 'Evaluate this claim: [claim]. Read these files: [paths]. Verdict: CORRECT / PARTIALLY CORRECT / INCORRECT with file+line evidence.' })`. Cost: ~60s and ~60K tokens. Value: catches rationalized skips and surfaces adjacent improvements.
+
+---
+
+## Multiple Solutions — Pick the Quality-Preserving Fix
+
+**RULE** (2026-05-16)
+
+**Context:** M3.6 Architect pipeline — architecture writer's LLM response was missing `implementationPatterns` and `stackConfig` due to token truncation at `maxTokens: 8192`.
+**Rule:** When a system produces incomplete output, always identify the root cause and propose 2-3 solutions. Pick the fix that preserves the original quality contract — don't weaken schemas, make required fields optional, or add fallback defaults to accommodate a runtime limit.
+**Why:** The first proposed fix was making `implementationPatterns` and `stackConfig` optional in the Zod validation schema with defaults. This would have silently degraded downstream quality — the architecture writer's stack config feeds into all 5 contract designer specialists, and missing implementation patterns would have left the task planner without coding conventions. The correct fix was increasing `maxTokens` to prevent truncation, which preserves the required contract and produces complete output.
+**How to apply:** When encountering incomplete LLM output: (1) check `finishReason` — if `max_tokens`, increase the limit; (2) check the user message size — if too large, summarize context; (3) check the response schema — if it doesn't match the Zod schema, fix the schema alignment. Only weaken validation as a last resort, and document the trade-off in an ADR if you do.

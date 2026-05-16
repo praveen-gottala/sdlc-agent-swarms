@@ -1,0 +1,306 @@
+# M3.6 Design Info Value Eval — Task Fixtures
+#
+# Six tasks (3 NEW, 3 MODIFY) measuring how design-stage context affects
+# implementer code-generation quality. Used by scripts/run-design-info-eval.ts.
+#
+# Entity data sourced from:
+#   NEW tasks:    fixtures/personal-expense-tracker/agentforge/clarifier-output/enriched-requirement.json
+#   MODIFY tasks: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/enriched-requirement.json
+#
+# Planning-stage data (screenPlan, componentComposition) sourced from:
+#   NEW tasks:    fixtures/personal-expense-tracker/agentforge/architect-output/ (greenfield Architect run, 2026-05-16)
+#   MODIFY tasks: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/ (brownfield Architect run, 2026-05-16)
+#   Eval script loads the JSON files and selects by screenId at runtime.
+#
+# Design specs sourced from:
+#   NEW tasks:    fixtures/personal-expense-tracker/agentforge/designs/*.json (M0 baseline)
+#   MODIFY tasks: Same files serve as existingDesignSpec (pre-change). No post-change
+#                 design specs exist yet — the design pipeline hasn't been re-run after
+#                 brownfield changes. designSpecPath = existingDesignSpecPath for MODIFY.
+
+id: design-info-value
+name: M3.6 Design Info Value Eval
+description: >
+  Empirical measurement across 5 context configurations × 6 tasks × 3 reps.
+  Determines which DesignSliceStrategy value M4 should default to.
+
+model: claude-sonnet-4-20250514
+temperature: 0.3
+reps: 3
+
+tasks:
+  # ---------------------------------------------------------------------------
+  # NEW tasks (M0 CashPulse greenfield baseline)
+  # ---------------------------------------------------------------------------
+
+  - id: cashpulse-dashboard-summary-card
+    taskDescription: >
+      Build a React/TypeScript dashboard summary card component for CashPulse,
+      a personal expense tracker. The card displays the current month's spending
+      summary: total spent, budget remaining, daily average, and budget status
+      indicator. Uses MonthSummary entity data and renders inside the dashboard
+      layout's left column.
+    taskType: NEW
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: Expense
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: description, type: string }
+              - { name: categoryId, type: reference }
+              - { name: date, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: createdAt, type: date }
+          - name: MonthSummary
+            fields:
+              - { name: month, type: string }
+              - { name: totalSpent, type: number }
+              - { name: transactionCount, type: number }
+              - { name: dailyAverage, type: number }
+              - { name: budgetLimit, type: number }
+              - { name: budgetStatus, type: enum }
+              - { name: remainingAmount, type: number }
+          - name: Budget
+            fields:
+              - { name: id, type: string }
+              - { name: monthlyLimit, type: number }
+              - { name: currency, type: enum }
+              - { name: month, type: string }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/screen-plans.json
+      screenId: screen-001
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
+      screenId: screen-001
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+
+  - id: cashpulse-transactions-list-page
+    taskDescription: >
+      Build a React/TypeScript spending insights page for CashPulse. The page
+      displays a list of expenses grouped by category with spending totals,
+      percentage breakdowns, and trend indicators. Includes filter chips for
+      time range (week/month/quarter) and category. Uses CategorySpending and
+      DailySpending entity data.
+    taskType: NEW
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: Expense
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: description, type: string }
+              - { name: categoryId, type: reference }
+              - { name: date, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: createdAt, type: date }
+          - name: Category
+            fields:
+              - { name: id, type: string }
+              - { name: name, type: string }
+              - { name: color, type: string }
+              - { name: icon, type: string }
+              - { name: isDefault, type: boolean }
+          - name: CategorySpending
+            fields:
+              - { name: categoryId, type: reference }
+              - { name: month, type: string }
+              - { name: totalAmount, type: number }
+              - { name: percentage, type: number }
+              - { name: transactionCount, type: number }
+          - name: DailySpending
+            fields:
+              - { name: date, type: date }
+              - { name: totalAmount, type: number }
+              - { name: transactionCount, type: number }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/screen-plans.json
+      screenId: screen-003
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
+      screenId: screen-003
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/spending-insights.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+
+  - id: cashpulse-settings-form
+    taskDescription: >
+      Build a React/TypeScript settings form component for CashPulse. The form
+      allows users to configure their default currency, monthly budget limit,
+      and manage expense categories (add, edit, delete, set colors and icons).
+      Uses UserSettings, Budget, and Category entity data.
+    taskType: NEW
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: UserSettings
+            fields:
+              - { name: id, type: string }
+              - { name: currency, type: enum }
+              - { name: defaultMonthlyBudget, type: number }
+          - name: Budget
+            fields:
+              - { name: id, type: string }
+              - { name: monthlyLimit, type: number }
+              - { name: currency, type: enum }
+              - { name: month, type: string }
+          - name: Category
+            fields:
+              - { name: id, type: string }
+              - { name: name, type: string }
+              - { name: color, type: string }
+              - { name: icon, type: string }
+              - { name: isDefault, type: boolean }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/screen-plans.json
+      screenId: screen-004
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
+      screenId: screen-004
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/settings.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+
+  # ---------------------------------------------------------------------------
+  # MODIFY tasks (M3.5 CashPulse brownfield — "Add recurring transactions")
+  # ---------------------------------------------------------------------------
+
+  - id: cashpulse-dashboard-modify-add-recurring-card
+    taskDescription: >
+      Modify the existing CashPulse dashboard component to add an "Upcoming
+      Recurring Expenses" card in the left column. The card shows the next 3-5
+      upcoming recurring transactions with amount, merchant name, frequency
+      badge, and next occurrence date. Each row links to the expense detail.
+      The existing dashboard has 159 nodes including a spending summary and
+      recent expense list.
+    taskType: MODIFY
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: Expense
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: date, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: recurringTemplateId, type: reference }
+          - name: RecurringTemplate
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: frequency, type: enum }
+              - { name: startDate, type: date }
+              - { name: endDate, type: date }
+              - { name: nextOccurrence, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: status, type: enum }
+              - { name: createdAt, type: date }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/screen-plans.json
+      screenId: screen-001
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
+      screenId: screen-001
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+
+  - id: cashpulse-add-expense-modify-recurrence-toggle
+    taskDescription: >
+      Modify the existing CashPulse add-expense form to include a recurrence
+      configuration section. Add a toggle "Make this recurring" that, when
+      enabled, reveals a frequency picker (weekly/monthly/yearly), start date,
+      and optional end date fields. The recurrence data maps to the
+      RecurringTemplate entity. The existing form has 157 nodes including
+      amount, category, date, payment method, and note fields.
+    taskType: MODIFY
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: Expense
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: date, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: recurringTemplateId, type: reference }
+          - name: RecurringTemplate
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: frequency, type: enum }
+              - { name: startDate, type: date }
+              - { name: endDate, type: date }
+              - { name: nextOccurrence, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: status, type: enum }
+              - { name: createdAt, type: date }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/screen-plans.json
+      screenId: screen-002
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
+      screenId: screen-002
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+
+  - id: cashpulse-transactions-list-modify-recurring-badge
+    taskDescription: >
+      Modify the existing CashPulse dashboard's expense list to add a recurring
+      badge to each transaction row that has a recurringTemplateId. The badge
+      shows the frequency (weekly/monthly/yearly) as a small pill/chip next to
+      the amount. Non-recurring expenses show no badge. The existing dashboard
+      expense list rows display amount, description, category, and date.
+    taskType: MODIFY
+    contractBundleSlice:
+      dataModel:
+        entities:
+          - name: Expense
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: date, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: recurringTemplateId, type: reference }
+          - name: RecurringTemplate
+            fields:
+              - { name: id, type: string }
+              - { name: amount, type: number }
+              - { name: categoryId, type: reference }
+              - { name: merchantName, type: string }
+              - { name: frequency, type: enum }
+              - { name: startDate, type: date }
+              - { name: endDate, type: date }
+              - { name: nextOccurrence, type: date }
+              - { name: paymentMethod, type: enum }
+              - { name: note, type: string }
+              - { name: status, type: enum }
+              - { name: createdAt, type: date }
+    screenPlan:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/screen-plans.json
+      screenId: screen-006
+    componentComposition:
+      source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
+      screenId: screen-006
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate

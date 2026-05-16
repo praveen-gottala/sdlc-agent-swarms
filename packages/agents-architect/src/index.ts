@@ -15,6 +15,9 @@ export type { ArchitectDeps, ArchitectNodeFn } from './deps.js';
 // Context slicer
 export { sliceContractBundle, stateCompositionsToBundle } from './context-slicer.js';
 
+// Design slice (DesignSliceStrategy resolution)
+export { extractLabelsAndBindings, extractStructure } from './design-slice/index.js';
+
 // Sizing heuristic
 export { estimateTaskTokenBudget } from './sizing-heuristic.js';
 

@@ -1,0 +1,706 @@
+[
+  {
+    "id": "screen-001",
+    "featureId": "feat-001,feat-002,feat-003,feat-007,feat-012,feat-013,feat-017",
+    "screenType": "page",
+    "route": "/",
+    "components": [
+      "dashboard-page",
+      "top-nav-bar",
+      "cashpulse-logo",
+      "nav-tabs",
+      "month-navigator",
+      "settings-trigger",
+      "dashboard-layout",
+      "dashboard-left-column",
+      "budget-summary-card",
+      "budget-status-badge",
+      "budget-amount-display",
+      "budget-progress-bar",
+      "budget-remaining-display",
+      "category-donut-chart-card",
+      "donut-chart",
+      "donut-tooltip",
+      "donut-legend",
+      "dashboard-right-column",
+      "recent-expenses-header",
+      "category-filter-dropdown",
+      "recent-expenses-list",
+      "expense-row",
+      "category-icon-circle",
+      "expense-row-meta",
+      "expense-row-amount",
+      "dashboard-empty-state",
+      "button",
+      "expense-detail-popover",
+      "popover-header",
+      "popover-detail-rows",
+      "popover-note",
+      "popover-actions"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-month-summary",
+        "field": "totalSpent",
+        "source": "/api/month-summary/{month}",
+        "transform": "selectedMonth param injected from MonthNavigator state"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "budgetLimit",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "remainingAmount",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "budgetStatus",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "transactionCount",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-user-settings",
+        "field": "currency",
+        "source": "/api/settings",
+        "transform": "used as currency prop for all amount display components"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "totalAmount",
+        "source": "/api/category-spending/{month}",
+        "transform": "selectedMonth param injected; mapped to donut chart segments and legend items"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "percentage",
+        "source": "/api/category-spending/{month}"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "transactionCount",
+        "source": "/api/category-spending/{month}",
+        "transform": "summed for donut center label"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses",
+        "transform": "query params: month=selectedMonth, sortBy=date, sortOrder=desc, limit=20; categoryId filter applied when category filter dropdown selection is non-null"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "description",
+        "source": "/api/expenses"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/expenses"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "paymentMethod",
+        "source": "/api/expenses"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "note",
+        "source": "/api/expenses"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "name",
+        "source": "/api/categories",
+        "transform": "used to populate category-filter-dropdown options and expense row category labels"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "icon",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "id",
+        "source": "/api/expenses/{id}",
+        "transform": "fetched on expense row click to populate expense-detail-popover"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "cashpulse-logo onClick"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "nav-tabs onTabChange -> 'add-expense'"
+      },
+      {
+        "target": "screen-003",
+        "trigger": "nav-tabs onTabChange -> 'insights'"
+      },
+      {
+        "target": "screen-004",
+        "trigger": "settings-trigger onClick"
+      },
+      {
+        "target": "screen-005",
+        "trigger": "expense-row onClick"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "dashboard-empty-state onCtaClick"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "popover-actions onEdit"
+      }
+    ]
+  },
+  {
+    "id": "screen-002",
+    "featureId": "feat-005,feat-006,feat-013,feat-015,feat-017",
+    "screenType": "page",
+    "route": "/add-expense",
+    "components": [
+      "add-expense-page",
+      "top-nav-bar",
+      "cashpulse-logo",
+      "nav-tabs",
+      "month-navigator",
+      "settings-trigger",
+      "add-expense-form",
+      "hero-amount-input",
+      "category-selector-grid",
+      "category-chip",
+      "inline-category-creation",
+      "color-picker-circles",
+      "button",
+      "date-picker-input",
+      "date-picker-calendar",
+      "payment-method-selector",
+      "payment-chip",
+      "note-input",
+      "save-button",
+      "quick-entry-suggestions",
+      "suggestion-chip"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-category",
+        "field": "id",
+        "source": "/api/categories",
+        "transform": "sorted by sortOrder; populates category-selector-grid chips"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "name",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "icon",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-quick-add-suggestion",
+        "field": "description",
+        "source": "/api/quick-add-suggestions",
+        "transform": "limit=4; hidden entirely when response data array is empty (feat-017)"
+      },
+      {
+        "entityId": "entity-quick-add-suggestion",
+        "field": "amount",
+        "source": "/api/quick-add-suggestions"
+      },
+      {
+        "entityId": "entity-quick-add-suggestion",
+        "field": "categoryId",
+        "source": "/api/quick-add-suggestions"
+      },
+      {
+        "entityId": "entity-quick-add-suggestion",
+        "field": "paymentMethod",
+        "source": "/api/quick-add-suggestions"
+      },
+      {
+        "entityId": "entity-user-settings",
+        "field": "currency",
+        "source": "/api/settings",
+        "transform": "used as currency prefix in hero-amount-input"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses/{id}",
+        "transform": "only fetched in edit mode; pre-fills hero-amount-input"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "description",
+        "source": "/api/expenses/{id}",
+        "transform": "edit mode pre-fill for description field"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/expenses/{id}",
+        "transform": "edit mode pre-fill; auto-selects matching category chip"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses/{id}",
+        "transform": "edit mode pre-fill for date-picker-input"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "paymentMethod",
+        "source": "/api/expenses/{id}",
+        "transform": "edit mode pre-fill; auto-selects matching payment chip"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "note",
+        "source": "/api/expenses/{id}",
+        "transform": "edit mode pre-fill for note-input"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "id",
+        "source": "/api/expenses",
+        "transform": "POST on save-button click (add mode); PUT /api/expenses/{id} in edit mode"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "id",
+        "source": "/api/categories",
+        "transform": "POST /api/categories on inline-category-creation save; new category auto-appended to grid and auto-selected"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "cashpulse-logo onClick"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "nav-tabs onTabChange -> 'dashboard'"
+      },
+      {
+        "target": "screen-003",
+        "trigger": "nav-tabs onTabChange -> 'insights'"
+      },
+      {
+        "target": "screen-004",
+        "trigger": "settings-trigger onClick"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "save-button onSaveSuccess (after '✓ Saved!' animation)"
+      },
+      {
+        "target": "screen-006",
+        "trigger": "date-picker-input onToggle"
+      }
+    ]
+  },
+  {
+    "id": "screen-003",
+    "featureId": "feat-007,feat-008,feat-009,feat-010,feat-011,feat-013,feat-016,feat-017",
+    "screenType": "page",
+    "route": "/insights",
+    "components": [
+      "insights-page",
+      "top-nav-bar",
+      "cashpulse-logo",
+      "nav-tabs",
+      "month-navigator",
+      "settings-trigger",
+      "period-summary-card",
+      "stat-cell",
+      "daily-spending-chart-card",
+      "chart-mode-toggle",
+      "daily-spending-chart",
+      "chart-tooltip",
+      "top-categories-card",
+      "stacked-bar",
+      "stacked-bar-tooltip",
+      "category-progress-list",
+      "biggest-expenses-card",
+      "biggest-expense-row",
+      "month-comparison-card",
+      "comparison-bars",
+      "comparison-badge",
+      "export-csv-button",
+      "insights-empty-state"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-month-summary",
+        "field": "totalSpent",
+        "source": "/api/month-summary/{month}",
+        "transform": "selectedMonth param from MonthNavigator; feeds period-summary-card stat-cell"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "dailyAverage",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "transactionCount",
+        "source": "/api/month-summary/{month}"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "totalSpent",
+        "source": "/api/month-comparison",
+        "transform": "query param: month=selectedMonth; current and previous MonthSummary used for stat-cell trend indicators and month-comparison-card"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "dailyAverage",
+        "source": "/api/month-comparison"
+      },
+      {
+        "entityId": "entity-month-summary",
+        "field": "transactionCount",
+        "source": "/api/month-comparison"
+      },
+      {
+        "entityId": "entity-daily-spending",
+        "field": "totalAmount",
+        "source": "/api/daily-spending/{month}",
+        "transform": "selectedMonth param; feeds daily-spending-chart data points"
+      },
+      {
+        "entityId": "entity-daily-spending",
+        "field": "transactionCount",
+        "source": "/api/daily-spending/{month}",
+        "transform": "shown in chart-tooltip on hover"
+      },
+      {
+        "entityId": "entity-daily-spending",
+        "field": "date",
+        "source": "/api/daily-spending/{month}"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "totalAmount",
+        "source": "/api/category-spending/{month}",
+        "transform": "selectedMonth param; feeds stacked-bar segments and category-progress-list"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "percentage",
+        "source": "/api/category-spending/{month}"
+      },
+      {
+        "entityId": "entity-category-spending",
+        "field": "categoryId",
+        "source": "/api/category-spending/{month}"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/insights/top-expenses/{month}",
+        "transform": "selectedMonth param; top 5 sorted by amount desc; feeds biggest-expenses-card rows"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "description",
+        "source": "/api/insights/top-expenses/{month}"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/insights/top-expenses/{month}"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/insights/top-expenses/{month}"
+      },
+      {
+        "entityId": "entity-user-settings",
+        "field": "currency",
+        "source": "/api/settings",
+        "transform": "used as currency prop for all amount display components on this screen"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "id",
+        "source": "/api/export/expenses",
+        "transform": "triggered on export-csv-button click; query param: month=selectedMonth; response is CSV download"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "cashpulse-logo onClick"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "nav-tabs onTabChange -> 'dashboard'"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "nav-tabs onTabChange -> 'add-expense'"
+      },
+      {
+        "target": "screen-004",
+        "trigger": "settings-trigger onClick"
+      }
+    ]
+  },
+  {
+    "id": "screen-004",
+    "featureId": "feat-014,feat-018,feat-022",
+    "screenType": "modal",
+    "route": "/settings",
+    "components": [
+      "settings-dialog",
+      "dialog-header",
+      "currency-selector",
+      "budget-limit-input",
+      "category-manager",
+      "category-manager-row"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-user-settings",
+        "field": "currency",
+        "source": "/api/settings",
+        "transform": "populates currency-selector selectedCurrency; PUT /api/settings on change triggers currency-change toast (feat-018)"
+      },
+      {
+        "entityId": "entity-user-settings",
+        "field": "defaultMonthlyBudget",
+        "source": "/api/settings",
+        "transform": "populates budget-limit-input value; PUT /api/settings on change"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "id",
+        "source": "/api/categories",
+        "transform": "populates category-manager list rows"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "name",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "isDefault",
+        "source": "/api/categories",
+        "transform": "isDefault=true disables trash icon on category-manager-row"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "id",
+        "source": "/api/categories/{id}",
+        "transform": "DELETE /api/categories/{id} on trash icon click for non-default categories"
+      },
+      {
+        "entityId": "entity-budget",
+        "field": "monthlyLimit",
+        "source": "/api/budgets/{month}",
+        "transform": "current month budget; PUT /api/budgets/{month} on budget-limit-input change"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "dialog-header onClose (× button)"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "scrim click (outside dialog)"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "Escape key press"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "category-manager onAdd (+ Add category link)"
+      }
+    ]
+  },
+  {
+    "id": "screen-005",
+    "featureId": "feat-004",
+    "screenType": "drawer",
+    "route": "/expenses/:id/detail",
+    "components": [
+      "expense-detail-popover-screen",
+      "popover-header",
+      "popover-amount-row",
+      "popover-category-row",
+      "popover-date-row",
+      "popover-payment-row",
+      "popover-note-section",
+      "popover-action-buttons"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-expense",
+        "field": "amount",
+        "source": "/api/expenses/{id}",
+        "transform": "id from clicked expense row; feeds popover-amount-row value"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "description",
+        "source": "/api/expenses/{id}",
+        "transform": "feeds popover-header title"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "categoryId",
+        "source": "/api/expenses/{id}",
+        "transform": "joined category object feeds popover-category-row categoryName and categoryColor"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses/{id}",
+        "transform": "feeds popover-date-row value"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "paymentMethod",
+        "source": "/api/expenses/{id}",
+        "transform": "feeds popover-payment-row value"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "note",
+        "source": "/api/expenses/{id}",
+        "transform": "feeds popover-note-section; hidden when undefined"
+      },
+      {
+        "entityId": "entity-user-settings",
+        "field": "currency",
+        "source": "/api/settings",
+        "transform": "used as currency prop for amount display"
+      },
+      {
+        "entityId": "entity-expense",
+        "field": "id",
+        "source": "/api/expenses/{id}",
+        "transform": "DELETE /api/expenses/{id} on confirmed delete action"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "popover-header onClose"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "popover-action-buttons onEdit"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "popover-action-buttons onConfirmDelete (after 3s confirm)"
+      }
+    ]
+  },
+  {
+    "id": "screen-006",
+    "featureId": "feat-005",
+    "screenType": "sheet",
+    "route": "/add-expense/date-picker",
+    "components": [
+      "date-picker-calendar-dropdown",
+      "calendar-header",
+      "calendar-day-grid"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-expense",
+        "field": "date",
+        "source": "/api/expenses/{id}",
+        "transform": "in edit mode, selectedDate pre-filled from expense.date; in add mode, defaults to today"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-002",
+        "trigger": "calendar-day-grid onDaySelect (valid date selected)"
+      },
+      {
+        "target": "screen-002",
+        "trigger": "click outside calendar dropdown"
+      }
+    ]
+  },
+  {
+    "id": "screen-007",
+    "featureId": "feat-003,feat-007",
+    "screenType": "sheet",
+    "route": "/dashboard/category-filter",
+    "components": [
+      "category-filter-dropdown-screen",
+      "filter-dropdown-trigger",
+      "filter-dropdown-list"
+    ],
+    "dataBindings": [
+      {
+        "entityId": "entity-category",
+        "field": "id",
+        "source": "/api/categories",
+        "transform": "all categories fetched; prepended with 'All Categories' null option in filter-dropdown-list items"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "name",
+        "source": "/api/categories"
+      },
+      {
+        "entityId": "entity-category",
+        "field": "color",
+        "source": "/api/categories"
+      }
+    ],
+    "navigationTargets": [
+      {
+        "target": "screen-001",
+        "trigger": "filter-dropdown-list onSelect (any item selected)"
+      },
+      {
+        "target": "screen-001",
+        "trigger": "click outside dropdown"
+      }
+    ]
+  }
+]

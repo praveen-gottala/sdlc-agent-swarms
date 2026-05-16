@@ -187,7 +187,7 @@ export function createArchitectureWriter(deps: ArchitectDeps): ArchitectNodeFn {
       { system: systemPrompt, messages: [{ role: 'user', content: userMessage }] },
       {
         model: 'claude-opus-4-6',
-        maxTokens: 8192,
+        maxTokens: 65536,
         temperature: 0,
         responseSchema: ARCHITECTURE_WRITER_RESPONSE_SCHEMA,
         promptVersion,
@@ -198,6 +198,10 @@ export function createArchitectureWriter(deps: ArchitectDeps): ArchitectNodeFn {
     if (!result.ok) {
       debugLog(`architectureWriter: LLM failed ${result.error.code}`);
       return {};
+    }
+
+    if (result.value.finishReason === 'max_tokens') {
+      debugLog('architectureWriter: response truncated (max_tokens) — increase maxTokens or simplify user message');
     }
 
     let raw: unknown;

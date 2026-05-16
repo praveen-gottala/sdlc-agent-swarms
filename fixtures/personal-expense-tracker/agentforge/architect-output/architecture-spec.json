@@ -1,0 +1,317 @@
+{
+  "projectId": "cashpulse-greenfield",
+  "decisions": [
+    {
+      "gapId": "gap-data-store",
+      "chosenAlternativeId": "alt-2",
+      "rationale": "Dexie.js (IndexedDB) provides indexed queries for efficient Insights chart aggregations within 600ms, liveQuery() for reactive UI updates within 150ms, schema versioning, and generous storage quota. The 23KB bundle is negligible. localStorage alternatives risk 5MB cap; sql.js WASM adds unacceptable cold-start latency.",
+      "adrId": "adr-001"
+    },
+    {
+      "gapId": "gap-styling-approach",
+      "chosenAlternativeId": "alt-tailwind-cva",
+      "rationale": "Tailwind CSS + CVA provides zero-runtime styling with typed variant maps that enforce CashPulse's 15 color tokens, 8 typography roles, and data-driven visual states (Category colors, Budget status) at compile time. motion-reduce: variant handles prefers-reduced-motion natively. 5 devDependencies (tailwindcss, postcss, autoprefixer, cva, tailwind-merge) with zero runtime cost.",
+      "adrId": "adr-002"
+    },
+    {
+      "gapId": "gap-component-library",
+      "chosenAlternativeId": "alt-shadcn-ui",
+      "rationale": "shadcn/ui's copy-owned components + Radix UI primitives deliver WCAG 2.1 AA accessibility (keyboard nav, focus management, ARIA) out of the box for Dialog, Popover, Select, and Toast. Design tokens are applied directly in source with zero override friction. Recharts added separately for charts. Lowest blast radius of library-based options (~20 new files).",
+      "adrId": "adr-003"
+    },
+    {
+      "gapId": "gap-orm-strategy",
+      "chosenAlternativeId": "alt-01",
+      "rationale": "Dexie.js as the data access layer aligns with the data-store decision (gap-data-store). Its fluent Collection API handles CRUD for 5 primary entities and aggregation queries for 3 derived entities. liveQuery() provides reactive subscriptions. Schema versioning handles migrations. Single 25KB dependency with async-only API requiring consistent async/await patterns across hooks.",
+      "adrId": "adr-001"
+    },
+    {
+      "gapId": "gap-caching-strategy",
+      "chosenAlternativeId": "alt-1",
+      "rationale": "Zustand in-memory store (combined with alt-4 memoized selectors) provides synchronous sub-150ms reads for all micro-interactions. Dexie.js handles durable persistence underneath. Derived entities recompute only when source slices change via memoized selectors. No backend exists to cache against, making Service Worker and HTTP caching premature. ~3KB Zustand + zero-dep useMemo selectors.",
+      "adrId": "adr-004"
+    },
+    {
+      "gapId": "gap-payment-provider",
+      "chosenAlternativeId": "alt-local-storage",
+      "rationale": "CashPulse is a tracker, not a payment initiator. No payment provider integration is needed. All expense data is user-entered and persisted client-side. The payment method field is a categorization enum label. Backend API, bank integration, and auth are all explicitly out of scope. Dexie.js (chosen in gap-data-store) serves as the actual persistence layer rather than raw localStorage.",
+      "adrId": "adr-005"
+    },
+    {
+      "gapId": "gap-notification-channel",
+      "chosenAlternativeId": "alt-02",
+      "rationale": "Radix UI Toast is already a zero-marginal-cost dependency since shadcn/ui (chosen for gap-component-library) uses Radix primitives. It provides production-grade ARIA live regions, Escape dismiss, and focus management out of the box. Covers expense save, currency change, CSV export, and error notifications. Browser Notification API is borderline out-of-scope and requires permission prompts.",
+      "adrId": "adr-006"
+    },
+    {
+      "gapId": "gap-search-strategy",
+      "chosenAlternativeId": "alt-1",
+      "rationale": "Current must-have scope has exactly one filter (category dropdown on Dashboard). Array.filter over an in-memory dataset of <2,000 records executes in <10ms, well within 150ms budget. URL params add unnecessary router complexity for a single dropdown. Fuse.js and predicate DSL are over-engineered for current scope. Can layer on Fuse.js later if the could-have search feature (feat-024) is prioritized.",
+      "adrId": "adr-007"
+    }
+  ],
+  "stackConfig": {
+    "frontend": "React 18 with Vite",
+    "backend": "None (client-side only)",
+    "database": "IndexedDB via Dexie.js (browser-local)",
+    "styling": "Tailwind CSS v3 + CVA (Class Variance Authority) + tailwind-merge",
+    "componentLibrary": "shadcn/ui (Radix UI primitives) + Recharts for charts"
+  },
+  "assumptionLedgerUpdates": [],
+  "implementationPatterns": [
+    {
+      "id": "data-access-drizzle-only",
+      "category": "data-access",
+      "title": "Drizzle ORM for all persistence",
+      "rule": "Use Drizzle schemas and queries only; no raw SQL except inside reviewed migrations.",
+      "rationale": "Keeps schema drift and parallel-task DB access consistent.",
+      "appliesTo": [
+        "backend"
+      ]
+    },
+    {
+      "id": "api-error-rfc7807",
+      "category": "error-handling",
+      "title": "Problem+json error envelope",
+      "rule": "HTTP errors use application/problem+json with code, message, optional details; same shape on every route.",
+      "rationale": "Prevents T3/T4 mismatch on error handling (R6 Q2, Cognition Principle 2).",
+      "appliesTo": [
+        "backend",
+        "integration"
+      ]
+    },
+    {
+      "id": "component-tailwind-tokens-only",
+      "category": "styling",
+      "title": "Tailwind via design tokens only — no arbitrary values",
+      "rule": "All styling uses Tailwind utility classes referencing tokens defined in tailwind.config.ts. The config extends the default theme with CashPulse's exact design tokens: colors (blue-600, gray-900, emerald-500, red-500, amber-500, violet-500, orange-500, etc.), spacing (4px base unit multiples), border-radius (card: 16px, button: 10px, badge: 20px, input: 8px), shadows (card: '0 1px 3px rgba(0,0,0,0.06)', elevated: '0 8px 24px rgba(0,0,0,0.10)'), and fontFamily (Inter with tabular-nums variant). Use CVA for multi-variant components. Never use Tailwind arbitrary value syntax (e.g., `w-[347px]`) except for one-off layout constraints explicitly specified in the PRD (e.g., donut chart 160px diameter).",
+      "rationale": "Derived from gap-styling-approach decision (Tailwind + CVA). Enforces strict design token adherence per NFR-007 and prevents style drift across 7 screens and 25 features.",
+      "example": "// tailwind.config.ts (excerpt)\nmodule.exports = {\n  theme: {\n    extend: {\n      colors: {\n        primary: '#2563EB',\n        'primary-light': '#DBEAFE',\n      },\n      borderRadius: {\n        card: '16px',\n        button: '10px',\n        badge: '20px',\n        input: '8px',\n      },\n      boxShadow: {\n        card: '0 1px 3px rgba(0,0,0,0.06)',\n        elevated: '0 8px 24px rgba(0,0,0,0.10)',\n      },\n      fontFamily: {\n        sans: ['Inter', 'system-ui', 'sans-serif'],\n      },\n    },\n  },\n};",
+      "forbids": [
+        "inline style attributes for token-expressible values",
+        "hardcoded hex colors in className strings",
+        "CSS-in-JS runtime libraries (styled-components, Emotion)"
+      ],
+      "appliesTo": [
+        "tailwind.config.ts",
+        "components/**/*.tsx",
+        "app/**/*.tsx"
+      ]
+    },
+    {
+      "id": "state-server-only",
+      "category": "other",
+      "title": "Authoritative state on the server",
+      "rule": "React state is ephemeral UI only; budgets, transactions, and sessions are loaded and mutated via API.",
+      "rationale": "Avoids split-brain between client guesses and server truth.",
+      "appliesTo": [
+        "frontend",
+        "backend"
+      ]
+    },
+    {
+      "id": "validation-zod-at-boundary",
+      "category": "validation",
+      "title": "Zod schemas validate all data at persistence boundaries",
+      "rule": "Define Zod schemas for each entity type (ExpenseSchema, CategorySchema, BudgetSchema, UserSettingsSchema). Validate data with schema.parse() before every Dexie write (add, put, update). Validate imported JSON data (CSV import, seed data) on ingestion. Form inputs use the same Zod schemas for client-side validation — amount max 99999.99, 2 decimal places; note max 100 chars; date not in future; paymentMethod enum. Never write unvalidated data to Dexie.",
+      "rationale": "Derived from NFR-009 (data integrity) and the assumption ledger entry on instant validation. Zod provides a single source of truth for validation rules shared between form UI and persistence layer, preventing invalid data from entering IndexedDB.",
+      "example": "// schemas/expense.ts\nimport { z } from 'zod';\n\nexport const ExpenseSchema = z.object({\n  amount: z.number().min(0.01).max(99999.99),\n  description: z.string().min(1).max(200),\n  categoryId: z.string().min(1),\n  date: z.string().refine(d => new Date(d) <= new Date(), 'Date cannot be in the future'),\n  paymentMethod: z.enum(['Cash', 'Debit Card', 'Credit Card', 'UPI/Other']),\n  note: z.string().max(100).optional(),\n});",
+      "forbids": [
+        "Dexie writes without prior Zod validation",
+        "ad-hoc validation logic duplicated across components"
+      ],
+      "appliesTo": [
+        "schemas/*.ts",
+        "hooks/useExpenses.ts",
+        "components/AddExpenseForm.tsx"
+      ]
+    },
+    {
+      "id": "auth-middleware-required",
+      "category": "auth",
+      "title": "Session auth via shared middleware",
+      "rule": "Protected routes and handlers run behind the same auth middleware stack; no ad-hoc cookie checks in handlers.",
+      "appliesTo": [
+        "backend"
+      ]
+    },
+    {
+      "id": "logging-structured-pino",
+      "category": "logging",
+      "title": "Structured JSON logging",
+      "rule": "Use structured logging (e.g. pino) with correlation ids; no console.log in production paths.",
+      "appliesTo": [
+        "backend",
+        "integration"
+      ]
+    },
+    {
+      "id": "data-access-dexie-only",
+      "category": "data-access",
+      "title": "Dexie.js for all client-side persistence",
+      "rule": "All entity reads and writes go through Dexie.js table operations. Define one db.ts file with a Dexie subclass declaring tables for Expense, Category, Budget, UserSettings, and QuickAddSuggestion. Use Dexie's versioned stores() for schema definitions. Access entities only via typed repository hooks (e.g., useExpenses, useCategories) that wrap Dexie Collection queries. Never read/write localStorage or sessionStorage for entity data.",
+      "rationale": "Derived from gap-data-store and gap-orm-strategy decisions. Centralizing persistence in Dexie ensures indexed queries, schema versioning, and reactive liveQuery() subscriptions are consistently available across all 7 screens.",
+      "example": "// db.ts\nimport Dexie, { type Table } from 'dexie';\nimport type { Expense, Category, Budget, UserSettings } from '@/types';\n\nexport class CashPulseDB extends Dexie {\n  expenses!: Table<Expense>;\n  categories!: Table<Category>;\n  budgets!: Table<Budget>;\n  settings!: Table<UserSettings>;\n\n  constructor() {\n    super('cashpulse');\n    this.version(1).stores({\n      expenses: '++id, date, categoryId, amount, createdAt',\n      categories: '++id, name, isDefault',\n      budgets: '++id, month',\n      settings: '++id',\n    });\n  }\n}\n\nexport const db = new CashPulseDB();",
+      "forbids": [
+        "localStorage for entity persistence",
+        "sessionStorage for entity persistence",
+        "direct IndexedDB API calls bypassing Dexie"
+      ],
+      "appliesTo": [
+        "db.ts",
+        "hooks/useExpenses.ts",
+        "hooks/useCategories.ts",
+        "hooks/useBudget.ts",
+        "hooks/useSettings.ts"
+      ]
+    },
+    {
+      "id": "api-error-toast-envelope",
+      "category": "error-handling",
+      "title": "Toast-based error envelope for client-side operations",
+      "rule": "All user-facing errors are surfaced via the Radix Toast notification system using a standardized toast object shape: { id: string, type: 'success' | 'error' | 'warning' | 'info', title: string, description?: string, duration: number }. Form validation errors are shown inline below the offending field. Dexie operation failures (write errors, quota exceeded) are caught in repository hooks and surfaced as error toasts. Never use window.alert() or console.error() as user-facing error channels.",
+      "rationale": "Derived from gap-notification-channel decision (Radix Toast). Standardizes error presentation across all screens and aligns with the assumption ledger entries on toast messages for minor errors and inline messages for form errors.",
+      "example": "// hooks/useToast.ts\nexport function useToast() {\n  const { toast } = useRadixToast();\n  return {\n    success: (title: string) => toast({ type: 'success', title, duration: 2000 }),\n    error: (title: string, description?: string) => toast({ type: 'error', title, description, duration: 4000 }),\n  };\n}",
+      "forbids": [
+        "window.alert()",
+        "console.error() as sole error handling",
+        "unhandled Promise rejections in Dexie operations"
+      ],
+      "appliesTo": [
+        "hooks/useToast.ts",
+        "components/ui/toast.tsx",
+        "hooks/useExpenses.ts"
+      ]
+    },
+    {
+      "id": "state-zustand-client",
+      "category": "state-management",
+      "title": "Zustand for client-side application state with Dexie hydration",
+      "rule": "Use Zustand as the in-memory application state store for UI state and hot-path data reads. Define slices per domain (expenseSlice, budgetSlice, settingsSlice, uiSlice). Hydrate Zustand from Dexie liveQuery() subscriptions on app mount. Derived entities (MonthSummary, CategorySpending, DailySpending) are computed via memoized selectors (useMemo or Zustand's useShallow) — never stored as separate Dexie tables. Mutations write to Dexie first, then Zustand updates reactively via liveQuery(). Never use Zustand persist middleware for entity data (Dexie handles persistence).",
+      "rationale": "Derived from gap-caching-strategy decision. Two-layer architecture: Dexie for durable persistence, Zustand for synchronous hot-path reads. Memoized selectors keep derived chart data recomputation within 600ms budget.",
+      "example": "// store/expenseSlice.ts\nimport { useLiveQuery } from 'dexie-react-hooks';\nimport { db } from '@/db';\n\nexport function useMonthExpenses(month: string) {\n  return useLiveQuery(\n    () => db.expenses.where('date').between(`${month}-01`, `${month}-31`).toArray(),\n    [month]\n  );\n}",
+      "forbids": [
+        "Zustand persist middleware for entity data",
+        "storing derived entities as Dexie tables",
+        "direct Dexie reads in render paths without Zustand caching"
+      ],
+      "appliesTo": [
+        "store/*.ts",
+        "hooks/use*.ts",
+        "components/**/*.tsx"
+      ]
+    },
+    {
+      "id": "auth-none-single-user",
+      "category": "auth",
+      "title": "No authentication — single-user client-side app",
+      "rule": "CashPulse has no authentication, authorization, or user identity layer. All data belongs to a single implicit user. No login screen, no session tokens, no middleware guards. UserSettings (entity-004) stores preferences (currency, default budget) without any user ID association. If multi-user support is added in the future, this decision must be revisited via a new ADR.",
+      "rationale": "Derived from scope exclusion constraint-scope-1 (auth out of scope) and gap-auth-strategy (resolved as 'none'). Explicitly documenting the absence of auth prevents accidental introduction of auth-related patterns.",
+      "forbids": [
+        "session tokens or cookies",
+        "user ID fields on entities",
+        "route guards or auth middleware",
+        "login/signup screens"
+      ],
+      "appliesTo": [
+        "app/**/*.tsx",
+        "hooks/**/*.ts",
+        "store/**/*.ts"
+      ]
+    },
+    {
+      "id": "logging-console-structured",
+      "category": "logging",
+      "title": "Structured console logging for client-side debugging",
+      "rule": "Use a thin logger utility (logger.ts) that wraps console.log/warn/error with structured JSON-like output including timestamp, level, module, and message. Log all Dexie write operations (entity type, operation, record count) at 'info' level. Log validation failures at 'warn' level. Log unhandled errors at 'error' level. In production builds, suppress 'info' and 'debug' levels via an environment variable. Never use bare console.log() — always use the logger utility.",
+      "rationale": "No server-side logging infrastructure exists (no backend), but structured client-side logging aids debugging during development and QA. Pino (baseline catalog) is server-oriented; a lightweight console wrapper is appropriate for a client-only app.",
+      "example": "// lib/logger.ts\nconst LOG_LEVEL = import.meta.env.PROD ? 'warn' : 'debug';\nconst levels = { debug: 0, info: 1, warn: 2, error: 3 };\n\nexport const logger = {\n  info: (module: string, msg: string, data?: unknown) => {\n    if (levels[LOG_LEVEL] <= levels.info) console.log(JSON.stringify({ ts: Date.now(), level: 'info', module, msg, data }));\n  },\n  warn: (module: string, msg: string, data?: unknown) => console.warn(JSON.stringify({ ts: Date.now(), level: 'warn', module, msg, data })),\n  error: (module: string, msg: string, data?: unknown) => console.error(JSON.stringify({ ts: Date.now(), level: 'error', module, msg, data })),\n};",
+      "forbids": [
+        "bare console.log() calls in production code",
+        "server-side logging libraries (pino, winston) in the client bundle"
+      ],
+      "appliesTo": [
+        "lib/logger.ts",
+        "hooks/**/*.ts",
+        "db.ts"
+      ]
+    },
+    {
+      "id": "cva-variant-components",
+      "category": "styling",
+      "title": "CVA variant definitions for all polymorphic components",
+      "rule": "Every component with more than one visual variant must define its variants using CVA's cva() function. Variant keys must map to design token values defined in tailwind.config.ts. Use tailwind-merge (cn() utility) to compose CVA output with additional className props. Required CVA-managed components: Button (intent: primary/secondary/ghost/danger, size: sm/md/lg), Badge (status: on-track/heads-up/over-budget), CategoryChip (selected/unselected, color: per category), PaymentChip (selected/unselected), and ExpenseRow (hover state). Variant definitions are co-located with their component file.",
+      "rationale": "Derived from gap-styling-approach decision (Tailwind + CVA). CVA enforces type-safe variant APIs that prevent invalid visual states and ensure design consistency across all 7 screens. tailwind-merge resolves class conflicts when variants are composed.",
+      "example": "// components/ui/badge.tsx\nimport { cva } from 'class-variance-authority';\n\nexport const badgeVariants = cva('inline-flex items-center rounded-badge px-3 py-1 text-xs font-medium', {\n  variants: {\n    status: {\n      'on-track': 'bg-emerald-50 text-emerald-500',\n      'heads-up': 'bg-amber-50 text-amber-500',\n      'over-budget': 'bg-red-50 text-red-500',\n    },\n  },\n});",
+      "appliesTo": [
+        "components/ui/button.tsx",
+        "components/ui/badge.tsx",
+        "components/ui/category-chip.tsx",
+        "components/ui/payment-chip.tsx"
+      ]
+    },
+    {
+      "id": "a11y-focus-ring-global",
+      "category": "accessibility",
+      "title": "Global focus ring via Tailwind focus-visible utilities",
+      "rule": "All interactive elements (buttons, links, inputs, chips, tabs, chart data points) must include focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 Tailwind classes. This is enforced by including these classes in the base CVA definitions for Button, Input, Chip, and Tab components. Custom interactive elements (expense rows, donut segments) must explicitly add focus ring classes. Minimum interactive element size is 36×36px (min-w-9 min-h-9). Charts use role='img' with descriptive aria-label attributes.",
+      "rationale": "Derived from hard constraint NFR-003 (WCAG 2.1 AA). Focus rings and minimum click targets are non-negotiable accessibility requirements. Embedding them in CVA base variants ensures they cannot be accidentally omitted.",
+      "forbids": [
+        "outline-none without a visible focus alternative",
+        "interactive elements smaller than 36×36px",
+        "color as the sole status indicator"
+      ],
+      "appliesTo": [
+        "components/ui/*.tsx",
+        "components/charts/*.tsx",
+        "components/ExpenseRow.tsx"
+      ]
+    },
+    {
+      "id": "reduced-motion-respect",
+      "category": "accessibility",
+      "title": "Respect prefers-reduced-motion via Tailwind motion-reduce variant",
+      "rule": "All CSS transitions and animations must be wrapped with Tailwind's motion-reduce: variant to disable them when the user prefers reduced motion. Chart animations (600ms staggered entry) must check window.matchMedia('(prefers-reduced-motion: reduce)') and render instantly if true. Slide transitions between screens (350ms) must fall back to instant cuts. Bounce and cascade effects on chip selection and Quick Add must be disabled. Use the motion-safe: variant for animations that should only run when motion is allowed.",
+      "rationale": "Derived from soft constraint NFR-004 and the PRD's accessibility section. Ensures CashPulse is usable for users with vestibular disorders or motion sensitivity.",
+      "example": "// In component JSX\n<div className=\"transition-transform duration-150 motion-reduce:transition-none motion-reduce:transform-none\">",
+      "appliesTo": [
+        "components/**/*.tsx",
+        "components/charts/*.tsx",
+        "app/layout.tsx"
+      ]
+    },
+    {
+      "id": "chart-recharts-pattern",
+      "category": "component",
+      "title": "Recharts for all chart visualizations on Insights screen",
+      "rule": "Use Recharts as the charting library for the Insights screen (Daily Spending bar/line chart, Category donut chart, Month Comparison bars, Top Categories stacked bar). Wrap each chart in a responsive container. Charts must include role='img' and aria-label with a data summary string. Tooltips must be keyboard-accessible (focusable data points). Chart color values must reference the design token palette (blue-600, red-500, amber-500, category colors). Respect prefers-reduced-motion by disabling Recharts animation props when motion is reduced.",
+      "rationale": "Derived from gap-component-library decision — shadcn/ui does not include charts, so Recharts is added as a focused charting dependency. Recharts is the same library underlying Mantine's @mantine/charts, validating its fitness for this use case.",
+      "forbids": [
+        "Chart.js or D3.js as primary charting library (Recharts is the standard)",
+        "hardcoded color values in chart configs — use design tokens"
+      ],
+      "appliesTo": [
+        "components/charts/*.tsx",
+        "components/insights/*.tsx"
+      ]
+    },
+    {
+      "id": "entity-type-definitions",
+      "category": "data-access",
+      "title": "Shared TypeScript entity types for all data entities",
+      "rule": "Define all 8 entity types (Expense, Category, Budget, UserSettings, MonthSummary, CategorySpending, DailySpending, QuickAddSuggestion) as TypeScript interfaces in a single types/entities.ts file. These types are the canonical contract shared between Dexie table definitions, Zod schemas, Zustand store slices, and React component props. Derived entity types (MonthSummary, CategorySpending, DailySpending) are computed types — they are never stored in Dexie but are returned by selector functions. PaymentMethod and Currency are defined as TypeScript union types (not enums) for better tree-shaking.",
+      "rationale": "Derived from gap-data-store and gap-orm-strategy decisions. A single canonical type file prevents schema drift between the persistence layer, validation layer, and UI layer.",
+      "example": "// types/entities.ts\nexport type PaymentMethod = 'Cash' | 'Debit Card' | 'Credit Card' | 'UPI/Other';\nexport type Currency = 'USD' | 'EUR' | 'GBP' | 'INR' | 'JPY';\nexport type BudgetStatus = 'On Track' | 'Heads Up' | 'Over Budget';\n\nexport interface Expense {\n  id?: number;\n  amount: number;\n  description: string;\n  categoryId: string;\n  date: string;\n  paymentMethod: PaymentMethod;\n  note?: string;\n  createdAt: string;\n}",
+      "forbids": [
+        "duplicate entity type definitions across files",
+        "TypeScript enums for PaymentMethod and Currency (use union types)"
+      ],
+      "appliesTo": [
+        "types/entities.ts",
+        "schemas/*.ts",
+        "db.ts",
+        "store/*.ts"
+      ]
+    }
+  ]
+}
