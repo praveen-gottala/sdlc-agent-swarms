@@ -1,0 +1,69 @@
+{
+  "briefId": "brief-dashboard-recurring-card-1748000000000",
+  "moduleId": "dashboard-recurring-card",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Must integrate into existing Dashboard layout (/dashboard) without disrupting the 159-node design; add as a new card section below or alongside existing BudgetSummaryCard and RecentExpensesList",
+    "Follow 8px spacing unit system — use spacing scale values: 4, 8, 12, 16, 24, 32px for all internal padding and gaps",
+    "Card background must use surface-primary token (#1E293B / navy-surface) consistent with existing dashboard cards",
+    "Card elevation level 1 (shadow: 0 1px 4px rgba(0,0,0,0.3)) matching BudgetSummaryCard and CategoryDonutChart card treatment",
+    "Border radius large (16px) for card container, consistent with existing card components on the dashboard",
+    "Maximum 3 levels of visual hierarchy within the card: header label → row list → row sub-elements",
+    "12-column grid layout with 24px gutters and 24px margins; card spans appropriate columns within existing dashboard grid",
+    "Content max-width 1280px, desktop-first at 1440px viewport as per existing dashboard viewport spec",
+    "RecurringFrequencyBadge must use pill border radius (9999px) consistent with existing BudgetStatusBadge pill pattern",
+    "CategoryColorDot color values must be sourced from Category.color_token / color_hex fields in the data model",
+    "Minimum touch target 44×44px for all interactive elements including upcoming-recurring-view-all-link and expense-row-recurring-badge",
+    "Text colors must use silver-text (#CBD5E1) for primary labels and muted-text (#64748B) for secondary/date text on the dark navy background",
+    "Gold-amber (#F59E0B) focus ring (2px width, 2px offset) on all interactive elements matching global focus state token",
+    "RecurringFrequencyBadge background and text must achieve 4.5:1 contrast ratio — adapt blue tokens to dark surface context using info token (#38BDF8) on navy-raised (#293548) if needed",
+    "Amount text must use DM Mono (body font family) for numeric display, consistent with expense amount rendering across the app",
+    "Section header label must use DM Sans (display font family) at heading-2 scale (16px, weight 600)",
+    "View All link and frequency badge text must use label scale (12px, weight 500, DM Mono)",
+    "Motion for row list entry: fast duration (150ms) with default easing cubic-bezier(0.4,0,0.2,1)",
+    "Empty state icon and label must be vertically centered within card, using muted-text opacity treatment",
+    "upcoming-recurring-view-all-link must be right-aligned within card footer, consistent with ExportCSVButton right-alignment pattern on Insights screen",
+    "expense-row-recurring-badge must be inline within existing ExpenseRow without increasing row height beyond current row spec",
+    "Z-index for any tooltip on recurring-frequency-badge must use tooltip z-index token (1400)"
+  ],
+  "referencePatterns": [
+    "Card-based data display pattern — matches BudgetSummaryCard and CategoryDonutChart card containers on Dashboard",
+    "Row list pattern with category color indicator — matches ExpenseRow with category color treatment in RecentExpensesList",
+    "Status badge / pill pattern — matches BudgetStatusBadge (on-track, heads-up, over-budget) for RecurringFrequencyBadge pill styling",
+    "Empty state pattern with icon + label — matches existing EmptyState component on Dashboard (centered icon + CTA label)",
+    "Section header label pattern — matches card section headers used in TopCategoriesCard and BiggestExpensesCard on Insights screen",
+    "Inline icon badge pattern — matches TrendIndicator inline icon usage in PeriodSummaryHeader on Insights screen",
+    "Right-aligned text link pattern — matches ExportCSVButton right-alignment on Insights screen for View All link",
+    "Amount right-alignment pattern — matches upcoming-recurring-row-amount right-aligned display consistent with RankedExpenseRow amounts",
+    "Category color dot pattern — matches CategoryLegend color dot indicators on Dashboard donut chart legend",
+    "Filter chip / frequency badge pattern — matches CategoryFilterDropdown active state chip styling for RecurringFrequencyBadge"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text elements: merchant name, date, amount, frequency badge text, empty state label, and View All link against their respective backgrounds",
+    "RecurringFrequencyBadge text must achieve 4.5:1 contrast — use #38BDF8 (info token) text on #293548 (navy-raised) background as blue.600 on blue.100 may fail on dark surfaces",
+    "CategoryColorDot must not be the sole means of conveying category information — merchant name text must always accompany the dot",
+    "upcoming-recurring-view-all-link must be keyboard focusable with visible gold-amber focus ring (2px, 2px offset) and have descriptive accessible name 'View all recurring expenses'",
+    "expense-row-recurring-badge must include aria-label describing the recurrence frequency (e.g., 'Recurring: Monthly') for screen reader users",
+    "upcoming-recurring-card must have role='region' with aria-label='Upcoming Recurring Expenses' for landmark navigation",
+    "upcoming-recurring-row-list must use a list element (ul/ol) with each upcoming-recurring-row as a list item (li) for screen reader list navigation",
+    "upcoming-recurring-empty-state must be announced to screen readers when items list is empty via aria-live='polite' region",
+    "circular-arrow-icon must have aria-hidden='true' as it is decorative; text label must convey meaning independently",
+    "recurring-inline-icon within expense-row-recurring-badge must have aria-hidden='true'; badge aria-label carries the semantic meaning",
+    "All amount values must include currency context in screen reader text (e.g., aria-label='$45.00 USD') using UserSettings.currency",
+    "Date values in upcoming-recurring-row-date must use datetime attribute on time element for machine-readable date format",
+    "isLoading state of upcoming-recurring-card must use aria-busy='true' on the card region and provide a loading announcement",
+    "Minimum touch target of 44×44px for upcoming-recurring-view-all-link — pad the clickable area if visual size is smaller",
+    "Color alone must not distinguish recurring vs non-recurring expense rows — recurring-inline-icon and text label must supplement the color indicator",
+    "Focus order within upcoming-recurring-card must follow logical reading order: header → rows (top to bottom) → View All link",
+    "Screen reader compatible alternative for category color dot: include visually hidden category name text alongside the dot"
+  ],
+  "dataModelDependencies": [
+    "RecurringTemplate entity (new) — fields: templateId, merchantName, amount, nextOccurrenceDate, frequency ('WEEKLY'|'MONTHLY'|'YEARLY'), categoryId, status ('ACTIVE'|'PAUSED'|'CANCELLED'), categoryColor — sourced from GET /api/recurring-templates/upcoming",
+    "Expense entity — existing model extended with isRecurringInstance (boolean) and recurringTemplateId (string) fields — sourced from GET /api/expenses",
+    "Category entity — existing model fields color_token and color_hex used for CategoryColorDot color lookup via categoryId join on recurring template items",
+    "UserSettings entity — currency field required for formatted amount display with correct currency symbol in upcoming-recurring-row-amount",
+    "CategoryAggregate entity — indirectly referenced for category color consistency between donut chart legend and recurring card color dots"
+  ]
+}

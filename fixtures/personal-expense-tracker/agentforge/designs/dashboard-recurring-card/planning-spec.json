@@ -1,0 +1,309 @@
+{
+  "specRef": "spec-dashboard-recurring-card-1748000000000",
+  "moduleId": "dashboard-recurring-card",
+  "componentTree": [
+    {
+      "name": "UpcomingRecurringCard",
+      "props": [
+        "ariaLabel",
+        "role",
+        "ariaBusy",
+        "padding",
+        "borderRadius",
+        "gap"
+      ],
+      "defaultValues": {
+        "ariaLabel": "Upcoming Recurring Expenses",
+        "role": "region",
+        "padding": 24,
+        "borderRadius": 16,
+        "gap": 16
+      },
+      "children": [
+        "RecurringCardHeader",
+        "RecurringRowList",
+        "RecurringEmptyState",
+        "RecurringCardFooter"
+      ]
+    },
+    {
+      "name": "RecurringCardHeader",
+      "props": [
+        "title",
+        "paddingBottom"
+      ],
+      "defaultValues": {
+        "title": "Upcoming Recurring",
+        "paddingBottom": 12
+      },
+      "children": [
+        "RecurringCardTitle"
+      ]
+    },
+    {
+      "name": "RecurringCardTitle",
+      "props": [
+        "label",
+        "typography"
+      ],
+      "defaultValues": {
+        "label": "Upcoming Recurring",
+        "typography": "heading-2"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringRowList",
+      "props": [
+        "items",
+        "rowGap",
+        "ariaRole",
+        "ariaLive"
+      ],
+      "defaultValues": {
+        "rowGap": 8,
+        "ariaRole": "list"
+      },
+      "children": [
+        "RecurringExpenseRow"
+      ]
+    },
+    {
+      "name": "RecurringExpenseRow",
+      "props": [
+        "merchantName",
+        "nextOccurrenceDate",
+        "amount",
+        "currency",
+        "categoryId",
+        "frequency",
+        "status",
+        "ariaRole",
+        "paddingY",
+        "paddingX"
+      ],
+      "defaultValues": {
+        "ariaRole": "listitem",
+        "paddingY": 12,
+        "paddingX": 0
+      },
+      "children": [
+        "CategoryColorDot",
+        "RecurringRowMeta",
+        "RecurringRowAmount",
+        "RecurringFrequencyBadge"
+      ]
+    },
+    {
+      "name": "CategoryColorDot",
+      "props": [
+        "colorHex",
+        "colorToken",
+        "categoryName",
+        "size",
+        "ariaHidden"
+      ],
+      "defaultValues": {
+        "size": 8,
+        "ariaHidden": "true"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringRowMeta",
+      "props": [
+        "merchantName",
+        "nextOccurrenceDate",
+        "gap"
+      ],
+      "defaultValues": {
+        "gap": 4
+      },
+      "children": [
+        "RecurringMerchantLabel",
+        "RecurringDateLabel"
+      ]
+    },
+    {
+      "name": "RecurringMerchantLabel",
+      "props": [
+        "text",
+        "typography"
+      ],
+      "defaultValues": {
+        "typography": "body"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringDateLabel",
+      "props": [
+        "dateText",
+        "datetimeAttr",
+        "typography"
+      ],
+      "defaultValues": {
+        "typography": "label"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringRowAmount",
+      "props": [
+        "amount",
+        "currency",
+        "ariaLabel",
+        "typography"
+      ],
+      "defaultValues": {
+        "typography": "body"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringFrequencyBadge",
+      "props": [
+        "frequency",
+        "ariaLabel",
+        "borderRadius",
+        "paddingX",
+        "paddingY",
+        "typography",
+        "zIndex"
+      ],
+      "defaultValues": {
+        "borderRadius": 9999,
+        "paddingX": 8,
+        "paddingY": 4,
+        "typography": "label",
+        "zIndex": 1400
+      },
+      "children": [
+        "RecurringInlineIcon"
+      ]
+    },
+    {
+      "name": "RecurringInlineIcon",
+      "props": [
+        "ariaHidden",
+        "iconName"
+      ],
+      "defaultValues": {
+        "ariaHidden": "true",
+        "iconName": "circular-arrow"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringEmptyState",
+      "props": [
+        "label",
+        "iconName",
+        "ariaLive",
+        "paddingY"
+      ],
+      "defaultValues": {
+        "label": "No upcoming recurring expenses",
+        "iconName": "circular-arrow",
+        "ariaLive": "polite",
+        "paddingY": 32
+      },
+      "children": []
+    },
+    {
+      "name": "RecurringCardFooter",
+      "props": [
+        "paddingTop",
+        "justifyContent"
+      ],
+      "defaultValues": {
+        "paddingTop": 12,
+        "justifyContent": "flex-end"
+      },
+      "children": [
+        "ViewAllRecurringLink"
+      ]
+    },
+    {
+      "name": "ViewAllRecurringLink",
+      "props": [
+        "label",
+        "ariaLabel",
+        "typography",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "View all recurring expenses",
+        "ariaLabel": "View all recurring expenses",
+        "typography": "label",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "UpcomingRecurringCard.background": "surface-primary",
+    "UpcomingRecurringCard.shadow": "elevation-1",
+    "UpcomingRecurringCard.borderRadius": "large",
+    "UpcomingRecurringCard.border": "border-default",
+    "RecurringCardTitle.color": "text-primary",
+    "RecurringCardTitle.typography": "heading-2",
+    "RecurringRowList.background": "surface-primary",
+    "RecurringExpenseRow.borderBottom": "border-default",
+    "RecurringMerchantLabel.color": "text-primary",
+    "RecurringMerchantLabel.typography": "body",
+    "RecurringDateLabel.color": "text-secondary",
+    "RecurringDateLabel.typography": "label",
+    "RecurringRowAmount.color": "text-primary",
+    "RecurringRowAmount.typography": "body",
+    "RecurringFrequencyBadge.background": "surface-elevated",
+    "RecurringFrequencyBadge.color": "info",
+    "RecurringFrequencyBadge.typography": "label",
+    "RecurringFrequencyBadge.borderRadius": "pill",
+    "RecurringEmptyState.color": "text-secondary",
+    "RecurringEmptyState.typography": "body",
+    "ViewAllRecurringLink.color": "cta-primary",
+    "ViewAllRecurringLink.typography": "label",
+    "ViewAllRecurringLink.focusRingColor": "focus-ring-color",
+    "ViewAllRecurringLink.focusRingWidth": "focus-ring-width"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Card spans 4 columns in the 12-column grid alongside BudgetSummaryCard and RecentExpensesList, with 24px gutters and 24px margins. Full row list visible with inline frequency badges.",
+      "layout": "multi-column",
+      "changes": [
+        "UpcomingRecurringCard spans 4 of 12 grid columns",
+        "RecurringRowList shows up to 5 rows before View All link",
+        "RecurringFrequencyBadge displayed inline to the right of amount",
+        "ViewAllRecurringLink right-aligned in card footer",
+        "Full merchant name and date visible on single row"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Dashboard",
+      "components": [
+        "UpcomingRecurringCard",
+        "RecurringCardHeader",
+        "RecurringCardTitle",
+        "RecurringRowList",
+        "RecurringExpenseRow",
+        "CategoryColorDot",
+        "RecurringRowMeta",
+        "RecurringMerchantLabel",
+        "RecurringDateLabel",
+        "RecurringRowAmount",
+        "RecurringFrequencyBadge",
+        "RecurringInlineIcon",
+        "RecurringEmptyState",
+        "RecurringCardFooter",
+        "ViewAllRecurringLink"
+      ]
+    }
+  ]
+}
