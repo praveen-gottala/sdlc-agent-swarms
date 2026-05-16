@@ -210,7 +210,7 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-001
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/dashboard-recurring-card.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
 
@@ -256,7 +256,7 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-002
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/add-expense-recurrence.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
 
@@ -301,6 +301,6 @@ tasks:
     componentComposition:
       source: fixtures/personal-expense-tracker/agentforge/architect-brownfield-output/component-compositions.json
       screenId: screen-006
-    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    designSpecPath: fixtures/personal-expense-tracker/agentforge/designs-brownfield-after/dashboard-recurring-badge.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate

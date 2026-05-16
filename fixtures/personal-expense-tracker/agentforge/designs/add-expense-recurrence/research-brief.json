@@ -1,0 +1,73 @@
+{
+  "briefId": "brief-add-expense-recurrence-1737000000000",
+  "moduleId": "add-expense-recurrence",
+  "requirementIds": [
+    "REQ-recurrence-config-section",
+    "REQ-recurrence-toggle-row",
+    "REQ-recurrence-config-panel",
+    "REQ-frequency-chip-selector",
+    "REQ-frequency-chip",
+    "REQ-end-date-row",
+    "REQ-end-date-never-radio",
+    "REQ-end-date-on-date-radio",
+    "REQ-end-date-picker-input"
+  ],
+  "designConstraints": [
+    "Must integrate into the existing Add Expense screen (/add) without disrupting the 157-node layout — append RecurrenceConfigSection below the NoteInput/CharacterCounter block and above the SaveExpenseButton",
+    "Follow the established 8px spacing unit system (scale: 4, 8, 12, 16, 24, 32, 48, 64px) for all internal gaps and padding",
+    "Use the 12-column grid with 24px gutters and 24px margins; RecurrenceConfigSection spans full content width matching sibling form sections",
+    "Maximum 3 levels of visual hierarchy: section label → toggle row / config panel → individual chip or radio option",
+    "RecurrenceConfigPanel must use a slide-down/collapse animation at 150ms duration with ease-in-out easing, consistent with the app's fast interaction feel (motion.durations.fast = 150ms)",
+    "FrequencyChip and RadioOption minimum click targets must be 44px tall per design token touch_targets.minimum_height (override architect's 36px to meet project standard)",
+    "All interactive states (hover, focus, disabled) must use the project's state tokens: focus ring gold-amber (#F59E0B), 2px width, 2px offset; disabled opacity 0.38",
+    "Surface color for the RecurrenceConfigPanel background must use surface-elevated (navy-raised #293548) to visually distinguish it from the page background (deep-navy #0F172A), consistent with card elevation level 1",
+    "Chip selected state must adapt architect tokens to project palette: selected background maps to gold-light (#FEF3C7), selected border and text map to gold-amber (#F59E0B) to align with cta-primary token instead of blue.600 which is not in the project token set",
+    "Toggle track ON color must map to teal-success (#14B8A6) as the nearest semantic success token, replacing architect's blue.600 which is absent from the project palette",
+    "Border colors for inputs and unselected chips must use slate-border (#334155) matching border-default token",
+    "Border radius for chips must use borders.radius.pill (9999) for pill-shaped chips consistent with CategoryChipGrid and PaymentMethodChipRow patterns on the same screen",
+    "Border radius for end-date-picker-input must use borders.radius.medium (10px) matching DatePickerInput and other form inputs on the screen",
+    "Section label typography must use the 'label' scale (12px, weight 500, DM Mono) with text-secondary color (muted-text #64748B), consistent with other form section labels on the Add Expense screen",
+    "Toggle label typography must use 'heading-3' scale (15px, weight 500, DM Sans) with text-primary color (silver-text #CBD5E1) to match peer section labels like 'Category' and 'Payment Method'",
+    "Desktop-first layout at 1440px viewport; RecurrenceConfigSection is single-column matching the Add Expense form's single-column layout",
+    "FrequencyChipSelector renders chips in a horizontal row with 8px gap (spacing.scale[1]); wraps to next line on narrower viewports",
+    "EndDateRow renders radio options inline horizontally with 12px gap (spacing.scale[2]); DatePickerInput appears below the radio row when ON_DATE is selected",
+    "The isEditingSeries=true state must visually indicate edit-series context — a muted informational banner using info color (#38BDF8) at opacity 0.1 background with info-colored border may be prepended inside RecurrenceConfigSection",
+    "Z-index for end-date-picker-input dropdown must use z_index.dropdown (1000) consistent with MiniCalendarDropdown on the same screen",
+    "Elevation level 2 shadow (0 4px 16px rgba(0,0,0,0.4)) must be applied to the end-date-picker-input calendar dropdown, matching MiniCalendarDropdown pattern"
+  ],
+  "referencePatterns": [
+    "Toggle row pattern: mirror the existing PaymentMethodChipRow label+control layout — left-aligned label in heading-3 scale, control right-aligned or inline",
+    "Chip selector pattern: reuse CategoryChipGrid and PaymentMethodChipRow chip anatomy — pill border-radius, selected state with cta-primary border and gold-light fill, unselected with slate-border and navy-raised fill",
+    "Inline form expansion pattern: reuse NewCategoryInlineForm slide-down reveal behavior for RecurrenceConfigPanel animated disclosure",
+    "Date picker input pattern: reuse DatePickerInput and MiniCalendarDropdown component patterns already present on the Add Expense screen for end-date-picker-input",
+    "Radio option pattern: styled similarly to filter options in CategoryFilterDropdown — circular indicator with gold-amber fill when selected, slate-border when unselected",
+    "Section divider pattern: use a 1px slate-border (#334155) horizontal rule above RecurrenceConfigSection to visually separate it from the NoteInput block, consistent with form section separators",
+    "Form card container pattern: wrap RecurrenceConfigPanel content in a navy-raised (#293548) surface with border-radius large (16px) and elevation level 1 shadow, matching BudgetSummaryCard and other card surfaces",
+    "Empty/disabled state pattern: when isRecurring=false, RecurrenceConfigPanel is hidden (height: 0, overflow: hidden) with no layout shift to sibling elements",
+    "Edit series informational state: use BudgetStatusBadge-style inline badge with info color to communicate 'Editing recurring series' context at the top of RecurrenceConfigSection"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text: silver-text (#CBD5E1) on navy-raised (#293548) achieves ~9.5:1; gold-amber (#F59E0B) on navy-raised achieves ~6.8:1 — both compliant",
+    "RecurrenceToggleRow must use a native <button role='switch'> or <input type='checkbox' role='switch'> with aria-checked reflecting the boolean state and aria-label='Enable recurring expense'",
+    "FrequencyChipSelector must be wrapped in a <fieldset> with <legend>Frequency</legend>; each FrequencyChip must be a <button> with aria-pressed reflecting isSelected state",
+    "EndDateRow radio options must use <fieldset> with <legend>End date</legend> and native <input type='radio'> elements in a radiogroup, ensuring keyboard arrow-key navigation between Never and On date options",
+    "end-date-picker-input must have an associated <label> element with for/id linkage; the calendar dropdown must trap focus when open and close on Escape key",
+    "RecurrenceConfigPanel animated disclosure must use aria-hidden='true' when collapsed (isVisible=false) and aria-hidden='false' when expanded, preventing screen readers from accessing hidden content",
+    "All interactive elements (toggle, chips, radio buttons, date input) must have visible focus indicators using the project focus ring: 2px solid gold-amber (#F59E0B) with 2px offset",
+    "Minimum touch target size of 44x44px for all interactive elements per project touch_targets tokens — FrequencyChip and RadioOption must meet this minimum regardless of visual size",
+    "Screen reader must announce RecurrenceConfigPanel expansion/collapse via aria-live='polite' region or aria-expanded on the toggle control",
+    "end-date-picker-input calendar dropdown must announce the selected date and available navigation instructions to screen readers via aria-label on the calendar widget",
+    "When isEditingSeries=true, an aria-live='polite' announcement or role='status' element must inform screen readers that the form is editing an existing recurring series",
+    "Color must not be the sole differentiator for chip selected state — selected FrequencyChip must also include a visible border change (slate-border → gold-amber) and optionally a checkmark icon or bold text weight change",
+    "Keyboard navigation: Tab moves through toggle → frequency chips → end date radio group → end date picker; within chip group and radio group, arrow keys navigate between options",
+    "Error states for end-date-picker-input (e.g., end date before start date) must use aria-invalid='true' and aria-describedby pointing to an error message element, with coral-error (#F87171) border matching border-error token"
+  ],
+  "dataModelDependencies": [
+    "RecurringTemplate entity (new) from /api/recurring-templates/{id} — fields: frequency ('WEEKLY'|'MONTHLY'|'YEARLY'), endDate (string|undefined), startDate (string), merchantName (string), amount (number), categoryId (string), paymentMethod (string), note (string)",
+    "Expense entity from expenses domain — existing model used for POST /api/expenses on form submit success; fields: id, amount, merchant, category_id, date, payment_method_id, note, currency",
+    "Category entity from categories domain — categoryId from RecurringTemplate pre-selects within existing CategoryChipGrid component",
+    "PaymentMethod entity from payment-methods domain — paymentMethod from RecurringTemplate pre-selects within existing PaymentMethodChipRow component",
+    "QuickAddSuggestion entity from quick-add-suggestions domain — existing suggestions must remain compatible with recurrence pre-fill flow when isEditingSeries=false",
+    "UserSettings entity from user-settings domain — currency field required for amount display formatting within the recurrence section context"
+  ]
+}

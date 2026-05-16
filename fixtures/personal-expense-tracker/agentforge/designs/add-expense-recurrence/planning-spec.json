@@ -1,0 +1,440 @@
+{
+  "specRef": "spec-add-expense-recurrence-1737000000000",
+  "moduleId": "add-expense-recurrence",
+  "componentTree": [
+    {
+      "name": "RecurrenceConfigSection",
+      "props": [
+        "isRecurring",
+        "isEditingSeries",
+        "paddingY",
+        "rowGap",
+        "maxWidth"
+      ],
+      "defaultValues": {
+        "paddingY": 0,
+        "rowGap": 16,
+        "maxWidth": 1280
+      },
+      "children": [
+        "SectionDivider",
+        "EditSeriesBanner",
+        "RecurrenceToggleRow",
+        "RecurrenceConfigPanel"
+      ]
+    },
+    {
+      "name": "SectionDivider",
+      "props": [
+        "thickness",
+        "color"
+      ],
+      "defaultValues": {
+        "thickness": 1
+      },
+      "children": []
+    },
+    {
+      "name": "EditSeriesBanner",
+      "props": [
+        "isVisible",
+        "message",
+        "paddingX",
+        "paddingY",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "isVisible": 0,
+        "paddingX": 12,
+        "paddingY": 8,
+        "borderRadius": 6
+      },
+      "children": []
+    },
+    {
+      "name": "RecurrenceToggleRow",
+      "props": [
+        "label",
+        "isChecked",
+        "ariaLabel",
+        "height",
+        "paddingX"
+      ],
+      "defaultValues": {
+        "height": 44,
+        "paddingX": 0
+      },
+      "children": [
+        "RecurrenceToggleLabel",
+        "RecurrenceToggleSwitch"
+      ]
+    },
+    {
+      "name": "RecurrenceToggleLabel",
+      "props": [
+        "text",
+        "typography"
+      ],
+      "defaultValues": {
+        "text": "Repeat expense"
+      },
+      "children": []
+    },
+    {
+      "name": "RecurrenceToggleSwitch",
+      "props": [
+        "isChecked",
+        "ariaChecked",
+        "ariaLabel",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "RecurrenceConfigPanel",
+      "props": [
+        "isVisible",
+        "ariaHidden",
+        "animationDuration",
+        "paddingX",
+        "paddingY",
+        "borderRadius",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "animationDuration": 150,
+        "paddingX": 16,
+        "paddingY": 16,
+        "borderRadius": 16,
+        "rowGap": 16
+      },
+      "children": [
+        "FrequencySection",
+        "EndDateSection"
+      ]
+    },
+    {
+      "name": "FrequencySection",
+      "props": [
+        "label",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "rowGap": 8
+      },
+      "children": [
+        "FrequencySectionLabel",
+        "FrequencyChipSelector"
+      ]
+    },
+    {
+      "name": "FrequencySectionLabel",
+      "props": [
+        "text",
+        "typography"
+      ],
+      "defaultValues": {
+        "text": "Frequency"
+      },
+      "children": []
+    },
+    {
+      "name": "FrequencyChipSelector",
+      "props": [
+        "selectedFrequency",
+        "gap",
+        "wrapOnNarrow"
+      ],
+      "defaultValues": {
+        "gap": 8,
+        "wrapOnNarrow": 1
+      },
+      "children": [
+        "FrequencyChip"
+      ]
+    },
+    {
+      "name": "FrequencyChip",
+      "props": [
+        "label",
+        "value",
+        "isSelected",
+        "ariaPressed",
+        "minHeight",
+        "minWidth",
+        "paddingX",
+        "paddingY",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "minHeight": 44,
+        "minWidth": 44,
+        "paddingX": 16,
+        "paddingY": 12,
+        "borderRadius": 9999
+      },
+      "children": []
+    },
+    {
+      "name": "EndDateSection",
+      "props": [
+        "label",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "rowGap": 8
+      },
+      "children": [
+        "EndDateSectionLabel",
+        "EndDateRow"
+      ]
+    },
+    {
+      "name": "EndDateSectionLabel",
+      "props": [
+        "text",
+        "typography"
+      ],
+      "defaultValues": {
+        "text": "End date"
+      },
+      "children": []
+    },
+    {
+      "name": "EndDateRow",
+      "props": [
+        "selectedOption",
+        "gap",
+        "rowGap"
+      ],
+      "defaultValues": {
+        "gap": 12,
+        "rowGap": 8
+      },
+      "children": [
+        "EndDateNeverRadio",
+        "EndDateOnDateRadio",
+        "EndDatePickerInput"
+      ]
+    },
+    {
+      "name": "EndDateNeverRadio",
+      "props": [
+        "label",
+        "isSelected",
+        "value",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "Never",
+        "value": "NEVER",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "EndDateOnDateRadio",
+      "props": [
+        "label",
+        "isSelected",
+        "value",
+        "minHeight",
+        "minWidth"
+      ],
+      "defaultValues": {
+        "label": "On date",
+        "value": "ON_DATE",
+        "minHeight": 44,
+        "minWidth": 44
+      },
+      "children": []
+    },
+    {
+      "name": "EndDatePickerInput",
+      "props": [
+        "isVisible",
+        "selectedDate",
+        "placeholder",
+        "ariaLabel",
+        "ariaInvalid",
+        "ariaDescribedBy",
+        "borderRadius",
+        "height",
+        "zIndexDropdown"
+      ],
+      "defaultValues": {
+        "placeholder": "Select end date",
+        "borderRadius": 10,
+        "height": 44
+      },
+      "children": [
+        "EndDateCalendarDropdown",
+        "EndDateErrorMessage"
+      ]
+    },
+    {
+      "name": "EndDateCalendarDropdown",
+      "props": [
+        "isOpen",
+        "selectedDate",
+        "ariaLabel",
+        "zIndex",
+        "borderRadius"
+      ],
+      "defaultValues": {
+        "borderRadius": 10
+      },
+      "children": []
+    },
+    {
+      "name": "EndDateErrorMessage",
+      "props": [
+        "message",
+        "isVisible",
+        "ariaLive"
+      ],
+      "defaultValues": {
+        "isVisible": 0
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "RecurrenceConfigSection.background": "background-primary",
+    "SectionDivider.color": "border-default",
+    "EditSeriesBanner.background": "info",
+    "EditSeriesBanner.borderColor": "info",
+    "EditSeriesBanner.borderRadius": "small",
+    "EditSeriesBanner.opacity": "opacity-subtle",
+    "EditSeriesBanner.typography": "label",
+    "EditSeriesBanner.textColor": "info",
+    "RecurrenceToggleRow.background": "background-primary",
+    "RecurrenceToggleLabel.typography": "heading-3",
+    "RecurrenceToggleLabel.color": "text-primary",
+    "RecurrenceToggleSwitch.trackColorOn": "success",
+    "RecurrenceToggleSwitch.trackColorOff": "border-default",
+    "RecurrenceToggleSwitch.focusRingColor": "focus-ring-color",
+    "RecurrenceToggleSwitch.focusRingWidth": "focus-ring-width",
+    "RecurrenceConfigPanel.background": "surface-elevated",
+    "RecurrenceConfigPanel.shadow": "elevation-1",
+    "RecurrenceConfigPanel.borderRadius": "large",
+    "RecurrenceConfigPanel.animationDuration": "duration-fast",
+    "RecurrenceConfigPanel.easing": "easing-default",
+    "FrequencySectionLabel.typography": "label",
+    "FrequencySectionLabel.color": "text-secondary",
+    "FrequencyChipSelector.gap": "8",
+    "FrequencyChip.borderRadiusSelected": "pill",
+    "FrequencyChip.borderRadiusUnselected": "pill",
+    "FrequencyChip.backgroundSelected": "cta-primary",
+    "FrequencyChip.backgroundUnselected": "surface-elevated",
+    "FrequencyChip.borderColorSelected": "cta-primary",
+    "FrequencyChip.borderColorUnselected": "border-default",
+    "FrequencyChip.textColorSelected": "text-on-cta",
+    "FrequencyChip.textColorUnselected": "text-primary",
+    "FrequencyChip.typography": "label",
+    "FrequencyChip.focusRingColor": "focus-ring-color",
+    "FrequencyChip.disabledOpacity": "disabled-opacity",
+    "EndDateSectionLabel.typography": "label",
+    "EndDateSectionLabel.color": "text-secondary",
+    "EndDateRow.gap": "12",
+    "EndDateNeverRadio.indicatorColorSelected": "cta-primary",
+    "EndDateNeverRadio.indicatorColorUnselected": "border-default",
+    "EndDateNeverRadio.typography": "body",
+    "EndDateNeverRadio.textColor": "text-primary",
+    "EndDateNeverRadio.focusRingColor": "focus-ring-color",
+    "EndDateOnDateRadio.indicatorColorSelected": "cta-primary",
+    "EndDateOnDateRadio.indicatorColorUnselected": "border-default",
+    "EndDateOnDateRadio.typography": "body",
+    "EndDateOnDateRadio.textColor": "text-primary",
+    "EndDateOnDateRadio.focusRingColor": "focus-ring-color",
+    "EndDatePickerInput.background": "surface-input",
+    "EndDatePickerInput.borderColor": "border-default",
+    "EndDatePickerInput.borderColorFocus": "border-focus",
+    "EndDatePickerInput.borderColorError": "border-error",
+    "EndDatePickerInput.borderRadius": "medium",
+    "EndDatePickerInput.textColor": "text-primary",
+    "EndDatePickerInput.placeholderColor": "text-secondary",
+    "EndDatePickerInput.typography": "body",
+    "EndDatePickerInput.focusRingColor": "focus-ring-color",
+    "EndDatePickerInput.zIndex": "z-dropdown",
+    "EndDateCalendarDropdown.background": "surface-elevated",
+    "EndDateCalendarDropdown.shadow": "elevation-2",
+    "EndDateCalendarDropdown.borderRadius": "medium",
+    "EndDateCalendarDropdown.zIndex": "z-dropdown",
+    "EndDateErrorMessage.color": "error",
+    "EndDateErrorMessage.typography": "small"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Single-column form section matching Add Expense layout; FrequencyChipSelector renders all chips in a single horizontal row with 8px gap; EndDateRow renders radio options inline horizontally with 12px gap",
+      "layout": "single-column",
+      "changes": [
+        "RecurrenceConfigSection spans full content width (max 1280px) with 24px side margins",
+        "FrequencyChipSelector: horizontal chip row, no wrapping needed at full width",
+        "EndDateRow: Never and On Date radios side-by-side inline, DatePickerInput below when ON_DATE selected",
+        "RecurrenceConfigPanel padding 16px all sides",
+        "EditSeriesBanner full width above toggle row"
+      ]
+    },
+    {
+      "breakpoint": "tablet",
+      "width": 768,
+      "behavior": "Single-column layout maintained; FrequencyChipSelector chips may wrap to second line if needed; EndDateRow remains inline",
+      "layout": "single-column",
+      "changes": [
+        "FrequencyChipSelector wraps chips to next line when viewport narrows",
+        "RecurrenceConfigPanel padding reduced to 12px",
+        "EndDateRow radio options remain inline with 12px gap",
+        "Touch targets remain 44px minimum"
+      ]
+    },
+    {
+      "breakpoint": "mobile",
+      "width": 375,
+      "behavior": "Single-column stack; FrequencyChipSelector wraps chips; EndDateRow stacks radio options vertically if needed",
+      "layout": "single-column",
+      "changes": [
+        "FrequencyChipSelector: chips wrap to multiple rows with 8px gap",
+        "EndDateRow: radio options may stack vertically with 8px gap",
+        "RecurrenceConfigPanel padding 12px",
+        "All touch targets maintain 44px minimum height",
+        "EndDatePickerInput full width"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Add Expense — Recurrence Module",
+      "components": [
+        "RecurrenceConfigSection",
+        "SectionDivider",
+        "EditSeriesBanner",
+        "RecurrenceToggleRow",
+        "RecurrenceToggleLabel",
+        "RecurrenceToggleSwitch",
+        "RecurrenceConfigPanel",
+        "FrequencySection",
+        "FrequencySectionLabel",
+        "FrequencyChipSelector",
+        "FrequencyChip",
+        "EndDateSection",
+        "EndDateSectionLabel",
+        "EndDateRow",
+        "EndDateNeverRadio",
+        "EndDateOnDateRadio",
+        "EndDatePickerInput",
+        "EndDateCalendarDropdown",
+        "EndDateErrorMessage"
+      ]
+    }
+  ]
+}

@@ -428,7 +428,7 @@ export function DesignCanvas({
       )}
 
       {/* Main canvas area */}
-      <div ref={canvasContainerRef} className="flex-1 relative overflow-auto">
+      <div ref={canvasContainerRef} className="flex-1 relative overflow-hidden">
         {/* Empty state: no page selected */}
         {!page && (
           <EmptyState

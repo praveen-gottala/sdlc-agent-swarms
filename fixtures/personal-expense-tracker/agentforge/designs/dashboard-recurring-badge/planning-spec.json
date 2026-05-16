@@ -1,0 +1,258 @@
+{
+  "specRef": "spec-dashboard-recurring-badge-1747000000000",
+  "moduleId": "dashboard-recurring-badge",
+  "componentTree": [
+    {
+      "name": "ExpenseRowEnhanced",
+      "props": [
+        "expenseId",
+        "merchant",
+        "amount",
+        "currency",
+        "categoryId",
+        "date",
+        "isRecurringInstance",
+        "recurringTemplateId",
+        "onClick",
+        "tabIndex",
+        "ariaLabel",
+        "ariaDescribedBy"
+      ],
+      "defaultValues": {
+        "paddingX": 16,
+        "paddingY": 12,
+        "minHeight": 44,
+        "tabIndex": 0
+      },
+      "children": [
+        "ExpenseRowLeadingSection",
+        "ExpenseRowTrailingSection"
+      ]
+    },
+    {
+      "name": "ExpenseRowLeadingSection",
+      "props": [
+        "merchantName",
+        "categoryId",
+        "isRecurringInstance",
+        "recurringTemplateId",
+        "gap"
+      ],
+      "defaultValues": {
+        "gap": 4
+      },
+      "children": [
+        "ExpenseMerchantLabel",
+        "ExpenseCaptionLine"
+      ]
+    },
+    {
+      "name": "ExpenseMerchantLabel",
+      "props": [
+        "text",
+        "typography",
+        "color"
+      ],
+      "defaultValues": {
+        "typography": "heading-3"
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseCaptionLine",
+      "props": [
+        "categoryId",
+        "isRecurringInstance",
+        "recurringTemplateId",
+        "gap",
+        "flexWrap",
+        "ariaId"
+      ],
+      "defaultValues": {
+        "gap": 4,
+        "flexWrap": "nowrap"
+      },
+      "children": [
+        "ExpenseRowCategoryDot",
+        "ExpenseCaptionCategoryLabel",
+        "ExpenseCaptionRecurringIcon",
+        "ExpenseCaptionFrequencyLabel",
+        "ExpenseCaptionDateLabel"
+      ]
+    },
+    {
+      "name": "ExpenseRowCategoryDot",
+      "props": [
+        "categoryId",
+        "categoryColor",
+        "size",
+        "borderRadius",
+        "ariaLabel",
+        "ariaHidden"
+      ],
+      "defaultValues": {
+        "size": 8,
+        "borderRadius": 9999
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseCaptionCategoryLabel",
+      "props": [
+        "categoryName",
+        "typography",
+        "color"
+      ],
+      "defaultValues": {
+        "typography": "label"
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseCaptionRecurringIcon",
+      "props": [
+        "isVisible",
+        "iconSize",
+        "ariaLabel",
+        "ariaHidden",
+        "role",
+        "animationDuration",
+        "animationEasing"
+      ],
+      "defaultValues": {
+        "iconSize": 14,
+        "animationDuration": 150
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseCaptionFrequencyLabel",
+      "props": [
+        "frequency",
+        "isVisible",
+        "typography",
+        "color",
+        "ariaHidden"
+      ],
+      "defaultValues": {
+        "typography": "label"
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseCaptionDateLabel",
+      "props": [
+        "date",
+        "typography",
+        "color"
+      ],
+      "defaultValues": {
+        "typography": "label"
+      },
+      "children": []
+    },
+    {
+      "name": "ExpenseRowTrailingSection",
+      "props": [
+        "amount",
+        "currency",
+        "typography",
+        "color",
+        "textAlign",
+        "verticalAlign"
+      ],
+      "defaultValues": {
+        "textAlign": "right",
+        "verticalAlign": "center"
+      },
+      "children": [
+        "ExpenseAmountLabel"
+      ]
+    },
+    {
+      "name": "ExpenseAmountLabel",
+      "props": [
+        "amount",
+        "currency",
+        "typography",
+        "color"
+      ],
+      "defaultValues": {
+        "typography": "heading-2"
+      },
+      "children": []
+    }
+  ],
+  "tokenBindings": {
+    "ExpenseRowEnhanced.background": "background-primary",
+    "ExpenseRowEnhanced.borderBottom": "border-default",
+    "ExpenseRowEnhanced.shadow": "elevation-0",
+    "ExpenseRowEnhanced.focusRingColor": "focus-ring-color",
+    "ExpenseRowEnhanced.focusRingWidth": "focus-ring-width",
+    "ExpenseRowEnhanced.paddingX": "16",
+    "ExpenseRowEnhanced.paddingY": "12",
+    "ExpenseRowEnhanced.minHeight": "touch-min-height",
+    "ExpenseRowEnhanced.animationDuration": "duration-fast",
+    "ExpenseRowEnhanced.animationEasing": "easing-default",
+    "ExpenseMerchantLabel.color": "text-primary",
+    "ExpenseMerchantLabel.typography": "heading-3",
+    "ExpenseCaptionLine.gap": "4",
+    "ExpenseCaptionCategoryLabel.color": "text-secondary",
+    "ExpenseCaptionCategoryLabel.typography": "label",
+    "ExpenseCaptionRecurringIcon.color": "text-secondary",
+    "ExpenseCaptionRecurringIcon.animationDuration": "duration-fast",
+    "ExpenseCaptionRecurringIcon.animationEasing": "easing-default",
+    "ExpenseCaptionFrequencyLabel.color": "text-secondary",
+    "ExpenseCaptionFrequencyLabel.typography": "label",
+    "ExpenseCaptionDateLabel.color": "text-secondary",
+    "ExpenseCaptionDateLabel.typography": "label",
+    "ExpenseRowCategoryDot.borderRadius": "pill",
+    "ExpenseAmountLabel.color": "text-primary",
+    "ExpenseAmountLabel.typography": "heading-2"
+  },
+  "responsiveRules": [
+    {
+      "breakpoint": "desktop",
+      "width": 1440,
+      "behavior": "Full two-line expense row with merchant name, caption line (category dot + category label + recurring icon + frequency label + date), and right-aligned amount. Caption line rendered as single horizontal flex row with 4px gap, no wrapping.",
+      "layout": "two-line-list-item",
+      "changes": [
+        "ExpenseRowEnhanced spans full content column width up to content-max-width (1280px) with 24px grid margin",
+        "Caption line displays all elements inline: category dot, category label, recurring icon (conditional), frequency label (conditional), date label",
+        "Amount right-aligned, vertically centered against two-line merchant + caption stack",
+        "Recurring icon and frequency label visible when isRecurringInstance is true",
+        "Row minimum height 44px enforced via paddingY compensation"
+      ]
+    },
+    {
+      "breakpoint": "tablet",
+      "width": 768,
+      "behavior": "Caption line remains a single horizontal flex row — does not collapse or wrap. Row layout unchanged from desktop. Grid margin reduces to 16px.",
+      "layout": "two-line-list-item",
+      "changes": [
+        "Caption line does NOT collapse — all elements remain inline with 4px gap",
+        "Grid margin adjusts to 16px",
+        "Amount remains right-aligned",
+        "Row minimum height 44px maintained"
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "Dashboard",
+      "components": [
+        "ExpenseRowEnhanced",
+        "ExpenseRowLeadingSection",
+        "ExpenseRowTrailingSection",
+        "ExpenseMerchantLabel",
+        "ExpenseCaptionLine",
+        "ExpenseRowCategoryDot",
+        "ExpenseCaptionCategoryLabel",
+        "ExpenseCaptionRecurringIcon",
+        "ExpenseCaptionFrequencyLabel",
+        "ExpenseCaptionDateLabel",
+        "ExpenseAmountLabel"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "briefId": "brief-dashboard-recurring-badge-1747000000000",
+  "moduleId": "dashboard-recurring-badge",
+  "requirementIds": [
+    "REQ-001"
+  ],
+  "designConstraints": [
+    "Must preserve existing 159-node dashboard layout — additive modification only, no removal or repositioning of existing nodes",
+    "Follow 8px spacing unit system; caption-line internal gap uses space.1 (4px), row vertical padding uses space.3 (24px)",
+    "Expense row must maintain minimum click target height of 44px (touch_targets.minimum_height) despite compact caption line addition",
+    "Category color dot sized at ~10px (space.2-5) with border-radius pill token to render as a perfect circle",
+    "Recurring icon fixed at 14px — does not scale with typography; must remain visually subordinate to merchant name",
+    "Caption line elements (category label, recurring icon, frequency label, date label) rendered in a single horizontal flex row with 4px gap, never wrapping to a second line",
+    "Amount text right-aligned within the row, vertically centered against the two-line merchant + caption stack",
+    "Maximum 3 levels of visual hierarchy within the row: merchant name (primary), caption line (secondary), amount (primary-right)",
+    "All new components must use deep-navy (#0F172A) as background-primary surface — no new background colors introduced",
+    "Elevation level 0 (no shadow) for inline row elements; elevation level 2 applies only to the existing ExpenseDetailPopover overlay",
+    "Content max width 1280px with 24px grid margin must be respected; row spans full available column width",
+    "Motion for recurring icon visibility toggle: fast duration (150ms) with default easing cubic-bezier(0.4,0,0.2,1)",
+    "Desktop-first layout at 1440px viewport; tablet breakpoint (768px) must not collapse the caption line",
+    "Z-index hierarchy must not be altered by new inline row components — no stacking context elevation introduced"
+  ],
+  "referencePatterns": [
+    "Existing ExpenseRow pattern on dashboard — enhanced variant extends the same list-item structure with an added caption sub-line below the merchant name",
+    "Caption line follows the secondary metadata pattern used in RecentExpensesList: muted-text color (#64748B) at label scale (12px/500 weight, DM Mono)",
+    "Category color dot references the CategoryLegend dot pattern already established in the CategoryDonutChart legend — same pill border-radius, same color token lookup via categoryId",
+    "Recurring icon (circular-arrow) follows the icon-inline-with-text pattern used in TrendIndicator on the Spending Insights screen — 14px, muted color, conditionally visible",
+    "Conditional visibility (isRecurringInstance gate) mirrors the BudgetStatusBadge conditional render pattern — element is hidden entirely (not opacity-0) when condition is false to avoid layout shift",
+    "Frequency label (WEEKLY / MONTHLY / YEARLY in title case) follows the badge-as-label pattern: plain text at caption scale, no pill background, consistent with caption-category-label styling",
+    "Row click target pattern matches existing ExpenseRow onClick → ExpenseDetailPopover flow; enhanced variant navigates to screen-003 (expense detail modal) on the same trigger",
+    "QuickAddChip caption sub-text pattern on Add Expense screen provides precedent for two-line list items with icon + label metadata rows"
+  ],
+  "accessibilityRequirements": [
+    "WCAG 2.1 AA color contrast ratio of 4.5:1 minimum for all text: silver-text (#CBD5E1) on deep-navy (#0F172A) passes at ~11.5:1; muted-text (#64748B) on deep-navy (#0F172A) must be verified — if it falls below 4.5:1 for caption text at 12px, increase caption color to silver-text or use 3:1 ratio only if text is bold and ≥18.66px (large text exception does not apply here)",
+    "Recurring icon (caption-recurring-icon) must include aria-label='Recurring expense' or be paired with a visually hidden span when icon is the sole indicator of recurring status — do not rely on icon alone for meaning",
+    "caption-frequency-label must be included in the accessible name or description of the row when isRecurringInstance is true, e.g. via aria-describedby on the expense-row-enhanced container pointing to the caption line",
+    "expense-row-enhanced must be keyboard focusable (tabIndex=0) with a visible focus ring using gold-amber (#F59E0B) at 2px width and 2px offset per focus_ring token",
+    "Minimum click/touch target for expense-row-enhanced: 44px height (touch_targets.minimum_height) and full row width — padding must compensate if content height is less than 44px",
+    "Screen reader must announce the full row context: merchant name, amount, category, date, and recurring status — use a single aria-label or structured aria-labelledby + aria-describedby composition on the row container",
+    "Recurring icon must not be announced as a decorative element when isRecurringInstance is true — set aria-hidden='false' with role='img' and aria-label='Recurring' on the icon element",
+    "When isRecurringInstance is false, caption-recurring-icon and caption-frequency-label must be aria-hidden='true' and removed from tab order to prevent phantom announcements",
+    "Color alone must not be the sole differentiator for recurring vs non-recurring rows — the circular-arrow icon and frequency label text provide non-color indicators",
+    "Category color dot (expense-row-category-dot) must include aria-label matching the category name, or be aria-hidden='true' if the caption-category-label text already conveys the category name to screen readers",
+    "Focus management: clicking expense-row-enhanced to open the expense detail modal must move focus to the modal's first interactive element; closing the modal must return focus to the originating expense row",
+    "Ensure DM Mono (body font) at 12px label scale meets readability requirements — do not use font-weight below 400 at this size for caption elements"
+  ],
+  "dataModelDependencies": [
+    "Expense entity (id, amount, merchant, category_id, date, payment_method_id, note, currency, created_at, updated_at) from GET /api/expenses — extended with isRecurringInstance (boolean) and recurringTemplateId (string | undefined) fields not yet present in the current Expense model definition",
+    "Category entity (id, name, color_token, color_hex) from GET /api/categories — used for categoryId → categoryName and categoryId → categoryColor lookups to populate caption-category-label and expense-row-category-dot",
+    "RecurringTemplate entity (id, frequency: 'WEEKLY' | 'MONTHLY' | 'YEARLY') from GET /api/recurring-templates/{id} — new entity not present in current Living Spec models; required to resolve frequency label for recurring expense rows via recurringTemplateId reference",
+    "DailyAggregate and CategoryAggregate entities remain unchanged — no new dependencies introduced for aggregate views",
+    "Client-side cached template store required to avoid per-row API calls for recurring template frequency resolution — RecurringTemplate data should be prefetched and memoized when dashboard loads expenses containing recurringTemplateId values"
+  ]
+}
