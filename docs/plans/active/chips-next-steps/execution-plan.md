@@ -12,7 +12,8 @@ This is a large initiative spanning multiple months. It's broken into **5 milest
 | **M1: Connect** | Clarifier output threads into design pipeline | Existing design pipeline tests + new integration test | M0 |
 | **M2: Architect Foundation** | Typed contracts + Critic (Node 6) + eval harness | Architect eval: hand-crafted bundles scored by Critic | M1 |
 | **M3: Architect Core** | Nodes 1-5 + shared module extraction | Architect eval: end-to-end on 3 fixture projects | M2 |
-| **M3.5: Brownfield Design Delta Research** | Research brief (R9): per-screen impact analysis, DesignSpec delta format, MODIFY task context wiring, design-info value analysis | N/A (research) | M3 |
+| **M3.5: Brownfield Design Delta Research** | Research brief (R9) + brownfield fixture: per-screen impact analysis, DesignSpec delta format, MODIFY task context wiring (slice-aware) | N/A (research) | M3 |
+| **M3.6: Design Info Value Eval** | Empirical measurement across 5 context configurations × 6 tasks × 3 reps (90 cells); recommends DesignSliceStrategy default for M4 | Pre-shipped eval harness produces R9_4 brief with data-driven recommendation | M3.5 (does not block M4) |
 | **M4: Full Spine** | Implementer + Reviewer + backward compat cleanup | Full spine eval: Clarifier→Architect→Design→Review | M3.5 |
 
 Each milestone gets its own execution plan when it's time to start it. This document covers M0 in detail and M1-M4 at outline level.
@@ -843,36 +844,34 @@ The three questions the brief answers:
 
 ### M3.6: Design Info Value Eval
 
-Empirical milestone (eval harness + measurement, no production wiring changes). Answers what M3.5's analysis cannot: which slice of design-stage context (ScreenPlan / ComponentComposition / DesignSpec) materially improves code-generation quality, and whether the answer differs between NEW and MODIFY frontend tasks. Runs in parallel with M4 — informs M4's prompt-design choices but does not gate M4's integration work, because M3.5's R9.3 wiring is slice-aware by design.
+Empirical milestone (eval harness + measurement, no production wiring changes). Answers what M3.5's analysis cannot: which `DesignSliceStrategy` value should M4 default to, and whether the answer differs between NEW and MODIFY frontend tasks. Runs in parallel with M4 — informs M4's default slice strategy but does not gate M4's integration work, because M3.5's R9.3 wiring is slice-aware by design.
 
-**Methodology.** Four context configurations crossed with two task types crossed with three representative tasks each. Same model, same temperature, same task description across runs.
+Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-only slice, E structure-only slice) × 2 task types (NEW, MODIFY) × 3 tasks per type × 3 reps = 90 cells. Three-axis scoring: visual fidelity (single-blind LLM reviewer, 0-3), prop & binding correctness (deterministic AST + TypeScript compilation, 0-3), token cost (raw input tokens). Standalone execution plan at `docs/plans/active/chips-next-steps/m3-6-execution-plan.md`.
 
-| Configuration | What enters the prompt beyond ContractBundle slice |
-|---------------|---------------------------------------------------|
-| **A — Baseline** | Nothing from design-stage outputs |
-| **B — Planning only** | + ScreenPlan + ComponentComposition |
-| **C — Full DesignSpec** | + everything in B + complete DesignSpec JSON |
-| **D — Narrowed DesignSpec** | + everything in B + DesignSpec restricted to labels, data bindings, region assignments — dropping spacing, typography, shadows that ComponentComposition implies |
+**Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` (eval brief, 400-600 lines) + `packages/eval/src/scenarios/design-info-value.yaml` (regression scenario) + `packages/eval/results/m3-6/` (raw + scored results).
 
-D is the interesting cell. If D ≈ C in quality at substantially lower token cost, the wiring defaults to D. If C > D, the wiring defaults to C. If B ≈ C, design-stage context past ComponentComposition is bloat and the wiring defaults to B. The hypothesis from CHIP's design-studio audit history (flat catalog keys hurt, full anatomy helped — but the shape of the context mattered more than the volume) predicts D wins, but the experiment is what settles it.
-
-**Task fixtures.** Three NEW tasks and three MODIFY tasks drawn from CashPulse:
-- NEW: dashboard summary card, transaction list page, settings form
-- MODIFY: the three screens most affected by the M3.5 fixture's "add recurring transactions" change
-
-**Scoring rubric.** Three axes, scored by a fresh-context reviewer (Cognition Devin Review pattern from R3 — no inheritance from the generation conversation):
-- **Visual fidelity** — does the generated code render output matching the DesignSpec? Measured against a rendered screenshot diff where available; falls back to manual inspection.
-- **Prop & binding correctness** — do component props match ComponentComposition, do data bindings hit the right entity fields?
-- **Token cost** — total input tokens consumed by the configuration.
-
-**Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` containing methodology, raw scores, configuration recommendation with token-cost tradeoff, and a follow-up flag if results suggest the slice should differ between NEW and MODIFY.
-
-**Output also:** `packages/eval/src/scenarios/design-info-value.yaml` — the eval scenario reused for regression testing as the implementer evolves.
-
-**Blocks:** Nothing. M4 ships with M3.5's slice-aware wiring defaulting to configuration C; M3.6's findings inform a follow-up commit narrowing the default if D wins.
+**Blocks:** Nothing. M4 ships with M3.5's slice-aware wiring defaulting to `'full'`; M3.6's findings inform a follow-up commit narrowing the default if a cheaper slice preserves quality.
 
 ### M4 Phase 7: Implementer + Reviewer
 Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1, M3.5 (for brownfield frontend).**
+
+### Brownfield wiring (from R9 brief)
+
+**Schemas from M3.5 to incorporate:**
+- `AffectedScreenSchema` / `ScreenImpact` (R9 §6.1) — Node 0.5 (Change Classifier) output additions
+- `DesignSpecDeltaSchema` / `DesignNodeDeltaSchema` (R9 §6.2) — hybrid format with `added` / `modified` / `removed` / `reordered` maps
+- `ContextRefKindSchema` extension (R9 §6.3) — adds `existingDesign` and `designDelta` kinds
+- `DesignSliceStrategy` type (R9 §6.4) — `'full' | 'labels-only' | 'structure-only'`; ship with `'full'` until M3.6 informs
+
+**Implementation notes from R9 verification review (§B1 and §C):**
+
+- **Delta dispatch interception point.** The delta-aware path is inside `browserDesignWork` or `penpotDesignWorkV2` in `packages/agents-ux/src/design-pipeline/nodes.ts`, NOT at `designNode`'s return boundary. The R9 brief's "designNode emits a single delta" phrasing is editorial — the actual `designNode` returns `Result<Partial<DesignPhaseState>>` and the DesignSpec lives at `state.design.spec`. M4 adds an `existingDesignSpec` field to the design work function input (`PenpotDesignInput` or equivalent for browser path), and the delta-aware branch lives inside the design work function.
+
+- **Type-safety constraint on `submit_design_delta` tool schema.** The delta payload uses `z.record(z.unknown())` (1 optional field) to stay within Anthropic's 24-optional-field strict-mode limit (NodeSpec already uses 19/24). The tool output is validated post-hoc against `DesignSpecDeltaSchema` rather than at the boundary. Accept this regression; do not attempt a typed schema.
+
+- **Screen name matching dependency.** The impact analysis algorithm in R9 §2 matches semantic screen names from Clarifier output (e.g., "Dashboard — Upcoming Recurring Card") to existing kebab-case page IDs (e.g., `dashboard`). Use `pages.yaml` as authoritative mapping. If absent or stale, fall back to normalized substring matching with a confidence penalty (R9 review §C2).
+
+- **Round-trip property test.** `deltaApply(existingSpec, delta).nodes` must pass the same structural quality gate as a fresh full-spec design. Cover with a test in the M4 test suite (R9 §7.4 deliverables table, row 6).
 
 ---
 
