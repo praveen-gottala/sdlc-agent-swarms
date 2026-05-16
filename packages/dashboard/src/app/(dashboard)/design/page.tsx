@@ -824,82 +824,14 @@ function DesignStudioContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, selectedDesignStatus]);
 
-  // Delta preview: apply highlights after spec renders in iframe
-  // Supported fixtures:
-  //   ?delta=fixture:cashpulse-add-recurring          (dashboard — 5 added, 1 reordered)
-  //   ?delta=fixture:cashpulse-recurring-badge         (dashboard — 4 modified expense rows)
-  //   ?delta=fixture:cashpulse-recurrence-toggle       (add-expense — 6 added form fields)
+  // Delta preview: loads fixture from /api/delta-fixtures?name=... (YAML files in packages/eval/src/fixtures/deltas/)
+  // Usage: ?delta=fixture:cashpulse-add-recurring (or cashpulse-recurring-badge, cashpulse-recurrence-toggle)
   const deltaFixtureParam = searchParams.get('delta');
   useEffect(() => {
     if (!deltaFixtureParam?.startsWith('fixture:') || !designSpec || !bridgeRef.current?.isReady) return;
 
     const fixtureName = deltaFixtureParam.replace('fixture:', '');
-
-    type DeltaFixture = {
-      nodes: Array<{ nodeId: string; op: 'added' | 'modified' | 'removed' | 'reordered'; description: string }>;
-      addedNodes?: Record<string, Record<string, unknown>>;
-      modifiedNodes?: Record<string, Record<string, unknown>>;
-      reorderedNodes?: Record<string, number>;
-    };
-
-    const FIXTURES: Record<string, DeltaFixture> = {
-      'cashpulse-add-recurring': {
-        nodes: [
-          { nodeId: 'recurring-section', op: 'added', description: 'Added section: Upcoming Recurring' },
-          { nodeId: 'recurring-list', op: 'added', description: 'Added container: Recurring list' },
-          { nodeId: 'recurring-item-netflix', op: 'added', description: 'Added list-item: Netflix' },
-          { nodeId: 'recurring-item-gym', op: 'added', description: 'Added list-item: Gym' },
-          { nodeId: 'recurring-item-spotify', op: 'added', description: 'Added list-item: Spotify' },
-          { nodeId: 'category-donut-card', op: 'reordered', description: 'Reordered: shifted down for recurring section' },
-        ],
-        addedNodes: {
-          'recurring-section': { parent: 'left-column', order: 1, type: 'section', label: 'Upcoming Recurring', layout: { dir: 'column', gap: 8 }, background: 'surface-primary', radius: 12 },
-          'recurring-list': { parent: 'recurring-section', order: 0, type: 'container', layout: { dir: 'column', gap: 4 } },
-          'recurring-item-netflix': { parent: 'recurring-list', order: 0, catalog: 'list-item', label: 'Netflix', overrides: { subtitle: 'Monthly · $15.99 · Due in 3 days' } },
-          'recurring-item-gym': { parent: 'recurring-list', order: 1, catalog: 'list-item', label: 'Gym Membership', overrides: { subtitle: 'Monthly · $45.00 · Due in 6 days' } },
-          'recurring-item-spotify': { parent: 'recurring-list', order: 2, catalog: 'list-item', label: 'Spotify', overrides: { subtitle: 'Monthly · $9.99 · Due in 10 days' } },
-        },
-        reorderedNodes: { 'category-donut-card': 2 },
-      },
-      'cashpulse-recurring-badge': {
-        nodes: [
-          { nodeId: 'recurring-badge-1', op: 'added', description: 'Added badge: Monthly (Rent Payment row)' },
-          { nodeId: 'recurring-badge-3', op: 'added', description: 'Added badge: Weekly (Uber row)' },
-          { nodeId: 'recurring-badge-4', op: 'added', description: 'Added badge: Monthly (Netflix row)' },
-          { nodeId: 'recurring-badge-6', op: 'added', description: 'Added badge: Yearly (Starbucks row)' },
-        ],
-        addedNodes: {
-          'recurring-badge-1': { parent: 'expense-row-1-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
-          'recurring-badge-3': { parent: 'expense-row-3-right', order: 2, catalog: 'badge', label: 'Weekly', overrides: { variant: 'secondary' } },
-          'recurring-badge-4': { parent: 'expense-row-4-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
-          'recurring-badge-6': { parent: 'expense-row-6-right', order: 2, catalog: 'badge', label: 'Yearly', overrides: { variant: 'secondary' } },
-        },
-      },
-      'cashpulse-recurrence-toggle': {
-        nodes: [
-          { nodeId: 'recurrence-section', op: 'added', description: 'Added section: Recurrence' },
-          { nodeId: 'recurrence-toggle', op: 'added', description: 'Added toggle: Make this recurring' },
-          { nodeId: 'recurrence-frequency', op: 'added', description: 'Added segmented-control: Frequency' },
-          { nodeId: 'recurrence-start-date', op: 'added', description: 'Added date-picker: Start Date' },
-          { nodeId: 'recurrence-end-date', op: 'added', description: 'Added date-picker: End Date' },
-          { nodeId: 'recurrence-summary', op: 'added', description: 'Added text: Repeats monthly' },
-        ],
-        addedNodes: {
-          'recurrence-section': { parent: 'expense-form-card', order: 10, type: 'section', label: 'Recurrence', layout: { dir: 'column', gap: 12 } },
-          'recurrence-toggle': { parent: 'recurrence-section', order: 0, catalog: 'toggle', label: 'Make this recurring' },
-          'recurrence-frequency': { parent: 'recurrence-section', order: 1, catalog: 'segmented-control', label: 'Frequency', options: [{ label: 'Weekly', selected: false }, { label: 'Monthly', selected: true }, { label: 'Yearly', selected: false }] },
-          'recurrence-start-date': { parent: 'recurrence-section', order: 2, catalog: 'date-picker', label: 'Start Date', placeholder: 'Select start date' },
-          'recurrence-end-date': { parent: 'recurrence-section', order: 3, catalog: 'date-picker', label: 'End Date (optional)', placeholder: 'No end date' },
-          'recurrence-summary': { parent: 'recurrence-section', order: 4, type: 'text', content: 'Repeats monthly starting today', typography: 'caption', color: 'text-secondary' },
-        },
-      },
-    };
-
-    const fixture = FIXTURES[fixtureName];
-    if (!fixture) {
-      log('WARN', 'studio', `Unknown delta fixture: ${fixtureName}. Available: ${Object.keys(FIXTURES).join(', ')}`);
-      return;
-    }
+    let cancelled = false;
 
     const DELTA_CSS = `
 .r10-highlight { position: relative; border-radius: var(--border-radius-md, 8px); }
@@ -915,53 +847,61 @@ function DesignStudioContent() {
 .r10-badge-reordered { background: #FAC775; color: #412402; border: 0.5px solid #BA7517; }
 `;
 
-    const timer = setTimeout(() => {
-      const existingIds = new Set(Object.keys(designSpec.nodes ?? {}));
-      const mergedNodes = { ...designSpec.nodes };
+    fetch(`/api/delta-fixtures?name=${encodeURIComponent(fixtureName)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(fixture => {
+        if (cancelled || !fixture || !bridgeRef.current?.isReady) return;
 
-      // Apply added nodes
-      if (fixture.addedNodes) {
-        for (const [id, node] of Object.entries(fixture.addedNodes)) {
-          mergedNodes[id] = node;
-        }
-      }
+        const { delta, highlightNodes } = fixture;
+        const existingIds = new Set(Object.keys(designSpec.nodes ?? {}));
+        const mergedNodes = { ...designSpec.nodes };
 
-      // Apply modified nodes (shallow merge into existing)
-      if (fixture.modifiedNodes) {
-        for (const [id, changes] of Object.entries(fixture.modifiedNodes)) {
-          if (mergedNodes[id]) {
-            mergedNodes[id] = { ...mergedNodes[id], ...changes };
+        // Apply added nodes from delta
+        if (delta.added) {
+          for (const [id, node] of Object.entries(delta.added)) {
+            mergedNodes[id] = node as Record<string, unknown>;
           }
         }
-      }
 
-      // Apply reordered nodes
-      if (fixture.reorderedNodes) {
-        for (const [id, newOrder] of Object.entries(fixture.reorderedNodes)) {
-          if (mergedNodes[id]) {
-            mergedNodes[id] = { ...mergedNodes[id], order: newOrder };
+        // Apply modified nodes (shallow merge)
+        if (delta.modified) {
+          for (const [id, changes] of Object.entries(delta.modified)) {
+            if (mergedNodes[id]) {
+              mergedNodes[id] = { ...mergedNodes[id], ...(changes as Record<string, unknown>) };
+            }
           }
         }
-      }
 
-      const mergedSpec = { ...designSpec, nodes: mergedNodes };
-      const rd = rendererData;
-      const payload = rd
-        ? { spec: mergedSpec, tokens: rd.tokens, catalog: rd.catalog }
-        : mergedSpec;
-      bridgeRef.current?.loadSpec(JSON.stringify(payload));
+        // Apply reordered nodes
+        if (delta.reordered) {
+          for (const r of delta.reordered as Array<{ nodeId: string; newOrder?: number }>) {
+            if (mergedNodes[r.nodeId] && r.newOrder !== undefined) {
+              mergedNodes[r.nodeId] = { ...mergedNodes[r.nodeId], order: r.newOrder };
+            }
+          }
+        }
 
-      setTimeout(() => {
-        const applicableNodes = fixture.nodes.filter(n =>
-          existingIds.has(n.nodeId) || fixture.addedNodes?.[n.nodeId],
-        );
-        bridgeRef.current?.applyDeltaHighlights(applicableNodes, DELTA_CSS);
-        setDeltaPreviewActive(true);
-        log('INFO', 'studio', `Delta preview "${fixtureName}" applied: ${applicableNodes.length} regions`);
-      }, 1500);
-    }, 1000);
+        const mergedSpec = { ...designSpec, nodes: mergedNodes };
+        const rd = rendererData;
+        const payload = rd
+          ? { spec: mergedSpec, tokens: rd.tokens, catalog: rd.catalog }
+          : mergedSpec;
+        bridgeRef.current?.loadSpec(JSON.stringify(payload));
 
-    return () => clearTimeout(timer);
+        setTimeout(() => {
+          if (cancelled) return;
+          const applicableNodes = (highlightNodes as Array<{ nodeId: string; op: string; description: string }>)
+            .filter((n: { nodeId: string }) => existingIds.has(n.nodeId) || delta.added?.[n.nodeId]);
+          bridgeRef.current?.applyDeltaHighlights(applicableNodes as Array<{ nodeId: string; op: 'added' | 'modified' | 'removed' | 'reordered'; description: string }>, DELTA_CSS);
+          setDeltaPreviewActive(true);
+          log('INFO', 'studio', `Delta preview "${fixtureName}" applied: ${applicableNodes.length} regions`);
+        }, 1500);
+      })
+      .catch(err => {
+        if (!cancelled) log('WARN', 'studio', `Failed to load delta fixture "${fixtureName}": ${err instanceof Error ? err.message : 'unknown'}`);
+      });
+
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deltaFixtureParam, designSpec, bridgeRef.current?.isReady]);
 

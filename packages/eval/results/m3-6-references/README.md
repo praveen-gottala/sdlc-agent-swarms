@@ -7,6 +7,59 @@ For MODIFY tasks, the **Change Summary** panel at the top shows exactly which no
 were added, modified, removed, or reordered — with field-level diffs for modified nodes.
 Use this as the basis for writing `groundTruthExpected` in `packages/eval/src/scenarios/design-info-value.yaml`.
 
+## Delta fixture files
+
+Fixture data lives in `packages/eval/src/fixtures/deltas/*.yaml`. Each file follows
+the `DesignSpecDelta` schema (R9 §6.2) with added metadata for the Design Studio preview.
+
+### How to add a new fixture
+
+1. Copy an existing YAML file (e.g., `cashpulse-add-recurring.yaml`)
+2. Update:
+   - `metadata.description` — what this delta represents
+   - `metadata.targetPage` — which design spec page it applies to
+   - `metadata.taskId` — matching ID in `design-info-value.yaml`
+   - `delta.added` — new nodes to add (nodeId → NodeSpec)
+   - `delta.modified` — existing nodes to modify (nodeId → partial NodeSpec)
+   - `delta.removed` — node IDs to remove
+   - `delta.reordered` — node IDs with new order/parent
+   - `highlightNodes` — which nodes to highlight in the Design Studio (nodeId, op, description)
+3. Run `npx tsx scripts/render-m3-6-fixtures.ts` to regenerate HTML references
+4. Preview in Design Studio: `http://localhost:3000/design?page={targetPage}&delta=fixture:{filename-without-yaml}`
+
+### YAML schema
+
+```yaml
+metadata:
+  description: string   # what the delta represents
+  targetPage: string    # design spec page ID (e.g., "dashboard")
+  taskId: string        # matching M3.6 task ID
+
+delta:
+  screenId: string
+  baseWidth: number
+  added:                # nodeId → NodeSpec (new nodes)
+    node-id:
+      parent: string
+      order: number
+      type: string      # or catalog: string
+      label: string
+      # ... other NodeSpec fields
+  modified:             # nodeId → partial NodeSpec (changed fields only)
+    node-id:
+      background: new-value
+  removed: []           # array of node IDs to remove
+  reordered:            # nodes whose position changed
+    - nodeId: string
+      newOrder: number
+      newParent: string  # optional
+
+highlightNodes:         # Design Studio highlight classifications
+  - nodeId: string
+    op: added | modified | removed | reordered
+    description: string  # shown in badge tooltip
+```
+
 ---
 
 ## NEW Tasks (greenfield)

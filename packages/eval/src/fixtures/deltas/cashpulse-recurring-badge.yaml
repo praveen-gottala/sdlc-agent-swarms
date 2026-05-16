@@ -1,0 +1,76 @@
+# Delta Fixture: Add Recurring Frequency Badges to Expense Rows
+#
+# Scenario: Modify the dashboard's expense list to show a recurring frequency
+# badge (Weekly/Monthly/Yearly) on each transaction row that has a
+# recurringTemplateId. Non-recurring expenses show no badge.
+#
+# Implementation note: Badges are added as new catalog:'badge' child nodes
+# inside each expense row's right container. Modifying the parent row's
+# overrides does NOT render a visible badge — the renderer needs an actual
+# badge catalog node to produce a pill/chip component.
+#
+# Target page: dashboard (159 nodes, fixtures/personal-expense-tracker/agentforge/designs/dashboard.json)
+
+metadata:
+  description: Add recurring frequency badge pills to 4 expense rows
+  targetPage: dashboard
+  taskId: cashpulse-transactions-list-modify-recurring-badge
+
+# DesignSpecDelta (R9 §6.2 schema)
+delta:
+  screenId: dashboard
+  baseWidth: 1440
+
+  added:
+    recurring-badge-1:
+      parent: expense-row-1-right
+      order: 2
+      catalog: badge
+      label: Monthly
+      overrides:
+        variant: secondary
+
+    recurring-badge-3:
+      parent: expense-row-3-right
+      order: 2
+      catalog: badge
+      label: Weekly
+      overrides:
+        variant: secondary
+
+    recurring-badge-4:
+      parent: expense-row-4-right
+      order: 2
+      catalog: badge
+      label: Monthly
+      overrides:
+        variant: secondary
+
+    recurring-badge-6:
+      parent: expense-row-6-right
+      order: 2
+      catalog: badge
+      label: Yearly
+      overrides:
+        variant: secondary
+
+  modified: {}
+
+  removed: []
+
+  reordered: []
+
+# Highlight classifications for Design Studio preview
+highlightNodes:
+  - nodeId: recurring-badge-1
+    op: added
+    description: "Added badge: Monthly (Rent Payment row)"
+  - nodeId: recurring-badge-3
+    op: added
+    description: "Added badge: Weekly (Uber row)"
+  - nodeId: recurring-badge-4
+    op: added
+    description: "Added badge: Monthly (Netflix row)"
+  - nodeId: recurring-badge-6
+    op: added
+    description: "Added badge: Yearly (Starbucks row)"

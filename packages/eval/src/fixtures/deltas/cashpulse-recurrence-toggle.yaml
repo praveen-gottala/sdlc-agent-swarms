@@ -1,0 +1,90 @@
+# Delta Fixture: Add Recurrence Toggle to Add-Expense Form
+#
+# Scenario: Modify the add-expense form to include a "Make this recurring"
+# toggle that reveals frequency picker, start date, and optional end date.
+# The recurrence data maps to the RecurringTemplate entity.
+#
+# Target page: add-expense (157 nodes, fixtures/personal-expense-tracker/agentforge/designs/add-expense.json)
+
+metadata:
+  description: Add recurrence configuration section with toggle, frequency picker, and date fields
+  targetPage: add-expense
+  taskId: cashpulse-add-expense-modify-recurrence-toggle
+
+# DesignSpecDelta (R9 §6.2 schema)
+delta:
+  screenId: add-expense
+  baseWidth: 1440
+
+  added:
+    recurrence-section:
+      parent: expense-form-card
+      order: 10
+      type: section
+      label: Recurrence
+      layout: { dir: column, gap: 12 }
+
+    recurrence-toggle:
+      parent: recurrence-section
+      order: 0
+      catalog: toggle
+      label: Make this recurring
+
+    recurrence-frequency:
+      parent: recurrence-section
+      order: 1
+      catalog: segmented-control
+      label: Frequency
+      options:
+        - { label: Weekly, selected: false }
+        - { label: Monthly, selected: true }
+        - { label: Yearly, selected: false }
+
+    recurrence-start-date:
+      parent: recurrence-section
+      order: 2
+      catalog: date-picker
+      label: Start Date
+      placeholder: Select start date
+
+    recurrence-end-date:
+      parent: recurrence-section
+      order: 3
+      catalog: date-picker
+      label: "End Date (optional)"
+      placeholder: No end date
+
+    recurrence-summary:
+      parent: recurrence-section
+      order: 4
+      type: text
+      content: Repeats monthly starting today
+      typography: caption
+      color: text-secondary
+
+  modified: {}
+
+  removed: []
+
+  reordered: []
+
+# Highlight classifications for Design Studio preview
+highlightNodes:
+  - nodeId: recurrence-section
+    op: added
+    description: "Added section: Recurrence"
+  - nodeId: recurrence-toggle
+    op: added
+    description: "Added toggle: Make this recurring"
+  - nodeId: recurrence-frequency
+    op: added
+    description: "Added segmented-control: Frequency"
+  - nodeId: recurrence-start-date
+    op: added
+    description: "Added date-picker: Start Date"
+  - nodeId: recurrence-end-date
+    op: added
+    description: "Added date-picker: End Date"
+  - nodeId: recurrence-summary
+    op: added
+    description: "Added text: Repeats monthly"

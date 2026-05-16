@@ -1,0 +1,88 @@
+# Delta Fixture: Add Recurring Transactions Card to Dashboard
+#
+# Scenario: Brownfield change "Add recurring transactions — let users mark
+# a transaction as recurring and see upcoming recurrence on the dashboard."
+# This delta adds an "Upcoming Recurring" section to the dashboard's left
+# column between the budget summary card and the spending categories card.
+#
+# Source: M3.5 CashPulse brownfield fixture (R9 worked example)
+# Target page: dashboard (159 nodes, fixtures/personal-expense-tracker/agentforge/designs/dashboard.json)
+
+metadata:
+  description: Add "Upcoming Recurring" card with 3 list items to dashboard left column
+  targetPage: dashboard
+  taskId: cashpulse-dashboard-modify-add-recurring-card
+
+# DesignSpecDelta (R9 §6.2 schema)
+delta:
+  screenId: dashboard
+  baseWidth: 1440
+
+  added:
+    recurring-section:
+      parent: left-column
+      order: 1
+      type: section
+      label: Upcoming Recurring
+      layout: { dir: column, gap: 8 }
+      background: surface-primary
+      radius: 12
+
+    recurring-list:
+      parent: recurring-section
+      order: 0
+      type: container
+      layout: { dir: column, gap: 4 }
+
+    recurring-item-netflix:
+      parent: recurring-list
+      order: 0
+      catalog: list-item
+      label: Netflix
+      overrides:
+        subtitle: "Monthly · $15.99 · Due in 3 days"
+
+    recurring-item-gym:
+      parent: recurring-list
+      order: 1
+      catalog: list-item
+      label: Gym Membership
+      overrides:
+        subtitle: "Monthly · $45.00 · Due in 6 days"
+
+    recurring-item-spotify:
+      parent: recurring-list
+      order: 2
+      catalog: list-item
+      label: Spotify
+      overrides:
+        subtitle: "Monthly · $9.99 · Due in 10 days"
+
+  modified: {}
+
+  removed: []
+
+  reordered:
+    - nodeId: category-donut-card
+      newOrder: 2
+
+# Highlight classifications for Design Studio preview
+highlightNodes:
+  - nodeId: recurring-section
+    op: added
+    description: "Added section: Upcoming Recurring"
+  - nodeId: recurring-list
+    op: added
+    description: "Added container: Recurring list"
+  - nodeId: recurring-item-netflix
+    op: added
+    description: "Added list-item: Netflix"
+  - nodeId: recurring-item-gym
+    op: added
+    description: "Added list-item: Gym"
+  - nodeId: recurring-item-spotify
+    op: added
+    description: "Added list-item: Spotify"
+  - nodeId: category-donut-card
+    op: reordered
+    description: "Reordered: shifted down for recurring section"

@@ -63,100 +63,28 @@ const TASKS: TaskDef[] = [
   },
 ];
 
-// Synthetic deltas for MODIFY tasks (since designSpecPath === existingDesignSpecPath)
-function getSyntheticDelta(taskId: string): Record<string, unknown> {
-  switch (taskId) {
-    case 'cashpulse-dashboard-modify-add-recurring-card':
-      return {
-        screenId: 'dashboard',
-        baseWidth: 1440,
-        added: {
-          'recurring-section': {
-            parent: 'left-column', order: 1, type: 'section',
-            label: 'Upcoming Recurring',
-            layout: { dir: 'column', gap: 8 }, background: 'surface-primary', radius: 12,
-          },
-          'recurring-list': {
-            parent: 'recurring-section', order: 0, type: 'container',
-            layout: { dir: 'column', gap: 4 },
-          },
-          'recurring-item-netflix': {
-            parent: 'recurring-list', order: 0, catalog: 'list-item',
-            label: 'Netflix', overrides: { subtitle: 'Monthly · $15.99 · Due in 3 days' },
-          },
-          'recurring-item-gym': {
-            parent: 'recurring-list', order: 1, catalog: 'list-item',
-            label: 'Gym Membership', overrides: { subtitle: 'Monthly · $45.00 · Due in 6 days' },
-          },
-          'recurring-item-spotify': {
-            parent: 'recurring-list', order: 2, catalog: 'list-item',
-            label: 'Spotify', overrides: { subtitle: 'Monthly · $9.99 · Due in 10 days' },
-          },
-        },
-        modified: {},
-        removed: [],
-        reordered: [{ nodeId: 'category-donut-card', newOrder: 2 }],
-      };
+// Task ID → fixture file name mapping
+const TASK_TO_FIXTURE: Record<string, string> = {
+  'cashpulse-dashboard-modify-add-recurring-card': 'cashpulse-add-recurring',
+  'cashpulse-add-expense-modify-recurrence-toggle': 'cashpulse-recurrence-toggle',
+  'cashpulse-transactions-list-modify-recurring-badge': 'cashpulse-recurring-badge',
+};
 
-    case 'cashpulse-add-expense-modify-recurrence-toggle':
-      return {
-        screenId: 'add-expense',
-        baseWidth: 1440,
-        added: {
-          'recurrence-section': {
-            parent: 'expense-form-card', order: 10, type: 'section',
-            label: 'Recurrence', layout: { dir: 'column', gap: 12 },
-          },
-          'recurrence-toggle': {
-            parent: 'recurrence-section', order: 0, catalog: 'toggle',
-            label: 'Make this recurring',
-          },
-          'recurrence-frequency': {
-            parent: 'recurrence-section', order: 1, catalog: 'segmented-control',
-            label: 'Frequency',
-            options: [
-              { label: 'Weekly', selected: false },
-              { label: 'Monthly', selected: true },
-              { label: 'Yearly', selected: false },
-            ],
-          },
-          'recurrence-start-date': {
-            parent: 'recurrence-section', order: 2, catalog: 'date-picker',
-            label: 'Start Date', placeholder: 'Select start date',
-          },
-          'recurrence-end-date': {
-            parent: 'recurrence-section', order: 3, catalog: 'date-picker',
-            label: 'End Date (optional)', placeholder: 'No end date',
-          },
-          'recurrence-summary': {
-            parent: 'recurrence-section', order: 4, type: 'text',
-            content: 'Repeats monthly starting today',
-            typography: 'caption', color: 'text-secondary',
-          },
-        },
-        modified: {},
-        removed: [],
-        reordered: [],
-      };
+async function loadDeltaFromFixture(taskId: string): Promise<Record<string, unknown>> {
+  const fixtureName = TASK_TO_FIXTURE[taskId];
+  if (!fixtureName) return { screenId: '', baseWidth: 1440, added: {}, modified: {}, removed: [], reordered: [] };
 
-    case 'cashpulse-transactions-list-modify-recurring-badge':
-      return {
-        screenId: 'dashboard',
-        baseWidth: 1440,
-        added: {
-          'recurring-badge-1': { parent: 'expense-row-1-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
-          'recurring-badge-3': { parent: 'expense-row-3-right', order: 2, catalog: 'badge', label: 'Weekly', overrides: { variant: 'secondary' } },
-          'recurring-badge-4': { parent: 'expense-row-4-right', order: 2, catalog: 'badge', label: 'Monthly', overrides: { variant: 'secondary' } },
-          'recurring-badge-6': { parent: 'expense-row-6-right', order: 2, catalog: 'badge', label: 'Yearly', overrides: { variant: 'secondary' } },
-        },
-        modified: {},
-        removed: [],
-        reordered: [],
-      };
-
-    default:
-      return { screenId: '', baseWidth: 1440, added: {}, modified: {}, removed: [], reordered: [] };
+  const fixturePath = path.join(ROOT, 'packages/eval/src/fixtures/deltas', `${fixtureName}.yaml`);
+  if (!fs.existsSync(fixturePath)) {
+    console.error(`  Fixture file not found: ${fixturePath}`);
+    return { screenId: '', baseWidth: 1440, added: {}, modified: {}, removed: [], reordered: [] };
   }
+
+  // Use inline YAML parsing (yaml package is ESM)
+  const yamlPkg = await import('yaml');
+  const raw = fs.readFileSync(fixturePath, 'utf-8');
+  const parsed = yamlPkg.parse(raw);
+  return parsed.delta;
 }
 
 function escapeHtml(s: string): string {
@@ -334,7 +262,7 @@ async function main(): Promise<void> {
       console.log(`  Rendered: ${result.nodeIds.length} nodes, ${result.warnings.length} warnings`);
     } else {
       isDelta = true;
-      const delta = getSyntheticDelta(task.id);
+      const delta = await loadDeltaFromFixture(task.id);
       const result = renderDelta(spec, delta, SAMPLE_TOKENS, V2_BUILTIN_CATALOG, { mode: 'overlay' });
       if (!result.ok) {
         console.error(`  FAILED: ${result.error.message}`);
