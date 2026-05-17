@@ -321,6 +321,19 @@ function buildAgentsYaml(manifest: ProjectManifest): Record<string, unknown> {
         on_complete: 'ReviewComplete',
         on_error: 'notify_human',
       },
+      {
+        role: 'implementer',
+        phase: 'code',
+        provider: manifest.agents.providers.default,
+        execution: { ...defaultExecution },
+        tools: ['code.read_file', 'code.write_file', 'code.apply_patch', 'code.run_typecheck', 'code.run_tests', 'code.run_lint', 'code.report_assumption_violation'],
+        permissions: ['read_spec', 'read_code', 'write_code', 'create_branch'],
+        denied: ['deploy', 'merge_pr', 'write_design'],
+        hitl_policy: 'review_and_override',
+        budget: { ...defaultBudget },
+        on_complete: 'ImplementerTaskComplete',
+        on_error: 'notify_human',
+      },
     ],
   };
 }

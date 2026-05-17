@@ -16,7 +16,7 @@ export interface SpineStage {
 export const SPINE_STAGES: readonly SpineStage[] = [
   { key: 'clarifier', label: 'Clarify', icon: IconSparkles, implemented: true },
   { key: 'architect', label: 'Architect', icon: IconBolt, implemented: true },
-  { key: 'implementer', label: 'Implement', icon: IconRocket, implemented: false },
+  { key: 'implementer', label: 'Implement', icon: IconRocket, implemented: true },
   { key: 'reviewer', label: 'Review', icon: IconCircleCheck, implemented: false },
 ] as const;
 

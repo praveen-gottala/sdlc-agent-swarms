@@ -26,6 +26,7 @@ module.exports = {
     '^@agentforge/telemetry$': '<rootDir>/../telemetry/src/index.ts',
     '^@agentforge/cli$': '<rootDir>/../cli/src/index.ts',
     '^@agentforge/cli/commands/(.*)$': '<rootDir>/../cli/src/commands/$1.ts',
+    '^@agentforge/agents-implementer$': '<rootDir>/../agents-implementer/src/index.ts',
     '^@agentforge/eval$': '<rootDir>/../eval/src/index.ts',
     '^@agentforge/agents-clarifier$': '<rootDir>/../agents-clarifier/src/index.ts',
     '^(\\..*)\\.js$': '$1',

@@ -368,6 +368,15 @@ const fixtures: Record<DomainEventType, DomainEventInput> = {
     source: 'clarifier',
     timestamp: now,
   },
+  ImplementerTaskComplete: {
+    type: 'ImplementerTaskComplete',
+    taskId: 'T1',
+    filesWritten: ['src/api.ts'],
+    deviationCount: 0,
+    sliceStrategy: 'none',
+    source: 'implementer',
+    timestamp: now,
+  },
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────
@@ -565,6 +574,8 @@ describe('EventBus', () => {
       'PipelineRunProgress',
       // Clarifier
       'RequirementsClarified',
+      // Implementer
+      'ImplementerTaskComplete',
     ];
 
     it('has a fixture for every defined domain event type', () => {

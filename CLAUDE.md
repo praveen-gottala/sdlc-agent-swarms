@@ -229,6 +229,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `retrieval` depends on: `core`, `voyageai`, `cohere-ai`, `@qdrant/js-client-rest`, `web-tree-sitter`
 - `agents-clarifier` depends on: `core`, `providers`, `retrieval`, `telemetry`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `agents-architect` depends on: `core`, `providers`, `retrieval`, `telemetry`, `agents-ux`, `@langchain/langgraph`, `@langchain/core`, `zod`
+- `agents-implementer` depends on: `core`, `governance`, `providers`, `telemetry`, `agents-ux`, `agents-architect`, `designspec-renderer`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `eval` depends on: `core`, `providers`, `agents-clarifier`, `yaml`, `zod`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
 

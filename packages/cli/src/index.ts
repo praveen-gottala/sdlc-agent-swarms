@@ -33,6 +33,7 @@ import { designPreviewCommand } from './commands/design-preview.js';
 import { designPageReviewCommand } from './commands/design-page-review.js';
 import { designListCommand } from './commands/design-list.js';
 import { evalCommand } from './commands/eval.js';
+import { spineImplementCommand } from './commands/spine-implement-task.js';
 
 /**
  * Create the AgentForge CLI program with all commands registered.
@@ -330,6 +331,22 @@ export function createProgram(): Command {
         threshold: opts.threshold,
         cassetteDir: opts.cassetteDir,
       }, rootDir);
+    });
+
+  program
+    .command('spine:implement')
+    .description('Run the Implementer on a task from the Architect\'s task plan')
+    .option('--task-id <id>', 'Task ID to implement')
+    .option('--provider <name>', 'LLM provider model', 'claude-opus-4-6')
+    .option('--task-plan <path>', 'Path to task plan YAML (default: .agentforge/architect/task-plan.yaml)')
+    .action(async (options: { taskId?: string; provider?: string; taskPlan?: string }) => {
+      const rootDir = findProjectRoot();
+      loadDotEnv(rootDir);
+      await spineImplementCommand(rootDir, {
+        taskId: options.taskId,
+        provider: options.provider,
+        taskPlanPath: options.taskPlan,
+      });
     });
 
   return program;

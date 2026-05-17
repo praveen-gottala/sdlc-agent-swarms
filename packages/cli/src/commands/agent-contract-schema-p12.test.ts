@@ -74,6 +74,7 @@ const PHASE_1_AGENTS = [
   'code_generator',
   'test_writer',
   'code_reviewer',
+  'implementer',
 ];
 
 /** Valid HITL policies per PRD */

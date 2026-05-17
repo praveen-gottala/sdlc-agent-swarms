@@ -264,6 +264,7 @@ export type {
   UXModuleDeployed,
   PipelineRunProgress,
   RequirementsClarified,
+  ImplementerTaskComplete,
 } from './events/index.js';
 
 export type { EventBus, EventFilter, EventBusOptions } from './events/index.js';

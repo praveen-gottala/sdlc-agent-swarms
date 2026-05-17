@@ -18,6 +18,7 @@ module.exports = {
     '^@agentforge/agents-ux/(.*)$': '<rootDir>/../agents-ux/src/$1',
     '^@agentforge/telemetry$': '<rootDir>/../telemetry/src/index.ts',
     '^@agentforge/designspec-renderer$': '<rootDir>/../designspec-renderer/src/index.ts',
+    '^@agentforge/agents-implementer$': '<rootDir>/../agents-implementer/src/index.ts',
     '^@agentforge/eval$': '<rootDir>/../eval/src/index.ts',
     '^@agentforge/agents-clarifier$': '<rootDir>/../agents-clarifier/src/index.ts',
     '^@agentforge/agents-clarifier/(.*)\\.js$': '<rootDir>/../agents-clarifier/src/$1',
