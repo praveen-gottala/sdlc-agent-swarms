@@ -128,6 +128,8 @@ export {
   PRDSchema,
   ClarificationRoundSchema,
   EnrichedRequirementSchema,
+  ScreenImpactSchema,
+  AffectedScreenSchema,
   ChangeClassificationSchema,
   FeatureNodeSchema,
   FeaturePlanSchema,
@@ -160,6 +162,8 @@ export type {
   PRD,
   ClarificationRound,
   EnrichedRequirement,
+  ScreenImpact,
+  AffectedScreen,
   ChangeClassification,
   FeatureNode,
   FeaturePlan,
@@ -174,10 +178,20 @@ export type {
   ReviewResult,
 } from './cross-boundary-artifacts.js';
 
+export {
+  ReorderEntrySchema,
+  DesignSpecDeltaSchema,
+} from './design-delta.schemas.js';
+export type {
+  ReorderEntry,
+  DesignSpecDelta,
+} from './design-delta.schemas.js';
+
 export { RetrievedContextSchema } from './retrieved-context.js';
 export type { RetrievedContext } from './retrieved-context.js';
 
 export {
+  DesignSliceStrategySchema,
   ConstraintTypeSchema,
   ProjectModeSchema,
   TaskTypeSchema,
@@ -196,6 +210,7 @@ export {
   ContextRefSchema,
   TaskModeSchema,
   TaskCompletionReportSchema,
+  ImplementerContextMetadataSchema,
   ArchitectureSpecSchema,
   TaskNodeSchema,
   TaskPlanSchema,
@@ -209,9 +224,11 @@ export {
   CriticGateSchema,
   CriticReportSchema,
   ContractBundleSchema,
+  resolveDesignSliceStrategy,
 } from './architect.schemas.js';
 
 export type {
+  DesignSliceStrategy,
   ConstraintType,
   ProjectMode,
   TaskType,
@@ -230,6 +247,7 @@ export type {
   ContextRef,
   TaskMode,
   TaskCompletionReport,
+  ImplementerContextMetadata,
   ArchitectureSpec,
   TaskNode,
   TaskPlan,

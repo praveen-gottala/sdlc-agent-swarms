@@ -13,7 +13,8 @@ export type { RepoSnapshot, RetrievalContext, RetryTarget } from './types.js';
 export type { ArchitectDeps, ArchitectNodeFn } from './deps.js';
 
 // Context slicer
-export { sliceContractBundle, stateCompositionsToBundle } from './context-slicer.js';
+export { sliceContractBundle, stateCompositionsToBundle, applyDesignSlice } from './context-slicer.js';
+export type { DesignSpecLookup, SlicedBundleWithDesign } from './context-slicer.js';
 
 // Design slice (DesignSliceStrategy resolution)
 export { extractLabelsAndBindings, extractStructure } from './design-slice/index.js';
@@ -39,6 +40,10 @@ export {
   escalationGate,
 } from './graph/index.js';
 export type { ArchitectStateType } from './graph/index.js';
+
+// Screen impact classifier (R9 §2)
+export { classifyScreenImpact } from './impact/screen-impact.js';
+export type { ScreenImpactInput, ScreenImpactResult } from './impact/screen-impact.js';
 
 // Pipeline runner
 export { runArchitect, runArchitectPipelineStream } from './run.js';

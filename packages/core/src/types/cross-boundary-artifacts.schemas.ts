@@ -165,6 +165,17 @@ export const EnrichedRequirementSchema = z.object({
 // 5. Change Classification — classifier node output (evolution mode)
 // ---------------------------------------------------------------------------
 
+export const ScreenImpactSchema = z.enum(['new', 'modified', 'unchanged']);
+
+export const AffectedScreenSchema = z.object({
+  screenId: z.string(),
+  impact: ScreenImpactSchema,
+  existingSpecPath: z.string().optional(),
+  existingNodeCount: z.number().int().min(0).optional(),
+  changeDescription: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+});
+
 export const ChangeClassificationSchema = z.object({
   id: z.string(),
   changeRequestId: z.string(),
@@ -172,6 +183,7 @@ export const ChangeClassificationSchema = z.object({
   blastRadius: BlastRadiusSchema,
   affectedModules: z.array(z.string()),
   confidence: z.number().min(0).max(1),
+  affectedScreens: z.array(AffectedScreenSchema).optional(),
 });
 
 // ---------------------------------------------------------------------------

@@ -24,6 +24,8 @@ import type {
   PRDSchema,
   ClarificationRoundSchema,
   EnrichedRequirementSchema,
+  ScreenImpactSchema,
+  AffectedScreenSchema,
   ChangeClassificationSchema,
   FeatureNodeSchema,
   FeaturePlanSchema,
@@ -84,6 +86,8 @@ export type EnrichedRequirement = z.infer<typeof EnrichedRequirementSchema>;
 // Change Classification
 // ---------------------------------------------------------------------------
 
+export type ScreenImpact = z.infer<typeof ScreenImpactSchema>;
+export type AffectedScreen = z.infer<typeof AffectedScreenSchema>;
 export type ChangeClassification = z.infer<typeof ChangeClassificationSchema>;
 
 // ---------------------------------------------------------------------------

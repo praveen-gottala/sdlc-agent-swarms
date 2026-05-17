@@ -15,7 +15,7 @@ import type {
   CriticGate,
   CriticReport,
 } from '../types/architect.schemas.js';
-import type { EnrichedRequirement } from '../types/cross-boundary-artifacts.js';
+import type { EnrichedRequirement, ChangeClassification } from '../types/cross-boundary-artifacts.js';
 
 const VALID_HTTP_METHODS = new Set([
   'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS',
@@ -29,14 +29,17 @@ const SQL_VERBS = /\b(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|SELECT)\b/i;
 export const TASK_TOKEN_BUDGET_CEILING = 120_000;
 
 /**
- * Validate a ContractBundle against 14 deterministic gates.
+ * Validate a ContractBundle against 15 deterministic gates.
  * @param existingFiles — When set (brownfield), gate 14 enforces MODIFY tasks touch
  *   at least one existing path. When omitted (greenfield), gate 14 is skipped.
+ * @param changeClassification — When set (brownfield), gate 15 enforces MODIFY
+ *   frontend tasks reference screens in affectedScreens with impact 'modified'.
  */
 export function validateContractBundle(
   bundle: ContractBundle,
   enrichedReq: EnrichedRequirement,
   existingFiles?: ReadonlySet<string>,
+  changeClassification?: ChangeClassification,
 ): CriticReport {
   const gates: CriticGate[] = [
     runSchemaValidation(bundle),
@@ -53,12 +56,14 @@ export function validateContractBundle(
     runAcceptanceCriteriaCoverage(bundle, enrichedReq),
     runTokenBudgetFeasibility(bundle),
     runModeConsistency(bundle, existingFiles),
+    runModifyScreenConsistency(bundle, changeClassification),
   ];
 
+  const gateCount = gates.length;
   const passed = gates.every((g) => g.passed);
   const failedGates = gates.filter((g) => !g.passed).map((g) => g.name);
   const summary = passed
-    ? 'All 14 gates passed.'
+    ? `All ${gateCount} gates passed.`
     : `Failed gates: ${failedGates.join(', ')}`;
 
   return { gates, passed, summary };
@@ -303,6 +308,9 @@ function resolveContextRef(bundle: ContractBundle, ref: ContextRef): boolean {
       return bundle.screenPlans.some((s) => s.id === ref.id);
     case 'pattern':
       return patterns.has(ref.id);
+    case 'existingDesign':
+    case 'designDelta':
+      return true;
     default: {
       const _exhaustive: never = ref.kind;
       return _exhaustive;
@@ -413,4 +421,38 @@ function runModeConsistency(
   }
 
   return { name: 'mode-consistency', passed: findings.length === 0, findings };
+}
+
+function runModifyScreenConsistency(
+  bundle: ContractBundle,
+  changeClassification?: ChangeClassification,
+): CriticGate {
+  if (!changeClassification?.affectedScreens) {
+    return { name: 'modify-screen-consistency', passed: true, findings: [] };
+  }
+
+  const findings: string[] = [];
+  const modifiedScreenIds = new Set(
+    changeClassification.affectedScreens
+      .filter(s => s.impact === 'modified')
+      .map(s => s.screenId),
+  );
+
+  const frontendTypes = new Set(['frontend']);
+
+  for (const task of bundle.taskPlan.tasks) {
+    if (task.mode !== 'MODIFY' || !frontendTypes.has(task.type)) continue;
+
+    const refsExistingDesign = task.contextRefs.some(
+      r => r.kind === 'existingDesign' && modifiedScreenIds.has(r.id),
+    );
+
+    if (!refsExistingDesign) {
+      findings.push(
+        `MODIFY frontend task '${task.id}' does not reference any screen from affectedScreens with impact 'modified' via existingDesign contextRef`,
+      );
+    }
+  }
+
+  return { name: 'modify-screen-consistency', passed: findings.length === 0, findings };
 }

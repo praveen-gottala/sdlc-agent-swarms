@@ -74,6 +74,7 @@ export function createCritic(): ArchitectNodeFn {
       bundle,
       req,
       state.existingFiles ?? undefined,
+      state.changeClassification ?? undefined,
     );
 
     debugLog(`critic: EXIT passed=${report.passed} gates=${report.gates.length}`);

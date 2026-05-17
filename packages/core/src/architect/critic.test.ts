@@ -142,12 +142,12 @@ function makeValidBundle(overrides?: Partial<ContractBundle>): ContractBundle {
 describe('validateContractBundle', () => {
   const enrichedReq = makeEnrichedReq();
 
-  it('passes all 14 gates with a valid bundle', () => {
+  it('passes all 15 gates with a valid bundle', () => {
     const bundle = makeValidBundle();
     const report = validateContractBundle(bundle, enrichedReq);
 
     expect(report.passed).toBe(true);
-    expect(report.gates).toHaveLength(14);
+    expect(report.gates).toHaveLength(15);
     for (const gate of report.gates) {
       expect(gate.passed).toBe(true);
       expect(gate.findings).toHaveLength(0);
@@ -720,6 +720,100 @@ describe('validateContractBundle', () => {
       );
       const gate = report.gates.find((g) => g.name === 'mode-consistency')!;
       expect(gate.passed).toBe(false);
+    });
+  });
+
+  describe('gate 15: modify-screen-consistency', () => {
+    it('passes when no changeClassification is provided', () => {
+      const bundle = makeValidBundle();
+      const report = validateContractBundle(bundle, enrichedReq);
+      const gate = report.gates.find((g) => g.name === 'modify-screen-consistency')!;
+      expect(gate.passed).toBe(true);
+    });
+
+    it('passes when MODIFY frontend task references a modified screen', () => {
+      const base = makeValidBundle();
+      const tasks = base.taskPlan.tasks.map((t) => ({ ...t }));
+      tasks[0] = {
+        ...tasks[0],
+        mode: 'MODIFY' as const,
+        type: 'frontend' as const,
+        contextRefs: [{ kind: 'existingDesign' as const, id: 'dashboard' }],
+      };
+      const bundle = makeValidBundle({
+        taskPlan: { ...base.taskPlan, tasks },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq, undefined, {
+        id: 'cc-1',
+        changeRequestId: 'er-1',
+        scopeAxes: ['ui'],
+        blastRadius: 'medium',
+        affectedModules: ['screen:dashboard'],
+        confidence: 0.9,
+        affectedScreens: [
+          { screenId: 'dashboard', impact: 'modified', confidence: 0.9 },
+        ],
+      });
+      const gate = report.gates.find((g) => g.name === 'modify-screen-consistency')!;
+      expect(gate.passed).toBe(true);
+    });
+
+    it('fails when MODIFY frontend task does not reference a modified screen', () => {
+      const base = makeValidBundle();
+      const tasks = base.taskPlan.tasks.map((t) => ({ ...t }));
+      tasks[0] = {
+        ...tasks[0],
+        mode: 'MODIFY' as const,
+        type: 'frontend' as const,
+        contextRefs: [],
+      };
+      const bundle = makeValidBundle({
+        taskPlan: { ...base.taskPlan, tasks },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq, undefined, {
+        id: 'cc-1',
+        changeRequestId: 'er-1',
+        scopeAxes: ['ui'],
+        blastRadius: 'medium',
+        affectedModules: ['screen:dashboard'],
+        confidence: 0.9,
+        affectedScreens: [
+          { screenId: 'dashboard', impact: 'modified', confidence: 0.9 },
+        ],
+      });
+      const gate = report.gates.find((g) => g.name === 'modify-screen-consistency')!;
+      expect(gate.passed).toBe(false);
+      expect(gate.findings[0]).toContain('MODIFY frontend task');
+    });
+
+    it('skips non-frontend MODIFY tasks', () => {
+      const base = makeValidBundle();
+      const tasks = base.taskPlan.tasks.map((t) => ({ ...t }));
+      tasks[0] = {
+        ...tasks[0],
+        mode: 'MODIFY' as const,
+        type: 'backend' as const,
+        contextRefs: [],
+      };
+      const bundle = makeValidBundle({
+        taskPlan: { ...base.taskPlan, tasks },
+      });
+
+      const report = validateContractBundle(bundle, enrichedReq, undefined, {
+        id: 'cc-1',
+        changeRequestId: 'er-1',
+        scopeAxes: ['ui'],
+        blastRadius: 'medium',
+        affectedModules: ['screen:dashboard'],
+        confidence: 0.9,
+        affectedScreens: [
+          { screenId: 'dashboard', impact: 'modified', confidence: 0.9 },
+        ],
+      });
+      const gate = report.gates.find((g) => g.name === 'modify-screen-consistency')!;
+      expect(gate.passed).toBe(true);
     });
   });
 

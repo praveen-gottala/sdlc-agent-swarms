@@ -66,6 +66,7 @@ export {
 
 // Architect Zod schemas (vision Layer 3)
 export {
+  DesignSliceStrategySchema,
   ConstraintTypeSchema,
   ProjectModeSchema,
   TaskTypeSchema,
@@ -84,6 +85,7 @@ export {
   ContextRefSchema,
   TaskModeSchema,
   TaskCompletionReportSchema,
+  ImplementerContextMetadataSchema,
   ArchitectureSpecSchema,
   TaskNodeSchema,
   TaskPlanSchema,
@@ -97,9 +99,11 @@ export {
   CriticGateSchema,
   CriticReportSchema,
   ContractBundleSchema,
+  resolveDesignSliceStrategy,
 } from './types/index.js';
 
 export type {
+  DesignSliceStrategy,
   ConstraintType,
   ProjectMode,
   TaskType,
@@ -118,6 +122,7 @@ export type {
   ContextRef,
   TaskMode,
   TaskCompletionReport,
+  ImplementerContextMetadata,
   ArchitectureSpec,
   TaskNode,
   TaskPlan,
@@ -145,6 +150,9 @@ export {
   AssumptionEntrySchema,
   DataBindingSchema,
   EndpointChangeSchema,
+  ScreenRefSchema,
+  ScreenImpactSchema,
+  AffectedScreenSchema,
   ChangeClassificationSchema,
   ScreenPlanSchema,
   APIChangeSetSchema,
@@ -159,10 +167,23 @@ export type {
   EARSCriterion,
   ClarificationRound,
   AssumptionEntry,
+  ScreenRef,
+  ScreenImpact,
+  AffectedScreen,
   ChangeClassification,
   ScreenPlan,
   APIChangeSet,
   ScopeAxis,
+} from './types/index.js';
+
+// Design delta schemas (R9 §6.2)
+export {
+  ReorderEntrySchema,
+  DesignSpecDeltaSchema,
+} from './types/index.js';
+export type {
+  ReorderEntry,
+  DesignSpecDelta,
 } from './types/index.js';
 
 // Scaffolding
