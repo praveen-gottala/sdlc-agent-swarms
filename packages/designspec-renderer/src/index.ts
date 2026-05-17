@@ -117,6 +117,7 @@ export type {
 
 // ─── SDK Tools ───────────────────────────────────────────
 export { SUBMIT_DESIGN_TOOL } from './sdk/submit-design-tool.js';
+export { SUBMIT_DESIGN_DELTA_TOOL } from './sdk/submit-design-delta-tool.js';
 
 // ─── Browser Renderer ───────────────────────────────────
 export { screenshotDesignSpec } from './renderer/browser/screenshot.js';

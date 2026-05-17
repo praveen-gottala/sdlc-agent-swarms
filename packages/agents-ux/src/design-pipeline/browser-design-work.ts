@@ -16,12 +16,14 @@ import { fileURLToPath } from 'node:url';
 import { Err, Ok } from '@agentforge/core';
 import type { Result } from '@agentforge/core';
 import { debugLog } from '@agentforge/core';
-import { SUBMIT_DESIGN_TOOL } from '@agentforge/designspec-renderer';
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { SUBMIT_DESIGN_TOOL, SUBMIT_DESIGN_DELTA_TOOL } from '@agentforge/designspec-renderer';
+import { deltaApply } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, DesignSpecDelta as RendererDelta } from '@agentforge/designspec-renderer';
 import { promoteToCatalog } from './promote-to-catalog.js';
-import { extractDesignSpecFromToolCall } from '../ux-design/penpot-script-executor.js';
+import { extractDesignSpecFromToolCall, extractDesignDeltaFromToolCall } from '../ux-design/penpot-script-executor.js';
 import { buildPromptFromTokens } from '../prompts/prompt-template-builder.js';
 import { formatPageContextPrompt } from '../page-context-prompt.js';
+import { runStructuralQualityGate } from '../ux-design/structural-quality-gate.js';
 import type { DesignPhaseState, NodeContext, PipelineStageError } from './types.js';
 import { pipelineStageError } from './types.js';
 import type { CatalogMap } from '@agentforge/designspec-renderer';
@@ -146,11 +148,19 @@ DO NOT flatten NavigationBar into a single node with overrides.`);
 /**
  * Generate a DesignSpec v2 via LLM tool call.
  * Superset of callClaudeDesignAPI — adds Chrome Pass, screen_type, viewport, navigateTo.
+ *
+ * Brownfield path: when `state.existingDesignSpec` is present, emits a delta
+ * via `submit_design_delta`, applies it deterministically via `deltaApply`,
+ * and runs the structural quality gate on the merged result.
  */
 export async function browserDesignWork(
   state: DesignPhaseState,
   ctx: NodeContext,
 ): Promise<Result<Partial<DesignPhaseState>, PipelineStageError>> {
+  if (state.existingDesignSpec) {
+    return brownfieldDesignWork(state, ctx);
+  }
+
   // Build system prompt
   let rawPrompt = loadDesignSystemPrompt();
   if (state.designTokensSpec) {
@@ -273,4 +283,169 @@ export async function browserDesignWork(
   }
 
   return Err(pipelineStageError('design', 'Design generation exhausted all retry attempts.'));
+}
+
+// ── Brownfield (delta) path ──
+
+const DELTA_SYSTEM_ADDENDUM = `
+
+## Delta Mode — Modifying an Existing Design
+
+You are modifying an existing design. Output ONLY the changes using the submit_design_delta tool.
+
+Rules:
+- Use "added" for new nodes. Each must reference a parent that exists in the existing spec or in added.
+- Use "modified" for existing nodes that need field changes. Include ONLY the changed fields — unchanged fields are preserved automatically.
+- Use "removed" for nodes to delete. Descendants are cascade-removed.
+- Use "reordered" for nodes that only need parent or order changes.
+- Do NOT include unchanged nodes in any section.
+- The screenId and baseWidth must match the existing spec.
+`;
+
+/** Build user message for brownfield delta path. */
+function buildBrownfieldUserMessage(
+  state: DesignPhaseState,
+  existingSpec: DesignSpecV2,
+): string {
+  const parts: string[] = [];
+
+  parts.push(`## Existing Design Spec (${Object.keys(existingSpec.nodes).length} nodes)`);
+  parts.push(`Screen: ${existingSpec.screen}, Width: ${existingSpec.width}px`);
+  parts.push('```json');
+  parts.push(JSON.stringify(existingSpec, null, 2));
+  parts.push('```');
+
+  parts.push(`\nModule ID: ${state.moduleId}`);
+
+  if (state.description) {
+    parts.push(`\nApp Description: ${state.description}`);
+  }
+
+  if (state.planning) {
+    parts.push(`\n## Planning Output (changes requested)\n${JSON.stringify(state.planning, null, 2)}`);
+  }
+
+  const catalogHint = buildCatalogMappingHint(state.catalogMap);
+  if (catalogHint) {
+    parts.push(catalogHint);
+  }
+
+  if (state.pageContext) {
+    parts.push(formatPageContextPrompt(state.pageContext));
+  }
+
+  return parts.join('\n');
+}
+
+/**
+ * Brownfield design path — emits a delta, applies it, validates the result.
+ */
+async function brownfieldDesignWork(
+  state: DesignPhaseState,
+  ctx: NodeContext,
+): Promise<Result<Partial<DesignPhaseState>, PipelineStageError>> {
+  const existingSpec = state.existingDesignSpec!;
+
+  let rawPrompt = loadDesignSystemPrompt();
+  if (state.designTokensSpec) {
+    rawPrompt = buildPromptFromTokens(rawPrompt, state.designTokensSpec);
+  }
+  const renderableIds = state.catalogMap
+    ? Object.keys(state.catalogMap).sort().map(id => `\`${id}\``).join(', ')
+    : '(none)';
+  const systemPrompt = rawPrompt
+    .replace('{{DESIGN_SYSTEM}}', state.designSystemPrompt || '(No project design system provided — use generic token names)')
+    .replace('{{COMPONENT_CATALOG}}', state.componentCatalogPrompt || '(No component catalog available)')
+    .replace('{{RENDERABLE_CATALOG_IDS}}', renderableIds)
+    + DELTA_SYSTEM_ADDENDUM;
+
+  const userMessage = buildBrownfieldUserMessage(state, existingSpec);
+  const model = ctx.agentContext.resolvedModel ?? 'claude-sonnet-4-6';
+  const maxTokens = 32000;
+
+  const attemptStart = Date.now();
+
+  const result = await ctx.provider.complete(
+    {
+      system: systemPrompt,
+      messages: [{ role: 'user' as const, content: userMessage }],
+      tools: [SUBMIT_DESIGN_DELTA_TOOL as { name: string; description: string; parameters: Record<string, unknown> }],
+    },
+    {
+      model,
+      maxTokens,
+      temperature: 0,
+      toolChoice: { type: 'tool', name: 'submit_design_delta' },
+    },
+  );
+
+  const attemptDuration = Date.now() - attemptStart;
+
+  if (!result.ok) {
+    const error = result.error as unknown as { code?: string; message?: string };
+    return Err(pipelineStageError('design',
+      `LLM completion failed (${error.code ?? 'unknown'}): ${error.message ?? 'no detail'}`));
+  }
+
+  const completion = result.value as {
+    content: string;
+    toolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }>;
+    usage: { inputTokens: number; outputTokens: number };
+    cost: { totalCostUsd: number };
+    finishReason: string;
+  };
+
+  debugLog(
+    `brownfieldDesignWork: model=${model}, finishReason=${completion.finishReason}, ` +
+    `outputTokens=${completion.usage.outputTokens}/${maxTokens}, ` +
+    `cost=$${completion.cost.totalCostUsd.toFixed(4)}, duration=${attemptDuration}ms`,
+  );
+
+  ctx.telemetry?.onLlmCall('design', {
+    model,
+    promptTokens: completion.usage.inputTokens,
+    completionTokens: completion.usage.outputTokens,
+    costUsd: completion.cost.totalCostUsd,
+    latencyMs: attemptDuration,
+  });
+
+  if (completion.finishReason === 'max_tokens') {
+    return Err(pipelineStageError('design',
+      `LLM delta response truncated (finishReason: max_tokens, outputTokens: ${completion.usage.outputTokens}/${maxTokens}).`));
+  }
+
+  const deltaResult = extractDesignDeltaFromToolCall(completion);
+  if (!deltaResult.ok) {
+    return Err(pipelineStageError('design',
+      `Failed to extract delta: ${(deltaResult.error as { message?: string }).message ?? 'unknown'}`));
+  }
+
+  const delta = deltaResult.value as unknown as RendererDelta;
+  debugLog(
+    `brownfieldDesignWork: delta — ` +
+    `${Object.keys(delta.added).length} added, ${Object.keys(delta.modified).length} modified, ` +
+    `${delta.removed.length} removed, ${delta.reordered.length} reordered`,
+  );
+
+  const applyResult = deltaApply(existingSpec, delta);
+  if (!applyResult.ok) {
+    return Err(pipelineStageError('design',
+      `deltaApply failed: ${applyResult.error.message}`));
+  }
+
+  const appliedSpec = applyResult.value;
+  const { spec: promotedSpec, promotions } = promoteToCatalog(appliedSpec);
+  if (promotions.length > 0) {
+    debugLog(`brownfieldDesignWork: ${promotions.length} catalog promotions applied`);
+  }
+
+  const qualityResult = runStructuralQualityGate(promotedSpec);
+  debugLog(`brownfieldDesignWork: structural quality score=${qualityResult.score}, issues=${qualityResult.issues.length}`);
+
+  return Ok({
+    design: {
+      spec: promotedSpec as unknown as Record<string, unknown>,
+      designToolMetadata: { tool: 'browser' as const },
+    },
+  });
 }

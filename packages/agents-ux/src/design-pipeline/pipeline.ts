@@ -63,6 +63,7 @@ function initState(input: PipelineInput): DesignPhaseState {
     catalogMap: input.catalogMap, componentCatalogPrompt: input.componentCatalogPrompt,
     designSystemPrompt: input.designSystemPrompt,
     enrichedRequirement: input.enrichedRequirement,
+    existingDesignSpec: input.existingDesignSpec,
   };
 }
 

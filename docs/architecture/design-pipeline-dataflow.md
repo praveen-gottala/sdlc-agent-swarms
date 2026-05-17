@@ -582,16 +582,27 @@ designNode(state, ctx)
   │
   ├── designTool === 'browser' → browserDesignWork()
   │     Source: packages/agents-ux/src/design-pipeline/browser-design-work.ts
-  │     LLM → submit_design tool-use → DesignSpecV2 JSON
-  │     Post-LLM: promoteToCatalog() promotes container→Section, container→Form,
-  │       header→PageHeader when pattern-matching detects high-confidence matches
-  │       (source: packages/agents-ux/src/design-pipeline/promote-to-catalog.ts)
-  │     Handles: Chrome Pass injection, screen_type/viewport, navigateTo
-  │     Retry: empty-node retry on malformed LLM output
-  │     NodeSpec budget: 19/24 optional fields (5 slots headroom)
-  │     Tool schema: 6 accelerator types (section removed; use catalog: Section)
-  │     Container treatments: elevated/outlined/flat/inset/separated
-  │       (prompt requires 2+ treatments per page with 3+ sections)
+  │     │
+  │     ├── existingDesignSpec present (brownfield MODIFY) → brownfieldDesignWork()
+  │     │     System prompt: base prompt + DELTA_SYSTEM_ADDENDUM (R9 §3)
+  │     │     User message: existing spec JSON + planning output
+  │     │     LLM → submit_design_delta tool-use → DesignSpecDelta
+  │     │     Post-hoc validate: DesignSpecDeltaSchema.safeParse()
+  │     │     Merge: deltaApply(existingSpec, delta) → DesignSpecV2
+  │     │     Post-LLM: promoteToCatalog() + runStructuralQualityGate()
+  │     │     Tool schema: packages/designspec-renderer/src/sdk/submit-design-delta-tool.ts
+  │     │
+  │     └── existingDesignSpec absent (greenfield NEW) — original path
+  │           LLM → submit_design tool-use → DesignSpecV2 JSON
+  │           Post-LLM: promoteToCatalog() promotes container→Section, container→Form,
+  │             header→PageHeader when pattern-matching detects high-confidence matches
+  │             (source: packages/agents-ux/src/design-pipeline/promote-to-catalog.ts)
+  │           Handles: Chrome Pass injection, screen_type/viewport, navigateTo
+  │           Retry: empty-node retry on malformed LLM output
+  │           NodeSpec budget: 19/24 optional fields (5 slots headroom)
+  │           Tool schema: 6 accelerator types (section removed; use catalog: Section)
+  │           Container treatments: elevated/outlined/flat/inset/separated
+  │             (prompt requires 2+ treatments per page with 3+ sections)
   │
   └── designTool === 'penpot' → penpotDesignWork()
         Source: packages/agents-ux/src/ux-design/ux-penpot-design.ts

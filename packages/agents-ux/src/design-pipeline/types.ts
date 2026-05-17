@@ -96,6 +96,8 @@ export interface PipelineInput {
   readonly designSystemPrompt?: string;
   /** Structured Clarifier output. When present and prdRequirements absent, initState() derives prdRequirements via renderPrdToMarkdown. */
   readonly enrichedRequirement?: EnrichedRequirement;
+  /** Existing design spec for brownfield MODIFY path. When present, design stage emits a delta instead of full spec. */
+  readonly existingDesignSpec?: DesignSpecV2;
 }
 
 // ============================================================================
@@ -134,6 +136,7 @@ export interface DesignPhaseState {
   readonly componentCatalogPrompt?: string;
   readonly designSystemPrompt?: string;
   readonly enrichedRequirement?: EnrichedRequirement;
+  readonly existingDesignSpec?: DesignSpecV2;
 }
 
 // ============================================================================

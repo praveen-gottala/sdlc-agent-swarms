@@ -9,12 +9,14 @@
  * - executeChunkedScript — execute a multi-chunk render result
  * - deleteRootShape — remove a root shape from the canvas
  * - extractDesignSpecFromToolCall — parse a DesignSpecV2 from LLM tool call
+ * - extractDesignDeltaFromToolCall — parse a DesignSpecDelta from LLM tool call (brownfield)
  * - exportShapeViaExecuteCode — export a shape as base64 PNG
  * - exportShapeWithRetry — export with retry logic
  */
 
 import type { Result, MCPClient } from '@agentforge/core';
-import { Ok, Err, logDefaults } from '@agentforge/core';
+import { Ok, Err, logDefaults, DesignSpecDeltaSchema } from '@agentforge/core';
+import type { DesignSpecDelta } from '@agentforge/core';
 import type { DesignSpecV2, ChunkedRenderResult } from '@agentforge/designspec-renderer';
 
 // ============================================================================
@@ -338,4 +340,41 @@ export function extractDesignSpecFromToolCall(
     ...(screenType ? { screenType } : {}),
     ...(regions ? { regions } : {}),
   });
+}
+
+/**
+ * Extract a DesignSpecDelta from the LLM's submit_design_delta tool call.
+ * Post-hoc validates with DesignSpecDeltaSchema from @agentforge/core.
+ */
+export function extractDesignDeltaFromToolCall(
+  completionValue: { content: string; toolCalls?: Array<{ id: string; name: string; args: Record<string, unknown> }> },
+): Result<DesignSpecDelta> {
+  const toolCall = completionValue.toolCalls?.find(tc => tc.name === 'submit_design_delta');
+  if (!toolCall) {
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: 'LLM did not call submit_design_delta tool. Ensure tool_choice is set correctly.',
+      recoverable: true,
+    });
+  }
+
+  const args = toolCall.args;
+  const parsed = DesignSpecDeltaSchema.safeParse({
+    screenId: args.screenId,
+    baseWidth: args.baseWidth,
+    added: args.added ?? {},
+    modified: args.modified ?? {},
+    removed: args.removed ?? [],
+    reordered: args.reordered ?? [],
+  });
+
+  if (!parsed.success) {
+    return Err({
+      code: 'LLM_MALFORMED_OUTPUT',
+      message: `submit_design_delta validation failed: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
+      recoverable: true,
+    });
+  }
+
+  return Ok(parsed.data);
 }
