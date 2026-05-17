@@ -17,7 +17,7 @@ export const SPINE_STAGES: readonly SpineStage[] = [
   { key: 'clarifier', label: 'Clarify', icon: IconSparkles, implemented: true },
   { key: 'architect', label: 'Architect', icon: IconBolt, implemented: true },
   { key: 'implementer', label: 'Implement', icon: IconRocket, implemented: true },
-  { key: 'reviewer', label: 'Review', icon: IconCircleCheck, implemented: false },
+  { key: 'reviewer', label: 'Review', icon: IconCircleCheck, implemented: true },
 ] as const;
 
 export type SpineStageKey = 'clarifier' | 'architect' | 'implementer' | 'reviewer';

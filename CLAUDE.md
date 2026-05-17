@@ -45,7 +45,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Completed plans (do NOT read during session-start):** 7 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
 
 <!-- Last session: max 2 lines — status + next action only. Details belong in the plan's execution-plan.md. -->
-**Last session (2026-05-17):** M4 Phases 1-4 COMPLETE. Next: M4 Phase 5 (Implementer LangGraph Package).
+**Last session (2026-05-17):** M4 Phases 1-6 COMPLETE. Next: M4 Phase 7 (Full Spine Eval + Regression).
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
@@ -230,6 +230,7 @@ The system is a four-stage vertical spine with specialist tools (vision Layer 3)
 - `agents-clarifier` depends on: `core`, `providers`, `retrieval`, `telemetry`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `agents-architect` depends on: `core`, `providers`, `retrieval`, `telemetry`, `agents-ux`, `@langchain/langgraph`, `@langchain/core`, `zod`
 - `agents-implementer` depends on: `core`, `governance`, `providers`, `telemetry`, `agents-ux`, `agents-architect`, `designspec-renderer`, `@langchain/langgraph`, `@langchain/core`, `zod`
+- `agents-reviewer` depends on: `core`, `governance`, `providers`, `telemetry`, `@langchain/langgraph`, `@langchain/core`, `zod`, `zod-to-json-schema`
 - `eval` depends on: `core`, `providers`, `agents-clarifier`, `yaml`, `zod`
 - `orchestrator` (planned) depends on: `core`, `agents-*`, `retrieval`
 

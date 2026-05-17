@@ -27,6 +27,7 @@ module.exports = {
     '^@agentforge/cli$': '<rootDir>/../cli/src/index.ts',
     '^@agentforge/cli/commands/(.*)$': '<rootDir>/../cli/src/commands/$1.ts',
     '^@agentforge/agents-implementer$': '<rootDir>/../agents-implementer/src/index.ts',
+    '^@agentforge/agents-reviewer$': '<rootDir>/../agents-reviewer/src/index.ts',
     '^@agentforge/eval$': '<rootDir>/../eval/src/index.ts',
     '^@agentforge/agents-clarifier$': '<rootDir>/../agents-clarifier/src/index.ts',
     '^(\\..*)\\.js$': '$1',

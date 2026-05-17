@@ -276,6 +276,9 @@ export const DiffSchema = z.object({
 
 // ---------------------------------------------------------------------------
 // 10. Review Result — output from Reviewer
+//     M4 plan references this field as "disposition"; the existing "outcome"
+//     field covers the same semantics: approved ≡ approved, rejected ≡
+//     revisionNeeded, escalated ≡ escalate. No separate disposition field added.
 // ---------------------------------------------------------------------------
 
 export const ReviewFindingSchema = z.object({

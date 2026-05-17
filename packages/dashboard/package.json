@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@agentforge/agents-clarifier": "0.1.0",
+    "@agentforge/agents-implementer": "0.1.0",
+    "@agentforge/agents-reviewer": "0.1.0",
     "@agentforge/agents-ux": "0.1.0",
     "@agentforge/cli": "0.1.0",
     "@agentforge/core": "0.1.0",

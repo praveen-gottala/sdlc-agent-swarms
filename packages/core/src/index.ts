@@ -157,6 +157,13 @@ export {
   ScreenPlanSchema,
   APIChangeSetSchema,
   ScopeAxisSchema,
+  FindingCategorySchema,
+  ReviewOutcomeSchema,
+  ReviewFindingSchema,
+  ReviewResultSchema,
+  DiffHunkSchema,
+  DiffFileSchema,
+  DiffSchema,
 } from './types/index.js';
 export type {
   EnrichedRequirement,
@@ -174,6 +181,13 @@ export type {
   ScreenPlan,
   APIChangeSet,
   ScopeAxis,
+  FindingCategory,
+  ReviewOutcome,
+  ReviewFinding,
+  ReviewResult,
+  Diff,
+  DiffFile,
+  DiffHunk,
 } from './types/index.js';
 
 // Design delta schemas (R9 §6.2)

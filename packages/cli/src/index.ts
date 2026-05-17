@@ -339,13 +339,15 @@ export function createProgram(): Command {
     .option('--task-id <id>', 'Task ID to implement')
     .option('--provider <name>', 'LLM provider model', 'claude-opus-4-6')
     .option('--task-plan <path>', 'Path to task plan YAML (default: .agentforge/architect/task-plan.yaml)')
-    .action(async (options: { taskId?: string; provider?: string; taskPlan?: string }) => {
+    .option('--skip-review', 'Skip the Reviewer step after implementation')
+    .action(async (options: { taskId?: string; provider?: string; taskPlan?: string; skipReview?: boolean }) => {
       const rootDir = findProjectRoot();
       loadDotEnv(rootDir);
       await spineImplementCommand(rootDir, {
         taskId: options.taskId,
         provider: options.provider,
         taskPlanPath: options.taskPlan,
+        skipReview: options.skipReview,
       });
     });
 

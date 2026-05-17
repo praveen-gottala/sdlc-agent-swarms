@@ -169,6 +169,7 @@ Checks Python availability, LLM provider connectivity (Anthropic, OpenAI, Vertex
 | `agentforge status [--watch]` | View task status (live-updating with `--watch`) |
 | `agentforge approve <task_id>` | Approve a task awaiting human review |
 | `agentforge abort [task_id] [--all]` | Stop a running or pending task |
+| `agentforge spine:implement [--task-id <id>] [--skip-review]` | Run Implementer → Reviewer on a task from the Architect's TaskPlan (bounded retry, max 2 cycles) |
 
 ### Evaluation
 
