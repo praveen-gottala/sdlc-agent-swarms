@@ -75,6 +75,10 @@ function contextRefTokenCost(
       return TOKENS_PER_SCREEN_PLAN;
     case 'pattern':
       return TOKENS_PER_PATTERN;
+    case 'existingDesign':
+      return 3000;
+    case 'designDelta':
+      return 1500;
     default: {
       const _exhaustive: never = ref.kind;
       return _exhaustive;

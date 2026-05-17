@@ -26,6 +26,13 @@ import {
 // Shared Architect enums
 // ---------------------------------------------------------------------------
 
+export const DesignSliceStrategySchema = z.enum([
+  'none',
+  'full',
+  'labels-only',
+  'structure-only',
+]);
+
 export const ConstraintTypeSchema = z.enum(['hard', 'soft']);
 
 export const ProjectModeSchema = z.enum(['greenfield', 'brownfield']);
@@ -135,6 +142,8 @@ export const ContextRefKindSchema = z.enum([
   'componentComposition',
   'screenPlan',
   'pattern',
+  'existingDesign',
+  'designDelta',
 ]);
 
 export const ContextRefSchema = z.object({
@@ -151,6 +160,25 @@ export const TaskCompletionReportSchema = z.object({
   patternsApplied: z.array(z.string()),
   deviationsFromContract: z.array(z.string()),
 });
+
+export const ImplementerContextMetadataSchema = z.object({
+  taskId: z.string(),
+  taskType: TaskModeSchema,
+  sliceStrategy: DesignSliceStrategySchema,
+  designSpecIncluded: z.boolean(),
+});
+
+/** ADR-057: resolve DesignSliceStrategy from task mode. */
+export function resolveDesignSliceStrategy(
+  taskMode: z.infer<typeof TaskModeSchema>,
+): z.infer<typeof DesignSliceStrategySchema> {
+  switch (taskMode) {
+    case 'MODIFY':
+      return 'structure-only';
+    case 'NEW':
+      return 'none';
+  }
+}
 
 export const ArchitectureSpecSchema = z.object({
   projectId: z.string(),
@@ -285,6 +313,7 @@ export const ContractBundleSchema = z.object({
 // Inferred TypeScript types
 // ---------------------------------------------------------------------------
 
+export type DesignSliceStrategy = z.infer<typeof DesignSliceStrategySchema>;
 export type ConstraintType = z.infer<typeof ConstraintTypeSchema>;
 export type ProjectMode = z.infer<typeof ProjectModeSchema>;
 export type TaskType = z.infer<typeof TaskTypeSchema>;
@@ -303,6 +332,7 @@ export type ContextRefKind = z.infer<typeof ContextRefKindSchema>;
 export type ContextRef = z.infer<typeof ContextRefSchema>;
 export type TaskMode = z.infer<typeof TaskModeSchema>;
 export type TaskCompletionReport = z.infer<typeof TaskCompletionReportSchema>;
+export type ImplementerContextMetadata = z.infer<typeof ImplementerContextMetadataSchema>;
 export type ArchitectureSpec = z.infer<typeof ArchitectureSpecSchema>;
 export type TaskNode = z.infer<typeof TaskNodeSchema>;
 export type TaskPlan = z.infer<typeof TaskPlanSchema>;

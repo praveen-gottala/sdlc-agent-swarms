@@ -39,19 +39,21 @@ const FULL_BUNDLE: Partial<ContractBundle> = {
 };
 
 describe('sliceContractBundle', () => {
-  it('returns empty object for empty contextRefs', () => {
-    expect(sliceContractBundle([], FULL_BUNDLE)).toEqual({});
+  it('returns empty bundle and designSpecs for empty contextRefs', () => {
+    const result = sliceContractBundle([], FULL_BUNDLE);
+    expect(result.bundle).toEqual({});
+    expect(result.existingDesignSpecs).toEqual({});
   });
 
   it('slices dataModel.entity by id', () => {
     const refs: ContextRef[] = [{ kind: 'dataModel.entity', id: 'entity-expense' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.dataModel).toBeDefined();
-    expect(sliced.dataModel!.entities).toHaveLength(1);
-    expect(sliced.dataModel!.entities[0]!.id).toBe('entity-expense');
-    expect(sliced.dataModel!.projectId).toBe('cashpulse');
-    expect(sliced.apiChangeSets).toBeUndefined();
-    expect(sliced.screenPlans).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.dataModel).toBeDefined();
+    expect(bundle.dataModel!.entities).toHaveLength(1);
+    expect(bundle.dataModel!.entities[0]!.id).toBe('entity-expense');
+    expect(bundle.dataModel!.projectId).toBe('cashpulse');
+    expect(bundle.apiChangeSets).toBeUndefined();
+    expect(bundle.screenPlans).toBeUndefined();
   });
 
   it('slices multiple dataModel entities', () => {
@@ -59,48 +61,48 @@ describe('sliceContractBundle', () => {
       { kind: 'dataModel.entity', id: 'entity-expense' },
       { kind: 'dataModel.entity', id: 'entity-budget' },
     ];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.dataModel!.entities).toHaveLength(2);
-    const ids = sliced.dataModel!.entities.map((e) => e.id);
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.dataModel!.entities).toHaveLength(2);
+    const ids = bundle.dataModel!.entities.map((e) => e.id);
     expect(ids).toContain('entity-expense');
     expect(ids).toContain('entity-budget');
   });
 
   it('slices apiChangeSet by id', () => {
     const refs: ContextRef[] = [{ kind: 'apiChangeSet', id: 'api-expenses' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.apiChangeSets).toHaveLength(1);
-    expect(sliced.apiChangeSets![0]!.id).toBe('api-expenses');
-    expect(sliced.dataModel).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.apiChangeSets).toHaveLength(1);
+    expect(bundle.apiChangeSets![0]!.id).toBe('api-expenses');
+    expect(bundle.dataModel).toBeUndefined();
   });
 
   it('slices componentComposition by screenId match', () => {
     const refs: ContextRef[] = [{ kind: 'componentComposition', id: 'screen-dashboard' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.componentComposition).toBeDefined();
-    expect(sliced.componentComposition!.screenId).toBe('screen-dashboard');
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.componentComposition).toBeDefined();
+    expect(bundle.componentComposition!.screenId).toBe('screen-dashboard');
   });
 
   it('omits componentComposition when screenId does not match', () => {
     const refs: ContextRef[] = [{ kind: 'componentComposition', id: 'screen-nonexistent' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.componentComposition).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.componentComposition).toBeUndefined();
   });
 
   it('slices screenPlans by id', () => {
     const refs: ContextRef[] = [{ kind: 'screenPlan', id: 'screen-expenses' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.screenPlans).toHaveLength(1);
-    expect(sliced.screenPlans![0]!.id).toBe('screen-expenses');
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.screenPlans).toHaveLength(1);
+    expect(bundle.screenPlans![0]!.id).toBe('screen-expenses');
   });
 
   it('slices patterns from architectureSpec by id', () => {
     const refs: ContextRef[] = [{ kind: 'pattern', id: 'data-access-drizzle-only' }];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.architectureSpec).toBeDefined();
-    expect(sliced.architectureSpec!.implementationPatterns).toHaveLength(1);
-    expect(sliced.architectureSpec!.implementationPatterns![0]!.id).toBe('data-access-drizzle-only');
-    expect(sliced.architectureSpec!.decisions).toEqual([]);
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.architectureSpec).toBeDefined();
+    expect(bundle.architectureSpec!.implementationPatterns).toHaveLength(1);
+    expect(bundle.architectureSpec!.implementationPatterns![0]!.id).toBe('data-access-drizzle-only');
+    expect(bundle.architectureSpec!.decisions).toEqual([]);
   });
 
   it('handles mixed ContextRef kinds in a single call', () => {
@@ -110,12 +112,12 @@ describe('sliceContractBundle', () => {
       { kind: 'screenPlan', id: 'screen-dashboard' },
       { kind: 'pattern', id: 'api-error-rfc7807' },
     ];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.dataModel!.entities).toHaveLength(1);
-    expect(sliced.apiChangeSets).toHaveLength(1);
-    expect(sliced.screenPlans).toHaveLength(1);
-    expect(sliced.architectureSpec!.implementationPatterns).toHaveLength(1);
-    expect(sliced.componentComposition).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.dataModel!.entities).toHaveLength(1);
+    expect(bundle.apiChangeSets).toHaveLength(1);
+    expect(bundle.screenPlans).toHaveLength(1);
+    expect(bundle.architectureSpec!.implementationPatterns).toHaveLength(1);
+    expect(bundle.componentComposition).toBeUndefined();
   });
 
   it('omits fields when referenced ids do not exist in bundle', () => {
@@ -123,9 +125,9 @@ describe('sliceContractBundle', () => {
       { kind: 'dataModel.entity', id: 'nonexistent' },
       { kind: 'apiChangeSet', id: 'nonexistent' },
     ];
-    const sliced = sliceContractBundle(refs, FULL_BUNDLE);
-    expect(sliced.dataModel).toBeUndefined();
-    expect(sliced.apiChangeSets).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, FULL_BUNDLE);
+    expect(bundle.dataModel).toBeUndefined();
+    expect(bundle.apiChangeSets).toBeUndefined();
   });
 
   it('handles bundle with missing optional fields gracefully', () => {
@@ -134,9 +136,9 @@ describe('sliceContractBundle', () => {
       { kind: 'dataModel.entity', id: 'entity-expense' },
       { kind: 'apiChangeSet', id: 'api-expenses' },
     ];
-    const sliced = sliceContractBundle(refs, sparseBundle);
-    expect(sliced.dataModel).toBeUndefined();
-    expect(sliced.apiChangeSets).toBeUndefined();
+    const { bundle } = sliceContractBundle(refs, sparseBundle);
+    expect(bundle.dataModel).toBeUndefined();
+    expect(bundle.apiChangeSets).toBeUndefined();
   });
 });
 

@@ -15,7 +15,10 @@ import type {
   ContractBundle,
   ContextRef,
   DataModelSpec,
+  DesignSliceStrategy,
 } from '@agentforge/core';
+import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { extractStructure, extractLabelsAndBindings } from './design-slice/index.js';
 
 /**
  * Bridge ArchitectStateType.componentCompositions (plural array) to
@@ -32,6 +35,41 @@ export function stateCompositionsToBundle(
   return compositions.find((c) => filterScreenIds.has(c.screenId));
 }
 
+/** Resolved design specs keyed by pageId, supplied by the caller via readDesignSpec. */
+export interface DesignSpecLookup {
+  readonly [pageId: string]: DesignSpecV2;
+}
+
+/** Result of slicing with design context attached. */
+export interface SlicedBundleWithDesign {
+  bundle: Partial<ContractBundle>;
+  existingDesignSpecs: Record<string, DesignSpecV2>;
+}
+
+/**
+ * Apply a DesignSliceStrategy to a raw DesignSpecV2.
+ * Returns the sliced spec or undefined when strategy is 'none'.
+ */
+export function applyDesignSlice(
+  spec: DesignSpecV2,
+  strategy: DesignSliceStrategy,
+): DesignSpecV2 | undefined {
+  switch (strategy) {
+    case 'none':
+      return undefined;
+    case 'full':
+      return spec;
+    case 'labels-only':
+      return extractLabelsAndBindings(spec);
+    case 'structure-only':
+      return extractStructure(spec);
+    default: {
+      const _exhaustive: never = strategy;
+      return _exhaustive;
+    }
+  }
+}
+
 /**
  * Filter a partial ContractBundle to include only elements matching the given ContextRefs.
  * Each ref kind maps to a specific bundle field:
@@ -40,23 +78,32 @@ export function stateCompositionsToBundle(
  *   - `componentComposition` → includes `componentComposition` if screenId matches
  *   - `screenPlan` → filters `screenPlans` by plan id
  *   - `pattern` → filters `architectureSpec.implementationPatterns` by pattern id
+ *   - `existingDesign` → attaches sliced design spec (strategy from task mode)
+ *   - `designDelta` → reserved for Phase 3 brownfield delta emission
  *
  * Fields not referenced by any ContextRef are omitted from the result.
  * Structural wrappers (projectId, etc.) are preserved when any child matches.
+ *
+ * @param designSpecs - Pre-resolved design specs keyed by pageId. Caller reads from disk.
+ * @param sliceStrategy - How to slice design specs (ADR-057). Defaults to 'none'.
  */
 export function sliceContractBundle(
   contextRefs: readonly ContextRef[],
   bundle: Partial<ContractBundle>,
-): Partial<ContractBundle> {
-  if (contextRefs.length === 0) return {};
+  designSpecs?: DesignSpecLookup,
+  sliceStrategy?: DesignSliceStrategy,
+): SlicedBundleWithDesign {
+  if (contextRefs.length === 0) return { bundle: {}, existingDesignSpecs: {} };
 
   const result: Partial<ContractBundle> = {};
+  const existingDesignSpecs: Record<string, DesignSpecV2> = {};
 
   const entityIds = new Set<string>();
   const apiChangeSetIds = new Set<string>();
   const compositionScreenIds = new Set<string>();
   const screenPlanIds = new Set<string>();
   const patternIds = new Set<string>();
+  const designPageIds = new Set<string>();
 
   for (const ref of contextRefs) {
     switch (ref.kind) {
@@ -74,6 +121,11 @@ export function sliceContractBundle(
         break;
       case 'pattern':
         patternIds.add(ref.id);
+        break;
+      case 'existingDesign':
+        designPageIds.add(ref.id);
+        break;
+      case 'designDelta':
         break;
     }
   }
@@ -120,5 +172,17 @@ export function sliceContractBundle(
     }
   }
 
-  return result;
+  if (designPageIds.size > 0 && designSpecs) {
+    const strategy = sliceStrategy ?? 'none';
+    for (const pageId of designPageIds) {
+      const raw = designSpecs[pageId];
+      if (!raw) continue;
+      const sliced = applyDesignSlice(raw, strategy);
+      if (sliced) {
+        existingDesignSpecs[pageId] = sliced;
+      }
+    }
+  }
+
+  return { bundle: result, existingDesignSpecs };
 }
