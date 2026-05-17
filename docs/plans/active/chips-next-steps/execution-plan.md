@@ -860,8 +860,11 @@ Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-on
 
 **Blocks:** Nothing. M4 ships with task-type-aware routing (`'none'` for NEW, `'structure-only'` for MODIFY) per M3.6 findings and ADR-057.
 
-### M4 Phase 7: Implementer + Reviewer
-Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1, M3.5 (for brownfield frontend).**
+### M4 Phase 7: Implementer + Reviewer — IN PROGRESS
+
+**Child execution plan:** [`m4-execution-plan.md`](m4-execution-plan.md) (7 phases: ADR-057 routing + instrumentation → brownfield schemas → delta design specialist → Architect TaskPlan wiring → Implementer graph → Reviewer graph → full spine eval).
+
+Design stage becomes Implementer specialist tool. Reviewer is self-contained. Task-level git-worktree parallelism (R1) is **deferred** — M4 ships sequential single-threaded execution per task.
 
 ### Brownfield wiring (from R9 brief)
 

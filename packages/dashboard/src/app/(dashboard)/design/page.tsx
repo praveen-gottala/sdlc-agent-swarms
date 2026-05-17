@@ -163,7 +163,7 @@ function DesignStudioContent() {
 
   // Delta preview state — activated via ?delta=fixture:cashpulse-add-recurring
   const [deltaPreviewActive, setDeltaPreviewActive] = useState(false);
-  const [deltaRegionActions, setDeltaRegionActions] = useState<Record<string, 'approve' | 'reject'>>({});
+  const [, setDeltaRegionActions] = useState<Record<string, 'approve' | 'reject'>>({});
 
   // Coherence check state
   const [coherenceResults, setCoherenceResults] = useState<CoherenceResult[]>([]);

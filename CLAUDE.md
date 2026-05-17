@@ -30,38 +30,22 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 
 **Active plans (read these during session-start):**
 
-1. Visual Diversity — Phase 1-2, 4 COMPLETE. Prerequisite COMPLETE. Phase 3 (3.1-3.8) COMPLETE. Phase 3.7 COMPLETE (evaluator calibration, catalog bridge, docs, pipeline verification). Phase 3.8 COMPLETE (progressive evaluator, correction parity, pipeline verification). Next: Phase 5 (Domain + Effects Foundation). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
-2. CHIP's Next Steps — M0 COMPLETE (2026-05-04), M1 COMPLETE (2026-05-14), M2 COMPLETE (2026-05-14), M3 COMPLETE (2026-05-15), M3.5 COMPLETE (2026-05-15), M3.6 COMPLETE (2026-05-16). M3.6 delivers: Design Info Value Eval — 90-cell matrix (5 configs × 6 tasks × 3 reps), recommended DesignSliceStrategy is task-type-dependent (`'none'` for NEW, `'structure-only'` for MODIFY). Config A (baseline) achieves 2.06 mean fidelity with 746 tokens; Config E matches full DesignSpec quality for MODIFY at 44% lower cost. Eval brief: `docs/research/briefs/R9_4-design-info-value-eval.md`. Results: `packages/eval/results/m3-6/`. Next: M4 (Full Spine). See `docs/plans/active/chips-next-steps/execution-plan.md`
-3. Dashboard Pipeline Fix — Planning stage fails from dashboard but works from CLI. Original diagnosis (`import.meta.url` under webpack) was incorrect — actual blocker was Opus 4.7 token quota on Vertex AI. Dashboard pipeline confirmed working (2026-05-14). Partial fix applied: `serverExternalPackages` for agents-clarifier. See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
-4. CHIP UX Overhaul — Rebrand from AgentForge to CHIP (Crafted Human Intelligence Platform). Phase 1 COMPLETE (2026-04-28). Phase 2 COMPLETE (2026-04-29, committed `ca5df49`). Phase 4.1 COMPLETE (2026-04-29, committed `ae0e8ba`): Home page redesigned as state-aware landing pad. Phase 4.0 COMPLETE (2026-04-29): Pipeline → Runs page redesigned with 4-stage spine, run history table, emergency controls, shared SpineRail extraction, ADR-050 (vision deviations). Next: Phase 4.2+ (remaining pages per priority order). See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
-5. Focused Deep Audit — Enhance Deep Audit (Vision) to support node-scoped inspection. When a selected container has ≤N children, the audit passes nodeId to the API, loads research brief + planning spec for upstream intent, highlights the container in the screenshot, and sends focused context to the vision LLM. Phase 1 (wire selectedNode) next. See `docs/plans/active/focused-deep-audit/execution-plan.md`
-6. Backstage Improvements — Doc quality improvements driven by `/backstage review` audits. Child Plan 1: concepts overview COMPLETE (2026-05-04): opener rewritten (competitor-swap), "How it works" promoted first, defensive title → strength statement, EVPI/ClarifyGPT jargon removed (D2), HITL slimmed to paragraph + link (D11 verified), "Current implementation" → 4-sentence "Current state", B3 citation added to current-status.md. Child Plan 2: agent taxonomy COMPLETE (2026-05-04): phantom predecessor → collapsible historical context, node count 6→9 (D2/D3 taxonomy level + link), mental model paragraph, planned admonitions, D1 diagram legend, Current implementation + Known limitations added. Child Plan 3: research report COMPLETE (2026-05-04): brand rename, voice rewrite, 2 Mermaid diagrams, gap analysis update, admonitions, Part 4.5 absorbed, D4 cascade to clarifier-pipeline.md. Child Plan 4: clarifier pipeline COMPLETE (2026-05-04): page restructured, diagram updated 6→9 nodes, 3 new node descriptions, stale limitation qualified, D3 downstream fix. Child Plan 5: coordination & state COMPLETE (2026-05-04): opener rewritten, Clarifier topology diagram replaced with generic channels pattern, Components 8→9 nodes, negative framing reduced, D13 crosslink added. Child Plan 6: architecture COMPLETE (2026-05-04): full rewrite — 4-stage spine, 19 packages, ADR-044–051, telemetry reframing (D8), 6 cross-references, planned admonitions. Child Plan 7: sdlc-agents spec COMPLETE (2026-05-04): brand rename AgentForge→CHIP (9 occurrences), 5-agent table → Implementer workflow, LLM routing haiku→sonnet for Code review, 11.3.3 workflow rewrite (single-threaded), 3 planned admonitions (11.4/11.5/12), Phase B historical collapsible, supersession note clarified, blockquote count fixed. Child Plan 8: hitl-governance COMPLETE (2026-05-04): opener rewritten (mental model first), gate-focused diagram (neutral fills, D1/D11), gate table aligned with vision.md + Gate 1.5 footnote + spine-impl discrepancy note, brand fixed, LangGraph mechanics in collapsible (D10), ADR-004 admonition, Known Limitations (4 items), Related docs expanded (8 links). Child Plan 9: design-pipeline COMPLETE (2026-05-04): opener rewritten (purpose-first), mental model paragraph, Spine Integration section with 4→2 table (D12), Three-Layer diagram + Spine Implementer caller, cross-screen restructured (positive framing), evaluator reasoning, schema constraint admonition, neutral fills (D1), spine-impl §4 linked. Child Plan 10: state-persistence COMPLETE (2026-05-04): opener rewritten (CHIP-specific three-tier), "Why CHIP does this" added, diagram redesigned (spine stages → tiers), duplicate Mermaid fixed, jargon defined, spine stage → tier mapping, deprecated marking, silent fallback admonition, D2/D13 crosslinks. Child Plan 11: observability COMPLETE (2026-05-04): env var fixed (LANGFUSE_HOST→LANGFUSE_BASE_URL), opening strengthened, "Why CHIP does this" added (ADR-052), diagram labels logical + D1 legend, Components table (4 rows), "Not built" → Known limitations (3 items, positive framing). Child Plan 12: rag-context (7 findings: jargon without grounding, generic citations not hyperlinked, duplicate Mermaid source, aspirational precision@5 "gate" claim). Child Plan 13: dashboard-architecture COMPLETE (2026-05-04): route count fixed (67→63), UI subgraph arrows removed (flat nodes), "Current implementation" removed (Recharts→Components table), sidebar label fixed ("Observability"), /audit+/traces nav note added, full hook paths. Child Plan 14: clarifier-question-generation COMPLETE (2026-05-04): fabricated blockquote removed (synthesis rewrite), D3 verified (Plan 4), EVPI+jargon grounded, defensive framing removed, Why CHIP does this added, competitor table 6→8 tools, Components table (6 rows), `!!!`→`???` collapsed questions, implications explained, pattern depth balanced, Known limitations (3 items), Let CHIP decide clarified (existing vs planned). Child Plan 15: vision-overview COMPLETE (2026-05-04): Single Invariant relocated after Spine (earned concept), test count removed (stale+banned), Locked Decisions table removed (26-row duplication→Open Decisions only), diagram legend added, length 297→261. Child Plan 16: architecture-readme (7 findings: generic competitor-swap failure, no architectural framing, no reading guidance, misleading nav position, underpowered vs peers, missing cross-section link, stale content categories). Cross-plan decisions D1-D15 (D1 addendum: status-encoding fills exempt; D14: README.md promoted to Architecture nav position 1 as section gateway; D15: three-way scope boundary spine-pattern/architecture/spine-implementation). Child Plan 17: spine-pattern-review COMPLETE (2026-05-04): CHIP status admonitions for unbuilt stages, D1 diagram legends, D15 scope boundary, Documentation Generator in Diagram 2, Related expanded (4→9 links). All 17 child plans from Batches 1-4 COMPLETE. Child Plan 18: spine-implementation-review COMPLETE (2026-05-04): D1 legends for 5 diagrams, D12 backlink, stale docs section updated, D15 reciprocal scope, Related expanded. Child Plan 19: design-decisions COMPLETE (2026-05-04): brand fix, 6 See-also cross-refs, Known Limitations added. Child Plan 20: agent-contracts COMPLETE (2026-05-04): deprecation admonition (rejected 10-agent model), scope clarification, historical warning on unbuilt agents, Known Limitations + Related added. Child Plan 21: design-pipeline-dataflow COMPLETE (2026-05-04): brand fix (file paths verified correct). Batch 4 (P0 Architecture Core) fully reviewed AND executed — all 5 entries done. 42 entries remain in pending-files-to-review.md (Batches 5-12). See `docs/plans/active/backstage-improvements/execution-plan.md`
-7. ChatPRD Split Panel — Subplan of CHIP UX Overhaul Phase 3. Phases 1-7 COMPLETE. Phase 8 (visual polish) NOT STARTED. See `docs/plans/active/chatprd-split-panel/execution-plan.md`
-8. Clarifier E2E Browser Test — Phase 1 (resume fix) COMPLETE, Phase 2 (E2E tests, 9 passing) COMPLETE. Phases 3-4 (recording cassettes, eval harness verification) remaining. See `docs/plans/active/clarifier-e2e-browser-test/execution-plan.md`
-9. Clarifier Self-Correction — Phases 1-3 COMPLETE (2026-05-02). Phase 4 (self-correction pipeline: evaluator + challenger LLM) next. Phase 5 (verification) after. See `docs/plans/active/clarifier-self-correction/execution-plan.md`
-    **Backlog plans (do NOT read during session-start — note status only):**
+1. Visual Diversity — Phases 1-4 + 3.1-3.8 COMPLETE. Next: Phase 5 (Domain + Effects Foundation). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
+2. CHIP's Next Steps — M0-M3.6 COMPLETE. Next: M4 (Full Spine). See `docs/plans/active/chips-next-steps/execution-plan.md`
+3. Dashboard Pipeline Fix — Resolved (Vertex AI quota was actual blocker, not import.meta.url). See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
+4. CHIP UX Overhaul — Phases 1, 2, 4.0, 4.1 COMPLETE. Next: Phase 4.2+. See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
+5. Focused Deep Audit — Phase 1 (wire selectedNode) next. See `docs/plans/active/focused-deep-audit/execution-plan.md`
+6. Backstage Improvements — Batches 1-4 (21 child plans) COMPLETE. 42 entries remain (Batches 5-12). See `docs/plans/active/backstage-improvements/execution-plan.md`
+7. ChatPRD Split Panel — Subplan of CHIP UX Overhaul Phase 3. Phases 1-7 COMPLETE. Phase 8 (visual polish) next. See `docs/plans/active/chatprd-split-panel/execution-plan.md`
+8. Clarifier E2E Browser Test — Phases 1-2 COMPLETE. Phases 3-4 remaining. See `docs/plans/active/clarifier-e2e-browser-test/execution-plan.md`
+9. Clarifier Self-Correction — Phases 1-3 COMPLETE. Phase 4 (self-correction pipeline) next. See `docs/plans/active/clarifier-self-correction/execution-plan.md`
 
-- Screen Types Plan B — B0-B2.7 complete, B3 next. Paused for visual diversity. See `docs/plans/backlog/screen-types-plan-b.md`
-- Docs Tutorials — Phase 5 of Docs Reorganization (3 tutorial/guide pages). See `docs/plans/backlog/docs-tutorials.md`
-- Clarifier Streaming — Research COMPLETE, 0/4 implementation phases started. See `docs/plans/active/clarifier-streaming/execution-plan.md`
-- Eval Documentation — 5 doc pages planned, 0/5 started. See `docs/plans/active/eval-documentation/execution-plan.md`
+**Backlog plans (do NOT read during session-start):** Screen Types Plan B (`docs/plans/backlog/screen-types-plan-b.md`), Docs Tutorials (`docs/plans/backlog/docs-tutorials.md`), Clarifier Streaming (`docs/plans/active/clarifier-streaming/`), Eval Documentation (`docs/plans/active/eval-documentation/`).
 
-**Completed plans (do NOT read during session-start):**
+**Completed plans (do NOT read during session-start):** 7 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
 
-- Integrating Clarifier — SUPERSEDED by M1 Connect (2026-05-14). All open decisions resolved: YAML + markdown PRD format, manual next-stage initiation, project home unchanged. See `docs/plans/completed/integrating-clarifier/execution-plan.md`
-- Clarifier Initiative — Phase 0, Phase 2 (RAG), Phase 1 Tasks 1.0-1.7 ALL COMPLETE (2026-04-28). 9-node LangGraph StateGraph, 186 tests. Task 1.8 (dashboard UX) owned by CHIP UX Overhaul Phase 3. Forward-looking items (FB1-FB4) merged into CHIP's Next Steps. See `docs/plans/completed/clarifier-initiative/execution-plan.md`
-- Observability — Phases 1-4 COMPLETE (incl. 4.1-4.3 extended tracing). Phase 5 (evaluation infrastructure) deferred. See `docs/plans/completed/observability/execution-plan.md`
-- Clarifier Resume Approve — Phase 1 COMPLETE (2026-05-02): barrel export fix, routing tests, checkpointer singleton tests, prd-draft event test. Phase 2 extracted to Integrating Clarifier plan. See `docs/plans/completed/clarifier-resume-approve/execution-plan.md`
-- Docs Reorganization — Phases 1-4, 6, 7 COMPLETE (2026-04-30). Phase 5 moved to backlog. See `docs/plans/completed/docs-reorganization.md`
-- Unify Design Pipeline — Phase 0-5 COMPLETE (2026-04-26). See `docs/plans/completed/unify-pipeline/execution-plan.md`
-- Screen Types Plan A — COMPLETE (A1-A6 done, 2026-04-22). See `docs/plans/completed/screen-types-plan-a.md`
-
-**Last session (2026-05-16):** M3.6 COMPLETE. Design Info Value Eval: 90/90 cells (5 configs × 6 tasks × 3 reps), 0 failures. Recommended DesignSliceStrategy: task-type-dependent — `'none'` for NEW (baseline fidelity=1.89, context hurts), `'structure-only'` for MODIFY (fidelity=2.56, matches full-spec at 44% lower cost). Brief: `docs/research/briefs/R9_4-design-info-value-eval.md` (473 lines). Eval runner: `scripts/run-design-info-eval.ts` + `scripts/run-design-info-reviewer.ts` + `scripts/analyze-design-info-eval.ts`. Delta fixture extraction to shared YAML (3 files in `packages/eval/src/fixtures/deltas/`). R10 Phase A COMPLETE (prior session). Next: M4 (Full Spine).
-
-Orchestration authority: resolved (ADR-043). `@langchain/langgraph` (TypeScript) is the
-sole runtime. `services/engine/` (Python) is deprecated and scheduled for deletion after
-ADR-043 migration Phase M-4. Do not extend the Python engine or the legacy imperative
-`runAgent()` path for new phase work.
+<!-- Last session: max 2 lines — status + next action only. Details belong in the plan's execution-plan.md. -->
+**Last session (2026-05-16):** M3.6 COMPLETE (Design Info Value Eval). Next: M4 (Full Spine).
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
@@ -81,31 +65,10 @@ When the user reports a UI issue, is stuck, or something "isn't working":
 These rules are non-negotiable. They apply to every implementation task, bug fix,
 and test written in this project.
 
-### Full Ownership of All Tests
+### Development Discipline (auto-loaded)
 
-- Every agent MUST run the FULL test suite and fix ALL failures — not just tests
-  "related to" the change. No such thing as a "pre-existing" failure.
-- There is no "unrelated" failure: if a required check (`typecheck`, `test`, or
-  applicable E2E) is red, fix it before declaring done. Do not excuse failures as
-  unrelated to the change, outside the diff, or pre-existing unless a human
-  explicitly waives that failure for this task.
-- Run `nx run-many -t typecheck`, `nx run-many -t test`, and `nx run-many -t lint`
-  after every change. Do not declare done until all three pass with zero failures.
-- When changes touch dashboard UI, API routes, or E2E-covered functionality
-  (pages under `packages/dashboard/`, `e2e/`), also run Playwright E2E tests:
-  `npx playwright test` (from monorepo root). All E2E tests must pass before
-  declaring done. The dashboard auto-starts the design renderer — Playwright
-  config only starts the Next.js server.
-
-### PRD is Source of Truth (for product)
-
-- PRD (`docs/specs/PRD.md`) defines product scope, interfaces, API contracts, enums,
-  field lists. TypeScript interfaces in `packages/core/src/types/` are authoritative
-  for field-level truth (ADR-038). When PRD and code diverge on field-level details,
-  code wins and PRD is updated.
-- Do NOT treat the PRD as authoritative on architectural _patterns_. Those are in
-  the vision document.
-- Do not hardcode values the PRD defines as configurable.
+Full rules in `.claude/rules/dev-discipline.md`: test ownership, PRD source of truth,
+interface/enum completeness, testing integrity & quality gates, event registry, typed contracts.
 
 ### Vision is Source of Truth (for architecture)
 
@@ -122,68 +85,6 @@ and test written in this project.
   channels), the vision wins. Do not replicate the legacy pattern in new code.
   Add a TODO linking to the vision layer. If migration is in flight, follow the
   target pattern in new code.
-
-### Interface Completeness
-
-- Include ALL fields from the TypeScript interface in `packages/core/src/types/`.
-  The TypeScript interface is authoritative — not the PRD description. See ADR-038.
-
-### Enum Coverage
-
-- Every enum member must have a working implementation, even if minimal.
-  Returning 400/404 for a defined enum value is a spec violation.
-
-### Testing Integrity
-
-- Tests must exercise the real server/API codepath, not internal functions.
-  Never work around a server bug by calling internal methods — flag as deviation.
-
-### Test Quality Gates
-
-Before adding ANY new test, verify all of:
-
-1. **Ownership.** Tests live in the package that owns the function under test.
-   When code moves between packages, the tests move with it.
-2. **One canonical assertion site per behavior.** Don't re-assert what another
-   test already covers. PRD-acceptance / criterion / wave-style suites are
-   organizational labels, not parallel suites.
-3. **No tautologies, no "did I call my mock" tests, no SLA-on-mocks.** A test
-   must be able to fail for a real reason.
-4. **Real codepath > mock pyramid.** Extends "Testing Integrity" above: prefer
-   one integration test against a tmp dir over six mock-heavy units. Mock-heavy
-   files MUST carry a top-of-file scope-header comment naming the canonical
-   home of any behavior they don't own.
-5. **Shared `withEnv` for `process.env`.** Inline `try/finally` env restoration
-   is forbidden — use `withEnv` from `@agentforge/core`.
-6. **~10s wall-time budget per `*.test.ts` file.** Collapse repeated end-to-end
-   runs of the same flow into one assertion-dense test.
-7. **Wiring tests inspect inputs, not just outputs.** A spy/recording provider
-   that captures prompts must be queried for substring evidence of upstream
-   data. If you can drop a field upstream and the test still passes, it is
-   not a wiring test — it is an integration test and a poorly named one.
-
-Detail, examples, and the bug story live in `docs/lessons-learned.md`
-§ Test Quality Gates — One Canonical Site Per Behavior.
-
-### Event Registry Completeness
-
-- Every domain event referenced in the PRD (TaskStatusChanged, PhaseStarted,
-  BudgetAlert, etc.) must be formally defined in the event model/registry with
-  typed payloads. An event that is emitted but not in the registry, or in the
-  registry but never emitted, is a gap.
-- **Scope clarification:** events in this registry are for the **telemetry plane**
-  (observability, audit, dashboard updates). They are NOT the coordination
-  mechanism between agents. See vision Layer 2.
-
-### Typed Contracts for Cross-Agent Artifacts
-
-- Every artifact that crosses an agent boundary (PRD, EnrichedRequirement,
-  AssumptionLedger, FeaturePlan, ChangeClassification, ScreenPlan, APIChangeSet,
-  Diff, ReviewResult) has a Zod schema in `packages/core/src/types/`.
-- Every LLM call with structured output uses `zod-to-json-schema` to produce the
-  response schema.
-- Every inter-node communication uses typed LangGraph channels, not untyped event
-  payloads.
 
 ### Deviations from PRD or Vision
 
@@ -232,11 +133,8 @@ and rejected with rejection reasoning. Notable rejected patterns:
 
 ### Think Before Coding (Karpathy Guidelines)
 
-- Follow `.claude/rules/karpathy-guidelines.md` alongside the rules above:
-  state assumptions, keep changes surgical, prefer the minimum code that
-  solves the problem, and define verifiable success criteria before
-  looping. Where project rules are stricter (e.g. full test suite must
-  pass), project rules win.
+Follow `.claude/rules/karpathy-guidelines.md` (auto-loaded). Where project rules
+are stricter (e.g. full test suite must pass), project rules win.
 
 ### Session Continuity
 
@@ -379,11 +277,10 @@ the env var gates are additive, not replacements for auth checks.
 
 ## Code Conventions
 
-- Strict TypeScript (`strict: true`, no `any`)
-- Functional style, avoid classes except where interfaces demand it
-- All public APIs must have JSDoc comments
-- Every module exports via `index.ts` barrel file
-- Error handling: Result pattern (never throw)
+See `.claude/rules/typescript.md` for base TypeScript conventions (strict mode,
+functional style, JSDoc, barrel exports, Result pattern).
+
+Additional project conventions:
 - File naming: kebab-case for files, PascalCase for types/interfaces
 - All LLM calls go through the typed wrapper in `packages/core/src/llm/` with
   response schema validation
@@ -406,10 +303,8 @@ the env var gates are additive, not replacements for auth checks.
 
 ### Markdown Formatting for Backstage TechDocs
 
-- Follow `.claude/rules/docs-formatting.md` when writing docs under `docs/`.
-  Key rules: use admonitions (`!!!`) for callouts, collapsible sections
-  (`???`) for gotchas, blank line before lists. Tables/code/blockquotes
-  get automatic styling via the `mdx_fix_list_spacing` extension.
+Follow `.claude/rules/docs-formatting.md` (auto-loaded): admonitions for callouts,
+collapsible sections for gotchas, blank line before lists.
 
 ### Blind Subagent Test (MANDATORY for new documentation)
 
@@ -431,27 +326,11 @@ works when you already know the answer is not documentation.
 
 ## Skills Library
 
-Available Claude Code skills (invoke with /slash command).
-See `.claude/skills/README.md` for lifecycle diagram, examples, and ownership boundaries.
+Available Claude Code skills (invoke with `/command`). Full list with lifecycle
+diagram: `.claude/skills/README.md`.
 
-- /session-start — Read key docs and produce a briefing before coding (use at every session start)
-- /create-plan [description] — **Mandatory** entry point for any initiative crossing the plan threshold (see `docs/guides/planning-docs.md`). Explores codebase, scaffolds plan folder under `docs/plans/active/`, generates per-phase gates that auto-invoke `/review-plan-impl`, `/mid-session-drift-check`, and `/verify-done`, auto-runs `/challenge-plan` with the explicit plan path.
-- /analyze-codebase — Full gap analysis + prioritized task roadmap
-- /implement-feature [name] — PRD-traced implementation workflow
-- /sprint-plan [duration] — Sprint planning from task backlog
-- /review-prd-compliance — Audit code vs PRD intent + TypeScript contracts
-- /write-adr [description] — Generate ADR for spec deviations
-- /demo-readiness — Fastest path to a working demo
-- /verify-design-render <project>/<page> — Verify spec-to-renderer property fidelity
-- /verify-done — Pre-completion gate: headed E2E, stale Vite kill, Chrome DevTools visual proof, documentation verification via /verify-docs (use before declaring prototype/renderer work done)
-- /verify-docs — Unified documentation verification: content accuracy, spec sync, vision layer currency, CLI docs, lessons-learned. Task-scoped (from verify-done) or full-sweep (pre-release). Absorbs former /review-spec-sync.
-- /mid-session-drift-check — Mid-session process compliance audit: mocks, tests, scope creep, honesty, rejected patterns, doc currency. Use before commits or when session feels long.
-- /challenge-plan — Challenge any plan against framework intent (PRD, architecture, design philosophy). Use before approving plans to get a second opinion.
-- /review-plan-impl <plan> [--phase X] — Fresh-context review of diff against plan phase. Deterministic pre-checks + 7-point rubric + portable prompt audit trail. Use after implementing a plan phase.
-- /backstage create <type> <topic> — Create/revise backstage doc page (concept, tutorial, guide, architecture, status) with editorial protocol, competitor-swap test, and voice/flow check
-- /backstage sync — Regenerate Tier 3 auto-generated pages + LLM-powered Tier 2 concept page drift check against authoritative sources
-- /backstage review <page> — Deep review of an existing page against voice, flow, and quality rules. Gathers context, identifies issues, suggests concrete rewrites, and creates a prioritized plan
-- /improvise-ux [description] [reference URL or screenshot] — Improve existing UI component polish to match a reference design. 11-phase protocol with design system audit, mathematical contrast computation (WCAG ratios for text, L deltas for surfaces), strictly-additive token changes, all-state browser verification, and color-scheme verification.
+Key skills: `/session-start` (every session), `/create-plan` (mandatory for plan-threshold work),
+`/verify-done` (pre-completion gate), `/mid-session-drift-check` (before commits).
 
 ## IMPORTANT
 
