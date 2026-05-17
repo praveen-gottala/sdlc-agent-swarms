@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 next (Design Info Value Eval) — M4 after
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 COMPLETE (2026-05-16) — M4 next (Full Spine)
 
 ## Plan Structure
 
@@ -842,15 +842,23 @@ The three questions the brief answers:
 
 ---
 
-### M3.6: Design Info Value Eval
+### M3.6: Design Info Value Eval — COMPLETE (2026-05-16)
 
 Empirical milestone (eval harness + measurement, no production wiring changes). Answers what M3.5's analysis cannot: which `DesignSliceStrategy` value should M4 default to, and whether the answer differs between NEW and MODIFY frontend tasks. Runs in parallel with M4 — informs M4's default slice strategy but does not gate M4's integration work, because M3.5's R9.3 wiring is slice-aware by design.
 
 Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-only slice, E structure-only slice) × 2 task types (NEW, MODIFY) × 3 tasks per type × 3 reps = 90 cells. Three-axis scoring: visual fidelity (single-blind LLM reviewer, 0-3), prop & binding correctness (deterministic AST + TypeScript compilation, 0-3), token cost (raw input tokens). Standalone execution plan at `docs/plans/active/chips-next-steps/m3-6-execution-plan.md`.
 
-**Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` (eval brief, 400-600 lines) + `packages/eval/src/scenarios/design-info-value.yaml` (regression scenario) + `packages/eval/results/m3-6/` (raw + scored results).
+**Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` (eval brief, 473 lines) + `packages/eval/src/scenarios/design-info-value.yaml` (regression scenario) + `packages/eval/results/m3-6/` (raw + scored results).
 
-**Blocks:** Nothing. M4 ships with M3.5's slice-aware wiring defaulting to `'full'`; M3.6's findings inform a follow-up commit narrowing the default if a cheaper slice preserves quality.
+**Results (2026-05-16):** 90/90 cells completed, 0 failures. Recommended `DesignSliceStrategy`: task-type-dependent. **NEW tasks: `'none'`** (Config A fidelity=1.89, no design context needed; all other configs drop to 1.33). **MODIFY tasks: `'structure-only'`** (Config E fidelity=2.56, matching Config C full-spec at 44% lower token cost; Config D labels-only underperforms at 2.22). Headline finding: baseline (A) achieves 2.06 overall mean fidelity at 746 input tokens — design-stage context is not universally beneficial. `DesignSliceStrategy` enum should add `'none'` value. Confidence: MEDIUM (small fixture set, single model). Full analysis: `docs/research/briefs/R9_4-design-info-value-eval.md`.
+
+**Findings to carry into M4** (closeout 2026-05-17; detail in [R9.4 §9](../../research/briefs/R9_4-design-info-value-eval.md#9-open-caveats-and-m4-follow-throughs), decision in [ADR-057](../../adrs/ADR-057-task-type-aware-design-slice-strategy.md)):
+
+1. **Routing must be explicit and tested** — unit tests: NEW task → no design-spec in implementer prompt; MODIFY task → `extractStructure(existingDesignSpec)` present.
+2. **Brownfield design specialist is mandatory** — M3.6 MODIFY cells used hand-crafted deltas; M4 must emit `DesignSpecDelta` from the pipeline, not full-screen regeneration.
+3. **Production instrumentation** — log `taskType`, `DesignSliceStrategy`, and a quality proxy (compilation, schema validation) per implementer call for post-launch validation.
+
+**Blocks:** Nothing. M4 ships with task-type-aware routing (`'none'` for NEW, `'structure-only'` for MODIFY) per M3.6 findings and ADR-057.
 
 ### M4 Phase 7: Implementer + Reviewer
 Design stage becomes Implementer specialist tool. Reviewer is self-contained. **Blocked by R1, M3.5 (for brownfield frontend).**
@@ -861,7 +869,7 @@ Design stage becomes Implementer specialist tool. Reviewer is self-contained. **
 - `AffectedScreenSchema` / `ScreenImpact` (R9 §6.1) — Node 0.5 (Change Classifier) output additions
 - `DesignSpecDeltaSchema` / `DesignNodeDeltaSchema` (R9 §6.2) — hybrid format with `added` / `modified` / `removed` / `reordered` maps
 - `ContextRefKindSchema` extension (R9 §6.3) — adds `existingDesign` and `designDelta` kinds
-- `DesignSliceStrategy` type (R9 §6.4) — `'full' | 'labels-only' | 'structure-only'`; ship with `'full'` until M3.6 informs
+- `DesignSliceStrategy` type (R9 §6.4) — `'none' | 'full' | 'labels-only' | 'structure-only'`; default per [ADR-057](../../adrs/ADR-057-task-type-aware-design-slice-strategy.md): `'none'` for NEW, `'structure-only'` for MODIFY
 
 **Implementation notes from R9 verification review (§B1 and §C):**
 

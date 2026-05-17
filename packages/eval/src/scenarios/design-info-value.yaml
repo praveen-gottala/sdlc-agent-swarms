@@ -79,7 +79,20 @@ tasks:
       source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
       screenId: screen-001
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      A summary card component for the dashboard's left column showing the current
+      month's spending overview. Header displays the month (from MonthSummary.month).
+      Body shows four metrics laid out in a 2x2 grid or vertical stack: Total Spent
+      (MonthSummary.totalSpent, formatted as currency with the project's locale),
+      Budget Remaining (MonthSummary.remainingAmount, same formatting), Daily Average
+      (MonthSummary.dailyAverage, same formatting), Transaction Count
+      (MonthSummary.transactionCount, plain integer). A status indicator
+      visually reflects MonthSummary.budgetStatus — color-coded (green for on-track,
+      amber for at-risk, red for over-budget) or with an icon. Component uses
+      MonthSummary directly, not aggregated from Expense rows. Props accept a
+      MonthSummary object; renders within the dashboard's existing card styling
+      (matching other dashboard cards' padding, border, radius).
 
   - id: cashpulse-transactions-list-page
     taskDescription: >
@@ -128,7 +141,21 @@ tasks:
       source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
       screenId: screen-003
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/spending-insights.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      A spending insights page with filter chips and a categorized expense breakdown.
+      Top of page: filter chips for time range (Week / Month / Quarter, single-select)
+      and a category filter (multi-select dropdown of Category names with their icons
+      and colors). Main content: list of category rows, each showing category name
+      with its Category.icon and Category.color as a leading visual, total spent
+      (CategorySpending.totalAmount as currency), percentage of total
+      (CategorySpending.percentage as "%"), transaction count
+      (CategorySpending.transactionCount as "N transactions"), and a small trend
+      indicator (arrow up/down or sparkline). Rows sorted by totalAmount descending.
+      Optionally renders a daily spending sparkline above the list using
+      DailySpending entries within the selected time range. All data binds to
+      CategorySpending and DailySpending — do NOT aggregate from raw Expense rows.
+      Empty state shows "No expenses in this time range" centered on the page.
 
   - id: cashpulse-settings-form
     taskDescription: >
@@ -165,7 +192,21 @@ tasks:
       source: fixtures/personal-expense-tracker/agentforge/architect-output/component-compositions.json
       screenId: screen-004
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/settings.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      A settings form with three sections. Section 1 — Preferences: currency selector
+      (dropdown bound to UserSettings.currency, options from the currency enum),
+      default monthly budget input (number input bound to
+      UserSettings.defaultMonthlyBudget, formatted as currency on display).
+      Section 2 — Current Month Budget: shows the active Budget.monthlyLimit and
+      Budget.currency in a read-only summary card with an "Edit" link.
+      Section 3 — Manage Categories: list of Category rows each showing Category.name,
+      a color swatch (Category.color), the category icon (Category.icon), and per-row
+      actions (Edit, Delete). Categories where Category.isDefault is true do NOT
+      expose a Delete action — only Edit. Below the list, an "Add Category" button
+      opens an inline form with name, color picker, and icon picker. Form uses
+      controlled inputs, validates non-empty name on save, and calls back to a
+      provided onUpdate handler. No persistence in the component itself.
 
   # ---------------------------------------------------------------------------
   # MODIFY tasks (M3.5 CashPulse brownfield — "Add recurring transactions")
@@ -216,7 +257,24 @@ tasks:
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/dashboard-add-recurring-card.delta.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      The existing dashboard layout is preserved unchanged. A new "Upcoming Recurring"
+      card is inserted in the dashboard's left column, between the Monthly Budget
+      card and the Spending by Category card. Card header: title "Upcoming Recurring"
+      and an optional refresh icon. Card body: list of 3-5 RecurringTemplate rows
+      where RecurringTemplate.status is "active", sorted by
+      RecurringTemplate.nextOccurrence ascending. Each row shows
+      RecurringTemplate.merchantName (left), RecurringTemplate.amount (right, formatted
+      as currency), a small frequency badge derived from RecurringTemplate.frequency
+      (values "Weekly" | "Monthly" | "Yearly"), and the next occurrence date below or
+      beside the merchant name (RecurringTemplate.nextOccurrence formatted as
+      "MMM D, YYYY"). Card footer: "View all recurring expenses" link to a future
+      recurring management page. The component binds to RecurringTemplate entities,
+      NOT to Expense rows. Existing dashboard nodes (Monthly Budget, Spending by
+      Category, Recent Expenses) must render unchanged from their pre-change
+      implementation. Component is purely additive; it does not modify any existing
+      dashboard component.
 
   - id: cashpulse-add-expense-modify-recurrence-toggle
     taskDescription: >
@@ -263,7 +321,24 @@ tasks:
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
     deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/add-expense-recurrence-toggle.delta.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      The existing add-expense form fields (amount, category, description, date,
+      payment method, note) render unchanged. After the note field and before the
+      Save button, a new "Recurring" section is added: a toggle labeled "Make this
+      recurring" (or "Recurring") bound to local component state. When the toggle is
+      OFF: only the toggle is visible. When the toggle is ON: reveals (a) a frequency
+      picker — three buttons or a select with options Weekly / Monthly / Yearly
+      mapping to RecurringTemplate.frequency, (b) a start date input defaulting to
+      the Expense.date already entered, mapping to RecurringTemplate.startDate,
+      (c) an end date selector with two options "Never" (RecurringTemplate.endDate =
+      null) and "On date" (date picker, maps to RecurringTemplate.endDate). On form
+      submit: if toggle OFF, submit only the Expense entity with
+      recurringTemplateId=null. If toggle ON, submit a RecurringTemplate first
+      (with status="active"), then submit the Expense with recurringTemplateId set
+      to the new template's id. Validation: when toggle is ON, frequency is required;
+      when "On date" is selected, end date is required and must be after start date.
+      Existing form validation rules for amount, category, etc. remain unchanged.
 
   - id: cashpulse-transactions-list-modify-recurring-badge
     taskDescription: >
@@ -309,4 +384,17 @@ tasks:
     designSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     existingDesignSpecPath: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
     deltaPath: fixtures/personal-expense-tracker/agentforge/deltas/transactions-list-recurring-badge.delta.json
-    groundTruthExpected: "" # REQUIRED: human-authored reference implementation — do not generate
+    # REQUIRED: human-authored reference implementation — do not generate
+    groundTruthExpected: >-
+      The existing dashboard's expense list rows render unchanged in structure
+      (amount, description/merchant, category badge, date, payment method). For each
+      expense row, if Expense.recurringTemplateId is non-null, render a small
+      frequency badge as a child of the row near the amount. The badge text is the
+      RecurringTemplate.frequency value (requires resolving the recurringTemplateId
+      reference — assume joined data is available or fetched). Badge styling: small
+      pill shape, muted background color (not the primary accent), font size 11-12px,
+      labeled by frequency. For expenses where recurringTemplateId is null, no badge
+      renders — the row layout matches the pre-change implementation exactly. The
+      badge is purely additive; no existing row content is modified or shifted in
+      visual hierarchy. Components remain bound to Expense data; the frequency value
+      comes from the joined RecurringTemplate.

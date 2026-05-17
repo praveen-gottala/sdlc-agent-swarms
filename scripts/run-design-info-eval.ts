@@ -20,8 +20,10 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 import Anthropic from '@anthropic-ai/sdk';
+import AnthropicVertex from '@anthropic-ai/vertex-sdk';
 import { extractLabelsAndBindings, extractStructure } from '@agentforge/agents-architect';
-import type { DesignSpecV2 } from '@agentforge/designspec-renderer';
+import { deltaApply } from '@agentforge/designspec-renderer';
+import type { DesignSpecV2, DesignSpecDelta } from '@agentforge/designspec-renderer';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -37,7 +39,9 @@ const RAW_RESULTS_PATH = join(RESULTS_DIR, 'raw-results.json');
 // Constants
 // ---------------------------------------------------------------------------
 
-const EXPECTED_MODEL = 'claude-sonnet-4-20250514';
+const EXPECTED_MODEL_DIRECT = 'claude-sonnet-4-20250514';
+const EXPECTED_MODEL_VERTEX = 'claude-sonnet-4-6';
+let EXPECTED_MODEL = EXPECTED_MODEL_DIRECT;
 const TEMPERATURE = 0.3;
 const MAX_TOKENS = 8192;
 const MAX_RETRIES = 3;
@@ -49,15 +53,21 @@ type ConfigKey = (typeof CONFIG_KEYS)[number];
 // Types
 // ---------------------------------------------------------------------------
 
+interface SourceRef {
+  source: string;
+  screenId: string;
+}
+
 interface RawTaskFixture {
   id: string;
   taskDescription: string;
   taskType: 'NEW' | 'MODIFY';
   contractBundleSlice: Record<string, unknown>;
-  screenPlan?: Record<string, unknown>;
-  componentComposition?: Record<string, unknown>;
+  screenPlan?: SourceRef;
+  componentComposition?: SourceRef;
   designSpecPath?: string;
   existingDesignSpecPath?: string;
+  deltaPath?: string;
   groundTruthExpected: string;
 }
 
@@ -70,6 +80,7 @@ interface EvalTaskFixture {
   componentComposition?: Record<string, unknown>;
   designSpec?: DesignSpecV2;
   existingDesignSpec?: DesignSpecV2;
+  delta?: Record<string, unknown>;
   groundTruthExpected: string;
 }
 
@@ -119,6 +130,32 @@ function resolveDesignSpec(relPath: string | undefined): DesignSpecV2 | undefine
   return JSON.parse(readFileSync(absPath, 'utf-8')) as DesignSpecV2;
 }
 
+function resolveSourceRef(ref: SourceRef | undefined, lookupField: string): Record<string, unknown> | undefined {
+  if (!ref?.source || !ref?.screenId) return undefined;
+  const absPath = join(ROOT, ref.source);
+  if (!existsSync(absPath)) {
+    log(`WARNING: Source file not found at ${absPath}`);
+    return undefined;
+  }
+  const arr = JSON.parse(readFileSync(absPath, 'utf-8')) as Record<string, unknown>[];
+  const entry = arr.find((item) => item[lookupField] === ref.screenId);
+  if (!entry) {
+    log(`WARNING: No entry with ${lookupField}=${ref.screenId} in ${ref.source}`);
+    return undefined;
+  }
+  return entry;
+}
+
+function resolveDelta(relPath: string | undefined): Record<string, unknown> | undefined {
+  if (!relPath) return undefined;
+  const absPath = join(ROOT, relPath);
+  if (!existsSync(absPath)) {
+    log(`WARNING: Delta file not found at ${absPath}`);
+    return undefined;
+  }
+  return JSON.parse(readFileSync(absPath, 'utf-8')) as Record<string, unknown>;
+}
+
 function loadFixtures(): EvalTaskFixture[] {
   if (!existsSync(FIXTURES_PATH)) {
     log(`STOP: Fixtures not found at ${FIXTURES_PATH}`);
@@ -127,17 +164,39 @@ function loadFixtures(): EvalTaskFixture[] {
   }
   const raw = readFileSync(FIXTURES_PATH, 'utf-8');
   const doc = parseYaml(raw) as { tasks: RawTaskFixture[] };
-  return doc.tasks.map((t) => ({
-    id: t.id,
-    taskDescription: t.taskDescription,
-    taskType: t.taskType,
-    contractBundleSlice: t.contractBundleSlice,
-    screenPlan: t.screenPlan,
-    componentComposition: t.componentComposition,
-    designSpec: resolveDesignSpec(t.designSpecPath),
-    existingDesignSpec: resolveDesignSpec(t.existingDesignSpecPath),
-    groundTruthExpected: t.groundTruthExpected,
-  }));
+  return doc.tasks.map((t) => {
+    const existingSpec = resolveDesignSpec(t.existingDesignSpecPath);
+    const delta = resolveDelta(t.deltaPath);
+
+    let designSpec = resolveDesignSpec(t.designSpecPath);
+    if (t.taskType === 'MODIFY' && existingSpec && delta) {
+      const result = deltaApply(existingSpec, delta as unknown as DesignSpecDelta);
+      if (result.ok) {
+        designSpec = result.value;
+        const d = delta as Record<string, unknown>;
+        const added = d['added'] as Record<string, unknown> | undefined;
+        const modified = d['modified'] as Record<string, unknown> | undefined;
+        const removed = d['removed'] as unknown[] | undefined;
+        const reordered = d['reordered'] as unknown[] | undefined;
+        log(`  Delta applied for ${t.id}: +${Object.keys(added ?? {}).length} ~${Object.keys(modified ?? {}).length} -${(removed ?? []).length} ↕${(reordered ?? []).length}`);
+      } else {
+        log(`  WARNING: Delta apply failed for ${t.id}: ${result.error.message}`);
+      }
+    }
+
+    return {
+      id: t.id,
+      taskDescription: t.taskDescription,
+      taskType: t.taskType,
+      contractBundleSlice: t.contractBundleSlice,
+      screenPlan: resolveSourceRef(t.screenPlan, 'id'),
+      componentComposition: resolveSourceRef(t.componentComposition, 'screenId'),
+      designSpec,
+      existingDesignSpec: existingSpec,
+      delta,
+      groundTruthExpected: t.groundTruthExpected,
+    };
+  });
 }
 
 function loadExistingResults(): EvalCellResult[] {
@@ -231,14 +290,47 @@ function assembleContext(task: EvalTaskFixture, config: ConfigKey): string {
 }
 
 // ---------------------------------------------------------------------------
+// Client creation (Vertex AI or direct Anthropic)
+// ---------------------------------------------------------------------------
+
+interface AnthropicClient {
+  messages: {
+    create(params: {
+      model: string;
+      max_tokens: number;
+      temperature: number;
+      system: string;
+      messages: Array<{ role: string; content: string }>;
+    }): Promise<Anthropic.Message>;
+  };
+}
+
+function createClient(): AnthropicClient {
+  const vertexProject = process.env['ANTHROPIC_VERTEX_PROJECT_ID'];
+  const vertexRegion = process.env['CLOUD_ML_REGION'];
+
+  if (vertexProject) {
+    const region = vertexRegion || 'us-east5';
+    EXPECTED_MODEL = EXPECTED_MODEL_VERTEX;
+    log(`Using Vertex AI (project=${vertexProject}, region=${region}, model=${EXPECTED_MODEL})`);
+    return new AnthropicVertex({
+      projectId: vertexProject,
+      region,
+    }) as unknown as AnthropicClient;
+  }
+
+  log('Using direct Anthropic API');
+  return new Anthropic() as unknown as AnthropicClient;
+}
+
+// ---------------------------------------------------------------------------
 // LLM call with retry
 // ---------------------------------------------------------------------------
 
 async function callLLM(
-  client: Anthropic,
+  client: AnthropicClient,
   systemPrompt: string,
   userContent: string,
-  seed: number,
 ): Promise<{ output: string; inputTokens: number; outputTokens: number; modelId: string }> {
   const response = await client.messages.create({
     model: EXPECTED_MODEL,
@@ -246,31 +338,30 @@ async function callLLM(
     temperature: TEMPERATURE,
     system: systemPrompt,
     messages: [{ role: 'user', content: userContent }],
-    metadata: { user_id: `m3.6-eval-seed-${seed}` },
   });
 
-  const output = response.content
+  const output = (response as Anthropic.Message).content
     .filter((block): block is Anthropic.TextBlock => block.type === 'text')
     .map((block) => block.text)
     .join('');
 
   return {
     output,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-    modelId: response.model,
+    inputTokens: (response as Anthropic.Message).usage.input_tokens,
+    outputTokens: (response as Anthropic.Message).usage.output_tokens,
+    modelId: (response as Anthropic.Message).model,
   };
 }
 
 async function runCellWithRetry(
-  client: Anthropic,
+  client: AnthropicClient,
   systemPrompt: string,
   userContent: string,
   seed: number,
 ): Promise<{ output: string; inputTokens: number; outputTokens: number; modelId: string; status: 'success' | 'failed'; error?: string }> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const result = await callLLM(client, systemPrompt, userContent, seed);
+      const result = await callLLM(client, systemPrompt, userContent);
       return { ...result, status: 'success' };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -322,7 +413,7 @@ async function main(): Promise<void> {
   log(`Matrix: ${configs.length} configs × ${tasks.length} tasks × ${reps} reps = ${totalCells} cells`);
 
   const systemPrompt = loadPromptTemplate();
-  const client = new Anthropic();
+  const client = createClient();
 
   // Verify model pin
   log(`Model pin: ${EXPECTED_MODEL}`);

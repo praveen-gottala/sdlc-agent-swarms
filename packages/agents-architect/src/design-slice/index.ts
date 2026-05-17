@@ -12,7 +12,7 @@
 import type { DesignSpecV2, NodeSpec } from '@agentforge/designspec-renderer';
 
 /** Fields retained by extractLabelsAndBindings — content + identity. */
-const LABELS_AND_BINDINGS_KEYS: ReadonlySet<keyof NodeSpec> = new Set([
+const LABELS_AND_BINDINGS_KEYS: ReadonlySet<keyof NodeSpec> = new Set<keyof NodeSpec>([
   'parent',
   'order',
   'type',
@@ -27,7 +27,7 @@ const LABELS_AND_BINDINGS_KEYS: ReadonlySet<keyof NodeSpec> = new Set([
 ]);
 
 /** Fields retained by extractStructure — tree skeleton only. */
-const STRUCTURE_KEYS: ReadonlySet<keyof NodeSpec> = new Set([
+const STRUCTURE_KEYS: ReadonlySet<keyof NodeSpec> = new Set<keyof NodeSpec>([
   'parent',
   'order',
   'type',

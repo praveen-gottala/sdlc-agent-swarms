@@ -51,6 +51,8 @@ nav:
       - CLI Orchestration: cli/orchestration.md
       - Agent Model Guide: guides/agent-model-guide.md
       - Design Generation: guides/design-generation.md
+      - Design Info Value Eval: guides/design-info-value-eval.md
+      - Design Info Value Eval Reference: guides/design-info-value-eval-reference.md
       - CLI Design Commands Guide: guides/cli-design-commands.md
       - Failure Mode Testing: guides/failure-mode-testing.md
       - Design Studio Logging: guides/design-studio-logging.md
@@ -114,6 +116,7 @@ nav:
       - ADR-054 Styling Library Architect Axis: adrs/ADR-054-styling-library-architect-axis.md
       - ADR-055 Architect Node 4 Shape: adrs/ADR-055-architect-node4-shape.md
       - ADR-056 Architect Package Boundary: adrs/ADR-056-architect-package-boundary.md
+      - ADR-057 Task-Type-Aware Design Slice: adrs/ADR-057-task-type-aware-design-slice-strategy.md
   - Operations:
       - Active Plans:
           - Visual Diversity: plans/active/visual-diversity/execution-plan.md

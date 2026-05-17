@@ -620,3 +620,14 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When a system produces incomplete output, always identify the root cause and propose 2-3 solutions. Pick the fix that preserves the original quality contract — don't weaken schemas, make required fields optional, or add fallback defaults to accommodate a runtime limit.
 **Why:** The first proposed fix was making `implementationPatterns` and `stackConfig` optional in the Zod validation schema with defaults. This would have silently degraded downstream quality — the architecture writer's stack config feeds into all 5 contract designer specialists, and missing implementation patterns would have left the task planner without coding conventions. The correct fix was increasing `maxTokens` to prevent truncation, which preserves the required contract and produces complete output.
 **How to apply:** When encountering incomplete LLM output: (1) check `finishReason` — if `max_tokens`, increase the limit; (2) check the user message size — if too large, summarize context; (3) check the response schema — if it doesn't match the Zod schema, fix the schema alignment. Only weaken validation as a last resort, and document the trade-off in an ADR if you do.
+
+---
+
+## LLM Rubric Plateau — Identical Means Across Different Inputs
+
+**RULE** (2026-05-17)
+
+**Context:** M3.6 Design Info Value Eval — for NEW tasks, configs B, C, D, and E (planning-only, full DesignSpec, labels-only, structure-only) all scored exactly 1.33 mean fidelity despite input tokens ranging from ~5K to ~16K. Per-task breakdown showed zero variance in 24 of 36 cells for B–E.
+**Rule:** When an LLM-judged rubric produces identical means across inputs that differ substantially in content or size, treat the rubric as too coarse before treating the inputs as equivalent. Widen the scale (e.g., 0–5 or 0–10), add a complementary deterministic metric (structural tree match, `tsc` compile), or run human calibration — do not infer fine-grained ordering from a plateau.
+**Why:** A 0–3 fidelity scale cannot distinguish "planning hurts a little" from "full spec hurts a lot" if both land on 1.33. The headline finding (baseline A beats all design-context configs for NEW) remains valid; relative ordering of B/C/D/E for NEW does not.
+**How to apply:** Before writing eval conclusions that compare configs within a plateau band, check per-cell score distributions. If ≥75% of cells share the same integer score across configs, report the band comparison only and flag rubric coarseness in Threats to Validity. See R9.4 §9.2 and ADR-057.

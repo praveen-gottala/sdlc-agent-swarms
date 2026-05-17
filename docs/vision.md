@@ -627,6 +627,7 @@ graph LR
 - **Deterministic gates own "done."** LLM does not self-declare.
 - **Budget caps are hard.** Fail loud when exceeded.
 - **Assumption violations are flagged, not silently resolved.**
+- **Task-type-aware design context for frontend code generation.** NEW tasks omit design-spec context; MODIFY tasks receive structure-only slice of existing DesignSpec (`extractStructure`). Measured in M3.6; see [ADR-057](adrs/ADR-057-task-type-aware-design-slice-strategy.md).
 
 ### Open decisions
 - **How to handle tasks that genuinely have no UI changes or no backend changes.** Skip the irrelevant steps. Classifier drives this.
