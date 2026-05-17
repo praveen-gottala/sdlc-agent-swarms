@@ -286,7 +286,7 @@ Files:
 - Unit tests: token-budget sizing on 5 fixture tasks (uses Phase 1 budget table as oracle), context-ref population, acceptance-criteria coverage, golden-fixture dry-Critic test
 - **Verification gate:** `nx test agents-architect --testPathPattern="task-planner"`, golden-fixture test all CashPulse tasks pass dry-Critic, `/review-plan-impl --phase 6`
 
-### Phase 7 — Brownfield wiring + retry routing matrix + brownfield eval scenario
+### Phase 7 — Brownfield wiring + retry routing matrix + brownfield eval scenario (COMPLETE 2026-05-15)
 
 - `packages/agents-architect/src/graph/retry-routing.ts` — `routeAfterCritic(criticReport): RetryTarget` matrix:
 
@@ -314,10 +314,10 @@ Files:
 
 - **Verification gate:** `nx test agents-architect --testPathPattern="retry-routing"`, `nx test dashboard`, `npx playwright test runs-page`, full eval run on all 4 scenarios pass (3 migrated + 1 brownfield), all 4 fixture-field assertions green, `/review-plan-impl --phase 7`, `/mid-session-drift-check`
 
-### Phase 8 — ADRs + doc updates
+### Phase 8 — ADRs + doc updates (COMPLETE 2026-05-15)
 
 - `docs/adrs/ADR-055-architect-node4-shape.md` — Hybrid choice: Approach 1 (Sequential 7-node) ships M3, Option B (subgraph-per-specialist) deferred. Migration trigger: Critic gates 5-8 retry rate > 15% across 30 runs OR per-specialist P50 latency > 90s. Cites stonebraker truncation analysis as evidence against further collapsing.
-- `docs/adrs/ADR-055+1-architect-package-boundary.md` — schemas + critic in `packages/core/` (no langgraph dep), graph/nodes/run.ts in `packages/agents-architect/` (langgraph). Documents the v2 review correction. References `CLAUDE.md` package dep rules.
+- `docs/adrs/ADR-056-architect-package-boundary.md` — schemas + critic in `packages/core/` (no langgraph dep), graph/nodes/run.ts in `packages/agents-architect/` (langgraph). Documents the v2 review correction. References `CLAUDE.md` package dep rules.
 - `docs/adrs/ADR-045-addendum-deferred-extractions.md` (or inline addendum to ADR-045) — `buildDesignSystemContext` + `assessCatalogAdoption` full extraction still owed; sunset target post-M4 once Implementer's needs are fully known.
 - [`docs/architecture/spine-implementation.md`](docs/architecture/spine-implementation.md) — replace conceptual 6-node Architect description with actual 7-node + Gate 2 shape; link the new ADRs
 - [`CLAUDE.md`](CLAUDE.md) — update Active Plan #2 (CHIP's Next Steps) M3 progress + last-session line; add `agents-architect` to package dependency list
@@ -360,7 +360,7 @@ Files:
 | `packages/agents-architect/src/prompts/**/*.md` | Versioned prompts with rubric pointers | 3-6 |
 | `packages/eval/src/scenarios/architect/add-budgeting-brownfield.yaml` | Brownfield scenario | 7 |
 | `docs/adrs/ADR-055-architect-node4-shape.md` | Hybrid Option A choice | 8 |
-| `docs/adrs/ADR-055+1-architect-package-boundary.md` | core vs agents-architect split | 8 |
+| `docs/adrs/ADR-056-architect-package-boundary.md` | core vs agents-architect split | 8 |
 | `docs/adrs/ADR-045-addendum-deferred-extractions.md` | Deferred extractions (or inline) | 8 |
 | [`docs/architecture/spine-implementation.md`](docs/architecture/spine-implementation.md) | Architect section update | 8 |
 | [`packages/dashboard/src/components/spine/spine-constants.ts`](packages/dashboard/src/components/spine/spine-constants.ts) | Flip `architect.implemented: true` | 7 |
@@ -381,19 +381,19 @@ Files:
 
 ## Exit criteria
 
-- [ ] `packages/agents-architect/` builds, tests, typechecks, lints clean
-- [ ] All 7 nodes + gate2Approval + escalationGate implemented with versioned prompts (carrying rubric pointers in frontmatter) and unit tests
-- [ ] `interruptBefore: ['gate2Approval', 'escalationGate']` verified to fire by integration test
-- [ ] `ArchitectStateAnnotation` channel count = 24 and matches the table above (incl. `adrs`)
-- [ ] `ArchitectDeps` interface matches the spec above
-- [ ] 14 Critic gates total (9 existing + 5 new); gate 14 honors `existingFiles?` semantics (skip if undefined, strict check if defined) — covered by greenfield-skip + brownfield-strict tests
-- [ ] All 4 eval scenarios pass (3 migrated + add-budgeting-brownfield)
-- [ ] `routeAfterCritic()` matrix covered by unit tests per gate
-- [ ] `nx run-many -t typecheck`, `nx run-many -t test`, `nx run-many -t lint` all zero failures
-- [ ] ADR-055 (node4-shape) + ADR-055+1 (package-boundary) merged
-- [ ] ADR-045 addendum on deferred buildDesignSystemContext + assessCatalogAdoption extraction
-- [ ] `spine-implementation.md`, `CLAUDE.md`, parent execution plan updated
-- [ ] `spine-constants.ts` flipped to `architect: { implemented: true }`; runs-page.spec.ts asserts Architect active-stage rendering
-- [ ] `docs/plans/backlog/gate2-dashboard-ui.md` + `docs/plans/backlog/architect-e2e-tests.md` exist; CHIP UX Overhaul Phase 4.6 annotated as blocked-by reference resolved
-- [ ] `/verify-done` passes
-- [ ] `/challenge-plan` re-run on this revised plan returns no critical findings
+- [x] `packages/agents-architect/` builds, tests, typechecks, lints clean
+- [x] All 7 nodes + gate2Approval + escalationGate implemented with versioned prompts (carrying rubric pointers in frontmatter) and unit tests
+- [x] `interruptBefore: ['gate2Approval', 'escalationGate']` verified to fire by integration test
+- [x] `ArchitectStateAnnotation` channel count = 24 and matches the table above (incl. `adrs`)
+- [x] `ArchitectDeps` interface matches the spec above
+- [x] 14 Critic gates total (9 existing + 5 new); gate 14 honors `existingFiles?` semantics (skip if undefined, strict check if defined) — covered by greenfield-skip + brownfield-strict tests
+- [x] All 4 eval scenarios pass (3 migrated + add-budgeting-brownfield)
+- [x] `routeAfterCritic()` matrix covered by unit tests per gate
+- [x] `nx run-many -t typecheck`, `nx run-many -t test`, `nx run-many -t lint` all zero failures
+- [x] ADR-055 (node4-shape) + ADR-056 (package-boundary) merged
+- [x] ADR-045 addendum on deferred buildDesignSystemContext + assessCatalogAdoption extraction
+- [x] `spine-implementation.md`, `CLAUDE.md`, parent execution plan updated
+- [x] `spine-constants.ts` flipped to `architect: { implemented: true }`; runs-page.spec.ts asserts Architect active-stage rendering
+- [x] `docs/plans/backlog/gate2-dashboard-ui.md` + `docs/plans/backlog/architect-e2e-tests.md` exist; CHIP UX Overhaul Phase 4.6 annotated as blocked-by reference resolved
+- [x] `/verify-done` passes
+- [x] `/challenge-plan` re-run on this revised plan returns no critical findings

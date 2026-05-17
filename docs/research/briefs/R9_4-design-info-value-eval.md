@@ -457,7 +457,7 @@ if production instrumentation surfaces a specific gap. Candidate follow-ups:
 - R9 — Brownfield Design Delta Research Brief: `docs/research/briefs/R9-brownfield-design-delta.md`
 - R9 Review: `docs/research/briefs/R9-brownfield-design-delta-review.md`
 - R10 — Visual Delta Rendering: `docs/research/briefs/R10-visual-delta-rendering.md`
-- M3.6 Execution Plan: `docs/plans/active/chips-next-steps/m3-6-execution-plan.md`
+- M3.6 Execution Plan: `docs/plans/completed/chips-next-steps-m3/m3-6-execution-plan.md`
 - Design slice functions: `packages/agents-architect/src/design-slice/index.ts`
 - Eval runner: `scripts/run-design-info-eval.ts`
 - Reviewer scorer: `scripts/run-design-info-reviewer.ts`

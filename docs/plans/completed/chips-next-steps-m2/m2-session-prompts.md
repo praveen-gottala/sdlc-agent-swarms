@@ -1,5 +1,7 @@
 # M2: Architect Foundation — Session Prompts
 
+**Status:** ARCHIVED. M2 shipped on 2026-05-14; the execution plan now lives at `docs/plans/completed/chips-next-steps-m2/execution-plan.md`. Paths in the prompt bodies below still point to `docs/plans/active/chips-next-steps/m2-execution-plan.md` because they record the commands that were actually run during the M2 sessions. They are historical, not navigational.
+
 Two sessions. Each prompt is self-contained — paste it at session start after `/session-start`.
 
 ---

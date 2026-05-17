@@ -26,4 +26,4 @@ Two functions referenced by this ADR — `assessCatalogAdoption()` and `buildDes
 
 **Sunset target:** Post-M4 (after the Implementer milestone), once the Implementer's usage patterns for these functions are fully known. At that point, the shared interface can be designed to serve all three consumers (agents-ux pipeline, agents-architect Node 4.5/Node 6, and agents-implementer design specialist tool).
 
-**Tracking:** This deferral is referenced by `docs/plans/active/chips-next-steps/m3-execution-plan.md` Phase 2 and Phase 8.
+**Tracking:** This deferral is referenced by `docs/plans/completed/chips-next-steps-m3/m3-execution-plan.md` Phase 2 and Phase 8.

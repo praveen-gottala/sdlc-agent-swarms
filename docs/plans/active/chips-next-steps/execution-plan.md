@@ -846,7 +846,7 @@ The three questions the brief answers:
 
 Empirical milestone (eval harness + measurement, no production wiring changes). Answers what M3.5's analysis cannot: which `DesignSliceStrategy` value should M4 default to, and whether the answer differs between NEW and MODIFY frontend tasks. Runs in parallel with M4 — informs M4's default slice strategy but does not gate M4's integration work, because M3.5's R9.3 wiring is slice-aware by design.
 
-Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-only slice, E structure-only slice) × 2 task types (NEW, MODIFY) × 3 tasks per type × 3 reps = 90 cells. Three-axis scoring: visual fidelity (single-blind LLM reviewer, 0-3), prop & binding correctness (deterministic AST + TypeScript compilation, 0-3), token cost (raw input tokens). Standalone execution plan at `docs/plans/active/chips-next-steps/m3-6-execution-plan.md`.
+Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-only slice, E structure-only slice) × 2 task types (NEW, MODIFY) × 3 tasks per type × 3 reps = 90 cells. Three-axis scoring: visual fidelity (single-blind LLM reviewer, 0-3), prop & binding correctness (deterministic AST + TypeScript compilation, 0-3), token cost (raw input tokens). Standalone execution plan at `docs/plans/completed/chips-next-steps-m3/m3-6-execution-plan.md`.
 
 **Output:** `docs/research/briefs/R9_4-design-info-value-eval.md` (eval brief, 473 lines) + `packages/eval/src/scenarios/design-info-value.yaml` (regression scenario) + `packages/eval/results/m3-6/` (raw + scored results).
 
