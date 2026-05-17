@@ -206,6 +206,7 @@ export const TaskNodeSchema = z.object({
   contextRefs: z.array(ContextRefSchema).default([]),
   patternRefs: z.array(z.string()).default([]),
   acceptanceCriteriaIds: z.array(z.string()).default([]),
+  sliceStrategyOverride: DesignSliceStrategySchema.optional(),
 });
 
 export const TaskPlanSchema = z.object({

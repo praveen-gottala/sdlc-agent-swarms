@@ -446,11 +446,150 @@ describe('buildTaskPlannerUserMessage', () => {
     };
     const msg = buildTaskPlannerUserMessage(brownfieldState);
     expect(msg).toContain('Change Classification');
-    expect(msg).toContain('scopeAxes');
+    expect(msg).toContain('Scope axes');
+  });
+
+  it('formats affectedScreens with impact, specPath, and nodeCount', () => {
+    const state = makeFullState();
+    const brownfieldState = {
+      ...state,
+      mode: 'brownfield' as const,
+      changeClassification: {
+        id: 'cc-1',
+        changeRequestId: 'cr-1',
+        scopeAxes: ['ui' as const],
+        blastRadius: 'medium' as const,
+        affectedModules: ['src/pages'],
+        confidence: 0.88,
+        affectedScreens: [
+          {
+            screenId: 'screen-dashboard',
+            impact: 'modified' as const,
+            existingSpecPath: 'agentforge/designs/screen-dashboard.json',
+            existingNodeCount: 24,
+            changeDescription: 'Add budget widget',
+            confidence: 0.92,
+          },
+          {
+            screenId: 'screen-budgets',
+            impact: 'new' as const,
+            confidence: 0.95,
+          },
+        ],
+      },
+    };
+    const msg = buildTaskPlannerUserMessage(brownfieldState);
+
+    expect(msg).toContain('Affected Screens');
+    expect(msg).toContain('screen-dashboard');
+    expect(msg).toContain('impact=`modified`');
+    expect(msg).toContain('agentforge/designs/screen-dashboard.json');
+    expect(msg).toContain('~24 nodes');
+    expect(msg).toContain('Add budget widget');
+    expect(msg).toContain('screen-budgets');
+    expect(msg).toContain('impact=`new`');
+    expect(msg).toContain('no existing spec');
   });
 
   it('includes project mode', () => {
     const msg = buildTaskPlannerUserMessage(makeFullState());
     expect(msg).toContain('greenfield');
+  });
+});
+
+describe('postProcessTaskPlan — token budget overflow', () => {
+  beforeEach(() => {
+    _resetTaskPlannerPromptCache();
+  });
+
+  it('MODIFY task within budget keeps default slice strategy (no override)', async () => {
+    const modifyPlan = {
+      ...VALID_TASK_PLAN,
+      tasks: [
+        {
+          ...VALID_TASK_PLAN.tasks[0]!,
+          id: 'task-modify-dashboard',
+          mode: 'MODIFY' as const,
+          type: 'frontend' as const,
+          contextRefs: [
+            { kind: 'existingDesign' as const, id: 'screen-dashboard' },
+            { kind: 'screenPlan' as const, id: 'sp-dashboard' },
+          ],
+        },
+      ],
+    };
+
+    const complete = jest.fn().mockImplementation(async () => okStructured(modifyPlan));
+    const deps = { ...mockDeps, provider: { ...stubProvider, complete } as LLMProvider };
+    const result = await createTaskPlanner(deps)(makeFullState());
+
+    expect(result.taskPlan).toBeDefined();
+    const task = result.taskPlan!.tasks[0]!;
+    expect(task.sliceStrategyOverride).toBeUndefined();
+    expect(task.estimatedTokenBudget).toBeLessThanOrEqual(76_000);
+  });
+
+  it('MODIFY task with massive deps downgrades slice strategy on overflow', async () => {
+    const manyDeps = Array.from({ length: 25 }, (_, i) => `dep-${i}`);
+    const modifyPlan = {
+      ...VALID_TASK_PLAN,
+      tasks: [
+        {
+          ...VALID_TASK_PLAN.tasks[0]!,
+          id: 'task-oversize',
+          mode: 'MODIFY' as const,
+          type: 'frontend' as const,
+          dependencies: manyDeps,
+          contextRefs: [
+            { kind: 'existingDesign' as const, id: 'screen-dashboard' },
+            { kind: 'screenPlan' as const, id: 'sp-dashboard' },
+          ],
+        },
+      ],
+    };
+
+    const complete = jest.fn().mockImplementation(async () => okStructured(modifyPlan));
+    const deps = { ...mockDeps, provider: { ...stubProvider, complete } as LLMProvider };
+    const result = await createTaskPlanner(deps)(makeFullState());
+
+    expect(result.taskPlan).toBeDefined();
+    const task = result.taskPlan!.tasks[0]!;
+    // 25 deps × 3000 = 75K + 4K base + 3K structure-only + 700 screenPlan = ~82.7K > 76K
+    // Even 'none' = 75K + 4K + 0 + 700 = ~79.7K > 76K → lands in final fallback
+    expect(task.sliceStrategyOverride).toBe('none');
+  });
+
+  it('NEW task is unaffected by overflow policy (no existingDesign ref)', async () => {
+    const newPlan = {
+      ...VALID_TASK_PLAN,
+      tasks: [
+        {
+          ...VALID_TASK_PLAN.tasks[0]!,
+          id: 'task-new-big',
+          mode: 'NEW' as const,
+          type: 'frontend' as const,
+          dependencies: Array.from({ length: 25 }, (_, i) => `dep-${i}`),
+          contextRefs: [{ kind: 'screenPlan' as const, id: 'sp-dashboard' }],
+        },
+      ],
+    };
+
+    const complete = jest.fn().mockImplementation(async () => okStructured(newPlan));
+    const deps = { ...mockDeps, provider: { ...stubProvider, complete } as LLMProvider };
+    const result = await createTaskPlanner(deps)(makeFullState());
+
+    expect(result.taskPlan).toBeDefined();
+    const task = result.taskPlan!.tasks[0]!;
+    // No existingDesign ref → no overflow policy applies → no override
+    expect(task.sliceStrategyOverride).toBeUndefined();
+  });
+});
+
+describe('TASK_PLANNER_RESPONSE_SCHEMA', () => {
+  it('includes existingDesign and designDelta in contextRef kind enum', () => {
+    const kindEnum = TASK_PLANNER_RESPONSE_SCHEMA.schema.properties.tasks.items
+      .properties.contextRefs.items.properties.kind.enum;
+    expect(kindEnum).toContain('existingDesign');
+    expect(kindEnum).toContain('designDelta');
   });
 });

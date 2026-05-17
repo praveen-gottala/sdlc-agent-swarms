@@ -25,8 +25,13 @@ import type {
 } from '@agentforge/core';
 import type { ArchitectDeps, ArchitectNodeFn } from '../../deps.js';
 import type { ArchitectStateType } from '../state.js';
-import { estimateTaskTokenBudget } from '../../sizing-heuristic.js';
+import {
+  estimateTaskTokenBudget,
+  MAX_INPUT_TOKEN_BUDGET,
+  DESIGN_SLICE_DOWNGRADE_ORDER,
+} from '../../sizing-heuristic.js';
 import { stateCompositionsToBundle } from '../../context-slicer.js';
+import { resolveDesignSliceStrategy } from '@agentforge/core';
 
 // ---------------------------------------------------------------------------
 // Prompt loading
@@ -121,6 +126,8 @@ export const TASK_PLANNER_RESPONSE_SCHEMA = {
                       'componentComposition',
                       'screenPlan',
                       'pattern',
+                      'existingDesign',
+                      'designDelta',
                     ],
                   },
                   id: { type: 'string' },
@@ -251,7 +258,29 @@ export function buildTaskPlannerUserMessage(state: ArchitectStateType): string {
 
   if (state.changeClassification) {
     parts.push('\n## Change Classification (brownfield)\n');
-    parts.push(JSON.stringify(state.changeClassification, null, 2));
+    const cc = state.changeClassification;
+    parts.push(`**Scope axes:** ${cc.scopeAxes.join(', ')}`);
+    parts.push(`**Blast radius:** ${cc.blastRadius}`);
+    if (cc.affectedModules.length > 0) {
+      parts.push(`**Affected modules:** ${cc.affectedModules.join(', ')}`);
+    }
+
+    if (cc.affectedScreens && cc.affectedScreens.length > 0) {
+      parts.push('\n### Affected Screens\n');
+      parts.push('Use this to assign `mode` and `existingDesign` contextRefs per frontend task:\n');
+      for (const screen of cc.affectedScreens) {
+        const specInfo = screen.existingSpecPath
+          ? ` | spec: ${screen.existingSpecPath}`
+          : ' | no existing spec';
+        const nodeInfo = screen.existingNodeCount != null
+          ? ` | ~${screen.existingNodeCount} nodes`
+          : '';
+        const desc = screen.changeDescription
+          ? ` — ${screen.changeDescription}`
+          : '';
+        parts.push(`- **${screen.screenId}**: impact=\`${screen.impact}\`${specInfo}${nodeInfo}${desc}`);
+      }
+    }
   }
 
   return parts.join('\n');
@@ -267,6 +296,7 @@ const DRY_CRITIC_GATES = new Set([
   'acceptanceCriteria-coverage',
   'tokenBudget-feasibility',
   'mode-consistency',
+  'modify-screen-consistency',
 ]);
 
 /**
@@ -283,6 +313,7 @@ function runDryCritic(
     bundle,
     req,
     state.existingFiles ?? undefined,
+    state.changeClassification ?? undefined,
   );
 
   const relevantGates = fullReport.gates.filter((g) => DRY_CRITIC_GATES.has(g.name));
@@ -316,6 +347,7 @@ function assembleBundleFromState(
     designSystemDiff: state.designSystemDiff ?? undefined,
     taskPlan,
     assumptionLedger: state.assumptionLedger!,
+    changeClassification: state.changeClassification ?? undefined,
   };
 }
 
@@ -336,10 +368,43 @@ function postProcessTaskPlan(
   };
 
   const tasks = plan.tasks.map((task) => {
-    const heuristicBudget = estimateTaskTokenBudget(task, bundle);
+    const defaultStrategy = resolveDesignSliceStrategy(task.mode);
+    let heuristicBudget = estimateTaskTokenBudget(task, bundle, defaultStrategy);
+
+    const hasExistingDesignRef = task.contextRefs.some((r) => r.kind === 'existingDesign');
+
+    if (heuristicBudget <= MAX_INPUT_TOKEN_BUDGET || !hasExistingDesignRef) {
+      return { ...task, estimatedTokenBudget: heuristicBudget };
+    }
+
+    const startIdx = DESIGN_SLICE_DOWNGRADE_ORDER.indexOf(defaultStrategy);
+    for (let i = startIdx + 1; i < DESIGN_SLICE_DOWNGRADE_ORDER.length; i++) {
+      const candidate = DESIGN_SLICE_DOWNGRADE_ORDER[i]!;
+      const candidateBudget = estimateTaskTokenBudget(task, bundle, candidate);
+
+      if (candidateBudget <= MAX_INPUT_TOKEN_BUDGET) {
+        debugLog(
+          `taskPlanner: task ${task.id} overflow ${heuristicBudget}→${candidateBudget} ` +
+          `(downgraded slice strategy: ${defaultStrategy}→${candidate})`,
+        );
+        return {
+          ...task,
+          estimatedTokenBudget: candidateBudget,
+          sliceStrategyOverride: candidate,
+        };
+      }
+
+      heuristicBudget = candidateBudget;
+    }
+
+    debugLog(
+      `taskPlanner: task ${task.id} exceeds MAX_INPUT_TOKEN_BUDGET (${heuristicBudget}) ` +
+      `even with slice strategy 'none' — task should be split`,
+    );
     return {
       ...task,
       estimatedTokenBudget: heuristicBudget,
+      sliceStrategyOverride: 'none' as const,
     };
   });
 

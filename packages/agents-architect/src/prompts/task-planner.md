@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 purpose: "Node 5 — Task Planner. Decomposes architecture + contract artifacts into a DAG of implementable tasks."
 rubric:
   - "R2 §5 — screen/endpoint-level granularity, 6-12 tasks per feature, hard cap 20"
@@ -64,8 +64,14 @@ Each contextRef is `{ kind, id }` where kind is one of:
 - `"componentComposition"` — reference a component composition by screenId
 - `"screenPlan"` — reference a screen plan by id
 - `"pattern"` — reference an implementation pattern by id
+- `"existingDesign"` — reference an existing design spec by page/screen id (brownfield MODIFY only)
+- `"designDelta"` — reference a design delta by screen id (brownfield MODIFY only)
 
 Only include refs the task will actually read or write. A backend API task should reference the relevant entities and API change sets, not screen plans. A frontend task should reference screen plans and component compositions, not raw data model entities (unless it needs entity types for bindings).
+
+**Brownfield design refs:** When `affectedScreens` is provided in the change classification:
+- For each screen with `impact: "modified"` that has an `existingSpecPath`, MODIFY frontend tasks touching that screen MUST include `{ kind: "existingDesign", id: <screenId> }` in contextRefs. This tells the Implementer to load and slice the existing design spec.
+- NEW screens do NOT get `existingDesign` refs — they have no prior spec.
 
 ## Pattern References
 
@@ -96,6 +102,12 @@ When mode is "brownfield":
 - Tasks that modify existing files should have `mode: "MODIFY"`
 - Tasks creating new files should have `mode: "NEW"`
 - File paths for MODIFY tasks must reference files that actually exist in the codebase
+
+**Using affectedScreens:** When the change classification includes `affectedScreens`, use it to decide per-task context:
+- `impact: "modified"` screens with an `existingSpecPath` → the frontend task modifying that screen MUST have `mode: "MODIFY"` and include `{ kind: "existingDesign", id: <screenId> }` in its contextRefs, plus the relevant `screenPlan` and `componentComposition` refs.
+- `impact: "new"` screens → the frontend task creating that screen should have `mode: "NEW"` with no `existingDesign` ref.
+- `impact: "unchanged"` screens → no task needed unless a dependency requires updating them.
+- Use `existingNodeCount` (when available) as a complexity signal for token budget estimation: more nodes = larger existing spec = higher context cost.
 
 ## Token Budget Estimation
 

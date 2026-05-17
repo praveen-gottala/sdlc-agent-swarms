@@ -20,7 +20,11 @@ export type { DesignSpecLookup, SlicedBundleWithDesign } from './context-slicer.
 export { extractLabelsAndBindings, extractStructure } from './design-slice/index.js';
 
 // Sizing heuristic
-export { estimateTaskTokenBudget } from './sizing-heuristic.js';
+export {
+  estimateTaskTokenBudget,
+  MAX_INPUT_TOKEN_BUDGET,
+  DESIGN_SLICE_DOWNGRADE_ORDER,
+} from './sizing-heuristic.js';
 
 // Graph
 export {

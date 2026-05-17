@@ -16,6 +16,7 @@ import type {
   TaskNode,
   ContractBundle,
   ContextRef,
+  DesignSliceStrategy,
 } from '@agentforge/core';
 
 const TOKENS_PER_ENTITY = 800;
@@ -27,18 +28,40 @@ const TOKENS_PER_DEPENDENCY = 3_000;
 const TOKENS_PER_FILE_OUTPUT = 400;
 const BASE_SYSTEM_PROMPT_TOKENS = 4_000;
 
+/** R3 §5: maximum input token budget for a single implementer LLM call. */
+export const MAX_INPUT_TOKEN_BUDGET = 76_000;
+
+/** Token cost per existingDesign ref, keyed by DesignSliceStrategy. */
+const DESIGN_SLICE_TOKEN_COSTS: Record<DesignSliceStrategy, number> = {
+  'full': 9_400,
+  'labels-only': 5_000,
+  'structure-only': 3_000,
+  'none': 0,
+};
+
+/** Strategy downgrade sequence for overflow resolution. */
+export const DESIGN_SLICE_DOWNGRADE_ORDER: readonly DesignSliceStrategy[] = [
+  'structure-only',
+  'labels-only',
+  'none',
+];
+
 /**
  * Estimate a task's token budget from its contextRefs, dependencies, and filePaths.
  * Returns clamped value in [1_000, TASK_TOKEN_BUDGET_CEILING].
+ *
+ * @param designSliceStrategy - Override for existingDesign token cost.
+ *   Defaults to 'structure-only' (ADR-057 default for MODIFY).
  */
 export function estimateTaskTokenBudget(
   task: Pick<TaskNode, 'contextRefs' | 'dependencies' | 'filePaths' | 'id'>,
   bundle: Partial<ContractBundle>,
+  designSliceStrategy?: DesignSliceStrategy,
 ): number {
   let tier0 = BASE_SYSTEM_PROMPT_TOKENS;
 
   for (const ref of task.contextRefs) {
-    tier0 += contextRefTokenCost(ref, bundle);
+    tier0 += contextRefTokenCost(ref, bundle, designSliceStrategy);
   }
 
   const tier1 = task.dependencies.length * TOKENS_PER_DEPENDENCY;
@@ -57,6 +80,7 @@ export function estimateTaskTokenBudget(
 function contextRefTokenCost(
   ref: ContextRef,
   bundle: Partial<ContractBundle>,
+  designSliceStrategy?: DesignSliceStrategy,
 ): number {
   switch (ref.kind) {
     case 'dataModel.entity': {
@@ -76,7 +100,7 @@ function contextRefTokenCost(
     case 'pattern':
       return TOKENS_PER_PATTERN;
     case 'existingDesign':
-      return 3000;
+      return DESIGN_SLICE_TOKEN_COSTS[designSliceStrategy ?? 'structure-only'];
     case 'designDelta':
       return 1500;
     default: {

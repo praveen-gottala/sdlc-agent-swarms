@@ -56,7 +56,9 @@ export function runArchitectScenario(
     ? new Set(scenario.existingFiles)
     : undefined;
 
-  const criticReport = validateContractBundle(bundle, enrichedReq, existingFiles);
+  const criticReport = validateContractBundle(
+    bundle, enrichedReq, existingFiles, bundle.changeClassification,
+  );
 
   const metrics = computeArchitectMetrics(
     scenario.id,
@@ -84,7 +86,9 @@ export function runArchitectScenarioDetailed(
     ? new Set(scenario.existingFiles)
     : undefined;
 
-  const criticReport = validateContractBundle(bundle, enrichedReq, existingFiles);
+  const criticReport = validateContractBundle(
+    bundle, enrichedReq, existingFiles, bundle.changeClassification,
+  );
 
   const metrics = computeArchitectMetrics(
     scenario.id,

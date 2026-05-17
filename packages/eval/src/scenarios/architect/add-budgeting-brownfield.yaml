@@ -319,6 +319,7 @@ contractBundle:
         contextRefs:
           - { kind: screenPlan, id: sp-dashboard }
           - { kind: dataModel.entity, id: entity-budget }
+          - { kind: existingDesign, id: screen-dashboard }
         patternRefs: [pat-tailwind-tokens]
         acceptanceCriteriaIds: [ac-dash-budget-widget]
       - id: t-nav-update
@@ -330,7 +331,8 @@ contractBundle:
         type: frontend
         mode: MODIFY
         estimatedTokenBudget: 8000
-        contextRefs: []
+        contextRefs:
+          - { kind: existingDesign, id: screen-dashboard }
         patternRefs: [pat-tailwind-tokens]
         acceptanceCriteriaIds: []
       # NEW tasks — new files
@@ -380,6 +382,26 @@ contractBundle:
       feat-budget-crud: [t-api-budgets, t-budgets-page]
       feat-budget-tracking: [t-budgets-page, t-budget-calc]
       feat-dashboard-existing: [t-dashboard-update]
+  changeClassification:
+    id: cc-cashpulse-budgeting
+    changeRequestId: cr-budgeting
+    scopeAxes:
+      - api
+      - data-model
+      - ui
+    blastRadius: medium
+    affectedModules: [src/api, src/pages, prisma]
+    confidence: 0.88
+    affectedScreens:
+      - screenId: screen-dashboard
+        impact: modified
+        existingSpecPath: agentforge/designs/screen-dashboard.json
+        existingNodeCount: 24
+        changeDescription: Add budget status widget
+        confidence: 0.92
+      - screenId: screen-budgets
+        impact: new
+        confidence: 0.95
   assumptionLedger:
     id: al-cashpulse-v2-merged
     entries:
