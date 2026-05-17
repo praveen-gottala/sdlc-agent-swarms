@@ -45,7 +45,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Completed plans (do NOT read during session-start):** 7 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
 
 <!-- Last session: max 2 lines — status + next action only. Details belong in the plan's execution-plan.md. -->
-**Last session (2026-05-16):** M3.6 COMPLETE (Design Info Value Eval). Next: M4 (Full Spine).
+**Last session (2026-05-17):** M4 Phases 1-4 COMPLETE. Next: M4 Phase 5 (Implementer LangGraph Package).
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
