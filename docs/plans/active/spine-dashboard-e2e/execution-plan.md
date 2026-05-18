@@ -4,6 +4,7 @@
 
 ## Related Documents
 
+- **Real-time UX reference:** [`real-time-ux-reference.md`](real-time-ux-reference.md) — 14 feedback patterns from Phase 0 eval session that MUST be replicated in the dashboard. Every component in Phases 2-8 traces back to a pattern in this file. **Read this before implementing any Phase.**
 - **Parent context:** [`docs/plans/active/chips-next-steps/execution-plan.md`](../chips-next-steps/execution-plan.md) — M0-M3.6 history, milestone table, brownfield wiring notes
 - **Hard upstream:** [`docs/plans/active/chips-next-steps/m4-execution-plan.md`](../chips-next-steps/m4-execution-plan.md) — Implementer + Reviewer agent packages. This plan does not start until M4 is COMPLETE.
 - **ADR-057:** [`docs/adrs/ADR-057-task-type-aware-design-slice-strategy.md`](../../../adrs/ADR-057-task-type-aware-design-slice-strategy.md) — task-type-aware design slice strategy (NEW: `'none'`, MODIFY: `'structure-only'`)
@@ -103,6 +104,73 @@ flowchart LR
 
 ---
 
+## Cross-Cutting: Animation & Engagement Requirements
+
+**Every moment the user waits must feel like valuable work is happening.** A 25-minute Architect run with Opus is the hardest UX challenge in this dashboard. The difference between "this is broken" and "this is impressive" is animation, feedback, and transparency.
+
+### Animation requirements (apply to all Phases 2-8)
+
+1. **SpineRail stage transitions:** Active stage pulses with a subtle glow animation (CSS `@keyframes pulse`). Completed stages slide from active state to checkmark with a smooth transition (Framer Motion or CSS). Upcoming stages are dimmed at 40% opacity.
+
+2. **NodeTimeline rows:** New rows slide in from the left (150ms ease-out). The spinning timer uses a smooth CSS counter animation, not jerky 1s intervals. On completion, the timer snaps to final value with a subtle scale bounce (1.0 → 1.05 → 1.0, 200ms).
+
+3. **HeartbeatPulse:** Continuous pulse animation (scale 0.8 → 1.2 → 0.8) with opacity fade (0.4 → 1.0 → 0.4) on a 2s cycle. The pulse should feel like breathing — organic, not mechanical. Reference: macOS Siri listening indicator.
+
+4. **Cost ticker:** Numbers should count up smoothly (animated number transition, not snap). When a stage completes and adds its cost, the total rolls up digit-by-digit over 500ms. Reference: fundraising ticker animations.
+
+5. **Progress ring (ETA):** Smooth SVG stroke-dashoffset animation that fills proportionally. Color transitions from blue → green as progress approaches 100%. Reference: Apple Watch activity rings.
+
+6. **Gate interrupt notification:** SpineRail stage flashes amber 3 times (300ms on, 200ms off), then settles to a steady amber glow. Toast slides in from the right with spring physics (slight overshoot + settle). Browser notification fires simultaneously for background tabs.
+
+7. **Task selection highlight:** The selected task row in TaskPlanDagPanel gets a left-border accent (2px, animated from 0 to full height over 200ms) and a subtle background color pulse that fades over 2s.
+
+8. **Run completion:** All SpineRail stages animate to checkmark state in sequence (100ms stagger between stages), then the summary card slides up from the bottom with the total cost and outcome badge. Confetti or subtle particle effect for "Approved" outcome (opt-in via preferences). Outcome badge appears with a scale-in animation (0 → 1.0 with spring).
+
+9. **Skeleton states:** Every component that loads data shows a Mantine skeleton with shimmer animation, not a blank space. Skeletons should match the exact shape of the loaded content (not generic rectangles).
+
+10. **Empty states with illustrations:** When no runs exist, show an illustrated empty state with a prominent "Run your first spine" CTA button. Not bare "No data" text.
+
+### Streaming text display (the "terminal feel")
+
+During the eval, the most engaging moments were when text streamed in real time —
+node completions appearing one by one, costs accumulating, task selections printing.
+Replicate this in the dashboard:
+
+1. **Log console panel** — a collapsible panel at the bottom of `/pipeline` (similar
+   to Chrome DevTools console or Vercel build logs) that streams raw events as they
+   arrive. Each line is timestamped and color-coded by stage (blue for Architect,
+   green for Implementer, amber for Reviewer). Text appears character-by-character
+   with a typewriter effect for key messages ("Selected task: ui-primitives"),
+   instant for status lines ("[architect:optionsExplorer] 487.8s").
+
+2. **Token streaming for LLM output** — when the Architect's architectureWriter or
+   contractDesigner is generating structured output, show a preview of the streamed
+   tokens in a "thinking" panel. Not the full JSON, but key excerpts: screen plan
+   names appearing one by one, API endpoint paths being written, task titles forming.
+   This turns an 8-minute wait into "watching the AI think" — which is fascinating,
+   not boring.
+
+3. **Activity feed** — a right sidebar or slide-out panel showing a chronological
+   feed of all events with human-readable descriptions:
+   - "Architect is exploring architecture options..." (optionsExplorer start)
+   - "Found 3 architecture alternatives" (optionsExplorer complete)
+   - "Writing architecture specification..." (architectureWriter start)
+   - "Designing data model and API schemas..." (contractDesigner start)
+   - "Planning 10 implementation tasks..." (taskPlanner complete)
+   - "Quality check passed ✓" (critic complete)
+   - "Now implementing: ui-primitives (frontend, NEW)" (task-selected)
+   - "Running 16 code quality gates..." (deterministicGates start)
+   - "All gates passed ✓" or "3 gates failed ✗" (deterministicGates complete)
+   - "Review complete — Escalated for human review" (outcome)
+
+### Performance constraints
+
+- All animations must run at 60fps. Use `transform` and `opacity` only — never animate `width`, `height`, `top`, `left`, or `margin`.
+- SSE event processing must not block the main thread. Use `requestAnimationFrame` for visual updates.
+- HeartbeatPulse must be pure CSS animation (no JS timer) to avoid jank during heavy SSE processing.
+
+---
+
 ## Phase 1: Dashboard audit + nav decision
 
 **Goal:** With M4 proven complete (Phase 0), reconcile the dashboard scaffolding against the now-real spine and lock the nav layout once.
@@ -129,23 +197,65 @@ flowchart LR
 
 ## Phase 2: Greenfield E2E in the dashboard (the spine works end-to-end through the UI)
 
-**Goal:** A developer submits the CashPulse PRD via `/new`, watches `SpineRail` move through all 4 stages backed by real M4 agents, and lands on a completed run. No stubs, no placeholders — every stage event the rail shows traces to a real agent call.
+**Goal:** A developer submits the CashPulse PRD via `/new`, watches `SpineRail` move through all 4 stages backed by real M4 agents, and lands on a completed run. No stubs, no placeholders — every stage event the rail shows traces to a real agent call. **The dashboard must provide the same quality of real-time feedback that the CLI eval script provides** — per-node progress, elapsed timers, cost accumulation, ETA estimates, and heartbeat indicators. Reference: Phase 0 eval session (2026-05-18) where every node completion was visible within seconds.
+
+### SSE event contract
+
+Every stage API route emits these SSE event types (consumed by all real-time components):
+
+```typescript
+type SpineSSEEvent =
+  | { type: 'stage-start'; stage: string; timestamp: string }
+  | { type: 'node-start'; stage: string; node: string; timestamp: string }
+  | { type: 'node-complete'; stage: string; node: string; durationMs: number; description: string }
+  | { type: 'stage-complete'; stage: string; durationMs: number; cost: StageCost }
+  | { type: 'task-selected'; taskId: string; title: string; type: string; mode: string }
+  | { type: 'heartbeat'; stage: string; node: string; elapsedMs: number }
+  | { type: 'revision-cycle'; cycle: number; maxCycles: number; reason: string }
+  | { type: 'gate-interrupt'; gateType: string; gateId: string }
+  | { type: 'run-complete'; totalCost: number; totalDurationMs: number; outcome: string }
+  | { type: 'error'; stage: string; message: string }
+```
+
+The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer, contractDesigner, etc.) so the UI can show "still working" indicators. Without this, 8-minute silent nodes look like the system is frozen.
 
 ### Tasks
 
-- [ ] Create `packages/dashboard/src/app/api/architect/route.ts` — POST handler with SSE streaming, mirrors [`api/clarifier/route.ts`](../../../../packages/dashboard/src/app/api/clarifier/route.ts) pattern (`resolve auth → create traced provider → load checkpointer → stream events`). Calls `compileArchitectGraph()` (verified callable in Phase 0).
-- [ ] Create `packages/dashboard/src/app/api/implementer/route.ts` per [`m4-execution-plan.md:254`](../chips-next-steps/m4-execution-plan.md) — calls `compileImplementerGraph()` (verified callable in Phase 0), emits per-node SSE events (`loadTaskContext` → `runDesignSpecialist` → `generateCode` → `reportCompletion`).
-- [ ] Create `packages/dashboard/src/app/api/reviewer/route.ts` per [`m4-execution-plan.md:288`](../chips-next-steps/m4-execution-plan.md) — calls `compileReviewerGraph()` (verified callable in Phase 0), emits deterministic-gate results + LLM review findings + final `ReviewResult.disposition`.
-- [ ] Wire a thin sequential orchestration layer in `packages/dashboard/src/app/api/spine/run/route.ts` — POST takes `{ projectId, mode: 'greenfield' }`, kicks off Clarifier, on completion advances to Architect, then Design, then Implementer, then Reviewer, persisting run state via `run-manager` at every transition. Single-threaded sequential per assumption A1 (no R1 orchestrator).
-- [ ] Implement the bounded-retry loop from [`m4-execution-plan.md:285-286`](../chips-next-steps/m4-execution-plan.md) inside `api/spine/run/route.ts`: `disposition === 'revisionNeeded' && cycle < 2 → re-invoke Implementer with findings; else → stop with disposition`.
+- [ ] Create `packages/dashboard/src/app/api/architect/route.ts` — POST handler with SSE streaming, mirrors [`api/clarifier/route.ts`](../../../../packages/dashboard/src/app/api/clarifier/route.ts) pattern (`resolve auth → create traced provider → load checkpointer → stream events`). Calls `compileArchitectGraph()` (verified callable in Phase 0). Must emit `node-start`, `node-complete`, `heartbeat`, and `stage-complete` events per the SSE contract above.
+- [ ] Create `packages/dashboard/src/app/api/implementer/route.ts` per [`m4-execution-plan.md:254`](../chips-next-steps/m4-execution-plan.md) — calls `compileImplementerGraph()` (verified callable in Phase 0), emits per-node SSE events (`loadTaskContext` → `runDesignSpecialist` → `generateCode` → `reportCompletion`). Must emit `task-selected` when the task is picked from the DAG.
+- [ ] Create `packages/dashboard/src/app/api/reviewer/route.ts` per [`m4-execution-plan.md:288`](../chips-next-steps/m4-execution-plan.md) — calls `compileReviewerGraph()` (verified callable in Phase 0), emits deterministic-gate results + LLM review findings + final `ReviewResult.outcome`. Must emit `revision-cycle` event when entering a retry.
+- [ ] Wire a thin sequential orchestration layer in `packages/dashboard/src/app/api/spine/run/route.ts` — POST takes `{ projectId, mode: 'greenfield' }`, kicks off Clarifier, on completion advances to Architect, then Design, then Implementer, then Reviewer, persisting run state via `run-manager` at every transition. Single-threaded sequential per assumption A1 (no R1 orchestrator). Emits `stage-start` / `stage-complete` at each transition.
+- [ ] Implement the bounded-retry loop from [`m4-execution-plan.md:285-286`](../chips-next-steps/m4-execution-plan.md) inside `api/spine/run/route.ts`: `outcome === 'rejected' && cycle < 2 → emit revision-cycle event → re-invoke Implementer with findings; else → stop with outcome`.
 - [ ] Extend `SpineRail` ([`packages/dashboard/src/components/spine/spine-rail.tsx`](../../../../packages/dashboard/src/components/spine/spine-rail.tsx)) to subscribe to the spine SSE stream and animate stage transitions per real M4 events.
 - [ ] Add a "Run spine" button on `/pipeline` ([`pipeline/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/pipeline/page.tsx)) that triggers the `/api/spine/run` endpoint for the active project.
+- [ ] **Build `StageNodeGraph` components** for each spine stage — the Clarifier already has `NodeProgressGraph` (`packages/dashboard/src/components/clarifier/node-progress-graph.tsx`) showing a horizontal row of dots with active/complete/pending states. Build equivalent graphs for: `ArchitectNodeGraph` (7 nodes: contextAssembler → optionsExplorer → architectureWriter → contractDesigner → taskPlanner → critic → Gate 2), `ImplementerNodeGraph` (4 nodes: loadTaskContext → runDesignSpecialist → generateCode → reportCompletion), `ReviewerNodeGraph` (4 nodes: deterministicGates → llmReview → assumptionValidator → emitReviewResult). Each graph subscribes to `node-start` / `node-complete` SSE events to animate in real time. These sit inside the expanded `SpineRail` stage panel — clicking a stage expands to show both the node graph AND the `NodeTimeline` detail view.
+- [ ] **Build `NodeTimeline` component** in `packages/dashboard/src/components/pipeline/node-timeline.tsx` — a vertical timeline showing each node within the active stage as a row. Each row shows: node name, status icon (pending gray dot / spinning blue ring / green checkmark / red X), elapsed time (live counter while running, final duration when done), and a one-line description of what the node produces. Reference: the Vercel build-log pattern where each step is a collapsible row with timing. Use the per-node timings from the Phase 0 greenfield receipt as baseline data:
+
+    | Node | Baseline | Description |
+    |------|----------|-------------|
+    | contextAssembler | <1s | Loads project context |
+    | optionsExplorer | ~8 min | Explores architecture alternatives |
+    | architectureWriter | ~3 min | Writes architecture spec + ADRs |
+    | contractDesigner | ~5 min | Designs data model, API schemas, screen plans |
+    | taskPlanner | ~4 min | Produces TaskPlan DAG |
+    | critic | <1s | Deterministic quality gate |
+
+- [ ] **Build `ETAIndicator` component** in `packages/dashboard/src/components/pipeline/eta-indicator.tsx` — shows estimated time remaining for the current node and total remaining for the stage. Uses historical node timing baselines from eval receipts (stored in a config or fetched from `/api/spine/baselines`). Displays as "~3 min remaining" with a subtle progress ring. When no baseline exists for a node, shows "Processing..." without an ETA. Updates every heartbeat event.
+- [ ] **Build `LiveCostTicker` component** in `packages/dashboard/src/components/pipeline/live-cost-ticker.tsx` — accumulates per-stage costs in real time as `stage-complete` events arrive. Shows a running total like `$3.81 / ~$6.00 est.` with per-stage breakdown on hover. Reference: the Phase 0 eval where I reported costs like "$5.88 for Architect" as each stage finished.
+- [ ] **Build `HeartbeatPulse` component** in `packages/dashboard/src/components/pipeline/heartbeat-pulse.tsx` — a subtle animated dot/ring next to the active node that pulses every time a `heartbeat` event arrives. Shows "Last activity 3s ago" tooltip. If no heartbeat arrives for >15s, changes to amber with "Waiting for response..." to differentiate "working" from "stuck." This solves the "is it frozen or just thinking?" problem during 8-minute Opus calls.
+- [ ] **Build `RevisionCycleBadge` component** in `packages/dashboard/src/components/pipeline/revision-cycle-badge.tsx` — when the Reviewer triggers a retry, shows "Review cycle 1/2" on the Reviewer stage in SpineRail. Updates on each `revision-cycle` SSE event. Subtle pill badge, not alarming — revisions are normal.
+- [ ] **Build `PostSubmissionView` for `/new`** — after the user submits a PRD on `/new`, immediately transition to a processing view (no blank screen). Show: SpineRail with Clarifier stage active + `StageNodeGraph` for Clarifier + `HeartbeatPulse` + "Analyzing your requirements..." message. As stages complete, the view evolves — this is the user's first impression of the spine working. (Pattern 12 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
+- [ ] **Build `RunSummaryCard` component** in `packages/dashboard/src/components/pipeline/run-summary-card.tsx` — when the spine completes, show a summary card with: total cost (animated count-up), total duration, outcome badge (green "Approved" / amber "Escalated" / red "Rejected"), per-stage cost breakdown bar, and findings count. This card persists in the run history on `/pipeline`. (Pattern 14 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
 
 ### Verification
 
-- [ ] Manual: open dashboard, load CashPulse fixture, click "Run spine", confirm `SpineRail` reaches `reviewer` with disposition `'approved'` on a fresh greenfield run.
+- [ ] Manual: open dashboard, load CashPulse fixture, click "Run spine", confirm `SpineRail` reaches `reviewer` with outcome `'approved'` or `'escalated'` on a fresh greenfield run.
 - [ ] Compare wall time + cost against Phase 0 greenfield receipt — dashboard overhead should be < 10% on top of raw eval cost.
 - [ ] Chrome DevTools MCP screenshot per [`m4-execution-plan.md:321`](../chips-next-steps/m4-execution-plan.md) — `SpineRail` shows all 4 stages completed, not just active.
+- [ ] **NodeTimeline verification:** During a live run, confirm each Architect node appears in the timeline within 1s of its `node-start` event, elapsed timer ticks live, and checkmark appears on `node-complete`.
+- [ ] **HeartbeatPulse verification:** During the optionsExplorer node (~8 min), confirm the pulse dot animates every 5s and the tooltip shows a live "last activity" counter.
+- [ ] **ETAIndicator verification:** Confirm "~8 min remaining" appears when optionsExplorer starts (baseline from Phase 0 receipt), counts down, and disappears on node completion.
+- [ ] **LiveCostTicker verification:** After Architect completes, confirm the ticker shows ~$5-6 matching the Phase 0 receipt. Hover shows per-stage breakdown.
 
 ### Phase 2 Gate
 
@@ -188,14 +298,19 @@ flowchart LR
 
 ### Tasks
 
-- [ ] Build `ArchitectGraphPanel` in `packages/dashboard/src/components/pipeline/` — visualizes Nodes 0.5 → 6 per the diagram at [`execution-plan.md:146-148`](../chips-next-steps/execution-plan.md), with per-node status (pending / running / done / failed) and the Critic's verdict.
-- [ ] Build `TaskPlanDagPanel` — renders the task DAG from Architect Node 5 (table example at [`execution-plan.md:253-264`](../chips-next-steps/execution-plan.md) for greenfield; the brownfield version with NEW/MODIFY badges at [`execution-plan.md:343-353`](../chips-next-steps/execution-plan.md) lands in Phase 6).
+- [ ] Build `ArchitectGraphPanel` in `packages/dashboard/src/components/pipeline/` — visualizes Nodes 0.5 → 6 per the diagram at [`execution-plan.md:146-148`](../chips-next-steps/execution-plan.md), with per-node status (pending / running / done / failed) and the Critic's verdict. **Must integrate with `NodeTimeline` from Phase 2** — when a run is active, the graph nodes animate in real time (pending → spinning → checkmark). When the Critic retries a node, show "Attempt 2" badge (Pattern 7 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
+- [ ] Build `TaskPlanDagPanel` — renders the task DAG from Architect Node 5 (table example at [`execution-plan.md:253-264`](../chips-next-steps/execution-plan.md) for greenfield; the brownfield version with NEW/MODIFY badges at [`execution-plan.md:343-353`](../chips-next-steps/execution-plan.md) lands in Phase 6). **Must highlight the active task** during Implementer execution — when `task-selected` SSE event fires, the corresponding row pulses/highlights with "Now implementing" label and the task's type/mode badge (Pattern 6 from [`real-time-ux-reference.md`](real-time-ux-reference.md)). If multiple tasks run sequentially, show "Task 1 of N" progress indicator.
 - [ ] Surface per-task fields from [`m4-execution-plan.md:204-217`](../chips-next-steps/m4-execution-plan.md): `mode`, `contextRefs` chips, `estimatedTokenBudget`, downgrade warnings when token budget overflows.
 - [ ] Add a "Re-run from Architect" affordance on the pipeline page that resumes the spine from a chosen node (LangGraph checkpointer-backed — checkpointer verified callable in Phase 0).
+- [ ] **Build `PreFlightCheckPanel` component** in `packages/dashboard/src/components/pipeline/pre-flight-check.tsx` — before "Run spine" executes, show a validation panel: "Verifying project setup..." with animated checkmarks for each prerequisite (fixtures loaded ✓, auth configured ✓, checkpointer available ✓, estimated cost: ~$6.00). Only enable the "Run" button when all checks pass. Shows estimated cost and duration based on Phase 0 baselines. (Pattern 11 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
+- [ ] **Build `RunComparisonView` component** in `packages/dashboard/src/components/pipeline/run-comparison.tsx` — on the `/pipeline` run history, each run row shows delta badges comparing against the previous run: "↓3.8% cost" (green), "↑5% time" (amber). Clicking a run expands to show the full `NodeTimeline` replay, per-stage costs, and `ReviewResult` findings. Sparklines show cost/duration trends across runs. (Pattern 9 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
 
 ### Verification
 
 - [ ] Run spine on CashPulse, navigate to `/pipeline`, confirm Architect graph shows all 7 nodes with verdicts and the TaskPlan DAG renders all greenfield tasks T1-T10 from the fixture.
+- [ ] **Active task highlight:** During Implementer execution, confirm the selected task row pulses in TaskPlanDagPanel with "Now implementing" label.
+- [ ] **Pre-flight check:** Before running, confirm the pre-flight panel validates auth + fixtures and shows estimated cost.
+- [ ] **Run comparison:** After 2+ runs, confirm delta badges appear (cost/duration % change).
 
 ### Phase 4 Gate
 
@@ -213,7 +328,7 @@ flowchart LR
 
 - [ ] **`/spec`** ([`spec/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/spec/page.tsx)) — add tabs for `EnrichedRequirement`, `FeaturePlan`, `AssumptionLedger`, Architect's `ConstraintSet` / `OptionsBundle` / `ArchitectureSpec` / `ContractBundle`. Source: [`execution-plan.md:213, 233-237`](../chips-next-steps/execution-plan.md).
 - [ ] **`/tasks`** ([`tasks/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/tasks/page.tsx)) — render the same TaskPlan DAG as `/pipeline` but in list form with filtering (`mode`, status, package). Token-budget warnings inline.
-- [ ] **`/agents/[id]/live`** ([`agents/[id]/live/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/agents/[id]/live/page.tsx)) — render Implementer tool-loop trace (`read_file`, `write_file`, `apply_patch`, `run_typecheck`, `run_tests`, `run_lint`, `report_assumption_violation` from [`m4-execution-plan.md:242-249`](../chips-next-steps/m4-execution-plan.md)) and Reviewer 3-node trace (`deterministicGates`, `llmReview`, `emitReviewResult` from [`m4-execution-plan.md:277-280`](../chips-next-steps/m4-execution-plan.md)).
+- [ ] **`/agents/[id]/live`** ([`agents/[id]/live/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/agents/[id]/live/page.tsx)) — render Implementer tool-loop trace (`read_file`, `write_file`, `apply_patch`, `run_typecheck`, `run_tests`, `run_lint`, `report_assumption_violation` from [`m4-execution-plan.md:242-249`](../chips-next-steps/m4-execution-plan.md)) and Reviewer 4-node trace (`deterministicGates`, `llmReview`, `assumptionValidator`, `emitReviewResult` from [`m4-execution-plan.md:277-280`](../chips-next-steps/m4-execution-plan.md)). **Reviewer trace must show:** gate pass/fail badges (16 gates with names), LLM review findings as expandable cards, assumption violations, and final outcome badge (Pattern 8 from [`real-time-ux-reference.md`](real-time-ux-reference.md)). Use the `NodeTimeline` component from Phase 2 for consistent per-node progress display.
 - [ ] **`/audit`** ([`audit/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/audit/page.tsx)) — list ADRs from Architect Node 3 with diff against prior project state.
 
 ### Verification
@@ -282,8 +397,8 @@ flowchart LR
 
 ### Tasks
 
-- [ ] **`/costs`** ([`costs/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/costs/page.tsx)) — per-run, per-stage cost breakdown using the cost estimate from [`m4-execution-plan.md:304-308`](../chips-next-steps/m4-execution-plan.md): Clarifier ~$0.05, Architect ~$0.30, Design ~$0.50, Implementer ~$0.50-1.50, Reviewer ~$0.20.
-- [ ] **`/traces`** ([`traces/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/traces/page.tsx)) — surface the M4 Phase 1 instrumentation fields (`taskType`, `sliceStrategy`, `qualityProxy` from [`m4-execution-plan.md:136`](../chips-next-steps/m4-execution-plan.md)) per Implementer call. Address the known telemetry gap ([`execution-plan.md:1006-1016`](../chips-next-steps/execution-plan.md)) by adding stage spans for Architect and Reviewer.
+- [ ] **`/costs`** ([`costs/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/costs/page.tsx)) — per-run, per-stage cost breakdown. **Must show both live and historical views:** During a run, `LiveCostTicker` (Phase 2) accumulates costs. After the run, `/costs` shows the full breakdown with per-stage bar chart (Architect dominates at ~98% of cost — make this visually clear), token counts (input/output), and cost-per-node drill-down. Show actual costs from Phase 0 receipts as reference: greenfield $6.00, brownfield $3.89. Include cost trend sparklines across runs (Pattern 9 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
+- [ ] **`/traces`** ([`traces/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/traces/page.tsx)) — surface the M4 Phase 1 instrumentation fields (`taskType`, `sliceStrategy`, `qualityProxy` from [`m4-execution-plan.md:136`](../chips-next-steps/m4-execution-plan.md)) per Implementer call. Address the known telemetry gap ([`execution-plan.md:1006-1016`](../chips-next-steps/execution-plan.md)) by adding stage spans for Architect and Reviewer. **Each trace entry must show:** stage name, node name, duration, token count, and cost — replicating the per-node detail from the eval output (Pattern 1 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
 - [ ] **`/trust`** ([`trust/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/trust/page.tsx)) — list AssumptionLedger violations from `report_assumption_violation` ([`m4-execution-plan.md:248`](../chips-next-steps/m4-execution-plan.md)) and ledger lifecycle diagram ([`execution-plan.md:126-144`](../chips-next-steps/execution-plan.md)).
 
 ### Phase 8 Gate
@@ -329,7 +444,7 @@ flowchart LR
 
 Observations captured during a real 25+ min spine eval run (Clarifier fixture → Architect → Implementer → Reviewer on CashPulse greenfield with Claude Opus via Vertex AI). These directly inform the UX quality required for the $100M investment bar.
 
-### Real-time progress visibility (CRITICAL)
+### Real-time progress visibility (CRITICAL) — see [`real-time-ux-reference.md`](real-time-ux-reference.md) for the full 14-pattern catalog
 
 The Architect pipeline alone takes ~25 min with Opus. Per-node timings observed:
 
