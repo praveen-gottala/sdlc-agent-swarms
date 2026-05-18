@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 COMPLETE (2026-05-16) — M4 COMPLETE (2026-05-17)
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 COMPLETE (2026-05-16) — M4 Phase 7 IN PROGRESS (Gate 6a/6b deferred)
 
 ## Plan Structure
 
@@ -860,7 +860,7 @@ Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-on
 
 **Blocks:** Nothing. M4 ships with task-type-aware routing (`'none'` for NEW, `'structure-only'` for MODIFY) per M3.6 findings and ADR-057.
 
-### M4: Full Spine — COMPLETE (2026-05-17)
+### M4: Full Spine — Phase 7 IN PROGRESS (Gate 6a/6b deferred)
 
 **Child execution plan:** [`m4-execution-plan.md`](m4-execution-plan.md) (7 phases: ADR-057 routing + instrumentation → brownfield schemas → delta design specialist → Architect TaskPlan wiring → Implementer graph → Reviewer graph → full spine eval).
 

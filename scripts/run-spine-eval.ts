@@ -16,8 +16,9 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdtempSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import type { TaskNode, ContractBundle, Diff, TaskCompletionReport, ReviewResult, BaseCheckpointSaver } from '@agentforge/core';
+import type { TaskNode, ContractBundle, Diff, TaskCompletionReport, ReviewResult, BaseCheckpointSaver, EnrichedRequirement, AssumptionLedger } from '@agentforge/core';
 import { MemorySaver } from '@agentforge/core';
+import type { ArchitectStateType } from '@agentforge/agents-architect';
 import {
   resolveClaudeAuth,
   authResultToProviderConfig,
@@ -142,8 +143,8 @@ interface ArchitectResult {
 
 async function runArchitectStage(
   scenario: SpineEvalScenario,
-  enrichedRequirement: Record<string, unknown>,
-  assumptionLedger: Record<string, unknown>,
+  enrichedRequirement: EnrichedRequirement,
+  assumptionLedger: AssumptionLedger,
   provider: LLMProvider,
   rep: number,
 ): Promise<ArchitectResult> {
@@ -152,15 +153,14 @@ async function runArchitectStage(
 
   log(`  [architect] Starting (mode=${scenario.architect.mode})...`);
 
-  // Shared checkpointer so resume can access the same checkpoint state
   const checkpointer: BaseCheckpointSaver = new MemorySaver();
 
-  let architectState: Record<string, unknown> | undefined;
+  let architectState: ArchitectStateType | undefined;
   let threadId = '';
 
   for await (const event of runArchitectPipelineStream({
-    enrichedRequirement: enrichedRequirement as never,
-    assumptionLedger: assumptionLedger as never,
+    enrichedRequirement,
+    assumptionLedger,
     mode: scenario.architect.mode,
     provider: recorder,
     projectRoot: PROJECT_ROOT,
@@ -172,15 +172,15 @@ async function runArchitectStage(
         log(`  [architect:${event.node}] ${(event.durationMs / 1000).toFixed(1)}s`);
         break;
       case 'interrupt':
-        // Gate 2 interrupt — the state already contains the full ContractBundle
+        // Gate 2 interrupt — state already contains the full ContractBundle
         // and TaskPlan. In eval mode we auto-approve with no edits, so the
         // post-Gate-2 processing adds no value. Use the interrupt state directly.
         log('  [architect] Gate 2 interrupt — using interrupt state (auto-approve, no resume needed).');
-        architectState = event.state as unknown as Record<string, unknown>;
+        architectState = event.state as ArchitectStateType;
         threadId = event.threadId;
         break;
       case 'complete':
-        architectState = event.state as unknown as Record<string, unknown>;
+        architectState = event.state as ArchitectStateType;
         threadId = event.threadId;
         break;
       case 'error':
@@ -197,8 +197,8 @@ async function runArchitectStage(
   log(`  [architect] Done in ${(durationMs / 1000).toFixed(1)}s, $${cost.totalCostUsd.toFixed(4)}`);
 
   return {
-    contractBundle: architectState as Partial<ContractBundle>,
-    taskPlan: (architectState as { taskPlan?: { tasks: TaskNode[] } }).taskPlan ?? { tasks: [] },
+    contractBundle: architectState as unknown as Partial<ContractBundle>,
+    taskPlan: architectState.taskPlan ?? { projectId: 'spine-eval', tasks: [], featureCoverage: {} },
     threadId,
     cost,
     durationMs,
@@ -329,11 +329,11 @@ async function runSpineScenario(
   try {
     // Stage 1: Load Clarifier fixture (no LLM cost)
     log('\n--- Stage 1: Clarifier (fixture) ---');
-    const enrichedRequirement = loadFixtureJson<Record<string, unknown>>(
+    const enrichedRequirement = loadFixtureJson<EnrichedRequirement>(
       scenario.clarifier.fixtureEnrichedRequirementPath,
     );
-    const assumptionLedger = scenario.clarifier.fixtureAssumptionLedgerPath
-      ? loadFixtureJson<Record<string, unknown>>(scenario.clarifier.fixtureAssumptionLedgerPath)
+    const assumptionLedger: AssumptionLedger = scenario.clarifier.fixtureAssumptionLedgerPath
+      ? loadFixtureJson<AssumptionLedger>(scenario.clarifier.fixtureAssumptionLedgerPath)
       : { assumptions: [] };
     log('  Loaded enriched requirement + assumption ledger from fixtures.');
     stageCosts.push({
