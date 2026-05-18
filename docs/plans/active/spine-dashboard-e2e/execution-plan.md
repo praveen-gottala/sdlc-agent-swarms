@@ -169,6 +169,129 @@ Replicate this in the dashboard:
 - SSE event processing must not block the main thread. Use `requestAnimationFrame` for visual updates.
 - HeartbeatPulse must be pure CSS animation (no JS timer) to avoid jank during heavy SSE processing.
 
+### Mandatory: Walk the User Journey with Browser Tools (applies to ALL Phases)
+
+**Before declaring ANY phase done, the implementer MUST use browser automation tools
+to experience the dashboard as a real user would.** Code review and unit tests verify
+correctness. Browser tools verify the *feeling* — the animations, the feedback timing,
+the engagement during long waits. This is the difference between "it works" and "$100M."
+
+#### Available tools and when to use each
+
+**1. Chrome DevTools MCP — `evaluate_script`** (MOST IMPORTANT)
+```javascript
+// Inspect computed styles — don't guess from screenshots
+(el) => getComputedStyle(el).backgroundColor
+(el) => getComputedStyle(el).animation
+(el) => getComputedStyle(el).opacity
+```
+Use to verify: animation properties are actually applied, colors match design tokens,
+transitions are smooth, HeartbeatPulse has the correct CSS animation. **Screenshots
+show symptoms; `getComputedStyle()` shows causes.**
+
+**2. Chrome DevTools MCP — `take_snapshot`** (a11y tree)
+Shows the DOM structure and element hierarchy. Use to verify: component rendering
+order, ARIA labels on interactive elements, that the NodeTimeline has the correct
+number of rows, that SpineRail stages have the right status attributes.
+
+**3. Chrome DevTools MCP — `take_screenshot`**
+Visual verification. Use to capture the dashboard at key moments:
+- Before spine run starts (empty/idle state)
+- During optionsExplorer (the 8-min wait — is HeartbeatPulse visible?)
+- When a node completes (does NodeTimeline update?)
+- When a gate interrupt fires (does SpineRail flash amber?)
+- When the run completes (does RunSummaryCard appear?)
+- Responsive breakpoints (768px, 1024px, 1440px)
+
+**4. Chrome DevTools MCP — `click` + `take_snapshot`**
+Interact with the dashboard: click "Run spine", click SpineRail stages to expand,
+click the log console to toggle, hover over LiveCostTicker for breakdown.
+
+**5. Chrome DevTools MCP — `wait_for`**
+Wait for SSE-driven UI updates: `wait_for({ text: ["optionsExplorer"] })` to confirm
+NodeTimeline updates, `wait_for({ text: ["$"] })` to confirm LiveCostTicker appears.
+
+**6. Playwright MCP — `browser_snapshot` + `browser_evaluate`**
+Second browser automation toolkit. Use for cross-origin iframe content (if the design
+renderer iframe is involved) and for complex interaction sequences.
+
+**7. Source code `Read` + `grep`**
+Trace CSS values to their source: `grep -rn "animation.*pulse" packages/dashboard/src/`
+to find where HeartbeatPulse animation is defined. Don't guess which component owns a style.
+
+#### The User Journey Walkthrough (run this for EVERY phase that touches UI)
+
+```
+Step 1: Start the dev server
+  $ nx run-many -t build && cd packages/dashboard && npm run dev
+
+Step 2: Navigate to /pipeline
+  navigate_page → http://localhost:3000/pipeline
+  take_screenshot → capture idle state
+
+Step 3: Click "Run spine" (Phase 2+)
+  take_snapshot → find the Run button uid
+  click → trigger the spine run
+  take_screenshot → capture immediate feedback (PostSubmissionView)
+
+Step 4: Watch the first 30 seconds
+  wait_for → "contextAssembler" (first node completion)
+  take_screenshot → confirm NodeTimeline appeared with first row
+  evaluate_script → check HeartbeatPulse animation is running:
+    () => {
+      const pulse = document.querySelector('[data-testid="heartbeat-pulse"]');
+      return pulse ? getComputedStyle(pulse).animationName : 'NOT FOUND';
+    }
+
+Step 5: Wait for a long node (optionsExplorer ~8 min)
+  take_screenshot every 60s → confirm:
+    - HeartbeatPulse is still animating
+    - ETAIndicator is counting down
+    - NodeTimeline shows elapsed time ticking up
+    - No "frozen" appearance
+
+Step 6: Confirm stage transition
+  wait_for → "Implementer" or "Stage 3"
+  take_screenshot → SpineRail updated, Architect shows checkmark
+  evaluate_script → verify SpineRail stage states:
+    () => {
+      const stages = document.querySelectorAll('[data-testid^="spine-stage-"]');
+      return Array.from(stages).map(s => ({
+        name: s.dataset.testid,
+        status: s.dataset.status
+      }));
+    }
+
+Step 7: Confirm LiveCostTicker
+  evaluate_script → read the displayed cost:
+    () => document.querySelector('[data-testid="live-cost-ticker"]')?.textContent
+
+Step 8: Confirm run completion
+  wait_for → "SUCCESS" or "PASSED" or "escalated"
+  take_screenshot → capture RunSummaryCard
+  take_screenshot → capture full page at completion
+
+Step 9: Verify animations at 60fps
+  evaluate_script → check no layout-thrashing animations:
+    () => {
+      const allAnimated = document.querySelectorAll('[style*="animation"]');
+      return Array.from(allAnimated).map(el => ({
+        tag: el.tagName,
+        animation: getComputedStyle(el).animationName,
+        transform: getComputedStyle(el).transform
+      }));
+    }
+
+Step 10: Test responsive layout
+  resize_page → width: 768, height: 1024
+  take_screenshot → confirm mobile layout
+  resize_page → width: 1440, height: 900
+  take_screenshot → confirm desktop layout
+```
+
+**The implementer who skips this walkthrough has not verified the UX.** Typecheck and
+tests prove the code compiles. The walkthrough proves the experience is worth $100M.
+
 ---
 
 ## Phase 1: Dashboard audit + nav decision
