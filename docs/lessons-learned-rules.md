@@ -42,6 +42,7 @@
 - [Verification Gate = Full Gate, Not Just the Triad](#verification-gate--full-gate-not-just-the-triad) — RULE
 - [Validate Deferral Reasoning with Fresh-Context Subagent](#validate-deferral-reasoning-with-fresh-context-subagent) — RULE
 - [Multiple Solutions — Pick the Quality-Preserving Fix](#multiple-solutions--pick-the-quality-preserving-fix) — RULE
+- [Visual Debugging — Inspect Computed Styles, Don't Guess from Screenshots](#visual-debugging--inspect-computed-styles-dont-guess-from-screenshots) — RULE
 
 ---
 
@@ -631,3 +632,22 @@ The design LLM receives this width as a hard constraint and lays out all content
 **Rule:** When an LLM-judged rubric produces identical means across inputs that differ substantially in content or size, treat the rubric as too coarse before treating the inputs as equivalent. Widen the scale (e.g., 0–5 or 0–10), add a complementary deterministic metric (structural tree match, `tsc` compile), or run human calibration — do not infer fine-grained ordering from a plateau.
 **Why:** A 0–3 fidelity scale cannot distinguish "planning hurts a little" from "full spec hurts a lot" if both land on 1.33. The headline finding (baseline A beats all design-context configs for NEW) remains valid; relative ordering of B/C/D/E for NEW does not.
 **How to apply:** Before writing eval conclusions that compare configs within a plateau band, check per-cell score distributions. If ≥75% of cells share the same integer score across configs, report the band comparison only and flag rubric coarseness in Threats to Validity. See R9.4 §9.2 and ADR-057.
+
+---
+
+## Visual Debugging — Inspect Computed Styles, Don't Guess from Screenshots
+
+**RULE** (2026-05-18)
+
+**Context:** User reported a page background color inconsistency. Wasted 3 rounds fixing table stripe colors, table borders, and table scroll container backgrounds — all wrong diagnoses. The actual root cause was `height: 100vh` on the AppShell `main` element in `dashboard-shell.tsx`, which capped the main area at viewport height. Content below the fold revealed the root element's `--color-sidebar` background (`#0a0a0d`) instead of the main's `--color-bg-base` (`#09090b`).
+
+**Rule:** When a user reports a visual inconsistency (background color, spacing, layout), do NOT guess from screenshots. Use programmatic inspection first:
+
+1. **Chrome DevTools MCP `evaluate_script`** — `getComputedStyle(element).backgroundColor` gives the actual rendered color. This is the primary tool for color/layout debugging.
+2. **Playwright MCP `browser_evaluate`** — Same capability, different tool.
+3. **Source code `Read`** — Trace the style from the component up through the layout shell (`dashboard-shell.tsx` → `AppShell` styles → `globals.css` tokens).
+4. **Bash `grep`** — Search for the CSS value across files: `grep -rn "height.*100vh\|background.*sidebar" packages/dashboard/src/`.
+
+**Why:** Screenshots show symptoms, not causes. A 1-step lightness difference between `#09090b` and `#0a0a0d` is visible to the human eye but impossible to diagnose from a screenshot alone. `getComputedStyle()` would have identified the mismatch in one call.
+
+**How to apply:** When a user reports a page-level visual issue (backgrounds, spacing, overflow), start at the layout shell and work inward — not at the component and work outward. First check: `dashboard-shell.tsx` AppShell styles (root, main, navbar, header, aside). Then check: page-level containers. Only then check: individual component styles. Use `evaluate_script` to read computed values on the actual DOM elements, not the CSS source.
