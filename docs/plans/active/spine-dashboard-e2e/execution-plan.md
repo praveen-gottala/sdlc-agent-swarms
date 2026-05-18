@@ -22,6 +22,19 @@ Any developer using the CHIP dashboard at `packages/dashboard/` can take an appl
 - **A3. CashPulse is the smoke-fixture.** Same fixture used by M0 ([`packages/eval/src/scenarios/cashpulse.yaml`](../../../../packages/eval/src/scenarios/cashpulse.yaml)) and M3.5 brownfield ([`packages/eval/src/scenarios/cashpulse-brownfield.yaml`](../../../../packages/eval/src/scenarios/cashpulse-brownfield.yaml)). Every phase's verification step uses this fixture.
 - **A4. No new top-level routes (decided in Phase 1).** All new surfaces live as panels/tabs inside existing pages ([`packages/dashboard/src/app/(dashboard)/`](../../../../packages/dashboard/src/app/(dashboard)/)). Sidebar from [`sidebar-nav.tsx:47-87`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx) stays as-is. Phase 1 either confirms or revises this.
 
+## Hard Constraint: Dashboard-Only from Phase 2 Onward
+
+**From Phase 2 onward, ALL spine runs MUST go through the dashboard UI — never through the CLI eval script (`scripts/run-spine-eval.ts`) or direct Node.js invocation.** The CLI was Phase 0's verification tool. From now on, if a feature can't be exercised through the dashboard, it's not done.
+
+Why this matters:
+- **No backdoors.** If we keep running the spine via CLI, we never feel the UX pain that real developers will hit. Every friction point, missing animation, blank screen, or silent 8-minute wait must be experienced firsthand through the dashboard.
+- **Dogfooding drives quality.** The implementer must submit PRDs on `/new`, watch SpineRail animate, approve gates on `/approvals`, and review findings on `/agents/[id]/live`. If any of those flows are broken or feel bad, that's a bug — not a "we'll polish later."
+- **Browser tools are the verification surface.** Use Chrome DevTools MCP and Playwright to interact with the dashboard, not `curl` or direct API calls. The dashboard IS the product.
+
+Exceptions (require explicit user waiver):
+- Debugging a specific API route in isolation (e.g., `curl /api/architect` to test SSE streaming before the UI is wired) — acceptable as a temporary debug step, but the final verification must go through the dashboard UI.
+- Running the tiny fixture for rapid iteration during development — still through the dashboard, just a faster fixture.
+
 ## Non-goals
 
 - Building the Implementer / Reviewer agent packages themselves (owned by M4 — this plan cannot start until that work is done).
