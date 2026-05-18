@@ -29,16 +29,16 @@ const chipPurple: MantineColorsTuple = [
 ];
 
 const chipDark: MantineColorsTuple = [
-  '#e2e8f0',
-  '#94a3b8',
-  '#64748b',
-  '#475569',
-  '#2d2f42',
-  '#252736',
-  '#1a1b2e',
-  '#13141f',
-  '#0f1117',
-  '#0a0b0f',
+  '#fafafa',
+  '#a1a1aa',
+  '#71717a',
+  '#52525b',
+  '#3f3f46',
+  '#27272a',
+  '#18181b',
+  '#0c0c0f',
+  '#0a0a0d',
+  '#09090b',
 ];
 
 export const chipTheme = createTheme({

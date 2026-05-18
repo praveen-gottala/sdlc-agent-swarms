@@ -44,7 +44,7 @@ export function ChatPanel({
   if (showWelcome) {
     return (
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-        <WelcomeHero onSubmit={onSubmitSeed} />
+        <WelcomeHero onSubmit={onSubmitSeed} isRunning={isRunning} />
       </div>
     );
   }

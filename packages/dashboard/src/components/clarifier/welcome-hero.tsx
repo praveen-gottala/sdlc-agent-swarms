@@ -27,16 +27,23 @@ const PLACEHOLDER_SUGGESTIONS = [
   'Create a real-time chat application...',
 ] as const;
 
+const ACTIVE_BLOB_COLORS = [
+  'var(--color-gradient-2)',
+  'var(--color-gradient-3)',
+] as const;
+
 interface WelcomeHeroProps {
   readonly onSubmit: (text: string, attachment?: { name: string; displayText?: string }) => void;
+  readonly isRunning?: boolean;
 }
 
-export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
+export function WelcomeHero({ onSubmit, isRunning = false }: WelcomeHeroProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [placeholderVisible, setPlaceholderVisible] = useState(true);
   const [blobColor1, setBlobColor1] = useState(0);
   const [blobColor2, setBlobColor2] = useState(2);
+  const [submitted, setSubmitted] = useState(false);
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +110,7 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
       rawInput = value.trim();
     }
 
+    setSubmitted(true);
     onSubmit(rawInput, hasFile ? { name: attachedFile.name, displayText: hasText ? value.trim() : undefined } : undefined);
     setValue('');
     setAttachedFile(null);
@@ -111,13 +119,31 @@ export function WelcomeHero({ onSubmit }: WelcomeHeroProps): React.JSX.Element {
   return (
     <div className="flex flex-1 flex-col items-center pt-[18vh] px-6">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div data-gradient-blob className="absolute left-1/4 top-1/4 h-[40vh] w-[40vw] rounded-full blur-[200px] opacity-30"
-             style={{ background: BLOB_COLORS[blobColor1], animation: 'gradient-drift 20s ease-in-out infinite', transition: 'background 3s ease-in-out' }} />
-        <div data-gradient-blob className="absolute right-1/4 bottom-1/4 h-[30vh] w-[30vw] rounded-full blur-[180px] opacity-20"
-             style={{ background: BLOB_COLORS[blobColor2], animation: 'gradient-drift 25s ease-in-out infinite reverse', transition: 'background 3s ease-in-out' }} />
+        <div data-gradient-blob className="absolute left-1/4 top-1/4 h-[40vh] w-[40vw] rounded-full blur-[200px]"
+             style={{
+               background: isRunning ? ACTIVE_BLOB_COLORS[0] : BLOB_COLORS[blobColor1],
+               opacity: isRunning ? 0.45 : 0.30,
+               animation: 'gradient-drift 20s ease-in-out infinite',
+               transition: 'background 1.5s ease-in-out, opacity 1.5s ease-in-out',
+             }} />
+        <div data-gradient-blob className="absolute right-1/4 bottom-1/4 h-[30vh] w-[30vw] rounded-full blur-[180px]"
+             style={{
+               background: isRunning ? ACTIVE_BLOB_COLORS[1] : BLOB_COLORS[blobColor2],
+               opacity: isRunning ? 0.35 : 0.20,
+               animation: 'gradient-drift 25s ease-in-out infinite reverse',
+               transition: 'background 1.5s ease-in-out, opacity 1.5s ease-in-out',
+             }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-[640px]">
+      <div
+        className="relative z-10 w-full max-w-[640px]"
+        style={{
+          opacity: submitted ? 0 : 1,
+          transform: submitted ? 'scale(0.95) translateY(-12px)' : 'scale(1) translateY(0)',
+          transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+          pointerEvents: submitted ? 'none' : 'auto',
+        }}
+      >
         <div className="text-center mb-8">
           <div className="mb-4 flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-accent-indigo/8 border border-accent-indigo/15">
             <svg className="h-5 w-5 text-accent-indigo" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

@@ -68,7 +68,7 @@ export function DashboardShell({
   const [budgetTotal, setBudgetTotal] = useState(0);
 
   const runProgress = useRunProgress(activeRunId);
-  usePipelineNotifications(activeRunId, runProgress);
+  const { unreadCount } = usePipelineNotifications(activeRunId, runProgress);
 
   useEffect(() => {
     Promise.all([
@@ -271,6 +271,7 @@ export function DashboardShell({
           budgetUsed={budgetUsed}
           budgetTotal={budgetTotal}
           activeAgents={headerAgents}
+          unreadCount={unreadCount}
           activityOpen={activityOpen}
           onToggleActivity={() => {
             setActivityOpen((prev) => {

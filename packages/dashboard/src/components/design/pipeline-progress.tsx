@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Stepper, Text, Group, Stack, Alert, Loader, Center } from '@mantine/core';
+import { Stepper, Text, Group, Stack, Alert, Loader, Center, Box } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { useRunProgress } from '@/lib/hooks/use-run-progress';
 import type { StageTiming } from '@/lib/hooks/use-run-progress';
 import { Button } from '../ui/button';
+import { StageDetailCard } from '../pipeline/stage-detail-card';
+import { FunFacts } from '../pipeline/fun-facts';
 
 const STAGES = [
-  { name: 'Research', agent: 'ux_research' },
-  { name: 'Planning', agent: 'ux_planning' },
-  { name: 'Design', agent: 'penpot_design' },
+  { name: 'Research', agent: 'ux_research', color: '#6366f1' },
+  { name: 'Planning', agent: 'ux_planning', color: '#8b5cf6' },
+  { name: 'Design', agent: 'penpot_design', color: '#3b82f6' },
 ];
 
 function formatElapsed(ms: number): string {
@@ -85,21 +87,17 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
   }
 
   const activeStep = isComplete ? STAGES.length : currentStageIdx;
+  const activeStage = STAGES[currentStageIdx];
+  const activeTiming = activeStage ? progress.stageTimings?.[activeStage.name] : null;
 
   return (
     <Center h="100%" px="xl">
-      <Stack align="center" gap="xs">
+      <Stack align="center" gap="md">
         <Text size="md" fw={600}>
           {isComplete ? 'Pipeline Complete' : isFailed ? 'Pipeline Failed' : 'Design Pipeline Running'}
         </Text>
-        <Text size="sm" c="dimmed" mb="xl">
-          {isComplete
-            ? 'All stages completed successfully'
-            : isFailed
-              ? progress.error ?? 'An error occurred'
-              : 'Research, Planning, and Design stages running sequentially'}
-        </Text>
 
+        {/* Stepper */}
         <Stepper
           active={activeStep}
           size="sm"
@@ -115,15 +113,10 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
             const timing: StageTiming | undefined = progress.stageTimings?.[stage.name];
 
             let statusText = 'Pending';
-            if (isDone) {
-              statusText = 'Complete';
-            } else if (isActive && isPending) {
-              statusText = 'Starting...';
-            } else if (isActive) {
-              statusText = progress.stageDescription ?? 'Running...';
-            } else if (hasFailed) {
-              statusText = 'Failed';
-            }
+            if (isDone) statusText = 'Complete';
+            else if (isActive && isPending) statusText = 'Starting...';
+            else if (isActive) statusText = progress.stageDescription ?? 'Running...';
+            else if (hasFailed) statusText = 'Failed';
 
             return (
               <Stepper.Step
@@ -149,11 +142,6 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
                         {formatElapsed(timing.durationMs)}
                       </Text>
                     )}
-                    {isDone && !timing?.durationMs && progress.cost && (
-                      <Text size="xs" c="dimmed">
-                        ~${(progress.cost.totalCostUsd / STAGES.length).toFixed(3)}
-                      </Text>
-                    )}
                   </Stack>
                 }
               />
@@ -161,8 +149,29 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
           })}
         </Stepper>
 
+        {/* Stage detail card — shows during active runs */}
+        {(isRunning || isPending) && activeStage && (
+          <Box mt="md" w="100%" style={{ display: 'flex', justifyContent: 'center' }}>
+            <StageDetailCard
+              stageName={activeStage.name}
+              stageDescription={progress.stageDescription}
+              startedAt={activeTiming?.startedAt ?? progress.startedAt}
+              cost={progress.cost}
+              progress={progress.progress}
+              estimatedRemainingMs={progress.estimatedRemainingMs}
+              stageColor={activeStage.color}
+            />
+          </Box>
+        )}
+
+        {/* Fun facts during long waits */}
+        {(isRunning || isPending) && progress.startedAt && (
+          <FunFacts startedAt={progress.startedAt} minWaitSeconds={30} />
+        )}
+
+        {/* Completion stats */}
         {isComplete && (
-          <Stack align="center" gap={4} mt="lg">
+          <Stack align="center" gap={4} mt="lg" style={{ animation: 'stage-complete-flash 1s ease-out' }}>
             {progress.cost && (
               <Text size="xs" c="dimmed">
                 Total: ${progress.cost.totalCostUsd.toFixed(4)} · {progress.cost.tokensUsed.toLocaleString()} tokens
@@ -179,12 +188,14 @@ export function PipelineProgress({ runId, model = 'claude-sonnet-4-6', onComplet
           </Stack>
         )}
 
+        {/* Overall elapsed */}
         {(isRunning || isPending) && progress.startedAt && (
-          <Text size="xs" c="dimmed" mt="lg">
-            Elapsed: <ElapsedTimer since={progress.startedAt} />
+          <Text size="xs" c="dimmed" mt="sm">
+            Total elapsed: <ElapsedTimer since={progress.startedAt} />
           </Text>
         )}
 
+        {/* Error display */}
         {isFailed && progress.error && (
           <Alert color="red" variant="light" maw={400} mt="md">
             <Text size="xs">{progress.error}</Text>

@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import { IconLayoutKanban } from '@tabler/icons-react';
 import { TaskCard } from './task-card';
 import type { TaskCardProps, TaskStatus } from './task-card';
+import { EmptyState } from '../ui/empty-state';
 
 /** Column definition for the Kanban board. */
 interface KanbanColumn {
@@ -92,9 +94,12 @@ export function KanbanBoard({ tasks, onStatusChange }: KanbanBoardProps) {
               </div>
             ))}
             {col.tasks.length === 0 && (
-              <p className="text-center text-[11px] text-text-muted py-8">
-                No tasks
-              </p>
+              <EmptyState
+                compact
+                icon={IconLayoutKanban}
+                title="Drag tasks here"
+                description="Tasks appear when the pipeline runs"
+              />
             )}
           </div>
         </div>

@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ApprovalCard, type ApprovalCardProps } from '@/components/approvals/approval-card';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { IconCircleCheck } from '@tabler/icons-react';
 
 interface RecentDecision {
   id: string;
@@ -104,6 +106,14 @@ export default function ApprovalsPage() {
 
       {/* Pending approvals */}
       <section className="space-y-4">
+        {pendingApprovals.length === 0 && (
+          <EmptyState
+            icon={IconCircleCheck}
+            title="All clear"
+            description="When the pipeline reaches a HITL gate, pending reviews appear here. Configure gate thresholds in Trust settings."
+            action={{ label: 'Configure trust', href: '/trust' }}
+          />
+        )}
         {pendingApprovals.map((approval) => (
           <ApprovalCard key={approval.id} {...approval} onDecide={handleDecide} />
         ))}
@@ -142,7 +152,9 @@ export default function ApprovalsPage() {
               })}
               {recentDecisions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-text-muted">No recent decisions</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-text-muted text-xs">
+                    Decision history will appear here after you approve or reject an item.
+                  </td>
                 </tr>
               )}
             </tbody>

@@ -17,6 +17,8 @@ export interface FeedEvent {
 export interface UseEventFeedResult {
   /** Recent events, most recent first */
   readonly events: readonly FeedEvent[];
+  /** Whether the feed is auto-polling (active run detected) */
+  readonly isLive: boolean;
   /** Add a new event to the feed */
   addEvent: (event: FeedEvent) => void;
   /** Clear all events */
@@ -95,9 +97,13 @@ export function mapAuditEntryToFeedEvent(entry: AuditEntry): FeedEvent {
  * No polling — avoids saturating the browser connection pool during
  * page switches and spec loading.
  */
+const LIVE_POLL_MS = 5_000;
+
 export function useEventFeed(): UseEventFeedResult {
   const [events, setEvents] = useState<FeedEvent[]>([]);
+  const [isLive, setIsLive] = useState(false);
   const localEventsRef = useRef<FeedEvent[]>([]);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -108,21 +114,39 @@ export function useEventFeed(): UseEventFeedResult {
       const fetched = data.entries.map(mapAuditEntryToFeedEvent);
       const local = localEventsRef.current;
 
-      // Merge: local events first (newest), then fetched, deduplicated
       const fetchedIds = new Set(fetched.map((e) => e.id));
       const uniqueLocal = local.filter((e) => !fetchedIds.has(e.id));
       const merged = [...uniqueLocal, ...fetched].slice(0, MAX_EVENTS);
 
       setEvents(merged);
+
+      const hasRecentActivity = fetched.some(
+        (e) => Date.now() - e.timestamp < 5 * 60 * 1000,
+      );
+      setIsLive(hasRecentActivity);
     } catch {
-      // Silently ignore fetch errors — dashboard should not crash
+      // Silently ignore fetch errors
     }
   }, []);
 
-  // Fetch once on mount
   useEffect(() => {
     void fetchEvents();
   }, [fetchEvents]);
+
+  useEffect(() => {
+    if (isLive && !pollRef.current) {
+      pollRef.current = setInterval(() => void fetchEvents(), LIVE_POLL_MS);
+    } else if (!isLive && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [isLive, fetchEvents]);
 
   const addEvent = useCallback((event: FeedEvent) => {
     localEventsRef.current = [event, ...localEventsRef.current];
@@ -137,5 +161,5 @@ export function useEventFeed(): UseEventFeedResult {
     setEvents([]);
   }, []);
 
-  return { events, addEvent, clearEvents, refresh: fetchEvents };
+  return { events, isLive, addEvent, clearEvents, refresh: fetchEvents };
 }

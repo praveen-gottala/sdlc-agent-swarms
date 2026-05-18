@@ -14,17 +14,13 @@
 import { execSync } from 'child_process';
 import { resolve } from 'path';
 
-const DASHBOARD_SRC = resolve(__dirname);
+const DASHBOARD_SRC = resolve(__dirname, '../src');
 
 /**
  * Whitelisted setInterval usages. Each entry documents WHY the polling
  * is acceptable and WHEN it stops (the guard condition).
  */
 const WHITELIST: Array<{ file: string; justification: string }> = [
-  {
-    file: 'components/layout/header-bar.tsx',
-    justification: 'Clock tick — 1s interval, single lightweight setState, no network call',
-  },
   {
     file: 'components/design/pipeline-progress.tsx',
     justification: 'Elapsed timer during active pipeline — UI-only, no network call',
@@ -123,7 +119,7 @@ describe('No unguarded polling', () => {
         '',
         'If this polling is intentional:',
         '  1. Ensure it has a guard (e.g., only poll while a pipeline is running)',
-        '  2. Add it to the WHITELIST in no-unguarded-polling.test.ts',
+        '  2. Add it to the WHITELIST in __tests__/no-unguarded-polling.test.ts',
         '  3. Prefer load-once + refresh button over continuous polling',
       ].join('\n');
 
