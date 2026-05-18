@@ -5,7 +5,7 @@
 ## Related Documents
 
 - **Parent:** [`execution-plan.md`](execution-plan.md) — milestone table, M4.5 sketch in §Deferred / Follow-Up Plans
-- **M4 plan:** [`m4-execution-plan.md`](m4-execution-plan.md) — M4.5 sketch origin, pre-shipped assets
+- **M4 plan (completed):** [`../../completed/chips-next-steps-m4/execution-plan.md`](../../completed/chips-next-steps-m4/execution-plan.md) — M4.5 sketch origin, pre-shipped assets
 - **Vision Layer 9:** [`docs/vision.md`](../../../vision.md) — 4-pass Reviewer topology
 - **Skills:** `.claude/skills/mid-session-drift-check/SKILL.md`, `.claude/skills/review-plan-impl/references/rubric.md`
 - **Guide:** [`docs/guides/planning-docs.md`](../../../guides/planning-docs.md) — verification gate (canonical)

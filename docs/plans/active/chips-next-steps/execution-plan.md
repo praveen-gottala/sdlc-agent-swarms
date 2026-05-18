@@ -862,7 +862,7 @@ Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-on
 
 ### M4: Full Spine — COMPLETE (2026-05-18)
 
-**Child execution plan:** [`m4-execution-plan.md`](m4-execution-plan.md) (7 phases: ADR-057 routing + instrumentation → brownfield schemas → delta design specialist → Architect TaskPlan wiring → Implementer graph → Reviewer graph → full spine eval).
+**Child execution plan:** [`../../completed/chips-next-steps-m4/execution-plan.md`](../../completed/chips-next-steps-m4/execution-plan.md) (7 phases: ADR-057 routing + instrumentation → brownfield schemas → delta design specialist → Architect TaskPlan wiring → Implementer graph → Reviewer graph → full spine eval).
 
 Design stage becomes Implementer specialist tool. Reviewer is self-contained. Task-level git-worktree parallelism (R1) is **deferred** — M4 ships sequential single-threaded execution per task. Gate 6a (spine passes) and Gate 6b (regression guard) both PASSED 2026-05-18.
 

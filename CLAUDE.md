@@ -42,7 +42,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 
 **Backlog plans (do NOT read during session-start):** Screen Types Plan B (`docs/plans/backlog/screen-types-plan-b.md`), Docs Tutorials (`docs/plans/backlog/docs-tutorials.md`), Clarifier Streaming (`docs/plans/active/clarifier-streaming/`), Eval Documentation (`docs/plans/active/eval-documentation/`).
 
-**Completed plans (do NOT read during session-start):** 7 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
+**Completed plans (do NOT read during session-start):** 20 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
 
 <!-- Last session: max 2 lines — status + next action only. Details belong in the plan's execution-plan.md. -->
 **Last session (2026-05-18):** M4 COMPLETE — Gate 6a/6b passed, Phase 7 gate findings resolved, end-of-plan gate closed. M4.5 execution plan drafted. Next: M4.5 Phase 1 (Assumption Validator node split).
