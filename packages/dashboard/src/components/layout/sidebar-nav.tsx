@@ -57,7 +57,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Execute',
     items: [
       { icon: IconListCheck, label: 'Tasks', href: '/tasks' },
-      { icon: IconRobot, label: 'Agents', href: '/agents' },
+      { icon: IconRobot, label: 'Pipeline', href: '/agents' },
       { icon: IconCircleCheck, label: 'Approvals', href: '/approvals', badgeKey: 'approvals' },
     ],
   },

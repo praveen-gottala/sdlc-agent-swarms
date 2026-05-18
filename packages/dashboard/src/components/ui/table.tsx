@@ -48,17 +48,16 @@ export function Table<T extends object>({
   );
 
   return (
-    <MantineTable.ScrollContainer minWidth={0} className={className}>
+    <MantineTable.ScrollContainer minWidth={0} className={className} style={{ backgroundColor: 'transparent' }}>
       <MantineTable
         striped
         highlightOnHover
-        withTableBorder
         stripedColor="var(--color-bg-card)"
         highlightOnHoverColor="var(--color-bg-card)"
         borderColor="var(--color-border)"
         styles={{
-          table: { backgroundColor: 'var(--color-bg-base)' },
-          thead: { backgroundColor: 'var(--color-bg-card)' },
+          table: { backgroundColor: 'transparent', borderCollapse: 'separate', borderSpacing: 0 },
+          thead: { backgroundColor: 'var(--color-bg-card)', borderRadius: '8px 8px 0 0' },
           tr: { borderColor: 'var(--color-border)' },
         }}
       >

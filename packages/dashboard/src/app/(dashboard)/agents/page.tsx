@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { AgentLearnings } from '@/components/agents/agent-learnings';
 import { SpineStageCard, type StageStatus } from '@/components/agents/spine-stage-card';
 import { SPINE_STAGES } from '@/components/spine/spine-constants';
-import { SpineRail } from '@/components/spine/spine-rail';
 
 interface StageStats {
   runsCompleted: number;
@@ -52,8 +51,6 @@ export default function AgentsPage(): React.JSX.Element {
       .catch(() => setLoading(false));
   }, []);
 
-  const activeStageIdx = SPINE_STAGES.findIndex((s) => stats[s.key]?.status === 'running');
-
   if (loading) {
     return <div className="flex items-center justify-center h-64 text-text-muted">Loading...</div>;
   }
@@ -67,11 +64,6 @@ export default function AgentsPage(): React.JSX.Element {
           <p className="mt-1 text-sm text-text-muted">
             Your idea flows through four stages — each one bringing it closer to production
           </p>
-        </div>
-
-        {/* Mini SpineRail showing the flow */}
-        <div className="mb-8 py-4">
-          <SpineRail activeStage={activeStageIdx} variant="compact" />
         </div>
 
         {/* Stage cards — 2x2 grid */}

@@ -243,7 +243,6 @@ export function DashboardShell({
         },
         main: {
           background: 'var(--color-bg-base)',
-          height: '100vh',
           minHeight: '100vh',
           borderRadius: '16px 0 0 0',
           borderLeft: '1px solid var(--color-border-bright)',
