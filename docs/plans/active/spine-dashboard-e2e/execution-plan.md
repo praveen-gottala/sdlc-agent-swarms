@@ -1,6 +1,6 @@
 # Spine Dashboard End-to-End
 
-## Status: Phase 0 COMPLETE (2026-05-18) — Phase 1 unblocked
+## Status: Phase 1 COMPLETE (2026-05-18) — Phase 2 unblocked
 
 ## Related Documents
 
@@ -321,25 +321,52 @@ tests prove the code compiles. The walkthrough proves the experience is worth $1
 
 ### Tasks
 
-- [ ] **Reconcile [`spine-constants.ts`](../../../../packages/dashboard/src/components/spine/spine-constants.ts).** All four stages should now legitimately be `implemented: true` because M4 is COMPLETE. If [`spine-constants.ts:19`](../../../../packages/dashboard/src/components/spine/spine-constants.ts) was previously `true` based on a premature assumption (drift item from initial audit), update inline justification comment to reference M4 exit criteria #4 and #5.
-- [ ] **Reconcile [`run-manager.ts:30`](../../../../packages/dashboard/src/app/api/_lib/run-manager.ts) `RunStatus['type']` union.** Current value: `'init' | 'design-generate' | 'design-penpot' | 'design-browser' | 'design-chat-iterate' | 'implementer'`. Add `'architect'` and `'reviewer'`. Implementer already present — leave as-is.
-- [ ] **Replace hard-coded `badge: 3`** at [`sidebar-nav.tsx:61`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx) with a real fetch from `/api/approvals` returning the live pending-gate count (the count is real because gates are real because M4 is done; the panel UI lands in Phase 3).
-- [ ] **Decide nav layout once.** Confirm assumption A4 (no new top-level routes) by listing every artifact the spine produces and mapping each to an existing page from the screen-by-screen analysis. If any artifact has no natural home, add the route to `NAV_SECTIONS` at [`sidebar-nav.tsx:47-87`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx) here, not later. Document the final decision in this plan file under a new "Nav decision" subsection.
+- [x] **Reconcile [`spine-constants.ts`](../../../../packages/dashboard/src/components/spine/spine-constants.ts).** All four stages already `implemented: true`. Added JSDoc comment referencing M4 exit criteria #4 (Implementer LangGraph package) and #5 (Reviewer LangGraph package).
+- [x] **Reconcile [`run-manager.ts:30`](../../../../packages/dashboard/src/app/api/_lib/run-manager.ts) `RunStatus['type']` union.** Already includes `'architect'` and `'reviewer'` alongside `'clarifier'` and `'implementer'`. No change needed — the plan's description was based on a stale snapshot.
+- [x] **Replace hard-coded `badge: 3`** — ALREADY DONE (M4 Phase 7 session, 2026-05-17). `useApprovalCount()` hook at [`sidebar-nav.tsx:121-138`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx) fetches from `/api/approvals` with 30s polling. Badge hidden when count is 0.
+- [x] **Decide nav layout once.** A4 confirmed — see [Nav decision](#nav-decision-phase-1) below.
 
 ### Verification
 
-- [ ] `nx run-many -t typecheck test lint` — green.
-- [ ] Manual: open dashboard, confirm sidebar renders with real badge count (0 is fine if no run is pending), `SpineRail` shows all 4 stages as `implemented`.
+- [x] `nx run-many -t typecheck test lint` — green. 512 tests passed, 0 errors, 0 lint errors.
+- [x] Manual: open dashboard, confirmed sidebar renders with real badge count (0 — no pending gates), `SpineRail` shows all 4 stages (Clarify, Architect, Implement, Review). Screenshot saved.
 
 ### Phase 1 Quality Gate (all must pass before proceeding)
 
-- [ ] `nx run-many -t typecheck test lint` — zero failures
-- [ ] **Browser verification:** Open the dashboard with Chrome DevTools MCP. Take screenshot of sidebar + SpineRail. Verify badge shows "0" (not hardcoded "3"). Verify all 4 SpineRail stages show as implemented.
-- [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 1`
-- [ ] `/mid-session-drift-check`
-- [ ] **Self-review:** Read every changed file against the animation requirements in the cross-cutting section. Does anything you added look generic or placeholder-ish? If so, fix it now.
+- [x] `nx run-many -t typecheck test lint` — zero failures (512 passed, 22 lint warnings, 0 errors)
+- [x] **Browser verification:** Opened dashboard with Playwright MCP. Screenshot of sidebar + SpineRail captured. Badge not visible (count=0, hidden when 0 — not hardcoded "3"). All 4 SpineRail stages render with labels confirmed via DOM query.
+- [x] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 1` — PASSED. All plan-listed files accounted for (2 already done, 2 modified). No scope creep, no dead code, no test gaps. Report at `artifacts/plan-impl-review/2026-05-18-phase1/report.md`.
+- [x] `/mid-session-drift-check` — PASSED. 9 rules checked, all CLEAN. One minor item fixed (moved screenshot to `packages/eval/results/spine-dashboard-e2e/phase-1/`).
+- [x] **Self-review:** Only change is one JSDoc comment on `spine-constants.ts:18` and plan file updates. No animation code touched. Nothing generic or placeholder-ish added.
 
 **Celebrate:** Phase 1 done means the dashboard skeleton is honest — every stage it shows is real. That's a solid foundation.
+
+### Nav decision (Phase 1)
+
+**A4 confirmed: no new top-level routes.** Every spine artifact maps to an existing page route. No changes to `NAV_SECTIONS` in `sidebar-nav.tsx`.
+
+| Spine Artifact | Route | Nav Section | Notes |
+|---|---|---|---|
+| Raw PRD input | `/new` | (standalone CTA) | Exists |
+| EnrichedRequirement | `/spec` | Build → Spec | Phase 5 adds tabs |
+| AssumptionLedger | `/trust` | Govern → Trust | Phase 8 populates |
+| FeaturePlan | `/spec` | Build → Spec | Phase 5 adds tabs |
+| OptionsBundle | `/spec` | Build → Spec | Phase 5 adds tabs |
+| ArchitectureSpec | `/spec` | Build → Spec | Phase 5 adds tabs |
+| ContractBundle | `/spec` | Build → Spec | Phase 5 adds tabs |
+| ADRs | `/audit` | Not in nav yet | Phase 5 creates content; nav entry added then |
+| TaskPlan DAG | `/tasks` + `/pipeline` | Execute → Tasks, Build → Runs | Phase 4 enhances |
+| DesignSpec per screen | `/design` | Build → Design Studio | Exists |
+| DesignSpecDelta | `/design` | Build → Design Studio | Phase 7 adds delta viewer |
+| Code output / tool traces | `/agents/[id]/live` | Execute → Pipeline | Phase 5 populates |
+| ReviewResult + findings | `/agents/[id]/live` | Execute → Pipeline | Phase 5 populates |
+| Run progress (SSE) | `/pipeline` | Build → Runs | Phase 2 wires SSE |
+| HITL Gates 1-3 | `/approvals` | Execute → Approvals | Phase 3 wires panels |
+| Cost breakdown | `/costs` | Govern → Budget | Phase 8 populates |
+| Instrumentation traces | `/traces` | Not in nav yet | Phase 8 creates content; nav entry added then |
+| Assumption violations | `/trust` | Govern → Trust | Phase 8 populates |
+
+**Routes without nav entries (`/audit`, `/traces`):** Both pages exist as routes but have no sidebar nav items. Nav entries will be added by Phase 5 and Phase 8 respectively when those pages get real content. Adding empty nav items now would violate A1 (no placeholders).
 
 ---
 

@@ -15,6 +15,7 @@ export interface SpineStage {
   readonly description: string;
 }
 
+/** All stages backed by working LangGraph agents — M4 exit criteria #4 (Implementer) and #5 (Reviewer). */
 export const SPINE_STAGES: readonly SpineStage[] = [
   { key: 'clarifier', label: 'Clarify', icon: IconSparkles, implemented: true, color: '#6366f1', description: 'Analyzing requirements and asking targeted questions' },
   { key: 'architect', label: 'Architect', icon: IconBolt, implemented: true, color: '#8b5cf6', description: 'Designing architecture, APIs, and task plan' },
