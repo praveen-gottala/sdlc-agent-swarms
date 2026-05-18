@@ -357,9 +357,9 @@ From `vision.md` Layer 8, still unresolved:
 
 ### Implementation Guidance
 
-**Package location:** `packages/agents-reviewer/` (not yet created).
+**Package location:** `packages/agents-reviewer/` (M4 complete 2026-05-18).
 
-**LangGraph structure:** Four sequential nodes in a StateGraph: `deterministic-gates` → `llm-review` → `assumption-validator` → `triage`. Each node is a `ReviewPass` that takes `(diff, referenceDoc, rubric)` and produces `Finding[]`.
+**LangGraph structure (v1):** Three sequential nodes in a StateGraph: `deterministicGates` → `llmReview` → `emitReviewResult`. Vision Layer 9 passes 3+4 (assumption validator + triage) collapsed into the `llmReview` prompt as a v1 simplification. M4.5 splits into 4-node topology: `deterministicGates` → `llmReview` → `assumptionValidator` → `emitReviewResult`. See `docs/plans/active/chips-next-steps/m4-5-execution-plan.md` Phase 1.
 
 **Pattern prototype:** The `/review-plan-impl` skill (`.claude/skills/review-plan-impl/`) validates two key patterns at the tool level before they are productionized in the LangGraph Reviewer:
 

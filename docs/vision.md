@@ -101,16 +101,16 @@ CHIP is an autonomous multi-agent SDLC framework that takes a product idea and p
 |---|---|---|---|---|
 | 1 | Orchestration runtime | Done | TypeScript LangGraph adopted (ADR-043). Python engine deprecated. | TypeScript LangGraph only |
 | 2 | Coordination substrate | Partial | Clarifier uses typed channels. Older code still uses EventEmitter for some control flow. | Typed LangGraph channels for control; event bus relegated to telemetry |
-| 3 | Agent taxonomy | Partial | Clarifier + Design pipeline operational as spine stages. Architect/Implementer/Reviewer not built. | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
+| 3 | Agent taxonomy | Done | All four spine stages operational: Clarifier (9-node), Architect (7-node), Implementer (4-node), Reviewer (3-node). M4 complete 2026-05-18. | Four-stage spine (Clarifier, Architect, Implementer, Reviewer) + specialist tools |
 | 4 | State persistence | Partial | YAML artifacts operational. Checkpointer factory built (MemorySaver/PostgresSaver). Wired into Clarifier pipeline; design pipeline uses imperative caching. | YAML for artifacts + Postgres LangGraph checkpointer for run state |
 | 5 | Clarifier / input | Done | Nine-node LangGraph StateGraph with HITL interrupts, assumption ledger, escalation handling. | Nine-node conversational clarifier with assumption ledger |
 | 6 | RAG / context | Done | Hybrid search (BM25+dense+rerank) for code/docs/designs. Repo map. 5 MCP tools. Wired into Clarifier. | Aider-style repo map + voyage-code-3 + Qdrant for code; LlamaIndex + voyage-3-large for docs |
 | 7 | Design pipeline | Partial | Per-screen pipeline works (Research→Planning→Design→Evaluator). Cross-screen coherence is post-hoc. | In-loop cross-screen coherence with shared running context |
-| 8 | Implementation | Not started | Architecture specified (single-threaded, sequential write order). No code. | Single-threaded tool-loop implementer with sequential write order |
-| 9 | Review | Not started | Architecture specified (fresh context, deterministic gates first). No code. | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
+| 8 | Implementation | Done | `packages/agents-implementer/` — 4-node LangGraph (loadTaskContext → runDesignSpecialist → generateCode → reportCompletion). ADR-057 task-type-aware design slice routing. 9 tools. M4 complete 2026-05-18. | Single-threaded tool-loop implementer with sequential write order |
+| 9 | Review | Partial | `packages/agents-reviewer/` — 3-node LangGraph (deterministicGates → llmReview → emitReviewResult). 5 deterministic gates. Vision Layer 9 passes 3+4 collapsed into llmReview prompt (v1 simplification). M4.5 splits into 4-node topology. | Fresh-context reviewer with deterministic gates + LLM review + assumption validator |
 | 10 | HITL | Partial | Two gates operational (clarification interrupt, design approval). Code merge gate not built. | Three gates: clarification, design/API, code merge |
 | 11 | Observability | Done | Langfuse self-hosted + OTel spans + prompt versioning + cost tracking per call. | OpenTelemetry + Langfuse + prompt versioning + cost tracking |
-| 12 | Evaluation | Not started | Design evaluator exists (structural + vision). No golden test sets. | Golden test sets with CI-integrated regression detection |
+| 12 | Evaluation | Partial | Design evaluator (structural + vision). `packages/eval/` with clarifier, architect, and spine eval scenarios. M3.6 design-info 90-cell matrix. M4 spine eval (greenfield + brownfield). No CI integration yet. | Golden test sets with CI-integrated regression detection |
 | 13 | Sandboxing | Not started | Runs on dev machine. Zero-secret design principle followed. | Ephemeral containers, egress allowlist, zero-secret agent design |
 
 ```mermaid
@@ -230,7 +230,7 @@ The `CLAUDE.md` rule at repo root that mandates event-bus-only communication is 
 
     The original PRD v2.0 described ten peer agents (PM, Product, Architect, Design, Implementation, Testing, Review, DevOps, Security, Docs) communicating via event bus. This design was rejected during research before any code was written. The spine architecture was the first and only implementation. The ten-agent taxonomy is preserved here as context for why the spine was chosen.
 
-Four-stage spine with the Clarifier operational (9-node LangGraph StateGraph, Tasks 1.0–1.7 complete). RAG layer wired into Clarifier's Context Retriever. Architect, Implementer, and Reviewer specified but not yet built. Six specialist tools defined, two operational (RAG, Design).
+Four-stage spine fully operational (M4 complete 2026-05-18): Clarifier (9-node), Architect (7-node with 15-gate Critic), Implementer (4-node with ADR-057 design slice routing), Reviewer (3-node with 5 deterministic gates). RAG layer wired into Clarifier's Context Retriever. Six specialist tools defined, four operational (RAG, Design, Implementer tools, Reviewer gates). Full spine eval passes on CashPulse greenfield + brownfield.
 
 ### Target vision
 **Four-stage spine with specialists as tools:**
@@ -569,9 +569,10 @@ graph TD
     For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
-- Implementation Agent described in PRD v2.0 Section 11.3.1 as a parallel fan-out: Frontend Coder + Backend Coder + Test Writer running concurrently via `max_concurrent_agents: 3`.
-- PRD Section 24.2 roadmaps this explicitly: "Multi-agent code generation (frontend + backend + tests in parallel)."
-- Shipped code to date does not yet implement this; it's still in roadmap phase.
+- `packages/agents-implementer/` — 4-node LangGraph graph: `loadTaskContext` → `runDesignSpecialist` (frontend only) → `generateCode` (tool-loop, 20 iterations max) → `reportCompletion`. 10 state channels, 9 tools (`read_file`, `write_file`, `apply_patch`, `run_typecheck`, `run_tests`, `run_lint`, `report_assumption_violation`, plus design specialist as internal node).
+- ADR-057 task-type-aware design slice routing: NEW tasks omit design context, MODIFY tasks receive structure-only slice via `extractStructure()`.
+- Sequential single-task execution (no git-worktree parallelism yet — deferred to R1/orchestrator).
+- PRD Section 24.2's parallel pattern (frontend + backend + tests in parallel) explicitly rejected per this layer's locked decision. See ADR-057.
 
 ### Target vision
 **Single-threaded tool-loop implementer** that writes all code for a task sequentially in one LLM conversation. Task-level parallelism achieved via git worktrees on independent features.
@@ -648,8 +649,10 @@ graph LR
     For an expanded overview with diagrams, see [Concepts: Agent Taxonomy](concepts/agent-taxonomy.md)
 
 ### Current state
-- Review Agent exists in PRD but not implemented.
-- Current flow: implementation complete → PR created → human reviews.
+- `packages/agents-reviewer/` — 3-node LangGraph graph: `deterministicGates` (5 gates) → `llmReview` (fresh-context, structured output) → `emitReviewResult`. 8 state channels.
+- Deterministic gates: file-path-coverage, single-writer, prd-criterion-refs, governance-scan, diff-non-empty.
+- Vision passes 3+4 (assumption validator + triage) collapsed into `llmReview` prompt as v1 simplification. M4.5 splits into separate `assumptionValidator` node (4-node topology).
+- Caller (CLI/orchestrator) owns bounded retry (≤2 revisions before escalation). Reviewer emits `ReviewResult` with `outcome: 'approved' | 'rejected' | 'escalated'`.
 
 ### Target vision
 Reviewer as a spine stage running in fresh LangGraph context (not inheriting the Implementer's conversation). Multi-stage review:
@@ -1033,11 +1036,11 @@ For every layer above, the current state diverges from the target. Here's the si
 | RAG | Build `packages/retrieval` | 2 | ✅ Complete |
 | Agent taxonomy | Collapse ten agents into four-stage spine | Spread across 3, 4, 5, 6 | Partial |
 | Design pipeline | Move coherence in-loop, add batch coordinator | 4 | Partial |
-| Implementation | Kill parallel code-gen; build single-threaded implementer | 5 | Not started |
-| Review | Build `packages/agents-reviewer` | 6 | Not started |
+| Implementation | Kill parallel code-gen; build single-threaded implementer | 5 | ✅ Complete (M4) |
+| Review | Build `packages/agents-reviewer` | 6 | ✅ v1 complete (M4); M4.5 enriches gates |
 | HITL | Add three gates as LangGraph interrupts | Spread across 1, 4, 6 | Partial (2 of 3) |
 | Observability | Add OTel + Langfuse + prompt versions | 7 | ✅ Complete |
-| Evaluation | Build `packages/eval` with golden sets | 8 | Not started |
+| Evaluation | Build `packages/eval` with golden sets | 8 | ✅ Clarifier + Architect + Spine eval scenarios |
 | Sandboxing | Add Docker sandboxing when scale demands | Post-POC | Not started |
 | Dashboard | Update `/new` for clarifier, pipeline for spine | Spread across 1, 3 | Partial (UX overhaul in progress) |
 | Integrations | MCP-compatible tools by default | Ongoing | Partial (MCP tools built) |
