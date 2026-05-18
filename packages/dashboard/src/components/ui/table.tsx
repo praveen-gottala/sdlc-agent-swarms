@@ -53,8 +53,14 @@ export function Table<T extends object>({
         striped
         highlightOnHover
         withTableBorder
-        stripedColor="var(--color-bg-elevated)"
-        highlightOnHoverColor="var(--color-bg-elevated)"
+        stripedColor="var(--color-bg-card)"
+        highlightOnHoverColor="var(--color-bg-card)"
+        borderColor="var(--color-border)"
+        styles={{
+          table: { backgroundColor: 'var(--color-bg-base)' },
+          thead: { backgroundColor: 'var(--color-bg-card)' },
+          tr: { borderColor: 'var(--color-border)' },
+        }}
       >
         <MantineTable.Thead>
           <MantineTable.Tr>
