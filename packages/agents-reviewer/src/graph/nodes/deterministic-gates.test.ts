@@ -22,6 +22,7 @@ function makeState(overrides: Partial<ReviewerStateType> = {}): ReviewerStateTyp
     taskCompletionReport: null,
     gateResults: [],
     gatesPassed: true,
+    assumptionValidationResults: [],
     reviewResult: null,
     errors: [],
     ...overrides,

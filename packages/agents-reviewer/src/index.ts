@@ -24,20 +24,19 @@
  * Vision Layer 9 mandates "≤ 2 retries before escalation" — this
  * contract enforces that invariant at the caller level.
  *
- * ## v1 Simplification (3-node topology)
+ * ## 4-node topology (vision Layer 9 compliant)
  *
- * Vision Layer 9 specifies a 4-pass pipeline (deterministic gates →
- * LLM review → assumption validator → triage). v1 collapses passes
- * 3 and 4 into the LLM review prompt — the LLM validates assumptions
- * and self-categorizes findings. Splitting into separate nodes is
- * deferred until production telemetry justifies the extra pass cost.
+ * Vision Layer 9 specifies a 4-pass pipeline: deterministic gates →
+ * LLM review → assumption validator → emit result. The assumption
+ * validator runs a deterministic contradiction scan for resolved
+ * assumptions and a focused LLM pass for unresolved ones.
  */
 
 // --- Dependency injection ---
 export type { ReviewerDeps, ReviewerNodeFn } from './deps.js';
 
 // --- Local types ---
-export type { GateResult } from './types.js';
+export type { GateResult, AssumptionValidationResult } from './types.js';
 
 // --- State definition ---
 export { ReviewerStateAnnotation } from './graph/state.js';
@@ -52,6 +51,7 @@ export {
 // --- Node factories ---
 export { createDeterministicGates } from './graph/nodes/deterministic-gates.js';
 export { createLlmReview } from './graph/nodes/llm-review.js';
+export { createAssumptionValidator } from './graph/nodes/assumption-validator.js';
 export { createEmitReviewResult } from './graph/nodes/emit-review-result.js';
 
 // --- Pipeline runner ---

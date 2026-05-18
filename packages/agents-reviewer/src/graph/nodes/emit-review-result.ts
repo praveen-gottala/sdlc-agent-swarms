@@ -1,12 +1,12 @@
 /**
  * @module emit-review-result
  *
- * Reviewer Node 3: emits the final ReviewResult.
+ * Reviewer Node 4: emits the final ReviewResult.
  * Deterministic — no LLM call. Composes the result from
- * gate findings + LLM review, reconciling any gate failures
- * that the LLM review may have missed.
+ * gate findings + LLM review + assumption validation results,
+ * reconciling any gate or assumption failures.
  *
- * Vision Layer 9 pass 4 (triage) — collapsed into this node in v1.
+ * Vision Layer 9 pass 4 (triage) — merges all upstream passes.
  */
 
 import { debugLog } from '@agentforge/core';
@@ -55,9 +55,21 @@ export function createEmitReviewResult(_deps: ReviewerDeps): ReviewerNodeFn {
     const allFindings = [...gateFindings, ...llmResult.findings];
     const hasBlocking = allFindings.some((f) => f.category === 'blocking');
 
-    // Reconcile outcome: if gates failed, override LLM-approved to rejected
+    // Merge assumption validation results into violation IDs
+    const assumptionViolations = state.assumptionValidationResults
+      .filter((r) => r.violated)
+      .map((r) => r.assumptionId);
+
+    const hasBlockingAssumption = state.assumptionValidationResults.some(
+      (r) => r.violated && r.severity === 'blocking',
+    );
+
+    // Reconcile outcome: gates or assumptions can override LLM-approved
     let outcome = llmResult.outcome;
     if (hasBlocking && outcome === 'approved') {
+      outcome = 'rejected';
+    }
+    if (hasBlockingAssumption && outcome === 'approved') {
       outcome = 'rejected';
     }
 
@@ -65,7 +77,7 @@ export function createEmitReviewResult(_deps: ReviewerDeps): ReviewerNodeFn {
       id: llmResult.id,
       diffId: llmResult.diffId,
       findings: allFindings,
-      assumptionViolations: llmResult.assumptionViolations,
+      assumptionViolations,
       outcome,
       revisionCount: llmResult.revisionCount,
     };

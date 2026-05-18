@@ -71,6 +71,7 @@ function makeState(overrides: Partial<ReviewerStateType> = {}): ReviewerStateTyp
     taskCompletionReport: SAMPLE_REPORT,
     gateResults: ALL_PASSED_GATES,
     gatesPassed: true,
+    assumptionValidationResults: [],
     reviewResult: null,
     errors: [],
     ...overrides,
@@ -81,7 +82,6 @@ describe('llmReview', () => {
   it('produces approved ReviewResult with no findings', async () => {
     const provider = makeMockProvider({
       findings: [],
-      assumptionViolations: [],
       outcome: 'approved',
     });
 
@@ -112,7 +112,6 @@ describe('llmReview', () => {
           evidence: 'Line 3 dereferences without check',
         },
       ],
-      assumptionViolations: [],
       outcome: 'rejected',
     });
 
@@ -131,7 +130,7 @@ describe('llmReview', () => {
   });
 
   it('escalates when governance gate failed (skips LLM)', async () => {
-    const provider = makeMockProvider({ findings: [], assumptionViolations: [], outcome: 'approved' });
+    const provider = makeMockProvider({ findings: [], outcome: 'approved' });
 
     const deps: ReviewerDeps = {
       provider,
@@ -154,7 +153,7 @@ describe('llmReview', () => {
     expect(provider.complete).not.toHaveBeenCalled();
   });
 
-  it('includes assumption violations in result', async () => {
+  it('does not include assumption content in prompt after split', async () => {
     const ledger: AssumptionLedger = {
       id: 'al-1',
       entries: [
@@ -173,8 +172,7 @@ describe('llmReview', () => {
 
     const provider = makeMockProvider({
       findings: [],
-      assumptionViolations: ['a1'],
-      outcome: 'rejected',
+      outcome: 'approved',
     });
 
     const deps: ReviewerDeps = {
@@ -186,13 +184,11 @@ describe('llmReview', () => {
     const node = createLlmReview(deps);
     const result = await node(makeState({ assumptionLedger: ledger }));
 
-    expect(result.reviewResult!.assumptionViolations).toContain('a1');
-    expect(result.reviewResult!.outcome).toBe('rejected');
+    expect(result.reviewResult!.assumptionViolations).toEqual([]);
 
-    // Wiring check: verify the assumption ledger content reached the prompt
     const callArgs = (provider.complete as jest.Mock).mock.calls[0];
     const promptContent = callArgs[0].messages[0].content as string;
-    expect(promptContent).toContain('Database supports JSON columns');
-    expect(promptContent).toContain('a1');
+    expect(promptContent).not.toContain('Assumption Ledger');
+    expect(promptContent).not.toContain('Validate the diff against the assumption ledger');
   });
 });

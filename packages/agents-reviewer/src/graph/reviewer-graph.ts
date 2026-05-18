@@ -2,9 +2,9 @@
  * @module @agentforge/agents-reviewer/graph/reviewer-graph
  *
  * LangGraph StateGraph assembly for the Reviewer pipeline.
- * Sequential: deterministicGates → llmReview → emitReviewResult → END
+ * Sequential: deterministicGates → llmReview → assumptionValidator → emitReviewResult → END
  *
- * No HITL interrupts in v1 — the Reviewer produces a ReviewResult
+ * No HITL interrupts — the Reviewer produces a ReviewResult
  * that the caller uses to drive bounded retry. The merge gate (HITL)
  * lives in the orchestrator/CLI, not inside this graph.
  *
@@ -19,20 +19,23 @@ import type { ReviewerDeps } from '../deps.js';
 import { createDeterministicGates } from './nodes/deterministic-gates.js';
 import { createLlmReview } from './nodes/llm-review.js';
 import { createEmitReviewResult } from './nodes/emit-review-result.js';
+import { createAssumptionValidator } from './nodes/assumption-validator.js';
 
 /**
  * Build the Reviewer StateGraph with typed channels.
- * 3-node v1: deterministicGates → llmReview → emitReviewResult → END
+ * 4-node: deterministicGates → llmReview → assumptionValidator → emitReviewResult → END
  */
 export function buildReviewerGraph(deps: ReviewerDeps) {
-  debugLog('buildReviewerGraph: assembling 3-node v1');
+  debugLog('buildReviewerGraph: assembling 4-node graph');
   return new StateGraph(ReviewerStateAnnotation)
     .addNode('deterministicGates', createDeterministicGates(deps))
     .addNode('llmReview', createLlmReview(deps))
+    .addNode('assumptionValidator', createAssumptionValidator(deps))
     .addNode('emitReviewResult', createEmitReviewResult(deps))
     .addEdge('__start__', 'deterministicGates')
     .addEdge('deterministicGates', 'llmReview')
-    .addEdge('llmReview', 'emitReviewResult')
+    .addEdge('llmReview', 'assumptionValidator')
+    .addEdge('assumptionValidator', 'emitReviewResult')
     .addEdge('emitReviewResult', END);
 }
 

@@ -2,11 +2,11 @@
  * @module llm-review
  *
  * Reviewer Node 2: fresh-context LLM diff review.
- * Prompt instructs the LLM to validate diff vs assumption ledger and
- * self-categorize findings as blocking/suggestion/false-positive.
+ * Handles pass 2 (LLM diff review) — categorizes findings as
+ * blocking/suggestion/false-positive.
  *
- * Vision Layer 9 v1 — collapses passes 3+4 (assumption validator + triage)
- * into the review prompt. See m4-execution-plan.md deviation note.
+ * Vision Layer 9 — assumption validation (pass 3) is handled by the
+ * dedicated assumptionValidator node.
  */
 
 import { z } from 'zod';
@@ -26,7 +26,6 @@ const LLMReviewResponseSchema = z.object({
     line: z.number().int().optional(),
     evidence: z.string(),
   })),
-  assumptionViolations: z.array(z.string()),
   outcome: ReviewOutcomeSchema,
 });
 
@@ -40,7 +39,6 @@ function buildReviewPrompt(
   gateResults: readonly GateResult[],
 ): string {
   const diff = state.diff;
-  const ledger = state.assumptionLedger;
   const report = state.taskCompletionReport;
 
   const sections: string[] = [];
@@ -81,19 +79,6 @@ function buildReviewPrompt(
     sections.push('');
   }
 
-  if (ledger && ledger.entries.length > 0) {
-    sections.push('## Assumption Ledger');
-    sections.push('Validate the diff against these assumptions:');
-    for (const entry of ledger.entries) {
-      const resolved = entry.resolvedBy ? ` (resolved by: ${entry.resolvedBy})` : '';
-      sections.push(
-        `- [${entry.id}] ${entry.statement} ` +
-        `(confidence: ${entry.confidence}, blast: ${entry.blastRadius})${resolved}`,
-      );
-    }
-    sections.push('');
-  }
-
   if (report) {
     sections.push('## Task Completion Report');
     sections.push(`Task: ${report.taskId}`);
@@ -106,11 +91,9 @@ function buildReviewPrompt(
 
   sections.push('## Instructions');
   sections.push('1. Review the diff for correctness, security, and code quality.');
-  sections.push('2. Validate the diff against the assumption ledger entries above.');
-  sections.push('3. For each finding, categorize as: blocking, suggestion, or false-positive.');
-  sections.push('4. List any assumption violations (IDs from the ledger).');
-  sections.push('5. Determine the outcome:');
-  sections.push('   - "approved" if no blocking findings and no assumption violations.');
+  sections.push('2. For each finding, categorize as: blocking, suggestion, or false-positive.');
+  sections.push('3. Determine the outcome:');
+  sections.push('   - "approved" if no blocking findings.');
   sections.push('   - "rejected" if there are fixable blocking findings.');
   sections.push('   - "escalated" if there are non-fixable issues or governance hard-blocks.');
 
@@ -225,7 +208,6 @@ export function createLlmReview(deps: ReviewerDeps): ReviewerNodeFn {
 
       debugLog(
         `llmReview: EXIT — ${parsed.data.findings.length} findings, ` +
-        `${parsed.data.assumptionViolations.length} violations, ` +
         `outcome=${parsed.data.outcome}`,
       );
 
@@ -234,7 +216,7 @@ export function createLlmReview(deps: ReviewerDeps): ReviewerNodeFn {
           id: crypto.randomUUID(),
           diffId: state.diff?.id ?? 'unknown',
           findings: parsed.data.findings,
-          assumptionViolations: parsed.data.assumptionViolations,
+          assumptionViolations: [],
           outcome: parsed.data.outcome,
           revisionCount: 0,
         },

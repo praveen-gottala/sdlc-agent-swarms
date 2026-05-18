@@ -3,7 +3,7 @@
  *
  * Typed LangGraph state definition for the Reviewer pipeline.
  * Uses Annotation from @langchain/langgraph for typed channels (vision Layer 2).
- * 8 channels — mirrors the ImplementerStateAnnotation pattern.
+ * 9 channels — mirrors the ImplementerStateAnnotation pattern.
  */
 
 import { Annotation } from '@langchain/langgraph';
@@ -14,7 +14,7 @@ import type {
   TaskCompletionReport,
   ReviewResult,
 } from '@agentforge/core';
-import type { GateResult } from '../types.js';
+import type { GateResult, AssumptionValidationResult } from '../types.js';
 
 /**
  * LangGraph state annotation for the Reviewer graph.
@@ -39,7 +39,7 @@ export const ReviewerStateAnnotation = Annotation.Root({
     default: () => null,
   }),
 
-  // --- Intermediate channels (5-6) ---
+  // --- Intermediate channels (5-7) ---
   gateResults: Annotation<readonly GateResult[]>({
     reducer: (_, b) => b,
     default: () => [],
@@ -48,8 +48,12 @@ export const ReviewerStateAnnotation = Annotation.Root({
     reducer: (_, b) => b,
     default: () => true,
   }),
+  assumptionValidationResults: Annotation<readonly AssumptionValidationResult[]>({
+    reducer: (_, b) => b,
+    default: () => [],
+  }),
 
-  // --- Output channels (7-8) ---
+  // --- Output channels (8-9) ---
   reviewResult: Annotation<ReviewResult | null>({
     reducer: (_, b) => b,
     default: () => null,

@@ -7,7 +7,7 @@ import type { ReviewResult } from '@agentforge/core';
 import { createEmitReviewResult } from './emit-review-result.js';
 import type { ReviewerDeps } from '../../deps.js';
 import type { ReviewerStateType } from '../state.js';
-import type { GateResult } from '../../types.js';
+import type { GateResult, AssumptionValidationResult } from '../../types.js';
 
 const MOCK_DEPS: ReviewerDeps = {
   provider: {} as ReviewerDeps['provider'],
@@ -23,6 +23,7 @@ function makeState(overrides: Partial<ReviewerStateType> = {}): ReviewerStateTyp
     taskCompletionReport: null,
     gateResults: [],
     gatesPassed: true,
+    assumptionValidationResults: [],
     reviewResult: null,
     errors: [],
     ...overrides,
@@ -113,6 +114,53 @@ describe('emitReviewResult', () => {
     }));
 
     expect(result.reviewResult!.findings).toHaveLength(2);
+    expect(result.reviewResult!.outcome).toBe('rejected');
+  });
+
+  it('merges assumption violations from assumptionValidationResults', async () => {
+    const llmResult: ReviewResult = {
+      id: 'r1',
+      diffId: 'd1',
+      findings: [],
+      assumptionViolations: [],
+      outcome: 'approved',
+      revisionCount: 0,
+    };
+
+    const validationResults: AssumptionValidationResult[] = [
+      { assumptionId: 'a1', violated: true, evidence: 'contradicted', severity: 'warning' },
+      { assumptionId: 'a2', violated: false, evidence: 'consistent', severity: 'warning' },
+    ];
+
+    const result = await emitter(makeState({
+      reviewResult: llmResult,
+      assumptionValidationResults: validationResults,
+    }));
+
+    expect(result.reviewResult!.assumptionViolations).toEqual(['a1']);
+    expect(result.reviewResult!.outcome).toBe('approved');
+  });
+
+  it('overrides approved to rejected when assumption violation is blocking', async () => {
+    const llmResult: ReviewResult = {
+      id: 'r1',
+      diffId: 'd1',
+      findings: [],
+      assumptionViolations: [],
+      outcome: 'approved',
+      revisionCount: 0,
+    };
+
+    const validationResults: AssumptionValidationResult[] = [
+      { assumptionId: 'a1', violated: true, evidence: 'critical breach', severity: 'blocking' },
+    ];
+
+    const result = await emitter(makeState({
+      reviewResult: llmResult,
+      assumptionValidationResults: validationResults,
+    }));
+
+    expect(result.reviewResult!.assumptionViolations).toEqual(['a1']);
     expect(result.reviewResult!.outcome).toBe('rejected');
   });
 });

@@ -11,3 +11,11 @@ export interface GateResult {
   readonly passed: boolean;
   readonly detail: string;
 }
+
+/** Result of validating a single assumption entry against the diff. */
+export interface AssumptionValidationResult {
+  readonly assumptionId: string;
+  readonly violated: boolean;
+  readonly evidence: string;
+  readonly severity: 'blocking' | 'warning';
+}
