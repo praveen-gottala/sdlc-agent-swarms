@@ -18,6 +18,8 @@ export interface ReviewerDeps {
   readonly projectRoot: string;
   /** Project identifier — scopes telemetry queries. */
   readonly projectId: string;
+  /** Optional plan file paths for rubric gate coverage checks. */
+  readonly planFilePaths?: readonly string[];
 }
 
 /** Node function signature for LangGraph StateGraph nodes. */
