@@ -31,7 +31,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Active plans (read these during session-start):**
 
 1. Visual Diversity — Phases 1-4 + 3.1-3.8 COMPLETE. Next: Phase 5 (Domain + Effects Foundation). Roadmap: `docs/plans/active/visual-diversity/design-quality-vision.md`. Execution: `docs/plans/active/visual-diversity/execution-plan.md`
-2. CHIP's Next Steps — M0-M3.6 COMPLETE. M4 Phase 7 IN PROGRESS — eval infrastructure complete, Gate 6a/6b deferred to next session. See `docs/plans/active/chips-next-steps/execution-plan.md`
+2. CHIP's Next Steps — M0-M4 COMPLETE. M4.5 NOT STARTED (skill-derived spine quality gates, 5 phases). See `docs/plans/active/chips-next-steps/execution-plan.md`, M4.5 plan at `docs/plans/active/chips-next-steps/m4-5-execution-plan.md`
 3. Dashboard Pipeline Fix — Resolved (Vertex AI quota was actual blocker, not import.meta.url). See `docs/plans/active/dashboard-pipeline-fix/execution-plan.md`
 4. CHIP UX Overhaul — Phases 1, 2, 4.0, 4.1 COMPLETE. Next: Phase 4.2+. See `docs/plans/active/chip-ux-overhaul/execution-plan.md`
 5. Focused Deep Audit — Phase 1 (wire selectedNode) next. See `docs/plans/active/focused-deep-audit/execution-plan.md`
@@ -45,7 +45,7 @@ Decided: `@langchain/langgraph` (TypeScript) is the sole orchestration runtime. 
 **Completed plans (do NOT read during session-start):** 7 plans in `docs/plans/completed/`. Integrating Clarifier SUPERSEDED by M1 Connect.
 
 <!-- Last session: max 2 lines — status + next action only. Details belong in the plan's execution-plan.md. -->
-**Last session (2026-05-17):** M4 Phases 1-6 COMPLETE, Phase 7 eval infrastructure shipped. Gate 6a/6b deferred (25+ min Opus runs). Next: run `scripts/run-spine-eval.ts` + regression subset.
+**Last session (2026-05-18):** M4 COMPLETE — Gate 6a/6b passed, Phase 7 gate findings resolved, end-of-plan gate closed. M4.5 execution plan drafted. Next: M4.5 Phase 1 (Assumption Validator node split).
 
 ## Browser-First Debugging (HIGHEST PRIORITY)
 
