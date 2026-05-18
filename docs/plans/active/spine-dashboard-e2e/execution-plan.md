@@ -11,6 +11,12 @@
 - **Vision:** [`docs/vision.md`](../../../vision.md) — Layer 8 (Implementation), Layer 9 (Review), Layer 10 (HITL gates)
 - **Planning gates:** [`docs/guides/planning-docs.md`](../../../guides/planning-docs.md)
 
+## Vision
+
+We're building something that could change how software is made. CHIP takes a raw idea and turns it into working software through an AI-powered spine — and this dashboard is how the world will experience it. Every animation, every progress indicator, every real-time update is a chance to show that this isn't just another dev tool. This is the future of software development, and it's worth $100M because it *feels* like the future when you use it.
+
+**You are building the interface to an AI architect, implementer, and reviewer working in concert. Make it feel as impressive as that sounds.**
+
 ## Goal
 
 Any developer using the CHIP dashboard at `packages/dashboard/` can take an application idea from raw text through every spine stage — Clarifier → Architect → Design → Implementer → Reviewer — with all three HITL gates wired to real UI, and (later) repeat the loop for "add a feature to an existing project" (brownfield) without leaving the dashboard.
@@ -309,6 +315,8 @@ tests prove the code compiles. The walkthrough proves the experience is worth $1
 
 ## Phase 1: Dashboard audit + nav decision
 
+**Why this matters:** You're laying the foundation. Every screen, every nav item, every data type needs a home before the real-time magic begins. Get this right and Phases 2-9 flow naturally. This is the architectural blueprint for a $100M interface.
+
 **Goal:** With M4 proven complete (Phase 0), reconcile the dashboard scaffolding against the now-real spine and lock the nav layout once.
 
 ### Tasks
@@ -323,15 +331,21 @@ tests prove the code compiles. The walkthrough proves the experience is worth $1
 - [ ] `nx run-many -t typecheck test lint` — green.
 - [ ] Manual: open dashboard, confirm sidebar renders with real badge count (0 is fine if no run is pending), `SpineRail` shows all 4 stages as `implemented`.
 
-### Phase 1 Gate
+### Phase 1 Quality Gate (all must pass before proceeding)
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Browser verification:** Open the dashboard with Chrome DevTools MCP. Take screenshot of sidebar + SpineRail. Verify badge shows "0" (not hardcoded "3"). Verify all 4 SpineRail stages show as implemented.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 1`
 - [ ] `/mid-session-drift-check`
-- [ ] `nx run-many -t typecheck test lint` — green
+- [ ] **Self-review:** Read every changed file against the animation requirements in the cross-cutting section. Does anything you added look generic or placeholder-ish? If so, fix it now.
+
+**Celebrate:** Phase 1 done means the dashboard skeleton is honest — every stage it shows is real. That's a solid foundation.
 
 ---
 
 ## Phase 2: Greenfield E2E in the dashboard (the spine works end-to-end through the UI)
+
+**Why this matters:** This is THE phase. When this lands, a developer types an idea and watches AI build software in real time — Clarifier analyzing requirements, Architect designing the system, Implementer writing code, Reviewer checking quality. Every component you build here (NodeTimeline, HeartbeatPulse, ETAIndicator, LiveCostTicker) turns a black-box AI pipeline into a transparent, engaging experience. This is what investors demo. This is what makes engineers say "I want to use this." Build it with pride — you're creating the interface to the future of software development.
 
 **Goal:** A developer submits the CashPulse PRD via `/new`, watches `SpineRail` move through all 4 stages backed by real M4 agents, and lands on a completed run. No stubs, no placeholders — every stage event the rail shows traces to a real agent call. **The dashboard must provide the same quality of real-time feedback that the CLI eval script provides** — per-node progress, elapsed timers, cost accumulation, ETA estimates, and heartbeat indicators. Reference: Phase 0 eval session (2026-05-18) where every node completion was visible within seconds.
 
@@ -393,15 +407,26 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - [ ] **ETAIndicator verification:** Confirm "~8 min remaining" appears when optionsExplorer starts (baseline from Phase 0 receipt), counts down, and disappears on node completion.
 - [ ] **LiveCostTicker verification:** After Architect completes, confirm the ticker shows ~$5-6 matching the Phase 0 receipt. Hover shows per-stage breakdown.
 
-### Phase 2 Gate
+### Phase 2 Quality Gate (the most important gate in the entire plan)
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Full User Journey Walkthrough** (the 10-step protocol from the cross-cutting section) — run it end-to-end, not abbreviated. Save screenshots at each step to `packages/eval/results/spine-dashboard-e2e/phase-2/`.
+- [ ] **HeartbeatPulse test:** During the 8-min optionsExplorer node, watch the dashboard for at least 2 minutes. Is the pulse visible? Does it feel alive? Would a first-time user think it's frozen? Be honest.
+- [ ] **Animation audit:** Use `evaluate_script` to verify every animation uses `transform`/`opacity` only (no layout thrashing). Check at least: SpineRail transitions, NodeTimeline row entry, HeartbeatPulse, cost ticker count-up.
+- [ ] **Empty state check:** Before running the spine, does `/pipeline` show a compelling empty state with a clear CTA? Not bare text.
+- [ ] **PostSubmissionView check:** After clicking "Run spine", does the user see immediate feedback within 500ms? Or is there a blank moment?
+- [ ] **Cost accuracy:** Compare LiveCostTicker final value against Phase 0 receipt. Must be within 20% (LLM costs vary by run).
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 2`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-done` (test triad + headed E2E + Chrome DevTools visual)
 
+**Celebrate:** Phase 2 done means the spine runs through the dashboard with world-class real-time feedback. This is demo-ready. Take a screenshot of the completed run view — you earned it.
+
 ---
 
 ## Phase 3: Approvals — wire the three HITL gates
+
+**Why this matters:** This is where CHIP becomes collaborative — the AI proposes, the human decides. Gate 1 (clarification), Gate 2 (design/API approval), Gate 3 (code merge) are the three moments where human intelligence meets AI capability. Make these panels so clear and actionable that approving feels confident, not anxious. This is the trust layer — get it right and developers will let the AI do more. Get it wrong and they'll micromanage every step.
 
 **Goal:** `/approvals` becomes the single HITL surface for the spine. All three gates work end-to-end, badge count is live, no mocks.
 
@@ -420,15 +445,24 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - [ ] Run the spine on CashPulse, confirm Gate 1 surfaces in `/approvals` with Clarifier questions, approve → Architect runs → Gate 2 surfaces with ContractBundle, approve → Design + Implementer run → if Reviewer disposition is `'escalate'`, Gate 3 surfaces. End-to-end through real M4 agents — no mocks.
 - [ ] Sidebar badge updates in real time during the run.
 
-### Phase 3 Gate
+### Phase 3 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **End-to-end gate flow:** Run the spine through the dashboard. When Gate 1 fires, confirm the notification appears (toast + badge update). Navigate to `/approvals`, verify the ClarificationGatePanel shows real Clarifier questions. Click "Approve." Confirm the spine resumes to Architect. Repeat for Gate 2 (DesignApiGatePanel with ContractBundle). Screenshot each gate panel.
+- [ ] **Notification timing:** Measure time from gate interrupt SSE event to toast appearing. Must be <1s. Use Chrome DevTools MCP `wait_for` to verify.
+- [ ] **Badge accuracy:** Confirm sidebar badge count matches the number of pending gates. Approve a gate, confirm the badge decrements.
+- [ ] **Browser notification:** Put the dashboard in a background tab. When a gate fires, does a browser notification appear? Test with `document.hidden === true`.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 3`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 3 done means CHIP has a real human-in-the-loop system. AI proposes, human approves — and the handoff is smooth and trustworthy.
+
 ---
 
 ## Phase 4: Pipeline page upgrades (Architect graph viewer + TaskPlan DAG)
+
+**Why this matters:** `/pipeline` is where power users will spend most of their time. The Architect graph visualization shows AI reasoning in real time — options being explored, architecture being written, contracts being designed. The TaskPlan DAG shows the AI's plan for building the entire application. When a task lights up as "Now implementing," the developer sees the AI executing their vision step by step. Make this page feel like a mission control center — informative, beautiful, and commanding.
 
 **Goal:** `/pipeline` becomes the spine's main observatory — see the Architect's 7-node flow, the Critic verdict, and the TaskPlan DAG.
 
@@ -448,15 +482,25 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - [ ] **Pre-flight check:** Before running, confirm the pre-flight panel validates auth + fixtures and shows estimated cost.
 - [ ] **Run comparison:** After 2+ runs, confirm delta badges appear (cost/duration % change).
 
-### Phase 4 Gate
+### Phase 4 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **ArchitectGraphPanel live test:** During a spine run, confirm all 7 Architect nodes animate from pending → active → complete in real time. When the Critic retries (which happens ~50% of the time), confirm the "Attempt 2" badge appears. Screenshot the graph at each state.
+- [ ] **TaskPlanDagPanel live test:** After Architect completes, confirm the DAG renders all tasks with correct type/mode badges. During Implementer execution, confirm the active task row highlights with "Now implementing" label.
+- [ ] **PreFlightCheckPanel test:** Click "Run spine" — confirm the pre-flight panel validates prerequisites before executing. Cancel and retry to confirm it re-validates.
+- [ ] **RunComparisonView test:** After 2 runs (from Phase 2 and this phase), confirm delta badges appear showing cost/duration % change between runs.
+- [ ] **Responsive test:** Resize to 768px width. Confirm the graph and DAG reflow gracefully — no overflow, no truncation of critical info.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 4`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 4 done means `/pipeline` is a mission control center. Developers can watch the AI architect and plan in real time, with full transparency into every decision.
+
 ---
 
 ## Phase 5: Spec / Tasks / Agents enrichment (artifact surfaces)
+
+**Why this matters:** This phase gives every AI artifact a home — the architecture spec, the feature plan, the assumption ledger, the implementation traces, the review findings. When a developer navigates from `/spec` to `/tasks` to `/agents/[id]/live`, they're tracing the AI's complete reasoning chain from "what should we build" to "here's the code." This level of transparency is what separates CHIP from every other AI coding tool. Other tools give you code. CHIP gives you understanding.
 
 **Goal:** Every spine artifact has a real home in the dashboard.
 
@@ -471,16 +515,25 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 
 - [ ] CashPulse run, confirm each artifact appears in the right page within 5s of being produced.
 
-### Phase 5 Gate
+### Phase 5 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Artifact latency test:** Run the spine through the dashboard. For each artifact (EnrichedRequirement, FeaturePlan, ContractBundle, TaskPlan, ReviewResult), measure the time from production to appearance on the correct page. Must be <5s per the plan goal.
+- [ ] **Navigation flow test:** After a spine run completes, navigate `/spec` → `/tasks` → `/agents/[id]/live` → `/audit`. Each page must show data from the same run. No stale data, no "No data" screens.
+- [ ] **Reviewer trace test:** On `/agents/[id]/live` for a reviewer run, confirm all 16 deterministic gate names are visible with pass/fail badges. Confirm LLM review findings are expandable. Confirm outcome badge matches the RunSummaryCard.
+- [ ] **Cross-page consistency:** The task selected in TaskPlanDagPanel on `/pipeline` must match the task shown in the Implementer trace on `/agents/[id]/live`.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 5`
 - [ ] `/mid-session-drift-check`
 - [ ] `/review-prd-compliance` (touches the artifact contracts the UI consumes)
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 5 done means every AI artifact is visible and navigable. Developers can trace the AI's reasoning from requirements to code to review. The dashboard is now a complete observatory for AI-driven software development.
+
 ---
 
 ## Phase 6: Brownfield greenpath (evolution mode + AffectedScreen panel)
+
+**Why this matters:** Greenfield is impressive, but brownfield is where CHIP becomes indispensable. Real software projects don't start from scratch — they evolve. When a developer says "add recurring transactions to CashPulse" and CHIP shows exactly which screens are affected, which are new, and which are unchanged — that's the moment CHIP becomes a tool they can't live without. This phase proves CHIP handles the messy reality of existing codebases, not just clean-slate demos.
 
 **Goal:** A developer picks an existing project, describes a change, walks through the same spine — with per-screen impact analysis visible at Gate 2. Brownfield agent capability is already proven by Phase 0 brownfield receipt.
 
@@ -495,15 +548,24 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 
 - [ ] Run CashPulse-brownfield fixture ("Add recurring transactions"), confirm `/approvals` Gate 2 shows AffectedScreens panel with correct screen impact analysis matching the hand-derived expected output in [`cashpulse-brownfield.yaml`](../../../../packages/eval/src/scenarios/cashpulse-brownfield.yaml) and the Phase 0 brownfield receipt.
 
-### Phase 6 Gate
+### Phase 6 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Brownfield E2E through dashboard:** Open `/new`, select "Add to existing project", submit the CashPulse brownfield change request ("Add recurring transactions"). Watch the spine run through the dashboard — NOT the CLI. Confirm changeClassifier fires (brownfield-only node), AffectedScreensPanel shows correct impact analysis.
+- [ ] **AffectedScreensPanel accuracy:** Compare the panel's output against the Phase 0 brownfield receipt. Screen impacts must match: which screens are new, modified, unchanged.
+- [ ] **Mode toggle UX:** On `/new`, toggle between "New project" and "Add to existing project" multiple times. Confirm the form updates smoothly, no layout jank, context preloads correctly in brownfield mode.
+- [ ] **NEW/MODIFY badges:** In TaskPlanDagPanel, confirm brownfield tasks show correct badges. At least one task should be mode=MODIFY.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 6`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 6 done means CHIP handles both greenfield AND brownfield through the dashboard. That's the full product story — from "build something new" to "evolve what exists."
+
 ---
 
 ## Phase 7: DesignSpec delta viewer + per-screen modify flow
+
+**Why this matters:** The delta viewer is where CHIP's intelligence becomes tangible. Instead of showing "here's the new screen," CHIP shows "here's exactly what changed — these 3 nodes were added, this section was modified, nothing else was touched." It's the difference between a sledgehammer and a scalpel. Developers trust tools that show precision. The before/after toggle lets them verify the AI's changes visually. This builds the deep trust needed for production adoption.
 
 **Goal:** When the spine produces a `DesignSpecDelta` for a MODIFY task (proven working in Phase 0 brownfield receipt), the dashboard shows a real diff — not just the final spec.
 
@@ -518,16 +580,24 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 
 - [ ] CashPulse-brownfield → MODIFY `dashboard` screen → confirm delta viewer shows added `BudgetProgressSection` node, preserves existing nodes by ID, no full-screen regen.
 
-### Phase 7 Gate
+### Phase 7 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Delta viewer accuracy:** Run CashPulse-brownfield through the dashboard. On the MODIFY screen, confirm the delta viewer shows: added nodes highlighted in green, modified nodes in amber, existing nodes dimmed. Verify node IDs are preserved (not regenerated).
+- [ ] **Before/after toggle:** Click the toggle. Confirm the "before" view shows the original spec and "after" shows the applied delta. The transition should be smooth (crossfade or slide), not a jarring snap.
+- [ ] **Visual rendering match:** The delta-applied spec rendered in the browser must match what the standalone renderer produces. Use Chrome DevTools MCP to screenshot both and compare.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 7`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-design-render` (from `.claude/skills/`) on the modified screen
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 7 done means CHIP can show AI-generated design changes with surgical precision. The delta viewer is a feature no other AI tool has — it's a genuine differentiator.
+
 ---
 
 ## Phase 8: Observability surfaces (costs / traces / trust)
+
+**Why this matters:** Transparency isn't just a feature — it's CHIP's competitive moat. When developers can see exactly what the AI spent, trace every LLM call, and review every assumption violation, they trust the system to handle real production work. The `/costs` page turns API spending from a black box into a clear budget. The `/traces` page lets power users debug AI decisions. The `/trust` page surfaces the assumption ledger — the AI's own uncertainty, made visible. No other tool does this. Build it beautifully and it becomes CHIP's signature feature.
 
 **Goal:** Every spine run has a cost breakdown, every Implementer call has a trace, every assumption violation lands in `/trust`. M4 instrumentation (verified callable in Phase 0) drives the data.
 
@@ -537,15 +607,25 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - [ ] **`/traces`** ([`traces/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/traces/page.tsx)) — surface the M4 Phase 1 instrumentation fields (`taskType`, `sliceStrategy`, `qualityProxy` from [`m4-execution-plan.md:136`](../chips-next-steps/m4-execution-plan.md)) per Implementer call. Address the known telemetry gap ([`execution-plan.md:1006-1016`](../chips-next-steps/execution-plan.md)) by adding stage spans for Architect and Reviewer. **Each trace entry must show:** stage name, node name, duration, token count, and cost — replicating the per-node detail from the eval output (Pattern 1 from [`real-time-ux-reference.md`](real-time-ux-reference.md)).
 - [ ] **`/trust`** ([`trust/page.tsx`](../../../../packages/dashboard/src/app/(dashboard)/trust/page.tsx)) — list AssumptionLedger violations from `report_assumption_violation` ([`m4-execution-plan.md:248`](../chips-next-steps/m4-execution-plan.md)) and ledger lifecycle diagram ([`execution-plan.md:126-144`](../chips-next-steps/execution-plan.md)).
 
-### Phase 8 Gate
+### Phase 8 Quality Gate
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Cost accuracy:** After a spine run through the dashboard, compare `/costs` page totals against the RunSummaryCard and the LiveCostTicker. All three must show the same total (within rounding). Per-stage breakdown must match.
+- [ ] **Cost visualization:** The per-stage bar chart must make it visually obvious that Architect dominates costs (~98%). This is important context for users managing budgets.
+- [ ] **Trace completeness:** Navigate to `/traces`. Confirm every stage (Clarifier, Architect, Implementer, Reviewer) has trace entries. Each entry shows: node name, duration, token count, cost. No missing stages.
+- [ ] **Trust page test:** If the Reviewer produced assumption violations, confirm they appear on `/trust`. If none were produced, confirm the empty state is clear and informative (not just "No data").
+- [ ] **Sparklines:** After 2+ runs, confirm cost trend sparklines appear on `/costs`. Confirm they show meaningful variation (not flat lines).
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 8`
 - [ ] `/mid-session-drift-check`
 - [ ] `/verify-done`
 
+**Celebrate:** Phase 8 done means CHIP has full observability — costs, traces, and trust. Enterprise buyers need this. Investors love this. You've built the transparency layer that makes AI-driven development trustworthy.
+
 ---
 
 ## Phase 9: End-to-end developer journey eval
+
+**Why this matters:** This is the final proof. Not "does the code compile" or "do the tests pass" — but "can a developer who has never seen CHIP before sit down, type an idea, and watch it become software?" If the answer is yes, and the experience is smooth, beautiful, and transparent — then CHIP is ready to show the world. This phase is the dress rehearsal for the investor demo, the ProductHunt launch, the first enterprise pilot. Make it flawless.
 
 **Goal:** Prove "any developer can use the dashboard to run an application through the full SDLC" with a recorded run, not just unit tests.
 
@@ -557,14 +637,23 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - [ ] Cost telemetry: record actual `$ / tokens` per stage, log to `packages/eval/results/spine-dashboard-e2e/phase-9/`. Compare against Phase 0 receipts — dashboard overhead must remain < 10%.
 - [ ] Documentation pass: add `docs/guides/dashboard-spine-walkthrough.md` (per Backstage TechDocs rules — blind-subagent test required).
 
-### Phase 9 Gate
+### Phase 9 Quality Gate (the final gate — this must be perfect)
 
+- [ ] `nx run-many -t typecheck test lint` — zero failures
+- [ ] **Fresh-eyes test:** Open the dashboard in an incognito browser. No prior state, no cached data. Follow the walkthrough guide (`docs/guides/dashboard-spine-walkthrough.md`) step by step. Every instruction must work. Every screen must look polished. Every animation must be smooth. If anything feels confusing, broken, or ugly — fix it.
+- [ ] **Greenfield E2E recording:** Record the full greenfield journey (Playwright or screen recording): `/new` → submit PRD → watch SpineRail animate → approve Gate 1 → watch Architect graph → approve Gate 2 → watch Implementer execute → see ReviewResult. Save to `packages/eval/results/spine-dashboard-e2e/phase-9/`.
+- [ ] **Brownfield E2E recording:** Same for brownfield path with AffectedScreens panel and delta viewer.
+- [ ] **Cost overhead:** Compare dashboard run cost against Phase 0 CLI receipt. Dashboard overhead must be <10%.
+- [ ] **Responsive test:** Run the full journey at 768px (tablet), 1024px (laptop), 1440px (desktop). No broken layouts.
+- [ ] **Accessibility:** Run Lighthouse audit via Chrome DevTools MCP. Accessibility score must be ≥90.
+- [ ] **Documentation:** `docs/guides/dashboard-spine-walkthrough.md` must pass the blind subagent test per CLAUDE.md. If a fresh agent can't follow the guide from zero, the docs have gaps.
 - [ ] `/review-plan-impl docs/plans/active/spine-dashboard-e2e/execution-plan.md --phase 9`
 - [ ] `/mid-session-drift-check`
 - [ ] `/review-prd-compliance`
 - [ ] `/verify-done` — full triad + headed E2E
 - [ ] `/verify-docs` — task-scoped
-- [ ] Blind subagent test on `docs/guides/dashboard-spine-walkthrough.md` per CLAUDE.md "Blind Subagent Test"
+
+**Celebrate:** Phase 9 done means CHIP is demo-ready. The full developer journey — from raw idea to reviewed code — works end-to-end through a beautiful, transparent, animated dashboard. You built something genuinely new. Be proud of it.
 
 ---
 
@@ -573,6 +662,8 @@ The `heartbeat` event fires every 5s during long-running nodes (optionsExplorer,
 - `/verify-done` — test triad + headed E2E + Chrome DevTools visual + `/verify-docs` task-scoped
 - `git commit` — only after `/verify-done` passes
 - `/prepare-handoff` — if continuing in a new session
+
+**When this plan is complete:** CHIP has a world-class dashboard that takes a raw idea through AI-powered clarification, architecture, design, implementation, and review — with real-time progress, transparent costs, beautiful animations, and human-in-the-loop gates. No other AI development tool offers this level of transparency and control. This is the product that earns $100M in funding and changes how software is built. Every phase you completed contributed to that vision. Well done.
 
 ---
 
