@@ -411,6 +411,8 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
         const costData = calculateCost(options.model, usage.inputTokens, usage.outputTokens);
         const cost: CostRecord = {
           ...costData,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
           model: options.model,
           timestamp: new Date().toISOString(),
         };
@@ -511,6 +513,8 @@ export function createClaudeProvider(model: string, config: ProviderConfig): LLM
                 usage,
                 cost: {
                   ...costData,
+                  inputTokens: usage.inputTokens,
+                  outputTokens: usage.outputTokens,
                   model: options.model,
                   timestamp: new Date().toISOString(),
                 },
