@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { AgentLearnings } from '@/components/agents/agent-learnings';
 import { SpineStageCard, type StageStatus } from '@/components/agents/spine-stage-card';
 import { SPINE_STAGES } from '@/components/spine/spine-constants';
+import { SpineRail } from '@/components/spine/spine-rail';
 
 interface StageStats {
   runsCompleted: number;
@@ -11,13 +12,6 @@ interface StageStats {
   totalCostUsd: number;
   status: StageStatus;
 }
-
-const STAGE_MODELS: Record<string, string> = {
-  clarifier: 'claude-opus-4-6',
-  architect: 'claude-opus-4-6',
-  implementer: 'claude-sonnet-4-6',
-  reviewer: 'claude-haiku-4-5',
-};
 
 export default function AgentsPage(): React.JSX.Element {
   const [stats, setStats] = useState<Record<string, StageStats>>({});
@@ -58,6 +52,8 @@ export default function AgentsPage(): React.JSX.Element {
       .catch(() => setLoading(false));
   }, []);
 
+  const activeStageIdx = SPINE_STAGES.findIndex((s) => stats[s.key]?.status === 'running');
+
   if (loading) {
     return <div className="flex items-center justify-center h-64 text-text-muted">Loading...</div>;
   }
@@ -66,27 +62,32 @@ export default function AgentsPage(): React.JSX.Element {
     <main className="px-6 py-10">
       <div className="mx-auto max-w-5xl">
         {/* Page header */}
-        <div className="mb-10">
-          <h1 className="text-2xl font-bold text-text-primary">Spine Stages</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-text-primary">Pipeline</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Four sequential stages that take your idea from requirements to reviewed code
+            Your idea flows through four stages — each one bringing it closer to production
           </p>
         </div>
 
-        {/* Spine stage grid — 2x2 */}
+        {/* Mini SpineRail showing the flow */}
+        <div className="mb-8 py-4">
+          <SpineRail activeStage={activeStageIdx} variant="compact" />
+        </div>
+
+        {/* Stage cards — 2x2 grid */}
         <section className="mb-12">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {SPINE_STAGES.map((stage) => {
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {SPINE_STAGES.map((stage, i) => {
               const s = stats[stage.key] ?? { runsCompleted: 0, avgDurationMs: 0, totalCostUsd: 0, status: 'idle' as const };
               return (
                 <SpineStageCard
                   key={stage.key}
                   stageKey={stage.key}
+                  stageNumber={i + 1}
                   name={stage.label}
                   description={stage.description}
                   icon={stage.icon}
                   color={stage.color}
-                  model={STAGE_MODELS[stage.key] ?? 'claude-sonnet-4-6'}
                   status={s.status}
                   runsCompleted={s.runsCompleted}
                   avgDurationMs={s.avgDurationMs}

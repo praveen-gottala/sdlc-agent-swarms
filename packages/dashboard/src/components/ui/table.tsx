@@ -49,7 +49,13 @@ export function Table<T extends object>({
 
   return (
     <MantineTable.ScrollContainer minWidth={0} className={className}>
-      <MantineTable striped highlightOnHover withTableBorder>
+      <MantineTable
+        striped
+        highlightOnHover
+        withTableBorder
+        stripedColor="var(--color-bg-elevated)"
+        highlightOnHoverColor="var(--color-bg-elevated)"
+      >
         <MantineTable.Thead>
           <MantineTable.Tr>
             {columns.map((col) => (

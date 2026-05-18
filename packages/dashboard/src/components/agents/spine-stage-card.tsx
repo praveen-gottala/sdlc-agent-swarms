@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Icon } from '@tabler/icons-react';
 
@@ -9,23 +8,16 @@ export type StageStatus = 'idle' | 'running' | 'complete' | 'failed';
 
 export interface SpineStageCardProps {
   stageKey: string;
+  stageNumber: number;
   name: string;
   description: string;
   icon: Icon;
   color: string;
-  model: string;
   status: StageStatus;
   runsCompleted: number;
   avgDurationMs: number;
   totalCostUsd: number;
 }
-
-const statusConfig: Record<StageStatus, { label: string; variant: 'success' | 'info' | 'danger' | 'default' }> = {
-  idle: { label: 'Idle', variant: 'default' },
-  running: { label: 'Running', variant: 'info' },
-  complete: { label: 'Complete', variant: 'success' },
-  failed: { label: 'Failed', variant: 'danger' },
-};
 
 function formatDuration(ms: number): string {
   if (ms === 0) return '—';
@@ -38,101 +30,156 @@ function formatDuration(ms: number): string {
 
 export function SpineStageCard({
   stageKey,
+  stageNumber,
   name,
   description,
   icon: IconComponent,
   color,
-  model,
   status,
   runsCompleted,
   avgDurationMs,
   totalCostUsd,
 }: SpineStageCardProps): React.JSX.Element {
-  const sc = statusConfig[status];
   const isRunning = status === 'running';
+  const isComplete = status === 'complete';
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-border bg-bg-card transition-all hover:border-border-bright"
-      style={{ animation: 'fade-in 0.3s ease-out forwards' }}
+      className="group relative overflow-hidden rounded-2xl border transition-all duration-300"
+      style={{
+        borderColor: isRunning ? `${color}50` : 'var(--color-border)',
+        background: 'var(--color-bg-card)',
+        animation: 'fade-in 0.4s ease-out forwards',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = `${color}40`;
+        e.currentTarget.style.boxShadow = `0 0 30px ${color}10, 0 4px 20px rgba(0,0,0,0.2)`;
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = isRunning ? `${color}50` : 'var(--color-border)';
+        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
     >
-      {/* Left accent bar */}
+      {/* Background gradient glow */}
       <div
         style={{
           position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          background: color,
-          borderRadius: '3px 0 0 3px',
-          opacity: status === 'idle' ? 0.4 : 0.9,
+          top: -40,
+          right: -40,
+          width: 160,
+          height: 160,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${color}12 0%, transparent 70%)`,
+          pointerEvents: 'none',
           transition: 'opacity 0.3s ease',
+          opacity: isRunning ? 1 : 0.5,
         }}
       />
 
-      <div className="flex flex-col gap-3 p-4 pl-5">
-        {/* Top row: icon + name + status */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className={isRunning ? 'animate-spine-glow' : ''}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: `${color}18`,
-                border: `1.5px solid ${color}30`,
-                animation: isRunning ? 'spine-glow 2s ease-in-out infinite' : undefined,
-                transition: 'all 0.3s ease',
-              }}
-            >
-              <IconComponent size={18} stroke={1.5} style={{ color }} />
+      {/* Stage number watermark */}
+      <span
+        style={{
+          position: 'absolute',
+          bottom: -8,
+          right: 12,
+          fontSize: 72,
+          fontWeight: 800,
+          color: `${color}08`,
+          lineHeight: 1,
+          pointerEvents: 'none',
+          userSelect: 'none',
+        }}
+      >
+        {stageNumber}
+      </span>
+
+      <div className="relative flex flex-col gap-4 p-5">
+        {/* Icon + stage info */}
+        <div className="flex items-start gap-4">
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: isRunning
+                ? `linear-gradient(135deg, ${color}, ${color}cc)`
+                : `${color}15`,
+              border: isRunning ? 'none' : `1.5px solid ${color}25`,
+              boxShadow: isRunning ? `0 0 24px ${color}30` : 'none',
+              animation: isRunning ? 'spine-glow 2s ease-in-out infinite' : undefined,
+              transition: 'all 0.4s ease',
+              flexShrink: 0,
+            }}
+          >
+            <IconComponent
+              size={22}
+              stroke={1.5}
+              style={{ color: isRunning ? '#fff' : color }}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-text-primary">{name}</h3>
+              {isRunning && (
+                <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color }}>
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{ background: color, animation: 'pulse-dot 1.5s ease-in-out infinite' }}
+                  />
+                  Running
+                </span>
+              )}
+              {isComplete && (
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </div>
+            <p className="text-sm text-text-muted mt-1 leading-relaxed">{description}</p>
+          </div>
+        </div>
+
+        {/* Stats — only when there's data */}
+        {runsCompleted > 0 ? (
+          <div className="flex items-center gap-6 pt-3 border-t border-border/50">
             <div>
-              <h3 className="text-sm font-semibold text-text-primary">{name}</h3>
-              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{description}</p>
+              <span className="text-lg font-bold text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {runsCompleted}
+              </span>
+              <span className="text-xs text-text-dim ml-1.5">{runsCompleted === 1 ? 'run' : 'runs'}</span>
+            </div>
+            <div className="w-px h-4 bg-border" />
+            <div>
+              <span className="text-sm font-semibold text-text-secondary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatDuration(avgDurationMs)}
+              </span>
+              <span className="text-xs text-text-dim ml-1.5">avg</span>
+            </div>
+            <div className="w-px h-4 bg-border" />
+            <div>
+              <span className="text-sm font-semibold" style={{ color, fontVariantNumeric: 'tabular-nums' }}>
+                ${totalCostUsd.toFixed(2)}
+              </span>
+              <span className="text-xs text-text-dim ml-1.5">total</span>
             </div>
           </div>
-          <Badge variant={sc.variant}>{sc.label}</Badge>
-        </div>
+        ) : (
+          <div className="pt-3 border-t border-border/50">
+            <p className="text-xs text-text-dim">No runs yet — start a project to see this stage in action</p>
+          </div>
+        )}
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 rounded-lg bg-bg-elevated px-3 py-2.5">
-          <div className="text-center">
-            <p className="text-[10px] text-text-muted uppercase tracking-wider">Runs</p>
-            <p className="text-sm font-semibold text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {runsCompleted}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] text-text-muted uppercase tracking-wider">Avg Time</p>
-            <p className="text-sm font-semibold text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {formatDuration(avgDurationMs)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] text-text-muted uppercase tracking-wider">Cost</p>
-            <p className="text-sm font-semibold text-text-primary" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              ${totalCostUsd.toFixed(2)}
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom row: model + action */}
-        <div className="flex items-center justify-between pt-1 border-t border-border">
-          <p className="text-xs text-text-dim">
-            Model: <span className="text-text-muted">{model}</span>
-          </p>
-          {isRunning && (
-            <Link href={`/agents/${stageKey}/live`}>
-              <Button size="sm" variant="primary">View Live</Button>
-            </Link>
-          )}
-        </div>
+        {/* Action */}
+        {isRunning && (
+          <Link href={`/agents/${stageKey}/live`}>
+            <Button size="sm" variant="primary">View Live</Button>
+          </Link>
+        )}
       </div>
     </div>
   );
