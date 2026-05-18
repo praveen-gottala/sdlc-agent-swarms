@@ -1,46 +1,5 @@
 [
   {
-    "scenarioId": "spine-cashpulse-greenfield",
-    "rep": 0,
-    "path": "greenfield",
-    "status": "success",
-    "reviewOutcome": "escalated",
-    "stageCosts": [
-      {
-        "stage": "clarifier",
-        "costUsd": 0,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 0
-      },
-      {
-        "stage": "architect",
-        "costUsd": 6.1188,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 1486000
-      },
-      {
-        "stage": "implementer",
-        "costUsd": 0.1133,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 3500
-      },
-      {
-        "stage": "reviewer",
-        "costUsd": 0.0112,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 8000
-      }
-    ],
-    "totalCostUsd": 6.2433,
-    "totalDurationMs": 1497600,
-    "taskId": "shared-ui-components",
-    "timestamp": "2026-05-18T04:52:57.000Z"
-  },
-  {
     "scenarioId": "spine-cashpulse-brownfield",
     "rep": 0,
     "path": "brownfield",
@@ -56,29 +15,70 @@
       },
       {
         "stage": "architect",
-        "costUsd": 3.88716,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 862482
+        "costUsd": 3.811017,
+        "inputTokens": 94810,
+        "outputTokens": 56249,
+        "durationMs": 864273
       },
       {
         "stage": "implementer",
-        "costUsd": 0.058499999999999996,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 2968
+        "costUsd": 0.07014,
+        "inputTokens": 3166,
+        "outputTokens": 302,
+        "durationMs": 4141
       },
       {
         "stage": "reviewer",
-        "costUsd": 0.012459000000000001,
-        "inputTokens": 0,
-        "outputTokens": 0,
-        "durationMs": 9033
+        "costUsd": 0.010998,
+        "inputTokens": 1401,
+        "outputTokens": 453,
+        "durationMs": 8722
       }
     ],
-    "totalCostUsd": 3.9581190000000004,
-    "totalDurationMs": 874486,
-    "taskId": "frontend-dashboard-recurring-badge",
-    "timestamp": "2026-05-18T05:06:06.169Z"
+    "totalCostUsd": 3.892155,
+    "totalDurationMs": 877138,
+    "taskId": "design-tokens-recurring",
+    "timestamp": "2026-05-18T18:41:54.941Z"
+  },
+  {
+    "scenarioId": "spine-cashpulse-greenfield",
+    "rep": 0,
+    "path": "greenfield",
+    "status": "success",
+    "reviewOutcome": "escalated",
+    "stageCosts": [
+      {
+        "stage": "clarifier",
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 0
+      },
+      {
+        "stage": "architect",
+        "costUsd": 5.88474,
+        "inputTokens": 197995,
+        "outputTokens": 94933,
+        "durationMs": 1461040
+      },
+      {
+        "stage": "implementer",
+        "costUsd": 0.10443,
+        "inputTokens": 6187,
+        "outputTokens": 155,
+        "durationMs": 3003
+      },
+      {
+        "stage": "reviewer",
+        "costUsd": 0.011748000000000001,
+        "inputTokens": 1396,
+        "outputTokens": 504,
+        "durationMs": 8838
+      }
+    ],
+    "totalCostUsd": 6.0009179999999995,
+    "totalDurationMs": 1472885,
+    "taskId": "ui-primitives",
+    "timestamp": "2026-05-18T18:51:38.044Z"
   }
 ]

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import type { RunProgressState } from './use-run-progress';
 import { useNotificationPreferences } from './use-notification-preferences';
@@ -27,10 +27,13 @@ export function usePipelineNotifications(
   const lastStage = useRef<string | null>(null);
   const lastStatus = useRef<string | null>(null);
   const hasRequestedPermission = useRef(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, dispatchUnread] = useReducer(
+    (s: number, a: 'increment' | 'clear') => (a === 'clear' ? 0 : s + 1),
+    0,
+  );
   const { prefs } = useNotificationPreferences();
 
-  const clearUnread = useCallback(() => setUnreadCount(0), []);
+  const clearUnread = useCallback(() => dispatchUnread('clear'), []);
 
   useEffect(() => {
     if (!runId || !progress.status) return;
@@ -48,7 +51,7 @@ export function usePipelineNotifications(
           color: 'blue',
           autoClose: 4000,
         });
-        setUnreadCount((c) => c + 1);
+        dispatchUnread('increment');
       }
       lastStage.current = progress.stage;
     }
@@ -65,7 +68,7 @@ export function usePipelineNotifications(
           autoClose: 8000,
         });
         showBrowserNotification('CHIP — Pipeline complete', `All stages finished successfully${costStr}`, prefs.browserNotifications);
-        setUnreadCount((c) => c + 1);
+        dispatchUnread('increment');
       } else if (progress.status === 'failed') {
         notifications.show({
           title: 'Pipeline failed',
@@ -74,7 +77,7 @@ export function usePipelineNotifications(
           autoClose: 10000,
         });
         showBrowserNotification('CHIP — Pipeline failed', progress.error ?? 'An error occurred during execution', prefs.browserNotifications);
-        setUnreadCount((c) => c + 1);
+        dispatchUnread('increment');
       }
       lastStatus.current = progress.status;
     }
