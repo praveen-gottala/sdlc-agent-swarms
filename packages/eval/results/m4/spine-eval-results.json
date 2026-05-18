@@ -1,5 +1,46 @@
 [
   {
+    "scenarioId": "spine-cashpulse-greenfield",
+    "rep": 0,
+    "path": "greenfield",
+    "status": "success",
+    "reviewOutcome": "escalated",
+    "stageCosts": [
+      {
+        "stage": "clarifier",
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 0
+      },
+      {
+        "stage": "architect",
+        "costUsd": 6.1188,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 1486000
+      },
+      {
+        "stage": "implementer",
+        "costUsd": 0.1133,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 3500
+      },
+      {
+        "stage": "reviewer",
+        "costUsd": 0.0112,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 8000
+      }
+    ],
+    "totalCostUsd": 6.2433,
+    "totalDurationMs": 1497600,
+    "taskId": "shared-ui-components",
+    "timestamp": "2026-05-18T04:52:57.000Z"
+  },
+  {
     "scenarioId": "spine-cashpulse-brownfield",
     "rep": 0,
     "path": "brownfield",

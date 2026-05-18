@@ -513,13 +513,20 @@ async function main(): Promise<void> {
     }
   }
 
-  // Write results
+  // Load existing results and merge (append new, avoid overwriting prior runs)
   const resultsPath = join(RESULTS_DIR, 'spine-eval-results.json');
-  writeFileSync(resultsPath, JSON.stringify(results, null, 2));
-  log(`\nResults written to ${resultsPath}`);
+  const existing: SpineEvalResult[] = existsSync(resultsPath)
+    ? JSON.parse(readFileSync(resultsPath, 'utf-8'))
+    : [];
+  const merged = [
+    ...existing.filter((e) => !results.some((r) => r.scenarioId === e.scenarioId && r.rep === e.rep)),
+    ...results,
+  ];
+  writeFileSync(resultsPath, JSON.stringify(merged, null, 2));
+  log(`\nResults written to ${resultsPath} (${merged.length} total, ${results.length} new)`);
 
-  // Write cost receipts
-  writeCostReceipts(results);
+  // Write cost receipts (all merged results)
+  writeCostReceipts(merged);
 
   // Check failure rate
   const totalRuns = results.length;

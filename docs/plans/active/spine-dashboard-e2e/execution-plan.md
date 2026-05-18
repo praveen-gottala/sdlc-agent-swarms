@@ -31,7 +31,7 @@ Any developer using the CHIP dashboard at `packages/dashboard/` can take an appl
 ## Out of scope items that are explicitly NOT this plan
 
 - New agents, new pipeline stages, new public APIs (those belong in M4 or follow-ups).
-- The `/approvals` `badge: 3` is currently hard-coded at [`sidebar-nav.tsx:61`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx). Replacing it with a live count IS in scope (Phase 3). Replacing the sidebar layout is not.
+- ~~The `/approvals` `badge: 3` is currently hard-coded at [`sidebar-nav.tsx:61`](../../../../packages/dashboard/src/components/layout/sidebar-nav.tsx). Replacing it with a live count IS in scope (Phase 3).~~ **DONE (2026-05-18, M4 Phase 7 session).** `useApprovalCount()` hook fetches from `/api/approvals` with 30s polling. Badge hidden when count is 0. Phase 3 should add E2E test coverage for this behavior.
 
 ---
 
