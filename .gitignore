@@ -98,6 +98,9 @@ docs/_generated/
 # Backup files
 *.bak
 
+# Test-generated design scripts (re-stamped on every RUN_LLM_TESTS=true run)
+packages/agents-ux/agentforge/designs/test-*/scripts/design.js
+
 # Test results (Playwright artifacts)
 test-results/
 
