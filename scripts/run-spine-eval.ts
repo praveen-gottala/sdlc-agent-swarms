@@ -28,7 +28,7 @@ import type { LLMProvider } from '@agentforge/providers';
 import { createTracedProvider, initLangfuseTracing } from '@agentforge/telemetry';
 import { createRecordingProvider } from '@agentforge/eval';
 import type { RecordingProvider, RunCostSummary, SpineEvalScenario, SpineEvalResult, SpineStageCost } from '@agentforge/eval';
-import { loadSpineScenarios, loadSpineScenario } from '@agentforge/eval';
+import { loadSpineScenarios, loadSpineScenario, selectTask, buildDiffFromArtifacts } from '@agentforge/eval';
 import { runArchitectPipelineStream } from '@agentforge/agents-architect';
 import type { ArchitectStreamEvent } from '@agentforge/agents-architect';
 import { runImplementerPipelineStream } from '@agentforge/agents-implementer';
@@ -88,44 +88,7 @@ function createStageRecorder(
   });
 }
 
-function selectTask(
-  tasks: readonly TaskNode[],
-  selector: SpineEvalScenario['architect']['taskSelector'],
-): TaskNode | undefined {
-  switch (selector.mode) {
-    case 'first':
-      return tasks[0];
-    case 'by-id':
-      return tasks.find((t) => t.id === selector.taskId);
-    case 'by-type':
-      return tasks.find((t) => {
-        const typeMatch = !selector.taskType || t.type === selector.taskType;
-        const modeMatch = !selector.taskMode || t.mode === selector.taskMode;
-        return typeMatch && modeMatch;
-      });
-    default:
-      return tasks[0];
-  }
-}
-
-function buildDiffFromArtifacts(
-  artifacts: readonly { path: string; action: string }[],
-  taskId: string,
-): Diff {
-  return {
-    id: `eval-diff-${taskId}`,
-    taskId,
-    worktreeBranch: `eval-${taskId}`,
-    files: artifacts.map((a) => ({
-      path: a.path,
-      operation: a.action === 'created' ? 'add' as const : 'modify' as const,
-      hunks: [],
-    })),
-    testsPassed: true,
-    typecheckPassed: true,
-    lintPassed: true,
-  };
-}
+// selectTask and buildDiffFromArtifacts extracted to spine-eval-utils.ts
 
 function log(msg: string): void {
   console.log(`[spine-eval] ${msg}`);

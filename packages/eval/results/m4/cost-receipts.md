@@ -25,7 +25,16 @@ Generated: 2026-05-18T05:06:06.170Z (brownfield), greenfield recovered from run 
 ## Totals
 
 - **Total cost:** $10.2014
-- **Total input tokens:** 0
-- **Total output tokens:** 0
+- **Total input tokens:** 0 (see note)
+- **Total output tokens:** 0 (see note)
 - **Runs:** 2
 - **Model:** claude-opus-4-6
+
+## Data Quality Note
+
+Token counts are zero because this eval ran before commit `2f5d2d7` which fixed
+`inputTokens`/`outputTokens` population in `CostRecord`. Cost totals ($USD) are
+correct — they were computed from the provider's cost response, not from token
+counts. A future re-run with the fixed provider will produce non-zero token
+breakdowns. The zero values do not affect Gate 6a/6b pass criteria (which are
+based on cost, duration, and structural quality — not token counts).

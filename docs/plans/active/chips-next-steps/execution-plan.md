@@ -1,6 +1,6 @@
 # CHIP's Next Steps: Spine Build-Out Plan
 
-## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 COMPLETE (2026-05-16) — M4 Phase 7 IN PROGRESS (Gate 6a/6b deferred)
+## Status: M0 COMPLETE (2026-05-04) — M1 COMPLETE (2026-05-14) — M2 COMPLETE (2026-05-14) — M3 COMPLETE (2026-05-15) — M3.5 COMPLETE (2026-05-15) — M3.6 COMPLETE (2026-05-16) — M4 COMPLETE (2026-05-18) — M4.5 NOT STARTED
 
 ## Plan Structure
 
@@ -860,11 +860,17 @@ Five configurations (A baseline, B planning-only, C full DesignSpec, D labels-on
 
 **Blocks:** Nothing. M4 ships with task-type-aware routing (`'none'` for NEW, `'structure-only'` for MODIFY) per M3.6 findings and ADR-057.
 
-### M4: Full Spine — Phase 7 IN PROGRESS (Gate 6a/6b deferred)
+### M4: Full Spine — COMPLETE (2026-05-18)
 
 **Child execution plan:** [`m4-execution-plan.md`](m4-execution-plan.md) (7 phases: ADR-057 routing + instrumentation → brownfield schemas → delta design specialist → Architect TaskPlan wiring → Implementer graph → Reviewer graph → full spine eval).
 
-Design stage becomes Implementer specialist tool. Reviewer is self-contained. Task-level git-worktree parallelism (R1) is **deferred** — M4 ships sequential single-threaded execution per task.
+Design stage becomes Implementer specialist tool. Reviewer is self-contained. Task-level git-worktree parallelism (R1) is **deferred** — M4 ships sequential single-threaded execution per task. Gate 6a (spine passes) and Gate 6b (regression guard) both PASSED 2026-05-18.
+
+### M4.5: Skill-Derived Spine Quality Gates — NOT STARTED
+
+**Child execution plan:** [`m4-5-execution-plan.md`](m4-5-execution-plan.md) (5 phases: assumption validator node split → enriched Reviewer deterministic gates → Implementer post-code quality gates → Architect Critic enrichment → eval + regression guard).
+
+Extracts deterministic logic from 8 Claude Code skills into spine pipeline nodes. Reviewer: 3→4 nodes, 5→16 gates. Implementer: 4→5 nodes, 0→5 gates. Critic: 15→17 gates. Skills continue working as Claude Code commands — no rewrite.
 
 ### Brownfield wiring (from R9 brief)
 

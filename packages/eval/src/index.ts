@@ -46,6 +46,7 @@ export {
   SpineEvalScenarioSchema,
   SpineStageCostSchema,
   SpineEvalResultSchema,
+  RunCostSummarySchema,
 } from './types.js';
 
 export { createRecordingProvider, clearCassette } from './recording-provider.js';
@@ -69,6 +70,8 @@ export { runScenario } from './runner.js';
 export type { ProgressCallback } from './runner.js';
 
 export { runArchitectScenario, runArchitectScenarioDetailed } from './architect-runner.js';
+
+export { selectTask, buildDiffFromArtifacts } from './spine-eval-utils.js';
 
 export { compareToBaseline, hasRegressions } from './baseline/compare.js';
 

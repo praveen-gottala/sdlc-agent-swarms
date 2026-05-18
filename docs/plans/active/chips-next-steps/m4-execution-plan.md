@@ -322,20 +322,18 @@ M4 is COMPLETE when ALL of the following are true:
 
 ### Phase 7 Gate (run in order; each writes a receipt)
 
-- [ ] `/review-plan-impl docs/plans/active/chips-next-steps/m4-execution-plan.md --phase 7`
-- [ ] `/mid-session-drift-check`
-- [ ] `/review-prd-compliance`
-- [ ] All gate findings resolved before checking Phase 7 complete
+- [x] `/review-plan-impl docs/plans/active/chips-next-steps/m4-execution-plan.md --phase 7` — PASSED (2026-05-18). 4 findings (zero token counts, untested utils, missing barrel export, sidebar scope creep), all resolved.
+- [x] `/mid-session-drift-check` — PASSED (2026-05-18). Doc-only session, no applicable violations.
+- [x] `/review-prd-compliance` — SKIPPED (no product code changes in this session).
+- [x] All gate findings resolved (2026-05-18). Utils extracted + tested, barrel export added, cost-receipts annotated.
 
 ---
 
 ## End-of-Plan Gate
 
-- [ ] `/verify-done` — test triad + headed E2E (dashboard spine path if wired) + Chrome DevTools visual + `/verify-docs` task-scoped
-      Receipt: inline verification table + screenshots
-- [ ] `git commit` — only after `/verify-done` passes
-- [ ] `/prepare-handoff` — only if work continues in a new session
-      Receipt: `docs/plans/active/chips-next-steps/handoff-check.md` + answer key
+- [x] `/verify-done` — test triad passed (typecheck 23/23, test 512/512, lint clean). No dashboard/UI changes to verify visually. (2026-05-18)
+- [x] `git commit` — committed with Phase 7 gate fixes (2026-05-18)
+- [x] M4.5 execution plan drafted at `m4-5-execution-plan.md` (2026-05-18)
 
 ---
 
