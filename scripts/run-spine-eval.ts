@@ -157,6 +157,7 @@ async function runArchitectStage(
 
   let architectState: ArchitectStateType | undefined;
   let threadId = '';
+  const eventTypes: string[] = [];
 
   for await (const event of runArchitectPipelineStream({
     enrichedRequirement,
@@ -167,19 +168,18 @@ async function runArchitectStage(
     projectId: 'spine-eval',
     checkpointer,
   })) {
+    eventTypes.push(event.type);
     switch (event.type) {
       case 'node-complete':
         log(`  [architect:${event.node}] ${(event.durationMs / 1000).toFixed(1)}s`);
         break;
       case 'interrupt':
-        // Gate 2 interrupt — state already contains the full ContractBundle
-        // and TaskPlan. In eval mode we auto-approve with no edits, so the
-        // post-Gate-2 processing adds no value. Use the interrupt state directly.
         log('  [architect] Gate 2 interrupt — using interrupt state (auto-approve, no resume needed).');
         architectState = event.state as ArchitectStateType;
         threadId = event.threadId;
         break;
       case 'complete':
+        log('  [architect] Pipeline complete.');
         architectState = event.state as ArchitectStateType;
         threadId = event.threadId;
         break;
@@ -187,6 +187,8 @@ async function runArchitectStage(
         throw new Error(`Architect error: ${event.error.code} — ${event.error.message}`);
     }
   }
+
+  log(`  [architect] Event sequence: ${eventTypes.join(' → ')}`);
 
   if (!architectState) {
     throw new Error('Architect did not produce a complete state');

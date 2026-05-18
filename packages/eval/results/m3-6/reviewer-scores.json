@@ -9,7 +9,7 @@
     "props": 3,
     "props_notes": "All props are correctly declared via the MonthSummary interface and every data binding uses the exact field names specified (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, budgetLimit).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:00:41.823Z"
+    "timestamp": "2026-05-18T04:50:39.965Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -17,11 +17,11 @@
     "config": "A",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The component covers all required metrics and status indicators with correct color coding, but the layout deviates from the specified 2x2 grid — Total Spent and Transaction Count are grouped together in a single row rather than as separate grid cells, and Budget Remaining/Daily Average are in a 2-column grid below, so the four metrics aren't presented in a clean 2x2 or vertical stack as specified.",
+    "fidelity_notes": "The component matches the spec well with correct status color-coding, currency formatting, and all four required metrics present, but the layout deviates from the specified 2x2 grid — Total Spent is in a full-width row while only Remaining and Daily Average share a 2-column grid, and Transaction Count is nested inside the Total Spent row rather than being a standalone grid cell.",
     "props": 3,
-    "props_notes": "All props are correctly declared via the MonthSummary interface and every data binding uses the exact field names specified (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, budgetLimit, month).",
+    "props_notes": "All props compile correctly, the MonthSummary interface matches the spec exactly, and all data bindings use the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, budgetLimit).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:00:46.253Z"
+    "timestamp": "2026-05-18T04:50:48.002Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -29,11 +29,11 @@
     "config": "A",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component faithfully renders all four required metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) with correct color-coded status indicators, but the layout uses a mixed approach (not a clean 2x2 grid for all four metrics — Total Spent is separated from the others, and a progress bar section is added that isn't in the spec) and the card styling uses a gradient header rather than matching existing dashboard card styling.",
+    "fidelity_notes": "The component faithfully renders all four required metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) with correct color-coded status indicators, but the layout uses a mixed approach (not a clean 2x2 grid for all four metrics — Total Spent is separated from the others) and includes an extra progress bar section not specified in the DesignSpec.",
     "props": 3,
-    "props_notes": "All props are correctly declared and bound — totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, and budgetLimit all use the correct field names from the MonthSummary interface.",
+    "props_notes": "All props are correctly declared and bound: totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, and budgetLimit all use the correct field names from the MonthSummary interface.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:00:52.066Z"
+    "timestamp": "2026-05-18T04:50:52.403Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -41,11 +41,11 @@
     "config": "A",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the DesignSpec well — time range filter, category filter chips, category breakdown rows with icon/color/amount/percentage/transaction count/trend indicator, daily spending chart, and sorted by totalAmount descending — but the category filter is individual chips rather than a multi-select dropdown, the empty state message says 'No spending data / Try selecting a different filter' instead of 'No expenses in this time range', and extra summary cards (Total Spent, Transactions, Daily Avg) and a Peak Spending Day card are added beyond the spec.",
+    "fidelity_notes": "The component matches the spec well — time range filter, category filter chips, category rows with icon/color/amount/percentage/transaction count/trend indicator, daily spending chart, and sorted breakdown are all present — but the category filter is inline chips rather than a multi-select dropdown, the empty state message differs ('No spending data' vs 'No expenses in this time range'), and extra summary cards (Total Spent, Transactions, Daily Avg) and a Peak Spending Day card are added beyond the spec.",
     "props": 3,
     "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId) and DailySpending fields (date, totalAmount, transactionCount), with no aggregation from raw expense rows, and all props compile correctly.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:00:57.526Z"
+    "timestamp": "2026-05-18T04:50:57.534Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -53,11 +53,11 @@
     "config": "A",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the overall structure well — time range filter chips, category breakdown with icon/color/amount/percentage/transaction count, daily spending section, and trend indicator are all present — but the category filter is implemented as inline badge chips rather than a multi-select dropdown, the empty state message differs from the spec ('No data for selected category.' vs 'No expenses in this time range'), and extra sections (Distribution card, Trend card, Summary cards) are added beyond the spec.",
+    "fidelity_notes": "The component has the correct overall structure with time range filters, category breakdown with icons/colors/amounts/percentages/transaction counts, and daily spending visualization, but deviates from the spec in several ways: category filter is individual badge chips rather than a multi-select dropdown, the empty state message says 'No data for selected category' instead of 'No expenses in this time range', and extra cards (Distribution, Trend) are added that aren't in the spec.",
     "props": 3,
-    "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId) and DailySpending fields (date, totalAmount, transactionCount), with no aggregation from raw expense rows, and the component compiles cleanly.",
+    "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId) and DailySpending fields (date, totalAmount, transactionCount), with no aggregation from raw expense rows and correct field names throughout.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:02.839Z"
+    "timestamp": "2026-05-18T04:51:04.534Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -65,11 +65,11 @@
     "config": "A",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the overall structure well — time range filter chips, category filter, sorted category rows with icon/color/amount/percentage/transaction count/trend indicator, daily sparkline, and distribution summary — but the category filter is implemented as inline chips rather than a multi-select dropdown, the empty state message says 'No spending data for this selection' instead of 'No expenses in this time range', and a few minor layout/label differences exist.",
+    "fidelity_notes": "The component matches the spec well with time range filters, category rows showing icon/color/amount/percentage/transaction count/trend indicators, a daily sparkline, and sorted descending by totalAmount, but the category filter is implemented as inline chips rather than a multi-select dropdown, the empty state message differs from the spec ('No spending data for this selection' vs 'No expenses in this time range'), and there are extra sections (summary cards, distribution legend) not called for in the spec.",
     "props": 3,
-    "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId) and DailySpending fields (date, totalAmount, transactionCount), with no aggregation from raw expense rows, and all props compile correctly.",
+    "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId) and DailySpending fields (date, totalAmount, transactionCount), with no misnamed fields and the component compiles cleanly.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:08.131Z"
+    "timestamp": "2026-05-18T04:51:10.585Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -77,11 +77,11 @@
     "config": "A",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has the Preferences and Manage Categories sections but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), and default categories incorrectly expose a Delete action when the spec says isDefault categories should only show Edit.",
+    "fidelity_notes": "The component has the Preferences and Manage Categories sections but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), and the Delete action is exposed for default categories contrary to the spec.",
     "props": 1,
-    "props_notes": "The component manages its own state internally rather than accepting props/callbacks (no onUpdate handler prop), and the Budget entity with monthlyLimit/currency fields is entirely absent, meaning key data bindings from the spec are missing.",
+    "props_notes": "The component manages its own state internally rather than accepting props/callbacks (no onUpdate handler prop), and the Budget data bindings (Budget.monthlyLimit, Budget.currency) are entirely absent since that section is missing.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:12.635Z"
+    "timestamp": "2026-05-18T04:51:14.379Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -89,11 +89,11 @@
     "config": "A",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has General Settings and Manage Categories sections matching the spec, but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), adds an unrequested 'Danger Zone' section, and default categories incorrectly expose a Delete action instead of hiding it when Category.isDefault is true.",
+    "fidelity_notes": "The component has the General Settings and Manage Categories sections but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), and adds an unrequested 'Danger Zone' section; also the spec requires that default categories suppress the Delete action rather than showing it.",
     "props": 1,
-    "props_notes": "The component uses no external props or onUpdate callback as specified; all state is self-contained with no Budget data bindings, meaning roughly half or more of the expected prop/binding surface is missing.",
+    "props_notes": "The component manages its own state internally with no onUpdate callback prop, missing the Budget prop/bindings entirely, and does not accept external props for settings or categories as the spec implies — over half the expected external data bindings are absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:18.627Z"
+    "timestamp": "2026-05-18T04:51:19.197Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -101,11 +101,11 @@
     "config": "A",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component has the Preferences section and Categories section correctly implemented, but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), and the 'Add Category' form is a dialog rather than inline.",
+    "fidelity_notes": "The component has the Preferences and Manage Categories sections with correct structure, but is missing the required 'Current Month Budget' section (showing Budget.monthlyLimit and Budget.currency in a read-only summary card with an Edit link), and the Add Category form is a dialog rather than inline.",
     "props": 2,
-    "props_notes": "Props and bindings are mostly correct (currency bound to settings.currency, budget to settings.defaultMonthlyBudget, category fields to name/color/icon/isDefault), but the component manages its own state internally rather than calling an onUpdate handler, and the Budget type fields (monthlyLimit, currency) are entirely absent.",
+    "props_notes": "Props and bindings are mostly correct (currency bound to UserSettings.currency, budget to UserSettings.defaultMonthlyBudget, Category fields correctly used), but the component manages its own persistence state internally rather than calling an onUpdate handler, and the Budget type fields (monthlyLimit, currency) are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:24.397Z"
+    "timestamp": "2026-05-18T04:51:23.491Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -113,11 +113,11 @@
     "config": "A",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is present with correct data bindings (merchantName, amount, frequency, nextOccurrence) and proper sorting/filtering, but it is placed below (not between) the Spending Summary card rather than between a Monthly Budget card and Spending by Category card, the footer shows a total rather than a 'View all recurring expenses' link, and there is no distinct Monthly Budget card matching the spec.",
+    "fidelity_notes": "The Upcoming Recurring card is present with correct data bindings (merchantName, amount, frequency, nextOccurrence) and proper sorting/filtering, but it is placed below (not between) the Spending Summary card rather than between a Monthly Budget card and Spending by Category card, the footer shows a total-due summary instead of a 'View all recurring expenses' link, and there is no distinct Monthly Budget card matching the spec.",
     "props": 3,
     "props_notes": "All props compile correctly, RecurringTemplate fields (merchantName, amount, frequency, nextOccurrence, status) are bound with correct field names, and the onViewDetail callback is properly wired.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:29.532Z"
+    "timestamp": "2026-05-18T04:51:30.061Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -125,11 +125,11 @@
     "config": "A",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is present with merchant name, amount, frequency badge, and next occurrence date, but it is placed after the Monthly Budget card rather than between Monthly Budget and Spending by Category (which is inside the same card in this implementation), the footer says 'View all' with a ChevronRight rather than 'View all recurring expenses', and the card title reads 'Upcoming Recurring Expenses' instead of 'Upcoming Recurring'.",
+    "fidelity_notes": "The Upcoming Recurring card is present in the left column with merchant name, amount, frequency badge, and next occurrence date, but it is placed after (not between) the Monthly Budget and Spending by Category cards, the footer says 'View all' rather than 'View all recurring expenses', and the Spending by Category section was moved into the Budget card rather than remaining a separate card as implied by the spec.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct RecurringTemplate fields (merchantName, amount, frequency, nextOccurrence, status), and the component is purely additive without modifying existing dashboard nodes.",
+    "props_notes": "All data bindings correctly use RecurringTemplate fields (merchantName, amount, frequency, nextOccurrence, status) with proper filtering for active status and ascending sort, and the onViewDetail callback is correctly wired.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:35.165Z"
+    "timestamp": "2026-05-18T04:51:35.591Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -137,11 +137,11 @@
     "config": "A",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly placed in the left column between the summary and category cards, shows merchant name, amount, frequency badge, and next occurrence date, but the footer should be a 'View all recurring expenses' link rather than a 'Manage' button, and the card footer shows a total summary row instead of the specified link.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly placed in the left column with merchant name, amount, frequency badge, and next occurrence date, but the layout differs from spec: the card footer should be a 'View all recurring expenses' link rather than a total-sum summary row, and the card is placed between SpendingSummaryCard and the right-column cards rather than between a 'Monthly Budget' card and 'Spending by Category' card (though the overall column structure is close).",
     "props": 2,
-    "props_notes": "All major props and data bindings use correct field names (merchantName, amount, frequency, nextOccurrence, status, categoryId), but the footer binding deviates from spec (shows aggregate total instead of a 'View all' link) and the category breakdown card is placed in the right column rather than the left as implied by the spec's ordering.",
+    "props_notes": "All major props and data bindings use correct field names (merchantName, amount, frequency, nextOccurrence, status, categoryId), but the footer renders a total-sum row instead of the specified 'View all recurring expenses' link, and the RefreshCw icon is in the header rather than being optional as specified.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:41.009Z"
+    "timestamp": "2026-05-18T04:51:46.031Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -149,11 +149,11 @@
     "config": "A",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The form structure, recurring toggle, frequency picker, start/end date inputs, and submit logic all match the spec well, but the end date implementation uses a free-form date input rather than the specified two-option selector ('Never' / 'On date') with null mapping, which is a notable deviation.",
+    "fidelity_notes": "The form structure, recurring toggle, frequency picker, start/end date inputs, and submit logic all match the spec well, but the end date handling uses a free-form date input instead of the specified two-option selector ('Never' / 'On date'), which is a notable deviation from the design.",
     "props": 3,
     "props_notes": "All data bindings use correct field names (amount, categoryId, merchantName, date, paymentMethod, note, frequency, startDate, endDate, recurringTemplateId, status='active'), the component compiles, and props are correctly declared and wired throughout.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:46.059Z"
+    "timestamp": "2026-05-18T04:51:50.520Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -161,11 +161,11 @@
     "config": "A",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the overall structure well — expense fields, recurring toggle, frequency picker, start/end date — but the end date handling deviates from the spec (spec requires 'Never'/'On date' radio options with endDate=null for Never, while the implementation uses a plain optional date input with a 'Leave blank' hint).",
+    "fidelity_notes": "The component matches the overall structure well — expense fields, recurring toggle, frequency picker, start/end date — but the end date handling deviates from the spec (spec requires 'Never'/'On date' radio options with endDate=null for Never, while the implementation uses a plain optional date input with a 'Leave blank' hint), and the start date doesn't explicitly default to the already-entered Expense.date.",
     "props": 3,
-    "props_notes": "All data bindings use correct field names (amount, categoryId, merchantName, date, paymentMethod, note, frequency, startDate, endDate, status, recurringTemplateId), the component compiles cleanly, and submit logic correctly sets recurringTemplateId=null when toggle is off and creates the template with status='active' when on.",
+    "props_notes": "The component compiles cleanly, all form fields use correct field names (amount, categoryId, merchantName, date, paymentMethod, note, recurringTemplateId, frequency, startDate, endDate, status), and data bindings correctly map to the ExpenseFormData and RecurringTemplateData interfaces with proper submit logic setting recurringTemplateId and status='active'.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:51.346Z"
+    "timestamp": "2026-05-18T04:51:56.360Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -173,11 +173,11 @@
     "config": "A",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the spec well overall — expense fields, recurring toggle, frequency picker, start/end date, and submit logic are all present — but the end date uses a free-form date input rather than the spec's two-option 'Never' / 'On date' selector, and the start date defaults to today rather than being bound to the already-entered Expense.date.",
+    "fidelity_notes": "The component matches the spec well overall — toggle, frequency picker, start/end date, and submit logic are all present — but the end date uses a free-form date input rather than the spec's two-option 'Never' / 'On date' selector, and the start date defaults to today rather than being bound to the already-entered Expense.date.",
     "props": 2,
-    "props_notes": "Props and state bindings are mostly correct (frequency, startDate, endDate, status, recurringTemplateId), but the start date for the recurring template is initialized independently to `today` instead of being bound to `formData.date`, and the end date binding omits the 'Never' / null distinction the spec requires.",
+    "props_notes": "Props and state bindings are mostly correct and compile cleanly, but recurringTemplateId is set to null only implicitly (via undefined) rather than explicitly null on toggle-OFF submission, and the start date binding uses its own independent state instead of formData.date as specified.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:01:57.895Z"
+    "timestamp": "2026-05-18T04:52:01.575Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -185,11 +185,11 @@
     "config": "A",
     "rep": 0,
     "fidelity": 3,
-    "fidelity_notes": "The component faithfully renders expense rows with merchant name, category badge, date, optional note, and amount, and additively places a small frequency pill badge near the amount only when recurringTemplateId is non-null, with no modification to rows lacking a template — matching the spec exactly.",
+    "fidelity_notes": "The component faithfully renders expense rows with merchant name, category badge, date, optional note, and amount, and additively places a small frequency pill badge near the amount only when recurringTemplateId is non-null, matching the spec exactly with no existing row content modified.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, template.frequency, expense.amount, expense.merchantName, expense.categoryId, expense.date), and the template lookup via templateMap correctly resolves the joined RecurringTemplate reference.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, template.frequency, expense.amount, expense.merchantName, expense.categoryId, expense.date), and the template lookup via templateMap correctly resolves the joined RecurringTemplate.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:02.228Z"
+    "timestamp": "2026-05-18T04:52:05.671Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -197,23 +197,23 @@
     "config": "A",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "The component faithfully implements all spec requirements: recurring frequency badges appear near the amount for expenses with recurringTemplateId, no badge renders for non-recurring expenses, badge styling uses small pill shape with muted colors at 11-12px font size, and existing row content (merchant, category, date, amount) is preserved without modification.",
+    "fidelity_notes": "The component faithfully implements all specified behavior: expense rows retain their structure, a frequency badge renders near the amount only when recurringTemplateId is non-null, the badge is a small pill with muted background colors at 11-12px font size, and rows without a recurringTemplateId render no badge.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use correct field names (expense.recurringTemplateId, recurringTemplate.frequency, expense.categoryId, expense.merchantName, expense.date, expense.amount), and the template lookup via templateMap correctly resolves the recurringTemplateId reference.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, recurringTemplate.frequency, expense.categoryId, expense.merchantName, expense.date, expense.amount), and the template lookup via templateMap correctly resolves the joined RecurringTemplate reference.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:06.588Z"
+    "timestamp": "2026-05-18T04:52:09.967Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
     "taskType": "MODIFY",
     "config": "A",
     "rep": 2,
-    "fidelity": 2,
-    "fidelity_notes": "The component correctly renders expense rows with additive frequency badges near the amount for recurring expenses and no badge for non-recurring ones, matching the spec's pill-shaped, muted-color, small-font badge approach, though the spec mentions payment method display in rows which is absent here.",
+    "fidelity": 3,
+    "fidelity_notes": "The component faithfully renders expense rows with merchant name, category, amount, date, and a small pill-shaped frequency badge near the amount only when recurringTemplateId is non-null, matching the spec's additive badge requirement without altering non-recurring row layout.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId resolves to RecurringTemplate.frequency, expense.categoryId, expense.amount, expense.date, expense.merchantName), and the component composition is accurate throughout.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, template.frequency, expense.categoryId, expense.amount, expense.date, expense.merchantName), and the recurring template is properly resolved via the templateMap lookup.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:12.033Z"
+    "timestamp": "2026-05-18T04:52:15.091Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -221,11 +221,11 @@
     "config": "B",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, progress bar, and stats are well-implemented, but the layout deviates from the specified 2x2 grid (uses a vertical stack with a separate progress bar section instead), and the status colors use blue/amber/red instead of the specified green/amber/red for on-track.",
+    "fidelity_notes": "The card structure, status badge, progress bar, and stats row are well-implemented and match the spec closely, but the layout uses a vertical stack with a separate progress bar section rather than the specified 2x2 grid of four metrics, and the status color for 'On Track' uses blue instead of the specified green.",
     "props": 3,
-    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the optional currency and animateOnMount props are properly declared with defaults.",
+    "props_notes": "All props compile correctly, MonthSummary fields (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month) are all bound to the correct field names throughout the component.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:16.300Z"
+    "timestamp": "2026-05-18T04:52:19.286Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -233,11 +233,11 @@
     "config": "B",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the overall structure well with header, status badge, currency metrics, and progress bar, but deviates from the spec's 2x2 grid/vertical stack of four metrics by splitting them across a large animated display, a progress bar section, a remaining display, and a stats row — also uses blue instead of green for 'On Track' status.",
+    "fidelity_notes": "The component matches the overall structure well with header, status badge, currency-formatted metrics, and progress bar, but deviates from the spec's 2x2 grid/vertical stack of four metrics by placing Total Spent as a large hero display and burying Budget Remaining in a separate row, while also adding a progress bar not mentioned in the spec; additionally the status badge uses blue for 'On Track' instead of the specified green.",
     "props": 3,
-    "props_notes": "All props compile correctly and data bindings use the exact field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetLimit, budgetStatus, month) with no misnamed fields.",
+    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through formatting helpers.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:20.853Z"
+    "timestamp": "2026-05-18T04:52:24.702Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -245,11 +245,11 @@
     "config": "B",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the overall structure well with header, status badge, currency formatting, progress bar, and stat rows, but deviates from the spec's 2x2 grid/vertical stack of four metrics by using a large animated display for Total Spent plus a separate remaining display and a divider section for stats, and uses blue for 'On Track' instead of the specified green.",
+    "fidelity_notes": "The component matches the overall structure well with header, status badge, currency formatting, progress bar, and stat rows, but deviates from the spec's 2x2 grid layout (uses a vertical stack instead) and uses blue for 'On Track' rather than the specified green.",
     "props": 3,
-    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through formatting calls.",
+    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through formatting helpers.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:25.753Z"
+    "timestamp": "2026-05-18T04:52:29.321Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -259,21 +259,21 @@
     "fidelity": 1,
     "fidelity_notes": "The component builds a multi-card dashboard (Period Summary, Daily Spending chart, Top Categories, Biggest Expenses, Month Comparison) rather than the specified single-page layout with time-range filter chips, a category multi-select dropdown, and a sorted category row list with trend indicators as the primary content.",
     "props": 2,
-    "props_notes": "The code compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending fields, but the required filter-chip and multi-select dropdown props are entirely absent, and data is not sorted by totalAmount descending as specified.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending fields, but the required filter-chip and dropdown props (time range selection, category multi-select) are entirely absent, and data is not sorted by totalAmount descending as specified.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:30.814Z"
+    "timestamp": "2026-05-18T04:52:34.924Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
     "taskType": "NEW",
     "config": "B",
     "rep": 1,
-    "fidelity": 1,
-    "fidelity_notes": "The component implements a multi-card dashboard (Period Summary, Daily Spending Chart, Top Categories, Biggest Expenses, Month Comparison) rather than the specified single-page layout with filter chips (Week/Month/Quarter), a multi-select category dropdown, and a sorted category list with trend indicators as the primary content.",
+    "fidelity": 0,
+    "fidelity_notes": "The component implements a multi-card monthly dashboard with navigation and comparison cards, completely different from the spec's filter-chip-driven category breakdown page with time range selector and multi-select category dropdown.",
     "props": 2,
-    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending fields, but the component is missing the required filter chip props (time range, category multi-select) and does not bind to the empty-state or trend-indicator logic specified.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending fields, but is missing the required filter chip and multi-select dropdown props entirely.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:35.837Z"
+    "timestamp": "2026-05-18T04:52:45.576Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -281,11 +281,11 @@
     "config": "B",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component renders spending data with category breakdowns and daily charts, but is missing the required filter chips (Week/Month/Quarter time range selector) and multi-select category filter dropdown that are central to the DesignSpec, and the layout uses multiple cards rather than the specified single list with filter chips at top.",
+    "fidelity_notes": "The component renders spending data with cards for period summary, daily chart, top categories, biggest expenses, and month comparison, but the DesignSpec calls for filter chips (Week/Month/Quarter), a multi-select category dropdown, and a simple categorized list with trend indicators — the overall layout and interaction model are substantially different.",
     "props": 2,
-    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending entries, but the component lacks the time-range and category filter props entirely, and the empty state message differs from the specified 'No expenses in this time range'.",
+    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category.icon, category.color) and DailySpending entries, but several DesignSpec-required props (time range filter, multi-select category filter, empty state message) are absent or misimplemented.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:41.039Z"
+    "timestamp": "2026-05-18T04:52:51.031Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -293,11 +293,11 @@
     "config": "B",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and a category list with delete/add (Section 3), but is entirely missing Section 2 (Current Month Budget read-only summary card with Budget.monthlyLimit and Budget.currency), the Edit action on category rows, the inline Add Category form with name/color/icon picker and validation, and category icons are not displayed in rows.",
+    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and a category list with delete/add (Section 3), but is entirely missing Section 2 (Current Month Budget read-only summary card with Budget.monthlyLimit and Budget.currency), the category Edit action, the inline Add Category form with name/color/icon picker and validation, and category icons are not displayed in rows.",
     "props": 2,
-    "props_notes": "Props compile and mostly match (isOpen, onClose, settings, categories, onSettingsChange, onCategoryDelete, onCategoryAdd), but onCategoryAdd should open an inline form rather than a callback, there is no onUpdate handler for edits, and Budget-related props (monthlyLimit, Budget.currency) are absent entirely.",
+    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.isDefault, category.name), but Category.icon is never rendered in rows, the onUpdate handler pattern differs from the spec, and the Budget fields (monthlyLimit, currency) are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:45.908Z"
+    "timestamp": "2026-05-18T04:52:56.552Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -305,11 +305,11 @@
     "config": "B",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and a category list with delete/add (Section 3), but is entirely missing Section 2 (Current Month Budget read-only summary card with Budget.monthlyLimit and Budget.currency and an Edit link), the category rows are missing the icon display and Edit action, and the Add Category button does not open an inline form with name/color picker/icon picker as specified.",
+    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and a category list with delete/add (Section 3), but is entirely missing Section 2 (Current Month Budget read-only summary card with Budget.monthlyLimit and Budget.currency and an Edit link), the category rows are missing the icon display and Edit action, and the inline Add Category form with name/color/icon picker is replaced by a simple button that adds a hardcoded category.",
     "props": 2,
-    "props_notes": "Props compile and mostly match (currency bound to settings.currency, defaultMonthlyBudget bound correctly, category color/name/isDefault used), but Category.icon is never rendered, the Budget entity fields (monthlyLimit, Budget.currency) are absent entirely, and the onUpdate handler pattern differs from the spec.",
+    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault), but Budget.monthlyLimit and Budget.currency bindings are absent entirely, and category.icon is never rendered, leaving multiple expected field bindings unused.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:51.349Z"
+    "timestamp": "2026-05-18T04:53:02.498Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -317,11 +317,11 @@
     "config": "B",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and category list with color swatches, icons, and delete actions (Section 3), but is entirely missing the 'Current Month Budget' read-only summary card (Section 2), the Edit action on category rows, and the inline Add Category form with name/color/icon picker — instead showing only a toast notification.",
+    "fidelity_notes": "The component has the currency selector and budget input (Section 1) and category list with color swatches, icons, and delete actions (Section 3), but is entirely missing the 'Current Month Budget' read-only summary card with Budget.monthlyLimit and Budget.currency (Section 2), and the inline 'Add Category' form with name/color/icon picker is replaced by a toast notification, representing multiple major missing sections.",
     "props": 2,
-    "props_notes": "Props compile and data bindings use correct field names (UserSettings.currency, UserSettings.defaultMonthlyBudget, Category.color, Category.icon, Category.name, Category.isDefault), but the onUpdate callback prop from the spec is absent and replaced with internal mock state/persistence logic.",
+    "props_notes": "Props compile and data bindings mostly use correct field names (UserSettings.currency, UserSettings.defaultMonthlyBudget, Category.color, Category.icon, Category.name, Category.isDefault), but the component self-manages persistence internally rather than calling an onUpdate handler, and the Budget fields (monthlyLimit, currency) are never bound at all.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:02:56.464Z"
+    "timestamp": "2026-05-18T04:53:07.789Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -329,23 +329,23 @@
     "config": "B",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure (merchantName, amount, frequency badge, nextOccurrenceDate), but the card footer shows a 'View All' link with an arrow icon rather than the specified 'View all recurring expenses' text link, and the card is placed between Spending Summary and the right column rather than between a Monthly Budget card and Spending by Category card (those existing cards are absent/replaced).",
-    "props": 2,
-    "props_notes": "Props for UpcomingRecurringCard (items, isLoading, onViewAllClick, onRowClick) and UpcomingRecurringRow are correctly declared and bound to the right RecurringTemplateItem fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor), but the footer link uses a different label than specified and the frequency badge derives from RecurringTemplate.frequency correctly.",
+    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure (merchantName, amount, frequency badge, nextOccurrenceDate), but the card footer shows a 'View All' link with an arrow icon rather than the specified 'View all recurring expenses' text link, and the card is placed between Spending Summary and the right column rather than between a Monthly Budget card and Spending by Category card as specified.",
+    "props": 3,
+    "props_notes": "All props compile correctly and data bindings use the correct field names from RecurringTemplateItem (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), with proper currency formatting and ascending sort by nextOccurrenceDate.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:02.529Z"
+    "timestamp": "2026-05-18T04:53:12.944Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
     "taskType": "MODIFY",
     "config": "B",
     "rep": 1,
-    "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure (merchant name, amount, frequency badge, next occurrence date) and a View All link, but the layout differs from the spec — the card is placed below Spending Summary in the left column rather than between Monthly Budget and Spending by Category, and the dashboard restructures the existing cards (Monthly Budget and Spending by Category are replaced by quick-stats gradient cards, and there is no Spending by Category card at all).",
+    "fidelity": 1,
+    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure and View All link, but the overall dashboard layout differs significantly from the spec: the left column contains Spending Summary and Upcoming Recurring (not Monthly Budget and Spending by Category), the right column has Quick Stats (Monthly Budget/Remaining) and Recent Expenses instead of the original layout, and the Spending by Category card is entirely absent.",
     "props": 2,
-    "props_notes": "Props are mostly correct and compile cleanly — RecurringTemplateItem fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status) are all used correctly, but the spec calls for binding to RecurringTemplate.nextOccurrence while the code uses nextOccurrenceDate, which is a field name mismatch from the canonical spec field name.",
+    "props_notes": "Props compile and data bindings use correct field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), but the RecurringTemplate entity uses nextOccurrenceDate instead of the spec's nextOccurrence field name, and the footer renders as a button labeled 'View All' rather than a link labeled 'View all recurring expenses'.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:08.608Z"
+    "timestamp": "2026-05-18T04:53:20.913Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -353,11 +353,11 @@
     "config": "B",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure (merchant name, frequency badge, next occurrence date, amount), a 'View All' link, and skeleton loading state, but the spec calls for it to be inserted between a Monthly Budget card and a Spending by Category card (which are absent), and the footer says 'View all recurring expenses' while the code uses 'View All' with an arrow icon.",
-    "props": 2,
-    "props_notes": "All props for UpcomingRecurringCard (items, isLoading, onViewAllClick, onRowClick) are correctly declared and bound to the right fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor), but RecurringExpensesCard hardcodes frequency as 'MONTHLY' instead of reading it from the expense/template data.",
+    "fidelity_notes": "The Upcoming Recurring card is present with correct row structure (merchant name, frequency badge, next occurrence date, amount), but the surrounding dashboard is missing the Monthly Budget and Spending by Category cards that the spec says must remain unchanged, and the footer says 'View All' instead of 'View all recurring expenses'.",
+    "props": 3,
+    "props_notes": "All props for UpcomingRecurringCard (items, isLoading, onViewAllClick, onRowClick) are correctly declared and bound, and row data bindings use the correct RecurringTemplateItem field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:14.083Z"
+    "timestamp": "2026-05-18T04:53:25.387Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -365,11 +365,11 @@
     "config": "B",
     "rep": 0,
     "fidelity": 3,
-    "fidelity_notes": "The component faithfully implements all specified sections — existing expense fields (amount, merchant, category, date, payment method, note), the recurring toggle, frequency chip selector (Weekly/Monthly/Yearly), start date input, and end date selector with Never/On date options — all in the correct order and with appropriate show/hide behavior.",
+    "fidelity_notes": "All specified sections are present and correctly ordered: existing expense fields (amount, merchant, category, date, payment method, note), followed by the recurring section with toggle, frequency chips (Weekly/Monthly/Yearly), start date input, and end date selector with Never/On date radio options and conditional date picker, then Cancel/Save buttons.",
     "props": 3,
-    "props_notes": "All props are correctly declared and data bindings use the correct field names throughout — RecurringTemplate fields (frequency, startDate, endDate, status) and Expense fields (amount, categoryId, merchantName, date, paymentMethod, note) are all properly mapped and submitted.",
+    "props_notes": "All props are correctly declared and bound: RecurrenceData fields map to RecurringTemplate fields (frequency, startDate, endDate), endDateMode drives null vs date value, submit logic posts RecurringTemplate with status='ACTIVE' first then Expense with recurringTemplateId logic, and all field names match the spec.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:20.221Z"
+    "timestamp": "2026-05-18T04:53:30.213Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -377,11 +377,11 @@
     "config": "B",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly structured: existing expense fields (amount, category, merchant, date, payment method, note), the recurring toggle, frequency chip selector (Weekly/Monthly/Yearly), start date input, end date selector with Never/On date radio options and conditional date picker, and submit logic that conditionally posts a RecurringTemplate first then the Expense.",
+    "fidelity_notes": "The component faithfully implements all specified sections: existing expense fields (amount, category, merchant, date, payment method, note), the recurring toggle, frequency chip selector (Weekly/Monthly/Yearly), start date input defaulting to today/expense date, end date with Never/On date radio options and conditional date picker, and correct submit logic branching on isRecurring.",
     "props": 3,
-    "props_notes": "All props are correctly declared and data bindings use the correct field names throughout — RecurringTemplate fields (frequency, startDate, endDate, status='ACTIVE') and Expense fields (amount, categoryId, merchantName, date, paymentMethod, note, recurringTemplateId implied via conditional logic) all match the spec.",
+    "props_notes": "All props are correctly declared and data bindings use the correct field names throughout — RecurrenceConfigSection, RecurrenceConfigPanel, FrequencyChipSelector, EndDateRow, and DatePickerInput all wire up the right state fields (frequency, startDate, endDateMode, endDate, isRecurring) with properly named handlers.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:25.205Z"
+    "timestamp": "2026-05-18T04:53:35.834Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -393,7 +393,7 @@
     "props": 3,
     "props_notes": "All props are correctly declared and data bindings use the correct field names throughout — RecurrenceConfigSection receives isRecurring, frequency, startDate, endDateMode, endDate with matching handlers, and the submit logic correctly maps to RecurringTemplate fields (frequency, startDate, endDate, status='ACTIVE') and Expense fields.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:29.963Z"
+    "timestamp": "2026-05-18T04:53:40.630Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -401,11 +401,11 @@
     "config": "B",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The badge is correctly additive near the amount for recurring expenses and absent for non-recurring ones, but the implementation also adds a redundant recurring icon and frequency label in the caption line (not specified), and the overall page wrapping with header/legend is extra scaffolding not in the spec.",
+    "fidelity_notes": "The badge is correctly additive and pill-shaped near the amount with muted styling, but the component also adds a recurring icon and frequency label in the caption line (not specified), and the overall page wrapping with header/legend is extra scaffolding beyond the spec's pure row-level change.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, RecurringTemplate.frequency, expense.isRecurringInstance), and the frequency value is properly resolved from the joined template record.",
+    "props_notes": "All props compile correctly, frequency is properly resolved from the joined RecurringTemplate via recurringTemplateId, and all data bindings use the correct field names from the Expense and RecurringTemplate types.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:36.312Z"
+    "timestamp": "2026-05-18T04:53:46.464Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -413,11 +413,11 @@
     "config": "B",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The frequency badge is rendered near the merchant name rather than near the amount as specified, and the caption line adds a recurring icon/frequency text that modifies existing row content rather than being purely additive, but the core badge concept, pill styling, muted colors, and conditional rendering logic are correct.",
+    "fidelity_notes": "The component correctly renders the frequency badge additively for recurring expenses and omits it for non-recurring ones, but places the badge near the merchant name rather than near the amount as specified, and adds extra caption-line elements (recurring icon, frequency text) not called for in the spec.",
     "props": 3,
     "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, expense.isRecurringInstance, expense.amount, expense.merchantName, expense.date), and frequency is properly resolved from the joined template data.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:40.764Z"
+    "timestamp": "2026-05-18T04:53:50.675Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -425,11 +425,11 @@
     "config": "B",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The core structure matches well — recurring badge near the amount, no badge for non-recurring rows, color dot, merchant name, category, date — but the implementation adds an extra frequency label in the caption line for recurring rows (RefreshCw icon + frequency text) which modifies existing row content rather than being purely additive, and the badge also appears duplicated in both the caption area and the amount area.",
+    "fidelity_notes": "The core structure matches well — recurring badge near the amount, no badge for non-recurring rows, color dot, merchant name, category, date — but the implementation adds an extra frequency label in the caption line for recurring rows (RefreshCw icon + frequency text) which modifies existing row content contrary to the spec's 'purely additive, no existing row content modified' requirement, and the badge also appears duplicated in the caption area.",
     "props": 3,
-    "props_notes": "All props are correctly declared and named (expense, categoryName, categoryColor, frequency, onClick), data bindings use correct field names (expense.recurringTemplateId, expense.isRecurringInstance, expense.amount, expense.merchantName, expense.date), and frequency is properly resolved from the joined RecurringTemplate.",
+    "props_notes": "All props are correctly declared and named (expense, categoryName, categoryColor, frequency, onClick), data bindings use correct field names (expense.recurringTemplateId, expense.isRecurringInstance, expense.amount, expense.merchantName, expense.date), and frequency is properly resolved from the joined RecurringTemplate mock data.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:47.669Z"
+    "timestamp": "2026-05-18T04:53:56.521Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -437,11 +437,11 @@
     "config": "C",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, progress bar, and all four metrics are present and correctly bound, but the layout uses a vertical stack with a custom progress bar rather than the specified 2x2 grid, and the status badge uses blue instead of green for 'On Track'.",
+    "fidelity_notes": "The card structure, status badge, progress bar, and all four metrics are present and correctly bound, but the layout uses a vertical stack with a custom progress bar section rather than the specified 2x2 grid, and the status badge uses blue instead of green for 'On Track'.",
     "props": 3,
     "props_notes": "All props compile correctly and every data binding uses the exact field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, budgetLimit) with no mismatches.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:51.772Z"
+    "timestamp": "2026-05-18T04:54:00.554Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -449,11 +449,11 @@
     "config": "C",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The card structure is recognizable and includes most required metrics (totalSpent, remainingAmount, dailyAverage, transactionCount) with status indicator, but the header shows a static 'Monthly Budget' label instead of the dynamic MonthSummary.month value, and the layout is a horizontal stats row rather than the specified 2x2 grid or vertical stack.",
+    "fidelity_notes": "The card structure is recognizable and includes all four required metrics plus a progress bar and status badge, but the layout deviates from the specified 2x2 grid/vertical stack (metrics are split across header, amount row, and a stats footer row), and the month header shows 'Monthly Budget' instead of the actual MonthSummary.month value.",
     "props": 3,
-    "props_notes": "All props compile correctly, the MonthSummary interface matches the spec fields exactly, and all data bindings (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, budgetLimit) use the correct field names.",
+    "props_notes": "All props compile correctly and data bindings use the correct field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, budgetLimit), with currency passed through properly.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:56.342Z"
+    "timestamp": "2026-05-18T04:54:08.105Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -461,11 +461,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The component covers all required metrics and status indicator, but uses a vertical stack instead of the specified 2x2 grid layout, and the status badge uses blue instead of green for 'On Track'.",
+    "fidelity_notes": "The component covers all required metrics and status indicator, but uses a vertical stack instead of the specified 2x2 grid layout, and uses blue instead of green for the 'On Track' status color.",
     "props": 3,
     "props_notes": "All props are correctly declared and all data bindings use the correct field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:03:59.744Z"
+    "timestamp": "2026-05-18T04:54:12.747Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -473,11 +473,11 @@
     "config": "C",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has a month navigator and stat summary cards instead of filter chips (Week/Month/Quarter) and a category filter dropdown, and the category rows lack trend indicators/sparklines; the overall layout and data presentation differ significantly from the spec.",
+    "fidelity_notes": "The component has a month navigator and stat summary cards instead of filter chips (Week/Month/Quarter) and a category multi-select dropdown, and the category rows lack trend indicators/sparklines; the overall layout and data presentation differ significantly from the spec.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.name/color) and DailySpending fields, but several expected props from the spec (time-range filter chips, multi-select category dropdown, trend indicators) are missing or replaced with different constructs.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.name/color) and DailySpending fields, but several expected props from the spec (time-range filter chips, category multi-select dropdown props) are absent entirely.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:06.073Z"
+    "timestamp": "2026-05-18T04:54:20.069Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -485,11 +485,11 @@
     "config": "C",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component builds a rich multi-section insights dashboard (stat cells, daily bar/line chart, category progress list, month comparison card) but the DesignSpec calls for a simpler page with time-range filter chips, a multi-select category dropdown, and a category-row list with trend indicators — the required filter chips and the specified row layout are absent, and the overall structure diverges significantly.",
+    "fidelity_notes": "The component builds a rich monthly insights dashboard with stat cards, a daily chart, and top expenses, but the DesignSpec calls for filter chips (Week/Month/Quarter), a multi-select category dropdown, and a category-row list with trend indicators — none of which are present in the correct form.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color/name) and DailySpending fields, but several DesignSpec-required props/bindings are missing entirely (time-range filter chip selection, category multi-select dropdown, per-row trend indicator binding) and the category icon field is never rendered.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category) and DailySpending fields, but the DesignSpec's required filter chip and category dropdown props/bindings are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:12.330Z"
+    "timestamp": "2026-05-18T04:54:24.767Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -497,11 +497,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component has a month navigator and stat cards instead of the required filter chips (Week/Month/Quarter) and category multi-select dropdown, and while it shows category rows with progress bars and a daily chart, it lacks the trend indicators (arrows/sparklines per row) and the layout/structure diverges significantly from the spec's filter-chip + categorized-list design.",
+    "fidelity_notes": "The component has a month navigator and stat cards instead of the required filter chips (Week/Month/Quarter) and category multi-select dropdown, and the main content is a full dashboard with comparison bars and top expenses rather than a simple sorted category list with trend indicators as specified.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.name/color/icon) and DailySpending fields, but the time-range filter chips and category multi-select dropdown props/bindings specified in the design are entirely absent.",
+    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.name) and DailySpending fields, but the filter chip and dropdown props from the spec are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:17.765Z"
+    "timestamp": "2026-05-18T04:54:29.337Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -509,11 +509,11 @@
     "config": "C",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has recognizable settings sections but deviates significantly: it lacks the 'Current Month Budget' read-only summary card (bound to Budget.monthlyLimit/currency), the Add Category inline form with name/color/icon pickers is missing (replaced by an alert), default categories show a Delete button (disabled) rather than hiding it entirely, and extra sections (Preferences with system locale toggle, Danger Zone with Reset All Budgets) are present that are not in the spec.",
+    "fidelity_notes": "The component has recognizable settings sections but deviates significantly from the spec: it lacks the 'Current Month Budget' read-only summary card (bound to Budget.monthlyLimit/currency with an Edit link), the Edit action per category row is missing, default categories show no Edit button at all, the inline Add Category form (with name, color picker, icon picker, and validation) is replaced by a simple callback, and extra sections (Preferences/system locale toggle, Danger Zone) are added that don't exist in the spec.",
     "props": 1,
-    "props_notes": "The component accepts onSettingsChange, onCategoryDelete, onCategoryAdd, settings, and categories props, but the Budget prop is entirely absent (no Budget.monthlyLimit or Budget.currency binding), onCategoryAdd triggers an alert instead of an inline form, and the onUpdate handler for category edits is not implemented, leaving ≥50% of expected data bindings missing or wrong.",
+    "props_notes": "The component compiles and accepts onSettingsChange/onCategoryDelete/onCategoryAdd callbacks, but the Budget prop (with monthlyLimit and currency fields) is entirely absent, there is no onUpdate handler as specified, and the Category edit action binding is missing, leaving more than half of the expected data bindings unimplemented.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:24.078Z"
+    "timestamp": "2026-05-18T04:54:35.758Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -521,11 +521,11 @@
     "config": "C",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has recognizable sections (currency, budget, categories) but is missing the required 'Current Month Budget' read-only summary card with Budget.monthlyLimit/currency and Edit link, the inline Add Category form with name/color picker/icon picker and validation, and incorrectly shows a Delete action on default categories (only disabling it) rather than hiding it; it also adds unrequested sections (Preferences/system locale toggle, Danger Zone).",
+    "fidelity_notes": "The component has recognizable sections (currency, budget, categories, preferences, danger zone) but deviates significantly from the spec: it lacks the 'Current Month Budget' read-only summary card with Edit link, the inline Add Category form with name/color/icon picker and validation is missing (replaced by a toast), default categories hide Delete but still show Edit is absent, and extra sections (Preferences with system locale toggle, Danger Zone with Reset All Budgets) are present that are not in the spec.",
     "props": 1,
-    "props_notes": "The component uses no onUpdate callback prop as specified, persists state internally rather than calling back to a provided handler, does not bind to a Budget object at all, and the category row delete logic exposes the button for default categories instead of hiding it, indicating multiple missing or misused data bindings.",
+    "props_notes": "The component does not accept or use the required onUpdate callback prop, does not bind to a Budget object for the current month summary, and the Category edit action is entirely absent; roughly half or more of the expected prop bindings from the spec are missing or misimplemented.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:30.270Z"
+    "timestamp": "2026-05-18T04:54:42.136Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -533,11 +533,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component has recognizable settings sections but deviates significantly from the spec: it lacks the 'Current Month Budget' read-only summary card with Edit link, the inline Add Category form with name/color/icon pickers and validation, and incorrectly shows a Delete action for default categories (spec says default categories should only show Edit); it also adds unrequested sections (Preferences/system locale toggle, Danger Zone) and a Save footer button instead of the spec's callback-driven no-persistence approach.",
+    "fidelity_notes": "The component has recognizable settings sections but deviates significantly: it lacks the 'Current Month Budget' read-only summary card with Edit link, the inline Add Category form (with name/color/icon picker) is missing, default categories show no Edit action, and extra sections (Preferences/system locale toggle, Danger Zone) are present that aren't in the spec.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds UserSettings.currency and UserSettings.defaultMonthlyBudget, and Category fields (name, color, icon, isDefault) are used correctly, but Budget.monthlyLimit and Budget.currency bindings are entirely absent, and the onUpdate callback prop specified in the design is missing.",
+    "props_notes": "Core data bindings use correct field names (UserSettings.currency, UserSettings.defaultMonthlyBudget, Category.color, Category.icon, Category.name, Category.isDefault) but Budget.monthlyLimit and Budget.currency are never bound, the onUpdate callback prop is absent, and the inline add-category form fields are missing entirely.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:36.091Z"
+    "timestamp": "2026-05-18T04:54:47.306Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -545,11 +545,11 @@
     "config": "C",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with proper row layout (merchant name, frequency badge, date, amount), but the footer says 'View All' instead of 'View all recurring expenses', and there is no refresh icon in the card header as specified.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with proper row layout (merchant name, amount, frequency badge, next occurrence date), but the footer says 'View All' instead of 'View all recurring expenses', and there is no refresh icon in the card header as specified.",
     "props": 3,
     "props_notes": "All props compile correctly and data bindings use the correct field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), with proper currency formatting and frequency label mapping.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:41.946Z"
+    "timestamp": "2026-05-18T04:54:51.543Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -559,9 +559,9 @@
     "fidelity": 3,
     "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category, shows merchant name, currency-formatted amount, frequency badge, and next occurrence date per row, with a 'View All' link and loading skeleton states; all existing dashboard sections remain intact.",
     "props": 3,
-    "props_notes": "All props and data bindings are correct: items, isLoading, onViewAllClick, onRowClick are properly declared and used; row data binds to templateId, merchantName, amount, frequency, nextOccurrenceDate, and categoryColor from RecurringTemplateItem with no field name mismatches.",
+    "props_notes": "All props and data bindings are correct: RecurringTemplateItem fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status) are properly declared and used, and the card receives items, isLoading, onViewAllClick, and onRowClick with correct field references throughout.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:46.756Z"
+    "timestamp": "2026-05-18T04:54:56.372Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -569,11 +569,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 3,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Monthly Budget and Spending by Category cards in the left column, with proper row layout showing merchant name, frequency badge, next occurrence date, and amount, plus a 'View All' link; all existing dashboard sections remain intact.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Monthly Budget and Spending by Category cards in the left column, with merchant name, currency-formatted amount, frequency badge, next occurrence date, and a 'View All' link, while all existing dashboard sections remain intact.",
     "props": 3,
-    "props_notes": "All props are correctly declared and bound — items, isLoading, onViewAllClick, onRowClick map to the right fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor), and data bindings use the correct field names throughout.",
+    "props_notes": "All props are correctly declared and bound: items maps to RecurringTemplateItem[], isLoading drives skeleton state, onViewAllClick and onRowClick are wired to the correct handlers, and data bindings use the correct field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:52.269Z"
+    "timestamp": "2026-05-18T04:55:02.410Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -581,11 +581,11 @@
     "config": "C",
     "rep": 0,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly ordered: existing fields unchanged, recurrence toggle labeled 'Make this recurring', frequency chips (Weekly/Monthly/Yearly), end date with Never/On date radio options, and Save button — matching the design spec faithfully.",
+    "fidelity_notes": "The component faithfully implements all specified sections — existing fields unchanged, recurrence toggle labeled 'Make this recurring', frequency chip selector (Weekly/Monthly/Yearly), end date with Never/On date radio options, and correct submit logic splitting Expense and RecurringTemplate payloads.",
     "props": 3,
-    "props_notes": "All props compile correctly and data bindings use the correct field names: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate with null when 'NEVER', and submit logic correctly sets recurringTemplateId=null when toggle is off and includes status='ACTIVE' when on.",
+    "props_notes": "All props compile correctly with proper field name bindings: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate (undefined/null for Never), status='ACTIVE' on RecurringTemplate, and recurringTemplateId logic is correctly handled in the submit handler.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:04:56.724Z"
+    "timestamp": "2026-05-18T04:55:07.225Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -593,11 +593,11 @@
     "config": "C",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "The component faithfully implements all specified sections: unchanged form fields, a 'Make this recurring' toggle, frequency chip selector (Weekly/Monthly/Yearly), start date input defaulting to expense date, and end date selector with Never/On date radio options — all in the correct order between note and save button.",
+    "fidelity_notes": "The component faithfully implements all specified sections: unchanged form fields, a 'Make this recurring' toggle, frequency chip selector (Weekly/Monthly/Yearly), start date input defaulting to expense date, and end date selector with Never/On date radio options, all positioned correctly between the note field and Save button.",
     "props": 3,
-    "props_notes": "All props compile correctly with proper field name bindings: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate (undefined for NEVER, date string for ON_DATE), and submit logic correctly posts RecurringTemplate with status='ACTIVE' before the Expense with recurringTemplateId handling.",
+    "props_notes": "All props compile correctly with proper field name bindings: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate (undefined for NEVER, date string for ON_DATE), and the submit handler correctly posts RecurringTemplate with status='ACTIVE' before the Expense with recurringTemplateId logic.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:01.501Z"
+    "timestamp": "2026-05-18T04:55:13.880Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -605,11 +605,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 3,
-    "fidelity_notes": "The component faithfully implements all specified sections: existing form fields unchanged, recurring toggle with correct label, frequency chip selector (Weekly/Monthly/Yearly), start date defaulting to expense date, end date with Never/On date radio options and conditional date picker, and conditional save button label — all matching the design spec.",
+    "fidelity_notes": "The component faithfully implements all specified sections — amount, category, date, payment method, note, and the new recurrence section with toggle, frequency chips (Weekly/Monthly/Yearly), end date radio options (Never/On date with date picker) — all in the correct order before the Save button.",
     "props": 3,
-    "props_notes": "All props compile correctly with proper field name bindings: frequency maps to RecurringTemplate.frequency, startDate to expenseDate/RecurringTemplate.startDate, endDate to RecurringTemplate.endDate (undefined for NEVER), status='ACTIVE' on submit, and recurringTemplateId logic is correctly handled in handleSubmit.",
+    "props_notes": "All props are correctly declared and data bindings use the right field names: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate (undefined for NEVER), and the submit handler correctly sets status='ACTIVE' and conditionally includes recurringTemplateId logic.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:06.191Z"
+    "timestamp": "2026-05-18T04:55:18.696Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -617,23 +617,23 @@
     "config": "C",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is correctly rendered as an additive pill near the row content for recurring expenses, and non-recurring rows are unchanged, but the badge is placed in the caption line (alongside category badge and date) rather than near the amount on the right side as specified.",
+    "fidelity_notes": "The recurring frequency badge is correctly implemented as a small pill near the row content and only renders when recurringTemplateId is non-null, but it appears in the caption line alongside the category badge and date rather than near the amount as specified, and uses the primary accent color (blue) rather than a muted background color.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency from joined template data), and the RecurringBadge receives the correct frequency value resolved from the template store.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency from joined RecurringTemplate), and the component composition accurately reflects the Expense and RecurringTemplate data structures.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:10.443Z"
+    "timestamp": "2026-05-18T04:55:23.009Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
     "taskType": "MODIFY",
     "config": "C",
     "rep": 1,
-    "fidelity": 2,
-    "fidelity_notes": "The recurring badge is correctly implemented as a small pill near the row content and only renders when recurringTemplateId is non-null, but it appears in the caption/date line rather than near the amount as specified, representing a minor positional deviation.",
+    "fidelity": 3,
+    "fidelity_notes": "The recurring badge is rendered as a small pill near the row content only when recurringTemplateId is non-null, badge styling matches the spec (muted blue background, 11px font, pill shape, Repeat icon + frequency label), and rows without a recurringTemplateId render without any badge — fully additive with no existing row content modified.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, frequency from TEMPLATE_FREQUENCY_MAP), and the RecurringBadge receives the properly resolved frequency value from the joined template data.",
+    "props_notes": "All props compile correctly, frequency is resolved from TEMPLATE_FREQUENCY_MAP keyed by recurringTemplateId, RecurringBadge receives the correct frequency field, and ExpenseRowEnhanced binds all Expense fields (merchantName, amount, date, paymentMethod, recurringTemplateId) by their correct names.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:14.405Z"
+    "timestamp": "2026-05-18T04:55:28.099Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -641,11 +641,11 @@
     "config": "C",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is correctly implemented as a small pill near the category/date area of each row, and non-recurring rows render without it, but the badge appears in the caption line rather than near the amount as specified, representing a minor placement deviation.",
+    "fidelity_notes": "The recurring frequency badge is correctly implemented as a small pill near the category/date area of each row, and non-recurring rows render without it, but the badge is placed in the caption line (near category badge and date) rather than near the amount as specified, representing a minor positional deviation.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, frequency from RecurringTemplate), and the joined lookup via recurringTemplateStore accurately resolves the template reference.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, frequency resolved via RecurringTemplate lookup), and the RecurringBadge receives the correct frequency value from the joined template store.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:18.707Z"
+    "timestamp": "2026-05-18T04:55:32.480Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -655,9 +655,9 @@
     "fidelity": 2,
     "fidelity_notes": "The card structure, status badge, progress bar, and stat rows are all present and well-implemented, but the spec calls for a 2x2 grid layout for the four key metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) whereas the component uses a vertical stack with a hero amount display and a separate stats section, and the progress bar is an addition not mentioned in the spec.",
     "props": 3,
-    "props_notes": "All props match the expected interface — MonthSummary fields (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month) are correctly bound, currency prop is used throughout, and animateOnMount is properly wired.",
+    "props_notes": "All props match the expected interface — MonthSummary fields (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month) are correctly bound, currency prop is used throughout, and animateOnMount is properly handled.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:23.726Z"
+    "timestamp": "2026-05-18T04:55:37.234Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -665,11 +665,11 @@
     "config": "D",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, progress bar, and stats row are well-implemented and match the spec closely, but the layout uses a progress bar section rather than a strict 2x2 grid for all four metrics, and 'Budget Remaining' is shown inline below the progress bar rather than as a peer metric alongside Total Spent, Daily Average, and Transaction Count.",
+    "fidelity_notes": "The component matches the spec well with month header, status indicator, currency-formatted metrics, and color-coded status, but uses a progress bar layout rather than a 2x2 grid for all four metrics, and uses blue instead of green for 'On Track' status.",
     "props": 3,
-    "props_notes": "All props match the component composition correctly — MonthSummary fields (totalSpent, remainingAmount, dailyAverage, transactionCount, month, budgetStatus, budgetLimit) are all bound using the correct field names, and the currency prop is properly threaded through formatting helpers.",
+    "props_notes": "All props are correctly declared and all data bindings use the correct field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, month, budgetStatus, budgetLimit).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:28.424Z"
+    "timestamp": "2026-05-18T04:55:40.978Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -677,11 +677,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, progress bar, and stats row are well-implemented and match the spec's intent, but the layout deviates from the specified 2x2 grid of four metrics — Total Spent is shown as a large animated counter with a separate progress bar section rather than as one of four equal grid cells, and Budget Remaining is a small inline display rather than a prominent metric cell alongside the others.",
+    "fidelity_notes": "The card structure, status badge, progress bar, and stats row are well-implemented, but the spec calls for a 2x2 grid showing Total Spent, Budget Remaining, Daily Average, and Transaction Count as equal metrics, whereas the component instead features a large animated counter for totalSpent, a separate remaining display, and only a 2-cell grid for dailyAverage and transactionCount — also the spec specifies green for on-track but the component uses blue.",
     "props": 3,
-    "props_notes": "All props compile correctly, MonthSummary fields (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month) are all bound to the correct field names, and the currency prop is properly threaded through formatting helpers.",
+    "props_notes": "All props compile correctly, the MonthSummary interface matches the spec's fields (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and all data bindings reference the correct field names.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:34.538Z"
+    "timestamp": "2026-05-18T04:55:45.898Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -689,11 +689,11 @@
     "config": "D",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component builds a multi-card dashboard (period summary, daily chart, top categories, biggest expenses, month comparison) rather than the specified single-page layout with time-range filter chips, a multi-select category dropdown, and a sorted category list with trend indicators and sparklines.",
+    "fidelity_notes": "The component builds a multi-card dashboard (period summary, daily chart, top categories, biggest expenses, month comparison) rather than the specified single-page layout with time-range filter chips, a category multi-select dropdown, and a sorted category list with trend indicators and optional sparkline above it.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color/name) and DailySpending fields, but the required filter-chip and category-dropdown props are absent, and data is not sourced exclusively from CategorySpending/DailySpending as specified.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color/name) and DailySpending fields, but the required filter-chip and category-dropdown props are entirely absent, and several expected prop interfaces (ExportCsvButton is cut off) are incomplete.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:39.568Z"
+    "timestamp": "2026-05-18T04:55:51.361Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -701,11 +701,11 @@
     "config": "D",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has a month navigator and category breakdown list but is missing the required filter chips (Week/Month/Quarter), multi-select category dropdown filter, and uses a full bar/line chart instead of a small sparkline above the list; the overall layout and interaction model diverge significantly from the spec.",
+    "fidelity_notes": "The component has a month navigator and category breakdown list with progress bars, but is missing the required filter chips (Week/Month/Quarter), multi-select category dropdown filter, and uses a full daily bar/line chart instead of small sparklines per category row; the overall layout and interaction model diverge significantly from the spec.",
     "props": 2,
-    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category) and DailySpending fields, but the component is missing the filter chip and category dropdown props entirely, and the trend indicator is a percentage comparison rather than the specified arrow/sparkline.",
+    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category) and DailySpending fields, but the component is cut off mid-render and the filter chip / dropdown props described in the spec are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:46.681Z"
+    "timestamp": "2026-05-18T04:55:55.982Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -713,11 +713,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component is a full monthly insights dashboard with stat cells, bar/line charts, stacked bars, and top expenses list, but the DesignSpec calls for a simpler page with time-range filter chips (Week/Month/Quarter), a multi-select category dropdown filter, and a category rows list with trend indicators — these core structural elements are absent or fundamentally different.",
+    "fidelity_notes": "The component is a multi-section monthly insights dashboard with stat cells, bar/line charts, stacked bars, and top expenses — it lacks the filter chips (Week/Month/Quarter), multi-select category dropdown, and category-row-centric layout with trend indicators described in the spec, and includes many sections not called for.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.name) and DailySpending fields, but several DesignSpec-required props like time-range filter chips and multi-select category filter are missing entirely.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.icon) and DailySpending fields, but the overall composition diverges significantly from the specified component structure so several expected prop bindings (filter chip selection, category dropdown, time-range-filtered sparkline) are absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:52.635Z"
+    "timestamp": "2026-05-18T04:56:01.808Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -725,23 +725,23 @@
     "config": "D",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has Currency and Budget sections that partially match, and a Category list with color swatches/icons, but it is missing the required read-only 'Current Month Budget' summary card with Budget.monthlyLimit/Budget.currency and an Edit link, the inline Add Category form with name/color/icon picker and validation, and incorrectly hides Delete on default categories instead of showing only Edit — multiple major spec sections are wrong or absent.",
+    "fidelity_notes": "The component has Currency and Budget sections that partially match, and a Category list with color/icon/name, but it is missing the required read-only 'Current Month Budget' summary card with Budget.monthlyLimit/currency and an Edit link, the inline Add Category form with name/color/icon picker and validation, and incorrectly hides Delete on default categories instead of showing only Edit — multiple major spec sections are wrong or absent.",
+    "props": 2,
+    "props_notes": "The component compiles and binds UserSettings.currency and UserSettings.defaultMonthlyBudget correctly, and Category fields (name, color, icon, isDefault) are used, but Budget.monthlyLimit and Budget.currency are never bound (the Budget type exists but no Budget prop is wired into the settings form), and the onUpdate handler pattern differs from the spec.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:56:07.605Z"
+  },
+  {
+    "taskId": "cashpulse-settings-form",
+    "taskType": "NEW",
+    "config": "D",
+    "rep": 1,
+    "fidelity": 1,
+    "fidelity_notes": "The component has Currency and Category sections matching the spec, but is missing the required 'Current Month Budget' read-only summary card (bound to Budget.monthlyLimit/currency with an Edit link), the inline Add Category form with name/color/icon picker and validation, and adds extra sections (Preferences toggle, Danger Zone) not in the spec.",
     "props": 1,
-    "props_notes": "The component compiles and passes settings/categories props, but Budget is never accepted as a prop (Budget.monthlyLimit and Budget.currency bindings are absent), the onUpdate handler from the spec is replaced by separate onSettingsChange/onCategoryDelete/onCategoryAdd callbacks, and the inline add-category form with controlled inputs and validation is missing entirely.",
+    "props_notes": "The component accepts no Budget prop at all (missing entirely), onUpdate handler is absent, and the Category delete logic incorrectly hides Delete for default categories rather than showing only Edit — meaning over half the expected prop surface and bindings are missing or wrong.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:05:59.648Z"
-  },
-  {
-    "taskId": "cashpulse-settings-form",
-    "taskType": "NEW",
-    "config": "D",
-    "rep": 1,
-    "fidelity": 1,
-    "fidelity_notes": "The component has Currency and Budget sections that roughly match, and a Category list with delete actions, but it is missing the required 'Current Month Budget' read-only summary card (showing Budget.monthlyLimit/Budget.currency with an Edit link), the inline Add Category form with name/color/icon picker and validation, and adds unrequested sections (Preferences toggle, Danger Zone) not in the spec.",
-    "props": 1,
-    "props_notes": "The SettingsDialog receives settings and categories props and binds currency/defaultMonthlyBudget correctly, but Budget is never passed or used as a prop (no Budget.monthlyLimit or Budget.currency binding), the onUpdate handler pattern differs from the spec, and the category Edit action is entirely absent.",
-    "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:05.069Z"
+    "timestamp": "2026-05-18T04:56:12.454Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -749,11 +749,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component has recognizable settings sections but deviates significantly: it lacks the 'Current Month Budget' read-only summary card with Edit link, the Category rows only show Edit for default items (no Edit action at all is present), the Add Category button opens an alert instead of an inline form with name/color/icon picker, and extra sections (Preferences toggle, Danger Zone) are added that aren't in the spec.",
+    "fidelity_notes": "The component has recognizable settings sections but deviates significantly: it lacks the 'Current Month Budget' read-only summary card with Edit link, the Edit action on category rows is missing entirely, the Delete action is incorrectly hidden for non-default categories on hover rather than always shown, an extra 'Preferences' section with a system locale toggle and a 'Danger Zone' section are added that don't exist in the spec, and the inline Add Category form with name/color/icon picker is replaced by a simple callback.",
     "props": 2,
-    "props_notes": "Props compile and UserSettings.currency and UserSettings.defaultMonthlyBudget are correctly bound, but Budget.monthlyLimit and Budget.currency bindings are entirely absent, and Category.isDefault logic is inverted (hides Delete for defaults but no Edit action exists anywhere).",
+    "props_notes": "The component compiles and uses correct field names like UserSettings.currency, UserSettings.defaultMonthlyBudget, Category.name, Category.color, Category.icon, and Category.isDefault, but it lacks the Budget.monthlyLimit and Budget.currency bindings entirely since the Current Month Budget section is absent, and the onUpdate handler from the spec is not implemented.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:10.374Z"
+    "timestamp": "2026-05-18T04:56:18.371Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -761,11 +761,11 @@
     "config": "D",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly placed between Monthly Budget and Spending by Category with proper row structure, frequency badge, merchant name, amount, and date, but uses a 'View All' link instead of 'View all recurring expenses', omits the optional refresh icon in the header, and formats nextOccurrenceDate as a short string ('Apr 1') rather than the specified 'MMM D, YYYY' format.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly placed between Monthly Budget and Spending by Category with proper row structure, frequency badge, merchant name, amount, and date, but uses a 'View All' link instead of 'View all recurring expenses', omits the refresh icon in the card header, and formats nextOccurrenceDate as a short string ('Apr 1') rather than the specified 'MMM D, YYYY' format.",
     "props": 2,
-    "props_notes": "Props compile and are mostly correct with proper bindings to templateId, merchantName, amount, frequency, categoryColor, and status, but nextOccurrenceDate is stored as a pre-formatted short string rather than a date field formatted to 'MMM D, YYYY', and the onViewAllClick handler is wired correctly though the link label differs from spec.",
+    "props_notes": "Props compile and are mostly correct with proper bindings to templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, isLoading, and onViewAllClick, but the nextOccurrenceDate field is pre-formatted short strings rather than being formatted from a proper date field, and the status filtering logic is absent from the component (all items passed in are assumed active rather than filtered by status).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:15.748Z"
+    "timestamp": "2026-05-18T04:56:24.187Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -773,11 +773,11 @@
     "config": "D",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with proper row structure (merchant name, amount, frequency badge, date), but the footer says 'View All' instead of 'View all recurring expenses', the date format is 'MMM D' instead of 'MMM D, YYYY', and the optional refresh icon in the card header is missing.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with proper row structure (merchant name, amount, frequency badge, date), but the footer says 'View All' instead of 'View all recurring expenses', the date format is 'MMM D' instead of 'MMM D, YYYY', and there is no refresh icon in the card header.",
     "props": 3,
-    "props_notes": "All props compile correctly and data bindings use the correct field names from RecurringTemplateItem (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), with proper handlers passed through.",
+    "props_notes": "All props compile correctly and data bindings use the correct field names from RecurringTemplateItem (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), with proper filtering and sorting logic applied.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:20.145Z"
+    "timestamp": "2026-05-18T04:56:28.610Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -785,11 +785,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with merchant name, amount, frequency badge, and next occurrence date per row, but the footer uses a 'View All' button in the header rather than a 'View all recurring expenses' footer link, and a refresh icon is missing from the card header.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between Monthly Budget and Spending by Category with proper row layout (merchant name, amount, frequency badge, next occurrence date), but the footer uses 'View All' button in the header rather than a 'View all recurring expenses' footer link, and a refresh icon in the header is missing.",
     "props": 3,
-    "props_notes": "All props compile correctly and data bindings use the right field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status) with proper filtering for ACTIVE status and correct currency formatting.",
+    "props_notes": "All props compile correctly, data bindings use the right field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), and the component correctly filters by status ACTIVE and sorts by nextOccurrenceDate.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:24.448Z"
+    "timestamp": "2026-05-18T04:56:32.831Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -797,11 +797,11 @@
     "config": "D",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The component faithfully renders all major sections (amount, category, date, payment method, note, recurrence toggle with frequency/end-date panel, save button) and the recurrence panel correctly shows frequency chips and end-date radio options, but the start date input inside the recurrence panel (required by the spec) is missing, and minor label/layout differences exist.",
+    "fidelity_notes": "The component faithfully renders all major sections (amount, category, date, payment method, note, recurrence toggle with frequency/end-date panel, save button) and the recurrence panel correctly shows frequency chips and end-date radio options, but the start date input inside the recurrence panel (required by the spec) is missing, and minor extras like the Quick Add section and bottom nav are present but not specified.",
     "props": 2,
-    "props_notes": "Props and data bindings are mostly correct and compile cleanly, but the RecurrenceConfigPanel lacks a start-date input binding (RecurringTemplate.startDate is passed as a prop but never rendered as an editable field), and the end-date 'On date' validation (must be after start date) is not enforced.",
+    "props_notes": "Props and data bindings are mostly correct throughout the component tree, but the RecurrenceConfigPanel is missing the startDate input field binding to RecurringTemplate.startDate, and the submit logic sets recurringTemplateId on the expense only implicitly via separate fetch calls rather than chaining the template id as specified.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:30.016Z"
+    "timestamp": "2026-05-18T04:56:38.990Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -809,11 +809,11 @@
     "config": "D",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly ordered — amount, category, date, payment method, note, then the recurring toggle with frequency chips (Weekly/Monthly/Yearly) and end-date radio options (Never/On date) — matching the design spec faithfully.",
+    "fidelity_notes": "All specified sections are present and correctly ordered — amount, category, date, payment method, note, recurrence toggle with frequency chips and end-date radio options, and save button — matching the design spec faithfully.",
     "props": 3,
-    "props_notes": "All props compile correctly and data bindings use the right field names: frequency maps to RecurringTemplate.frequency, startDate to expenseDate/RecurringTemplate.startDate, endDate to RecurringTemplate.endDate with null when 'Never', and status='ACTIVE' on submit when recurring is on.",
+    "props_notes": "All props compile correctly, data bindings use the right field names (frequency, startDate/expenseDate, endDate, status='ACTIVE', recurringTemplateId logic), and the RecurrenceConfigSection sub-components wire up their props accurately.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:34.385Z"
+    "timestamp": "2026-05-18T04:56:42.985Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -821,11 +821,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly ordered: existing form fields unchanged, recurrence toggle labeled 'Make this recurring', frequency picker with Weekly/Monthly/Yearly chips, end date selector with Never/On date radio options and conditional date input, and correct save logic branching on toggle state.",
+    "fidelity_notes": "All specified sections are present and correctly ordered: existing form fields (amount, category, date, payment method, note) are unchanged, the new recurrence section with toggle, frequency picker (Weekly/Monthly/Yearly chips), and end-date selector (Never/On date with date input) appears between note and Save button, matching the design spec faithfully.",
     "props": 3,
-    "props_notes": "All props compile correctly with proper field name bindings: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (Expense.date), endDate maps to RecurringTemplate.endDate (undefined when NEVER), status='ACTIVE' on recurring template submission, and recurringTemplateId logic is handled in handleSave.",
+    "props_notes": "All props and data bindings are correct: frequency maps to RecurringTemplate.frequency, startDate defaults to expenseDate (RecurringTemplate.startDate), endDate maps to RecurringTemplate.endDate with null when 'NEVER', status is set to 'ACTIVE', and recurringTemplateId logic is handled in handleSave with correct field names.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:38.988Z"
+    "timestamp": "2026-05-18T04:56:47.716Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -833,11 +833,11 @@
     "config": "D",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is implemented and additive per spec, but it appears in the caption/subtitle line rather than near the amount column as specified, representing a layout placement deviation.",
+    "fidelity_notes": "The recurring frequency badge is implemented and additive as specified, but it appears in the caption/subtitle line rather than near the amount column as the spec requires, and the overall dashboard adds significant unrequested UI (budget summary card, category chart, top nav, month navigator) beyond the scope of the spec which focuses only on the expense list row change.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency from templateStore lookup), and the RecurringTemplate.frequency value is correctly resolved and passed through.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency from RecurringTemplate), and the join between Expense and RecurringTemplate is properly resolved via templateStore.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:43.893Z"
+    "timestamp": "2026-05-18T04:56:52.919Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -845,11 +845,11 @@
     "config": "D",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is correctly implemented as a small muted pill near the row (in the caption line rather than near the amount), and non-recurring rows render without it, but the badge placement is in the metadata/caption area rather than near the amount as specified, and the component includes substantial additional UI (budget card, donut chart, detail popover, top nav) beyond the scope of the spec.",
+    "fidelity_notes": "The recurring frequency badge is correctly implemented as a small pill near the row (though placed in the caption/date line rather than near the amount), and non-recurring rows render without it; the overall dashboard adds extra sections (budget card, donut chart, top nav) not specified in the spec, but the core additive badge behavior matches.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency resolved via templateStore), and the RecurringBadge component properly gates rendering on both isRecurringInstance and recurringTemplateId being non-null.",
+    "props_notes": "All props compile correctly, RecurringBadge resolves recurringTemplateId through templateStore to get the frequency value, Expense fields are correctly bound, and no field names are misused.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:49.287Z"
+    "timestamp": "2026-05-18T04:56:57.515Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -857,11 +857,11 @@
     "config": "D",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is implemented and additive as specified, but it appears in the caption line (below merchant name) rather than near the amount column, and the overall dashboard adds unrequested sections (budget summary card, donut chart, top nav) beyond the spec's focused expense list change.",
+    "fidelity_notes": "The recurring frequency badge is implemented and additive as specified, but it appears in the caption line (below merchant name) rather than near the amount column, and the overall dashboard adds significant unrequested UI (budget card, donut chart, top nav) beyond the spec's focus on the expense list rows.",
     "props": 3,
-    "props_notes": "All components compile correctly, expense rows are bound to Expense fields, and the frequency value is correctly resolved from the joined RecurringTemplate via recurringTemplateId lookup, with null-safe rendering for non-recurring rows.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency from RecurringTemplate), and the joined template lookup resolves frequency accurately.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:54.963Z"
+    "timestamp": "2026-05-18T04:57:02.123Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -869,11 +869,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The component matches the spec well with correct metrics, status indicator, and card styling, but uses a progress bar layout rather than a 2x2 grid for all four metrics, and uses blue for 'On Track' instead of the specified green.",
+    "fidelity_notes": "The component matches the spec well with correct metrics, status indicator, and card styling, but uses blue instead of green for 'On Track' status, and lays out stats in a 2-column bottom row rather than a 2x2 grid with Budget Remaining as a peer metric alongside Total Spent.",
     "props": 3,
     "props_notes": "All props compile correctly and all data bindings use the correct field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month).",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:06:59.043Z"
+    "timestamp": "2026-05-18T04:57:07.340Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -881,11 +881,11 @@
     "config": "E",
     "rep": 1,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, progress bar, and stat rows are all present and well-implemented, but the spec calls for a 2x2 grid or vertical stack of four metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) while the component instead uses a hero amount display plus a progress bar plus a separate remaining row plus a divider plus a stats section — a more elaborate layout than specified, and the status badge uses blue for 'On Track' rather than the specified green.",
+    "fidelity_notes": "The card structure, status badge, progress bar, and stat rows are all present and well-implemented, but the spec calls for a 2x2 grid or vertical stack of four metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) while the component instead uses a hero amount display plus a progress bar plus a separate remaining row plus a stats section, deviating from the specified layout; also the spec uses green for on-track but the component uses blue.",
     "props": 3,
-    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through all formatting calls.",
+    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through formatting helpers.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:04.584Z"
+    "timestamp": "2026-05-18T04:57:12.419Z"
   },
   {
     "taskId": "cashpulse-dashboard-summary-card",
@@ -893,11 +893,11 @@
     "config": "E",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The card structure, status badge, currency formatting, and data bindings are all correct, but the spec calls for a 2x2 grid layout for the four metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) whereas the component uses a vertical stack with a hero amount display, a progress bar, a remaining display, and a stats section — also the spec uses green for on-track but the component uses blue.",
+    "fidelity_notes": "The component matches the overall structure well with header, status badge, currency formatting, and stat rows, but deviates from the spec's 2x2 grid/vertical stack of four metrics by separating 'Budget Remaining' into its own styled row and adding a progress bar not mentioned in the spec, while also using blue for 'On Track' instead of the specified green.",
     "props": 3,
-    "props_notes": "All props compile correctly, MonthSummary fields are bound to the right display elements (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is threaded through all formatCurrency calls.",
+    "props_notes": "All props compile correctly, MonthSummary fields are bound to the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month), and the currency prop is properly threaded through formatting helpers.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:09.403Z"
+    "timestamp": "2026-05-18T04:57:17.068Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -905,11 +905,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has a month navigator, summary stats, and category breakdown, but is missing the required filter chips (Week/Month/Quarter), multi-select category dropdown filter, and the category rows with trend indicators sorted by totalAmount — instead it uses a different layout with comparison bars and top expenses list that don't match the spec.",
+    "fidelity_notes": "The component has a month navigator, summary stats, and category breakdown, but is missing the required filter chips (Week/Month/Quarter), multi-select category dropdown filter, and the category rows lack trend indicators (arrows/sparklines); the overall layout and feature set diverge significantly from the spec.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.icon) and DailySpending fields, but several expected props/components from the spec (time range filter, category multi-select, trend indicators per row) are absent or misimplemented.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.icon) and DailySpending fields, but the filter chip and category dropdown props specified in the design are entirely absent.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:14.522Z"
+    "timestamp": "2026-05-18T04:57:21.445Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -917,11 +917,11 @@
     "config": "E",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has a month navigator instead of Week/Month/Quarter filter chips, lacks a multi-select category filter dropdown, and the layout diverges significantly from the spec's simple category list with trend indicators — instead building a multi-card dashboard with comparison bars and top expenses.",
+    "fidelity_notes": "The component builds a multi-card insights dashboard with a month navigator, stat cells, a daily spending chart, and top expenses, but the DesignSpec calls for a simpler page with time-range filter chips (Week/Month/Quarter), a multi-select category filter dropdown, and a sorted category list with trend indicators — none of those key elements are present.",
     "props": 2,
-    "props_notes": "Props compile and data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.name) and DailySpending fields, but the absence of the required filter chip and category dropdown components means several expected prop surfaces are missing entirely.",
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.name, category.icon) and DailySpending fields, but the required filter-chip and category-dropdown props/components are entirely absent, leaving several expected bindings missing.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:19.334Z"
+    "timestamp": "2026-05-18T04:57:26.901Z"
   },
   {
     "taskId": "cashpulse-transactions-list-page",
@@ -929,11 +929,11 @@
     "config": "E",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component builds a multi-card dashboard (summary stats, daily chart, top categories, biggest expenses, month comparison) rather than the specified single-page layout with time-range filter chips, a category multi-select dropdown, and a sorted category list with trend indicators as the primary content.",
+    "fidelity_notes": "The component builds a multi-card dashboard (summary stats, daily chart, top categories, biggest expenses, month comparison) rather than the specified filter-chip + category-row list layout with time-range chips, multi-select category dropdown, trend indicators per row, and a daily sparkline above the list.",
     "props": 2,
-    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color/icon/name) and DailySpending fields, but the overall composition diverges from the expected prop surface (filter chip props, category dropdown props, trend indicator props) described in the spec.",
+    "props_notes": "The code compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.color, category.icon) and DailySpending fields, but the required props (time-range filter, category multi-select filter) are absent and several expected component interfaces from the spec are missing.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:25.374Z"
+    "timestamp": "2026-05-18T04:57:32.226Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -941,11 +941,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 1,
-    "fidelity_notes": "The component has Currency and Budget sections that partially match, but is entirely missing the required Section 2 (Current Month Budget read-only card with Budget.monthlyLimit/Budget.currency and Edit link), and the Category section lacks Edit actions, icon display, and the inline Add Category form with name/color/icon picker — multiple major sections and features are absent or wrong.",
-    "props": 1,
-    "props_notes": "The component compiles but is missing key expected props entirely (no Budget prop for monthlyLimit/currency, no onUpdate handler for categories), and the onCategoryAdd callback uses a prompt() instead of the specified inline form, meaning ≥50% of expected data bindings and props are absent or misimplemented.",
+    "fidelity_notes": "The component has Currency and Budget sections that roughly match Section 1, and a Category list with delete/add actions, but it is entirely missing Section 2 (Current Month Budget read-only summary card with Budget.monthlyLimit and Budget.currency and an Edit link), the category rows don't show the icon field, default categories only hide Delete rather than showing Edit-only, and the Add Category flow uses a prompt() instead of an inline form with name/color/icon pickers.",
+    "props": 2,
+    "props_notes": "The component compiles and most props are correctly named and bound (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault, category.id), but the Budget section is missing its Budget.monthlyLimit and Budget.currency bindings entirely, and category.icon is declared in the type but never rendered in the row.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:30.903Z"
+    "timestamp": "2026-05-18T04:57:38.157Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -953,11 +953,11 @@
     "config": "E",
     "rep": 1,
     "fidelity": 1,
-    "fidelity_notes": "The component has Currency and Budget sections that roughly match, but is missing the required 'Current Month Budget' read-only summary card (showing Budget.monthlyLimit and Budget.currency with an Edit link), the category rows are missing Edit actions and icons, the inline Add Category form (with name, color picker, icon picker) is absent (replaced by a simple callback), and default categories incorrectly hide Delete but also hide Edit rather than showing only Edit.",
+    "fidelity_notes": "The component has the currency selector and budget input sections matching the spec, but is entirely missing the 'Current Month Budget' read-only summary card (Section 2 with Budget.monthlyLimit and Budget.currency), the Edit action on category rows, the inline Add Category form with name/color/icon picker, and the icon display in category rows.",
     "props": 2,
-    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault, category.id), but the Budget prop (Budget.monthlyLimit, Budget.currency) is entirely missing and category.icon is never rendered, leaving key field bindings unused.",
+    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault), but Budget.monthlyLimit and Budget.currency are never bound (missing section), and the onUpdate handler from the spec is replaced by separate onSettingsChange/onCategoryDelete/onCategoryAdd callbacks.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:37.947Z"
+    "timestamp": "2026-05-18T04:57:47.870Z"
   },
   {
     "taskId": "cashpulse-settings-form",
@@ -965,11 +965,11 @@
     "config": "E",
     "rep": 2,
     "fidelity": 1,
-    "fidelity_notes": "The component has the currency selector and budget input sections, and a category manager, but is missing the required 'Current Month Budget' read-only summary card section (showing Budget.monthlyLimit and Budget.currency with an Edit link), the category rows are missing the icon display and Edit action, the inline Add Category form (with name, color picker, icon picker) is replaced by a prompt(), and default categories show a disabled Delete button rather than hiding it entirely.",
+    "fidelity_notes": "The component has the currency selector and budget input sections, and a category manager, but is missing the required 'Current Month Budget' read-only summary card section (showing Budget.monthlyLimit and Budget.currency with an Edit link), the category rows are missing the icon display and Edit action, the inline Add Category form (with name, color picker, icon picker) is replaced by a prompt(), and default categories show only a disabled Delete rather than Edit-only.",
     "props": 2,
-    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault, category.id), but category.icon is never rendered, the Budget section props are absent entirely, and onUpdate handler pattern differs from the spec.",
+    "props_notes": "Props compile and most bindings are correct (settings.currency, settings.defaultMonthlyBudget, category.color, category.name, category.isDefault, category.id), but category.icon is never rendered, the Budget entity fields (monthlyLimit, Budget.currency) are absent entirely, and the component adds its own persistence logic (fetch calls) contrary to the spec's 'no persistence in the component itself' requirement.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:44.915Z"
+    "timestamp": "2026-05-18T04:57:54.349Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -977,11 +977,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The Upcoming Recurring card is correctly placed between the budget and category cards with merchant name, amount, frequency badge, and date per row, but the footer link reads 'View All' instead of 'View all recurring expenses', and the card header shows no refresh icon as specified.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the budget and category cards with merchant name, amount, frequency badge, and date per row, but the footer link reads 'View All' instead of 'View all recurring expenses', and the card header shows no refresh icon as specified.",
     "props": 3,
     "props_notes": "All props compile correctly and data bindings use the right field names (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status) from RecurringTemplateItem, not Expense rows.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:50.466Z"
+    "timestamp": "2026-05-18T04:57:58.767Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -989,11 +989,11 @@
     "config": "E",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Budget Summary and Spending by Category cards, shows merchant name, amount, frequency badge, and next occurrence date for active recurring templates, with a 'View All' link — matching the spec faithfully.",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Budget Summary and Spending by Category cards, with merchant name, currency-formatted amount, frequency badge, next occurrence date, and a 'View All' link, matching the spec closely.",
     "props": 3,
-    "props_notes": "All props are correctly declared and bound: items maps to MOCK_RECURRING using templateId, merchantName, amount, nextOccurrenceDate, frequency, and categoryColor; isLoading and onViewAllClick are properly wired; existing dashboard components remain unchanged.",
+    "props_notes": "All props compile correctly and data bindings use the right field names: templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, and status are all correctly referenced from RecurringTemplateItem.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:54.640Z"
+    "timestamp": "2026-05-18T04:58:02.944Z"
   },
   {
     "taskId": "cashpulse-dashboard-modify-add-recurring-card",
@@ -1001,11 +1001,11 @@
     "config": "E",
     "rep": 2,
     "fidelity": 3,
-    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Budget Summary and Category cards in the left column, with merchant name, currency-formatted amount, frequency badge, next occurrence date, and a 'View All' link, matching the spec closely (minor: uses 'View All' instead of 'View all recurring expenses' and shows a refresh icon in empty state rather than card header).",
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Budget Summary and Category Donut cards in the left column, with merchant name, currency-formatted amount, frequency badge, next occurrence date, and a 'View All' link, matching the spec closely (minor: uses 'View All' instead of 'View all recurring expenses' and shows a refresh icon in the empty state rather than the header).",
     "props": 3,
-    "props_notes": "All data bindings use correct field names from RecurringTemplateItem (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), props are properly typed and passed, and no misnamed fields are present.",
+    "props_notes": "All data bindings use correct field names from RecurringTemplateItem (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status), props are properly typed and passed, and the component compiles without issues.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:07:59.678Z"
+    "timestamp": "2026-05-18T04:58:07.678Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -1013,11 +1013,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly ordered: amount, category, date, payment method, note, recurring toggle with collapsible frequency/end-date panel, and save button; layout and labels match the spec faithfully.",
+    "fidelity_notes": "All specified sections are present and correctly ordered: amount, category, date, payment method, note, recurring toggle with collapsible frequency/end-date panel, and save button, with the toggle label, frequency chips (Weekly/Monthly/Yearly), start date binding, and Never/On date end-date options all matching the spec.",
     "props": 3,
-    "props_notes": "All props and data bindings are correctly named and wired — RecurrenceConfigSection receives isRecurring, frequency, endDateMode, endDate, startDate with matching handler props, and the submit logic correctly branches on recurrence.isRecurring to post a RecurringTemplate with status='ACTIVE' before the Expense.",
+    "props_notes": "All props compile correctly and data bindings use the correct field names: recurrence.frequency maps to RecurringTemplate.frequency, recurrence.startDate defaults to the expense date, recurrence.endDate maps to RecurringTemplate.endDate (null when NEVER), and the submit handler correctly sets status='ACTIVE' and conditionally posts the template before the expense.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:04.159Z"
+    "timestamp": "2026-05-18T04:58:13.262Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -1025,11 +1025,11 @@
     "config": "E",
     "rep": 1,
     "fidelity": 3,
-    "fidelity_notes": "All specified sections are present and correctly ordered: existing fields (amount, category, date, payment method, note) render unchanged, followed by the recurring toggle that reveals frequency picker (Weekly/Monthly/Yearly chips), start date input defaulting to the expense date, and end date selector with Never/On date radio options including a conditional date picker.",
+    "fidelity_notes": "The component faithfully implements all specified sections — amount, category, date, payment method, note, and the new recurrence section with toggle, frequency chips (Weekly/Monthly/Yearly), start date input defaulting to the expense date, and end date selector with Never/On date radio options — all in the correct order before the Save button.",
     "props": 3,
-    "props_notes": "All props are correctly declared and bound: RecurrenceConfigSection receives isRecurring, frequency, endDateMode, endDate, startDate with correct handler callbacks; submit logic correctly posts RecurringTemplate with status='ACTIVE' then Expense when toggle is ON, and sets recurringTemplateId=null (implicitly) when OFF; field names match the spec (frequency, startDate, endDate, paymentMethod, categoryId, note).",
+    "props_notes": "All props are correctly declared and data bindings use the correct field names: recurrence.frequency maps to RecurringTemplate.frequency, form.date mirrors RecurringTemplate.startDate, endDateMode/endDate correctly map to RecurringTemplate.endDate (null for NEVER, date value for ON_DATE), and the submit handler conditionally posts to /api/recurring-templates then /api/expenses with status='ACTIVE'.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:10.061Z"
+    "timestamp": "2026-05-18T04:58:18.495Z"
   },
   {
     "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
@@ -1039,9 +1039,9 @@
     "fidelity": 3,
     "fidelity_notes": "The component faithfully implements all specified sections — amount, category, date, payment method, note, and the recurring section with toggle, frequency chips (Weekly/Monthly/Yearly), start date input defaulting to the expense date, and end date selector with Never/On date options — matching the design spec closely.",
     "props": 3,
-    "props_notes": "All props are correctly declared and data bindings use the correct field names: RecurrenceState fields (isRecurring, frequency, startDate, endDateMode, endDate) map properly to RecurringTemplate fields, and the submit handler correctly posts a RecurringTemplate with status='ACTIVE' before the Expense when toggle is ON, with recurringTemplateId logic noted in comments.",
+    "props_notes": "All props are correctly declared and data bindings use the correct field names throughout, including RecurrenceState fields (isRecurring, frequency, startDate, endDateMode, endDate), RecurringTemplate payload fields (status='ACTIVE', startDate, endDate, frequency), and the expense payload fields.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:14.634Z"
+    "timestamp": "2026-05-18T04:58:23.763Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -1049,11 +1049,11 @@
     "config": "E",
     "rep": 0,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is correctly additive and resolves from the joined template, but it appears in the caption/subtitle line rather than near the amount as specified, and the badge uses a blue accent color rather than a muted background.",
+    "fidelity_notes": "The recurring frequency badge is implemented and resolves from the template correctly, but it appears in the caption/subtitle line rather than near the amount as specified, and the badge uses a blue accent color rather than a muted background, slightly deviating from the spec.",
     "props": 3,
-    "props_notes": "All components compile correctly, props are properly named, and data bindings correctly resolve frequency from recurringTemplateId via lookupTemplateFrequency using the joined template data.",
+    "props_notes": "All components compile correctly, props are properly named and typed, and data bindings correctly resolve frequency from recurringTemplateId via the joined template lookup.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:18.327Z"
+    "timestamp": "2026-05-18T04:58:27.576Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -1063,9 +1063,9 @@
     "fidelity": 2,
     "fidelity_notes": "The recurring frequency badge is correctly rendered for recurring expenses and absent for non-recurring ones, but the badge is placed in the caption/subtitle line rather than near the amount as specified, and the badge uses a blue accent color rather than a muted background.",
     "props": 3,
-    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, frequency, isRecurringInstance, categoryId, etc.), and the RecurringTemplate is properly resolved via the recurringTemplateId reference.",
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, frequency, isRecurringInstance, categoryId, etc.), and the template lookup correctly resolves the recurringTemplateId reference.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:22.725Z"
+    "timestamp": "2026-05-18T04:58:31.700Z"
   },
   {
     "taskId": "cashpulse-transactions-list-modify-recurring-badge",
@@ -1073,10 +1073,154 @@
     "config": "E",
     "rep": 2,
     "fidelity": 2,
-    "fidelity_notes": "The recurring frequency badge is implemented and additive per spec, but it appears in the caption/subtitle line rather than near the amount on the right side as specified, and the badge uses a blue accent color rather than a muted/neutral background.",
+    "fidelity_notes": "The recurring frequency badge is implemented and additive as specified, but it appears in the caption/subtitle line rather than near the amount as the spec requires, and the badge uses a blue accent color rather than a muted background.",
     "props": 3,
     "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency resolved from RecurringTemplate), and the component composition is accurate throughout.",
     "reviewerModelId": "claude-sonnet-4-6",
-    "timestamp": "2026-05-16T21:08:27.708Z"
+    "timestamp": "2026-05-18T04:58:35.612Z"
+  },
+  {
+    "taskId": "cashpulse-dashboard-summary-card",
+    "taskType": "NEW",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 3,
+    "fidelity_notes": "All four required metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count) are present and correctly formatted, the month header is displayed, and the budget status is color-coded with icons matching the green/amber/red spec.",
+    "props": 3,
+    "props_notes": "All props match the MonthSummary interface exactly, all data bindings use the correct field names (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, budgetLimit), and the component compiles cleanly.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:58:38.993Z"
+  },
+  {
+    "taskId": "cashpulse-transactions-list-page",
+    "taskType": "NEW",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The component matches the spec well — time range filter chips, category filter, sorted category rows with icon/color/amount/percentage/transaction count/trend indicator, and a daily spending chart — but the category filter is implemented as inline chips rather than a multi-select dropdown, the empty state message differs from the spec ('No spending data for this selection' vs 'No expenses in this time range'), and there are extra elements (summary card, insight banner) not in the spec.",
+    "props": 3,
+    "props_notes": "All data bindings correctly use CategorySpending fields (totalAmount, percentage, transactionCount, categoryId), Category fields (icon, color, name), and DailySpending fields (totalAmount, transactionCount, date), with no misnamed or missing field references.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:58:43.771Z"
+  },
+  {
+    "taskId": "cashpulse-settings-form",
+    "taskType": "NEW",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The component has all three conceptual sections (preferences, categories, summary) and matches most of the spec, but the 'Current Month Budget' section showing Budget.monthlyLimit and Budget.currency as a read-only summary with an Edit link is missing — replaced by a general configuration summary card, and the 'Add Category' button opens a dialog rather than an inline form.",
+    "props": 2,
+    "props_notes": "Most data bindings are correct (UserSettings.currency, UserSettings.defaultMonthlyBudget, Category.name/color/icon/isDefault), but the component uses internal state for persistence rather than calling an onUpdate handler, and there is no Budget.monthlyLimit or Budget.currency binding as the spec requires.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:58:48.616Z"
+  },
+  {
+    "taskId": "cashpulse-dashboard-modify-add-recurring-card",
+    "taskType": "MODIFY",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The Upcoming Recurring card is present in the left column with correct data bindings to RecurringTemplate, but it is placed after the Budget Progress card (which also contains the spending categories inline) rather than between a separate Monthly Budget card and a separate Spending by Category card, and the footer shows a total summary instead of a 'View all recurring expenses' link.",
+    "props": 2,
+    "props_notes": "Props and data bindings correctly use RecurringTemplate fields (merchantName, amount, frequency, nextOccurrence, status), but the footer link binding is missing and replaced with a calculated total, and the card title reads 'Upcoming Recurring Expenses' instead of 'Upcoming Recurring'.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:58:53.988Z"
+  },
+  {
+    "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
+    "taskType": "MODIFY",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The component matches the overall structure well — toggle, frequency picker, start/end date, validation — but the end date uses a free-form date input instead of the specified two-option selector ('Never' / 'On date'), which is a notable deviation from the spec.",
+    "props": 2,
+    "props_notes": "Props and bindings are mostly correct (frequency, startDate, endDate, status='active', recurringTemplateId), but on submit the code does not actually set recurringTemplateId on the expense payload from the created template's id (it's left undefined), deviating from the spec's required binding.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:58:58.720Z"
+  },
+  {
+    "taskId": "cashpulse-transactions-list-modify-recurring-badge",
+    "taskType": "MODIFY",
+    "config": "A",
+    "rep": 0,
+    "fidelity": 3,
+    "fidelity_notes": "The component faithfully renders expense rows with merchant name, category, date, and amount, and additively places a correctly styled frequency badge (small pill, muted color, 11-12px text) near the amount only when recurringTemplateId is non-null, with no badge or layout shift for non-recurring rows.",
+    "props": 3,
+    "props_notes": "All props compile correctly, data bindings use the correct field names (expense.recurringTemplateId, expense.categoryId, expense.merchantName, expense.date, expense.amount, recurringTemplate.frequency), and the template lookup is properly resolved via the templateMap.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:03.161Z"
+  },
+  {
+    "taskId": "cashpulse-dashboard-summary-card",
+    "taskType": "NEW",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The component matches the spec well with all four required metrics (Total Spent, Budget Remaining, Daily Average, Transaction Count), a color-coded status indicator, and proper card styling, but the layout uses a vertical stack with a 2-column grid only for the bottom two stats rather than a consistent 2x2 grid, and the status uses blue for 'On Track' instead of the spec's green.",
+    "props": 3,
+    "props_notes": "All props are correctly declared and all data bindings use the correct field names from MonthSummary (totalSpent, remainingAmount, dailyAverage, transactionCount, budgetStatus, month, budgetLimit).",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:07.347Z"
+  },
+  {
+    "taskId": "cashpulse-transactions-list-page",
+    "taskType": "NEW",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 1,
+    "fidelity_notes": "The component has a month navigator and multiple cards (daily chart, top categories, biggest expenses, month comparison) but the DesignSpec calls for filter chips (Week/Month/Quarter) with a multi-select category dropdown filter, a sorted category list with trend indicators, and an optional daily sparkline above the list — the overall layout and interaction model differ significantly from the spec.",
+    "props": 2,
+    "props_notes": "The component compiles and correctly binds CategorySpending fields (totalAmount, percentage, transactionCount, category.name/color/icon) and DailySpending fields, but the DesignSpec's required filter chip props and multi-select category filter component are absent entirely.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:12.890Z"
+  },
+  {
+    "taskId": "cashpulse-settings-form",
+    "taskType": "NEW",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 1,
+    "fidelity_notes": "The component has a currency selector and budget input matching Section 1, and a category list with delete actions matching parts of Section 3, but it is entirely missing Section 2 (Current Month Budget read-only card with Budget.monthlyLimit/Budget.currency and Edit link), the category rows don't show the icon field, Edit actions are absent from category rows (only Delete is present), and the 'Add Category' inline form with name/color/icon picker is replaced by a simple button that directly adds a hardcoded category.",
+    "props": 2,
+    "props_notes": "Props compile and mostly match expected fields (settings.currency, settings.defaultMonthlyBudget, categories with color/name/isDefault/id), but Category.icon is never rendered, there is no Budget prop at all (missing Section 2 bindings), and onCategoryAdd fires directly instead of opening an inline form with an onUpdate callback pattern.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:19.679Z"
+  },
+  {
+    "taskId": "cashpulse-dashboard-modify-add-recurring-card",
+    "taskType": "MODIFY",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The Upcoming Recurring card is correctly inserted between the Budget and Category cards with merchant name, amount, frequency badge, and next occurrence date per row, but the footer uses 'View All' instead of 'View all recurring expenses', and a refresh icon in the card header is missing.",
+    "props": 3,
+    "props_notes": "All props compile correctly and data bindings use the proper RecurringTemplateItem fields (templateId, merchantName, amount, nextOccurrenceDate, frequency, categoryColor, status) with no misnamed fields.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:25.280Z"
+  },
+  {
+    "taskId": "cashpulse-add-expense-modify-recurrence-toggle",
+    "taskType": "MODIFY",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 3,
+    "fidelity_notes": "The component faithfully implements all specified sections — amount hero, category chips, date, payment method, note with character counter, and the recurrence section with toggle, frequency chips (Weekly/Monthly/Yearly), end date radio options (Never/On date), and conditional save button label — matching the DesignSpec layout and behavior.",
+    "props": 3,
+    "props_notes": "All props are correctly declared and data bindings use the correct field names throughout — RecurrenceConfigSection receives isRecurring, frequency, startDate, endDateMode, endDate with matching handler props, and the submit payload correctly maps to RecurringTemplate fields (frequency, startDate, endDate, status='ACTIVE') and Expense fields.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:30.765Z"
+  },
+  {
+    "taskId": "cashpulse-transactions-list-modify-recurring-badge",
+    "taskType": "MODIFY",
+    "config": "E",
+    "rep": 0,
+    "fidelity": 2,
+    "fidelity_notes": "The recurring frequency badge is correctly rendered as a small pill near the expense row and only for recurring instances, but it appears in the caption/subtitle line rather than near the amount as specified, and the overall dashboard adds extra sections (Budget Summary, By Category sidebar) not described in the spec.",
+    "props": 3,
+    "props_notes": "All props compile correctly, data bindings use the correct field names (recurringTemplateId, isRecurringInstance, frequency resolved from RecurringTemplate), and the badge receives the proper frequency value from the joined template lookup.",
+    "reviewerModelId": "claude-sonnet-4-6",
+    "timestamp": "2026-05-18T04:59:35.699Z"
   }
 ]

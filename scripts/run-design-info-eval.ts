@@ -388,10 +388,11 @@ async function main(): Promise<void> {
   const configArg = args[args.indexOf('--config') + 1] ?? 'all';
   const taskArg = args[args.indexOf('--task') + 1] ?? 'all';
   const reps = parseInt(args[args.indexOf('--reps') + 1] ?? '3', 10);
+  const force = args.includes('--force');
 
   const configs: ConfigKey[] = configArg === 'all'
     ? [...CONFIG_KEYS]
-    : [configArg.toUpperCase() as ConfigKey];
+    : configArg.split(',').map((c) => c.trim().toUpperCase() as ConfigKey);
 
   if (!configs.every((c) => CONFIG_KEYS.includes(c))) {
     log(`Invalid config: ${configArg}. Must be one of ${CONFIG_KEYS.join(', ')} or 'all'.`);
@@ -429,7 +430,7 @@ async function main(): Promise<void> {
     for (const task of tasks) {
       for (let rep = 0; rep < reps; rep++) {
         const key = cellKey(task.id, config, rep);
-        if (completedKeys.has(key)) {
+        if (!force && completedKeys.has(key)) {
           skipped++;
           continue;
         }

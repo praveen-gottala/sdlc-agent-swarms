@@ -128,6 +128,7 @@ async function scoreCell(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const consistencyMode = args.includes('--consistency');
+  const force = args.includes('--force');
 
   if (!existsSync(RAW_RESULTS_PATH)) {
     log('STOP: No raw results found. Run the eval first.');
@@ -192,13 +193,18 @@ async function main(): Promise<void> {
     : [];
   const scoredKeys = new Set(existingScores.map((s) => `${s.taskId}:${s.config}:${s.rep}`));
 
-  const scores: ScoredCell[] = [...existingScores];
+  const forcedKeys = force
+    ? new Set(successCells.map((c) => `${c.taskId}:${c.config}:${c.rep}`))
+    : new Set<string>();
+  const scores: ScoredCell[] = force
+    ? existingScores.filter((s) => !forcedKeys.has(`${s.taskId}:${s.config}:${s.rep}`))
+    : [...existingScores];
   let scored = 0;
   let skipped = 0;
 
   for (const cell of successCells) {
     const key = `${cell.taskId}:${cell.config}:${cell.rep}`;
-    if (scoredKeys.has(key)) {
+    if (!force && scoredKeys.has(key)) {
       skipped++;
       continue;
     }

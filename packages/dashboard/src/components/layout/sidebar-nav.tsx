@@ -29,13 +29,13 @@ import {
   IconChevronRight,
   IconExternalLink,
 } from '@tabler/icons-react';
-import type { ComponentType, ReactNode } from 'react';
+import { type ComponentType, type ReactNode, useState, useEffect } from 'react';
 
 interface NavItem {
   icon: ComponentType<{ size?: number; stroke?: number }>;
   label: string;
   href: string;
-  badge?: number;
+  badgeKey?: string;
   external?: boolean;
 }
 
@@ -58,7 +58,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { icon: IconListCheck, label: 'Tasks', href: '/tasks' },
       { icon: IconRobot, label: 'Agents', href: '/agents' },
-      { icon: IconCircleCheck, label: 'Approvals', href: '/approvals', badge: 3 },
+      { icon: IconCircleCheck, label: 'Approvals', href: '/approvals', badgeKey: 'approvals' },
     ],
   },
   {
@@ -118,6 +118,25 @@ function getInitials(name: string): string {
     .join('');
 }
 
+function useApprovalCount(): number {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCount(): Promise<void> {
+      try {
+        const res = await fetch('/api/approvals');
+        if (!res.ok) return;
+        const data = await res.json() as { total: number };
+        if (!cancelled) setCount(data.total);
+      } catch { /* API unreachable — show 0 */ }
+    }
+    fetchCount();
+    const interval = setInterval(fetchCount, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+  return count;
+}
+
 function SectionLabel({ collapsed, children }: { collapsed: boolean; children: ReactNode }): React.JSX.Element {
   if (collapsed) {
     return <Divider my={4} color="var(--color-border)" />;
@@ -148,6 +167,8 @@ export function SidebarNav({
 }: SidebarNavProps): React.JSX.Element {
   const pathname = usePathname();
   const projectName = project?.name ?? 'my-saas-app';
+  const approvalCount = useApprovalCount();
+  const badgeCounts: Record<string, number> = { approvals: approvalCount };
 
   return (
     <>
@@ -296,13 +317,16 @@ export function SidebarNav({
                     color="blue"
                     variant="light"
                     data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    rightSection={
-                      !collapsed && item.badge ? (
+                    rightSection={(() => {
+                      if (collapsed || !item.badgeKey) return undefined;
+                      const count = badgeCounts[item.badgeKey] ?? 0;
+                      if (count <= 0) return undefined;
+                      return (
                         <Badge size="xs" variant="filled" color="orange" circle>
-                          {item.badge}
+                          {count}
                         </Badge>
-                      ) : undefined
-                    }
+                      );
+                    })()}
                     styles={{
                       root: {
                         borderRadius: 'var(--mantine-radius-sm)',

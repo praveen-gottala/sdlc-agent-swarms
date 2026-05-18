@@ -380,6 +380,31 @@ Before starting Phase 1, invest one focused session in:
 
 ---
 
+## Pre-Phase 1 UX Audit (2026-05-18)
+
+Full pixel-level audit of all 11 dashboard pages completed. Results documented in [`ux-audit-findings.md`](ux-audit-findings.md) with screenshots at `packages/eval/results/m4/dashboard-smoke-*.png`.
+
+**Investment-readiness score: 4/10** — strong structural bones, fatal gap on progress visibility.
+
+### Top P0 fixes (must complete before investor demo)
+
+1. **Real-time layer (SSE/WebSocket)** — No mechanism to surface pipeline progress in dashboard. Foundation for everything else. (3-5 days)
+2. **Remove hardcoded/fake data** — Header budget, approval badge "3", phase label, agent count all inconsistent with actual data. (1 day)
+3. **Animate SpineRail** — Active stage pulses, completed stages get checkmarks. Needs real-time layer. (1-2 days)
+4. **Notification system** — Toast on gate interrupt, completion, failure. Browser notifications for background tabs. (1-2 days)
+5. **Post-submission feedback on /new** — After PRD submission, show Clarifier progress. Currently: nothing happens visually. (1 day)
+
+### Cross-cutting issues
+
+- **Legacy agent model:** Agents page shows 7 old design-era agents, not the 4 spine stages
+- **Tasks page:** Shows design-era tasks, not Architect TaskPlan output
+- **Run history:** Only "Spec Generation" type exists, no "Spine Run"
+- **Empty states:** Bare "No tasks" text everywhere, no illustrations/CTAs
+
+See full findings with per-page screenshots and severity ratings in [`ux-audit-findings.md`](ux-audit-findings.md).
+
+---
+
 ## Relationship to M4
 
 This plan is **downstream of, not parallel to**, [`m4-execution-plan.md`](../chips-next-steps/m4-execution-plan.md). Phase 0 is the verification gate that M4 is truly done end-to-end before any dashboard work starts. Once Phase 0 passes, every subsequent phase consumes M4 deliverables as load-bearing dependencies — there are no stub fallbacks. If a regression in M4 surfaces during Phase 2+ (e.g., the Reviewer's `ReviewResult.disposition` changes shape), the dashboard work pauses and the regression is fixed in M4 first.

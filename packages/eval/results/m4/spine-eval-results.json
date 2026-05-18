@@ -1,9 +1,10 @@
 [
   {
-    "scenarioId": "spine-cashpulse-greenfield",
+    "scenarioId": "spine-cashpulse-brownfield",
     "rep": 0,
-    "path": "greenfield",
-    "status": "failed",
+    "path": "brownfield",
+    "status": "success",
+    "reviewOutcome": "escalated",
     "stageCosts": [
       {
         "stage": "clarifier",
@@ -11,11 +12,32 @@
         "inputTokens": 0,
         "outputTokens": 0,
         "durationMs": 0
+      },
+      {
+        "stage": "architect",
+        "costUsd": 3.88716,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 862482
+      },
+      {
+        "stage": "implementer",
+        "costUsd": 0.058499999999999996,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 2968
+      },
+      {
+        "stage": "reviewer",
+        "costUsd": 0.012459000000000001,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 9033
       }
     ],
-    "totalCostUsd": 0,
-    "totalDurationMs": 1466015,
-    "error": "Architect did not produce a complete state",
-    "timestamp": "2026-05-18T00:25:13.138Z"
+    "totalCostUsd": 3.9581190000000004,
+    "totalDurationMs": 874486,
+    "taskId": "frontend-dashboard-recurring-badge",
+    "timestamp": "2026-05-18T05:06:06.169Z"
   }
 ]
