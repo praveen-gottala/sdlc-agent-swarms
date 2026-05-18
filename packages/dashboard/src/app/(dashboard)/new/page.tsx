@@ -338,7 +338,7 @@ export default function NewProjectPage(): React.JSX.Element {
   }, [clarifier.clarifierState?.requirement, clarifier.threadId, router]);
 
   return (
-    <div className="-m-[--mantine-spacing-md] h-[calc(100%+2*var(--mantine-spacing-md))]">
+    <div className="-m-[--mantine-spacing-md] min-h-[calc(100vh-52px)]">
     <SplitPanelLayout prdPanelVisible={prdPanelVisible}>
       {/* Left: Chat panel — questions/escalation render above the input */}
       <ChatPanel
