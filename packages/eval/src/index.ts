@@ -22,6 +22,12 @@ export type {
   ArchitectExpectedBehavior,
   ArchitectEvalScenario,
   ArchitectMetrics,
+  SpinePath,
+  SpineTaskSelector,
+  SpineStageExpectation,
+  SpineEvalScenario,
+  SpineStageCost,
+  SpineEvalResult,
 } from './types.js';
 
 export {
@@ -34,6 +40,12 @@ export {
   ArchitectExpectedBehaviorSchema,
   ArchitectEvalScenarioSchema,
   ArchitectMetricsSchema,
+  SpinePathSchema,
+  SpineTaskSelectorSchema,
+  SpineStageExpectationSchema,
+  SpineEvalScenarioSchema,
+  SpineStageCostSchema,
+  SpineEvalResultSchema,
 } from './types.js';
 
 export { createRecordingProvider, clearCassette } from './recording-provider.js';
@@ -49,6 +61,9 @@ export type { ScenarioId } from './scenarios/index.js';
 
 export { loadArchitectScenarios, loadArchitectScenario, ARCHITECT_SCENARIO_IDS } from './scenarios/architect/index.js';
 export type { ArchitectScenarioId } from './scenarios/architect/index.js';
+
+export { loadSpineScenarios, loadSpineScenario, SPINE_SCENARIO_IDS } from './scenarios/spine/index.js';
+export type { SpineScenarioId } from './scenarios/spine/index.js';
 
 export { runScenario } from './runner.js';
 export type { ProgressCallback } from './runner.js';

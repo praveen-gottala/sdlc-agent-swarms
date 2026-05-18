@@ -1,0 +1,21 @@
+[
+  {
+    "scenarioId": "spine-cashpulse-greenfield",
+    "rep": 0,
+    "path": "greenfield",
+    "status": "failed",
+    "stageCosts": [
+      {
+        "stage": "clarifier",
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "durationMs": 0
+      }
+    ],
+    "totalCostUsd": 0,
+    "totalDurationMs": 1466015,
+    "error": "Architect did not produce a complete state",
+    "timestamp": "2026-05-18T00:25:13.138Z"
+  }
+]

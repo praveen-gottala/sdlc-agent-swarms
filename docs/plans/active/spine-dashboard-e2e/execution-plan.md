@@ -325,6 +325,61 @@ flowchart LR
 
 ---
 
+## UX Observations from M4 Phase 7 Spine Eval (2026-05-17)
+
+Observations captured during a real 25+ min spine eval run (Clarifier fixture → Architect → Implementer → Reviewer on CashPulse greenfield with Claude Opus via Vertex AI). These directly inform the UX quality required for the $100M investment bar.
+
+### Real-time progress visibility (CRITICAL)
+
+The Architect pipeline alone takes ~25 min with Opus. Per-node timings observed:
+
+| Node | Duration | What it produces |
+|------|----------|-----------------|
+| contextAssembler | <1s | Loads context |
+| optionsExplorer | ~8 min | Architecture alternatives |
+| architectureWriter | ~3 min | Architecture spec + ADRs |
+| contractDesigner | ~5 min | Full data model, API schemas, screen plans |
+| taskPlanner | ~4 min | TaskPlan DAG |
+| critic | <1s | Deterministic gate check |
+| Gate 2 HITL | User action | Design/API approval |
+
+**Every phase and every Implementer tool-loop iteration must show real-time progress in the dashboard.** A 25-min wait with no feedback is unacceptable UX. This is the top priority for Phases 2 and 5.
+
+### Notification system
+
+- Desktop/browser notifications when spine stages complete or hit HITL gates
+- Sound/visual indicators for Gate 1, 2, 3 readiness — the user may be in another tab
+- Estimated time remaining per stage (use observed timings as baselines)
+
+### Sample app strategy for UX validation
+
+CashPulse (7 screens, 25 features) takes ~25+ min per spine run — too slow for rapid UX iteration. The plan needs a fixture ladder:
+
+1. **Tiny fixture (~2 screens, ~30s-1 min)** — for rapid iteration during Phase 2-5 development. Could be a simple "Todo app" with 1 page + 1 entity.
+2. **CashPulse (medium, 7 screens, ~25 min)** — the existing eval fixture. Use for Phase 9 end-to-end validation.
+3. **Large fixture (20+ screens, ~60+ min)** — stress-test progress UX, notification queuing, cost tracking at scale. Deferred.
+
+### Page-by-page UX audit task
+
+Before Phase 2 begins, conduct a pixel-level audit of every dashboard page currently live:
+
+- **Home `/`** — SpineRail renders 4 stages with icons + connectors. Run status card shows last run. Clean layout. Need: run history preview, spine "Run" CTA.
+- **Runs `/pipeline`** — SpineRail + run history table. Run type shows "Spec Generation" (legacy). Need: add "Spine Run" type, per-stage progress column, cost column with real data (currently "—").
+- **Tasks `/tasks`** — Kanban board with 5 columns (Backlog/Blocked/In Progress/In Review/Done). Shows 1 old task. Need: populate from Architect TaskPlan, add NEW/MODIFY badges for brownfield.
+- **Approvals `/approvals`** — Badge shows "3" (hardcoded). Need: live gate count, HITL panel UIs.
+- Each page needs spacing, typography, color, interaction polish to $100M standard.
+
+### Task: UX Strategy & Fixture Planning (new task, pre-Phase 1)
+
+Before starting Phase 1, invest one focused session in:
+
+1. **Define the UX quality bar** — Reference best-in-class developer tools (Linear, Vercel, Cursor) and extract specific patterns: loading states, progress indicators, notification design, error recovery flows.
+2. **Create the tiny fixture** — A 2-screen "QuickNote" app that runs the full spine in <2 min, enabling rapid iteration.
+3. **Map every user wait moment** — Chart the entire developer journey noting every point where the user waits >5s. For each, design a specific loading/progress UX (skeleton, progress bar, stage completion animation, notification).
+4. **Evaluate alternative approaches** — Should we consider: (a) background runs with email/Slack notifications? (b) a "preview mode" that uses cached intermediate outputs? (c) streaming tokens directly for transparency? (d) parallel estimation + execution? Pick the approach that feels most premium.
+
+---
+
 ## Relationship to M4
 
 This plan is **downstream of, not parallel to**, [`m4-execution-plan.md`](../chips-next-steps/m4-execution-plan.md). Phase 0 is the verification gate that M4 is truly done end-to-end before any dashboard work starts. Once Phase 0 passes, every subsequent phase consumes M4 deliverables as load-bearing dependencies — there are no stub fallbacks. If a regression in M4 surfaces during Phase 2+ (e.g., the Reviewer's `ReviewResult.disposition` changes shape), the dashboard work pauses and the regression is fixed in M4 first.

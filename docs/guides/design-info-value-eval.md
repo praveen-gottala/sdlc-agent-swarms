@@ -330,6 +330,35 @@ Outputs `packages/eval/results/m3-6/scored-results.csv` plus `raw-results.json` 
 | Reviewer scores diverge | Stale results | Re-run reviewer with `--consistency` flag |
 | Matrix fails mid-run | Transient API error | Re-run same command — checkpointing skips completed cells |
 
+## M4 regression validation
+
+M4 ships the full spine pipeline with task-type-aware routing in the production Implementer. The routing implements `resolveDesignSliceStrategy()` from `packages/core/src/types/architect.schemas.ts`:
+
+- **NEW tasks:** `DesignSliceStrategy = 'none'` — no design-spec context
+- **MODIFY tasks:** `DesignSliceStrategy = 'structure-only'` — tree skeleton via `extractStructure()`
+
+### Regression check
+
+Re-run configs A (baseline, maps to NEW routing) and E (structure-only, maps to MODIFY routing) to confirm the M4 production path matches M3.6 baselines within ±0.15 mean fidelity per task type:
+
+```bash
+CLOUD_ML_REGION=us-east5 npx tsx scripts/run-design-info-eval.ts --config A,E --task all --reps 1
+CLOUD_ML_REGION=us-east5 npx tsx scripts/run-design-info-reviewer.ts
+npx tsx scripts/analyze-design-info-eval.ts
+```
+
+Results: `packages/eval/results/m4/regression-results.md`
+
+### Full pipeline validation
+
+The spine eval runner exercises the full Clarifier → Architect → Implementer → Reviewer pipeline:
+
+```bash
+RUN_LLM_TESTS=true npx tsx scripts/run-spine-eval.ts --reps 3
+```
+
+Results: `packages/eval/results/m4/spine-eval-results.json` and `packages/eval/results/m4/cost-receipts.md`
+
 ## What's next
 
 - [Configuration Reference](design-info-value-eval-reference.md) — what each config contains, with JSON examples

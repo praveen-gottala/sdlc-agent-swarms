@@ -1,0 +1,64 @@
+---
+id: spine-cashpulse-greenfield
+name: CashPulse Full Spine — Greenfield
+description: >
+  End-to-end spine eval on CashPulse in greenfield mode. Uses fixture
+  Clarifier output (M0 baseline), runs Architect live in greenfield mode,
+  selects first NEW frontend task, runs Implementer + Reviewer live.
+  Validates that the full Clarifier → Architect → Design → Implement →
+  Review pipeline completes without errors.
+path: greenfield
+clarifier:
+  fixtureEnrichedRequirementPath: fixtures/personal-expense-tracker/agentforge/clarifier-output/enriched-requirement.json
+  fixtureAssumptionLedgerPath: fixtures/personal-expense-tracker/agentforge/clarifier-output/assumption-ledger.json
+architect:
+  mode: greenfield
+  taskSelector:
+    mode: by-type
+    taskType: frontend
+    taskMode: NEW
+expectations:
+  - stage: architect
+    shouldPass: true
+    notes: Architect should produce a valid ContractBundle with TaskPlan containing frontend tasks.
+  - stage: implementer
+    shouldPass: true
+    notes: Implementer should produce at least one artifact for the selected NEW frontend task.
+  - stage: reviewer
+    shouldPass: true
+    notes: Reviewer may approve or reject — either outcome proves the pipeline works.
+---
+id: spine-cashpulse-brownfield
+name: CashPulse Full Spine — Brownfield
+description: >
+  End-to-end spine eval on CashPulse in brownfield mode. Uses fixture
+  Clarifier evolution output (M3.5 recurring transactions), runs Architect
+  live in brownfield mode with existing design specs, selects first MODIFY
+  frontend task, runs Implementer with delta design + Reviewer live.
+  Validates brownfield path: delta-aware design, structure-only context
+  routing (ADR-057), bounded review.
+path: brownfield
+clarifier:
+  fixtureEnrichedRequirementPath: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/enriched-requirement.json
+  fixtureAssumptionLedgerPath: fixtures/personal-expense-tracker/agentforge/clarifier-brownfield-output/assumption-ledger.json
+architect:
+  mode: brownfield
+  existingDesignSpecPaths:
+    screen-001: fixtures/personal-expense-tracker/agentforge/designs/dashboard.json
+    screen-002: fixtures/personal-expense-tracker/agentforge/designs/add-expense.json
+    screen-003: fixtures/personal-expense-tracker/agentforge/designs/spending-insights.json
+    screen-004: fixtures/personal-expense-tracker/agentforge/designs/settings.json
+  taskSelector:
+    mode: by-type
+    taskType: frontend
+    taskMode: MODIFY
+expectations:
+  - stage: architect
+    shouldPass: true
+    notes: Architect should classify affected screens and produce MODIFY frontend tasks with existingDesign contextRefs.
+  - stage: implementer
+    shouldPass: true
+    notes: Implementer should invoke design specialist for delta generation and produce code artifacts.
+  - stage: reviewer
+    shouldPass: true
+    notes: Reviewer may approve or reject — either outcome proves the brownfield pipeline works.

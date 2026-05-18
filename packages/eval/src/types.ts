@@ -186,3 +186,70 @@ export const ArchitectMetricsSchema = z.object({
 });
 
 export type ArchitectMetrics = z.infer<typeof ArchitectMetricsSchema>;
+
+// ── Spine Eval Types ─────────────────────────────────────────────────
+
+export const SpinePathSchema = z.enum(['greenfield', 'brownfield']);
+export type SpinePath = z.infer<typeof SpinePathSchema>;
+
+export const SpineTaskSelectorSchema = z.object({
+  mode: z.enum(['first', 'by-id', 'by-type']),
+  taskId: z.string().optional(),
+  taskType: z.string().optional(),
+  taskMode: z.enum(['NEW', 'MODIFY']).optional(),
+});
+
+export type SpineTaskSelector = z.infer<typeof SpineTaskSelectorSchema>;
+
+export const SpineStageExpectationSchema = z.object({
+  stage: z.enum(['clarifier', 'architect', 'implementer', 'reviewer']),
+  shouldPass: z.boolean(),
+  notes: z.string().optional(),
+});
+
+export type SpineStageExpectation = z.infer<typeof SpineStageExpectationSchema>;
+
+export const SpineEvalScenarioSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  path: SpinePathSchema,
+  clarifier: z.object({
+    fixtureEnrichedRequirementPath: z.string(),
+    fixtureAssumptionLedgerPath: z.string().optional(),
+  }),
+  architect: z.object({
+    mode: z.enum(['greenfield', 'brownfield']),
+    existingDesignSpecPaths: z.record(z.string()).optional(),
+    taskSelector: SpineTaskSelectorSchema,
+  }),
+  expectations: z.array(SpineStageExpectationSchema),
+});
+
+export type SpineEvalScenario = z.infer<typeof SpineEvalScenarioSchema>;
+
+export const SpineStageCostSchema = z.object({
+  stage: z.string(),
+  costUsd: z.number(),
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  durationMs: z.number(),
+});
+
+export type SpineStageCost = z.infer<typeof SpineStageCostSchema>;
+
+export const SpineEvalResultSchema = z.object({
+  scenarioId: z.string(),
+  rep: z.number().int(),
+  path: SpinePathSchema,
+  status: z.enum(['success', 'failed']),
+  reviewOutcome: z.enum(['approved', 'rejected', 'escalated']).optional(),
+  stageCosts: z.array(SpineStageCostSchema),
+  totalCostUsd: z.number(),
+  totalDurationMs: z.number(),
+  taskId: z.string().optional(),
+  error: z.string().optional(),
+  timestamp: z.string(),
+});
+
+export type SpineEvalResult = z.infer<typeof SpineEvalResultSchema>;
