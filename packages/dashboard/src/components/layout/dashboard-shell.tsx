@@ -244,10 +244,9 @@ export function DashboardShell({
         main: {
           background: 'var(--color-bg-base)',
           minHeight: '100vh',
-          borderRadius: '16px 0 0 0',
-          borderLeft: '1px solid var(--color-border-bright)',
-          borderTop: '1px solid var(--color-border-bright)',
-          boxShadow: '-8px -4px 24px rgba(0,0,0,0.12), -2px -1px 8px rgba(0,0,0,0.06)',
+          borderRadius: '12px 0 0 0',
+          borderLeft: '1px solid var(--color-border-subtle)',
+          borderTop: '1px solid var(--color-border-subtle)',
         },
         navbar: {
           background: 'var(--color-sidebar)',
