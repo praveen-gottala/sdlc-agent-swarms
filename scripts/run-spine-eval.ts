@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, cpSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import type { TaskNode, ContractBundle, Diff, TaskCompletionReport, ReviewResult, BaseCheckpointSaver } from '@agentforge/core';
 import { MemorySaver } from '@agentforge/core';
@@ -189,7 +189,7 @@ async function runArchitectStage(
   }
 
   if (!architectState) {
-    throw new Error(`Architect did not produce a complete state after ${resumeCycle} resume cycles`);
+    throw new Error('Architect did not produce a complete state');
   }
 
   const durationMs = Date.now() - startMs;
