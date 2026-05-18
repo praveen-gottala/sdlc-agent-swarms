@@ -1,102 +1,99 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { AgentCard } from '@/components/agents/agent-card';
+import React, { useState, useEffect } from 'react';
 import { AgentLearnings } from '@/components/agents/agent-learnings';
-import { CreateAgentModal } from '@/components/agents/create-agent-modal';
-import { Button } from '@/components/ui/button';
+import { SpineStageCard, type StageStatus } from '@/components/agents/spine-stage-card';
+import { SPINE_STAGES } from '@/components/spine/spine-constants';
 
-import type { AgentStatus, HitlLevel } from '@/components/agents/agent-card';
-
-interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  provider: string;
-  status: AgentStatus;
-  tasksCompleted: number;
-  avgCost: number;
-  qualityScore: number;
-  hitlLevel: HitlLevel;
-  isCustom: boolean;
+interface StageStats {
+  runsCompleted: number;
+  avgDurationMs: number;
+  totalCostUsd: number;
+  status: StageStatus;
 }
 
-/** Map API status to component-expected AgentStatus. */
-function mapAgentStatus(apiStatus: string): AgentStatus {
-  const mapping: Record<string, AgentStatus> = {
-    'idle': 'idle',
-    'active': 'active',
-    'executing': 'executing',
-    'error': 'blocked',
-    'disabled': 'blocked',
-  };
-  return mapping[apiStatus] ?? 'idle';
-}
+const STAGE_MODELS: Record<string, string> = {
+  clarifier: 'claude-opus-4-6',
+  architect: 'claude-opus-4-6',
+  implementer: 'claude-sonnet-4-6',
+  reviewer: 'claude-haiku-4-5',
+};
 
-/** Map trust level number to HitlLevel. */
-function mapHitlLevel(trustLevel: number): HitlLevel {
-  if (trustLevel >= 0.95) return 'autonomous';
-  if (trustLevel >= 0.85) return 'notify_only';
-  if (trustLevel >= 0.70) return 'review_and_override';
-  return 'full_approval';
-}
-
-export default function AgentsPage() {
-  const [agents, setAgents] = useState<Agent[]>([]);
+export default function AgentsPage(): React.JSX.Element {
+  const [stats, setStats] = useState<Record<string, StageStats>>({});
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
 
-  const fetchAgents = useCallback(() => {
-    fetch('/api/agents')
-      .then(res => res.json())
-      .then(json => {
-        const apiAgents = json.agents ?? json.data ?? [];
-        const mapped: Agent[] = apiAgents.map((a: Record<string, unknown>) => ({
-          id: a.id as string,
-          name: a.name as string,
-          role: a.role as string,
-          provider: (a.model as string) ?? (a.provider as string) ?? 'unknown',
-          status: mapAgentStatus(a.status as string),
-          tasksCompleted: 0,
-          avgCost: 0,
-          qualityScore: Math.round(((a.trustLevel as number) ?? 0.5) * 100),
-          hitlLevel: mapHitlLevel((a.trustLevel as number) ?? 0.5),
-          isCustom: (a.isCustom as boolean) ?? false,
-        }));
-        setAgents(mapped);
+  useEffect(() => {
+    fetch('/api/runs?limit=50')
+      .then((r) => (r.ok ? r.json() : { runs: [] }))
+      .then((data: { runs?: Array<{ type: string; status: string; cost?: { totalCostUsd?: number }; stageTimings?: Record<string, { durationMs?: number }> }> }) => {
+        const runs = data.runs ?? [];
+        const stageMap: Record<string, StageStats> = {};
+
+        for (const stage of SPINE_STAGES) {
+          const stageRuns = runs.filter((r) => r.type === stage.key);
+          const completed = stageRuns.filter((r) => r.status === 'complete');
+          const running = stageRuns.find((r) => r.status === 'running' || r.status === 'pending');
+          const failed = stageRuns.find((r) => r.status === 'failed');
+
+          const durations = completed
+            .map((r) => {
+              const timings = r.stageTimings ?? {};
+              const totalMs = Object.values(timings).reduce((sum, t) => sum + (t.durationMs ?? 0), 0);
+              return totalMs;
+            })
+            .filter((d) => d > 0);
+
+          stageMap[stage.key] = {
+            runsCompleted: completed.length,
+            avgDurationMs: durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
+            totalCostUsd: completed.reduce((sum, r) => sum + (r.cost?.totalCostUsd ?? 0), 0),
+            status: running ? 'running' : failed && completed.length === 0 ? 'failed' : completed.length > 0 ? 'complete' : 'idle',
+          };
+        }
+
+        setStats(stageMap);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    fetchAgents();
-  }, [fetchAgents]);
-
-  if (loading) return <div className="flex items-center justify-center h-64 text-text-muted">Loading...</div>;
+  if (loading) {
+    return <div className="flex items-center justify-center h-64 text-text-muted">Loading...</div>;
+  }
 
   return (
-    <main className="min-h-screen bg-[#0f1117] px-6 py-10">
-      <div className="mx-auto max-w-6xl">
+    <main className="px-6 py-10">
+      <div className="mx-auto max-w-5xl">
         {/* Page header */}
-        <div className="mb-10 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-[#e2e8f0]">Agents</h1>
-            <p className="mt-1 text-sm text-[#94a3b8]">
-              Manage and monitor your SDLC agents
-            </p>
-          </div>
-          <Button variant="primary" onClick={() => setModalOpen(true)}>
-            + New Agent
-          </Button>
+        <div className="mb-10">
+          <h1 className="text-2xl font-bold text-text-primary">Spine Stages</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Four sequential stages that take your idea from requirements to reviewed code
+          </p>
         </div>
 
-        {/* Agent grid */}
+        {/* Spine stage grid — 2x2 */}
         <section className="mb-12">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {agents.map((agent) => (
-              <AgentCard key={agent.id} {...agent} />
-            ))}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {SPINE_STAGES.map((stage) => {
+              const s = stats[stage.key] ?? { runsCompleted: 0, avgDurationMs: 0, totalCostUsd: 0, status: 'idle' as const };
+              return (
+                <SpineStageCard
+                  key={stage.key}
+                  stageKey={stage.key}
+                  name={stage.label}
+                  description={stage.description}
+                  icon={stage.icon}
+                  color={stage.color}
+                  model={STAGE_MODELS[stage.key] ?? 'claude-sonnet-4-6'}
+                  status={s.status}
+                  runsCompleted={s.runsCompleted}
+                  avgDurationMs={s.avgDurationMs}
+                  totalCostUsd={s.totalCostUsd}
+                />
+              );
+            })}
           </div>
         </section>
 
@@ -105,16 +102,6 @@ export default function AgentsPage() {
           <AgentLearnings />
         </section>
       </div>
-
-      {/* Create Agent Modal */}
-      <CreateAgentModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreate={() => {
-          // Refetch agents list after creation
-          fetchAgents();
-        }}
-      />
     </main>
   );
 }
