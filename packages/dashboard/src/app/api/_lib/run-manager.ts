@@ -27,7 +27,7 @@ export interface StageTiming {
 
 export interface RunStatus {
   runId: string;
-  type: 'init' | 'design-generate' | 'design-penpot' | 'design-browser' | 'design-chat-iterate' | 'implementer' | 'reviewer';
+  type: 'init' | 'clarifier' | 'architect' | 'design-generate' | 'design-penpot' | 'design-browser' | 'design-chat-iterate' | 'implementer' | 'reviewer';
   status: 'pending' | 'running' | 'complete' | 'failed';
   stage: string | null;
   /** Human-readable description of what the current stage is doing */

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readYamlFile } from '../_lib/project-reader';
+import { listRuns } from '../_lib/run-manager';
 
 interface RawTask {
   id: string;
@@ -36,7 +37,7 @@ const PHASE_ORDER = ['design', 'spec', 'code', 'cicd', 'observe'];
 
 /**
  * GET /api/costs
- * Returns cost summary computed from agentforge.tasks.yaml,
+ * Returns cost summary computed from agentforge.tasks.yaml + completed pipeline runs,
  * with budget limits from agentforge.yaml.
  */
 export async function GET() {
@@ -47,8 +48,15 @@ export async function GET() {
   const budget = projectConfig?.budget;
   const monthlyBudget = budget?.monthly_max_usd ?? 200;
 
-  const totalCost = tasks.reduce((sum, t) => sum + (t.cost_usd ?? 0), 0);
-  const totalTokens = tasks.reduce((sum, t) => sum + (t.tokens_used ?? 0), 0);
+  const taskCost = tasks.reduce((sum, t) => sum + (t.cost_usd ?? 0), 0);
+
+  // Also aggregate costs from completed pipeline runs
+  const runs = listRuns();
+  const runCost = runs.reduce((sum, r) => sum + (r.cost?.totalCostUsd ?? 0), 0);
+  const runTokens = runs.reduce((sum, r) => sum + (r.cost?.tokensUsed ?? 0), 0);
+
+  const totalCost = taskCost + runCost;
+  const totalTokens = tasks.reduce((sum, t) => sum + (t.tokens_used ?? 0), 0) + runTokens;
 
   // By phase
   const byPhase = PHASE_ORDER.map((phaseKey) => {

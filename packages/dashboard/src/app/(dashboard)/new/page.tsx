@@ -9,6 +9,7 @@ import { useClarifierStream } from '@/lib/hooks/use-clarifier-stream';
 import { SplitPanelLayout } from '@/components/clarifier/split-panel-layout';
 import { ChatPanel } from '@/components/clarifier/chat-panel';
 import { PrdPanel } from '@/components/clarifier/prd-panel';
+import { NodeProgressGraph } from '@/components/clarifier/node-progress-graph';
 import type { AssumptionEntry, Question, StructuredOption } from '@/lib/clarifier-chat-types';
 
 /* ------------------------------------------------------------------ */
@@ -287,12 +288,15 @@ export default function NewProjectPage(): React.JSX.Element {
     clarifier.reset();
   }, [clarifier]);
 
+  const [approving, setApproving] = useState(false);
+
   const handleApprove = useCallback(async () => {
     const requirement = clarifier.clarifierState?.requirement;
     const tid = clarifier.threadId;
     if (!requirement || !tid || approvingRef.current) return;
 
     approvingRef.current = true;
+    setApproving(true);
     try {
       const res = await fetch('/api/projects', {
         method: 'POST',
@@ -313,6 +317,12 @@ export default function NewProjectPage(): React.JSX.Element {
       }
 
       await res.json();
+      notifications.show({
+        title: 'Project created',
+        message: `"${requirement.prd.title}" is ready — redirecting to dashboard`,
+        color: 'green',
+        autoClose: 3000,
+      });
       router.push('/');
     } catch (err) {
       notifications.show({
@@ -323,6 +333,7 @@ export default function NewProjectPage(): React.JSX.Element {
       });
     } finally {
       approvingRef.current = false;
+      setApproving(false);
     }
   }, [clarifier.clarifierState?.requirement, clarifier.threadId, router]);
 
@@ -336,6 +347,13 @@ export default function NewProjectPage(): React.JSX.Element {
         isRunning={clarifier.isRunning}
         onSubmitSeed={clarifier.startClarifier}
       >
+        {clarifier.phase === 'running' && (
+          <NodeProgressGraph
+            activeNode={clarifier.activeNode}
+            completedNodes={clarifier.completedNodes}
+          />
+        )}
+
         {clarifier.phase === 'questions' && currentQuestions && (
           <QuestionFlow
             questions={currentQuestions.questions}
@@ -379,6 +397,7 @@ export default function NewProjectPage(): React.JSX.Element {
         interruptedAt={clarifier.interruptedAt}
         onApprove={handleApprove}
         onRequestChanges={handleRequestChanges}
+        approving={approving}
       />
     </SplitPanelLayout>
     </div>

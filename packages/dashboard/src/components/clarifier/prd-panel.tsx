@@ -22,6 +22,7 @@ interface PrdPanelProps {
   readonly interruptedAt?: string | null;
   readonly onApprove?: () => void;
   readonly onRequestChanges?: () => void;
+  readonly approving?: boolean;
 }
 
 export function PrdPanel({
@@ -36,6 +37,7 @@ export function PrdPanel({
   interruptedAt = null,
   onApprove,
   onRequestChanges,
+  approving = false,
 }: PrdPanelProps): React.JSX.Element {
   const [userView, setUserView] = useState<PanelView | null>(null);
   const view: PanelView = userView ?? (prdDraft && !isRunning ? 'document' : 'graph');
@@ -106,9 +108,10 @@ export function PrdPanel({
                     <button
                       type="button"
                       onClick={onApprove}
-                      className="rounded-lg bg-accent-blue px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-blue/90 active:bg-accent-blue/80"
+                      disabled={approving}
+                      className="rounded-lg bg-accent-blue px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-blue/90 active:bg-accent-blue/80 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Approve &amp; Continue
+                      {approving ? 'Creating project…' : 'Approve & Continue'}
                     </button>
                   )}
                 </div>

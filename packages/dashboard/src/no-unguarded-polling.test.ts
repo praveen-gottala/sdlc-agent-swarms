@@ -57,6 +57,26 @@ const WHITELIST: Array<{ file: string; justification: string }> = [
     file: 'components/clarifier/chat-message.tsx',
     justification: 'ElapsedTimer — 1s interval, UI-only, tracks stage elapsed time with cleanup',
   },
+  {
+    file: 'components/layout/dashboard-shell.tsx',
+    justification: 'Active run + budget poll — 30s interval, lightweight GET, cleanup on unmount',
+  },
+  {
+    file: 'components/pipeline/fun-facts.tsx',
+    justification: 'Fun fact rotation — UI-only animation, no network call',
+  },
+  {
+    file: 'components/pipeline/stage-detail-card.tsx',
+    justification: 'Stage elapsed timer — 1s interval, UI-only, no network call',
+  },
+  {
+    file: 'components/layout/sidebar-nav.tsx',
+    justification: 'Approval badge poll — 30s interval, lightweight GET /api/approvals, cleanup on unmount',
+  },
+  {
+    file: 'lib/hooks/use-event-feed.ts',
+    justification: 'Live event feed poll — guarded by isLive flag, polls only while activity sidebar is open',
+  },
 ];
 
 describe('No unguarded polling', () => {

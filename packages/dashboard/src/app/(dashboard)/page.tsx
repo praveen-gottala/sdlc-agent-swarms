@@ -221,7 +221,9 @@ export default function HomePage(): React.JSX.Element {
                 icon={<IconCircleX size={20} />}
                 color="var(--color-accent-red)"
                 label={`Last run failed: ${failedRun.type.replace(/-/g, ' ')}`}
-                detail={failedRun.error?.substring(0, 60) ?? failedRun.stage}
+                detail={failedRun.error
+                  ? (failedRun.error.length > 80 ? failedRun.error.substring(0, 80) + '…' : failedRun.error)
+                  : failedRun.stage}
                 href="/pipeline"
               />
             )}

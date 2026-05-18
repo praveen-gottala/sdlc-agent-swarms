@@ -143,7 +143,9 @@ export default function TasksPage() {
         <div>
           <h1 className="text-xl font-bold text-text-primary">Tasks</h1>
           <p className="text-sm text-text-muted mt-0.5">
-            {tasks.length} tasks across {new Set(tasks.map((t) => t.agent)).size} agents
+            {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'} across{' '}
+            {new Set(tasks.map((t) => t.agent)).size}{' '}
+            {new Set(tasks.map((t) => t.agent)).size === 1 ? 'agent' : 'agents'}
           </p>
         </div>
         <ToggleGroup items={VIEW_TOGGLE_ITEMS} value={view} onChange={setView} />

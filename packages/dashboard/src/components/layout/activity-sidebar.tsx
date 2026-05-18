@@ -93,7 +93,7 @@ const PIPELINE_LABELS: Record<string, string> = {
 };
 
 export function ActivitySidebar(): React.JSX.Element {
-  const { events, refresh: refreshEvents } = useEventFeed();
+  const { events, isLive, refresh: refreshEvents } = useEventFeed();
   const [activeRuns, setActiveRuns] = useState<ActiveRunInfo[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -181,7 +181,7 @@ export function ActivitySidebar(): React.JSX.Element {
               )}
               {run.agentRole && (
                 <Text size="xs" c="var(--color-text-secondary)">
-                  Agent: {run.agentRole}
+                  Agent: {run.agentRole.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </Text>
               )}
               {run.stage && (
@@ -197,9 +197,16 @@ export function ActivitySidebar(): React.JSX.Element {
       {/* Event feed */}
       <ScrollArea flex={1} px="md" pt="md">
         <Group justify="space-between" mb="xs">
-          <Text size="sm" fw={600} c="var(--color-text-primary)">
-            Activity
-          </Text>
+          <Group gap={8}>
+            <Text size="sm" fw={600} c="var(--color-text-primary)">
+              Activity
+            </Text>
+            {isLive && (
+              <Badge size="xs" variant="light" color="green" radius="xl" styles={{ root: { textTransform: 'uppercase', fontSize: 9, fontWeight: 700 } }}>
+                Live
+              </Badge>
+            )}
+          </Group>
           <ActionIcon
             variant="subtle"
             color="gray"
@@ -213,9 +220,17 @@ export function ActivitySidebar(): React.JSX.Element {
         </Group>
 
         {events.length === 0 ? (
-          <Text size="xs" c="var(--color-text-muted)" ta="center" py="xl">
-            No recent activity
-          </Text>
+          <div className="flex flex-col items-center gap-3 py-10" style={{ animation: 'fade-in 0.4s ease-out forwards' }}>
+            <div
+              className="w-10 h-10 rounded-xl border border-border flex items-center justify-center bg-bg-elevated"
+              style={{ animation: 'float 3s ease-in-out infinite' }}
+            >
+              <IconRefreshIcon size={18} style={{ color: 'var(--color-text-muted)' }} />
+            </div>
+            <Text size="xs" c="var(--color-text-muted)" ta="center" maw={180} lh={1.5}>
+              Activity events stream here during pipeline runs
+            </Text>
+          </div>
         ) : (
           <Timeline active={0} bulletSize={24} lineWidth={2} color="dark.4">
             {events.map((event) => (

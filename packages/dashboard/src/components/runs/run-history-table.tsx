@@ -9,10 +9,14 @@ import { RunDetailPanel } from './run-detail-panel';
 
 const RUN_TYPE_LABELS: Record<string, string> = {
   init: 'Project Init',
+  clarifier: 'Clarification',
+  architect: 'Architecture',
   'design-generate': 'Spec Generation',
   'design-penpot': 'Design Pipeline',
   'design-browser': 'Browser Design',
   'design-chat-iterate': 'Chat Iteration',
+  implementer: 'Implementation',
+  reviewer: 'Code Review',
 };
 
 interface RunData {

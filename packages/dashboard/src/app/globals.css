@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Background layers (4-level elevation) ───────────────── */
-  --color-bg-base: #0a0b10;
-  --color-bg-surface: #0f1117;
-  --color-bg-card: #161827;
-  --color-bg-elevated: #1e2035;
+  /* ── Background layers (4-level elevation, zinc scale) ──── */
+  --color-bg-base: #09090b;
+  --color-bg-surface: #111114;
+  --color-bg-card: #18181b;
+  --color-bg-elevated: #27272a;
 
   /* Sidebar */
-  --color-sidebar: #0c0d15;
+  --color-sidebar: #0a0a0d;
 
   /* ── Text hierarchy ──────────────────────────────────────── */
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-text-dim: #475569;
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-dim: #52525b;
 
   /* ── Border ──────────────────────────────────────────────── */
-  --color-border: #1e2035;
-  --color-border-subtle: #161827;
-  --color-border-bright: #2d3354;
+  --color-border: #27272a;
+  --color-border-subtle: #1c1c1f;
+  --color-border-bright: #3f3f46;
 
   /* ── CHIP brand colors ───────────────────────────────────── */
   --color-accent-blue: #3b82f6;
@@ -28,27 +28,35 @@
 
   /* ── Status colors ───────────────────────────────────────── */
   --color-accent-green: #22c55e;
+  --color-accent-emerald: #34d399;
   --color-accent-orange: #f97316;
+  --color-accent-amber: #fbbf24;
   --color-accent-yellow: #eab308;
   --color-accent-red: #ef4444;
   --color-accent-cyan: #06b6d4;
   --color-accent-teal: #14b8a6;
 
+  /* ── SpineRail tokens ───────────────────────────────────── */
+  --color-spine-active: #6366f1;
+  --color-spine-completed: #34d399;
+  --color-spine-pending: #3f3f46;
+  --color-spine-glow: rgba(99, 102, 241, 0.4);
+
   /* ── Input elevation ─────────────────────────────────────── */
-  --color-bg-input: #252945;
-  --color-border-input: rgba(255, 255, 255, 0.15);
+  --color-bg-input: #1e1e24;
+  --color-border-input: rgba(255, 255, 255, 0.12);
   --color-border-input-focus: rgba(99, 102, 241, 0.6);
   --color-border-input-rest: rgba(255, 255, 255, 0.06);
-  --color-bg-input-inline: #252945;
+  --color-bg-input-inline: #1e1e24;
   --shadow-input: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 40px rgba(0,0,0,0.5);
   --shadow-input-focus: 0 0 0 1.5px rgba(99,102,241,0.5), 0 0 30px rgba(99,102,241,0.2), 0 8px 40px rgba(0,0,0,0.4);
 
   /* ── Playful gradient (welcome page) ────────────────────── */
-  --color-gradient-1: rgba(99, 102, 241, 0.7);
-  --color-gradient-2: rgba(59, 130, 246, 0.65);
-  --color-gradient-3: rgba(6, 182, 212, 0.6);
-  --color-gradient-4: rgba(99, 102, 241, 0.55);
-  --color-gradient-5: rgba(14, 165, 233, 0.5);
+  --color-gradient-1: rgba(99, 102, 241, 0.85);
+  --color-gradient-2: rgba(59, 130, 246, 0.75);
+  --color-gradient-3: rgba(6, 182, 212, 0.7);
+  --color-gradient-4: rgba(99, 102, 241, 0.65);
+  --color-gradient-5: rgba(14, 165, 233, 0.6);
 
   /* ── Glassmorphism ───────────────────────────────────────── */
   --color-glass-bg: rgba(255, 255, 255, 0.03);
@@ -72,18 +80,18 @@
 /* ── Light mode overrides ─────────────────────────────────── */
 
 html[data-mantine-color-scheme="light"] {
-  --color-bg-base: #f8fafc;
+  --color-bg-base: #fafafa;
   --color-bg-surface: #ffffff;
-  --color-bg-card: #f1f5f9;
-  --color-bg-elevated: #e2e8f0;
+  --color-bg-card: #f4f4f5;
+  --color-bg-elevated: #e4e4e7;
   --color-sidebar: #ffffff;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  --color-text-dim: #cbd5e1;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --color-border-bright: #cbd5e1;
+  --color-text-primary: #09090b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #a1a1aa;
+  --color-text-dim: #d4d4d8;
+  --color-border: #e4e4e7;
+  --color-border-subtle: #f4f4f5;
+  --color-border-bright: #d4d4d8;
   --color-glass-bg: rgba(0, 0, 0, 0.02);
   --color-glass-border: rgba(0, 0, 0, 0.06);
   --color-glass-hover: rgba(0, 0, 0, 0.04);
@@ -283,4 +291,71 @@ html[data-mantine-color-scheme="light"] [data-gradient-blob] { opacity: 0.25; }
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
+}
+
+/* ── SpineRail & pipeline animations ─────────────────────── */
+
+@keyframes spine-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--color-spine-glow), 0 0 24px rgba(99,102,241,0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--color-spine-glow), 0 0 40px rgba(99,102,241,0.25);
+  }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes cost-tick {
+  0% { opacity: 0.6; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes stage-complete-flash {
+  0% { background-color: rgba(52, 211, 153, 0); }
+  30% { background-color: rgba(52, 211, 153, 0.08); }
+  100% { background-color: rgba(52, 211, 153, 0); }
+}
+
+@keyframes pulse-ring {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.3); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+.spine-active-pulse {
+  position: relative;
+}
+
+.spine-active-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  border: 2px solid var(--color-spine-active);
+  opacity: 0;
+  animation: pulse-ring 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spine-glow,
+  .animate-float,
+  .animate-check-draw,
+  .animate-cost-tick,
+  .spine-active-pulse::before { animation: none !important; }
 }

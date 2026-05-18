@@ -5,6 +5,8 @@ import { AppShell, Notification } from '@mantine/core';
 import { SidebarNav, type ProjectContext, type ProjectInfo } from './sidebar-nav';
 import { HeaderBar } from './header-bar';
 import { ActivitySidebar } from './activity-sidebar';
+import { useRunProgress } from '@/lib/hooks/use-run-progress';
+import { usePipelineNotifications } from '@/lib/hooks/use-pipeline-notifications';
 
 const DEFAULT_WIDTH = 220;
 const COLLAPSED_WIDTH = 64;
@@ -59,6 +61,14 @@ export function DashboardShell({
   const [isAsideResizing, setIsAsideResizing] = useState(false);
   const switchErrorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const savedWidth = useRef(sidebarWidth === COLLAPSED_WIDTH ? DEFAULT_WIDTH : sidebarWidth);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [headerPhase, setHeaderPhase] = useState<string | undefined>(undefined);
+  const [headerAgents, setHeaderAgents] = useState(0);
+  const [budgetUsed, setBudgetUsed] = useState(0);
+  const [budgetTotal, setBudgetTotal] = useState(0);
+
+  const runProgress = useRunProgress(activeRunId);
+  usePipelineNotifications(activeRunId, runProgress);
 
   useEffect(() => {
     Promise.all([
@@ -74,6 +84,41 @@ export function DashboardShell({
       }
       setAllProjects(projectsList as ProjectInfo[]);
     });
+  }, []);
+
+  useEffect(() => {
+    function checkActiveRuns(): void {
+      fetch('/api/runs?limit=5')
+        .then((r) => (r.ok ? r.json() : { runs: [] }))
+        .then((data: { runs?: Array<{ id: string; status: string; stage?: string }> }) => {
+          const runs = data.runs ?? [];
+          const active = runs.find((r) => r.status === 'running' || r.status === 'pending');
+          setActiveRunId(active?.id ?? null);
+          setHeaderPhase(active?.stage ?? undefined);
+          setHeaderAgents(runs.filter((r) => r.status === 'running').length);
+        })
+        .catch(() => { /* ignore */ });
+    }
+    checkActiveRuns();
+    const id = setInterval(checkActiveRuns, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    function fetchBudget(): void {
+      fetch('/api/costs')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { costs?: { monthly?: { totalCost?: number; budget?: number } } } | null) => {
+          if (data?.costs?.monthly) {
+            setBudgetUsed(data.costs.monthly.totalCost ?? 0);
+            setBudgetTotal(data.costs.monthly.budget ?? 0);
+          }
+        })
+        .catch(() => { /* ignore */ });
+    }
+    fetchBudget();
+    const id = setInterval(fetchBudget, 30_000);
+    return () => clearInterval(id);
   }, []);
 
   const handleSwitchProject = useCallback(async (path: string) => {
@@ -222,6 +267,10 @@ export function DashboardShell({
     >
       <AppShell.Header>
         <HeaderBar
+          phase={headerPhase}
+          budgetUsed={budgetUsed}
+          budgetTotal={budgetTotal}
+          activeAgents={headerAgents}
           activityOpen={activityOpen}
           onToggleActivity={() => {
             setActivityOpen((prev) => {

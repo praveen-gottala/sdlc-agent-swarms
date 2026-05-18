@@ -538,14 +538,17 @@ function DesignStudioContent() {
     fetch('/api/pages')
       .then((r) => (r.ok ? r.json() : { pages: [] }))
       .then((data) => {
-        const fetched: Page[] = (data.pages ?? []).map((p: Record<string, unknown>) => ({
-          id: p.id as string,
-          name: p.name as string,
-          description: (p.description as string) ?? undefined,
-          status: (p.status as string) ?? undefined,
-          designStatus: (p.designStatus as string) ?? 'draft',
-          components: (p.components as string[]) ?? undefined,
-        }));
+        const TEST_PAGE_PATTERN = /^(Draft|Pipeline) test \d+$/;
+        const fetched: Page[] = (data.pages ?? [])
+          .filter((p: Record<string, unknown>) => !TEST_PAGE_PATTERN.test(p.name as string))
+          .map((p: Record<string, unknown>) => ({
+            id: p.id as string,
+            name: p.name as string,
+            description: (p.description as string) ?? undefined,
+            status: (p.status as string) ?? undefined,
+            designStatus: (p.designStatus as string) ?? 'draft',
+            components: (p.components as string[]) ?? undefined,
+          }));
         setPages(fetched);
         setLoading(false);
 
